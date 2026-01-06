@@ -1,0 +1,87 @@
+import 'package:flutter/material.dart';
+import 'package:hexcolor/hexcolor.dart';
+
+abstract class AppColors {
+  static final Gradient defaultGradient = LinearGradient(
+    colors: [HexColor('e26c83'), HexColor('d95f78'), HexColor('c8455f')],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+  static final LinearGradient backgroundGradient = LinearGradient(
+    colors: [HexColor('EB7A91'), HexColor('AC1A37')],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static final Gradient textGradient = LinearGradient(
+    colors: [Color(0xFFAC1A37), Color(0xFFEB7A91)],
+    begin: Alignment.centerRight,
+    end: Alignment.centerLeft,
+  );
+  static final LinearGradient blueOrangeGradient = LinearGradient(
+    colors: [Color(0xff1456A1), Color(0xffF0582A)],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+  );
+
+  static List<Color> kGradineSplashColor = [
+    kprimaryColor,
+    HexColor('4d7bc5'),
+    HexColor('9fb8e0'),
+    HexColor('ffffff'),
+  ];
+  static List<Color> kGradineOnbardingColor = [
+    // HexColor('ffffff'),
+    HexColor('ffffff'),
+    HexColor('fdf3f5'),
+    HexColor('f9d5dc'),
+    kprimaryColor,
+  ];
+  static List<Color> kGradineContainerColor = [
+    HexColor('9fc2ee'),
+    HexColor('9ec4f0'),
+    HexColor('c0d4f7'),
+    HexColor('dae6fe'),
+    HexColor('dbe5fe'),
+  ];
+  static List<Color> kGradineNoteColors = [
+    HexColor('f0ffff'),
+    HexColor('edfdff'),
+    HexColor('e3f6ff'),
+    HexColor('afd5ff'),
+    HexColor('81b8ff'),
+    HexColor('81b8ff'),
+  ];
+  static List<Color> kGradineYourRequestNoteColors = [
+    HexColor('e6f2ff'),
+    HexColor('e3f0ff'),
+    HexColor('d6e7fa'),
+    HexColor('a5c1e3'),
+    HexColor('a7c1e1'),
+  ];
+  static Color kprimaryColor = HexColor('e44e6c');
+  static Color kprimaryTextColor = HexColor('ac1a37');
+  static Color kscandryTextColor = HexColor('590d1c');
+  static Color kScaffoldColor = HexColor('fefcfe');
+  static Color ksecondaryColor = HexColor('E7F4F7');
+  static Color kLightPurpleColor = HexColor('9D25DC');
+  static Color kPinkColor = HexColor('CE56F6');
+  static Color kMagentaColor = HexColor('F939E4');
+  static Color kBlueColor = HexColor('007aff');
+  static Color kLightBlueColor = HexColor('e3e0e8');
+  static const Color kGreyColor = Colors.black38;
+  static Color kRedColor = Colors.red;
+  static Color kWhiteColor = Colors.white;
+  static Color kBlueButtonTextColor = HexColor(
+    '0C5AF0',
+  ); // لون النص الأزرق للأزرار
+  static Color kButtonBackgroundColor = HexColor(
+    "0F122C",
+  ).withOpacity(0.1); // خلفية الزر الشفافة
+
+  static Color kgreyColor = HexColor('999999'); // لون رمادي
+  static Color kTextGrey = HexColor('4D4D4D'); // لون رمادي فاتح
+  static Color kgreyNormalColor = HexColor('BAC0CA'); // لون رمادي نص نص
+  static Color kgreen = HexColor('94CF29'); //لون  الاخضر
+  static Color kGreyB3 = HexColor('B3B3B3'); // new color B3B3B3
+  static Color kGrey666 = HexColor('666666'); // new color 666666
+}

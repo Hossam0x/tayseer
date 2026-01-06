@@ -1,0 +1,172 @@
+import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
+import '../../../../my_import.dart';
+import '../reposiotry/home_repository.dart';
+
+class HomeCubit extends Cubit<HomeState> {
+  final HomeRepository homeRepository;
+  final int pageSize = 10;
+
+  HomeCubit(this.homeRepository) : super(HomeState());
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 FETCH POSTS
+  // ═══════════════════════════════════════════════════════════
+  Future<void> fetchPosts({bool loadMore = false}) async {
+    if (loadMore) {
+      if (state.isLoadingMore || !state.hasMore) return;
+      emit(state.copyWith(isLoadingMore: true));
+
+      final nextPage = state.currentPage + 1;
+      final result = await homeRepository.fetchPosts(page: nextPage);
+
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(isLoadingMore: false, errorMessage: failure.message),
+          );
+        },
+        (newPosts) {
+          final updatedList = [...state.posts, ...newPosts];
+          emit(
+            state.copyWith(
+              posts: updatedList,
+              currentPage: nextPage,
+              hasMore: newPosts.length >= pageSize,
+              isLoadingMore: false,
+            ),
+          );
+        },
+      );
+    } else {
+      emit(
+        state.copyWith(
+          postsState: CubitStates.loading,
+          posts: [],
+          currentPage: 1,
+          hasMore: true,
+        ),
+      );
+      final result = await homeRepository.fetchPosts(page: 1);
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              postsState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (postsList) {
+          emit(
+            state.copyWith(
+              postsState: CubitStates.success,
+              posts: postsList,
+              currentPage: 1,
+              hasMore: postsList.length >= pageSize,
+            ),
+          );
+        },
+      );
+    }
+  }
+
+  void reactToPost({required String postId, ReactionType? reactionType}) {
+    // 1️⃣ إيجاد الـ Post
+    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+
+    // لا تغيير
+    if (post.myReaction == reactionType) {
+      // لو نفس الريأكشن ومطلوب إزالته (لو الزرار بيعمل toggle)
+      // لكن بناء على اللوجيك بتاعك انت بتبعت null للإزالة
+      if (reactionType != null) return;
+    }
+
+    // لو مفيش تغيير (null و null)
+    if (post.myReaction == null && reactionType == null) return;
+
+    // 2️⃣ تحديد الحالة
+    final isRemoving = reactionType == null;
+    final oldReaction = post.myReaction;
+
+    // 3️⃣ حساب العدد
+    int newLikesCount = post.likesCount;
+    if (isRemoving) {
+      newLikesCount = (post.likesCount - 1).clamp(0, post.likesCount);
+    } else if (oldReaction == null) {
+      newLikesCount = post.likesCount + 1;
+    }
+    // في حالة التغيير (Change) العدد بيفضل ثابت
+
+    // 4️⃣ حساب التوب ريأكشنز
+    final newTopReactions = calculateTopReactions(
+      currentTopReactions: post.topReactions,
+      oldReaction: oldReaction,
+      newReaction: reactionType,
+      newLikesCount: newLikesCount,
+    );
+
+    // 5️⃣ التحديث
+    final updatedPost = post.copyWith(
+      likesCount: newLikesCount,
+      topReactions: newTopReactions,
+      myReaction: reactionType,
+      clearMyReaction: isRemoving,
+    );
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[postIndex] = updatedPost;
+
+    emit(state.copyWith(posts: updatedPosts));
+
+    // API Call
+    homeRepository.reactToPost(
+      postId: postId,
+      reactionType: reactionType,
+      isRemove: isRemoving,
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 SAVE POST (Local Only)
+  // ═══════════════════════════════════════════════════════════
+  void toggleSavePost({required String postId}) {
+    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
+
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+
+    // تحديث الـ Post
+    final updatedPost = post.copyWith(isSaved: !post.isSaved);
+
+    // تحديث القائمة
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[postIndex] = updatedPost;
+
+    emit(state.copyWith(posts: updatedPosts));
+
+    // homeRepository.toggleSavePost(postId: postId, isSaved: updatedPost.isSaved);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 FOLLOW/UNFOLLOW ADVISOR (Local Only)
+  // ═══════════════════════════════════════════════════════════
+  void toggleFollowAdvisor({required String advisorId}) {
+    final updatedPosts = state.posts.map((post) {
+      if (post.advisorId == advisorId) {
+        return post.copyWith(isFollowing: !post.isFollowing);
+      }
+      return post;
+    }).toList();
+
+    emit(state.copyWith(posts: updatedPosts));
+
+    // 🔜 TODO: إرسال الطلب للـ backend لاحقاً
+    // homeRepository.toggleFollowAdvisor(advisorId: advisorId);
+  }
+}

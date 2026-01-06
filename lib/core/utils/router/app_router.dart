@@ -1,0 +1,497 @@
+import 'package:flutter/services.dart';
+import 'package:tayseer/core/enum/add_post_enum.dart';
+import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
+import 'package:tayseer/features/advisor/add_post/view/camera_view.dart';
+import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/view/conversition.dart';
+import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
+import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
+import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
+import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
+import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
+import 'package:tayseer/features/advisor/search/view/a_search_view.dart';
+import 'package:tayseer/features/shared/auth/view/consultant_upload_certificate_view.dart';
+import 'package:tayseer/features/shared/auth/view/professional_information_consultant_view.dart';
+import 'package:tayseer/features/shared/auth/view/select_days_view.dart';
+import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
+import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
+import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
+import 'package:tayseer/features/user/questions/accept_married_view.dart';
+import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
+import 'package:tayseer/features/user/questions/children_living_status_view.dart';
+import 'package:tayseer/features/user/questions/children_number_view.dart';
+import 'package:tayseer/features/user/questions/choose_age_view.dart';
+import 'package:tayseer/features/user/questions/choose_employer_view.dart';
+import 'package:tayseer/features/user/questions/choose_gender_view.dart';
+import 'package:tayseer/features/user/questions/choose_height_view.dart';
+import 'package:tayseer/features/user/questions/choose_job_view.dart';
+import 'package:tayseer/features/user/questions/choose_weight_view.dart';
+import 'package:tayseer/features/user/questions/country_view.dart';
+import 'package:tayseer/features/user/questions/education_level_view.dart';
+import 'package:tayseer/features/user/questions/has_children_view.dart';
+import 'package:tayseer/features/user/questions/health_status_view.dart';
+import 'package:tayseer/features/user/questions/hobbies_view.dart';
+import 'package:tayseer/features/user/questions/nationality_view.dart';
+import 'package:tayseer/features/shared/auth/view/otp_view.dart';
+import 'package:tayseer/features/shared/auth/view/personal_info_as_consultant_view.dart';
+import 'package:tayseer/features/user/questions/personal_info_view.dart';
+import 'package:tayseer/features/shared/auth/view/register_view.dart';
+import 'package:tayseer/features/user/questions/religious_commitment_view.dart';
+import 'package:tayseer/features/user/questions/skin_color_view.dart';
+import 'package:tayseer/features/user/questions/smoking_view.dart';
+import 'package:tayseer/features/user/questions/social_status_view.dart';
+import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
+import 'package:tayseer/features/advisor/layout/views/a_layout_view.dart';
+import 'package:tayseer/features/shared/auth/view/regisration_view.dart';
+import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
+// import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/on_boarding_screen.dart';
+import 'package:tayseer/features/advisor/home/views/home_view.dart';
+import '../../../my_import.dart';
+
+abstract class AppRouter {
+  // shared routes
+  static const kSplashView = '/splashView';
+  // static const kOnBoardingScreen = '/OnBoardingScreen';
+  static const kHomeScreen = '/HomeScreen';
+  static const kRegisrationView = '/RegisrationView';
+  static const kRegisterView = '/RegisterView';
+  static const kOtpView = '/OtpView';
+  static const kChooseGenderView = '/ChooseGenderView';
+  static const kNationalityView = '/NationalityView';
+  static const kCountryView = '/CountryView';
+  static const kChooseAgeView = '/ChooseAgeView';
+  static const kSocialStatusView = '/SocialStatusView';
+  static const kChooseWeightView = '/ChooseWeightView';
+  static const kChooseHeightView = '/ChooseHeightView';
+  static const kSkinColorView = '/SkinColorView';
+  static const kSmokingView = '/SmokingView';
+  static const kReligiousCommitmentView = '/ReligiousCommitmentView';
+  static const kHasChildrenView = '/HasChildrenView';
+  static const kChildrenLivingStatusView = '/ChildrenLivingStatusView';
+  static const kChildrenNumberView = '/ChildrenNumberView';
+  static const kEducationLevelView = '/EducationLevelView';
+  static const kChooseJobView = '/ChooseJobView';
+  static const kChooseEmployerView = '/ChooseEmployerView';
+  static const kAcceptMarriedView = '/AcceptMarriedView';
+  static const kHealthStatusView = '/HealthStatusView';
+  static const kHobbiesView = '/HobbiesView';
+  static const kAddYourCvView = '/AddYourCvView';
+  static const kPersonalInfoView = '/PersonalInfoView';
+  static const kPersonalInfoAsConsultantView = '/PersonalInfoAsConsultantView';
+  static const kConsultantInfoView = '/ConsultantInfoView';
+  static const kConsultantUploadCertificateView =
+      '/ConsultantUploadCertificateView';
+  static const kUploadNationalidView = '/UploadNationalidView';
+  static const kSelectLanguagesView = '/SelectLanguagesView';
+  static const kSelectDaysView = '/SelectDaysView';
+  static const kSelectSessionDurationView = '/SelectSessionDurationView';
+  static const kAccountReviewScreen = '/AccountReviewScreen';
+  static const kAccountActivationPendingView = '/AccountActivationPendingView';
+  static const kActivationSuccessView = '/ActivationSuccessView';
+  static const kChatRequest = '/chatrequest';
+  static const kChatSearchView = '/ChatSearchView';
+  static const kConversitionView = '/ConversitionView';
+
+  // advisor routes
+  static const kAdvisorLayoutView = '/AdvisorLayoutView';
+  static const kAdvisorSearchView = '/SearchView';
+  static const kAddPostView = '/AddPostView';
+  static const kCameraView = '/CameraView';
+
+  // static String getInitialRoute() {
+  //   if (kShowOnBoarding == false) {
+  //     return kOnBoardingScreen;
+  //   } else {
+  //     return kSplashView;
+  //     // return kAddPostView;
+  //   }
+  // }
+
+  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      // case kOnBoardingScreen:
+      //   return MaterialPageRoute(
+      //     settings: settings,
+      //     builder: (_) => const OnBoardingScreen(),
+      //   );
+
+      case kHomeScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const HomeView(),
+        );
+
+      case kSplashView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SplashScreen(),
+        );
+      ////////////////////// AuthCubit///////////////////////
+
+      case kRegisrationView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const RegisrationView(),
+          ),
+        );
+
+      case kRegisterView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: RegisterView(),
+          ),
+        );
+
+      case kChooseGenderView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: ChooseGenderView(
+              currentUserType: args != null && args['currentUserType'] != null
+                  ? args['currentUserType'] as UserTypeEnum
+                  : UserTypeEnum.user,
+            ),
+          ),
+        );
+
+      case kNationalityView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const NationalityView(),
+          ),
+        );
+
+      case kCountryView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const CountryView(),
+          ),
+        );
+
+      case kChooseAgeView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const ChooseAgeView(),
+          ),
+        );
+
+      case kSocialStatusView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const SocialStatusView(),
+          ),
+        );
+
+      case kChooseWeightView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const ChooseWeightView(),
+          ),
+        );
+
+      case kChooseHeightView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const ChooseHeightView(),
+          ),
+        );
+
+      case kSkinColorView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const SkinColorView(),
+          ),
+        );
+
+      case kSmokingView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const SmokingView(),
+          ),
+        );
+
+      case kReligiousCommitmentView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const ReligiousCommitmentView(),
+          ),
+        );
+
+      case kHasChildrenView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const HasChildrenView(),
+          ),
+        );
+
+      case kChildrenLivingStatusView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const ChildrenLivingStatusView(),
+          ),
+        );
+
+      case kChildrenNumberView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const ChildrenNumberView(),
+          ),
+        );
+
+      case kEducationLevelView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const EducationLevelView(),
+          ),
+        );
+
+      case kChooseJobView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const ChooseJobView(),
+          ),
+        );
+
+      case kChooseEmployerView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const ChooseEmployerView(),
+          ),
+        );
+
+      case kAcceptMarriedView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const AcceptMarriedView(),
+          ),
+        );
+
+      case kHealthStatusView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const HealthStatusView(),
+          ),
+        );
+
+      case kHobbiesView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const HobbiesView(),
+          ),
+        );
+
+      case kAddYourCvView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const AddYourCvView(),
+          ),
+        );
+
+      case kPersonalInfoView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const PersonalInfoView(),
+          ),
+        );
+
+      case kOtpView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) =>
+              BlocProvider.value(value: getIt<AuthCubit>(), child: OtpView()),
+        );
+      case kPersonalInfoAsConsultantView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: PersonalInfoAsConsultantView(),
+          ),
+        );
+      case kConsultantInfoView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: ProfessionalInformationAsConsultantView(),
+          ),
+        );
+      case kConsultantUploadCertificateView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: ConsultantUploadCertificateView(),
+          ),
+        );
+      case kUploadNationalidView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: UploadNationalidView(),
+          ),
+        );
+      case kSelectLanguagesView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: SelectLanguagesView(),
+          ),
+        );
+      case kSelectDaysView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: SelectDaysView(),
+          ),
+        );
+      case kSelectSessionDurationView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: SelectSessionDurationView(),
+          ),
+        );
+      case kAccountReviewScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: AccountReviewView(),
+          ),
+        );
+      case kAccountActivationPendingView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: AccountActivationPendingView(),
+          ),
+        );
+      case kActivationSuccessView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: ActivationSuccessView(),
+          ),
+        );
+
+      // advisor routes
+      case kAdvisorLayoutView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final userType = args != null && args['currentUserType'] != null
+            ? args['currentUserType'] as UserTypeEnum
+            : UserTypeEnum.asConsultant;
+
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ALayoutView(currentUserType: userType),
+        );
+      case kAdvisorSearchView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const ASearchView(),
+        );
+      case kAddPostView:
+        final args = settings.arguments as AddPostEnum;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider(
+            create: (context) => AddPostCubit()
+              ..loadGallery()
+              ..loadGifs()
+              ..getALLCategory(),
+            child: AddPostView(addPostEnum: args),
+          ),
+        );
+      case kCameraView:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => CameraView(cubit: args['cubit']),
+        );
+      case kChatRequest:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const Requests(),
+        );
+      case kChatSearchView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const ChatSearchView(),
+        );
+      case kConversitionView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ChatScreenWithOverlay(
+            receiverId: settings.arguments != null
+                ? (settings.arguments as Map<String, dynamic>)['receiverid']
+                      as String
+                : '',
+            chatRoomId:
+                (settings.arguments as Map<String, dynamic>?)?['chatroomid']
+                    as String?,
+            username:
+                (settings.arguments as Map<String, dynamic>?)?['username']
+                    as String?,
+            userimage:
+                (settings.arguments as Map<String, dynamic>?)?['userimage']
+                    as String?,
+          ),
+        );
+    }
+    return null;
+  }
+}

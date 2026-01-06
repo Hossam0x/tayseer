@@ -1,0 +1,22 @@
+enum AuthEnum {
+  nationality,
+  country,
+  age,
+  socialStatus,
+  weight,
+  height,
+  skinColor,
+  smoker,
+  wearHijab,
+  religiousCommitment,
+  childrenNumber,
+  hasChildren,
+  childrenLivingStatus,
+  educationLevel,
+  job,
+  chooseEmployer,
+  gender,
+  healthStatus,
+  acceptMarried,
+  addYourCv
+}
