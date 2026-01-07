@@ -1,16 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/core/appLocalizations/appLocalizations.dart';
-import 'package:tayseer/core/constant/constans.dart';
-import 'package:tayseer/core/utils/colors.dart';
-import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
-class tayseerApp extends StatelessWidget {
-  const tayseerApp({super.key});
+class TayseerApp extends StatelessWidget {
+  const TayseerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
