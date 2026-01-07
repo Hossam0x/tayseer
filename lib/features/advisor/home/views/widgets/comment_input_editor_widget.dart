@@ -1,11 +1,18 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gap/gap.dart';
+import 'package:tayseer/core/utils/app_strings.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
+import 'package:tayseer/core/widgets/custom_button.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
-import 'package:tayseer/my_import.dart';
+import 'package:tayseer/core/utils/styles.dart';
 
 class CommentInputEditorWidget extends StatefulWidget {
   final String initialText;
   final String btnText;
   final VoidCallback onCancel;
   final Function(String) onSave;
+  final bool isLoading;
 
   const CommentInputEditorWidget({
     super.key,
@@ -13,6 +20,7 @@ class CommentInputEditorWidget extends StatefulWidget {
     required this.btnText,
     required this.onCancel,
     required this.onSave,
+    this.isLoading = false,
   });
 
   @override
@@ -21,18 +29,20 @@ class CommentInputEditorWidget extends StatefulWidget {
 }
 
 class _CommentInputEditorWidgetState extends State<CommentInputEditorWidget> {
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
-  bool isInputEmpty = true;
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+  bool _isInputEmpty = true;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialText);
     _focusNode = FocusNode();
-    isInputEmpty = widget.initialText.trim().isEmpty;
+    _isInputEmpty = widget.initialText.trim().isEmpty;
+    
     _controller.addListener(_checkInput);
 
+    // Auto-focus logic
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         FocusScope.of(context).requestFocus(_focusNode);
@@ -43,6 +53,7 @@ class _CommentInputEditorWidgetState extends State<CommentInputEditorWidget> {
   @override
   void didUpdateWidget(covariant CommentInputEditorWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Update text if parent sends new initialText (unlikely but safe)
     if (widget.initialText != oldWidget.initialText &&
         widget.initialText != _controller.text) {
       _controller.text = widget.initialText;
@@ -54,10 +65,8 @@ class _CommentInputEditorWidgetState extends State<CommentInputEditorWidget> {
 
   void _checkInput() {
     final isEmpty = _controller.text.trim().isEmpty;
-    if (isInputEmpty != isEmpty) {
-      setState(() {
-        isInputEmpty = isEmpty;
-      });
+    if (_isInputEmpty != isEmpty) {
+      setState(() => _isInputEmpty = isEmpty);
     }
   }
 
@@ -93,20 +102,17 @@ class _CommentInputEditorWidgetState extends State<CommentInputEditorWidget> {
                 ),
                 child: TextField(
                   focusNode: _focusNode,
-                  style: Styles.textStyle12.copyWith(
-                    color: Colors.black,
-                    height: 1.5,
-                  ),
                   controller: _controller,
                   maxLines: 3,
                   minLines: 1,
                   textAlign: TextAlign.right,
-                  autofocus: true,
+                  style: Styles.textStyle12.copyWith(
+                    color: Colors.black,
+                    height: 1.5,
+                  ),
                   decoration: InputDecoration(
                     hintText: context.tr(AppStrings.writeHere),
-                    hintStyle: Styles.textStyle12.copyWith(
-                      color: Colors.grey.shade400,
-                    ),
+                    hintStyle: Styles.textStyle12.copyWith(color: Colors.grey.shade400),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     isDense: true,
@@ -120,6 +126,7 @@ class _CommentInputEditorWidgetState extends State<CommentInputEditorWidget> {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
+            // Cancel Button
             CustomBotton(
               title: context.tr(AppStrings.cancel),
               width: 80.w,
@@ -127,16 +134,20 @@ class _CommentInputEditorWidgetState extends State<CommentInputEditorWidget> {
               radius: 20.r,
               backGroundcolor: greyColor,
               titleColor: Colors.black,
-              onPressed: widget.onCancel,
+              // Disable if loading
+              onPressed: widget.isLoading ? null : widget.onCancel,
             ),
             Gap(10.w),
+            
+            // Save/Send Button
             CustomBotton(
               title: widget.btnText,
               width: 100.w,
               height: 35.h,
               radius: 20.r,
               useGradient: true,
-              onPressed: isInputEmpty
+              isLoading: widget.isLoading,
+              onPressed: (_isInputEmpty || widget.isLoading)
                   ? null
                   : () => widget.onSave(_controller.text),
             ),

@@ -97,7 +97,6 @@ class HomePostFeed extends StatelessWidget {
   }
 }
 
-// TODO : redesign this widget
 class _EndOfFeedIndicator extends StatelessWidget {
   const _EndOfFeedIndicator();
 
@@ -108,21 +107,9 @@ class _EndOfFeedIndicator extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: EdgeInsets.all(12.r),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.check_rounded,
-              color: Colors.grey.shade400,
-              size: 24.sp,
-            ),
-          ),
-          Gap(12.h),
+          AppImage(AssetsData.postsEndIcon, height: 110.h),
           Text(
-            " تهانينا! لقد وصلت لنهاية المنشورات ",
+            "تم الوصول لنهاية المنشورات",
             style: Styles.textStyle14.copyWith(
               color: Colors.grey.shade500,
               fontWeight: FontWeight.w600,
@@ -137,6 +124,7 @@ class _EndOfFeedIndicator extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
+          Gap(16.h),
         ],
       ),
     );

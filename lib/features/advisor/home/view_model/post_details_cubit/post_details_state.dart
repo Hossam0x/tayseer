@@ -1,52 +1,94 @@
 part of 'post_details_cubit.dart';
 
-sealed class PostDetailsState extends Equatable {
-  const PostDetailsState();
-
-  @override
-  List<Object?> get props => [];
-}
-
-final class PostDetailsInitial extends PostDetailsState {}
-
-final class PostDetailsLoaded extends PostDetailsState {
+class PostDetailsState extends Equatable {
+  // Comments List State
+  final CubitStates commentsState;
   final List<CommentModel> comments;
-  final String? activeReplyId;
-  final String? editingCommentId;
-  final int focusInputTrigger;
+  final String? errorMessage;
+  
+  // Pagination
+  final int currentPage;
+  final int totalPages;
+  final bool isLoadingMore;
 
-  const PostDetailsLoaded({
-    required this.comments,
+  // Interaction Logic
+  final String? activeReplyId;      // ID الكومنت المفتوح للرد
+  final String? editingCommentId;   // ID الكومنت المفتوح للتعديل
+  final int focusInputTrigger;      
+
+  // Action States
+  final CubitStates addingCommentState; // للكومنت الرئيسي
+  final CubitStates addingReplyState;   // <--- جديد: للردود
+    final CubitStates editingState; // <--- جديد: حالة التعديل
+
+  
+
+  const PostDetailsState({
+    this.commentsState = CubitStates.initial,
+    this.comments = const [],
+    this.errorMessage,
+    this.currentPage = 0,
+    this.totalPages = 1,
+    this.isLoadingMore = false,
     this.activeReplyId,
     this.editingCommentId,
     this.focusInputTrigger = 0,
+    this.addingCommentState = CubitStates.initial,
+    this.addingReplyState = CubitStates.initial, // <--- القيمة الافتراضية
+    this.editingState = CubitStates.initial, // <--- القيمة الافتراضية
   });
 
-  PostDetailsLoaded copyWith({
+  bool get hasMoreComments => currentPage < totalPages;
+
+  PostDetailsState copyWith({
+    CubitStates? commentsState,
     List<CommentModel>? comments,
+    String? errorMessage,
+    int? currentPage,
+    int? totalPages,
+    bool? isLoadingMore,
     String? activeReplyId,
+    bool? clearActiveReplyId,
     String? editingCommentId,
-    bool clearActiveReplyId = false,
-    bool clearEditingCommentId = false,
+    bool? clearEditingCommentId,
     int? focusInputTrigger,
+    CubitStates? addingCommentState,
+    CubitStates? addingReplyState, // <---
+    CubitStates? editingState, // <---
   }) {
-    return PostDetailsLoaded(
+    return PostDetailsState(
+      commentsState: commentsState ?? this.commentsState,
       comments: comments ?? this.comments,
-      activeReplyId:
-          clearActiveReplyId ? null : (activeReplyId ?? this.activeReplyId),
-      editingCommentId:
-          clearEditingCommentId
-              ? null
-              : (editingCommentId ?? this.editingCommentId),
+      errorMessage: errorMessage ?? this.errorMessage,
+      currentPage: currentPage ?? this.currentPage,
+      totalPages: totalPages ?? this.totalPages,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      activeReplyId: (clearActiveReplyId == true) 
+          ? null 
+          : (activeReplyId ?? this.activeReplyId),
+      editingCommentId: (clearEditingCommentId == true) 
+          ? null 
+          : (editingCommentId ?? this.editingCommentId),
       focusInputTrigger: focusInputTrigger ?? this.focusInputTrigger,
+      addingCommentState: addingCommentState ?? this.addingCommentState,
+      addingReplyState: addingReplyState ?? this.addingReplyState, // <---
+      editingState: editingState ?? this.editingState, // <---
     );
   }
 
   @override
   List<Object?> get props => [
-    comments,
-    activeReplyId,
-    editingCommentId,
-    focusInputTrigger,
-  ];
+        commentsState,
+        comments,
+        errorMessage,
+        currentPage,
+        totalPages,
+        isLoadingMore,
+        activeReplyId,
+        editingCommentId,
+        focusInputTrigger,
+        addingCommentState,
+        addingReplyState, // <---
+        editingState, // <---
+      ];
 }
