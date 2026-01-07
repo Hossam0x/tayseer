@@ -23,7 +23,7 @@ class _ContentSwitcherState extends State<ContentSwitcher> {
       textDirection: TextDirection.rtl,
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: context.width * 0.07),
-        height: context.height * 0.09,
+        height: context.height * 0.07,
         padding: const EdgeInsets.all(1),
         decoration: BoxDecoration(
           border: Border.all(
