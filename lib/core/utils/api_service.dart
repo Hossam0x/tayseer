@@ -107,15 +107,19 @@ class ApiService {
   Future<Map<String, dynamic>> delete({
     required String endPoint,
     Map<String, dynamic>? headers,
+    Map<String, dynamic>? data,
   }) async {
     try {
-      final mergedHeaders = {
+      final mergedHeaders = <String, dynamic>{
         'Accept-Language': selectedLanguage ?? 'ar',
+        'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
+        'Accept': 'application/json',
         ...?headers,
       };
 
       var response = await _dio.delete(
         "$kbaseUrl$endPoint",
+        data: data,
         options: Options(
           headers: mergedHeaders,
           validateStatus: (status) => status! < 500,

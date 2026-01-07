@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
-import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
 import '../../manager/scroll/chat_scroll_cubit.dart';
 import '../../manager/scroll/chat_scroll_state.dart';
 import '../bubble/message_bubble.dart';
@@ -36,6 +35,15 @@ class _MessageListViewState extends State<MessageListView> {
   }
 
   @override
+  void didUpdateWidget(covariant MessageListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Clean up keys for messages that no longer exist
+    // This prevents GlobalKey conflicts when temp messages are replaced
+    final currentIds = widget.messages.map((m) => m.id).toSet();
+    _messageKeys.removeWhere((key, _) => !currentIds.contains(key));
+  }
+
+  @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isMobile = screenSize.width < 600;
@@ -52,7 +60,13 @@ class _MessageListViewState extends State<MessageListView> {
             vertical: isMobile ? 6 : 8,
           ),
           itemCount: widget.messages.length,
+          // Keep items alive to prevent reload
+          addAutomaticKeepAlives: true,
+          // Cache items for better scroll performance
+          cacheExtent: 500,
           itemBuilder: (context, index) {
+            // With reverse: true, index 0 is the last message (newest at bottom)
+            // So we access messages directly - newest messages are at the end of the list
             final msg = widget.messages[widget.messages.length - 1 - index];
             final currentMsgId = msg.id;
             final messageKey = currentMsgId.isNotEmpty
@@ -62,10 +76,9 @@ class _MessageListViewState extends State<MessageListView> {
                 scrollState.highlightedMessageId != null &&
                 currentMsgId == scrollState.highlightedMessageId;
 
-            return _MessageItemAnimated(
+            return _MessageItemKeepAlive(
               key: ValueKey(currentMsgId),
               messageKey: messageKey,
-              index: index,
               child: GestureDetector(
                 onLongPress: () =>
                     widget.onMessageLongPress?.call(msg, messageKey),
@@ -85,34 +98,31 @@ class _MessageListViewState extends State<MessageListView> {
   }
 }
 
-class _MessageItemAnimated extends StatelessWidget {
+/// Keep message items alive to prevent image/video reload during scroll
+class _MessageItemKeepAlive extends StatefulWidget {
   final GlobalKey messageKey;
-  final int index;
   final Widget child;
 
-  const _MessageItemAnimated({
+  const _MessageItemKeepAlive({
     super.key,
     required this.messageKey,
-    required this.index,
     required this.child,
   });
 
   @override
+  State<_MessageItemKeepAlive> createState() => _MessageItemKeepAliveState();
+}
+
+class _MessageItemKeepAliveState extends State<_MessageItemKeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(
-        milliseconds:
-            ChatAnimations.messageEntryDuration.inMilliseconds + (index * 50),
-      ),
-      curve: ChatAnimations.defaultCurve,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - value)),
-          child: Opacity(opacity: value, child: child),
-        );
-      },
-      child: Container(key: messageKey, child: child),
-    );
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    // Don't pass GlobalKey to Container - it's already on the parent widget
+    // The messageKey is only for external access (long press, etc.)
+    return KeyedSubtree(key: widget.messageKey, child: widget.child);
   }
 }

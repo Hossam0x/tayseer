@@ -6,21 +6,24 @@ import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
-import 'package:tayseer/features/advisor/chat/data/repo/chat_repo.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_state.dart';
+import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_v2.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_v2.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_state_v2.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/input/chat_input_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/typing/typing_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/typing/typing_state.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/message_details.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/conversation_app_bar.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/conversation_context_menu.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/message_shimmer.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/typing_indicator.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/scroll_to_bottom_button.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/message_list_view.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/selectable_message_list_view.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/selection_bottom_bar.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/conversation_input_area.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/bubble/message_bubble.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
@@ -214,7 +217,21 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
     return _messageKeys[messageId]!;
   }
 
-  void _showDeleteConfirmation(BuildContext blocContext) {
+  // حذف رسالة واحدة من context menu (يستخدم نفس منطق selection)
+  void _showDeleteConfirmationForSingleMessage(
+    BuildContext blocContext,
+    String deleteType,
+    ChatMessage message,
+  ) {
+    final isDeleteForAll = deleteType == 'everyone';
+    final title = isDeleteForAll ? 'حذف لدى الجميع' : 'حذف لديّ';
+    final content = isDeleteForAll
+        ? 'هل أنت متأكد من حذف هذه الرسالة لدى الجميع؟'
+        : 'هل أنت متأكد من حذف هذه الرسالة لديك فقط؟';
+
+    // حفظ reference للـ cubit قبل فتح الـ dialog
+    final cubit = blocContext.read<ChatMessagesCubitV2>();
+
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -224,17 +241,14 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            title: const Text(
-              'حذف الرسالة',
-              style: TextStyle(
+            title: Text(
+              title,
+              style: const TextStyle(
                 fontFamily: 'Cairo',
                 fontWeight: FontWeight.bold,
               ),
             ),
-            content: const Text(
-              'هل أنت متأكد من حذف هذه الرسالة؟',
-              style: TextStyle(fontFamily: 'Cairo'),
-            ),
+            content: Text(content, style: const TextStyle(fontFamily: 'Cairo')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext),
@@ -244,14 +258,105 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                 ),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(dialogContext);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('تم حذف الرسالة'),
-                      backgroundColor: Colors.red,
-                    ),
+
+                  // استخدام الـ cubit المحفوظ
+                  final success = await cubit.deleteMessages(
+                    messageIds: [message.id],
+                    deleteType: deleteType,
                   );
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success ? 'تم حذف الرسالة' : 'فشل حذف الرسالة',
+                        ),
+                        backgroundColor: success ? Colors.green : Colors.red,
+                      ),
+                    );
+                  }
+                },
+                child: const Text(
+                  'حذف',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Handle delete for selected messages (multi-select mode)
+  void _handleDeleteSelected(BuildContext blocContext, String deleteType) {
+    final selectionCubit = blocContext.read<MessageSelectionCubit>();
+    final selectedIds = selectionCubit.getSelectedMessageIds();
+
+    if (selectedIds.isEmpty) return;
+
+    final isDeleteForAll = deleteType == 'everyone';
+    final count = selectedIds.length;
+    final title = isDeleteForAll ? 'حذف لدى الجميع' : 'حذف لديّ';
+    final content = isDeleteForAll
+        ? 'هل أنت متأكد من حذف $count رسالة لدى الجميع؟'
+        : 'هل أنت متأكد من حذف $count رسالة لديك فقط؟';
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              title,
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Text(content, style: const TextStyle(fontFamily: 'Cairo')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text(
+                  'إلغاء',
+                  style: TextStyle(color: Colors.grey, fontFamily: 'Cairo'),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(dialogContext);
+
+                  final success = await blocContext
+                      .read<ChatMessagesCubitV2>()
+                      .deleteMessages(
+                        messageIds: selectedIds,
+                        deleteType: deleteType,
+                      );
+
+                  // Exit selection mode after delete
+                  selectionCubit.exitSelectionMode();
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success ? 'تم حذف الرسائل' : 'فشل حذف الرسائل',
+                        ),
+                        backgroundColor: success ? Colors.green : Colors.red,
+                      ),
+                    );
+                  }
                 },
                 child: const Text(
                   'حذف',
@@ -278,25 +383,30 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
       providers: [
         BlocProvider(
           create: (context) {
-            log('🚀 Creating ChatMessagesCubit for room: ${widget.chatRoomId}');
-            final cubit = ChatMessagesCubit(getIt<ChatRepo>());
-            cubit.getChatMessages(widget.chatRoomId!);
-            cubit.listenToNewMessages();
-            cubit.listenToUserTyping(widget.chatRoomId!);
-            cubit.listenToMessagesRead();
+            log(
+              '🚀 Creating ChatMessagesCubitV2 (Local-First) for room: ${widget.chatRoomId}',
+            );
+            final cubit = ChatMessagesCubitV2(getIt<ChatRepoV2>());
+            // Load from local DB first, then sync with server
+            cubit.loadInitialMessages(
+              widget.chatRoomId!,
+              receiverId: widget.receiverId,
+            );
+            cubit.setupSocketListeners();
             return cubit;
           },
         ),
         BlocProvider(create: (_) => ChatScrollCubit()),
+        BlocProvider(create: (_) => MessageSelectionCubit()),
         BlocProvider(
           create: (_) => TypingCubit()..listenToUserTyping(widget.chatRoomId!),
         ),
         BlocProvider(
           create: (context) => ChatInputCubit(
-            onTypingStart: () => context.read<ChatMessagesCubit>().typingstart(
-              widget.chatRoomId!,
-            ),
-            onTypingStop: () => context.read<ChatMessagesCubit>().typingstop(
+            onTypingStart: () => context
+                .read<ChatMessagesCubitV2>()
+                .typingStart(widget.chatRoomId!),
+            onTypingStop: () => context.read<ChatMessagesCubitV2>().typingStop(
               widget.chatRoomId!,
             ),
           ),
@@ -305,64 +415,94 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
       child: Builder(
         builder: (context) {
           _setupScrollListener(context.read<ChatScrollCubit>());
-          return SafeArea(
-            top: false,
-            child: Scaffold(
-              backgroundColor: ChatColors.chatBackground,
-              body: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Stack(
-                  children: [
-                    Column(
-                      children: [
-                        ConversationAppBar(
-                          username: widget.username,
-                          userimage: widget.userimage,
-                          videoIcon: AssetsData.videoIcon,
-                          phoneIcon: AssetsData.phoneIcon,
-                        ),
-                        Expanded(
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage(
-                                  AssetsData.homeBackgroundImage,
-                                ),
-                                fit: BoxFit.cover,
+          return BlocBuilder<MessageSelectionCubit, MessageSelectionState>(
+            buildWhen: (previous, current) =>
+                previous.isSelectionMode != current.isSelectionMode,
+            builder: (context, selectionState) {
+              return PopScope(
+                canPop: !selectionState.isSelectionMode,
+                onPopInvokedWithResult: (didPop, result) {
+                  if (!didPop && selectionState.isSelectionMode) {
+                    context.read<MessageSelectionCubit>().exitSelectionMode();
+                  }
+                },
+                child: SafeArea(
+                  top: false,
+                  child: Scaffold(
+                    backgroundColor: ChatColors.chatBackground,
+                    body: Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: Stack(
+                        children: [
+                          Column(
+                            children: [
+                              // App bar عادي دائماً (بدون تغيير في selection mode)
+                              ConversationAppBar(
+                                username: widget.username,
+                                userimage: widget.userimage,
+                                videoIcon: AssetsData.videoIcon,
+                                phoneIcon: AssetsData.phoneIcon,
                               ),
-                            ),
-                            child: Stack(
-                              children: [
-                                _buildMessagesArea(isMobile),
-                                _buildScrollToBottomButton(),
-                              ],
-                            ),
+                              Expanded(
+                                child: Container(
+                                  decoration: const BoxDecoration(
+                                    image: DecorationImage(
+                                      image: AssetImage(
+                                        AssetsData.homeBackgroundImage,
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      _buildMessagesArea(isMobile),
+                                      _buildScrollToBottomButton(),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Show input area or selection bottom bar
+                              if (selectionState.isSelectionMode)
+                                SelectionBottomBar(
+                                  onDeleteForMe: () =>
+                                      _handleDeleteSelected(context, 'me'),
+                                  onDeleteForAll: () => _handleDeleteSelected(
+                                    context,
+                                    'everyone',
+                                  ),
+                                  onCancel: () => context
+                                      .read<MessageSelectionCubit>()
+                                      .exitSelectionMode(),
+                                )
+                              else
+                                _buildInputArea(),
+                            ],
                           ),
-                        ),
-                        _buildInputArea(),
-                      ],
+                          if (_isOverlayVisible && _selectedMessage != null)
+                            _buildContextMenuOverlay(screenSize, isMobile),
+                        ],
+                      ),
                     ),
-                    if (_isOverlayVisible && _selectedMessage != null)
-                      _buildContextMenuOverlay(screenSize, isMobile),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),
     );
   }
 
+  /// Build the app bar shown during selection mode
   Widget _buildMessagesArea(bool isMobile) {
-    return BlocConsumer<ChatMessagesCubit, ChatMessagesState>(
+    return BlocConsumer<ChatMessagesCubitV2, ChatMessagesStateV2>(
       listenWhen: (previous, current) =>
-          previous.messages?.length != current.messages?.length ||
-          previous.getChatMessages != current.getChatMessages,
+          previous.messages.length != current.messages.length ||
+          previous.loadingState != current.loadingState,
       listener: (context, state) {
-        final currentCount = state.messages?.length ?? 0;
+        final currentCount = state.messages.length;
 
-        if (state.getChatMessages == CubitStates.success &&
+        if (state.loadingState == CubitStates.success &&
             _isFirstLoad &&
             currentCount > 0) {
           _isFirstLoad = false;
@@ -380,23 +520,60 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
         _previousMessageCount = currentCount;
       },
       buildWhen: (previous, current) =>
-          previous.getChatMessages != current.getChatMessages ||
+          previous.loadingState != current.loadingState ||
           previous.messages != current.messages,
       builder: (context, state) {
-        if (state.getChatMessages == CubitStates.loading) {
+        if (state.loadingState == CubitStates.loading) {
           return const MessageShimmer();
         }
 
-        if (state.getChatMessages == CubitStates.success) {
+        if (state.loadingState == CubitStates.success ||
+            state.messages.isNotEmpty) {
           return Column(
             children: [
+              // Offline indicator
+              if (!state.isOnline)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  color: Colors.orange.shade100,
+                  child: const Text(
+                    'أنت غير متصل - سيتم إرسال الرسائل عند الاتصال',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Colors.orange),
+                  ),
+                ),
+              // Pending messages indicator
+              if (state.pendingCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  child: Text(
+                    '${state.pendingCount} رسالة قيد الإرسال...',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  ),
+                ),
               Expanded(
-                child: MessageListView(
-                  messages: state.messages ?? [],
-                  scrollController: _scrollController,
-                  onMessageLongPress: (message, key) =>
-                      _showOverlay(message, key),
-                  onReplyTap: _scrollToMessage,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    // Load older messages when scrolling to top
+                    if (notification is ScrollEndNotification) {
+                      final metrics = notification.metrics;
+                      if (metrics.pixels >= metrics.maxScrollExtent - 100) {
+                        context.read<ChatMessagesCubitV2>().loadOlderMessages();
+                      }
+                    }
+                    return false;
+                  },
+                  child: SelectableMessageListView(
+                    messages: state.messages,
+                    scrollController: _scrollController,
+                    onMessageLongPress: (message, key) =>
+                        _showOverlay(message, key),
+                    onReplyTap: _scrollToMessage,
+                  ),
                 ),
               ),
               BlocBuilder<TypingCubit, TypingState>(
@@ -414,7 +591,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
           );
         }
 
-        if (state.getChatMessages == CubitStates.failure) {
+        if (state.loadingState == CubitStates.failure) {
           return _buildErrorState(context, state);
         }
 
@@ -444,7 +621,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
           chatEmojiIcon: AssetsData.chatEmojiIcon,
           cameraIcon: AssetsData.cameraIcon,
           onSendMessage: (message, replyMessageId) {
-            context.read<ChatMessagesCubit>().sendMessage(
+            context.read<ChatMessagesCubitV2>().sendMessage(
               widget.receiverId!,
               message,
               widget.chatRoomId!,
@@ -453,7 +630,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
             _scrollToBottomAfterSend();
           },
           onSendMedia: (files, messageType, replyMessageId) {
-            context.read<ChatMessagesCubit>().sendMediaMessage(
+            context.read<ChatMessagesCubitV2>().sendMediaMessage(
               chatRoomId: widget.chatRoomId!,
               messageType: messageType,
               images: messageType == 'image' ? files : null,
@@ -463,17 +640,17 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
             _scrollToBottomAfterSend();
           },
           onTypingStart: () {
-            context.read<ChatMessagesCubit>().typingstart(widget.chatRoomId!);
+            context.read<ChatMessagesCubitV2>().typingStart(widget.chatRoomId!);
           },
           onTypingStop: () {
-            context.read<ChatMessagesCubit>().typingstop(widget.chatRoomId!);
+            context.read<ChatMessagesCubitV2>().typingStop(widget.chatRoomId!);
           },
         );
       },
     );
   }
 
-  Widget _buildErrorState(BuildContext context, ChatMessagesState state) {
+  Widget _buildErrorState(BuildContext context, ChatMessagesStateV2 state) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -487,8 +664,9 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              context.read<ChatMessagesCubit>().getChatMessages(
+              context.read<ChatMessagesCubitV2>().loadInitialMessages(
                 widget.chatRoomId!,
+                receiverId: widget.receiverId,
               );
             },
             child: const Text('إعادة المحاولة'),
@@ -544,21 +722,34 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                       },
                       onDetails: _openMessageDetails,
                       onSelect: () {
+                        if (_selectedMessage != null) {
+                          builderContext
+                              .read<MessageSelectionCubit>()
+                              .enterSelectionMode(_selectedMessage!);
+                        }
                         _hideOverlay();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('تم التحديد'),
-                            duration: Duration(seconds: 1),
-                          ),
-                        );
                       },
                       onDeleteForMe: () {
-                        _hideOverlay();
-                        _showDeleteConfirmation(builderContext);
+                        if (_selectedMessage != null) {
+                          final messageToDelete = _selectedMessage!;
+                          _hideOverlay();
+                          _showDeleteConfirmationForSingleMessage(
+                            builderContext,
+                            'me',
+                            messageToDelete,
+                          );
+                        }
                       },
                       onDeleteForAll: () {
-                        _hideOverlay();
-                        _showDeleteConfirmation(builderContext);
+                        if (_selectedMessage != null) {
+                          final messageToDelete = _selectedMessage!;
+                          _hideOverlay();
+                          _showDeleteConfirmationForSingleMessage(
+                            builderContext,
+                            'everyone',
+                            messageToDelete,
+                          );
+                        }
                       },
                     );
                   },

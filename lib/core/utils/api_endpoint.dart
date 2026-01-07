@@ -9,4 +9,5 @@ class ApiEndPoint {
   static String getChatMessages(String chatRoomId) =>
       '/chat/$chatRoomId/messages';
   static const String sendChatMedia = '/chat/messages/media';
+  static const String deleteChatMessage = '/chat/messages/';
 }
