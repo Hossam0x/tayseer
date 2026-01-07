@@ -9,7 +9,6 @@ abstract class AssetsData {
       "assets/images/onboarding_background.png";
   static const String kBackgroundtayseerImage =
       "assets/images/background_tayser_Image.png";
-      "assets/images/background_tayser_Image.png";
   static const String kOnboarding1 = "assets/images/1_onboarding.png";
   static const String kOnboarding2 = "assets/images/2_onboarding.png";
   static const String kOnboarding3 = "assets/images/3_onboarding.png";
