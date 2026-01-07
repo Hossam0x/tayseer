@@ -1,11 +1,13 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/features/advisor/home/model/comment_model.dart';
+import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 import 'package:tayseer/my_import.dart';
 
 part 'post_details_state.dart';
 
 class PostDetailsCubit extends Cubit<PostDetailsState> {
-  PostDetailsCubit() : super(PostDetailsInitial()) {
+  final HomeRepository homeRepository;
+  PostDetailsCubit(this.homeRepository) : super(PostDetailsInitial()) {
     _loadComments();
   }
 
@@ -56,6 +58,18 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     final currentState = state;
     if (currentState is PostDetailsLoaded) {
       emit(currentState.copyWith(clearEditingCommentId: true));
+    }
+  }
+
+  void requestInputFocus() {
+    final currentState = state;
+    if (currentState is PostDetailsLoaded) {
+      emit(
+        currentState.copyWith(
+          clearActiveReplyId: true,
+          focusInputTrigger: currentState.focusInputTrigger + 1,
+        ),
+      );
     }
   }
 

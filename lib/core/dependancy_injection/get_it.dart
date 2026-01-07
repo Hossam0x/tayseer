@@ -4,6 +4,7 @@ import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dar
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/home/view_model/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository_impl.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
@@ -59,6 +60,9 @@ Future<void> setupGetIt() async {
   );
   // Home Cubit
   getIt.registerFactory<HomeCubit>(() => HomeCubit(getIt<HomeRepository>()));
+  getIt.registerFactory<PostDetailsCubit>(
+    () => PostDetailsCubit(getIt<HomeRepository>()),
+  );
 
   // Stories Feature
   getIt.registerLazySingleton<StoriesRepository>(

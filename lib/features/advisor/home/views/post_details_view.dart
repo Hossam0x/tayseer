@@ -40,7 +40,7 @@ class PostDetailsView extends StatelessWidget {
     );
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (context) => PostDetailsCubit()),
+        BlocProvider(create: (context) => getIt<PostDetailsCubit>()),
         BlocProvider.value(value: homeCubit),
       ],
       child: Scaffold(

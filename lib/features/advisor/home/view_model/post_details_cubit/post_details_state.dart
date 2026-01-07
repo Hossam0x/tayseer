@@ -13,11 +13,13 @@ final class PostDetailsLoaded extends PostDetailsState {
   final List<CommentModel> comments;
   final String? activeReplyId;
   final String? editingCommentId;
+  final int focusInputTrigger;
 
   const PostDetailsLoaded({
     required this.comments,
     this.activeReplyId,
     this.editingCommentId,
+    this.focusInputTrigger = 0,
   });
 
   PostDetailsLoaded copyWith({
@@ -26,6 +28,7 @@ final class PostDetailsLoaded extends PostDetailsState {
     String? editingCommentId,
     bool clearActiveReplyId = false,
     bool clearEditingCommentId = false,
+    int? focusInputTrigger,
   }) {
     return PostDetailsLoaded(
       comments: comments ?? this.comments,
@@ -35,9 +38,15 @@ final class PostDetailsLoaded extends PostDetailsState {
           clearEditingCommentId
               ? null
               : (editingCommentId ?? this.editingCommentId),
+      focusInputTrigger: focusInputTrigger ?? this.focusInputTrigger,
     );
   }
 
   @override
-  List<Object?> get props => [comments, activeReplyId, editingCommentId];
+  List<Object?> get props => [
+    comments,
+    activeReplyId,
+    editingCommentId,
+    focusInputTrigger,
+  ];
 }
