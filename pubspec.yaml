@@ -54,6 +54,11 @@ dependencies:
   hive: ^2.2.3
   photo_manager: ^3.6.4
   firebase_core: ^4.3.0
+  flutter_local_notifications: ^19.5.0
+  firebase_messaging: ^16.1.0
+  google_maps_flutter: ^2.14.0
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:io';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
@@ -38,6 +37,20 @@ class AuthCubit extends Cubit<AuthState> {
   String? specialization;
   String? jobLevel;
   String? experienceYears;
+
+  bool _isVideoLoading = false;
+
+  bool get isVideoLoading => _isVideoLoading;
+
+  void setVideoLoaded() {
+    _isVideoLoading = false;
+    emit(state.copyWith());
+  }
+
+  void setVideoLoading(bool isLoading) {
+    _isVideoLoading = isLoading;
+    emit(state.copyWith());
+  }
 
   Future<void> logInUser({
     String? email,

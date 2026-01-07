@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
-import 'package:tayseer/core/utils/image_picker_helper.dart';
+import 'package:tayseer/core/utils/helper/image_picker_helper.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 

@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:tayseer/core/notifications/message_config.dart';
 import 'package:tayseer/firebase_options.dart';
 import 'package:tayseer/tayser_app.dart';
 import 'package:tayseer/core/utils/simple_bloc_observer.dart';
@@ -9,7 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // LocalNotification().initialize();
+  LocalNotification().initialize();
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
   Bloc.observer = SimpleBlocObserver();
