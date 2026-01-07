@@ -67,6 +67,7 @@ Future<void> setupGetIt() async {
   // Home Cubit
   getIt.registerFactory<HomeCubit>(() => HomeCubit(getIt<HomeRepository>()));
 
+
   // Stories Feature
   getIt.registerLazySingleton<StoriesRepository>(
     () => StoriesRepositoryImpl(getIt<ApiService>()),

@@ -20,10 +20,11 @@ class FullscreenVideoPlayer extends StatefulWidget {
   final bool isMuted;
 
   const FullscreenVideoPlayer({
+    Key? key,
     required this.videoUrl,
     required this.startPosition,
     required this.isMuted,
-  });
+  }) : super(key: key);
 
   @override
   State<FullscreenVideoPlayer> createState() => _FullscreenVideoPlayerState();
@@ -38,6 +39,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
   late bool _isMuted;
   bool _isEnded = false;
   bool _isBuffering = false;
+  bool _isLandscape = false; // متغير لمتابعة حالة دوران الشاشة
 
   final _videoCacheManager = VideoCacheManager();
 
@@ -46,11 +48,11 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
     super.initState();
     _isMuted = widget.isMuted;
 
+    // إخفاء شريط الحالة وأزرار النظام لاستغلال الشاشة بالكامل
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+
+    // البدء بالوضع الطولي (Portrait)
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
     _initializeVideo();
   }
@@ -155,6 +157,22 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
     });
   }
 
+  // دالة جديدة للتبديل بين الطول والعرض
+  void _toggleOrientation() {
+    setState(() {
+      _isLandscape = !_isLandscape;
+    });
+
+    if (_isLandscape) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    }
+  }
+
   void _replayVideo() {
     _controller?.seekTo(Duration.zero);
     _controller?.play();
@@ -179,7 +197,8 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
     _controller!.seekTo(newPos > Duration.zero ? newPos : Duration.zero);
   }
 
-  void _exitFullscreen() {
+  // تم تغيير اسم الدالة لتعكس أنها تغلق الصفحة
+  void _onClosePage() {
     final result = FullscreenResult(
       position: _controller?.value.position ?? Duration.zero,
       isMuted: _isMuted,
@@ -190,6 +209,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
 
   @override
   void dispose() {
+    // إعادة إعدادات النظام للوضع الطبيعي عند الخروج
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -215,50 +235,56 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (_isInitialized && _controller != null)
-            GestureDetector(
-              onTap: _toggleControls,
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: _controller!.value.aspectRatio,
-                  child: VideoPlayer(_controller!),
+    // WillPopScope (أو PopScope) للتأكد من إرجاع النتيجة عند الضغط على زر الرجوع في الهاتف
+    return WillPopScope(
+      onWillPop: () async {
+        _onClosePage();
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_isInitialized && _controller != null)
+              GestureDetector(
+                onTap: _toggleControls,
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio: _controller!.value.aspectRatio,
+                    child: VideoPlayer(_controller!),
+                  ),
                 ),
               ),
-            ),
-          if (!_isInitialized)
-            const Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2.5,
-              ),
-            ),
-          if (_isInitialized && _isBuffering)
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.black38,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const CircularProgressIndicator(
+            if (!_isInitialized)
+              const Center(
+                child: CircularProgressIndicator(
                   color: Colors.white,
-                  strokeWidth: 2,
+                  strokeWidth: 2.5,
                 ),
               ),
-            ),
-          if (_isInitialized && _controller != null) _buildFullscreenControls(),
-        ],
+            if (_isInitialized && _isBuffering)
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black38,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ),
+            if (_isInitialized && _controller != null) _buildOverlayControls(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFullscreenControls() {
-    // ... (كود الـ Fullscreen Controls كما هو)
+  Widget _buildOverlayControls() {
     final duration = _controller!.value.duration;
     final position = _controller!.value.position;
 
@@ -288,10 +314,10 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.6),
+                  Colors.black.withOpacity(0.7),
                   Colors.transparent,
                   Colors.transparent,
-                  Colors.black.withOpacity(0.6),
+                  Colors.black.withOpacity(0.7),
                 ],
                 stops: const [0.0, 0.2, 0.8, 1.0],
               ),
@@ -300,6 +326,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // --- الشريط العلوي (زر الرجوع + الأزرار الجانبية) ---
                   Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -308,8 +335,9 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        // زر الرجوع (إغلاق الصفحة)
                         GestureDetector(
-                          onTap: _exitFullscreen,
+                          onTap: _onClosePage,
                           child: Container(
                             padding: EdgeInsets.all(6.r),
                             decoration: BoxDecoration(
@@ -317,30 +345,56 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Icon(
-                              Icons.fullscreen_exit_rounded,
+                              Icons.arrow_back_ios_new_rounded,
                               color: Colors.white,
                               size: 20.sp,
                             ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: _toggleMute,
-                          child: Container(
-                            padding: EdgeInsets.all(6.r),
-                            decoration: BoxDecoration(
-                              color: Colors.black45,
-                              borderRadius: BorderRadius.circular(6),
+                        // أزرار التحكم (صامت + تدوير الشاشة)
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: _toggleMute,
+                              child: Container(
+                                padding: EdgeInsets.all(6.r),
+                                decoration: BoxDecoration(
+                                  color: Colors.black45,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(
+                                  _isMuted ? Icons.volume_off : Icons.volume_up,
+                                  color: Colors.white,
+                                  size: 20.sp,
+                                ),
+                              ),
                             ),
-                            child: Icon(
-                              _isMuted ? Icons.volume_off : Icons.volume_up,
-                              color: Colors.white,
-                              size: 18.sp,
+                            SizedBox(width: 12.w),
+                            // زر تدوير الشاشة (Fullscreen Toggle)
+                            GestureDetector(
+                              onTap: _toggleOrientation,
+                              child: Container(
+                                padding: EdgeInsets.all(6.r),
+                                decoration: BoxDecoration(
+                                  color: Colors.black45,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(
+                                  _isLandscape
+                                      ? Icons.fullscreen_exit_rounded
+                                      : Icons.fullscreen_rounded,
+                                  color: Colors.white,
+                                  size: 22.sp,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
                   ),
+
+                  // --- أزرار التشغيل في المنتصف ---
                   _isEnded
                       ? GestureDetector(
                           onTap: _replayVideo,
@@ -397,6 +451,8 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                             ),
                           ],
                         ),
+
+                  // --- شريط التقدم السفلي ---
                   Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,

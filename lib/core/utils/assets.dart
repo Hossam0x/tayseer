@@ -9,6 +9,7 @@ abstract class AssetsData {
       "assets/images/onboarding_background.png";
   static const String kBackgroundtayseerImage =
       "assets/images/background_tayser_Image.png";
+      "assets/images/background_tayser_Image.png";
   static const String kOnboarding1 = "assets/images/1_onboarding.png";
   static const String kOnboarding2 = "assets/images/2_onboarding.png";
   static const String kOnboarding3 = "assets/images/3_onboarding.png";
@@ -109,6 +110,8 @@ abstract class AssetsData {
   static const String deleteIcon = "assets/icons/delete_icon.svg";
   static const String reportIcon = "assets/icons/report_icon.svg";
   static const String send = "assets/icons/send.svg";
+
+  static const String postsEndIcon = "assets/icons/posts_end_icon.svg";
   static const String sentMessageIcon = "assets/icons/sent_message_icon.svg";
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =

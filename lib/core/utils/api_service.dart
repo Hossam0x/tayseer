@@ -55,16 +55,12 @@ class ApiService {
         data: isFromData ? FormData.fromMap(data) : data,
         options: Options(
           headers: mergedHeaders,
-          validateStatus: (status) => status! < 500,
+          validateStatus: (status) => status! >= 200 && status < 300,
         ),
       );
       return response.data;
-    } on DioException catch (e) {
-      if (e.response != null) {
-        return e.response!.data;
-      } else {
-        rethrow;
-      }
+    } on DioException {
+      rethrow; // ✅ Re-throw للـ repository يقدر يـ handle الـ error
     }
   }
 
@@ -91,7 +87,7 @@ class ApiService {
         data: isFromData ? FormData.fromMap(data) : data,
         options: Options(
           headers: mergedHeaders,
-          validateStatus: (status) => status! < 500,
+          validateStatus: (status) => status! >= 200 && status < 300,
         ),
       );
       return response.data;
@@ -122,7 +118,7 @@ class ApiService {
         data: data,
         options: Options(
           headers: mergedHeaders,
-          validateStatus: (status) => status! < 500,
+          validateStatus: (status) => status! >= 200 && status < 300,
         ),
       );
       return response.data;

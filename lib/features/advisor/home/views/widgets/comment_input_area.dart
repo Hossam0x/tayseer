@@ -25,9 +25,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
 
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
-        setState(() {
-          _showEmojiPicker = false;
-        });
+        setState(() => _showEmojiPicker = false);
       }
     });
   }
@@ -43,9 +41,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
     final text = _controller.text;
     if (text.trim().isEmpty) {
       if (_textDirection != TextDirection.rtl) {
-        setState(() {
-          _textDirection = TextDirection.rtl;
-        });
+        setState(() => _textDirection = TextDirection.rtl);
       }
       return;
     }
@@ -53,202 +49,268 @@ class CommentInputAreaState extends State<CommentInputArea> {
     bool isArabic = RegExp(r"^[\u0600-\u06FF]").hasMatch(text.trim());
 
     if (isArabic && _textDirection != TextDirection.rtl) {
-      setState(() {
-        _textDirection = TextDirection.rtl;
-      });
+      setState(() => _textDirection = TextDirection.rtl);
     } else if (!isArabic && _textDirection != TextDirection.ltr) {
-      setState(() {
-        _textDirection = TextDirection.ltr;
-      });
+      setState(() => _textDirection = TextDirection.ltr);
     }
   }
 
   void _toggleEmojiPicker() {
     if (_showEmojiPicker) {
       _focusNode.requestFocus();
-      setState(() {
-        _showEmojiPicker = false;
-      });
+      setState(() => _showEmojiPicker = false);
     } else {
       _focusNode.unfocus();
-      setState(() {
-        _showEmojiPicker = true;
-      });
+      setState(() => _showEmojiPicker = true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<PostDetailsCubit, PostDetailsState>(
-      listenWhen: (previous, current) {
-        return previous is PostDetailsLoaded &&
-            current is PostDetailsLoaded &&
-            previous.activeReplyId != current.activeReplyId &&
-            current.activeReplyId != null;
-      },
-      listener: (context, state) {
-        if (_showEmojiPicker) {
-          setState(() {
-            _showEmojiPicker = false;
-          });
-        }
-        if (_focusNode.hasFocus) {
-          _focusNode.unfocus();
-        }
-      },
-      child: PopScope(
-        canPop: !_showEmojiPicker,
-        onPopInvoked: (didPop) {
-          if (didPop) return;
-          setState(() {
-            _showEmojiPicker = false;
-          });
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF6F8),
-                border: Border(top: BorderSide(color: Colors.grey.shade100)),
-              ),
-              child: SafeArea(
-                top: false,
-                bottom: !_showEmojiPicker,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 2.h),
-                      child: const MyProfileImage(),
+    return MultiBlocListener(
+      listeners: [
+        // 1. Logic: Focus & UI Reset
+        BlocListener<PostDetailsCubit, PostDetailsState>(
+          listenWhen: (previous, current) {
+            final replyStarted =
+                previous.activeReplyId != current.activeReplyId &&
+                current.activeReplyId != null;
+            
+            // 👇 إضافة شرط التعديل أيضاً لإخفاء الكيبورد لو فتحنا تعديل
+            final editStarted = 
+                previous.editingCommentId != current.editingCommentId &&
+                current.editingCommentId != null;
+
+            final focusTriggered =
+                previous.focusInputTrigger != current.focusInputTrigger;
+            
+            return replyStarted || editStarted || focusTriggered;
+          },
+          listener: (context, state) {
+            if (state.activeReplyId != null || state.editingCommentId != null) {
+              // لو دخلنا في مود رد أو تعديل، نخفي الإيموجي ونشيل الفوكس من الانبوت السفلي
+              if (_showEmojiPicker) setState(() => _showEmojiPicker = false);
+              if (_focusNode.hasFocus) _focusNode.unfocus();
+            } else {
+              // لو رجعنا للوضع العادي (طلبنا فوكس)
+              if (_showEmojiPicker) setState(() => _showEmojiPicker = false);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _focusNode.requestFocus();
+              });
+            }
+          },
+        ),
+
+        // 2. Logic: Add Comment Success/Failure
+        BlocListener<PostDetailsCubit, PostDetailsState>(
+          listenWhen: (previous, current) =>
+              previous.addingCommentState != current.addingCommentState,
+          listener: (context, state) {
+            if (state.addingCommentState == CubitStates.success) {
+              _controller.clear();
+              setState(() {
+                _textDirection = TextDirection.rtl;
+                _showEmojiPicker = false;
+              });
+              _focusNode.unfocus();
+              
+              // Scroll to top logic handled in View if needed
+            } else if (state.addingCommentState == CubitStates.failure) {
+              AppToast.error(
+                context,
+                state.errorMessage ?? "حدث خطأ أثناء إضافة التعليق",
+              );
+            }
+          },
+        ),
+      ],
+      // 👇 هنا التعديل الجوهري المطلوب 👇
+      child: BlocSelector<PostDetailsCubit, PostDetailsState, bool>(
+        selector: (state) => 
+            state.activeReplyId != null || state.editingCommentId != null,
+        builder: (context, shouldHideInput) {
+          
+          // إذا كان المستخدم يرد على تعليق أو يعدل تعليقاً، نخفي الانبوت السفلي
+          if (shouldHideInput) {
+            return const SizedBox.shrink();
+          }
+
+          return PopScope(
+            canPop: !_showEmojiPicker,
+            onPopInvokedWithResult: (didPop, result) {
+              if (didPop) return;
+              setState(() => _showEmojiPicker = false);
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 12.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF6F8),
+                    border: Border(
+                      top: BorderSide(color: Colors.grey.shade100),
                     ),
-                    Gap(12.w),
-                    Expanded(
-                      child: Container(
-                        constraints: BoxConstraints(
-                          minHeight: 45.h,
-                          maxHeight: 120.h,
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    bottom: !_showEmojiPicker,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 2.h),
+                          child: const MyProfileImage(),
                         ),
-                        padding: EdgeInsets.symmetric(horizontal: 12.w),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(25.r),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _controller,
-                                focusNode: _focusNode,
-                                textDirection: _textDirection,
-                                textAlign: _textDirection == TextDirection.rtl
-                                    ? TextAlign.right
-                                    : TextAlign.left,
-                                maxLines: null,
-                                keyboardType: TextInputType.multiline,
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: Colors.black,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: context.tr(AppStrings.writeComment),
-                                  hintStyle: TextStyle(
-                                    fontSize: 12.sp,
-                                    color: Colors.grey.shade400,
-                                  ),
-                                  hintTextDirection: TextDirection.rtl,
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 14.h,
-                                  ),
-                                ),
-                              ),
+                        Gap(12.w),
+                        Expanded(
+                          child: Container(
+                            constraints: BoxConstraints(
+                              minHeight: 45.h,
+                              maxHeight: 120.h,
                             ),
-                            Gap(4.w),
-                            GestureDetector(
-                              onTap: _toggleEmojiPicker,
-                              child: Container(
-                                height: 45.h,
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  _showEmojiPicker
-                                      ? Icons.keyboard_outlined
-                                      : Icons.emoji_emotions_outlined,
-                                  color: _showEmojiPicker
-                                      ? Theme.of(context).primaryColor
-                                      : Colors.grey.shade400,
-                                  size: 22.sp,
-                                ),
-                              ),
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(25.r),
+                              border: Border.all(color: Colors.grey.shade200),
                             ),
-                          ],
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _controller,
+                                    focusNode: _focusNode,
+                                    textDirection: _textDirection,
+                                    textAlign:
+                                        _textDirection == TextDirection.rtl
+                                            ? TextAlign.right
+                                            : TextAlign.left,
+                                    maxLines: null,
+                                    keyboardType: TextInputType.multiline,
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      color: Colors.black,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: context.tr(
+                                        AppStrings.writeComment,
+                                      ),
+                                      hintStyle: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: Colors.grey.shade400,
+                                      ),
+                                      hintTextDirection: TextDirection.rtl,
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.symmetric(
+                                        vertical: 14.h,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Gap(4.w),
+                                GestureDetector(
+                                  onTap: _toggleEmojiPicker,
+                                  child: Container(
+                                    height: 45.h,
+                                    alignment: Alignment.center,
+                                    child: Icon(
+                                      _showEmojiPicker
+                                          ? Icons.keyboard_outlined
+                                          : Icons.emoji_emotions_outlined,
+                                      color: _showEmojiPicker
+                                          ? Theme.of(context).primaryColor
+                                          : Colors.grey.shade400,
+                                      size: 22.sp,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    Gap(10.w),
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 10.h),
-                      child: InkWell(
-                        onTap: () {
-                          if (_controller.text.trim().isNotEmpty) {
-                            print("Sending: ${_controller.text}");
-                            _controller.clear();
-                          }
-                        },
-                        child: AppImage(
-                          AssetsData.send,
-                          height: 26.w,
-                          width: 26.w,
+                        Gap(10.w),
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 10.h),
+                          child: BlocSelector<PostDetailsCubit, PostDetailsState, CubitStates>(
+                            selector: (state) => state.addingCommentState,
+                            builder: (context, addingState) {
+                              if (addingState == CubitStates.loading) {
+                                return SizedBox(
+                                  height: 26.w,
+                                  width: 26.w,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                );
+                              }
+                              return InkWell(
+                                onTap: () {
+                                  if (_controller.text.trim().isNotEmpty) {
+                                    context
+                                        .read<PostDetailsCubit>()
+                                        .addComment(_controller.text);
+                                  }
+                                },
+                                child: AppImage(
+                                  AssetsData.send,
+                                  height: 26.w,
+                                  width: 26.w,
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_showEmojiPicker)
-              SizedBox(
-                height: 250.h,
-                child: EmojiPicker(
-                  textEditingController: _controller,
-                  config: Config(
-                    height: 250.h,
-                    checkPlatformCompatibility: true,
-                    emojiViewConfig: EmojiViewConfig(
-                      emojiSizeMax:
-                          28 *
-                          (foundation.defaultTargetPlatform ==
-                                  TargetPlatform.iOS
-                              ? 1.30
-                              : 1.0),
-                      columns: 7,
-                      backgroundColor: const Color(0xFFFEF6F8),
-                    ),
-                    categoryViewConfig: const CategoryViewConfig(
-                      initCategory: Category.SMILEYS,
-                      indicatorColor: Colors.pink,
-                      iconColorSelected: Colors.pink,
-                      iconColor: Colors.grey,
-                      backspaceColor: Colors.pink,
-                      backgroundColor: Color(0xFFFEF6F8),
-                    ),
-                    bottomActionBarConfig: const BottomActionBarConfig(
-                      enabled: false,
-                    ),
-                    searchViewConfig: SearchViewConfig(
-                      backgroundColor: const Color(0xFFFEF6F8),
-                      buttonIconColor: Colors.pink,
-                      hintText: context.tr(AppStrings.search),
+                      ],
                     ),
                   ),
                 ),
-              ),
-          ],
-        ),
+                if (_showEmojiPicker)
+                  SizedBox(
+                    height: 250.h,
+                    child: EmojiPicker(
+                      textEditingController: _controller,
+                      config: Config(
+                        height: 250.h,
+                        checkPlatformCompatibility: true,
+                        emojiViewConfig: EmojiViewConfig(
+                          emojiSizeMax: 28 *
+                              (foundation.defaultTargetPlatform ==
+                                      TargetPlatform.iOS
+                                  ? 1.30
+                                  : 1.0),
+                          columns: 7,
+                          backgroundColor: const Color(0xFFFEF6F8),
+                        ),
+                        categoryViewConfig: const CategoryViewConfig(
+                          initCategory: Category.SMILEYS,
+                          indicatorColor: Colors.pink,
+                          iconColorSelected: Colors.pink,
+                          iconColor: Colors.grey,
+                          backspaceColor: Colors.pink,
+                          backgroundColor: Color(0xFFFEF6F8),
+                        ),
+                        bottomActionBarConfig: const BottomActionBarConfig(
+                          enabled: false,
+                        ),
+                        searchViewConfig: SearchViewConfig(
+                          backgroundColor: const Color(0xFFFEF6F8),
+                          buttonIconColor: Colors.pink,
+                          hintText: context.tr(AppStrings.search),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
