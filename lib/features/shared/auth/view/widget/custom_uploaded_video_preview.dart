@@ -1,15 +1,15 @@
-import 'dart:io';
-import 'package:video_player/video_player.dart';
 import 'package:tayseer/my_import.dart';
 
 class CustomUploadedVideoPreview extends StatefulWidget {
   final XFile video;
   final VoidCallback onRemove;
+  final VoidCallback onInitialized;
 
   const CustomUploadedVideoPreview({
     super.key,
     required this.video,
     required this.onRemove,
+    required this.onInitialized,
   });
 
   @override
@@ -32,10 +32,16 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
 
     _controller = VideoPlayerController.file(File(widget.video.path))
       ..initialize().then((_) {
-        setState(() {
-          _isInitialized = true;
-        });
+        if (mounted) {
+          setState(() {
+            _isInitialized = true;
+          });
+          widget.onInitialized();
+        }
       });
+
+    // ✅ Listen للتغييرات في الـ controller
+    _controller.addListener(_videoListener);
 
     _animationController = AnimationController(
       vsync: this,
@@ -50,8 +56,21 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
     _animationController.forward();
   }
 
+  // ✅ Listener عشان يتابع حالة الفيديو
+  void _videoListener() {
+    if (mounted) {
+      final isPlaying = _controller.value.isPlaying;
+      if (isPlaying != _isPlaying) {
+        setState(() {
+          _isPlaying = isPlaying;
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _controller.removeListener(_videoListener);
     _controller.pause();
     _controller.dispose();
     _animationController.dispose();
@@ -61,24 +80,26 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
   void _togglePlay() {
     if (!_isInitialized) return;
 
-    setState(() {
-      if (_controller.value.isPlaying) {
-        _controller.pause();
-        _isPlaying = false;
-      } else {
-        _controller.play();
-        _isPlaying = true;
-      }
-    });
+    if (_controller.value.isPlaying) {
+      _controller.pause();
+    } else {
+      _controller.play();
+    }
   }
 
   void _openFullScreen() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => FullScreenVideoPlayer(file: File(widget.video.path)),
+        builder: (_) => FullScreenVideoPlayer(controller: _controller),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = _controller.value.isPlaying;
+        });
+      }
+    });
   }
 
   @override
@@ -176,33 +197,52 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
 }
 
 class FullScreenVideoPlayer extends StatefulWidget {
-  final File file;
-
-  const FullScreenVideoPlayer({super.key, required this.file});
+  final VideoPlayerController controller;
+  const FullScreenVideoPlayer({super.key, required this.controller});
 
   @override
   State<FullScreenVideoPlayer> createState() => _FullScreenVideoPlayerState();
 }
 
 class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
-  late VideoPlayerController _controller;
+  bool _isPlaying = false;
+  bool _showControls = true;
 
   @override
   void initState() {
     super.initState();
+    _isPlaying = widget.controller.value.isPlaying;
+    widget.controller.addListener(_listener);
+  }
 
-    _controller = VideoPlayerController.file(widget.file)
-      ..initialize().then((_) {
-        setState(() {});
-        _controller.play();
+  void _listener() {
+    if (mounted) {
+      setState(() {
+        _isPlaying = widget.controller.value.isPlaying;
       });
+    }
   }
 
   @override
   void dispose() {
-    _controller.pause();
-    _controller.dispose();
+    widget.controller.removeListener(_listener);
+    // ❌ مش بنعمل dispose للـ controller هنا
+    // لأن الـ parent widget هو المسؤول عن ده
     super.dispose();
+  }
+
+  void _togglePlay() {
+    if (widget.controller.value.isPlaying) {
+      widget.controller.pause();
+    } else {
+      widget.controller.play();
+    }
+  }
+
+  void _toggleControls() {
+    setState(() {
+      _showControls = !_showControls;
+    });
   }
 
   @override
@@ -210,26 +250,83 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Stack(
-          children: [
-            Center(
-              child: _controller.value.isInitialized
-                  ? AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
-                      child: VideoPlayer(_controller),
-                    )
-                  : const CircularProgressIndicator(),
-            ),
-
-            Positioned(
-              top: 20,
-              left: 20,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+        child: GestureDetector(
+          onTap: _toggleControls,
+          child: Stack(
+            children: [
+              // 🎬 Video Player
+              Center(
+                child: AspectRatio(
+                  aspectRatio: widget.controller.value.aspectRatio,
+                  child: VideoPlayer(widget.controller),
+                ),
               ),
-            ),
-          ],
+
+              // ▶️ Play/Pause Button (CENTER)
+              if (_showControls)
+                Center(
+                  child: GestureDetector(
+                    onTap: _togglePlay,
+                    child: AnimatedOpacity(
+                      opacity: _showControls ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Container(
+                        height: 70,
+                        width: 70,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+              // ← Back Button (TOP RIGHT)
+              if (_showControls)
+                Positioned(
+                  top: 20,
+                  right: 20,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+
+              // 🎚️ Video Progress Bar (BOTTOM)
+              if (_showControls)
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: VideoProgressIndicator(
+                    widget.controller,
+                    allowScrubbing: true, // ✅ يقدر يتحكم في الـ timeline
+                    colors: const VideoProgressColors(
+                      playedColor: Colors.white,
+                      bufferedColor: Colors.white24,
+                      backgroundColor: Colors.white10,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

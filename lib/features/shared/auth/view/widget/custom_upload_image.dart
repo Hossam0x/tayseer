@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:tayseer/core/utils/image_picker_helper.dart';
+import 'package:tayseer/core/utils/helper/image_picker_helper.dart';
 import 'package:tayseer/my_import.dart';
 
 class UploadImageWidget extends StatefulWidget {

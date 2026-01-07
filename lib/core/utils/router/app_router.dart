@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
@@ -7,6 +6,8 @@ import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart
 import 'package:tayseer/features/advisor/chat/presentation/view/conversition.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
+import 'package:tayseer/features/advisor/event/view/creat_event_view.dart';
+import 'package:tayseer/features/advisor/map/map_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
@@ -98,6 +99,8 @@ abstract class AppRouter {
   static const kAdvisorSearchView = '/SearchView';
   static const kAddPostView = '/AddPostView';
   static const kCameraView = '/CameraView';
+  static const kMapView = '/MapView';
+  static const kCreatEventView = '/CreatEventView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -461,6 +464,18 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => CameraView(cubit: args['cubit']),
+        );
+      case kMapView:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => MapView(eventsCubit: args['cubit']),
+        );
+      case kCreatEventView:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => CreatEventView(cubit: args['cubit']),
         );
       case kChatRequest:
         return MaterialPageRoute(

@@ -4,6 +4,8 @@ import 'package:tayseer/core/database/message_queue_manager.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dart';
+import 'package:tayseer/features/advisor/event/repo/event_repo.dart';
+import 'package:tayseer/features/advisor/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
@@ -78,6 +80,7 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<ChatRepo>(
     () => ChatRepoImpl(getIt<ApiService>()),
   );
+  ///// tayseerSocketHelper
   getIt.registerLazySingleton<tayseerSocketHelper>(() => tayseerSocketHelper());
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -105,5 +108,11 @@ Future<void> setupGetIt() async {
   /// Cache Cleanup Manager
   getIt.registerLazySingleton<CacheCleanupManager>(
     () => CacheCleanupManager(getIt<ChatLocalDataSource>()),
+  );
+
+  ////event
+
+  getIt.registerLazySingleton<EventRepo>(
+    () => EventRepoImpl(apiService: getIt<ApiService>()),
   );
 }
