@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/utils/animation/fly_animation.dart';
@@ -28,42 +30,89 @@ class ImageViewerView extends StatefulWidget {
   State<ImageViewerView> createState() => _ImageViewerViewState();
 }
 
-class _ImageViewerViewState extends State<ImageViewerView> {
+class _ImageViewerViewState extends State<ImageViewerView>
+    with SingleTickerProviderStateMixin {
+  // 2. إضافة Mixin للانيميشن
   late PageController _pageController;
   late int _currentIndex;
 
-  // ✅ Performance: استخدام ValueNotifier لتجنب إعادة بناء الصفحة بالكامل
   final ValueNotifier<bool> _showOverlaysNotifier = ValueNotifier(true);
-
   final GlobalKey _reactionDestinationKey = GlobalKey();
+
+  // 3. متغيرات السحب (Drag Logic)
+  double _dragY = 0.0;
+  bool _isDragging = false;
+  late AnimationController _resetController;
+  late Animation<double> _resetAnimation;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    // إعداد الانيميشن لعودة الصورة لمكانها لو السحب لم يكتمل
+    _resetController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _resetController.addListener(() {
+      setState(() {
+        _dragY = _resetAnimation.value;
+      });
+    });
+
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _showOverlaysNotifier.dispose();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    _resetController.dispose();  
     super.dispose();
   }
 
   void _onImageTap() {
+    // لو بنسحب مش عايزين التاب يشتغل
+    if (_isDragging) return;
     _showOverlaysNotifier.value = !_showOverlaysNotifier.value;
   }
 
+  // 4. منطق السحب الرأسي
+  void _onVerticalDragStart(DragStartDetails details) {
+    _isDragging = true;
+    _showOverlaysNotifier.value = false; // إخفاء القوائم عند بدء السحب
+  }
+
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragY += details.delta.dy;
+    });
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    _isDragging = false;
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double threshold = screenHeight * 0.15; // 15% من الشاشة يكفي للاغلاق
+    final double velocity = details.primaryVelocity ?? 0;
+
+    // شرط الاغلاق: مسافة كبيرة أو سحب سريع
+    if (_dragY.abs() > threshold || velocity.abs() > 1000) {
+      Navigator.pop(context);
+    } else {
+      // العودة للمركز (Reset)
+      _showOverlaysNotifier.value = true; // إظهار القوائم مرة أخرى
+      _resetAnimation = Tween<double>(begin: _dragY, end: 0.0).animate(
+        CurvedAnimation(parent: _resetController, curve: Curves.easeOut),
+      );
+      _resetController.forward(from: 0);
+    }
+  }
+
   void _handleDoubleTap(Offset tapPosition) {
-    // 1. إظهار الأشرطة لو مخفية
     if (!_showOverlaysNotifier.value) {
       _showOverlaysNotifier.value = true;
     }
-
-    // 2. تشغيل القلب الطائر
     FlyAnimation.flyWidget(
       context: context,
       startOffset: tapPosition,
@@ -89,59 +138,88 @@ class _ImageViewerViewState extends State<ImageViewerView> {
 
   @override
   Widget build(BuildContext context) {
+    // حساب الشفافية بناءً على مسافة السحب
+    // كلما زاد _dragY قلت الشفافية (من 1 إلى 0)
+    final double dragRatio = (_dragY.abs() / MediaQuery.of(context).size.height)
+        .clamp(0.0, 1.0);
+    final double backgroundOpacity = (1.0 - dragRatio * 2).clamp(0.0, 1.0);
+
+    // حساب التصغير (Scale) مثل فيسبوك
+    final double scale = (1.0 - dragRatio * 0.3).clamp(0.5, 1.0);
+
     return BlocProvider.value(
       value: widget.homeCubit,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor:
+            Colors.transparent, // جعلنا الخلفية شفافة عشان نتحكم فيها يدوياً
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // 1. Image Slider (ثابت لا يعاد بناؤه مع الأشرطة)
-            _buildImageSlider(),
+            // 5. الخلفية السوداء المتغيرة الشفافية
+            Container(color: Colors.black.withOpacity(backgroundOpacity)),
 
-            // 3. UI Overlays (Header, Counter, BottomBar)
-            // نستخدم ValueListenableBuilder عشان نحدث الأجزاء دي بس
-            ValueListenableBuilder<bool>(
-              valueListenable: _showOverlaysNotifier,
-              builder: (context, showOverlays, child) {
-                return Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Header
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 300),
-                      top: showOverlays ? 0 : -150,
-                      left: 0,
-                      right: 0,
-                      child: _ViewerHeader(
-                        currentIndex: _currentIndex,
-                        totalImages: widget.images.length,
-                        onClose: () => Navigator.pop(context),
+            // 6. المحتوى القابل للسحب (Gesture Detector Wrapper)
+            GestureDetector(
+              onVerticalDragStart: _onVerticalDragStart,
+              onVerticalDragUpdate: _onVerticalDragUpdate,
+              onVerticalDragEnd: _onVerticalDragEnd,
+              child: Transform.translate(
+                offset: Offset(0, _dragY), // تحريك المحتوى
+                child: Transform.scale(
+                  scale: scale, // تصغير المحتوى
+                  child: _buildImageSlider(),
+                ),
+              ),
+            ),
+
+            // UI Overlays (يتم اخفاؤها تماماً أثناء السحب عبر Opacity)
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: _isDragging ? 0.0 : 1.0, // اخفاء العناصر لو بنسحب
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _showOverlaysNotifier,
+                builder: (context, showOverlays, child) {
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Header
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 300),
+                        top: showOverlays ? 0 : -150,
+                        left: 0,
+                        right: 0,
+                        child: _ViewerHeader(
+                          currentIndex: _currentIndex,
+                          totalImages: widget.images.length,
+                          onClose: () => Navigator.pop(context),
+                        ),
                       ),
-                    ),
 
-                    // Counter
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 300),
-                      top: showOverlays ? context.responsiveHeight(120) : -100,
-                      right: context.responsiveWidth(24),
-                      child: _GlassCounter(
-                        current: _currentIndex + 1,
-                        total: widget.images.length,
+                      // Counter
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 300),
+                        top: showOverlays
+                            ? context.responsiveHeight(120)
+                            : -100,
+                        right: context.responsiveWidth(24),
+                        child: _GlassCounter(
+                          current: _currentIndex + 1,
+                          total: widget.images.length,
+                        ),
                       ),
-                    ),
 
-                    // Bottom Bar
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 300),
-                      bottom: showOverlays ? 0 : -200,
-                      left: 0,
-                      right: 0,
-                      child: _buildBottomBar(context),
-                    ),
-                  ],
-                );
-              },
+                      // Bottom Bar
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 300),
+                        bottom: showOverlays ? 0 : -200,
+                        left: 0,
+                        right: 0,
+                        child: _buildBottomBar(context),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -149,13 +227,12 @@ class _ImageViewerViewState extends State<ImageViewerView> {
     );
   }
 
-  // فصلنا السلايدر عشان الكود يبقى أنضف
   Widget _buildImageSlider() {
     return PageView.builder(
       controller: _pageController,
+      // physics: _isDragging ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
       itemCount: widget.images.length,
       onPageChanged: (index) {
-        // تحديث بسيط هنا (ممكن نستخدم Notifier للاندكس لو عايزين نمنع الـ setState هنا كمان، بس مقبول هنا)
         setState(() => _currentIndex = index);
       },
       itemBuilder: (context, index) {
@@ -165,6 +242,11 @@ class _ImageViewerViewState extends State<ImageViewerView> {
           onDoubleTapDown: (details) =>
               _handleDoubleTap(details.globalPosition),
           child: InteractiveViewer(
+            // مهم: منع التداخل بين الزوم والسحب للاغلاق
+            // لو الزوم 1 (الوضع الطبيعي) نسمح بالسحب للاغلاق من الـ Parent
+            onInteractionStart: (details) {
+              // يمكن إضافة منطق هنا لوقف السحب الخارجي إذا بدأ الزوم
+            },
             minScale: 0.5,
             maxScale: 4.0,
             child: Center(
@@ -184,10 +266,10 @@ class _ImageViewerViewState extends State<ImageViewerView> {
     );
   }
 
+  // ... (rest of your _buildBottomBar and other widgets remain unchanged)
   Widget _buildBottomBar(BuildContext context) {
     return BlocSelector<HomeCubit, HomeState, PostModel?>(
       selector: (state) {
-        // Safe selection using collection logic manually
         try {
           return state.posts.firstWhere((p) => p.postId == widget.postId);
         } catch (_) {
@@ -236,6 +318,8 @@ class _ImageViewerViewState extends State<ImageViewerView> {
                         );
                       },
                       onCommentTap: () => print("Open Comments"),
+                      onShareTap: () =>
+                          widget.homeCubit.toggleSharePost(postId: post.postId),
                     ),
                     Gap(16.h),
                   ],
@@ -249,7 +333,7 @@ class _ImageViewerViewState extends State<ImageViewerView> {
   }
 }
 
-// 📌 فصلنا الهيدر في ويدجت مستقلة
+// ... (Header and Counter classes remain unchanged)
 class _ViewerHeader extends StatelessWidget {
   final int currentIndex;
   final int totalImages;
@@ -319,7 +403,6 @@ class _ViewerHeader extends StatelessWidget {
   }
 }
 
-// 📌 فصلنا العداد في ويدجت مستقلة
 class _GlassCounter extends StatelessWidget {
   final int current;
   final int total;

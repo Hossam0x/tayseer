@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/app_toast.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
@@ -11,7 +12,28 @@ class HomePostFeed extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: homeCubit,
-      child: BlocBuilder<HomeCubit, HomeState>(
+      child: BlocConsumer<HomeCubit, HomeState>(
+        listenWhen: (previous, current) =>
+            previous.shareActionState != current.shareActionState &&
+            current.shareActionState != CubitStates.initial,
+        listener: (context, state) {
+          if (state.shareActionState == CubitStates.success) {
+            if (state.isShareAdded == true) {
+              AppToast.success(
+                context,
+                state.shareMessage ?? 'تمت المشاركة بنجاح',
+              );
+            } else {
+              AppToast.info(context, state.shareMessage ?? 'تم إلغاء المشاركة');
+            }
+          } else if (state.shareActionState == CubitStates.failure) {
+            AppToast.error(
+              context,
+              state.shareMessage ?? 'حدث خطأ أثناء المشاركة',
+            );
+          }
+        },
+
         builder: (context, state) {
           if (state.postsState == CubitStates.loading && state.posts.isEmpty) {
             return SliverList(

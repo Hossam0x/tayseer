@@ -10,4 +10,9 @@ abstract class HomeRepository {
     required ReactionType? reactionType,
     required bool isRemove,
   });
+
+  Future<Either<Failure, String>> sharePost({
+    required String postId,
+    required String action,
+  });
 }

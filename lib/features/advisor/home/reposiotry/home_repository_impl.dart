@@ -45,4 +45,27 @@ class HomeRepositoryImpl implements HomeRepository {
     }
     apiService.post(endPoint: ApiEndPoint.like, data: requestData);
   }
+
+  @override
+  Future<Either<Failure, String>> sharePost({
+    required String postId,
+    required String action,
+  }) async {
+    try {
+      final Map<String, dynamic> requestData = {"postId": postId};
+      var response = await apiService.post(
+        endPoint: "${ApiEndPoint.share}?action=$action",
+        data: requestData,
+      );
+      // ✅ لو وصلنا هنا يعني 200 OK
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (error) {
+      if (error.response != null && error.response!.data != null) {
+        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
+        return Left(ServerFailure(errorMessage));
+      } else {
+        return Left(ServerFailure(error.message ?? 'Unknown error'));
+      }
+    }
+  }
 }

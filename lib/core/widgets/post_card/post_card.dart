@@ -166,6 +166,11 @@ class _PostCardState extends State<PostCard>
                 reactionType: react,
               );
             },
+            onShareTap: () {
+              context.read<HomeCubit>().toggleSharePost(
+                postId: widget.post.postId,
+              );
+            },
           ),
         ],
       ),
