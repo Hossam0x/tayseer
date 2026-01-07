@@ -60,7 +60,7 @@ class ChatListBuilder extends StatelessWidget {
         // حالة النجاح
         if (state.getallchatrooms == CubitStates.success) {
           // إذا كانت القائمة فارغة
-          if (state.chatRoom?.rooms == null || state.chatRoom!.rooms!.isEmpty) {
+          if (state.chatRoom?.rooms == null || state.chatRoom!.rooms.isEmpty) {
             return SharedEmptyState(
               title: "لا توجد محادثات حتى الآن",
               subTitleWidget: Text(
@@ -83,13 +83,13 @@ class ChatListBuilder extends StatelessWidget {
             color: const Color(0xFFE96E88),
             child: ListView.separated(
               padding: EdgeInsets.only(bottom: screenHeight * 0.01),
-              itemCount: state.chatRoom!.rooms!.length,
+              itemCount: state.chatRoom!.rooms.length,
               separatorBuilder: (context, index) => Divider(
                 color: Colors.grey.shade200,
                 height: isMobile ? 0.5 : 1,
               ),
               itemBuilder: (context, index) {
-                final chatRoom = state.chatRoom!.rooms![index];
+                final chatRoom = state.chatRoom!.rooms[index];
                 return ChatListItem(index: index, chatRoom: chatRoom);
               },
             ),

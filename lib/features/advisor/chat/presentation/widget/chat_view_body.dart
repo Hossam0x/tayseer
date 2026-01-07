@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tayseer/core/utils/assets.dart';
-import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/chat_list_builder.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/chat_view_header.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/new_chat_floating_button.dart';

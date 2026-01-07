@@ -1,24 +1,28 @@
 import 'dart:async';
 import 'dart:developer';
-import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tayseer/core/utils/helper/picker_helper.dart';
 import 'package:tayseer/core/widgets/pick_image_bottom_sheet.dart';
-import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
+import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
 import 'package:tayseer/my_import.dart';
+import '../../manager/input/chat_input_cubit.dart';
+import '../../manager/input/chat_input_state.dart';
+import 'reply_preview_input.dart';
+import 'dart:io';
 
 class ConversationInputArea extends StatefulWidget {
   final String sendMessageIcon;
   final String chatEmojiIcon;
   final String cameraIcon;
-  final Function(String message)? onSendMessage;
-  final Function(List<File> files, String messageType)? onSendMedia;
-  final VoidCallback? onTypingStart; // ✅ جديد
-  final VoidCallback? onTypingStop; // ✅ جديد
-  final ChatMessage? replyingToMessage; // ✅ الرسالة اللي بنرد عليها
-  final VoidCallback? onCancelReply; // ✅ إلغاء الرد
+  final Function(String message, String? replyMessageId)? onSendMessage;
+  final Function(List<File> files, String messageType, String? replyMessageId)?
+  onSendMedia;
+  final VoidCallback? onTypingStart;
+  final VoidCallback? onTypingStop;
 
   const ConversationInputArea({
     super.key,
@@ -27,10 +31,8 @@ class ConversationInputArea extends StatefulWidget {
     required this.cameraIcon,
     this.onSendMessage,
     this.onSendMedia,
-    this.onTypingStart, // ✅ جديد
-    this.onTypingStop, // ✅ جديد
-    this.replyingToMessage,
-    this.onCancelReply,
+    this.onTypingStart,
+    this.onTypingStop,
   });
 
   @override
@@ -39,6 +41,7 @@ class ConversationInputArea extends StatefulWidget {
 
 class _ConversationInputAreaState extends State<ConversationInputArea> {
   late TextEditingController _messageController;
+  late FocusNode _focusNode;
   Timer? _typingTimer;
   bool _isTyping = false;
 
@@ -46,16 +49,22 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
   void initState() {
     super.initState();
     _messageController = TextEditingController();
+    _focusNode = FocusNode();
     _messageController.addListener(_onTextChanged);
+
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        context.read<ChatInputCubit>().setShowEmojiPicker(false);
+      }
+    });
   }
 
   @override
   void dispose() {
     _messageController.removeListener(_onTextChanged);
     _messageController.dispose();
+    _focusNode.dispose();
     _typingTimer?.cancel();
-
-    // لو كان بيكتب وخرج من الشاشة، نبعت stop
     if (_isTyping) {
       widget.onTypingStop?.call();
     }
@@ -64,58 +73,72 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
 
   void _onTextChanged() {
     final text = _messageController.text;
+    context.read<ChatInputCubit>().onTextChanged(text);
 
     if (text.isNotEmpty) {
-      // لو مكانش بيكتب، نبعت typing_start
       if (!_isTyping) {
         _isTyping = true;
         widget.onTypingStart?.call();
-        log('⌨️ Started typing...');
       }
 
-      // إلغاء التايمر السابق
       _typingTimer?.cancel();
-
-      // تايمر جديد - لو مكتبش حاجة لمدة 2 ثانية، نعتبره وقف
       _typingTimer = Timer(const Duration(seconds: 2), () {
         if (_isTyping) {
           _isTyping = false;
           widget.onTypingStop?.call();
-          log('⌨️ Stopped typing (timeout)');
         }
       });
     } else {
-      // لو النص فاضي ووقف، نبعت stop
       if (_isTyping) {
         _isTyping = false;
         _typingTimer?.cancel();
         widget.onTypingStop?.call();
-        log('⌨️ Stopped typing (empty text)');
       }
+    }
+  }
+
+  void _toggleEmojiPicker() {
+    final cubit = context.read<ChatInputCubit>();
+    if (cubit.state.showEmojiPicker) {
+      cubit.setShowEmojiPicker(false);
+      _focusNode.requestFocus();
+    } else {
+      _focusNode.unfocus();
+      cubit.setShowEmojiPicker(true);
     }
   }
 
   void _sendMessage() {
     final message = _messageController.text.trim();
     if (message.isNotEmpty && widget.onSendMessage != null) {
-      // وقف الـ typing قبل الإرسال
       if (_isTyping) {
         _isTyping = false;
         _typingTimer?.cancel();
         widget.onTypingStop?.call();
       }
 
-      widget.onSendMessage!(message);
+      final replyMessageId = context
+          .read<ChatInputCubit>()
+          .state
+          .replyingToMessage
+          ?.id;
+      widget.onSendMessage!(message, replyMessageId);
       _messageController.clear();
+      context.read<ChatInputCubit>().onMessageSent();
     }
   }
 
   void _openGallerySheet() {
+    final inputCubit = context.read<ChatInputCubit>();
+    inputCubit.setShowEmojiPicker(false);
+
+    final replyMessageId = inputCubit.state.replyingToMessage?.id;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CustomGallerySheet(
+      builder: (_) => CustomGallerySheet(
         config: const PickerConfig(
           allowMultiple: true,
           maxCount: 10,
@@ -138,150 +161,15 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
           }
 
           if (imageFiles.isNotEmpty && widget.onSendMedia != null) {
-            widget.onSendMedia!(imageFiles, 'image');
+            widget.onSendMedia!(imageFiles, 'image', replyMessageId);
           }
 
           if (videoFiles.isNotEmpty && widget.onSendMedia != null) {
-            widget.onSendMedia!(videoFiles, 'video');
+            widget.onSendMedia!(videoFiles, 'video', replyMessageId);
           }
+
+          inputCubit.onMessageSent();
         },
-      ),
-    );
-  }
-
-  /// ✅ بناء ويدجت معاينة الرد
-  Widget _buildReplyPreview() {
-    final replyMessage = widget.replyingToMessage;
-    if (replyMessage == null) return const SizedBox.shrink();
-
-    final isMediaMessage =
-        replyMessage.messageType == 'image' ||
-        replyMessage.messageType == 'video';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9EEFA),
-        border: const Border(
-          bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1),
-        ),
-      ),
-      child: Row(
-        children: [
-          // ✅ خط عمودي للدلالة على الرد
-          Container(
-            width: 4,
-            height: 50,
-            decoration: BoxDecoration(
-              color: const Color(0xFFD84D65),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // ✅ المحتوى
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'رد على ${replyMessage.senderName}',
-                  style: const TextStyle(
-                    color: Color(0xFFD84D65),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    fontFamily: 'Cairo',
-                  ),
-                ),
-                const SizedBox(height: 2),
-                if (isMediaMessage)
-                  Row(
-                    children: [
-                      Icon(
-                        replyMessage.messageType == 'image'
-                            ? Icons.image
-                            : Icons.videocam,
-                        size: 16,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        replyMessage.messageType == 'image' ? 'صورة' : 'فيديو',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                          fontFamily: 'Cairo',
-                        ),
-                      ),
-                    ],
-                  )
-                else
-                  Text(
-                    replyMessage.content,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                      fontFamily: 'Cairo',
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // ✅ صورة مصغرة للميديا
-          if (isMediaMessage && replyMessage.contentList.isNotEmpty)
-            Container(
-              width: 45,
-              height: 45,
-              margin: const EdgeInsets.only(left: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.grey[300],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  CachedNetworkImage(
-                    imageUrl: replyMessage.contentList.first,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey[300],
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.error, size: 20),
-                    ),
-                  ),
-                  if (replyMessage.messageType == 'video')
-                    Container(
-                      color: Colors.black26,
-                      child: const Center(
-                        child: Icon(
-                          Icons.play_circle_outline,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-          // ✅ زر الإلغاء
-          IconButton(
-            onPressed: widget.onCancelReply,
-            icon: const Icon(Icons.close, color: Colors.grey, size: 20),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
       ),
     );
   }
@@ -300,96 +188,155 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
     final attachIconSize = isMobile ? 16.0 : 18.0;
     final inputFontSize = isMobile ? 11.0 : 12.0;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // ✅ معاينة الرد
-        _buildReplyPreview(),
-
-        // ✅ منطقة الإدخال
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: paddingH,
-            vertical: paddingV,
-          ),
-          color: const Color(0xFFF9EEFA),
-          child: Directionality(
-            textDirection: TextDirection.ltr,
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _sendMessage,
-                  child: SvgPicture.asset(
-                    widget.sendMessageIcon,
-                    width: iconSize,
-                    height: iconSize,
-                  ),
-                ),
-                SizedBox(width: spacing1),
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: spacing2),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
+    return BlocBuilder<ChatInputCubit, ChatInputState>(
+      builder: (context, state) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (state.replyingToMessage != null)
+              ReplyPreviewInput(
+                replyMessage: state.replyingToMessage!,
+                onCancel: () => context.read<ChatInputCubit>().cancelReply(),
+              ),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: paddingH,
+                vertical: paddingV,
+              ),
+              color: ChatColors.inputBackground,
+              child: Directionality(
+                textDirection: TextDirection.ltr,
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: _sendMessage,
+                      child: SvgPicture.asset(
+                        widget.sendMessageIcon,
+                        width: iconSize,
+                        height: iconSize,
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        SizedBox(width: spacing2),
-                        GestureDetector(
-                          onTap: () {},
-                          child: Icon(
-                            Icons.attach_file,
-                            color: Colors.grey,
-                            size: attachIconSize,
-                          ),
+                    SizedBox(width: spacing1),
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: spacing2),
+                        decoration: BoxDecoration(
+                          color: ChatColors.inputFieldBackground,
+                          borderRadius: BorderRadius.circular(30),
                         ),
-                        SizedBox(width: spacing3),
-                        GestureDetector(
-                          onTap: () {},
-                          child: SvgPicture.asset(
-                            widget.chatEmojiIcon,
-                            width: attachIconSize,
-                            height: attachIconSize,
-                          ),
-                        ),
-                        SizedBox(width: spacing3),
-                        GestureDetector(
-                          onTap: _openGallerySheet,
-                          child: SvgPicture.asset(
-                            widget.cameraIcon,
-                            width: attachIconSize,
-                            height: attachIconSize,
-                          ),
-                        ),
-                        SizedBox(width: spacing3),
-                        Expanded(
-                          child: TextField(
-                            controller: _messageController,
-                            onSubmitted: (_) => _sendMessage(),
-                            decoration: InputDecoration(
-                              hintText: "نص الرسالة",
-                              hintStyle: TextStyle(
+                        child: Row(
+                          children: [
+                            SizedBox(width: spacing2),
+                            GestureDetector(
+                              onTap: () {},
+                              child: Icon(
+                                Icons.attach_file,
                                 color: Colors.grey,
-                                fontSize: inputFontSize,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: spacing4,
+                                size: attachIconSize,
                               ),
                             ),
-                            textAlign: TextAlign.right,
-                          ),
+                            SizedBox(width: spacing3),
+                            GestureDetector(
+                              onTap: _toggleEmojiPicker,
+                              child: Icon(
+                                state.showEmojiPicker
+                                    ? Icons.keyboard
+                                    : Icons.emoji_emotions_outlined,
+                                color: state.showEmojiPicker
+                                    ? Colors.pink
+                                    : Colors.grey,
+                                size: attachIconSize,
+                              ),
+                            ),
+                            SizedBox(width: spacing3),
+                            GestureDetector(
+                              onTap: _openGallerySheet,
+                              child: SvgPicture.asset(
+                                widget.cameraIcon,
+                                width: attachIconSize,
+                                height: attachIconSize,
+                              ),
+                            ),
+                            SizedBox(width: spacing3),
+                            Expanded(
+                              child: TextField(
+                                controller: _messageController,
+                                focusNode: _focusNode,
+                                textDirection: state.textDirection,
+                                textAlign:
+                                    state.textDirection == TextDirection.rtl
+                                    ? TextAlign.right
+                                    : TextAlign.left,
+                                onSubmitted: (_) => _sendMessage(),
+                                onTap: () {
+                                  if (state.showEmojiPicker) {
+                                    context
+                                        .read<ChatInputCubit>()
+                                        .setShowEmojiPicker(false);
+                                  }
+                                },
+                                decoration: InputDecoration(
+                                  hintText: "نص الرسالة",
+                                  hintTextDirection: TextDirection.rtl,
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: inputFontSize,
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: spacing4,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
+            if (state.showEmojiPicker) _buildEmojiPicker(),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEmojiPicker() {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: EmojiPicker(
+        textEditingController: _messageController,
+        config: Config(
+          height: 250,
+          checkPlatformCompatibility: true,
+          emojiViewConfig: EmojiViewConfig(
+            emojiSizeMax:
+                28 *
+                (foundation.defaultTargetPlatform == TargetPlatform.iOS
+                    ? 1.30
+                    : 1.0),
+            columns: 7,
+            backgroundColor: ChatColors.inputBackground,
+          ),
+          categoryViewConfig: const CategoryViewConfig(
+            initCategory: Category.SMILEYS,
+            indicatorColor: Colors.pink,
+            iconColorSelected: Colors.pink,
+            iconColor: Colors.grey,
+            backspaceColor: Colors.pink,
+            backgroundColor: ChatColors.inputBackground,
+          ),
+          bottomActionBarConfig: const BottomActionBarConfig(enabled: false),
+          searchViewConfig: const SearchViewConfig(
+            backgroundColor: ChatColors.inputBackground,
+            buttonIconColor: Colors.pink,
+            hintText: 'Search...',
           ),
         ),
-      ],
+      ),
     );
   }
 }

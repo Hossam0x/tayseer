@@ -1,3 +1,5 @@
+import 'package:tayseer/core/enum/message_status_enum.dart';
+
 class ChatMessagesResponse {
   final bool success;
   final String message;
@@ -26,10 +28,9 @@ class ChatMessagesData {
 
   factory ChatMessagesData.fromJson(Map<String, dynamic> json) {
     return ChatMessagesData(
-      messages:
-          (json['messages'] as List)
-              .map((e) => ChatMessage.fromJson(e))
-              .toList(),
+      messages: (json['messages'] as List)
+          .map((e) => ChatMessage.fromJson(e))
+          .toList(),
       pagination: MessagePagination.fromJson(json['pagination']),
     );
   }
@@ -106,8 +107,9 @@ class ChatMessage {
   final String messageType;
   final String createdAt;
   final String updatedAt;
-  bool isRead; // ✅ تأكد إنها مش final عشان نقدر نغيرها
-  final ReplyInfo? reply; // ✅ معلومات الرد
+  bool isRead;
+  final MessageStatusEnum status; // ✅ New field
+  final ReplyInfo? reply;
 
   String get content => contentList.isNotEmpty ? contentList.first : '';
 
@@ -124,6 +126,7 @@ class ChatMessage {
     required this.createdAt,
     required this.updatedAt,
     this.isRead = true,
+    this.status = MessageStatusEnum.sent, // ✅ Default value
     this.reply,
   });
 
@@ -149,6 +152,9 @@ class ChatMessage {
       createdAt: json['createdAt']?.toString() ?? "",
       updatedAt: json['updatedAt']?.toString() ?? "",
       isRead: json['isRead'] ?? true,
+      status: MessageStatusExtension.fromString(
+        json['status']?.toString(),
+      ), // ✅ Parse status
       reply: ReplyInfo.fromJson(json['reply']),
     );
   }
@@ -167,6 +173,7 @@ class ChatMessage {
     String? createdAt,
     String? updatedAt,
     bool? isRead,
+    MessageStatusEnum? status, // ✅ Add status
     ReplyInfo? reply,
   }) {
     return ChatMessage(
@@ -182,6 +189,7 @@ class ChatMessage {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isRead: isRead ?? this.isRead,
+      status: status ?? this.status, // ✅ Copy status
       reply: reply ?? this.reply,
     );
   }
