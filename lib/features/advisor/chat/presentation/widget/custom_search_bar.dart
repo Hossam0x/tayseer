@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/my_import.dart';
 
 class CustomSearchBar extends StatelessWidget {
   final bool isReadOnly; // ده المتغير اللي هيحدد الحالة
@@ -16,7 +17,7 @@ class CustomSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
-    final height = isMobile ? 36.0 : 39.0;
+    final height = isMobile ? 34.h : 38.h;
     final borderRadius = isMobile ? 25.0 : 30.0;
     final fontSize = isMobile ? 12.0 : 14.0;
     final contentPaddingH = isMobile ? 16.0 : 20.0;
