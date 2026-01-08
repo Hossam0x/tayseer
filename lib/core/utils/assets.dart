@@ -111,6 +111,8 @@ abstract class AssetsData {
   static const String send = "assets/icons/send.svg";
 
   static const String postsEndIcon = "assets/icons/posts_end_icon.svg";
+
+  static const String noCommentsIcon = "assets/icons/no_comments_icon.svg";
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
       "assets/animations/loading_animations.json";

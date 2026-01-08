@@ -113,6 +113,7 @@ class CommentContentWidget extends StatelessWidget {
                 AssetsData.loveDefault,
                 height: 18.w,
                 width: 18.w,
+                fit: BoxFit.contain,
                 color: comment.isLiked ? Colors.red : const Color(0xFFB3B3B3),
               ),
             ],

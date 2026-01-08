@@ -156,6 +156,7 @@ class _PostCardState extends State<PostCard>
           PostStats(
             comments: widget.post.commentsCount,
             shares: widget.post.sharesCount,
+            onTap: () => _navigateToDetails(context),
           ),
           Gap(context.responsiveHeight(8)),
           PostActionsRow(
@@ -210,6 +211,7 @@ class _PostCardState extends State<PostCard>
       case PostContentType.post:
         return widget.post.images.isNotEmpty
             ? PostImagesGrid(
+                isFromPostDetails: widget.isDetailsView,
                 images: widget.post.images,
                 postId: widget.post.postId, // ✅ ضروري جداً
                 post: widget.post, // ✅ عشان الداتا اللي تحت في الفيو

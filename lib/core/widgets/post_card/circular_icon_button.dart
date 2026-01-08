@@ -25,7 +25,7 @@ class CircularIconButton extends StatelessWidget {
         // خليناه Animated عشان تغيير اللون يكون ناعم
         duration: const Duration(milliseconds: 200),
         width: context.responsiveWidth(width ?? 38),
-        height: context.responsiveHeight(height ?? 38),
+        height: context.responsiveWidth(height ?? 38),
         padding: EdgeInsets.all(
           context.responsiveWidth((width ?? 38) > 38 ? 12 : 8),
         ),

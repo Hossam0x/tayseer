@@ -12,7 +12,7 @@ class AppImage extends StatelessWidget {
     super.key,
     this.height,
     this.width,
-    this.fit = BoxFit.scaleDown,
+    this.fit = BoxFit.contain,
     this.color,
     this.placeholderImage,
   });

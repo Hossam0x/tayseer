@@ -1,7 +1,10 @@
 import 'package:tayseer/my_import.dart';
 
 class CustomFabMenu extends StatefulWidget {
-  const CustomFabMenu({super.key});
+  // استقبال حالة الظهور من الخارج
+  final bool isVisible;
+
+  const CustomFabMenu({super.key, required this.isVisible});
 
   @override
   State<CustomFabMenu> createState() => _CustomFabMenuState();
@@ -34,6 +37,26 @@ class _CustomFabMenuState extends State<CustomFabMenu>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
+  // هذه الدالة تراقب التغيرات القادمة من الأب
+  @override
+  void didUpdateWidget(covariant CustomFabMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // إذا تغيرت الحالة من مرئي إلى غير مرئي
+    if (oldWidget.isVisible == true && widget.isVisible == false) {
+      // وكانت القائمة مفتوحة، قم بإغلاقها
+      if (_isExpanded) {
+        _closeMenu();
+      }
+    }
+  }
+
+  void _closeMenu() {
+    setState(() {
+      _isExpanded = false;
+      _controller.reverse();
+    });
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -64,8 +87,8 @@ class _CustomFabMenuState extends State<CustomFabMenu>
         GestureDetector(
           onTap: _toggleMenu,
           child: Container(
-            width: 60,
-            height: 60,
+            width: 60.w,
+            height: 60.w,
             decoration: BoxDecoration(
               // اللون الوردي المتدرج او الثابت حسب الصورة
               gradient: AppColors.defaultGradient,
@@ -90,7 +113,7 @@ class _CustomFabMenuState extends State<CustomFabMenu>
 
   // دالة لبناء عناصر القائمة
   List<Widget> _buildExpandableItems() {
-    // قائمة العناصر (يمكنك تعديل الايقونات والنصوص)
+    // قائمة العناصر
     final items = [
       _MenuItem(icon: Icons.edit_outlined, label: "بوست", onTap: () {}),
       _MenuItem(icon: Icons.play_circle_outline, label: "فيديو", onTap: () {}),
@@ -111,8 +134,8 @@ class _CustomFabMenuState extends State<CustomFabMenu>
               child: InkWell(
                 onTap: items[i].onTap,
                 child: Container(
-                  width: 65.w,
-                  height: 65.w,
+                  width: 60.w,
+                  height: 60.w,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
