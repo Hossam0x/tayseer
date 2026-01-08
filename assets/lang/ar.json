@@ -356,5 +356,18 @@
     "create_event_btn": "انشأ حدث",
     "select_location_on_map": "اختار مكان الحدث",
     "please_select_location_on_map": "الرجاء اختيار مكان الحدث",
-    "confirm_location": "اختيار"
+    "confirm_location": "اختيار",
+    "enter_email": "Example: name@example.com",
+    "enter_name": "ادخل اسمك هنا",
+    "enter_account_name": "ادخل اسم الحساب",
+    "password": "كلمة المرور",
+    "confirm_password": "تأكيد كلمة المرور",
+    "enter_phone": "ادخل رقم الهاتف",
+    "enter_city": "ادخل المدينة",
+    "enter_text": "ادخل النص هنا",
+    "email_required": "يجب إدخال البريد الإلكتروني",
+    "invalid_email": "صيغة البريد الإلكتروني غير صحيحة",
+    "password_min_length": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
+    "invalid_phone": "رقم الهاتف غير صحيح",
+    "field_required": "يجب إدخال هذا الحقل"
 }

@@ -274,6 +274,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
 
                     /// 6. الأسعار
                     CustomTextFormField(
+                      isNumber: true,
                       controller:
                           eventsCubit.eventPriceBeforeDiscountController,
                       hintText: context.tr('event_price_before_discount'),
@@ -292,6 +293,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                     ),
                     Gap(context.responsiveHeight(16)),
                     CustomTextFormField(
+                      isNumber: true,
                       controller: eventsCubit.eventPriceAfterDiscountController,
                       hintText: context.tr('event_price_after_discount'),
                       suffixIcon: Row(

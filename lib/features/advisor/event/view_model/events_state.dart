@@ -4,6 +4,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:tayseer/features/advisor/event/model/my_event_model.dart';
 import 'package:tayseer/my_import.dart';
 
+// Sentinel used in copyWith to allow explicitly setting nullable fields to null
+const _sentinel = Object();
+
 class EventsState {
   // ==================== Events Data ====================
   final CubitStates advisorEventsState;
@@ -76,7 +79,7 @@ class EventsState {
     List<EventModel>? allEvents,
     // Media
     List<XFile>? pickedImages,
-    XFile? pickedVideo,
+    Object? pickedVideo = _sentinel,
     bool? isVideoLoading,
     // Event Details
     String? duration,
@@ -104,7 +107,9 @@ class EventsState {
       allEvents: allEvents ?? this.allEvents,
       // Media
       pickedImages: pickedImages ?? this.pickedImages,
-      pickedVideo: pickedVideo ?? this.pickedVideo,
+      pickedVideo: pickedVideo == _sentinel
+          ? this.pickedVideo
+          : pickedVideo as XFile?,
       isVideoLoading: isVideoLoading ?? this.isVideoLoading,
       // Event Details
       duration: duration ?? this.duration,
