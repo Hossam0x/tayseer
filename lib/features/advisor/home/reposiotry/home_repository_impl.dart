@@ -221,7 +221,7 @@ class HomeRepositoryImpl implements HomeRepository {
     try {
       final Map<String, dynamic> requestData = {"reply": reply};
       var response = await apiService.patch(
-        endPoint: '${ApiEndPoint.replies}$replyId',
+        endPoint: '${ApiEndPoint.updateReply}$replyId',
         data: requestData,
       );
       return Right(response['message'] ?? 'تم تعديل الرد بنجاح');
