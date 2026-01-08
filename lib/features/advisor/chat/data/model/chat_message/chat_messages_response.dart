@@ -1,3 +1,5 @@
+import 'package:tayseer/core/enum/message_status_enum.dart';
+
 class ChatMessagesResponse {
   final bool success;
   final String message;
@@ -26,10 +28,9 @@ class ChatMessagesData {
 
   factory ChatMessagesData.fromJson(Map<String, dynamic> json) {
     return ChatMessagesData(
-      messages:
-          (json['messages'] as List)
-              .map((e) => ChatMessage.fromJson(e))
-              .toList(),
+      messages: (json['messages'] as List)
+          .map((e) => ChatMessage.fromJson(e))
+          .toList(),
       pagination: MessagePagination.fromJson(json['pagination']),
     );
   }
@@ -106,8 +107,10 @@ class ChatMessage {
   final String messageType;
   final String createdAt;
   final String updatedAt;
-  bool isRead; // ✅ تأكد إنها مش final عشان نقدر نغيرها
-  final ReplyInfo? reply; // ✅ معلومات الرد
+  final String? deliveredAt; // ISO timestamp for sorting
+  bool isRead;
+  final MessageStatusEnum status; // ✅ New field
+  final ReplyInfo? reply;
 
   String get content => contentList.isNotEmpty ? contentList.first : '';
 
@@ -123,7 +126,9 @@ class ChatMessage {
     required this.messageType,
     required this.createdAt,
     required this.updatedAt,
+    this.deliveredAt,
     this.isRead = true,
+    this.status = MessageStatusEnum.sent, // ✅ Default value
     this.reply,
   });
 
@@ -148,7 +153,11 @@ class ChatMessage {
       messageType: json['messageType']?.toString() ?? "text",
       createdAt: json['createdAt']?.toString() ?? "",
       updatedAt: json['updatedAt']?.toString() ?? "",
+      deliveredAt: json['deliveredAt']?.toString(), // ISO timestamp
       isRead: json['isRead'] ?? true,
+      status: MessageStatusExtension.fromString(
+        json['status']?.toString(),
+      ), // ✅ Parse status
       reply: ReplyInfo.fromJson(json['reply']),
     );
   }
@@ -166,7 +175,9 @@ class ChatMessage {
     String? messageType,
     String? createdAt,
     String? updatedAt,
+    String? deliveredAt,
     bool? isRead,
+    MessageStatusEnum? status, // ✅ Add status
     ReplyInfo? reply,
   }) {
     return ChatMessage(
@@ -181,7 +192,9 @@ class ChatMessage {
       messageType: messageType ?? this.messageType,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      deliveredAt: deliveredAt ?? this.deliveredAt,
       isRead: isRead ?? this.isRead,
+      status: status ?? this.status, // ✅ Copy status
       reply: reply ?? this.reply,
     );
   }

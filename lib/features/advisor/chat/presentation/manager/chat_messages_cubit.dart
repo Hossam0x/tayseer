@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
+import 'package:tayseer/core/enum/message_status_enum.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/typinn_model.dart';
@@ -98,9 +99,39 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     _safeEmit(state.copyWith(clearReplyingToMessage: true));
   }
 
-  void sendMessage(String receiverId, String message, String chatRoomId) {
+  void sendMessage(
+    String receiverId,
+    String message,
+    String chatRoomId, {
+    String? replyMessageId,
+  }) {
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-    final replyingTo = state.replyingToMessage;
+
+    ReplyInfo? replyInfo;
+    if (replyMessageId != null) {
+      final originalMessage = state.messages?.firstWhere(
+        (msg) => msg.id == replyMessageId,
+        orElse: () => ChatMessage(
+          id: '',
+          chatRoomId: '',
+          senderId: '',
+          senderName: '',
+          senderImage: '',
+          senderType: '',
+          isMe: false,
+          contentList: [],
+          messageType: '',
+          createdAt: '',
+          updatedAt: '',
+          isRead: false,
+        ),
+      );
+      replyInfo = ReplyInfo(
+        replyMessageId: replyMessageId,
+        replyMessage: originalMessage?.content,
+        isReply: true,
+      );
+    }
 
     final localMessage = ChatMessage(
       id: tempId,
@@ -114,34 +145,23 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       messageType: 'text',
       createdAt: DateTime.now().toIso8601String(),
       updatedAt: DateTime.now().toIso8601String(),
-      isRead: false, // ✅ الرسالة تبدأ كـ غير مقروءة
-      reply: replyingTo != null
-          ? ReplyInfo(
-              replyMessageId: replyingTo.id,
-              replyMessage: replyingTo.content,
-              isReply: true,
-            )
-          : null,
+      isRead: false,
+      status: MessageStatusEnum.sent,
+      reply: replyInfo,
     );
 
     addMessageLocally(localMessage);
 
-    // ✅ إرسال الرسالة مع replyMessageId لو فيه رد
     final messageData = <String, dynamic>{
       'receiverId': receiverId,
       'content': message,
     };
 
-    if (replyingTo != null) {
-      messageData['replyMessageId'] = replyingTo.id;
+    if (replyMessageId != null) {
+      messageData['replyMessageId'] = replyMessageId;
     }
 
     socketHelper.send('send_message', messageData, (ack) {});
-
-    // ✅ إلغاء حالة الرد بعد الإرسال
-    if (replyingTo != null) {
-      cancelReply();
-    }
   }
 
   /// ✅ الاستماع للرسائل الجديدة
@@ -241,7 +261,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
     try {
       final chatRoomId = data['chatRoomId']?.toString();
-      final readBy = data['readBy']?.toString();
       final readByName = data['readByName']?.toString();
 
       if (chatRoomId == null) {
@@ -278,11 +297,12 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       return;
     }
 
-    // تحديث كل رسائلي (isMe = true) لتصبح isRead = true
+    // تحديث كل رسائلي (isMe = true) لتصبح isRead = true و status = read
     final updatedMessages = currentMessages.map((message) {
-      if (message.isMe && !message.isRead) {
+      if (message.isMe &&
+          (!message.isRead || message.status != MessageStatusEnum.read)) {
         log('✅ [$_listenerId] Marking message ${message.id} as read');
-        return message.copyWith(isRead: true);
+        return message.copyWith(isRead: true, status: MessageStatusEnum.read);
       }
       return message;
     }).toList();
@@ -354,26 +374,19 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     required String messageType,
     List<File>? images,
     List<File>? videos,
+    String? replyMessageId,
   }) async {
     if (isClosed) return;
 
     _safeEmit(state.copyWith(sendMediaMessage: CubitStates.loading));
-
-    // ✅ جلب الـ replyMessageId لو موجود
-    final replyingTo = state.replyingToMessage;
 
     final result = await chatRepo.sendMediaMessage(
       chatRoomId: chatRoomId,
       messageType: messageType,
       images: images,
       videos: videos,
-      replyMessageId: replyingTo?.id, // ✅ إرسال replyMessageId
+      replyMessageId: replyMessageId,
     );
-
-    // ✅ إلغاء حالة الرد بعد الإرسال
-    if (replyingTo != null) {
-      cancelReply();
-    }
 
     if (isClosed) return;
 

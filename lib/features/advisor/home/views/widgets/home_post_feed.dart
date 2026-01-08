@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/app_toast.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
@@ -11,7 +12,28 @@ class HomePostFeed extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: homeCubit,
-      child: BlocBuilder<HomeCubit, HomeState>(
+      child: BlocConsumer<HomeCubit, HomeState>(
+        listenWhen: (previous, current) =>
+            previous.shareActionState != current.shareActionState &&
+            current.shareActionState != CubitStates.initial,
+        listener: (context, state) {
+          if (state.shareActionState == CubitStates.success) {
+            if (state.isShareAdded == true) {
+              AppToast.success(
+                context,
+                state.shareMessage ?? 'تمت المشاركة بنجاح',
+              );
+            } else {
+              AppToast.info(context, state.shareMessage ?? 'تم إلغاء المشاركة');
+            }
+          } else if (state.shareActionState == CubitStates.failure) {
+            AppToast.error(
+              context,
+              state.shareMessage ?? 'حدث خطأ أثناء المشاركة',
+            );
+          }
+        },
+
         builder: (context, state) {
           if (state.postsState == CubitStates.loading && state.posts.isEmpty) {
             return SliverList(
@@ -35,26 +57,75 @@ class HomePostFeed extends StatelessWidget {
           final posts = state.posts;
           final isLoadingMore = state.isLoadingMore;
 
+          // ملاحظة: يفضل أن يكون لديك متغير في الـ State اسمه hasReachedMax
+          // للتأكد من أن البيانات انتهت فعلياً من السيرفر
+          // final hasReachedMax = state.hasReachedMax;
+
           return SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              if (index < posts.length) {
-                return Column(
-                  children: [
-                    PostCard(post: posts[index]),
-                    if (index < posts.length - 1)
-                      Gap(context.responsiveHeight(12)),
-                  ],
-                );
-              } else if (isLoadingMore) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
-                  child: const Center(child: _PostCardShimmer()),
-                );
-              }
-              return const SizedBox.shrink();
-            }, childCount: posts.length + (isLoadingMore ? 1 : 0)),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                // عرض البوستات
+                if (index < posts.length) {
+                  return Column(
+                    children: [
+                      PostCard(post: posts[index]),
+                      if (index < posts.length - 1)
+                        Gap(context.responsiveHeight(12)),
+                    ],
+                  );
+                }
+                // نحن الآن في العنصر الأخير (ما بعد البوستات)
+                else {
+                  if (isLoadingMore) {
+                    return Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                      child: const Center(child: _PostCardShimmer()),
+                    );
+                  } else {
+                    // عرض تصميم نهاية القائمة
+                    return const _EndOfFeedIndicator();
+                  }
+                }
+              },
+              // قمنا بزيادة العدد 1 دائماً لحجز مكان إما للتحميل أو لرسالة النهاية
+              childCount: posts.length + 1,
+            ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _EndOfFeedIndicator extends StatelessWidget {
+  const _EndOfFeedIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 20.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AppImage(AssetsData.postsEndIcon, height: 110.h),
+          Text(
+            "تم الوصول لنهاية المنشورات",
+            style: Styles.textStyle14.copyWith(
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Gap(4.h),
+          Container(
+            width: 4.w,
+            height: 4.w,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              shape: BoxShape.circle,
+            ),
+          ),
+          Gap(16.h),
+        ],
       ),
     );
   }

@@ -55,16 +55,12 @@ class ApiService {
         data: isFromData ? FormData.fromMap(data) : data,
         options: Options(
           headers: mergedHeaders,
-          validateStatus: (status) => status! < 500,
+          validateStatus: (status) => status! >= 200 && status < 300,
         ),
       );
       return response.data;
-    } on DioException catch (e) {
-      if (e.response != null) {
-        return e.response!.data;
-      } else {
-        rethrow;
-      }
+    } on DioException {
+      rethrow; // ✅ Re-throw للـ repository يقدر يـ handle الـ error
     }
   }
 
@@ -91,7 +87,7 @@ class ApiService {
         data: isFromData ? FormData.fromMap(data) : data,
         options: Options(
           headers: mergedHeaders,
-          validateStatus: (status) => status! < 500,
+          validateStatus: (status) => status! >= 200 && status < 300,
         ),
       );
       return response.data;
@@ -107,18 +103,22 @@ class ApiService {
   Future<Map<String, dynamic>> delete({
     required String endPoint,
     Map<String, dynamic>? headers,
+    Map<String, dynamic>? data,
   }) async {
     try {
-      final mergedHeaders = {
+      final mergedHeaders = <String, dynamic>{
         'Accept-Language': selectedLanguage ?? 'ar',
+        'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
+        'Accept': 'application/json',
         ...?headers,
       };
 
       var response = await _dio.delete(
         "$kbaseUrl$endPoint",
+        data: data,
         options: Options(
           headers: mergedHeaders,
-          validateStatus: (status) => status! < 500,
+          validateStatus: (status) => status! >= 200 && status < 300,
         ),
       );
       return response.data;

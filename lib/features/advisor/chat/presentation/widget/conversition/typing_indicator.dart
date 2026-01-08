@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
 
 class TypingIndicator extends StatefulWidget {
   final String userName;
@@ -17,7 +18,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: ChatAnimations.typingDotsDuration,
       vsync: this,
     )..repeat();
   }
@@ -28,89 +29,78 @@ class _TypingIndicatorState extends State<TypingIndicator>
     super.dispose();
   }
 
+  double _calculateBounce(double value) {
+    if (value < 0.5) {
+      return -6 * (value * 2);
+    } else {
+      return -6 + (6 * ((value - 0.5) * 2));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      margin: const EdgeInsets.only(bottom: 4),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: ChatColors.typingIndicatorBackground,
               borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${widget.userName} يكتب',
+                  '${widget.userName} يكتب الآن',
                   style: TextStyle(
                     color: Colors.grey.shade700,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: 6),
-                _buildAnimatedDots(),
+                const SizedBox(width: 8),
+                AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(3, (index) {
+                        final delay = index * 0.2;
+                        final animValue = (_controller.value + delay) % 1.0;
+                        final bounce = _calculateBounce(animValue);
+
+                        return Transform.translate(
+                          offset: Offset(0, bounce),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: ChatColors.typingDots,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        );
+                      }),
+                    );
+                  },
+                ),
               ],
             ),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildAnimatedDots() {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(3, (index) {
-            final delay = index * 0.2;
-            final animValue = (_controller.value + delay) % 1.0;
-            final opacity = _calculateOpacity(animValue);
-            final offset = _calculateOffset(animValue);
-
-            return Transform.translate(
-              offset: Offset(0, offset),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                child: Opacity(
-                  opacity: opacity,
-                  child: Container(
-                    width: 5,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade600,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        );
-      },
-    );
-  }
-
-  double _calculateOpacity(double value) {
-    if (value < 0.5) {
-      return 0.4 + (value * 1.2);
-    } else {
-      return 1.0 - ((value - 0.5) * 1.2);
-    }
-  }
-
-  double _calculateOffset(double value) {
-    if (value < 0.5) {
-      return -3 * (value * 2);
-    } else {
-      return -3 + (3 * ((value - 0.5) * 2));
-    }
   }
 }

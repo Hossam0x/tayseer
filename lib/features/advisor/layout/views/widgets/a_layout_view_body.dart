@@ -41,7 +41,9 @@ class ALayOutViewBody extends StatelessWidget {
                 curve: Curves.easeInOut,
                 left: 20,
 
-                bottom: state.isNavVisible ? 90 : -400,
+                bottom: state.isNavVisible && state.currentIndex == 0
+                    ? 90
+                    : -400,
 
                 child: SafeArea(child: const CustomFabMenu()),
               ),
