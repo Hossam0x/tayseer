@@ -137,7 +137,6 @@ class EventRepoImpl implements EventRepo {
       );
     } catch (error) {
       debugPrint(' error $error');
-
       return left(ServerFailure('حدث خطأ غير متوقع: $error'));
     }
   }

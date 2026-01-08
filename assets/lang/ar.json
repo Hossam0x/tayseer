@@ -352,7 +352,7 @@
     "add_event_image": "اضف صورة الحدث",
     "add_4_images_hint": "اضف 4 صور تعبر عن الحدث",
     "video_size_hint": "ارفاق فيديو تعريفي",
-    "succ_event": "يجب ان يكون حجم الفيديو اقل من 4 MG",
+    "succ_event": "تم إنشاء الحدث بنجاح!",
     "create_event_btn": "انشأ حدث",
     "select_location_on_map": "اختار مكان الحدث",
     "please_select_location_on_map": "الرجاء اختيار مكان الحدث",
