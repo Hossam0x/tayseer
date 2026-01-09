@@ -112,13 +112,4 @@ abstract class AssetsData {
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
       "assets/animations/loading_animations.json";
-
-  // Profile assests
-  static const String certificatePlaceholder =
-      "assets/images/certificatePlaceholder.jpg";
-  static const String editIcon = "assets/icons/editIcon.svg";
-  static const String icAdd = "assets/icons/icAdd.svg";
-  static const String settingsIcon = "assets/icons/settingsIcon.svg";
-  static const String locationIcon = "assets/icons/locationIcon.svg";
-  static const String boostIcon = "assets/icons/boost_icon.svg";
 }

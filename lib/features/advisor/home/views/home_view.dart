@@ -16,8 +16,9 @@ class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<ALayoutCubit, ALayoutState>(
-      listenWhen: (previous, current) =>
-          previous.scrollToTopTrigger != current.scrollToTopTrigger,
+      listenWhen:
+          (previous, current) =>
+              previous.scrollToTopTrigger != current.scrollToTopTrigger,
       listener: (context, state) {
         // لما يتغير الـ scrollToTopTrigger نعمل scroll لفوق
         _homeViewBodyKey.currentState?.scrollToTop();

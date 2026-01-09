@@ -84,17 +84,4 @@ abstract class AppColors {
   static Color kgreen = HexColor('94CF29'); //لون  الاخضر
   static Color kGreyB3 = HexColor('B3B3B3'); // new color B3B3B3
   static Color kGrey666 = HexColor('666666'); // new color 666666
-
-  // Profile Colors
-  static Color primary100 = Color.fromRGBO(248, 211, 218, 1);
-  static Color cBackground100 = Color.fromRGBO(242, 166, 181, 0.56);
-  static Color primary300 = Color.fromRGBO(235, 122, 145, 1);
-  static Color blueText = Color.fromRGBO(25, 41, 92, 1);
-  static Color hintText = Color.fromRGBO(153, 161, 190, 1);
-  static Color secondary400 = Color.fromRGBO(153, 153, 153, 1);
-  static Color secondary600 = Color.fromRGBO(102, 102, 102, 1);
-  static Color secondary700 = Color.fromRGBO(77, 77, 77, 1);
-  static Color secondary800 = Color.fromRGBO(51, 51, 51, 1);
-  static Color infoText = Color.fromRGBO(110, 110, 110, 1);
-  static Color blackColor = Color.fromRGBO(0, 0, 0, 1);
 }
