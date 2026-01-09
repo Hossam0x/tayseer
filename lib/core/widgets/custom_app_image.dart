@@ -22,11 +22,11 @@ class AppImage extends StatelessWidget {
     if (path == null || path!.isEmpty) {
       return placeholderImage != null
           ? Image.asset(
-            placeholderImage!,
-            height: height,
-            width: width,
-            fit: fit,
-          )
+              placeholderImage!,
+              height: height,
+              width: width,
+              fit: fit,
+            )
           : const SizedBox.shrink();
     }
 
@@ -39,16 +39,14 @@ class AppImage extends StatelessWidget {
           height: height,
           width: width,
           color: color,
-          placeholderBuilder:
-              (context) =>
-                  placeholderImage != null
-                      ? Image.asset(
-                        placeholderImage!,
-                        height: height,
-                        width: width,
-                        fit: fit,
-                      )
-                      : _buildLoadingPlaceholder(),
+          placeholderBuilder: (context) => placeholderImage != null
+              ? Image.asset(
+                  placeholderImage!,
+                  height: height,
+                  width: width,
+                  fit: fit,
+                )
+              : _buildLoadingPlaceholder(),
         );
       } else {
         return SvgPicture.asset(
@@ -74,19 +72,16 @@ class AppImage extends StatelessWidget {
           fit: fit,
           height: height,
           width: width,
-          placeholder:
-              (context, url) =>
-                  placeholderImage != null
-                      ? Image.asset(
-                        placeholderImage!,
-                        height: height,
-                        width: width,
-                        fit: fit,
-                      )
-                      : _buildLoadingPlaceholder(),
-          errorWidget:
-              (context, url, error) =>
-                  const Icon(Icons.error, color: Colors.red),
+          placeholder: (context, url) => placeholderImage != null
+              ? Image.asset(
+                  placeholderImage!,
+                  height: height,
+                  width: width,
+                  fit: fit,
+                )
+              : _buildLoadingPlaceholder(),
+          errorWidget: (context, url, error) =>
+              const Icon(Icons.error, color: Colors.red),
         );
       } else {
         return Image.asset(path!, height: height, width: width, fit: fit);
@@ -102,26 +97,22 @@ class AppImage extends StatelessWidget {
         height: height,
         width: width,
         color: color,
-        placeholder:
-            (context, url) =>
-                placeholderImage != null
-                    ? Image.asset(
-                      placeholderImage!,
-                      height: height,
-                      width: width,
-                      fit: fit,
-                    )
-                    : _buildLoadingPlaceholder(),
-        errorWidget:
-            (context, url, error) =>
-                placeholderImage != null
-                    ? Image.asset(
-                      placeholderImage!,
-                      height: height,
-                      width: width,
-                      fit: fit,
-                    )
-                    : const Icon(Icons.error, color: Colors.red),
+        placeholder: (context, url) => placeholderImage != null
+            ? Image.asset(
+                placeholderImage!,
+                height: height,
+                width: width,
+                fit: fit,
+              )
+            : _buildLoadingPlaceholder(),
+        errorWidget: (context, url, error) => placeholderImage != null
+            ? Image.asset(
+                placeholderImage!,
+                height: height,
+                width: width,
+                fit: fit,
+              )
+            : const Icon(Icons.error, color: Colors.red),
       );
     }
 
