@@ -4,12 +4,16 @@ class CustomUploadedVideoPreview extends StatefulWidget {
   final XFile video;
   final VoidCallback onRemove;
   final VoidCallback onInitialized;
+  final double height;
+  final double width;
 
   const CustomUploadedVideoPreview({
     super.key,
     required this.video,
     required this.onRemove,
     required this.onInitialized,
+    this.height = 0.25,
+    this.width = 0.4,
   });
 
   @override
@@ -91,7 +95,7 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => FullScreenVideoPlayer(controller: _controller),
+        builder: (_) => _FullScreenVideoPlayer(controller: _controller),
       ),
     ).then((_) {
       if (mounted) {
@@ -109,8 +113,8 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
       child: ScaleTransition(
         scale: _fadeScale,
         child: Container(
-          height: context.height * 0.25,
-          width: context.width * 0.4,
+          height: context.height * widget.height,
+          width: context.width * widget.width,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.kBlueColor.withOpacity(.4)),
@@ -120,11 +124,32 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
             child: Stack(
               alignment: Alignment.center,
               children: [
-                /// 🎬 Mini Video Player
+                /// 🎬 Mini Video Player (fill parent container)
                 _isInitialized
-                    ? AspectRatio(
-                        aspectRatio: _controller.value.aspectRatio,
-                        child: VideoPlayer(_controller),
+                    ? LayoutBuilder(
+                        builder: (context, constraints) {
+                          final videoSize = _controller.value.size;
+                          // If controller reports zero size (rare), fallback to AspectRatio
+                          if (videoSize.width == 0 || videoSize.height == 0) {
+                            return AspectRatio(
+                              aspectRatio: _controller.value.aspectRatio,
+                              child: VideoPlayer(_controller),
+                            );
+                          }
+
+                          return SizedBox(
+                            width: constraints.maxWidth,
+                            height: constraints.maxHeight,
+                            child: FittedBox(
+                              fit: BoxFit.cover,
+                              child: SizedBox(
+                                width: videoSize.width,
+                                height: videoSize.height,
+                                child: VideoPlayer(_controller),
+                              ),
+                            ),
+                          );
+                        },
                       )
                     : Container(color: Colors.black12),
 
@@ -196,15 +221,15 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
   }
 }
 
-class FullScreenVideoPlayer extends StatefulWidget {
+class _FullScreenVideoPlayer extends StatefulWidget {
   final VideoPlayerController controller;
-  const FullScreenVideoPlayer({super.key, required this.controller});
+  const _FullScreenVideoPlayer({required this.controller});
 
   @override
-  State<FullScreenVideoPlayer> createState() => _FullScreenVideoPlayerState();
+  State<_FullScreenVideoPlayer> createState() => _FullScreenVideoPlayerState();
 }
 
-class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
+class _FullScreenVideoPlayerState extends State<_FullScreenVideoPlayer> {
   bool _isPlaying = false;
   bool _showControls = true;
 
@@ -226,8 +251,7 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
   @override
   void dispose() {
     widget.controller.removeListener(_listener);
-    // ❌ مش بنعمل dispose للـ controller هنا
-    // لأن الـ parent widget هو المسؤول عن ده
+
     super.dispose();
   }
 

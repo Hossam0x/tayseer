@@ -1,6 +1,4 @@
-
 import '../../my_import.dart';
-
 
 // ignore: must_be_immutable
 class CustomOutlineButton extends StatelessWidget {
@@ -33,8 +31,9 @@ class CustomOutlineButton extends StatelessWidget {
       width: width,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.kprimaryColor),
+        color: AppColors.kprimaryColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.kprimaryTextColor),
       ),
       // margin: const EdgeInsets.only(right: 10, left: 10, bottom: 15),
       child: InkWell(
@@ -49,7 +48,7 @@ class CustomOutlineButton extends StatelessWidget {
                 text,
                 style: Styles.textStyle14.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.kprimaryColor,
+                  color: AppColors.kprimaryTextColor,
                 ),
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,

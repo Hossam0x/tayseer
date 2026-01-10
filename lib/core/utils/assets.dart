@@ -34,6 +34,7 @@ abstract class AssetsData {
   static const String guestLockImage = "assets/images/guest_lock.png";
   static const String emptyChatImage = "assets/images/empty_chat.png";
   static const String kEmptyEventImage = "assets/images/empty_event_image.png";
+  static const String kWoriningImage = "assets/images/worining_image.png";
 
   //////////////////////icons//////////////////////
   static const String kArroBackIcon = "assets/icons/arro_back.svg";
@@ -109,6 +110,7 @@ abstract class AssetsData {
   static const String deleteIcon = "assets/icons/delete_icon.svg";
   static const String reportIcon = "assets/icons/report_icon.svg";
   static const String send = "assets/icons/send.svg";
+  static const String kpinIcon = "assets/icons/pin_icon.svg";
 
   static const String postsEndIcon = "assets/icons/posts_end_icon.svg";
   static const String sentMessageIcon = "assets/icons/sent_message_icon.svg";

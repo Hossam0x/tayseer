@@ -50,13 +50,12 @@ class _EventBodyState extends State<EventBody> {
                   child: SlideTransition(position: slideAnim, child: child),
                 );
               },
-              child:
-                  selectedIndex == 0
-                      ? MyEventsContent(
-                        key: const ValueKey('my'),
-                        eventsCubit: context.read<EventsCubit>(),
-                      )
-                      : AllEventsContent(key: const ValueKey('all')),
+              child: selectedIndex == 0
+                  ? MyEventsContent(
+                      key: const ValueKey('my'),
+                      eventsCubit: context.read<EventsCubit>(),
+                    )
+                  : AllEventsContent(key: const ValueKey('all')),
             ),
           ),
         ],

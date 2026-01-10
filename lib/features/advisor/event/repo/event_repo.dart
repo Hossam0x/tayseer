@@ -21,4 +21,7 @@ abstract class EventRepo {
     required String numberOfAttendees,
     required String location,
   });
+  Future<Either<Failure, void>> deleteEvent({
+    required String id,
+  });
 }

@@ -314,7 +314,7 @@ class AuthCubit extends Cubit<AuthState> {
             '267720438243-1bb3i9jbnllncd8o46lajmtcnp0rsj25.apps.googleusercontent.com',
       );
 
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
 
       if (googleUser == null) {
         emit(

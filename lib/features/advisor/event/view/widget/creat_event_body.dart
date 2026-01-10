@@ -83,7 +83,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: Text(
-                        '0/250',
+                        '${eventsCubit.eventDescriptionController.text.length}/250',
                         style: Styles.textStyle12.copyWith(
                           color: AppColors.kGreyColor,
                         ),

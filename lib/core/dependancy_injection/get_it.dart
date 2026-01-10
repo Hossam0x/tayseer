@@ -6,6 +6,9 @@ import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/event/repo/event_repo.dart';
 import 'package:tayseer/features/advisor/event/repo/event_repo_impl.dart';
+import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository.dart';
+import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository_impl.dart';
+import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
@@ -67,7 +70,6 @@ Future<void> setupGetIt() async {
   // Home Cubit
   getIt.registerFactory<HomeCubit>(() => HomeCubit(getIt<HomeRepository>()));
 
-
   // Stories Feature
   getIt.registerLazySingleton<StoriesRepository>(
     () => StoriesRepositoryImpl(getIt<ApiService>()),
@@ -115,5 +117,15 @@ Future<void> setupGetIt() async {
 
   getIt.registerLazySingleton<EventRepo>(
     () => EventRepoImpl(apiService: getIt<ApiService>()),
+  );
+
+  //// Event Detail Repository
+  getIt.registerLazySingleton<EventDetailRepository>(
+    () => EventDetailRepositoryImpl(getIt<ApiService>()),
+  );
+
+  //// Event Detail Cubit
+  getIt.registerFactory<EventDetailCubit>(
+    () => EventDetailCubit(repo: getIt<EventDetailRepository>()),
   );
 }

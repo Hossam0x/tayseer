@@ -5,8 +5,6 @@ import 'package:tayseer/firebase_options.dart';
 import 'package:tayseer/tayser_app.dart';
 import 'package:tayseer/core/database/cache_cleanup_manager.dart';
 import 'package:tayseer/core/database/message_queue_manager.dart';
-import 'package:tayseer/core/dependancy_injection/get_it.dart';
-import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/core/utils/simple_bloc_observer.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -18,7 +16,6 @@ void main() async {
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
 
-  // Initialize Chat System (SQLite + Offline Queue + Cache Cleanup)
   await _initializeChatSystem();
 
   Bloc.observer = SimpleBlocObserver();

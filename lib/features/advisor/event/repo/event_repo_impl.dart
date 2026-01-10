@@ -67,27 +67,6 @@ class EventRepoImpl implements EventRepo {
     required String numberOfAttendees,
     required String location,
   }) async {
-    debugPrint("title: $title");
-    debugPrint("description: $description");
-    debugPrint("date: $date");
-    debugPrint("start_time: $startTime");
-    debugPrint("duration: $duration");
-
-    debugPrint("priceBeforeDiscount: $priceBeforeDiscount");
-    debugPrint("priceAfterDiscount: $priceAfterDiscount");
-
-    debugPrint("latitude: $latitude");
-    debugPrint("longitude: $longitude");
-    debugPrint("location: $location");
-
-    debugPrint("numberOfAttendees: $numberOfAttendees");
-
-    debugPrint("images count: ${images.length}");
-    for (var image in images) {
-      debugPrint("image path: ${image.path}");
-    }
-
-    debugPrint("video path: $video");
     try {
       final response = await apiService.post(
         isFromData: true,
@@ -138,6 +117,30 @@ class EventRepoImpl implements EventRepo {
     } catch (error) {
       debugPrint(' error $error');
       return left(ServerFailure('حدث خطأ غير متوقع: $error'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteEvent({required String id}) async {
+    try {
+      final response = await apiService.delete(
+        endPoint: '/event/deleteEvent/$id',
+      );
+
+      final success = response['success'] ?? false;
+
+      if (success) return right(null);
+
+      return left(ServerFailure(response['message'] ?? 'فشل حذف الحدث'));
+    } on DioException catch (error) {
+      return left(
+        ServerFailure(
+          error.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error deleting event: $e');
+      return Left(ServerFailure('حدث خطأ أثناء الاتصال بالخادم'));
     }
   }
 }

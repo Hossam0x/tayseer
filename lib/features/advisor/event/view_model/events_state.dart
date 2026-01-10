@@ -11,6 +11,7 @@ class EventsState {
   // ==================== Events Data ====================
   final CubitStates advisorEventsState;
   final CubitStates allEventsState;
+  final CubitStates deleteEventStatus;
   final String? errorMessage;
   final List<EventModel> advisorEvents;
   final List<EventModel> allEvents;
@@ -42,6 +43,7 @@ class EventsState {
     // Events
     this.advisorEventsState = CubitStates.initial,
     this.allEventsState = CubitStates.initial,
+    this.deleteEventStatus = CubitStates.initial,
     this.errorMessage,
     this.advisorEvents = const [],
     this.allEvents = const [],
@@ -74,6 +76,7 @@ class EventsState {
     // Events
     CubitStates? advisorEventsState,
     CubitStates? allEventsState,
+    CubitStates? deleteEventStatus,
     String? errorMessage,
     List<EventModel>? advisorEvents,
     List<EventModel>? allEvents,
@@ -102,6 +105,7 @@ class EventsState {
       // Events
       advisorEventsState: advisorEventsState ?? this.advisorEventsState,
       allEventsState: allEventsState ?? this.allEventsState,
+      deleteEventStatus: deleteEventStatus ?? this.deleteEventStatus,
       errorMessage: errorMessage ?? this.errorMessage,
       advisorEvents: advisorEvents ?? this.advisorEvents,
       allEvents: allEvents ?? this.allEvents,

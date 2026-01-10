@@ -1,3 +1,4 @@
+import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/my_import.dart';
 
 class CustomFabMenu extends StatefulWidget {
@@ -92,10 +93,46 @@ class _CustomFabMenuState extends State<CustomFabMenu>
   List<Widget> _buildExpandableItems() {
     // قائمة العناصر (يمكنك تعديل الايقونات والنصوص)
     final items = [
-      _MenuItem(icon: Icons.edit_outlined, label: "بوست", onTap: () {}),
-      _MenuItem(icon: Icons.play_circle_outline, label: "فيديو", onTap: () {}),
-      _MenuItem(icon: Icons.movie_outlined, label: "ريلز", onTap: () {}),
-      _MenuItem(icon: Icons.add_circle_outline, label: "ستوري", onTap: () {}),
+      _MenuItem(
+        icon: Icons.edit_outlined,
+        label: "بوست",
+        onTap: () {
+          context.pushNamed(
+            AppRouter.kAddPostView,
+            arguments: AddPostEnum.post,
+          );
+        },
+      ),
+      _MenuItem(
+        icon: Icons.play_circle_outline,
+        label: "فيديو",
+        onTap: () {
+          context.pushNamed(
+            AppRouter.kAddPostView,
+            arguments: AddPostEnum.video,
+          );
+        },
+      ),
+      _MenuItem(
+        icon: Icons.movie_outlined,
+        label: "ريلز",
+        onTap: () {
+          context.pushNamed(
+            AppRouter.kAddPostView,
+            arguments: AddPostEnum.reel,
+          );
+        },
+      ),
+      _MenuItem(
+        icon: Icons.add_circle_outline,
+        label: "ستوري",
+        onTap: () {
+          context.pushNamed(
+            AppRouter.kAddPostView,
+            arguments: AddPostEnum.story,
+          );
+        },
+      ),
     ];
 
     List<Widget> animatedItems = [];
