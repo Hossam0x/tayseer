@@ -1,8 +1,8 @@
-import 'package:tayseer/features/advisor/profille/view/widgets/bio_information.dart';
-import 'package:tayseer/features/advisor/profille/view/widgets/boost_button.dart';
-import 'package:tayseer/features/advisor/profille/view/widgets/profile_header.dart';
-import 'package:tayseer/features/advisor/profille/view/widgets/profile_stories_section.dart';
-import 'package:tayseer/features/advisor/profille/view/widgets/profile_tabs_section.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/bio_information.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost_button.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/profile_header.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/profile_tabs_section.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 

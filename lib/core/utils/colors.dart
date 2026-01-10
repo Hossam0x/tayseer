@@ -96,6 +96,7 @@ abstract class AppColors {
   static Color mentionBlue = Color.fromRGBO(98, 132, 255, 1);
   static Color mentionComment = Color.fromRGBO(75, 184, 249, 1);
   static Color hintText = Color.fromRGBO(153, 161, 190, 1);
+  static Color secondary200 = Color.fromRGBO(204, 204, 204, 1);
   static Color secondary300 = Color.fromRGBO(179, 179, 179, 1);
   static Color secondary400 = Color.fromRGBO(153, 153, 153, 1);
   static Color secondary600 = Color.fromRGBO(102, 102, 102, 1);

@@ -1,9 +1,9 @@
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
-import 'package:tayseer/features/advisor/profille/view/widgets/profile_certificates_section.dart';
-import 'package:tayseer/features/advisor/profille/view/widgets/tabs/comments_tab.dart';
-import 'package:tayseer/features/advisor/profille/view/widgets/tabs/inquiries_tab.dart';
-import 'package:tayseer/features/advisor/profille/view/widgets/tabs/posts_tab.dart';
-import 'package:tayseer/features/advisor/profille/view/widgets/tabs/ratings_tab.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/tabs/comments_tab.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/tabs/inquiries_tab.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts_tab.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 

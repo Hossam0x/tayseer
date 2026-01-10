@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
@@ -98,6 +97,7 @@ abstract class AppRouter {
   static const kAdvisorSearchView = '/SearchView';
   static const kAddPostView = '/AddPostView';
   static const kCameraView = '/CameraView';
+  static const kEditCertificateView = '/editCertificateView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -491,6 +491,28 @@ abstract class AppRouter {
                     as String?,
           ),
         );
+      // case kEditCertificateView:
+      //   final cert = settings.arguments as CertificateModelProfile;
+      //   return PageRouteBuilder(
+      //     settings: settings,
+      //     pageBuilder: (context, animation, secondaryAnimation) =>
+      //         EditCertificateView(certificate: cert),
+      //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      //       const begin = Offset(1.0, 0.0);
+      //       const end = Offset.zero;
+      //       const curve = Curves.easeInOut;
+
+      //       var tween = Tween(
+      //         begin: begin,
+      //         end: end,
+      //       ).chain(CurveTween(curve: curve));
+
+      //       return SlideTransition(
+      //         position: animation.drive(tween),
+      //         child: child,
+      //       );
+      //     },
+      //   );
     }
     return null;
   }

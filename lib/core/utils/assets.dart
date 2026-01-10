@@ -123,4 +123,6 @@ abstract class AssetsData {
   static const String boostIcon = "assets/icons/boost_icon.svg";
   static const String icCamera = "assets/icons/icCamera.svg";
   static const String icCommentLike = "assets/icons/icCommentLike.svg";
+  static const String addCertificateImage = "assets/icons/addCertificateImage.svg";
+  static const String calenderIcon = "assets/icons/calenderIcon.svg";
 }
