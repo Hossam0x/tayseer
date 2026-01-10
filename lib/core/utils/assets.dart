@@ -123,6 +123,26 @@ abstract class AssetsData {
   static const String boostIcon = "assets/icons/boost_icon.svg";
   static const String icCamera = "assets/icons/icCamera.svg";
   static const String icCommentLike = "assets/icons/icCommentLike.svg";
-  static const String addCertificateImage = "assets/icons/addCertificateImage.svg";
+  static const String addCertificateImage =
+      "assets/icons/addCertificateImage.svg";
   static const String calenderIcon = "assets/icons/calenderIcon.svg";
+
+  // Settings assets
+  static const String icNotificationSettings =
+      "assets/icons/icNotificationSettings.svg";
+  static const String icEditSettings = "assets/icons/icEditSettings.svg";
+  static const String icWalletSettings = "assets/icons/icWalletSettings.svg";
+  static const String icLanguageSettings =
+      "assets/icons/icLanguageSettings.svg";
+  static const String icPackesSettinngs = "assets/icons/icPackesSettinngs.svg";
+  static const String icArchiveSettings = "assets/icons/icArchiveSettings.svg";
+  static const String icHideSettings = "assets/icons/icHideSettings.svg";
+  static const String icDatesSettings = "assets/icons/icDatesSettings.svg";
+  static const String icDurationSettings =
+      "assets/icons/icDurationSettings.svg";
+  static const String icSavedSettings = "assets/icons/icSavedSettings.svg";
+  static const String icBlockedSettings = "assets/icons/icBlockedSettings.svg";
+  static const String icInviteSettings = "assets/icons/icInviteSettings.svg";
+  static const String icManagementSettings =
+      "assets/icons/icManagementSettings.svg";
 }

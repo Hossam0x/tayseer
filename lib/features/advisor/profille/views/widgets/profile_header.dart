@@ -1,4 +1,6 @@
 import 'package:tayseer/core/enum/add_post_enum.dart';
+import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
+import 'package:tayseer/features/settings/view/settings_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileHeader extends StatelessWidget {
@@ -15,7 +17,8 @@ class ProfileHeader extends StatelessWidget {
             // Profile picture
             GestureDetector(
               onTap: () {
-                context.pushNamed(
+                Navigator.pushNamed(
+                  context,
                   AppRouter.kAddPostView,
                   arguments: AddPostEnum.story,
                 );
@@ -25,7 +28,7 @@ class ProfileHeader extends StatelessWidget {
                   Container(
                     width: 85.w,
                     height: 85.w,
-                    decoration: BoxDecoration(shape: BoxShape.circle),
+                    decoration: const BoxDecoration(shape: BoxShape.circle),
                     child: ClipOval(
                       child: AppImage(
                         AssetsData.avatarImage,
@@ -74,17 +77,20 @@ class ProfileHeader extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Container(
-                  padding: EdgeInsets.all(9.w),
-                  width: 50.w,
-                  height: 50.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary100,
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 2.0),
-                    child: AppImage(AssetsData.settingsIcon),
+                GestureDetector(
+                  onTap: () => _openSettings(context),
+                  child: Container(
+                    padding: EdgeInsets.all(9.w),
+                    width: 50.w,
+                    height: 50.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary100,
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 2.0),
+                      child: AppImage(AssetsData.settingsIcon),
+                    ),
                   ),
                 ),
                 SizedBox(height: 40.w),
@@ -92,6 +98,16 @@ class ProfileHeader extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _openSettings(BuildContext context) {
+    Navigator.push(
+      context,
+      SlideLeftRoute(
+        page: const SettingsView(),
+        routeSettings: const RouteSettings(name: AppRouter.kSettingsView),
       ),
     );
   }

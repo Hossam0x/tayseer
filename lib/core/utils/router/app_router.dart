@@ -1,11 +1,13 @@
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view/camera_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/conversition.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
+import 'package:tayseer/features/settings/view/settings_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
@@ -98,6 +100,7 @@ abstract class AppRouter {
   static const kAddPostView = '/AddPostView';
   static const kCameraView = '/CameraView';
   static const kEditCertificateView = '/editCertificateView';
+  static const kSettingsView = '/settings';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -110,11 +113,11 @@ abstract class AppRouter {
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      // case kOnBoardingScreen:
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) => const OnBoardingScreen(),
-      //   );
+      case AppRouter.kSettingsView:
+        return SlideLeftRoute(
+          page: const SettingsView(),
+          routeSettings: settings,
+        );
 
       case kHomeScreen:
         return MaterialPageRoute(
