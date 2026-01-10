@@ -5,15 +5,17 @@ class ProfileCertificatesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverPadding(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 24.h),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate((context, index) {
+      child: ListView.builder(
+        physics: const BouncingScrollPhysics(),
+        itemCount: 3,
+        itemBuilder: (context, index) {
           return Padding(
             padding: EdgeInsets.only(bottom: 10.h),
             child: _buildCertificateItem(context),
           );
-        }, childCount: 3),
+        },
       ),
     );
   }

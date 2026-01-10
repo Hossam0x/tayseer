@@ -77,8 +77,8 @@ class __BoostButtonContentState extends State<_BoostButtonContent> {
               Color.fromRGBO(245, 192, 3, 1),
               Color.fromRGBO(228, 78, 108, 1),
             ],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.w),
@@ -86,12 +86,7 @@ class __BoostButtonContentState extends State<_BoostButtonContent> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AppImage(
-              AssetsData.boostIcon,
-              width: 24.w,
-              height: 24.w,
-              color: Colors.white,
-            ),
+            AppImage(AssetsData.boostIcon),
             Gap(12.w),
             Text(
               widget.text,
