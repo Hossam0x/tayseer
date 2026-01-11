@@ -234,4 +234,31 @@ class HomeRepositoryImpl implements HomeRepository {
       }
     }
   }
+
+ @override
+  Future<Either<Failure, List<PostModel>>> getReels({
+    required int page,
+    int limit = 5,
+  }) async {
+    try {
+      var response = await apiService.get(
+        endPoint: ApiEndPoint.reels,
+        query: {'page': page, 'limit': limit},
+      );
+      // Parse reelsDto instead of postsDto for reels endpoint
+      final reelsList =
+          (response['data']?['reelsDto'] as List<dynamic>?)
+              ?.map((e) => PostModel.fromJson(e))
+              .toList() ??
+          [];
+      return Right(reelsList);
+    } on DioException catch (error) {
+      if (error.response != null && error.response!.data != null) {
+        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
+        return Left(ServerFailure(errorMessage));
+      } else {
+        return Left(ServerFailure(error.message ?? 'Unknown error'));
+      }
+    }
+  }
 }

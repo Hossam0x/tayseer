@@ -12,10 +12,12 @@ import 'package:tayseer/my_import.dart';
 class ReelsOverlay extends StatelessWidget {
   final PostModel post;
   final dynamic Function(ReactionType?) onReactionChanged;
+  final VoidCallback onShareTapped;
   const ReelsOverlay({
     super.key,
     required this.post,
     required this.onReactionChanged,
+    required this.onShareTapped,
   });
 
   @override
@@ -228,9 +230,7 @@ class ReelsOverlay extends StatelessWidget {
           child: ShareButton(
             height: 50,
             width: 50,
-            onShareTapped: () {
-              // call Api
-            },
+            onShareTapped: onShareTapped,
             isShared: post.isRepostedByMe,
           ),
           count: post.sharesCount,

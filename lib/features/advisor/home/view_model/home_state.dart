@@ -9,7 +9,6 @@ class HomeState extends Equatable {
   final CubitStates postsState;
   final List<PostModel> posts;
   final String? errorMessage;
-  final bool isConnected;
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
@@ -24,7 +23,6 @@ class HomeState extends Equatable {
     this.postsState = CubitStates.initial,
     this.posts = const [],
     this.errorMessage,
-    this.isConnected = true,
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
@@ -51,7 +49,6 @@ class HomeState extends Equatable {
       postsState: postsState ?? this.postsState,
       posts: posts ?? this.posts,
       errorMessage: errorMessage ?? this.errorMessage,
-      isConnected: isConnected ?? this.isConnected,
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
@@ -67,7 +64,6 @@ class HomeState extends Equatable {
     postsState,
     posts,
     errorMessage,
-    isConnected,
     currentPage,
     hasMore,
     isLoadingMore,

@@ -241,8 +241,7 @@ class _PostCardState extends State<PostCard>
               context,
               MaterialPageRoute(
                 builder: (context) => ReelsFeedView(
-                  posts: [widget.post, widget.post, widget.post],
-                  initialIndex: 0,
+                  post: widget.post,
                   initialController: controller,
                 ),
               ),

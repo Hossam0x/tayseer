@@ -49,6 +49,11 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
       if (_controller!.value.isInitialized) {
         _isInitialized = true;
         _hasError = false;
+
+        // ✅ Auto-play if shouldPlay is true
+        if (widget.shouldPlay) {
+          _controller!.play();
+        }
       }
       _controller!.addListener(_videoListener);
       if (mounted) setState(() {});

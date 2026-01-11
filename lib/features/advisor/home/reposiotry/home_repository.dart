@@ -54,4 +54,8 @@ abstract class HomeRepository {
     required String replyId,
     required String reply,
   });
+    Future<Either<Failure, List<PostModel>>> getReels({
+    required int page,
+    int limit,
+  });
 }

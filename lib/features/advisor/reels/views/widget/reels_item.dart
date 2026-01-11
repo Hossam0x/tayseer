@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/reels/views/widget/reels_overlay.dart';
 import 'package:tayseer/features/advisor/reels/views/widget/reels_video_background.dart';
 import 'package:video_player/video_player.dart';
@@ -52,6 +54,7 @@ class _ReelsItemState extends State<ReelsItem>
   }
 
   void _handleVisibility(VisibilityInfo info) {
+    if (!mounted) return;
     final isNowVisible = info.visibleFraction > 0.7;
     if (isNowVisible != _isVisible) {
       setState(() {
@@ -65,6 +68,7 @@ class _ReelsItemState extends State<ReelsItem>
   }
 
   void _togglePlay() {
+    if (!mounted) return;
     setState(() {
       _isPausedByUser = !_isPausedByUser;
       _showIcon = true;
@@ -140,11 +144,29 @@ class _ReelsItemState extends State<ReelsItem>
               ),
             ),
 
-          // 4. Info Overlay
-          ReelsOverlay(
-            post: widget.post,
-            onReactionChanged: (ReactionType? reaction) {
-              // todo
+          // 4. Info Overlay - Using BlocSelector to get updated post from state
+          BlocSelector<ReelsCubit, ReelsState, PostModel>(
+            selector: (state) {
+              return state.reels.firstWhere(
+                (reel) => reel.postId == widget.post.postId,
+                orElse: () => widget.post,
+              );
+            },
+            builder: (context, currentPost) {
+              return ReelsOverlay(
+                post: currentPost,
+                onReactionChanged: (ReactionType? reaction) {
+                  context.read<ReelsCubit>().reactToReel(
+                    postId: widget.post.postId,
+                    reactionType: reaction,
+                  );
+                },
+                onShareTapped: () {
+                  context.read<ReelsCubit>().toggleShareReel(
+                    postId: widget.post.postId,
+                  );
+                },
+              );
             },
           ),
         ],
