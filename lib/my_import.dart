@@ -33,7 +33,6 @@ export 'package:dio/dio.dart';
 export 'package:flutter_animate/flutter_animate.dart';
 export 'package:shared_preferences/shared_preferences.dart';
 export 'package:flutter_svg/flutter_svg.dart';
-export 'package:connectivity_plus/connectivity_plus.dart';
 export 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 export 'package:pinput/pinput.dart';
 export 'package:tayseer/core/widgets/custom_background.dart';

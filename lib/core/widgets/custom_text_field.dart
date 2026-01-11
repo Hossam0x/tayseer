@@ -8,7 +8,7 @@ class CustomTextField extends StatelessWidget {
     this.controller,
     this.onChanged,
     this.hintText = "اكتب الوصف هنا...",
-    this.maxlength = null,
+    this.maxlength,
   });
   final String? hintText;
   final Function(String)? onChanged;

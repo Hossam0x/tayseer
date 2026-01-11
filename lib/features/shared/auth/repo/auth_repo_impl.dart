@@ -17,10 +17,10 @@ class AuthRepoImpl implements AuthRepo {
   Future<String> getFcmToken() async {
     try {
       // Firebase Messaging removed - return empty string
-      return '';
+      return '1';
     } catch (e) {
       debugPrint('Failed to get FCM token: $e');
-      return '';
+      return '1';
     }
   }
 
