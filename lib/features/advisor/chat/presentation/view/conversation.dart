@@ -6,9 +6,8 @@ import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
-import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_v2.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_v2.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_state_v2.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/state/chat_messages_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/input/chat_input_cubit.dart';
@@ -17,15 +16,15 @@ import 'package:tayseer/features/advisor/chat/presentation/manager/typing/typing
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/message_details.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/block_action_area.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/conversation_app_bar.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/conversation_context_menu.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/message_shimmer.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/typing_indicator.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/scroll_to_bottom_button.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/selectable_message_list_view.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/selection_bottom_bar.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/conversation_input_area.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/block_action_area.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/conversation_app_bar.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/conversation_context_menu.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/message_shimmer.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/typing_indicator.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/scroll_to_bottom_button.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/selectable_message_list_view.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/selection_bottom_bar.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/conversation_input_area.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/bubble/message_bubble.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
 
@@ -235,7 +234,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
         : 'هل أنت متأكد من حذف هذه الرسالة لديك فقط؟';
 
     // حفظ reference للـ cubit قبل فتح الـ dialog
-    final cubit = blocContext.read<ChatMessagesCubitV2>();
+    final cubit = blocContext.read<ChatMessagesCubit>();
 
     showDialog(
       context: context,
@@ -343,7 +342,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                   Navigator.pop(dialogContext);
 
                   final success = await blocContext
-                      .read<ChatMessagesCubitV2>()
+                      .read<ChatMessagesCubit>()
                       .deleteMessages(
                         messageIds: selectedIds,
                         deleteType: deleteType,
@@ -389,9 +388,9 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
         BlocProvider(
           create: (context) {
             log(
-              '🚀 Creating ChatMessagesCubitV2 (Local-First) for room: ${widget.chatRoomId}',
+              '🚀 Creating ChatMessagesCubit (Refactored) for room: ${widget.chatRoomId}',
             );
-            final cubit = ChatMessagesCubitV2(getIt<ChatRepoV2>());
+            final cubit = getIt<ChatMessagesCubit>(param1: widget.chatRoomId);
             // تعيين حالة الحظر الأولية
             cubit.setInitialBlocked(widget.isBlocked);
             // Load from local DB first, then sync with server
@@ -410,10 +409,10 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
         ),
         BlocProvider(
           create: (context) => ChatInputCubit(
-            onTypingStart: () => context
-                .read<ChatMessagesCubitV2>()
-                .typingStart(widget.chatRoomId!),
-            onTypingStop: () => context.read<ChatMessagesCubitV2>().typingStop(
+            onTypingStart: () => context.read<ChatMessagesCubit>().typingStart(
+              widget.chatRoomId!,
+            ),
+            onTypingStop: () => context.read<ChatMessagesCubit>().typingStop(
               widget.chatRoomId!,
             ),
           ),
@@ -453,7 +452,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                                 onBlockUser: (blockedId) async {
                                   // حظر فوري بدون انتظار
                                   await context
-                                      .read<ChatMessagesCubitV2>()
+                                      .read<ChatMessagesCubit>()
                                       .blockUser(blockedId: blockedId);
                                   // Notify parent about block status change
                                   widget.onBlockStatusChanged?.call(true);
@@ -478,10 +477,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                                 ),
                               ),
                               // Show input area or selection bottom bar
-                              BlocBuilder<
-                                ChatMessagesCubitV2,
-                                ChatMessagesStateV2
-                              >(
+                              BlocBuilder<ChatMessagesCubit, ChatMessagesState>(
                                 builder: (context, messageState) {
                                   if (selectionState.isSelectionMode) {
                                     return SelectionBottomBar(
@@ -501,7 +497,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                                       onUnblockTap: () async {
                                         if (widget.receiverId != null) {
                                           await context
-                                              .read<ChatMessagesCubitV2>()
+                                              .read<ChatMessagesCubit>()
                                               .unblockUser(
                                                 blockedId: widget.receiverId!,
                                               );
@@ -539,7 +535,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
 
   /// Build the app bar shown during selection mode
   Widget _buildMessagesArea(bool isMobile) {
-    return BlocConsumer<ChatMessagesCubitV2, ChatMessagesStateV2>(
+    return BlocConsumer<ChatMessagesCubit, ChatMessagesState>(
       listenWhen: (previous, current) =>
           previous.messages.length != current.messages.length ||
           previous.loadingState != current.loadingState,
@@ -587,18 +583,18 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                     style: TextStyle(fontSize: 12, color: Colors.orange),
                   ),
                 ),
-              // Pending messages indicator
-              if (state.pendingCount > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  child: Text(
-                    '${state.pendingCount} رسالة قيد الإرسال...',
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                  ),
-                ),
+              // Pending messages indicator - removed as per user request
+              // if (state.pendingCount > 0)
+              //   Container(
+              //     padding: const EdgeInsets.symmetric(
+              //       horizontal: 8,
+              //       vertical: 2,
+              //     ),
+              //     child: Text(
+              //       '${state.pendingCount} رسالة قيد الإرسال...',
+              //       style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              //     ),
+              //   ),
               Expanded(
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (notification) {
@@ -606,7 +602,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                     if (notification is ScrollEndNotification) {
                       final metrics = notification.metrics;
                       if (metrics.pixels >= metrics.maxScrollExtent - 100) {
-                        context.read<ChatMessagesCubitV2>().loadOlderMessages();
+                        context.read<ChatMessagesCubit>().loadOlderMessages();
                       }
                     }
                     return false;
@@ -665,7 +661,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
           chatEmojiIcon: AssetsData.chatEmojiIcon,
           cameraIcon: AssetsData.cameraIcon,
           onSendMessage: (message, replyMessageId) {
-            context.read<ChatMessagesCubitV2>().sendMessage(
+            context.read<ChatMessagesCubit>().sendMessage(
               widget.receiverId!,
               message,
               widget.chatRoomId!,
@@ -674,7 +670,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
             _scrollToBottomAfterSend();
           },
           onSendMedia: (files, messageType, replyMessageId) {
-            context.read<ChatMessagesCubitV2>().sendMediaMessage(
+            context.read<ChatMessagesCubit>().sendMediaMessage(
               chatRoomId: widget.chatRoomId!,
               messageType: messageType,
               images: messageType == 'image' ? files : null,
@@ -684,17 +680,17 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
             _scrollToBottomAfterSend();
           },
           onTypingStart: () {
-            context.read<ChatMessagesCubitV2>().typingStart(widget.chatRoomId!);
+            context.read<ChatMessagesCubit>().typingStart(widget.chatRoomId!);
           },
           onTypingStop: () {
-            context.read<ChatMessagesCubitV2>().typingStop(widget.chatRoomId!);
+            context.read<ChatMessagesCubit>().typingStop(widget.chatRoomId!);
           },
         );
       },
     );
   }
 
-  Widget _buildErrorState(BuildContext context, ChatMessagesStateV2 state) {
+  Widget _buildErrorState(BuildContext context, ChatMessagesState state) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -708,7 +704,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              context.read<ChatMessagesCubitV2>().loadInitialMessages(
+              context.read<ChatMessagesCubit>().loadInitialMessages(
                 widget.chatRoomId!,
                 receiverId: widget.receiverId,
               );
@@ -721,6 +717,42 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
   }
 
   Widget _buildContextMenuOverlay(Size screenSize, bool isMobile) {
+    // حساب ارتفاع الـ Context Menu التقريبي
+    // كل عنصر ~44 بكسل + padding
+    final isMyMessage = _selectedMessage?.isMe ?? false;
+    final menuItemCount = isMyMessage
+        ? 5
+        : 3; // 5 عناصر لرسائلي، 3 للرسائل الأخرى
+    const menuItemHeight = 44.0;
+    const menuPadding = 16.0;
+    final estimatedMenuHeight = (menuItemCount * menuItemHeight) + menuPadding;
+
+    // المساحة المتاحة تحت الرسالة
+    final bottomPosition = _messagePosition.dy + _messageSize.height + 8;
+    final availableSpaceBelow = screenSize.height - bottomPosition;
+
+    // لو المساحة تحت مش كافية، نعرض الـ Menu فوق الرسالة
+    final shouldShowAbove = availableSpaceBelow < estimatedMenuHeight;
+
+    // حساب موقع الرسالة - لو هنعرض الـ Menu فوق، محتاج نعدل موقع الرسالة كمان
+    final double messageTopPosition;
+    final double menuTopPosition;
+
+    if (shouldShowAbove) {
+      // الـ Menu فوق الرسالة
+      final safeTopMargin =
+          MediaQuery.of(context).padding.top + 80; // AppBar + safe area
+      menuTopPosition = (_messagePosition.dy - estimatedMenuHeight - 8).clamp(
+        safeTopMargin,
+        screenSize.height,
+      );
+      messageTopPosition = menuTopPosition + estimatedMenuHeight + 8;
+    } else {
+      // الـ Menu تحت الرسالة (الوضع الافتراضي)
+      messageTopPosition = _messagePosition.dy;
+      menuTopPosition = bottomPosition;
+    }
+
     return GestureDetector(
       onTap: _hideOverlay,
       child: Container(
@@ -730,11 +762,11 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
           child: Stack(
             children: [
               Positioned(
-                top: _messagePosition.dy,
+                top: messageTopPosition,
                 left: _messagePosition.dx,
                 width: screenSize.width - (isMobile ? 24 : 32),
                 child: Align(
-                  alignment: (_selectedMessage?.isMe ?? false)
+                  alignment: isMyMessage
                       ? Alignment.centerRight
                       : Alignment.centerLeft,
                   child: MessageBubble(
@@ -744,18 +776,16 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                 ),
               ),
               Positioned(
-                top: _messagePosition.dy + _messageSize.height + 8,
-                left: (_selectedMessage?.isMe ?? false)
-                    ? null
-                    : _messagePosition.dx,
-                right: (_selectedMessage?.isMe ?? false)
+                top: menuTopPosition,
+                left: isMyMessage ? null : _messagePosition.dx,
+                right: isMyMessage
                     ? screenSize.width -
                           (_messagePosition.dx + _messageSize.width)
                     : null,
                 child: Builder(
                   builder: (builderContext) {
                     return ConversationContextMenu(
-                      isMyMessage: _selectedMessage?.isMe ?? false,
+                      isMyMessage: isMyMessage,
                       onReply: () {
                         if (_selectedMessage != null) {
                           builderContext

@@ -1,28 +1,22 @@
 import 'dart:developer';
 import 'package:dartz/dartz.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/database/entities/chat_room_entity.dart';
-import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/chat/data/local/chat_local_datasource.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chatView/chat_item_model.dart';
-import 'package:tayseer/features/advisor/chat/data/repo/chat_repo.dart';
+
 import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_v2.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class ChatCubit extends Cubit<ChatState> {
-  ChatCubit({
-    required this.chatRepo,
-    required this.localDataSource,
-    required this.chatRepoV2,
-  }) : super(ChatState()) {
+  ChatCubit({required this.localDataSource, required this.chatRepoV2})
+    : super(ChatState()) {
     _listenerId =
-        'ChatCubit_${DateTime.now().millisecondsSinceEpoch}_${hashCode}';
+        'ChatCubit_${DateTime.now().millisecondsSinceEpoch}_$hashCode';
     log('🆔 ChatCubit created with ID: $_listenerId');
   }
 
-  final ChatRepo chatRepo;
   final ChatLocalDataSource localDataSource;
   final ChatRepoV2 chatRepoV2;
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
@@ -79,7 +73,7 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     // Step 2: Fetch from server and update cache
-    final result = await chatRepo.getAllChatRooms();
+    final result = await chatRepoV2.getAllChatRooms();
 
     if (isClosed) return;
 
@@ -449,7 +443,7 @@ class ChatCubit extends Cubit<ChatState> {
     return super.close();
   }
 
-  markMessageRed(String chatRoomId) {
+  void markMessageRed(String chatRoomId) {
     socketHelper.send('mark_messages_read', {'chatRoomId': chatRoomId}, (ack) {
       log('✅ mark_messages_read ACK: $ack');
     });
@@ -485,7 +479,7 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     // Step 4: Delete from server (in background)
-    final result = await chatRepo.deleteChatRoom(chatRoomId);
+    final result = await chatRepoV2.deleteChatRoom(chatRoomId);
 
     result.fold(
       (error) {
@@ -575,7 +569,7 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     // Call API to archive on server
-    final result = await chatRepo.archiveChatRoom(chatRoomId);
+    final result = await chatRepoV2.archiveChatRoom(chatRoomId);
 
     result.fold(
       (error) {

@@ -25,14 +25,14 @@ class ChatViewHeader extends StatelessWidget {
 
     final isMobile = screenWidth < 600;
 
-    final double fullHeightRatio = isMobile ? 0.32 : 0.35;
-    final double reducedHeightRatio = isMobile ? 0.24 : 0.26;
+    final double fullHeightRatio = isMobile ? 0.28 : 0.30;
+    final double reducedHeightRatio = isMobile ? 0.22 : 0.24;
 
     double calculatedHeight =
         screenHeight * (isChatsSelected ? fullHeightRatio : reducedHeightRatio);
 
-    double minFullHeight = 250 + statusBarHeight;
-    double minReducedHeight = 190 + statusBarHeight;
+    double minFullHeight = 220 + statusBarHeight;
+    double minReducedHeight = 170 + statusBarHeight;
 
     final headerHeight = isChatsSelected
         ? (calculatedHeight < minFullHeight ? minFullHeight : calculatedHeight)

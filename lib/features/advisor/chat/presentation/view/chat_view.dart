@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:tayseer/features/advisor/chat/data/local/chat_local_datasource.dart';
-import 'package:tayseer/features/advisor/chat/data/repo/chat_repo.dart';
+
 import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_v2.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/chat_view_body.dart';
@@ -14,7 +13,6 @@ class ChatView extends StatelessWidget {
     return BlocProvider(
       create: (context) =>
           ChatCubit(
-              chatRepo: getIt.get<ChatRepo>(),
               localDataSource: getIt.get<ChatLocalDataSource>(),
               chatRepoV2: getIt.get<ChatRepoV2>(),
             )

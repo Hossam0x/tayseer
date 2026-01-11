@@ -1,74 +1,111 @@
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
 
 class ImageMessageWidget extends StatelessWidget {
   final List<String> images;
+  final List<String>? localFilePaths; // ✅ New parameter
   final double maxWidth;
   final void Function(int index)? onImageTap;
 
   const ImageMessageWidget({
     super.key,
     required this.images,
+    this.localFilePaths,
     required this.maxWidth,
     this.onImageTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (images.isEmpty) return const SizedBox.shrink();
+    // If we have local files, use them
+    final hasLocalFiles = localFilePaths != null && localFilePaths!.isNotEmpty;
+    final displayList = hasLocalFiles ? localFilePaths! : images;
 
-    if (images.length == 1) {
+    if (displayList.isEmpty) return const SizedBox.shrink();
+
+    if (displayList.length == 1) {
       return GestureDetector(
         onTap: () => onImageTap?.call(0),
-        child: _buildSingleImage(images.first),
+        child: _buildSingleImage(displayList.first, isLocal: hasLocalFiles),
       );
     }
 
     return GestureDetector(
       onTap: () => onImageTap?.call(0),
-      child: _buildImageGrid(context),
+      child: _buildImageGrid(context, displayList, isLocal: hasLocalFiles),
     );
   }
 
-  Widget _buildSingleImage(String imageUrl) {
+  Widget _buildSingleImage(String imagePath, {required bool isLocal}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(ChatDimensions.bubbleRadiusSmall),
-      child: CachedNetworkImage(
-        imageUrl: imageUrl,
-        width: maxWidth - 8,
-        fit: BoxFit.contain,
-        placeholder: (context, url) => Container(
-          width: maxWidth - 8,
-          height: 200,
-          color: Colors.grey[300],
-          child: const Center(child: CircularProgressIndicator()),
-        ),
-        errorWidget: (context, url, error) => Container(
-          width: maxWidth - 8,
-          height: 200,
-          color: Colors.grey[300],
-          child: const Icon(Icons.error, color: Colors.red),
-        ),
-      ),
+      child: isLocal
+          ? Image.file(
+              File(imagePath),
+              width: maxWidth - 8,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+            )
+          : CachedNetworkImage(
+              imageUrl: imagePath,
+              width: maxWidth - 8,
+              fit: BoxFit.contain,
+              placeholder: (context, url) => _buildPlaceholder(),
+              errorWidget: (context, url, error) => _buildErrorWidget(),
+            ),
     );
   }
 
-  Widget _buildImageGrid(BuildContext context) {
-    final imageCount = images.length;
+  Widget _buildPlaceholder() {
+    return Container(
+      width: maxWidth - 8,
+      height: 200,
+      color: Colors.grey[300],
+      child: const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      width: maxWidth - 8,
+      height: 200,
+      color: Colors.grey[300],
+      child: const Icon(Icons.error, color: Colors.red),
+    );
+  }
+
+  Widget _buildImageGrid(
+    BuildContext context,
+    List<String> displayList, {
+    required bool isLocal,
+  }) {
+    final imageCount = displayList.length;
     final gridWidth = maxWidth - 8;
     const spacing = 4.0;
 
     if (imageCount == 2) {
-      return _buildTwoImageGrid(gridWidth, spacing);
+      return _buildTwoImageGrid(gridWidth, spacing, displayList, isLocal);
     } else if (imageCount == 3) {
-      return _buildThreeImageGrid(gridWidth, spacing);
+      return _buildThreeImageGrid(gridWidth, spacing, displayList, isLocal);
     } else {
-      return _buildFourPlusImageGrid(gridWidth, spacing, imageCount);
+      return _buildFourPlusImageGrid(
+        gridWidth,
+        spacing,
+        displayList,
+        imageCount,
+        isLocal,
+      );
     }
   }
 
-  Widget _buildTwoImageGrid(double gridWidth, double spacing) {
+  Widget _buildTwoImageGrid(
+    double gridWidth,
+    double spacing,
+    List<String> list,
+    bool isLocal,
+  ) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(ChatDimensions.bubbleRadiusSmall),
       child: SizedBox(
@@ -79,14 +116,14 @@ class ImageMessageWidget extends StatelessWidget {
             Expanded(
               child: GestureDetector(
                 onTap: () => onImageTap?.call(0),
-                child: _gridImage(images[0], height: 150),
+                child: _gridImage(list[0], isLocal: isLocal, height: 150),
               ),
             ),
             SizedBox(width: spacing),
             Expanded(
               child: GestureDetector(
                 onTap: () => onImageTap?.call(1),
-                child: _gridImage(images[1], height: 150),
+                child: _gridImage(list[1], isLocal: isLocal, height: 150),
               ),
             ),
           ],
@@ -95,7 +132,12 @@ class ImageMessageWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildThreeImageGrid(double gridWidth, double spacing) {
+  Widget _buildThreeImageGrid(
+    double gridWidth,
+    double spacing,
+    List<String> list,
+    bool isLocal,
+  ) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(ChatDimensions.bubbleRadiusSmall),
       child: SizedBox(
@@ -107,7 +149,7 @@ class ImageMessageWidget extends StatelessWidget {
               flex: 2,
               child: GestureDetector(
                 onTap: () => onImageTap?.call(0),
-                child: _gridImage(images[0], height: 200),
+                child: _gridImage(list[0], isLocal: isLocal, height: 200),
               ),
             ),
             SizedBox(width: spacing),
@@ -117,14 +159,14 @@ class ImageMessageWidget extends StatelessWidget {
                   Expanded(
                     child: GestureDetector(
                       onTap: () => onImageTap?.call(1),
-                      child: _gridImage(images[1]),
+                      child: _gridImage(list[1], isLocal: isLocal),
                     ),
                   ),
                   SizedBox(height: spacing),
                   Expanded(
                     child: GestureDetector(
                       onTap: () => onImageTap?.call(2),
-                      child: _gridImage(images[2]),
+                      child: _gridImage(list[2], isLocal: isLocal),
                     ),
                   ),
                 ],
@@ -139,7 +181,9 @@ class ImageMessageWidget extends StatelessWidget {
   Widget _buildFourPlusImageGrid(
     double gridWidth,
     double spacing,
+    List<String> list,
     int imageCount,
+    bool isLocal,
   ) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(ChatDimensions.bubbleRadiusSmall),
@@ -154,14 +198,14 @@ class ImageMessageWidget extends StatelessWidget {
                   Expanded(
                     child: GestureDetector(
                       onTap: () => onImageTap?.call(0),
-                      child: _gridImage(images[0]),
+                      child: _gridImage(list[0], isLocal: isLocal),
                     ),
                   ),
                   SizedBox(height: spacing),
                   Expanded(
                     child: GestureDetector(
                       onTap: () => onImageTap?.call(2),
-                      child: _gridImage(images[2]),
+                      child: _gridImage(list[2], isLocal: isLocal),
                     ),
                   ),
                 ],
@@ -174,7 +218,7 @@ class ImageMessageWidget extends StatelessWidget {
                   Expanded(
                     child: GestureDetector(
                       onTap: () => onImageTap?.call(1),
-                      child: _gridImage(images[1]),
+                      child: _gridImage(list[1], isLocal: isLocal),
                     ),
                   ),
                   SizedBox(height: spacing),
@@ -182,8 +226,12 @@ class ImageMessageWidget extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () => onImageTap?.call(3),
                       child: imageCount > 4
-                          ? _gridImageWithOverlay(images[3], imageCount - 4)
-                          : _gridImage(images[3]),
+                          ? _gridImageWithOverlay(
+                              list[3],
+                              imageCount - 4,
+                              isLocal: isLocal,
+                            )
+                          : _gridImage(list[3], isLocal: isLocal),
                     ),
                   ),
                 ],
@@ -195,9 +243,21 @@ class ImageMessageWidget extends StatelessWidget {
     );
   }
 
-  Widget _gridImage(String url, {double? height}) {
+  Widget _gridImage(String path, {required bool isLocal, double? height}) {
+    if (isLocal) {
+      return Image.file(
+        File(path),
+        fit: BoxFit.cover,
+        height: height,
+        width: double.infinity,
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: Colors.grey[300],
+          child: const Icon(Icons.error, color: Colors.red, size: 20),
+        ),
+      );
+    }
     return CachedNetworkImage(
-      imageUrl: url,
+      imageUrl: path,
       fit: BoxFit.cover,
       height: height,
       width: double.infinity,
@@ -212,11 +272,15 @@ class ImageMessageWidget extends StatelessWidget {
     );
   }
 
-  Widget _gridImageWithOverlay(String url, int remainingCount) {
+  Widget _gridImageWithOverlay(
+    String path,
+    int remainingCount, {
+    required bool isLocal,
+  }) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        _gridImage(url),
+        _gridImage(path, isLocal: isLocal),
         Container(
           color: Colors.black.withOpacity(0.5),
           child: Center(

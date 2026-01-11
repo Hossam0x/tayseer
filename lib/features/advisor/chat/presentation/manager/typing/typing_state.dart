@@ -1,14 +1,14 @@
-import 'package:tayseer/features/advisor/chat/data/model/chat_message/typinn_model.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chat_message/typing_model.dart';
 
 class TypingState {
   final bool isUserTyping;
-  final TypinnModel? typingInfo;
+  final TypingModel? typingInfo;
 
   const TypingState({this.isUserTyping = false, this.typingInfo});
 
   TypingState copyWith({
     bool? isUserTyping,
-    TypinnModel? typingInfo,
+    TypingModel? typingInfo,
     bool clearTypingInfo = false,
   }) {
     return TypingState(

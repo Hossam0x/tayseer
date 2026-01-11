@@ -1,8 +1,6 @@
 import 'package:tayseer/core/enum/message_status_enum.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 
-/// Entity class for SQLite message storage
-/// Maps between ChatMessage model and SQLite database
 class MessageEntity {
   final String id;
   final String? localId;
@@ -22,7 +20,10 @@ class MessageEntity {
   final String? replyMessage;
   final bool isReply;
   final bool isPending;
-  final int sortTimestamp; // For proper sorting
+  final int sortTimestamp;
+  final String? action;
+  final String?
+  localFilePaths; // ✅ Local file paths for optimistic media (pipe-delimited)
 
   MessageEntity({
     required this.id,
@@ -44,6 +45,8 @@ class MessageEntity {
     required this.isReply,
     this.isPending = false,
     required this.sortTimestamp,
+    this.action,
+    this.localFilePaths,
   });
 
   /// Convert from SQLite row to Entity
@@ -68,6 +71,8 @@ class MessageEntity {
       isReply: (map['is_reply'] as int) == 1,
       isPending: (map['is_pending'] as int) == 1,
       sortTimestamp: (map['sort_timestamp'] as int?) ?? 0,
+      action: map['action'] as String?,
+      localFilePaths: map['local_file_paths'] as String?,
     );
   }
 
@@ -93,6 +98,8 @@ class MessageEntity {
       'is_reply': isReply ? 1 : 0,
       'is_pending': isPending ? 1 : 0,
       'sort_timestamp': sortTimestamp,
+      'action': action,
+      'local_file_paths': localFilePaths,
     };
   }
 
@@ -150,6 +157,8 @@ class MessageEntity {
       isReply: message.reply?.isReply ?? false,
       isPending: isPending,
       sortTimestamp: sortTimestamp,
+      action: message.action.name == 'none' ? null : message.action.name,
+      localFilePaths: message.localFilePaths?.join('|||'),
     );
   }
 
@@ -176,6 +185,10 @@ class MessageEntity {
               isReply: true,
             )
           : null,
+      action: SystemMessageAction.fromString(action),
+      localFilePaths: localFilePaths?.isNotEmpty == true
+          ? localFilePaths!.split('|||')
+          : null,
     );
   }
 
@@ -200,6 +213,8 @@ class MessageEntity {
     bool? isReply,
     bool? isPending,
     int? sortTimestamp,
+    String? action,
+    String? localFilePaths,
   }) {
     return MessageEntity(
       id: id ?? this.id,
@@ -221,6 +236,8 @@ class MessageEntity {
       isReply: isReply ?? this.isReply,
       isPending: isPending ?? this.isPending,
       sortTimestamp: sortTimestamp ?? this.sortTimestamp,
+      action: action ?? this.action,
+      localFilePaths: localFilePaths ?? this.localFilePaths,
     );
   }
 }

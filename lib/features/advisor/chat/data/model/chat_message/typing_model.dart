@@ -1,16 +1,16 @@
-class TypinnModel {
+class TypingModel {
   final String userId;
   final String userName;
   final String chatRoomId;
 
-  TypinnModel({
+  TypingModel({
     required this.userId,
     required this.userName,
     required this.chatRoomId,
   });
 
-  factory TypinnModel.fromJson(Map<String, dynamic> json) {
-    return TypinnModel(
+  factory TypingModel.fromJson(Map<String, dynamic> json) {
+    return TypingModel(
       userId: json['userId']?.toString() ?? "",
       userName: json['userName']?.toString() ?? "",
       chatRoomId: json['chatRoomId']?.toString() ?? "",

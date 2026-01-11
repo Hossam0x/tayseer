@@ -1,4 +1,4 @@
-enum MessageStatusEnum { pending, sent, delivered, read }
+enum MessageStatusEnum { pending, sent, delivered, read, failed }
 
 // Extension for parsing from string
 extension MessageStatusExtension on MessageStatusEnum {
@@ -14,6 +14,8 @@ extension MessageStatusExtension on MessageStatusEnum {
         return MessageStatusEnum.delivered;
       case 'read':
         return MessageStatusEnum.read;
+      case 'failed':
+        return MessageStatusEnum.failed;
       default:
         return MessageStatusEnum.sent;
     }
@@ -29,6 +31,8 @@ extension MessageStatusExtension on MessageStatusEnum {
         return 'delivered';
       case MessageStatusEnum.read:
         return 'read';
+      case MessageStatusEnum.failed:
+        return 'failed';
     }
   }
 }

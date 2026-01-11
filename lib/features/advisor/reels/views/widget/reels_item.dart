@@ -57,7 +57,6 @@ class _ReelsItemState extends State<ReelsItem>
       setState(() {
         _isVisible = isNowVisible;
         if (!isNowVisible) {
-          // لما الفيديو يختفي، نلغي حالة التوقف اليدوي عشان لما يرجع يشتغل عادي
           _isPausedByUser = false;
         }
       });
@@ -79,7 +78,6 @@ class _ReelsItemState extends State<ReelsItem>
     });
   }
 
-  // ✅ اللوجيك هنا: يشتغل لو الصفحة دي هي اللي عليها الدور + ظاهرة + اليوزر مش موقفه
   bool get _shouldPlay => widget.isCurrentPage && !_isPausedByUser;
 
   @override

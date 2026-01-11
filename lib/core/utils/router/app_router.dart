@@ -3,7 +3,7 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view/camera_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
-import 'package:tayseer/features/advisor/chat/presentation/view/conversition.dart';
+import 'package:tayseer/features/advisor/chat/presentation/view/conversation.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
 import 'package:tayseer/features/advisor/event/view/creat_event_view.dart';

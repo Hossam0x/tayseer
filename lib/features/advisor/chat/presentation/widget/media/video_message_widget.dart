@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
@@ -6,11 +7,13 @@ import 'package:video_player/video_player.dart';
 class VideoMessageWidget extends StatefulWidget {
   final String videoUrl;
   final double maxWidth;
+  final bool isLocal; // ✅ New parameter
 
   const VideoMessageWidget({
     super.key,
     required this.videoUrl,
     required this.maxWidth,
+    this.isLocal = false,
   });
 
   @override
@@ -37,24 +40,30 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget>
 
   Future<void> _initializeVideo() async {
     try {
-      // Try to get cached file first
-      final cachedFile = await _videoCacheManager.getCachedFile(
-        widget.videoUrl,
-      );
-
-      if (!mounted) return;
-
-      if (cachedFile != null) {
-        debugPrint('📹 Using cached video: ${widget.videoUrl}');
-        _controller = VideoPlayerController.file(cachedFile);
+      if (widget.isLocal) {
+        // Local file
+        debugPrint('📹 Using local video: ${widget.videoUrl}');
+        _controller = VideoPlayerController.file(File(widget.videoUrl));
       } else {
-        debugPrint('📹 Loading video from network: ${widget.videoUrl}');
-        _controller = VideoPlayerController.networkUrl(
-          Uri.parse(widget.videoUrl),
-          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+        // Try to get cached file first
+        final cachedFile = await _videoCacheManager.getCachedFile(
+          widget.videoUrl,
         );
-        // Start caching in background
-        _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
+
+        if (!mounted) return;
+
+        if (cachedFile != null) {
+          debugPrint('📹 Using cached video: ${widget.videoUrl}');
+          _controller = VideoPlayerController.file(cachedFile);
+        } else {
+          debugPrint('📹 Loading video from network: ${widget.videoUrl}');
+          _controller = VideoPlayerController.networkUrl(
+            Uri.parse(widget.videoUrl),
+            videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+          );
+          // Start caching in background
+          _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
+        }
       }
 
       await _controller!.initialize();
@@ -107,6 +116,7 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget>
       MaterialPageRoute(
         builder: (context) => FullScreenVideoPlayer(
           videoUrl: widget.videoUrl,
+          isLocal: widget.isLocal,
           startPosition: currentPosition,
           wasPlaying: wasPlaying,
         ),
@@ -228,12 +238,14 @@ class FullScreenResult {
 
 class FullScreenVideoPlayer extends StatefulWidget {
   final String videoUrl;
+  final bool isLocal; // ✅ New parameter
   final Duration startPosition;
   final bool wasPlaying;
 
   const FullScreenVideoPlayer({
     super.key,
     required this.videoUrl,
+    this.isLocal = false,
     this.startPosition = Duration.zero,
     this.wasPlaying = false,
   });
@@ -258,22 +270,27 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
 
   Future<void> _initializeVideo() async {
     try {
-      // Try to get cached file first
-      final cachedFile = await _videoCacheManager.getCachedFile(
-        widget.videoUrl,
-      );
-
-      if (!mounted) return;
-
-      if (cachedFile != null) {
-        debugPrint('📹 FullScreen: Using cached video');
-        _controller = VideoPlayerController.file(cachedFile);
+      if (widget.isLocal) {
+        debugPrint('📹 FullScreen: Using local video');
+        _controller = VideoPlayerController.file(File(widget.videoUrl));
       } else {
-        debugPrint('📹 FullScreen: Loading video from network');
-        _controller = VideoPlayerController.networkUrl(
-          Uri.parse(widget.videoUrl),
-          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+        // Try to get cached file first
+        final cachedFile = await _videoCacheManager.getCachedFile(
+          widget.videoUrl,
         );
+
+        if (!mounted) return;
+
+        if (cachedFile != null) {
+          debugPrint('📹 FullScreen: Using cached video');
+          _controller = VideoPlayerController.file(cachedFile);
+        } else {
+          debugPrint('📹 FullScreen: Loading video from network');
+          _controller = VideoPlayerController.networkUrl(
+            Uri.parse(widget.videoUrl),
+            videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+          );
+        }
       }
 
       await _controller!.initialize();

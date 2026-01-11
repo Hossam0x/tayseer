@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
-import 'package:tayseer/features/advisor/chat/data/model/chat_message/typinn_model.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chat_message/typing_model.dart';
 import 'typing_state.dart';
 
 class TypingCubit extends Cubit<TypingState> {
@@ -51,7 +51,7 @@ class TypingCubit extends Cubit<TypingState> {
     _safeEmit(
       state.copyWith(
         isUserTyping: true,
-        typingInfo: TypinnModel(
+        typingInfo: TypingModel(
           userId: userId ?? '',
           userName: userName ?? '',
           chatRoomId: chatRoomId ?? '',

@@ -95,6 +95,27 @@ class ReplyInfo {
   }
 }
 
+/// System message action types for block/unblock
+enum SystemMessageAction {
+  block,
+  unblock,
+  none;
+
+  static SystemMessageAction fromString(String? value) {
+    switch (value?.toLowerCase()) {
+      case 'block':
+        return SystemMessageAction.block;
+      case 'unblock':
+        return SystemMessageAction.unblock;
+      default:
+        return SystemMessageAction.none;
+    }
+  }
+
+  bool get isBlock => this == SystemMessageAction.block;
+  bool get isUnblock => this == SystemMessageAction.unblock;
+}
+
 class ChatMessage {
   final String id;
   final String? tempId; // ✅ UUID for reliable message matching
@@ -112,8 +133,15 @@ class ChatMessage {
   bool isRead;
   final MessageStatusEnum status; // ✅ New field
   final ReplyInfo? reply;
+  final SystemMessageAction action; // ✅ Action field for system messages
+  final List<String>?
+  localFilePaths; // ✅ Local file paths for optimistic media display
 
   String get content => contentList.isNotEmpty ? contentList.first : '';
+
+  /// Check if this message has local files (optimistic media)
+  bool get hasLocalFiles =>
+      localFilePaths != null && localFilePaths!.isNotEmpty;
 
   ChatMessage({
     required this.id,
@@ -132,6 +160,8 @@ class ChatMessage {
     this.isRead = true,
     this.status = MessageStatusEnum.sent, // ✅ Default value
     this.reply,
+    this.action = SystemMessageAction.none,
+    this.localFilePaths,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -162,10 +192,10 @@ class ChatMessage {
         json['status']?.toString(),
       ), // ✅ Parse status
       reply: ReplyInfo.fromJson(json['reply']),
+      action: SystemMessageAction.fromString(json['action']?.toString()),
     );
   }
 
-  // ✅ أضف هذا الـ copyWith
   ChatMessage copyWith({
     String? id,
     String? tempId,
@@ -181,8 +211,11 @@ class ChatMessage {
     String? updatedAt,
     String? deliveredAt,
     bool? isRead,
-    MessageStatusEnum? status, // ✅ Add status
+    MessageStatusEnum? status,
     ReplyInfo? reply,
+    SystemMessageAction? action,
+    List<String>? localFilePaths,
+    bool clearLocalFilePaths = false,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -199,8 +232,12 @@ class ChatMessage {
       updatedAt: updatedAt ?? this.updatedAt,
       deliveredAt: deliveredAt ?? this.deliveredAt,
       isRead: isRead ?? this.isRead,
-      status: status ?? this.status, // ✅ Copy status
+      status: status ?? this.status,
       reply: reply ?? this.reply,
+      action: action ?? this.action,
+      localFilePaths: clearLocalFilePaths
+          ? null
+          : (localFilePaths ?? this.localFilePaths),
     );
   }
 }
