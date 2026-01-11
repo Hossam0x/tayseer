@@ -403,5 +403,8 @@
     "closest_to_my_location": "الأقرب إلى موقعي",
     "select_location": "حدد الموقع",
     "session": "الجلسات",
-    "conversations": "المحادثات"
+    "conversations": "المحادثات",
+    "coming": "القادمة",
+    "previous_sessions": "الجلسات السابقة",
+    "session_details": "تفاصيل الجلسة"
 }

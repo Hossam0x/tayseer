@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/advisor/add_post/model/category_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -41,22 +42,7 @@ class _CustomProfileHeaderState extends State<CustomProfileHeader> {
           /// الصورة الشخصية
           ClipRRect(
             borderRadius: BorderRadius.circular(30),
-            child: widget.imageUrl != null && widget.imageUrl!.isNotEmpty
-                ? AppImage(
-                    widget.imageUrl!,
-                    width: context.responsiveWidth(48),
-                    height: context.responsiveWidth(48),
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    width: context.responsiveWidth(48),
-                    height: context.responsiveWidth(48),
-                    decoration: const BoxDecoration(
-                      color: Colors.grey,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.person, color: Colors.white),
-                  ),
+            child: MyProfileImage(size: 60),
           ),
           Gap(context.responsiveWidth(12)),
 

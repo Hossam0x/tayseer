@@ -11,6 +11,7 @@ import 'package:tayseer/features/advisor/event_detail/view/update_event_view.dar
 import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/map/map_view.dart';
 import 'package:tayseer/features/advisor/notification/presentation/view/notification_view.dart';
+import 'package:tayseer/features/advisor/session/view/session_details_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
@@ -106,6 +107,7 @@ abstract class AppRouter {
   static const notification = '/notification';
   static const kEventDetailView = '/EventDetailView';
   static const kUpdateEventView = '/UpdateEventView';
+  static const kSessionDetailsView = '/SessionDetailsView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -451,6 +453,11 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const ASearchView(),
+        );
+      case kSessionDetailsView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SessionDetailsView(),
         );
       case kEventDetailView:
         final args = settings.arguments as Map<String, dynamic>?;

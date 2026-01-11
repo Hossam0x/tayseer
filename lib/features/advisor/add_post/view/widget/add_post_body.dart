@@ -115,8 +115,6 @@ class AddPostBody extends StatelessWidget {
                   CustomProfileHeader(
                     name: 'Anna Mary',
                     initialSubtitle: context.tr('select_group'),
-                    imageUrl:
-                        'https://pbs.twimg.com/profile_images/1519640426956963840/zgFOntNM_400x400.jpg',
                     isVerified: true,
                     groups: state.categories,
                     onGroupSelectedId: (group) =>
