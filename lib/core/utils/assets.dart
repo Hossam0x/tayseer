@@ -116,6 +116,7 @@ abstract class AssetsData {
   // Profile assests
   static const String certificatePlaceholder =
       "assets/images/certificatePlaceholder.jpg";
+  static const String boostBackground = "assets/images/boostBackground.png";
   static const String editIcon = "assets/icons/editIcon.svg";
   static const String icAdd = "assets/icons/icAdd.svg";
   static const String settingsIcon = "assets/icons/settingsIcon.svg";
@@ -126,6 +127,8 @@ abstract class AssetsData {
   static const String addCertificateImage =
       "assets/icons/addCertificateImage.svg";
   static const String calenderIcon = "assets/icons/calenderIcon.svg";
+  static const String logoIcon = "assets/icons/logoIcon.svg";
+  static const String boostFinish = "assets/icons/boostFinish.svg";
 
   // Settings assets
   static const String icNotificationSettings =

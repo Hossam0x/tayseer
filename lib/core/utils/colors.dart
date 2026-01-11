@@ -88,9 +88,11 @@ abstract class AppColors {
   // Profile Colors
   static Color primary50 = Color.fromRGBO(252, 235, 238, 1);
   static Color primary100 = Color.fromRGBO(248, 211, 218, 1);
+  static Color primary200 = Color.fromRGBO(241, 166, 181, 1);
   static Color primary300 = Color.fromRGBO(235, 122, 145, 1);
   static Color primary400 = Color.fromRGBO(228, 78, 108, 1);
   static Color primary500 = Color.fromRGBO(172, 26, 55, 1);
+  static Color primary600 = Color.fromRGBO(177, 27, 57, 1);
   static Color primary900 = Color.fromRGBO(44, 7, 14, 1);
   static Color cBackground100 = Color.fromRGBO(242, 166, 181, 0.56);
   static Color blueText = Color.fromRGBO(25, 41, 92, 1);
@@ -105,9 +107,17 @@ abstract class AppColors {
   static Color secondary600 = Color.fromRGBO(102, 102, 102, 1);
   static Color secondary700 = Color.fromRGBO(77, 77, 77, 1);
   static Color secondary800 = Color.fromRGBO(51, 51, 51, 1);
+  static Color secondary950 = Color.fromRGBO(255, 255, 255, 1);
   static Color primaryText = Color.fromRGBO(59, 59, 59, 1);
   static Color secondaryText = Color.fromRGBO(117, 117, 117, 1);
   static Color infoText = Color.fromRGBO(110, 110, 110, 1);
   static Color blackColor = Color.fromRGBO(0, 0, 0, 1);
   static Color whiteCardBack = Color.fromRGBO(255, 255, 255, 0.46);
+
+  // Boost Colors
+  static const Color primaryPink = Color(0xFFE89AB8);
+  static const Color darkPink = Color(0xFFD14D68);
+  static const Color boostFinishBack = Color.fromRGBO(252, 233, 237, 0.45);
+  static const Color boostPackageBack = Color.fromRGBO(177, 27, 57, 0.17);
+  static const Color boostUnactive = Color.fromRGBO(128, 128, 128, 1);
 }

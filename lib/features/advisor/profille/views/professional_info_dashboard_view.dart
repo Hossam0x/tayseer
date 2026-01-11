@@ -66,7 +66,6 @@ class _ProfessionalInfoDashboardViewState
                 // قسم التحليلات السفلية
                 _buildAnalysisSection(),
 
-                // Gap(40.h),Spacer
                 Spacer(),
                 BoostButton(),
               ],
