@@ -25,7 +25,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           id: 'edit_profile',
           title: 'تعديل البيانات الشخصية',
           iconAsset: AssetsData.icEditSettings,
-          routeName: '',
+          routeName: AppRouter.kEditPersonalDataView,
         ),
         SettingItemModel(
           id: 'savers',

@@ -1,4 +1,3 @@
-import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/settings/view/cubit/settings_cubit.dart';
 import 'package:tayseer/features/settings/view/cubit/settings_state.dart';
@@ -190,34 +189,7 @@ class SettingsView extends StatelessWidget {
     }
 
     if (setting.routeName.isNotEmpty) {
-      // استخدام Custom Animation للانتقال
-      Navigator.push(
-        context,
-        SlideLeftRoute(
-          page: _getPageByRoute(setting.routeName),
-          routeSettings: RouteSettings(name: setting.routeName),
-        ),
-      );
-    }
-  }
-
-  Widget _getPageByRoute(String routeName) {
-    switch (routeName) {
-      // case AppRouter.kLogosSettings:
-      //   return Container(
-      //     color: Colors.blue,
-      //     child: Center(child: Text('الشعارات')),
-      //   );
-      // case AppRouter.kEditProfile:
-      //   return Container(
-      //     color: Colors.green,
-      //     child: Center(child: Text('تعديل البيانات الشخصية')),
-      //   );
-      default:
-        return Container(
-          color: Colors.grey,
-          child: Center(child: Text(routeName)),
-        );
+      Navigator.pushNamed(context, setting.routeName);
     }
   }
 

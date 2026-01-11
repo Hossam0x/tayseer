@@ -7,6 +7,7 @@ import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart
 import 'package:tayseer/features/advisor/chat/presentation/view/conversition.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
+import 'package:tayseer/features/settings/view/edit_personal_data_view.dart';
 import 'package:tayseer/features/settings/view/settings_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
@@ -101,21 +102,19 @@ abstract class AppRouter {
   static const kCameraView = '/CameraView';
   static const kEditCertificateView = '/editCertificateView';
   static const kSettingsView = '/settings';
-
-  // static String getInitialRoute() {
-  //   if (kShowOnBoarding == false) {
-  //     return kOnBoardingScreen;
-  //   } else {
-  //     return kSplashView;
-  //     // return kAddPostView;
-  //   }
-  // }
+  static const kEditPersonalDataView = '/edit_personal_data';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case AppRouter.kSettingsView:
+      case kSettingsView:
         return SlideLeftRoute(
           page: const SettingsView(),
+          routeSettings: settings,
+        );
+
+      case kEditPersonalDataView:
+        return SlideLeftRoute(
+          page: const EditPersonalDataView(),
           routeSettings: settings,
         );
 

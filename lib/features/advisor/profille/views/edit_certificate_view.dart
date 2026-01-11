@@ -98,6 +98,13 @@ class EditCertificateView extends StatelessWidget {
                           ),
                         ),
                       ),
+                      Gap(20.h),
+                      CustomBotton(
+                        width: context.width * 0.9,
+                        useGradient: true,
+                        title: 'حفظ',
+                        onPressed: () {},
+                      ),
                     ],
                   ),
                 ),
