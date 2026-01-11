@@ -75,6 +75,7 @@ abstract class AssetsData {
   static const String selectedEventIcon = "assets/icons/selected_event.svg";
 
   static const String notificationIcon = "assets/icons/notification.svg";
+  static const String emptynotification = "assets/icons/empty_notification.png";
 
   static const String addIcon = "assets/icons/add.svg";
 
@@ -109,9 +110,15 @@ abstract class AssetsData {
   static const String deleteIcon = "assets/icons/delete_icon.svg";
   static const String reportIcon = "assets/icons/report_icon.svg";
   static const String send = "assets/icons/send.svg";
-
   static const String postsEndIcon = "assets/icons/posts_end_icon.svg";
   static const String sentMessageIcon = "assets/icons/sent_message_icon.svg";
+  static const String commentnotify = 'assets/icons/comment_notify.svg';
+  static const String consultationIcon = "assets/icons/Consultation.svg";
+  static const String followNotify = "assets/icons/follow_notify.svg";
+  static const String messageNotify = "assets/icons/message_notify.svg";
+  static const String ticketEventNotify =
+      "assets/icons/ticket_event_notifiy.svg";
+
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
       "assets/animations/loading_animations.json";

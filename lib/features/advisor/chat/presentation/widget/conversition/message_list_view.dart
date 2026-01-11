@@ -4,6 +4,7 @@ import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messa
 import '../../manager/scroll/chat_scroll_cubit.dart';
 import '../../manager/scroll/chat_scroll_state.dart';
 import '../bubble/message_bubble.dart';
+import '../bubble/system_message_bubble.dart';
 
 class MessageListView extends StatefulWidget {
   final List<ChatMessage> messages;
@@ -79,17 +80,22 @@ class _MessageListViewState extends State<MessageListView> {
             return _MessageItemKeepAlive(
               key: ValueKey(currentMsgId),
               messageKey: messageKey,
-              child: GestureDetector(
-                onLongPress: () =>
-                    widget.onMessageLongPress?.call(msg, messageKey),
-                child: MessageBubble(
-                  chatMessage: msg,
-                  isHighlighted: isHighlighted,
-                  onReplyTap: (replyMessageId) {
-                    widget.onReplyTap?.call(replyMessageId, widget.messages);
-                  },
-                ),
-              ),
+              child: msg.messageType == 'system'
+                  ? SystemMessageBubble(content: msg.content)
+                  : GestureDetector(
+                      onLongPress: () =>
+                          widget.onMessageLongPress?.call(msg, messageKey),
+                      child: MessageBubble(
+                        chatMessage: msg,
+                        isHighlighted: isHighlighted,
+                        onReplyTap: (replyMessageId) {
+                          widget.onReplyTap?.call(
+                            replyMessageId,
+                            widget.messages,
+                          );
+                        },
+                      ),
+                    ),
             );
           },
         );

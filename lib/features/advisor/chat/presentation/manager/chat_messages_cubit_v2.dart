@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
 import 'package:tayseer/core/database/entities/pending_message_entity.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
@@ -35,9 +36,6 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
   String? _currentChatRoomId;
   String? _currentReceiverId;
 
-  /// Counter for generating unique temp IDs
-  static int _tempIdCounter = 0;
-
   /// Connectivity checker
   final Connectivity _connectivity = Connectivity();
 
@@ -47,6 +45,13 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
     log('🆔 ChatMessagesCubitV2 created with ID: $_listenerId');
 
     _setupConnectivityListener();
+  }
+
+  /// Set initial blocked state
+  void setInitialBlocked(bool isBlocked) {
+    if (isBlocked) {
+      emit(state.copyWith(isBlocked: true));
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -75,9 +80,15 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
     for (final pending in pendingMessages) {
       log('🔄 [$_listenerId] Retrying message: ${pending.localId}');
 
+      // Extract tempId from localId (format: "temp_<uuid>")
+      final tempId = pending.localId.startsWith('temp_')
+          ? pending.localId.substring(5)
+          : pending.localId;
+
       final messageData = <String, dynamic>{
         'receiverId': pending.receiverId,
         'content': pending.content,
+        'tempId': tempId, // ✅ Include tempId for reliable matching
       };
 
       // Only include replyMessageId if it's a real server ID (not temp_)
@@ -134,11 +145,15 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
 
       if (isClosed) return;
 
+      // التحقق من حالة الحظر من آخر رسالة system
+      final isBlocked = _checkBlockStatusFromMessages(messages);
+
       _safeEmit(
         state.copyWith(
           loadingState: CubitStates.success,
           messages: messages,
           hasMoreMessages: messages.length >= 20,
+          isBlocked: isBlocked,
         ),
       );
 
@@ -146,6 +161,7 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
       await _repo.markChatAsRead(chatRoomId);
 
       log('✅ [$_listenerId] Loaded ${messages.length} messages from local DB');
+      log('🔒 [$_listenerId] Block status from messages: $isBlocked');
     } catch (e) {
       log('❌ [$_listenerId] Error loading messages: $e');
       if (!isClosed) {
@@ -263,9 +279,10 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
     String chatRoomId, {
     String? replyMessageId,
   }) async {
-    // Use microseconds + counter to ensure uniqueness even for rapid sends
-    final localId =
-        'temp_${DateTime.now().microsecondsSinceEpoch}_${_tempIdCounter++}';
+    // Generate UUID for reliable server matching
+    const uuid = Uuid();
+    final tempId = uuid.v4();
+    final localId = 'temp_$tempId';
     final now = DateTime.now().toIso8601String();
 
     // Create reply info if replying
@@ -308,7 +325,7 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
       createdAt: now,
       updatedAt: now,
       isRead: false,
-      status: MessageStatusEnum.sent, // Will be 'sending' in DB
+      status: MessageStatusEnum.pending, // Pending until server confirms
       reply: replyInfo,
     );
 
@@ -344,6 +361,7 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
     final messageData = <String, dynamic>{
       'receiverId': receiverId,
       'content': message,
+      'tempId': tempId, // ✅ Include tempId for reliable matching
     };
 
     // Only include replyMessageId if it's a real server ID (not temp_)
@@ -447,11 +465,21 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
     log('📨 [$_listenerId] Processing new message');
 
     try {
-      final newMessage = ChatMessage.fromJson(data);
+      // الـ socket بيبعت {message: {...}, chatRoomId: ...}
+      final messageData = data is Map && data.containsKey('message')
+          ? data['message']
+          : data;
+      final newMessage = ChatMessage.fromJson(messageData);
 
       // Only process messages for current chat room
       if (newMessage.chatRoomId != _currentChatRoomId) {
         log('📭 [$_listenerId] Message for different room, ignoring');
+        return;
+      }
+
+      // معالجة رسائل النظام (Block/Unblock)
+      if (newMessage.messageType == 'system') {
+        _handleSystemMessage(newMessage);
         return;
       }
 
@@ -471,12 +499,32 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
   void _handleSentMessageConfirmation(ChatMessage serverMessage) async {
     // Find and replace local message with server message
     final currentMessages = state.messages;
-    final localIndex = currentMessages.lastIndexWhere(
-      (msg) =>
-          msg.id.startsWith('temp_') &&
-          msg.content == serverMessage.content &&
-          msg.isMe,
-    );
+
+    // ✅ Primary: Match by tempId (reliable)
+    int localIndex = -1;
+    final serverTempId = serverMessage.tempId;
+
+    if (serverTempId != null && serverTempId.isNotEmpty) {
+      localIndex = currentMessages.indexWhere(
+        (msg) => msg.id == 'temp_$serverTempId',
+      );
+      log(
+        '🔍 [$_listenerId] Matching by tempId: $serverTempId, found: ${localIndex != -1}',
+      );
+    }
+
+    // ✅ Fallback: Match by content (for backwards compatibility)
+    if (localIndex == -1) {
+      localIndex = currentMessages.lastIndexWhere(
+        (msg) =>
+            msg.id.startsWith('temp_') &&
+            msg.content.trim() == serverMessage.content.trim() &&
+            msg.isMe,
+      );
+      log(
+        '🔍 [$_listenerId] Fallback: content matching, found: ${localIndex != -1}',
+      );
+    }
 
     if (localIndex != -1) {
       final localMessage = currentMessages[localIndex];
@@ -518,6 +566,93 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
 
     // Auto-mark as read since user is viewing this chat
     _autoMarkMessagesAsRead();
+  }
+
+  /// معالجة رسائل النظام من Socket (Block/Unblock)
+  void _handleSystemMessage(ChatMessage serverMessage) async {
+    final serverContent = serverMessage.content.trim();
+
+    log('📩 [$_listenerId] Received system message: $serverContent');
+
+    // التحقق من وجود رسالة محلية مطابقة (optimistic)
+    // نستخدم any للبحث عن تطابق مع تجاهل المسافات
+    final hasPendingMatch = _pendingSystemMessageContents.any(
+      (pending) => pending.trim() == serverContent,
+    );
+
+    if (hasPendingMatch) {
+      // البحث عن الرسالة المحلية بنفس المحتوى (مع تجاهل المسافات)
+      final localIndex = state.messages.lastIndexWhere(
+        (msg) =>
+            msg.id.startsWith('temp_') &&
+            msg.messageType == 'system' &&
+            msg.content.trim() == serverContent,
+      );
+
+      if (localIndex != -1) {
+        final localMessage = state.messages[localIndex];
+        final localId = localMessage.id;
+
+        // تحديث الـ ID في Local DB
+        await _repo.confirmMessageSent(localId, serverMessage.id);
+
+        // تحديث UI
+        final updatedMessages = List<ChatMessage>.from(state.messages);
+        updatedMessages[localIndex] = serverMessage;
+
+        _safeEmit(state.copyWith(messages: updatedMessages));
+
+        log(
+          '✅ [$_listenerId] System message confirmed: $localId -> ${serverMessage.id}',
+        );
+
+        // إزالة من القائمة المعلقة (بالمقارنة المرنة)
+        _pendingSystemMessageContents.removeWhere(
+          (pending) => pending.trim() == serverContent,
+        );
+        return;
+      }
+    }
+
+    // تحقق إضافي: هل توجد رسالة temp بنفس المحتوى؟
+    // (في حالة عدم التطابق في القائمة المعلقة لأي سبب)
+    final tempIndex = state.messages.lastIndexWhere(
+      (msg) =>
+          msg.id.startsWith('temp_') &&
+          msg.messageType == 'system' &&
+          msg.content.trim() == serverContent,
+    );
+
+    if (tempIndex != -1) {
+      final localMessage = state.messages[tempIndex];
+      final localId = localMessage.id;
+
+      // تحديث الـ ID في Local DB
+      await _repo.confirmMessageSent(localId, serverMessage.id);
+
+      // تحديث UI
+      final updatedMessages = List<ChatMessage>.from(state.messages);
+      updatedMessages[tempIndex] = serverMessage;
+
+      _safeEmit(state.copyWith(messages: updatedMessages));
+
+      log(
+        '✅ [$_listenerId] System message confirmed (fallback): $localId -> ${serverMessage.id}',
+      );
+      return;
+    }
+
+    // إذا لم يكن هناك رسالة محلية، تحقق من التكرار
+    final exists = state.messages.any((m) => m.id == serverMessage.id);
+    if (exists) {
+      log('📭 [$_listenerId] System message already exists, ignoring');
+      return;
+    }
+
+    // إضافة الرسالة الجديدة
+    await _repo.saveMessageLocally(serverMessage);
+    _addMessageToState(serverMessage);
+    log('📩 [$_listenerId] New system message added: ${serverMessage.id}');
   }
 
   void _autoMarkMessagesAsRead() {
@@ -798,9 +933,195 @@ class ChatMessagesCubitV2 extends Cubit<ChatMessagesStateV2> {
 
     _currentChatRoomId = null;
     _currentReceiverId = null;
+    _pendingSystemMessageContents.clear();
 
     log('✅ [$_listenerId] ChatMessagesCubitV2 closed');
 
     return super.close();
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BLOCK STATUS HELPERS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// التحقق من حالة الحظر من الرسائل
+  /// يبحث عن آخر رسالة system ويحدد إذا كان المستخدم محظور أم لا
+  bool _checkBlockStatusFromMessages(List<ChatMessage> messages) {
+    // البحث عن آخر رسالة system من الأحدث للأقدم
+    for (int i = messages.length - 1; i >= 0; i--) {
+      final msg = messages[i];
+      if (msg.messageType == 'system') {
+        final content = msg.content.trim();
+        // رسالة إلغاء حظر - يجب فحصها أولاً لأن "غير محظور" يحتوي على "محظور"
+        if (content.contains('غير محظور من إرسال الرسائل')) {
+          return false;
+        }
+        // رسالة حظر
+        if (content.contains('محظور من إرسال الرسائل')) {
+          return true;
+        }
+      }
+    }
+    // لو مفيش رسالة system، نرجع الـ state الحالي أو false
+    return state.isBlocked;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BLOCK USER
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// Track pending system messages for block/unblock to prevent duplicates
+  final Set<String> _pendingSystemMessageContents = {};
+
+  /// Block a user with optimistic system message
+  Future<Either<String, String>> blockUser({required String blockedId}) async {
+    if (_currentChatRoomId == null) {
+      return Left('لا يوجد محادثة مفتوحة');
+    }
+
+    try {
+      log('🚫 [$_listenerId] Blocking user: $blockedId');
+
+      // تحديث state فوراً لتعطيل منطقة الكتابة
+      emit(state.copyWith(isBlocked: true));
+
+      // إنشاء رسالة نظام محلية (Optimistic)
+      // Note: Server sends with leading space, so we match it
+      const systemContent = ' المستخدم محظور من إرسال الرسائل في هذه الدردشة';
+      final localId = 'temp_block_${DateTime.now().millisecondsSinceEpoch}';
+      final now = DateTime.now().toIso8601String();
+
+      final localSystemMessage = ChatMessage(
+        id: localId,
+        chatRoomId: _currentChatRoomId!,
+        senderId: blockedId,
+        senderName: '',
+        senderImage: '',
+        senderType: 'system',
+        isMe: true,
+        contentList: [systemContent],
+        messageType: 'system',
+        createdAt: 'الآن',
+        updatedAt: now,
+        isRead: false,
+        status: MessageStatusEnum.sent,
+      );
+
+      // حفظ المحتوى لمنع التكرار
+      _pendingSystemMessageContents.add(systemContent.trim());
+
+      // حفظ في الـ local DB
+      await _repo.saveMessageLocally(localSystemMessage, localId: localId);
+
+      // تحديث UI فوراً
+      final updatedMessages = [...state.messages, localSystemMessage];
+      _safeEmit(state.copyWith(messages: updatedMessages));
+
+      log('📤 [$_listenerId] Block system message saved locally: $localId');
+
+      final result = await _repo.blockUser(blockedId: blockedId);
+      return result.fold(
+        (error) {
+          log('❌ [$_listenerId] Block user failed: $error');
+          // إرجاع state في حالة الفشل
+          emit(state.copyWith(isBlocked: false));
+          // إزالة الرسالة المحلية
+          _removeLocalSystemMessage(localId);
+          _pendingSystemMessageContents.remove(systemContent.trim());
+          return Left(error);
+        },
+        (successMessage) {
+          log('✅ [$_listenerId] Block user success: $successMessage');
+          return Right(successMessage);
+        },
+      );
+    } catch (e) {
+      log('❌ [$_listenerId] Block user error: $e');
+      emit(state.copyWith(isBlocked: false));
+      return Left('حدث خطأ أثناء حظر المستخدم');
+    }
+  }
+
+  /// Unblock a user with optimistic system message
+  Future<Either<String, String>> unblockUser({
+    required String blockedId,
+  }) async {
+    if (_currentChatRoomId == null) {
+      return Left('لا يوجد محادثة مفتوحة');
+    }
+
+    try {
+      log('✅ [$_listenerId] Unblocking user: $blockedId');
+
+      // تحديث state فوراً لتفعيل منطقة الكتابة
+      emit(state.copyWith(isBlocked: false));
+
+      // إنشاء رسالة نظام محلية (Optimistic)
+      // Note: Match server format
+      const systemContent =
+          'المستخدم غير محظور من إرسال الرسائل في هذه الدردشة';
+      final localId = 'temp_unblock_${DateTime.now().millisecondsSinceEpoch}';
+      final now = DateTime.now().toIso8601String();
+
+      final localSystemMessage = ChatMessage(
+        id: localId,
+        chatRoomId: _currentChatRoomId!,
+        senderId: blockedId,
+        senderName: '',
+        senderImage: '',
+        senderType: 'system',
+        isMe: true,
+        contentList: [systemContent],
+        messageType: 'system',
+        createdAt: 'الآن',
+        updatedAt: now,
+        isRead: false,
+        status: MessageStatusEnum.sent,
+      );
+
+      // حفظ المحتوى لمنع التكرار
+      _pendingSystemMessageContents.add(systemContent.trim());
+
+      // حفظ في الـ local DB
+      await _repo.saveMessageLocally(localSystemMessage, localId: localId);
+
+      // تحديث UI فوراً
+      final updatedMessages = [...state.messages, localSystemMessage];
+      _safeEmit(state.copyWith(messages: updatedMessages));
+
+      log('📤 [$_listenerId] Unblock system message saved locally: $localId');
+
+      final result = await _repo.unblockUser(blockedId: blockedId);
+      return result.fold(
+        (error) {
+          log('❌ [$_listenerId] Unblock user failed: $error');
+          // إرجاع state في حالة الفشل
+          emit(state.copyWith(isBlocked: true));
+          // إزالة الرسالة المحلية
+          _removeLocalSystemMessage(localId);
+          _pendingSystemMessageContents.remove(systemContent.trim());
+          return Left(error);
+        },
+        (successMessage) {
+          log('✅ [$_listenerId] Unblock user success: $successMessage');
+          return Right(successMessage);
+        },
+      );
+    } catch (e) {
+      log('❌ [$_listenerId] Unblock user error: $e');
+      emit(state.copyWith(isBlocked: true));
+      return Left('حدث خطأ أثناء إلغاء حظر المستخدم');
+    }
+  }
+
+  /// إزالة رسالة نظام محلية في حالة الفشل
+  void _removeLocalSystemMessage(String localId) {
+    final updatedMessages = state.messages
+        .where((m) => m.id != localId)
+        .toList();
+    _safeEmit(state.copyWith(messages: updatedMessages));
+    // حذف من الـ local DB
+    _repo.deleteMessageLocally(localId);
+    log('🗑️ [$_listenerId] Removed local system message: $localId');
   }
 }

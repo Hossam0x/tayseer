@@ -97,6 +97,7 @@ class ReplyInfo {
 
 class ChatMessage {
   final String id;
+  final String? tempId; // ✅ UUID for reliable message matching
   final String chatRoomId;
   final String senderId;
   final String senderName;
@@ -116,6 +117,7 @@ class ChatMessage {
 
   ChatMessage({
     required this.id,
+    this.tempId,
     required this.chatRoomId,
     required this.senderId,
     required this.senderName,
@@ -143,6 +145,7 @@ class ChatMessage {
 
     return ChatMessage(
       id: json['id']?.toString() ?? "",
+      tempId: json['tempId']?.toString(),
       chatRoomId: json['chatRoomId']?.toString() ?? "",
       senderId: json['senderId']?.toString() ?? "",
       senderName: json['senderName']?.toString() ?? "",
@@ -165,6 +168,7 @@ class ChatMessage {
   // ✅ أضف هذا الـ copyWith
   ChatMessage copyWith({
     String? id,
+    String? tempId,
     String? chatRoomId,
     String? senderId,
     String? senderName,
@@ -182,6 +186,7 @@ class ChatMessage {
   }) {
     return ChatMessage(
       id: id ?? this.id,
+      tempId: tempId ?? this.tempId,
       chatRoomId: chatRoomId ?? this.chatRoomId,
       senderId: senderId ?? this.senderId,
       senderName: senderName ?? this.senderName,

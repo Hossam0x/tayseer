@@ -6,6 +6,8 @@ class ConversationAppBar extends StatelessWidget {
   final String phoneIcon;
   final String? username;
   final String? userimage;
+  final String? receiverId;
+  final Function(String blockedId)? onBlockUser;
 
   const ConversationAppBar({
     super.key,
@@ -13,6 +15,8 @@ class ConversationAppBar extends StatelessWidget {
     required this.phoneIcon,
     this.username,
     this.userimage,
+    this.receiverId,
+    this.onBlockUser,
   });
 
   @override
@@ -92,16 +96,12 @@ class ConversationAppBar extends StatelessWidget {
                 icon: SvgPicture.asset(phoneIcon, width: isMobile ? 20 : 24),
               ),
 
-              // 👇 هنا تم التعديل لعمل القائمة المنبثقة
-              // 👇 تعديل الإزاحة هنا
               Theme(
                 data: Theme.of(context).copyWith(
                   splashColor: Colors.transparent,
                   highlightColor: Colors.transparent,
                 ),
                 child: PopupMenuButton<String>(
-                  // ✅ التعديل هنا: غيرنا 0 إلى 20 لزقه ناحية اليمين
-                  // يمكنك زيادة الرقم (مثلاً 30 أو 40) إذا أردت إزاحته أكثر
                   offset: const Offset(20, 50),
 
                   icon: const Icon(
@@ -118,7 +118,12 @@ class ConversationAppBar extends StatelessWidget {
                     if (value == 'report') {
                       print("تم اختيار ابلاغ");
                     } else if (value == 'block') {
-                      print("تم اختيار حظر");
+                      // استدعاء دالة الحظر
+                      if (receiverId != null && onBlockUser != null) {
+                        onBlockUser!(receiverId!);
+                      } else {
+                        print("❌ receiverId is null or onBlockUser is null");
+                      }
                     }
                   },
                   itemBuilder: (BuildContext context) =>

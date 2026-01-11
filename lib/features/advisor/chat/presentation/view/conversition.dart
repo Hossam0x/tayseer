@@ -17,6 +17,7 @@ import 'package:tayseer/features/advisor/chat/presentation/manager/typing/typing
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/message_details.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/block_action_area.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/conversation_app_bar.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/conversation_context_menu.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversition/message_shimmer.dart';
@@ -33,6 +34,8 @@ class ChatScreenWithOverlay extends StatefulWidget {
   final String? receiverId;
   final String? username;
   final String? userimage;
+  final bool isBlocked;
+  final void Function(bool isBlocked)? onBlockStatusChanged;
 
   const ChatScreenWithOverlay({
     super.key,
@@ -40,6 +43,8 @@ class ChatScreenWithOverlay extends StatefulWidget {
     this.receiverId,
     this.username,
     this.userimage,
+    this.isBlocked = false,
+    this.onBlockStatusChanged,
   });
 
   @override
@@ -387,6 +392,8 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
               '🚀 Creating ChatMessagesCubitV2 (Local-First) for room: ${widget.chatRoomId}',
             );
             final cubit = ChatMessagesCubitV2(getIt<ChatRepoV2>());
+            // تعيين حالة الحظر الأولية
+            cubit.setInitialBlocked(widget.isBlocked);
             // Load from local DB first, then sync with server
             cubit.loadInitialMessages(
               widget.chatRoomId!,
@@ -442,6 +449,15 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                                 userimage: widget.userimage,
                                 videoIcon: AssetsData.videoIcon,
                                 phoneIcon: AssetsData.phoneIcon,
+                                receiverId: widget.receiverId,
+                                onBlockUser: (blockedId) async {
+                                  // حظر فوري بدون انتظار
+                                  await context
+                                      .read<ChatMessagesCubitV2>()
+                                      .blockUser(blockedId: blockedId);
+                                  // Notify parent about block status change
+                                  widget.onBlockStatusChanged?.call(true);
+                                },
                               ),
                               Expanded(
                                 child: Container(
@@ -462,20 +478,48 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                                 ),
                               ),
                               // Show input area or selection bottom bar
-                              if (selectionState.isSelectionMode)
-                                SelectionBottomBar(
-                                  onDeleteForMe: () =>
-                                      _handleDeleteSelected(context, 'me'),
-                                  onDeleteForAll: () => _handleDeleteSelected(
-                                    context,
-                                    'everyone',
-                                  ),
-                                  onCancel: () => context
-                                      .read<MessageSelectionCubit>()
-                                      .exitSelectionMode(),
-                                )
-                              else
-                                _buildInputArea(),
+                              BlocBuilder<
+                                ChatMessagesCubitV2,
+                                ChatMessagesStateV2
+                              >(
+                                builder: (context, messageState) {
+                                  if (selectionState.isSelectionMode) {
+                                    return SelectionBottomBar(
+                                      onDeleteForMe: () =>
+                                          _handleDeleteSelected(context, 'me'),
+                                      onDeleteForAll: () =>
+                                          _handleDeleteSelected(
+                                            context,
+                                            'everyone',
+                                          ),
+                                      onCancel: () => context
+                                          .read<MessageSelectionCubit>()
+                                          .exitSelectionMode(),
+                                    );
+                                  } else if (messageState.isBlocked) {
+                                    return BlockedActionArea(
+                                      onUnblockTap: () async {
+                                        if (widget.receiverId != null) {
+                                          await context
+                                              .read<ChatMessagesCubitV2>()
+                                              .unblockUser(
+                                                blockedId: widget.receiverId!,
+                                              );
+                                          // Notify parent about block status change
+                                          widget.onBlockStatusChanged?.call(
+                                            false,
+                                          );
+                                        }
+                                      },
+                                      onDeleteChatTap: () {
+                                        // TODO: Implement delete chat
+                                      },
+                                    );
+                                  } else {
+                                    return _buildInputArea();
+                                  }
+                                },
+                              ),
                             ],
                           ),
                           if (_isOverlayVisible && _selectedMessage != null)

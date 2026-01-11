@@ -20,4 +20,8 @@ abstract class ChatRepo {
     String? audio,
     String? replyMessageId, // ✅ للرد على رسالة بالميديا
   });
+
+  Future<Either<String, bool>> deleteChatRoom(String chatRoomId);
+
+  Future<Either<String, bool>> archiveChatRoom(String chatRoomId);
 }

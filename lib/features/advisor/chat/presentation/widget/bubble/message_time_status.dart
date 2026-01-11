@@ -49,6 +49,16 @@ class MessageTimeStatus extends StatelessWidget {
   }
 
   Widget _buildStatusIcon() {
+    // Pending state: show clock icon
+    if (status == MessageStatusEnum.pending) {
+      final pendingIconSize = isMobile ? 12.0 : 16.0;
+      return Icon(
+        Icons.access_time,
+        size: pendingIconSize,
+        color: ChatColors.sentIconColor,
+      );
+    }
+
     final iconSize = status != MessageStatusEnum.sent
         ? (isMobile ? 10.0 : 14.0)
         : (isMobile ? 24.0 : 30.0);

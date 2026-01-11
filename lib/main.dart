@@ -18,21 +18,17 @@ void main() async {
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
 
-  // Initialize Chat System (SQLite + Offline Queue + Cache Cleanup)
   await _initializeChatSystem();
 
   Bloc.observer = SimpleBlocObserver();
   runApp(const TayseerApp());
 }
 
-/// Initialize the local-first chat system
 Future<void> _initializeChatSystem() async {
   try {
-    // Initialize cache cleanup (runs cleanup on startup)
     final cacheCleanup = getIt<CacheCleanupManager>();
     await cacheCleanup.initialize();
 
-    // Start message queue manager for offline support
     final messageQueue = getIt<MessageQueueManager>();
     messageQueue.startRetryTimer();
 

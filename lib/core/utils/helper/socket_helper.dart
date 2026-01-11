@@ -9,8 +9,6 @@ class tayseerSocketHelper {
   bool _isConnected = false;
   Completer<bool>? _connectionCompleter;
 
-  // ✅ Map لتخزين الـ listeners مع IDs
-  // Key: event name, Value: Map<listenerId, callback>
   final Map<String, Map<String, Function(dynamic)>> _listeners = {};
 
   bool get isConnected => _isConnected;

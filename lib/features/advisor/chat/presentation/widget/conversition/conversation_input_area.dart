@@ -2,9 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/foundation.dart' as foundation;
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+
 import 'package:tayseer/core/utils/helper/picker_helper.dart';
 import 'package:tayseer/core/widgets/pick_image_bottom_sheet.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
@@ -185,7 +183,7 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
     final spacing3 = isMobile ? 4.0 : 6.0;
     final spacing4 = isMobile ? 6.0 : 8.0;
     final iconSize = isMobile ? 24.0 : 28.0;
-    final attachIconSize = isMobile ? 16.0 : 18.0;
+    final attachIconSize = isMobile ? 20.0 : 18.0;
     final inputFontSize = isMobile ? 11.0 : 12.0;
 
     return BlocBuilder<ChatInputCubit, ChatInputState>(
