@@ -1,6 +1,6 @@
 import 'package:tayseer/features/advisor/profille/view_model/models/analysis_item.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/analytics_chart.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/boost_button.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost/boost_button.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfessionalInfoDashboardView extends StatefulWidget {

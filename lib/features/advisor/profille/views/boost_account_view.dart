@@ -182,7 +182,12 @@ class BoostAccountView extends StatelessWidget {
                     ),
                     child: CustomBotton(
                       title: 'التالي',
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRouter.kBoostPropertiesView,
+                        );
+                      },
                       useGradient: true,
                     ),
                   ),

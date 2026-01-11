@@ -110,8 +110,10 @@ abstract class AppColors {
   static Color secondary950 = Color.fromRGBO(255, 255, 255, 1);
   static Color primaryText = Color.fromRGBO(59, 59, 59, 1);
   static Color secondaryText = Color.fromRGBO(117, 117, 117, 1);
+  static Color text2 = Color.fromRGBO(127, 127, 127, 1);
   static Color infoText = Color.fromRGBO(110, 110, 110, 1);
   static Color blackColor = Color.fromRGBO(0, 0, 0, 1);
+  static Color whiteCard2Back = Color.fromRGBO(251, 251, 251, 0.64);
   static Color whiteCardBack = Color.fromRGBO(255, 255, 255, 0.46);
 
   // Boost Colors

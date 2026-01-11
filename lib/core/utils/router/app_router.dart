@@ -8,6 +8,7 @@ import 'package:tayseer/features/advisor/chat/presentation/view/conversition.dar
 import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
 import 'package:tayseer/features/advisor/profille/views/boost_account_view.dart';
+import 'package:tayseer/features/advisor/profille/views/boost_properties_view.dart';
 import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
 import 'package:tayseer/features/settings/view/edit_personal_data_view.dart';
 import 'package:tayseer/features/settings/view/settings_view.dart';
@@ -107,6 +108,7 @@ abstract class AppRouter {
   static const kEditPersonalDataView = '/edit_personal_data';
   static const kProfessionalInfoDashboardView = '/professional_info_dashboard';
   static const kBoostAccountView = '/boost_account_view';
+  static const kBoostPropertiesView = '/boost_properties_view';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -131,6 +133,12 @@ abstract class AppRouter {
       case AppRouter.kBoostAccountView:
         return SlideLeftRoute(
           page: const BoostAccountView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kBoostPropertiesView:
+        return SlideLeftRoute(
+          page: const BoostPropertiesView(),
           routeSettings: settings,
         );
 
