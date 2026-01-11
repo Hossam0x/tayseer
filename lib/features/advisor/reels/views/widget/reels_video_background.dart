@@ -37,6 +37,8 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   bool _isBuffering = false;
   bool _isDragging = false;
   bool _isDisposed = false;
+  bool _isSpeedUp = false;
+  bool _showSpeedIndicator = false;
   final _videoCacheManager = VideoCacheManager();
   final _stateManager = VideoStateManager();
 
@@ -268,12 +270,54 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
     _controller?.seekTo(position);
   }
 
+  void _onLongPressStart(LongPressStartDetails details) {
+    if (_controller == null || !_isInitialized) return;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final tapPosition = details.localPosition.dx;
+
+    // Check if tap is on left or right third of the screen
+    final isOnSide =
+        tapPosition < screenWidth / 3 || tapPosition > screenWidth * 2 / 3;
+
+    if (isOnSide) {
+      setState(() {
+        _isSpeedUp = true;
+        _showSpeedIndicator = true;
+      });
+      _controller?.setPlaybackSpeed(2.0);
+    }
+  }
+
+  void _onLongPressEnd(LongPressEndDetails details) {
+    if (_isSpeedUp) {
+      setState(() {
+        _isSpeedUp = false;
+        _showSpeedIndicator = false;
+      });
+      _controller?.setPlaybackSpeed(1.0);
+    }
+  }
+
+  void _onLongPressCancel() {
+    if (_isSpeedUp) {
+      setState(() {
+        _isSpeedUp = false;
+        _showSpeedIndicator = false;
+      });
+      _controller?.setPlaybackSpeed(1.0);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
       onDoubleTapDown: (details) =>
           widget.onDoubleTap?.call(details.globalPosition),
+      onLongPressStart: _onLongPressStart,
+      onLongPressEnd: _onLongPressEnd,
+      onLongPressCancel: _onLongPressCancel,
       child: Container(
         color: Colors.black,
         width: double.infinity,
@@ -307,6 +351,41 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
                 child: CircularProgressIndicator(
                   color: Colors.white,
                   strokeWidth: 2,
+                ),
+              ),
+
+            // Speed Indicator (2x)
+            if (_showSpeedIndicator)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 75.h,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.fast_forward, color: Colors.white, size: 20),
+                        SizedBox(width: 6),
+                        Text(
+                          '2x',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
 
