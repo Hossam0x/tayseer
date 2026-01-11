@@ -10,12 +10,14 @@ class SendMessageParams {
   final String message;
   final String chatRoomId;
   final String? replyMessageId;
+  final ChatMessage? replyToMessage;
 
   const SendMessageParams({
     required this.receiverId,
     required this.message,
     required this.chatRoomId,
     this.replyMessageId,
+    this.replyToMessage,
   });
 }
 
@@ -53,10 +55,21 @@ class SendMessageUseCase {
 
     // Create reply info if replying
     ReplyInfo? replyInfo;
-    if (params.replyMessageId != null) {
+    if (params.replyMessageId != null && params.replyToMessage != null) {
+      // Extract content from ChatMessage
+      String? replyMessageContent;
+      
+      // For media messages, prefer localFilePaths if available (for local messages)
+      if (params.replyToMessage!.localFilePaths != null &&
+          params.replyToMessage!.localFilePaths!.isNotEmpty) {
+        replyMessageContent = params.replyToMessage!.localFilePaths!.first;
+      } else if (params.replyToMessage!.contentList.isNotEmpty) {
+        replyMessageContent = params.replyToMessage!.contentList.first;
+      }
+      
       replyInfo = ReplyInfo(
         replyMessageId: params.replyMessageId,
-        replyMessage: null, // Will be filled by caller if needed
+        replyMessage: replyMessageContent,
         isReply: true,
       );
     }

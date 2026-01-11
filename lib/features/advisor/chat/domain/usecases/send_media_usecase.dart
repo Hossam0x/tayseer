@@ -15,6 +15,7 @@ class SendMediaParams {
   final List<File>? videos;
   final String? audio;
   final String? replyMessageId;
+  final ChatMessage? replyToMessage;
   final String? tempId;
 
   const SendMediaParams({
@@ -24,6 +25,7 @@ class SendMediaParams {
     this.videos,
     this.audio,
     this.replyMessageId,
+    this.replyToMessage,
     this.tempId,
   });
 
@@ -73,9 +75,21 @@ class SendMediaUseCase {
 
     // Create reply info if replying
     ReplyInfo? replyInfo;
-    if (params.replyMessageId != null) {
+    if (params.replyMessageId != null && params.replyToMessage != null) {
+      // Extract content from ChatMessage
+      String? replyMessageContent;
+      
+      // For media messages, prefer localFilePaths if available (for local messages)
+      if (params.replyToMessage!.localFilePaths != null &&
+          params.replyToMessage!.localFilePaths!.isNotEmpty) {
+        replyMessageContent = params.replyToMessage!.localFilePaths!.first;
+      } else if (params.replyToMessage!.contentList.isNotEmpty) {
+        replyMessageContent = params.replyToMessage!.contentList.first;
+      }
+      
       replyInfo = ReplyInfo(
         replyMessageId: params.replyMessageId,
+        replyMessage: replyMessageContent,
         isReply: true,
       );
     }

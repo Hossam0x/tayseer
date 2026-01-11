@@ -49,7 +49,6 @@ dependencies:
   hive_flutter: ^1.1.0
   hive: ^2.2.3
   photo_manager: ^3.6.4
-  flutter_launcher_icons: ^0.14.1
   fl_chart: ^1.1.1
   sqflite: ^2.4.1
   path: ^1.9.0
@@ -64,6 +63,10 @@ dependencies:
   google_generative_ai: ^0.4.7
   carousel_slider: ^5.1.1
   freezed_annotation: ^2.4.4
+  google_sign_in: ^7.2.0
+  sign_in_with_apple: ^6.1.0
+  connectivity_plus: ^7.0.0
+
 
 dev_dependencies:
   flutter_test:

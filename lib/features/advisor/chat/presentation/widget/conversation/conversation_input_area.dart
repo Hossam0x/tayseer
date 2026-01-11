@@ -137,9 +137,9 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => CustomGallerySheet(
-        config: const PickerConfig(
+        config: PickerConfig(
           allowMultiple: true,
-          maxCount: 10,
+          maxCount: 5,
           requestType: RequestType.common,
         ),
         onMediaSelected: (list) {

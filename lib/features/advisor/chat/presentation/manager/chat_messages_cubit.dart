@@ -357,6 +357,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     String message,
     String chatRoomId, {
     String? replyMessageId,
+    ChatMessage? replyToMessage,
   }) async {
     // Use the SendMessageUseCase
     final result = await _sendMessageUseCase.call(
@@ -365,6 +366,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         message: message,
         chatRoomId: chatRoomId,
         replyMessageId: replyMessageId,
+        replyToMessage: replyToMessage,
       ),
     );
 
@@ -396,6 +398,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     List<File>? images,
     List<File>? videos,
     String? replyMessageId,
+    ChatMessage? replyToMessage,
   }) async {
     if (isClosed) return;
 
@@ -405,6 +408,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       images: images,
       videos: videos,
       replyMessageId: replyMessageId,
+      replyToMessage: replyToMessage,
     );
 
     // Step 1: Create optimistic local message with local file paths
@@ -439,6 +443,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       images: params.images,
       videos: params.videos,
       replyMessageId: params.replyMessageId,
+      replyToMessage: params.replyToMessage,
       tempId: optimisticResult.tempId,
     );
     final uploadResult = await _sendMediaUseCase.upload(uploadParams);

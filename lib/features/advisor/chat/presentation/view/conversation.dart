@@ -661,21 +661,25 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
           chatEmojiIcon: AssetsData.chatEmojiIcon,
           cameraIcon: AssetsData.cameraIcon,
           onSendMessage: (message, replyMessageId) {
+            final replyToMessage = context.read<ChatInputCubit>().state.replyingToMessage;
             context.read<ChatMessagesCubit>().sendMessage(
               widget.receiverId!,
               message,
               widget.chatRoomId!,
               replyMessageId: replyMessageId,
+              replyToMessage: replyToMessage,
             );
             _scrollToBottomAfterSend();
           },
           onSendMedia: (files, messageType, replyMessageId) {
+            final replyToMessage = context.read<ChatInputCubit>().state.replyingToMessage;
             context.read<ChatMessagesCubit>().sendMediaMessage(
               chatRoomId: widget.chatRoomId!,
               messageType: messageType,
               images: messageType == 'image' ? files : null,
               videos: messageType == 'video' ? files : null,
               replyMessageId: replyMessageId,
+              replyToMessage: replyToMessage,
             );
             _scrollToBottomAfterSend();
           },
