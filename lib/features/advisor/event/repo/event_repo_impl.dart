@@ -31,9 +31,14 @@ class EventRepoImpl implements EventRepo {
   }
 
   @override
-  Future<Either<Failure, List<EventModel>>> getAllEvents() async {
+  Future<Either<Failure, List<EventModel>>> getAllEvents(
+    String? location,
+  ) async {
     try {
-      final response = await apiService.get(endPoint: '/event/getAllEvents');
+      final response = await apiService.get(
+        endPoint: '/event/getAllEvents',
+        query: {"location": location},
+      );
       final eventsJson = response['data'] as List;
 
       List<EventModel> results = eventsJson

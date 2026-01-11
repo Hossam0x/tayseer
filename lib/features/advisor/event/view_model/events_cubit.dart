@@ -1,5 +1,7 @@
 // lib/features/advisor/event/view_model/events_cubit.dart
 
+import 'dart:async';
+
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
@@ -11,6 +13,22 @@ import 'package:tayseer/my_import.dart';
 
 class EventsCubit extends Cubit<EventsState> {
   EventsCubit() : super(const EventsState());
+
+  //// =================== Location  controler ====================
+  final TextEditingController locationSearchController =
+      TextEditingController();
+
+  Timer? _debounce;
+
+  void onSearchChanged(String text) {
+    // cancel timer لو لسه شغال
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    // ابدأ تايمر جديد
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      getAllEvents();
+    });
+  }
 
   // ==================== Controllers ====================
   final creatEventformKey = GlobalKey<FormState>();
@@ -383,7 +401,9 @@ class EventsCubit extends Cubit<EventsState> {
     try {
       emit(state.copyWith(allEventsState: CubitStates.loading));
 
-      final either = await getIt<EventRepo>().getAllEvents();
+      final either = await getIt<EventRepo>().getAllEvents(
+        locationSearchController.text,
+      );
 
       either.fold(
         (failure) {
@@ -493,11 +513,8 @@ class EventsCubit extends Cubit<EventsState> {
 
   @override
   Future<void> close() {
-    eventTitleController.dispose();
-    eventDescriptionController.dispose();
-    eventPriceBeforeDiscountController.dispose();
-    eventPriceAfterDiscountController.dispose();
-    eventPriceAfterDiscountController.dispose();
+  
+    _debounce?.cancel();
 
     return super.close();
   }

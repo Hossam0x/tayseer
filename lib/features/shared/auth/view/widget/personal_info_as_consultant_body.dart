@@ -1,4 +1,4 @@
-import 'package:tayseer/core/functions/pac_date.dart';
+import 'package:tayseer/core/widgets/custom_date_picker_field.dart';
 import 'package:tayseer/features/shared/auth/view/widget/custom_upload_image.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -54,11 +54,14 @@ class _PersonalInfoAsConsultantBodyState
                   Text(context.tr('upload_Photo'), style: Styles.textStyle14),
                   SizedBox(height: context.height * 0.02),
                   Center(
-                    child: UploadImageWidget(
+                    child: UploadImageFormField(
+                      initialValue: authCubit.pickedImage,
                       isShowImage: true,
                       onImagePicked: (image) {
                         authCubit.pickedImage = image;
                       },
+                      validator: (v) =>
+                          v == null ? context.tr('required') : null,
                     ),
                   ),
 
@@ -113,58 +116,26 @@ class _PersonalInfoAsConsultantBodyState
 
                   const SizedBox(height: 16),
 
-                  /// ➜ Birth Date
-                  GestureDetector(
-                    onTap: () async {
-                      final date = await pickDate(context);
-
-                      if (date != null) {
-                        setState(() {
-                          authCubit.birthDate = date;
-                        });
-                      }
+                  DatePickerField(
+                    initialValue: authCubit.birthDate,
+                    placeholder: context.tr('birthDate'),
+                    onDateChanged: (date) {
+                      setState(() {
+                        authCubit.birthDate = date;
+                      });
                     },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 15,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppColors.kprimaryColor.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 18,
-                            color: AppColors.kprimaryColor.withOpacity(0.3),
-                          ),
-                          SizedBox(
-                            height: 20,
-                            child: VerticalDivider(
-                              width: 10,
-                              thickness: 1.5,
-                              color: AppColors.kprimaryColor.withOpacity(0.3),
-                            ),
-                          ),
-                          Text(
-                            authCubit.birthDate == null
-                                ? context.tr('birthDate')
-                                : '${authCubit.birthDate!.day}/${authCubit.birthDate!.month}/${authCubit.birthDate!.year}',
-                            style: Styles.textStyle12.copyWith(
-                              color: authCubit.birthDate == null
-                                  ? AppColors.kprimaryColor.withOpacity(0.5)
-                                  : Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    validator: (value) {
+                      if (value == null) return context.tr('required');
+                      final now = DateTime.now();
+                      int age = now.year - value.year;
+                      if (now.month < value.month ||
+                          (now.month == value.month && now.day < value.day)) {
+                        age--;
+                      }
+                      return age < 30
+                          ? context.tr('age_must_be_over_30')
+                          : null;
+                    },
                   ),
 
                   SizedBox(height: context.height * 0.03),

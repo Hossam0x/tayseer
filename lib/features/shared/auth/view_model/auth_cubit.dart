@@ -769,8 +769,11 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void set60MinPrice(String price) {
-    emit(state.copyWith(price60Min: price));
-    emit(state.copyWith(isSixtyMinutesSelected: !state.isSixtyMinutesSelected));
+    // Update the price and ensure the 60-minutes switch stays enabled
+    // while the user has entered a non-empty price. Avoid toggling the
+    // switch on every input change which caused the field to collapse.
+    final shouldEnable = price.isNotEmpty;
+    emit(state.copyWith(price60Min: price, isSixtyMinutesSelected: shouldEnable));
   }
 
   /// Languages

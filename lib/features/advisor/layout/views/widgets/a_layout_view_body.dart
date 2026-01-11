@@ -6,6 +6,7 @@ import 'package:tayseer/features/advisor/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/custom_feb_menu.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
+import 'package:tayseer/features/advisor/session/view/session_view.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 
@@ -60,10 +61,7 @@ class ALayOutViewBody extends StatelessWidget {
         return [
           HomeView(onScroll: cubit.onScroll),
           const ChatView(),
-          Container(
-            color: Colors.white,
-            child: const Center(child: Text('My Space')),
-          ),
+          SessionView(),
           EventView(),
           Container(
             color: Colors.white,

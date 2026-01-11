@@ -1,7 +1,7 @@
 import 'package:tayseer/core/utils/helper/video_picker_helper.dart';
 import 'package:tayseer/core/utils/helper/image_picker_helper.dart';
 import 'package:tayseer/core/widgets/custtom_time_pic.dart';
-import 'package:tayseer/core/widgets/date_picker_field.dart';
+import 'package:tayseer/core/widgets/custom_date_picker_field.dart';
 import 'package:tayseer/features/advisor/event/view/widget/custom_sliver_app_bar.dart';
 import 'package:tayseer/features/advisor/event/view/widget/custom_upload_image.dart';
 import 'package:tayseer/features/advisor/event/view_model/events_cubit.dart';

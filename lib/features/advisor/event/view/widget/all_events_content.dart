@@ -131,7 +131,8 @@ class AllEventsContent extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const LocationBottomSheet(),
+      builder: (_) =>
+          LocationBottomSheet(eventsCubit: context.read<EventsCubit>()),
     );
   }
 }
