@@ -12,6 +12,7 @@ import 'package:tayseer/features/advisor/profille/views/boost_properties_view.da
 import 'package:tayseer/features/advisor/profille/views/consultation_topics_view.dart';
 import 'package:tayseer/features/advisor/profille/views/location_selection_view.dart';
 import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
+import 'package:tayseer/features/settings/view/blocked_user_view.dart';
 import 'package:tayseer/features/settings/view/edit_personal_data_view.dart';
 import 'package:tayseer/features/settings/view/settings_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
@@ -113,6 +114,7 @@ abstract class AppRouter {
   static const kBoostPropertiesView = '/boost_properties_view';
   static const kLocationSelectionView = '/location_selection_view';
   static const kConsultationTopicsView = '/converssation_topics_view';
+  static const kBlockedUsersView = '/blocked_users_view';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -155,6 +157,12 @@ abstract class AppRouter {
       case AppRouter.kConsultationTopicsView:
         return SlideLeftRoute(
           page: const ConsultationTopicsView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kBlockedUsersView:
+        return SlideLeftRoute(
+          page: const BlockedUsersView(),
           routeSettings: settings,
         );
 

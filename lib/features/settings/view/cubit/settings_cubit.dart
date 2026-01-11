@@ -82,7 +82,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           id: 'blocks',
           title: 'المحظورات',
           iconAsset: AssetsData.icBlockedSettings,
-          routeName: '',
+          routeName: AppRouter.kBlockedUsersView,
         ),
         SettingItemModel(
           id: 'invite',
