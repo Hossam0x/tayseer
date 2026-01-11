@@ -11,7 +11,7 @@ class SettingsView extends StatelessWidget {
     return BlocProvider(
       create: (context) => SettingsCubit(),
       child: Scaffold(
-        body: SafeArea(child: AdvisorBackground(child: _buildBody(context))),
+        body: AdvisorBackground(child: SafeArea(child: _buildBody(context))),
       ),
     );
   }

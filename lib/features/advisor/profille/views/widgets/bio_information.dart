@@ -61,41 +61,49 @@ class BioInformation extends StatelessWidget {
             ),
             Gap(24.h),
             // Consultation packages button
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
-              decoration: BoxDecoration(
-                color: AppColors.cBackground100,
-                borderRadius: BorderRadius.circular(10.r),
-                border: Border.all(color: AppColors.primary300),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "لوحة العلومات الاحترافية",
-                    style: Styles.textStyle16SemiBold.copyWith(
-                      color: AppColors.blackColor,
+            InkWell(
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRouter.kProfessionalInfoDashboardView,
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
+                decoration: BoxDecoration(
+                  color: AppColors.cBackground100,
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(color: AppColors.primary300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "لوحة المعلومات الاحترافية",
+                      style: Styles.textStyle16SemiBold.copyWith(
+                        color: AppColors.blackColor,
+                      ),
                     ),
-                  ),
-                  Gap(12.h),
-                  Row(
-                    children: [
-                      Icon(
-                        CupertinoIcons.arrow_up_left,
-                        color: AppColors.secondary700,
-                        size: 24.w,
-                      ),
-                      Gap(8),
-                      Text(
-                        "1350 ألف مشاهدة خلال 30 يوم.",
-                        style: Styles.textStyle14.copyWith(
+                    Gap(12.h),
+                    Row(
+                      children: [
+                        Icon(
+                          CupertinoIcons.arrow_up_left,
                           color: AppColors.secondary700,
+                          size: 24.w,
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        Gap(8),
+                        Text(
+                          "1350 ألف مشاهدة خلال 30 يوم.",
+                          style: Styles.textStyle14.copyWith(
+                            color: AppColors.secondary700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

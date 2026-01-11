@@ -91,6 +91,7 @@ abstract class AppColors {
   static Color primary300 = Color.fromRGBO(235, 122, 145, 1);
   static Color primary400 = Color.fromRGBO(228, 78, 108, 1);
   static Color primary500 = Color.fromRGBO(172, 26, 55, 1);
+  static Color primary900 = Color.fromRGBO(44, 7, 14, 1);
   static Color cBackground100 = Color.fromRGBO(242, 166, 181, 0.56);
   static Color blueText = Color.fromRGBO(25, 41, 92, 1);
   static Color mentionBlue = Color.fromRGBO(98, 132, 255, 1);

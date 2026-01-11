@@ -88,12 +88,10 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
       if (fileSizeInMB > 4) {
         // عرض رسالة خطأ إذا كان الفيديو أكبر من 4 ميجابايت
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'حجم الفيديو يجب أن يكون أقل من 4 ميجابايت',
-              style: Styles.textStyle14.copyWith(color: AppColors.kWhiteColor),
-            ),
-            backgroundColor: AppColors.kRedColor,
+          CustomSnackBar(
+            context,
+            text: 'حجم الفيديو يجب أن يكون أقل من 4 ميجابايت',
+            isError: true,
           ),
         );
         return;
@@ -146,13 +144,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
 
     // عرض رسالة نجاح
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'تم حفظ البيانات بنجاح',
-          style: Styles.textStyle14.copyWith(color: AppColors.kWhiteColor),
-        ),
-        backgroundColor: Colors.green,
-      ),
+      CustomSnackBar(context, text: 'تم حفظ البيانات بنجاح', isSuccess: true),
     );
 
     // العودة للخلف بعد ثانية

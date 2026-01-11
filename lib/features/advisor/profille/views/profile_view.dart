@@ -1,5 +1,5 @@
 import 'package:tayseer/features/advisor/profille/views/widgets/bio_information.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/boost_button.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_header.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_tabs_section.dart';
