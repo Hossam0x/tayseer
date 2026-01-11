@@ -117,6 +117,7 @@ abstract class AssetsData {
   static const String certificatePlaceholder =
       "assets/images/certificatePlaceholder.jpg";
   static const String boostBackground = "assets/images/boostBackground.png";
+  static const String noPersonsBlocked = "assets/images/noPersonsBlocked.png";
   static const String editIcon = "assets/icons/editIcon.svg";
   static const String icAdd = "assets/icons/icAdd.svg";
   static const String settingsIcon = "assets/icons/settingsIcon.svg";

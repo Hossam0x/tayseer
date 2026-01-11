@@ -62,7 +62,12 @@ class BoostPropertiesView extends StatelessWidget {
               // 5. Bottom Action Button
               CustomBotton(
                 title: 'اشتراك',
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    AppRouter.kLocationSelectionView,
+                  );
+                },
                 useGradient: true,
               ),
               Gap(20.h),

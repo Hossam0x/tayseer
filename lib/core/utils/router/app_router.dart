@@ -9,6 +9,8 @@ import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
 import 'package:tayseer/features/advisor/profille/views/boost_account_view.dart';
 import 'package:tayseer/features/advisor/profille/views/boost_properties_view.dart';
+import 'package:tayseer/features/advisor/profille/views/consultation_topics_view.dart';
+import 'package:tayseer/features/advisor/profille/views/location_selection_view.dart';
 import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
 import 'package:tayseer/features/settings/view/edit_personal_data_view.dart';
 import 'package:tayseer/features/settings/view/settings_view.dart';
@@ -109,6 +111,8 @@ abstract class AppRouter {
   static const kProfessionalInfoDashboardView = '/professional_info_dashboard';
   static const kBoostAccountView = '/boost_account_view';
   static const kBoostPropertiesView = '/boost_properties_view';
+  static const kLocationSelectionView = '/location_selection_view';
+  static const kConsultationTopicsView = '/converssation_topics_view';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -139,6 +143,18 @@ abstract class AppRouter {
       case AppRouter.kBoostPropertiesView:
         return SlideLeftRoute(
           page: const BoostPropertiesView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kLocationSelectionView:
+        return SlideLeftRoute(
+          page: const LocationSelectionView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kConsultationTopicsView:
+        return SlideLeftRoute(
+          page: const ConsultationTopicsView(),
           routeSettings: settings,
         );
 

@@ -120,6 +120,10 @@ abstract class Styles {
     fontSize: 24.sp,
     fontWeight: FontWeight.w400,
   );
+  static final textStyle24Meduim = TextStyle(
+    fontSize: 24.sp,
+    fontWeight: FontWeight.w500,
+  );
   static final textStyle24SemiBold = TextStyle(
     fontSize: 24.sp,
     fontWeight: FontWeight.w600,

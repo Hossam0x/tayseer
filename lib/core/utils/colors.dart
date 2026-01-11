@@ -122,4 +122,6 @@ abstract class AppColors {
   static const Color boostFinishBack = Color.fromRGBO(252, 233, 237, 0.45);
   static const Color boostPackageBack = Color.fromRGBO(177, 27, 57, 0.17);
   static const Color boostUnactive = Color.fromRGBO(128, 128, 128, 1);
+  static Color gray2 = Color.fromRGBO(174, 174, 178, 1);
+  static Color selectLocationBack = Color.fromRGBO(255, 233, 237, 0.17);
 }
