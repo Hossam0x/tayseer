@@ -53,8 +53,6 @@ class _ChatViewBodyState extends State<ChatViewBody> {
                 },
               ),
 
-              // ---------------------------------------------
-              // ... داخل ChatViewBody
               Expanded(
                 child: hasChats
                     ? const ChatListBuilder()

@@ -3,6 +3,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chatView/chat_item_model.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
 class ChatListItem extends StatelessWidget {
@@ -43,7 +44,8 @@ class ChatListItem extends StatelessWidget {
           children: [
             CustomSlidableAction(
               onPressed: (context) {
-                print("Archive Action");
+                context.read<ChatCubit>().archiveChatRoom(chatRoom.id);
+                AppToast.success(context, 'تم أرشفة المحادثة بنجاح');
               },
               backgroundColor: Colors.transparent,
               foregroundColor: archiveColor,
@@ -121,8 +123,20 @@ class ChatListItem extends StatelessWidget {
                           label: 'حذف',
                           color: Colors.red,
                           onTap: () {
-                            print("Delete Clicked");
                             Slidable.of(context)?.close();
+                            showConfirmationDialog(
+                              context: context,
+                              imagePath: AssetsData.deleteIcon,
+                              title: 'هل أنت متأكد من حذف المحادثة؟',
+                              subtitle:
+                                  'لن تتمكن من استعادة المحادثة بعد حذفها.',
+                              onConfirm: () {
+                                context.read<ChatCubit>().deleteChatRoom(
+                                  chatRoom.id,
+                                );
+                                // deleteConversation();
+                              },
+                            );
                           },
                           isMobile: isMobile,
                         ),
@@ -154,11 +168,42 @@ class ChatListItem extends StatelessWidget {
                         _buildActionButton(
                           context,
                           icon: Icons.block,
-                          label: 'حظر',
+                          label: chatRoom.isBlocked ? 'إلغاء الحظر' : 'حظر',
                           color: const Color(0xFF581C25),
                           onTap: () {
-                            print("Block Clicked");
                             Slidable.of(context)?.close();
+                            if (chatRoom.isBlocked) {
+                              // Unblock
+                              showConfirmationDialog(
+                                context: context,
+                                imagePath: AssetsData.deleteIcon,
+                                title:
+                                    'هل أنت متأكد من إلغاء حظر هذا المستخدم؟',
+                                subtitle:
+                                    'سيتمكن المستخدم من إرسال رسائل إليك مرة أخرى.',
+                                onConfirm: () {
+                                  context.read<ChatCubit>().unblockUser(
+                                    blockedId: chatRoom.sender.id,
+                                    chatRoomId: chatRoom.id,
+                                  );
+                                },
+                              );
+                            } else {
+                              // Block
+                              showConfirmationDialog(
+                                context: context,
+                                imagePath: AssetsData.deleteIcon,
+                                title: 'هل أنت متأكد من حظر هذا المستخدم؟',
+                                subtitle:
+                                    'لن يتمكن المستخدم من إرسال رسائل إليك.',
+                                onConfirm: () {
+                                  context.read<ChatCubit>().blockUser(
+                                    blockedId: chatRoom.sender.id,
+                                    chatRoomId: chatRoom.id,
+                                  );
+                                },
+                              );
+                            }
                           },
                           isMobile: isMobile,
                         ),
@@ -173,16 +218,33 @@ class ChatListItem extends StatelessWidget {
 
         child: GestureDetector(
           onTap: () {
+            context.read<ChatCubit>().setActiveChatRoom(chatRoom.id);
             context.read<ChatCubit>().markMessageRed(chatRoom.id);
-            context.pushNamed(
-              AppRouter.kConversitionView,
-              arguments: {
-                'receiverid': chatRoom.sender.id,
-                'chatroomid': chatRoom.id,
-                'username': chatRoom.sender.name,
-                'userimage': chatRoom.sender.image,
-              },
-            );
+            context.read<ChatCubit>().markChatAsRead(chatRoom.id);
+            context
+                .pushNamed(
+                  AppRouter.kConversitionView,
+                  arguments: {
+                    'receiverid': chatRoom.sender.id,
+                    'chatroomid': chatRoom.id,
+                    'username': chatRoom.sender.name,
+                    'userimage': chatRoom.sender.image,
+                    'isBlocked': chatRoom.isBlocked,
+                    'onBlockStatusChanged': (bool isBlocked) {
+                      if (context.mounted) {
+                        context.read<ChatCubit>().updateBlockStatus(
+                          chatRoom.id,
+                          isBlocked,
+                        );
+                      }
+                    },
+                  },
+                )
+                .then((_) {
+                  if (context.mounted) {
+                    context.read<ChatCubit>().setActiveChatRoom(null);
+                  }
+                });
           },
           child: Container(
             color: Colors.transparent,
@@ -222,7 +284,7 @@ class ChatListItem extends StatelessWidget {
                       ),
                       SizedBox(height: spacing2),
                       Text(
-                        chatRoom.lastMessage?.content ?? "لا توجد رسائل",
+                        chatRoom.lastMessage?.content ?? "",
                         style: TextStyle(
                           color: Colors.grey.shade500,
                           fontSize: subtitleFontSize,

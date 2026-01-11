@@ -60,7 +60,7 @@ class ApiService {
       );
       return response.data;
     } on DioException {
-      rethrow; // ✅ Re-throw للـ repository يقدر يـ handle الـ error
+      rethrow;
     }
   }
 

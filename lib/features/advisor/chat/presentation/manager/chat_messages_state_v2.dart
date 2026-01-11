@@ -37,6 +37,9 @@ class ChatMessagesStateV2 {
   /// Number of pending messages (unsent)
   final int pendingCount;
 
+  /// Whether the other user is blocked
+  final bool isBlocked;
+
   ChatMessagesStateV2({
     this.loadingState,
     this.paginationState,
@@ -49,6 +52,7 @@ class ChatMessagesStateV2 {
     this.replyingToMessage,
     this.isOnline = true,
     this.pendingCount = 0,
+    this.isBlocked = false,
   });
 
   ChatMessagesStateV2 copyWith({
@@ -65,6 +69,7 @@ class ChatMessagesStateV2 {
     bool clearReplyingToMessage = false,
     bool? isOnline,
     int? pendingCount,
+    bool? isBlocked,
   }) {
     return ChatMessagesStateV2(
       loadingState: loadingState ?? this.loadingState,
@@ -80,6 +85,7 @@ class ChatMessagesStateV2 {
           : (replyingToMessage ?? this.replyingToMessage),
       isOnline: isOnline ?? this.isOnline,
       pendingCount: pendingCount ?? this.pendingCount,
+      isBlocked: isBlocked ?? this.isBlocked,
     );
   }
 

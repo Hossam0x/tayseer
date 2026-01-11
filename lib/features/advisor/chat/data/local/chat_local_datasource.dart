@@ -421,6 +421,28 @@ class ChatLocalDataSource {
     );
   }
 
+  /// Delete a chat room and all its messages
+  Future<void> deleteChatRoom(String chatRoomId) async {
+    final db = await _chatDatabase.database;
+
+    // Delete all messages for this chat room
+    await db.delete(
+      'messages',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+    );
+
+    // Delete the chat room itself
+    await db.delete('chat_rooms', where: 'id = ?', whereArgs: [chatRoomId]);
+
+    // Delete any pending messages for this chat room
+    await db.delete(
+      'pending_messages',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+    );
+  }
+
   /// Clear all data (for logout)
   Future<void> clearAllData() async {
     await _chatDatabase.clearAll();

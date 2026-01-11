@@ -118,9 +118,15 @@ class MessageQueueManager {
     // Increment retry count
     await _localDataSource.incrementRetryCount(pending.localId);
 
+    // Extract tempId from localId (format: "temp_<uuid>")
+    final tempId = pending.localId.startsWith('temp_')
+        ? pending.localId.substring(5)
+        : pending.localId;
+
     final messageData = <String, dynamic>{
       'receiverId': pending.receiverId,
       'content': pending.content,
+      'tempId': tempId, // ✅ Include tempId for reliable matching
     };
 
     if (pending.replyMessageId != null) {

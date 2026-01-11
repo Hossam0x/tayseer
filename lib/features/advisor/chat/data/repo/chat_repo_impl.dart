@@ -105,4 +105,36 @@ class ChatRepoImpl extends ChatRepo {
       return Left(response['message'] ?? 'Failed to send message');
     }
   }
+
+  @override
+  Future<Either<String, bool>> deleteChatRoom(String chatRoomId) async {
+    try {
+      final response = await apiService.delete(
+        endPoint: ApiEndPoint.deleteChatRoom(chatRoomId),
+      );
+      if (response['success'] == true) {
+        return const Right(true);
+      } else {
+        return Left(response['message'] ?? 'Failed to delete chat room');
+      }
+    } catch (e) {
+      return Left('Failed to delete chat room: $e');
+    }
+  }
+
+  @override
+  Future<Either<String, bool>> archiveChatRoom(String chatRoomId) async {
+    try {
+      final response = await apiService.patch(
+        endPoint: ApiEndPoint.archiveChatRoom(chatRoomId),
+      );
+      if (response['success'] == true) {
+        return const Right(true);
+      } else {
+        return Left(response['message'] ?? 'Failed to archive chat room');
+      }
+    } catch (e) {
+      return Left('Failed to archive chat room: $e');
+    }
+  }
 }

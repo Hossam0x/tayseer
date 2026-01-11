@@ -60,11 +60,16 @@ class HomeAppBar extends StatelessWidget {
                     clipBehavior: Clip.none,
 
                     children: [
-                      AppImage(
-                        AssetsData.notificationIcon,
-                        height: context.responsiveHeight(23),
-                        width: context.responsiveWidth(23),
-                        fit: BoxFit.fill,
+                      GestureDetector(
+                        onTap: () {
+                          context.pushNamed(AppRouter.notification);
+                        },
+                        child: AppImage(
+                          AssetsData.notificationIcon,
+                          height: context.responsiveHeight(23),
+                          width: context.responsiveWidth(23),
+                          fit: BoxFit.fill,
+                        ),
                       ),
                       if (notificationCount > 0)
                         Positioned(

@@ -10,6 +10,7 @@ import 'package:tayseer/features/advisor/event_detail/view/event_detail_view.dar
 import 'package:tayseer/features/advisor/event_detail/view/update_event_view.dart';
 import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/map/map_view.dart';
+import 'package:tayseer/features/advisor/notification/presentation/view/notification_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
@@ -102,6 +103,7 @@ abstract class AppRouter {
   static const kAddPostView = '/AddPostView';
   static const kMapView = '/MapView';
   static const kCreatEventView = '/CreatEventView';
+  static const notification = '/notification';
   static const kEventDetailView = '/EventDetailView';
   static const kUpdateEventView = '/UpdateEventView';
 
@@ -521,7 +523,20 @@ abstract class AppRouter {
             userimage:
                 (settings.arguments as Map<String, dynamic>?)?['userimage']
                     as String?,
+            isBlocked:
+                (settings.arguments as Map<String, dynamic>?)?['isBlocked']
+                    as bool? ??
+                false,
+            onBlockStatusChanged:
+                (settings.arguments
+                        as Map<String, dynamic>?)?['onBlockStatusChanged']
+                    as void Function(bool)?,
           ),
+        );
+      case notification:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const NotificationView(),
         );
     }
     return null;

@@ -7,6 +7,7 @@ import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_s
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/bubble/message_bubble.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/bubble/system_message_bubble.dart';
 
 /// Message list view with selection support
 class SelectableMessageListView extends StatefulWidget {
@@ -86,6 +87,7 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
                   isHighlighted: isHighlighted,
                   isSelected: isSelected,
                   isSelectionMode: selectionState.isSelectionMode,
+                  isSystemMessage: msg.messageType == 'system',
                   onLongPress: () {
                     if (!selectionState.isSelectionMode) {
                       widget.onMessageLongPress?.call(msg, messageKey);
@@ -118,6 +120,7 @@ class _SelectableMessageItem extends StatefulWidget {
   final bool isHighlighted;
   final bool isSelected;
   final bool isSelectionMode;
+  final bool isSystemMessage;
   final VoidCallback onLongPress;
   final VoidCallback onTap;
   final Function(String?) onReplyTap;
@@ -129,6 +132,7 @@ class _SelectableMessageItem extends StatefulWidget {
     required this.isHighlighted,
     required this.isSelected,
     required this.isSelectionMode,
+    required this.isSystemMessage,
     required this.onLongPress,
     required this.onTap,
     required this.onReplyTap,
@@ -146,6 +150,14 @@ class _SelectableMessageItemState extends State<_SelectableMessageItem>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    // رسائل النظام لا تدعم التحديد
+    if (widget.isSystemMessage) {
+      return KeyedSubtree(
+        key: widget.messageKey,
+        child: SystemMessageBubble(content: widget.message.content),
+      );
+    }
 
     return KeyedSubtree(
       key: widget.messageKey,

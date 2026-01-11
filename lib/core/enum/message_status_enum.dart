@@ -1,4 +1,4 @@
-enum MessageStatusEnum { sent, delivered, read }
+enum MessageStatusEnum { pending, sent, delivered, read }
 
 // Extension for parsing from string
 extension MessageStatusExtension on MessageStatusEnum {
@@ -6,6 +6,8 @@ extension MessageStatusExtension on MessageStatusEnum {
     if (status == null) return MessageStatusEnum.sent;
 
     switch (status.toLowerCase()) {
+      case 'pending':
+        return MessageStatusEnum.pending;
       case 'sent':
         return MessageStatusEnum.sent;
       case 'delivered':
@@ -19,6 +21,8 @@ extension MessageStatusExtension on MessageStatusEnum {
 
   String toApiString() {
     switch (this) {
+      case MessageStatusEnum.pending:
+        return 'pending';
       case MessageStatusEnum.sent:
         return 'sent';
       case MessageStatusEnum.delivered:

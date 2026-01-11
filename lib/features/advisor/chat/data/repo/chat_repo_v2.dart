@@ -109,6 +109,12 @@ abstract class ChatRepoV2 {
 
   /// Delete message from local database only (for socket events)
   Future<void> deleteMessageLocally(String messageId);
+
+  /// Block a user
+  Future<Either<String, String>> blockUser({required String blockedId});
+
+  /// Unblock a user
+  Future<Either<String, String>> unblockUser({required String blockedId});
 }
 
 class ChatRepoV2Impl implements ChatRepoV2 {
@@ -154,23 +160,55 @@ class ChatRepoV2Impl implements ChatRepoV2 {
         final serverResponse = ChatMessagesResponse.fromJson(response);
         final serverMessages = serverResponse.data.messages;
 
-        // Create a map of existing messages for fast lookup
-        final existingMessagesMap = {for (final m in currentMessages) m.id: m};
+        // Create a map of existing messages for fast lookup (excluding temp_ messages)
+        final existingMessagesMap = {
+          for (final m in currentMessages)
+            if (!m.id.startsWith('temp_')) m.id: m,
+        };
+
+        // Get temp messages for matching
+        final tempMessages = currentMessages
+            .where((m) => m.id.startsWith('temp_'))
+            .toList();
 
         // Find truly new messages AND messages with updated status
         final newMessages = <ChatMessage>[];
-        bool statusUpdated = false;
+        bool dataUpdated = false;
 
         for (final serverMsg in serverMessages) {
           final existingMsg = existingMessagesMap[serverMsg.id];
 
           if (existingMsg == null) {
-            // New message - check if it exists in DB
+            // Check if it exists in DB by server ID
             final existsInDb = await _localDataSource.messageExists(
               serverMsg.id,
             );
+
             if (!existsInDb) {
-              newMessages.add(serverMsg);
+              // Check if there's a matching temp message (same content & type)
+              final matchingTempIndex = tempMessages.indexWhere(
+                (temp) =>
+                    temp.messageType == serverMsg.messageType &&
+                    temp.content.trim() == serverMsg.content.trim(),
+              );
+
+              if (matchingTempIndex != -1) {
+                // Found matching temp message - update its ID
+                final tempMsg = tempMessages[matchingTempIndex];
+                await _localDataSource.updateMessageId(
+                  tempMsg.id,
+                  serverMsg.id,
+                );
+                // Remove from temp list to avoid duplicate matches
+                tempMessages.removeAt(matchingTempIndex);
+                dataUpdated = true;
+                print(
+                  '🔄 Updated temp message ID: ${tempMsg.id} -> ${serverMsg.id}',
+                );
+              } else {
+                // Truly new message
+                newMessages.add(serverMsg);
+              }
             }
           } else {
             // Existing message - check if status changed
@@ -179,7 +217,7 @@ class ChatRepoV2Impl implements ChatRepoV2 {
                 serverMsg.id,
                 serverMsg.status.toApiString(),
               );
-              statusUpdated = true;
+              dataUpdated = true;
               print(
                 '🔄 Updated status for ${serverMsg.id}: ${existingMsg.status} -> ${serverMsg.status}',
               );
@@ -187,16 +225,17 @@ class ChatRepoV2Impl implements ChatRepoV2 {
           }
         }
 
-        // Insert new messages to local DB
+        // Insert truly new messages to local DB
         if (newMessages.isNotEmpty) {
           await _localDataSource.insertMessages(
             newMessages.map((m) => MessageEntity.fromChatMessage(m)).toList(),
           );
           print('✅ Synced ${newMessages.length} new messages to local DB');
+          dataUpdated = true;
         }
 
         // Reload and notify UI if anything changed
-        if (newMessages.isNotEmpty || statusUpdated) {
+        if (dataUpdated) {
           final updatedMessages = await _localDataSource.getLatestMessages(
             chatRoomId,
             limit: 20,
@@ -590,6 +629,55 @@ class ChatRepoV2Impl implements ChatRepoV2 {
       print('✅ Deleted message from local DB: $messageId');
     } catch (e) {
       print('❌ Error deleting message from local DB: $e');
+    }
+  }
+
+  @override
+  Future<Either<String, String>> blockUser({required String blockedId}) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.blockuser,
+        isAuth: true,
+        data: {'blockedId': blockedId},
+      );
+
+      if (response['success'] == true) {
+        final message = response['message'] ?? 'تم حظر المستخدم بنجاح';
+        print('✅ User blocked successfully: $blockedId');
+        return Right(message);
+      } else {
+        final errorMessage = response['message'] ?? 'فشل حظر المستخدم';
+        print('❌ Failed to block user: $errorMessage');
+        return Left(errorMessage);
+      }
+    } catch (e) {
+      print('❌ Error blocking user: $e');
+      return Left('فشل حظر المستخدم: $e');
+    }
+  }
+
+  @override
+  Future<Either<String, String>> unblockUser({
+    required String blockedId,
+  }) async {
+    try {
+      final response = await _apiService.delete(
+        endPoint: ApiEndPoint.unblockuser,
+        data: {'blockedId': blockedId},
+      );
+
+      if (response['success'] == true) {
+        final message = response['message'] ?? 'تم إلغاء حظر المستخدم بنجاح';
+        print('✅ User unblocked successfully: $blockedId');
+        return Right(message);
+      } else {
+        final errorMessage = response['message'] ?? 'فشل إلغاء حظر المستخدم';
+        print('❌ Failed to unblock user: $errorMessage');
+        return Left(errorMessage);
+      }
+    } catch (e) {
+      print('❌ Error unblocking user: $e');
+      return Left('فشل إلغاء حظر المستخدم: $e');
     }
   }
 

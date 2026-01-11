@@ -22,14 +22,11 @@ void main() async {
   runApp(const TayseerApp());
 }
 
-/// Initialize the local-first chat system
 Future<void> _initializeChatSystem() async {
   try {
-    // Initialize cache cleanup (runs cleanup on startup)
     final cacheCleanup = getIt<CacheCleanupManager>();
     await cacheCleanup.initialize();
 
-    // Start message queue manager for offline support
     final messageQueue = getIt<MessageQueueManager>();
     messageQueue.startRetryTimer();
 
