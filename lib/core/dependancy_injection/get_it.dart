@@ -13,6 +13,7 @@ import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cu
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository_impl.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
@@ -23,6 +24,7 @@ import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
+import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 import '../../my_import.dart';
@@ -84,6 +86,13 @@ Future<void> setupGetIt() async {
 
   ///// tayseerSocketHelper
   getIt.registerLazySingleton<tayseerSocketHelper>(() => tayseerSocketHelper());
+
+  /// Reels Feature
+
+  getIt.registerFactoryParam<ReelsCubit, PostModel, void>(
+    (initialPost, _) =>
+        ReelsCubit(getIt<HomeRepository>(), initialPost: initialPost),
+  );
 
   // ══════════════════════════════════════════════════════════════════════════
   // Chat V2 - Local-First Architecture (SQLite)

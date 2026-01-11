@@ -166,7 +166,7 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
           // ✅ 2. ربطنا المفتاح بالزرار هنا
           key: _buttonKey,
           width: context.responsiveWidth(widget.width ?? 38),
-          height: context.responsiveHeight(widget.height ?? 38),
+          height: context.responsiveWidth(widget.height ?? 38),
           padding: EdgeInsets.all((widget.width ?? 38) > 38 ? 12.r : 6.r),
           decoration: BoxDecoration(
             color: getBackgroundColor(),

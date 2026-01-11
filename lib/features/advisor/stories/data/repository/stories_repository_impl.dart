@@ -19,13 +19,8 @@ class StoriesRepositoryImpl implements StoriesRepository {
       );
       final storiesResponse = StoriesResponseModel.fromJson(response);
       return Right(storiesResponse.data.result);
-    } on DioException catch (error) {
-      if (error.response != null && error.response!.data != null) {
-        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
-        return Left(ServerFailure(errorMessage));
-      } else {
-        return Left(ServerFailure(error.message ?? 'Unknown error'));
-      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 

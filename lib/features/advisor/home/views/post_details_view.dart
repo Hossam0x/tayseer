@@ -7,8 +7,7 @@ import 'package:tayseer/features/advisor/home/view_model/post_details_cubit/post
 import 'package:tayseer/features/advisor/home/views/widgets/comment_input_area.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/comment_item_widget.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/comments_list_shimmer.dart';
-// افترض أن ملف الشيمر الذي أنشأناه بالأعلى اسمه comment_shimmer_list.dart
-// import 'package:tayseer/features/advisor/home/views/widgets/comment_shimmer_list.dart';
+
 import 'package:tayseer/my_import.dart';
 
 class PostDetailsView extends StatefulWidget {
@@ -265,7 +264,7 @@ class _CommentsList extends StatelessWidget {
               onPressed: () {
                 context.read<PostDetailsCubit>().loadMoreComments();
               },
-              child: const Text('تحميل المزيد'),
+              child: Text('تحميل المزيد', style: Styles.textStyle14SemiBold),
             );
           }
           return const SizedBox.shrink();
@@ -292,14 +291,17 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 40.h),
-        child: Text(
-          'لا توجد تعليقات بعد',
-          style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Gap(16.h),
+        AppImage(AssetsData.noCommentsIcon, height: 130.h),
+        Gap(20.h),
+        Text(
+          context.tr(AppStrings.noComments),
+          style: Styles.textStyle14.copyWith(color: AppColors.kGreyB3),
         ),
-      ),
+      ],
     );
   }
 }
@@ -322,7 +324,10 @@ class _FailureState extends StatelessWidget {
             onPressed: () {
               context.read<PostDetailsCubit>().loadComments();
             },
-            child: const Text('إعادة المحاولة'),
+            child: Text(
+              context.tr(AppStrings.retry),
+              style: Styles.textStyle14SemiBold,
+            ),
           ),
         ],
       ),

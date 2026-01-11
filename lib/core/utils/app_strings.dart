@@ -16,4 +16,5 @@ class AppStrings {
   static const String retry = "retry";
   static const String report = "report";
   static const String hide = "hide";
+  static const String noComments = "no_comments";
 }

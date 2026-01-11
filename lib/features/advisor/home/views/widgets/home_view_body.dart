@@ -41,6 +41,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
     _scrollController = ScrollController()..addListener(_scrollListener);
     storiesCubit.fetchStories();
     homeCubit.fetchPosts();
+    homeCubit.fetchNameAndImage();
   }
 
   void _scrollListener() {
@@ -65,8 +66,11 @@ class HomeViewBodyState extends State<HomeViewBody> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: storiesCubit,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: storiesCubit),
+        BlocProvider.value(value: homeCubit),
+      ],
       child: RefreshIndicator(
         color: AppColors.kprimaryColor,
         onRefresh: () async {
@@ -79,7 +83,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
           cacheExtent: 500.0,
           controller: _scrollController,
           slivers: [
-            const HomeAppBar(userName: 'أحمد ماهر', notificationCount: 3),
+            const HomeAppBar(notificationCount: 3),
             const HomeSearchBar(),
             const StoriesSection(),
             const HomeFilterSection(),

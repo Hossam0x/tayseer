@@ -116,6 +116,8 @@ abstract class AssetsData {
   static const String kpinIcon = "assets/icons/pin_icon.svg";
 
   static const String postsEndIcon = "assets/icons/posts_end_icon.svg";
+
+  static const String noCommentsIcon = "assets/icons/no_comments_icon.svg";
   static const String sentMessageIcon = "assets/icons/sent_message_icon.svg";
   static const String commentnotify = 'assets/icons/comment_notify.svg';
   static const String consultationIcon = "assets/icons/Consultation.svg";

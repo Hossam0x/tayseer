@@ -1,5 +1,3 @@
-// features/advisor/layout/views/widgets/a_layout_view_body.dart
-
 import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
 import 'package:tayseer/features/advisor/event/view/event_view.dart';
 import 'package:tayseer/features/advisor/home/views/home_view.dart';
@@ -21,6 +19,8 @@ class ALayOutViewBody extends StatelessWidget {
       builder: (context, state) {
         final pages = _getPages(state.userType, cubit);
 
+        final bool isFabVisible = state.isNavVisible && state.currentIndex == 0;
+
         return Scaffold(
           body: Stack(
             children: [
@@ -41,12 +41,13 @@ class ALayOutViewBody extends StatelessWidget {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 left: 20,
+                // استخدام المتغير لتحديد الموقع
+                bottom: isFabVisible ? 90.h : -400.h,
 
-                bottom: state.isNavVisible && state.currentIndex == 0
-                    ? 90
-                    : -400,
-
-                child: SafeArea(child: const CustomFabMenu()),
+                child: SafeArea(
+                  // تمرير المتغير للويدجت ليقوم بإغلاق نفسه عند الاختفاء
+                  child: CustomFabMenu(isVisible: isFabVisible),
+                ),
               ),
             ],
           ),
