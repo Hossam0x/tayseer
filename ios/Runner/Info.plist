@@ -4,59 +4,94 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+
 	<key>CFBundleDisplayName</key>
 	<string>Tayseer</string>
+
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+
 	<key>CFBundleName</key>
 	<string>tayseer</string>
+
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
+
 	<key>CFBundleSignature</key>
 	<string>????</string>
+
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>يحتاج التطبيق الوصول للبلوتوث لتوصيل الأجهزة</string>
+
+	<!-- Camera + Microphone -->
 	<key>NSCameraUsageDescription</key>
 	<string>يحتاج التطبيق الوصول للكاميرا لالتقاط الصور والفيديوهات</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>يحتاج التطبيق الوصول لموقعك دائمًا لتحسين تجربة المستخدم</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>يحتاج التطبيق الوصول لموقعك لتقديم خدمات الموقع</string>
+
 	<key>NSMicrophoneUsageDescription</key>
 	<string>يحتاج التطبيق الوصول للميكروفون لتسجيل الصوت</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>يحتاج التطبيق إضافة الصور والفيديوهات إلى مكتبة الصور</string>
+
+	<!-- Photos -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>يحتاج التطبيق الوصول لمكتبة الصور لاختيار الصور والفيديوهات</string>
+
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>يحتاج التطبيق إضافة الصور والفيديوهات إلى مكتبة الصور</string>
+
+	<!-- Location -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>يحتاج التطبيق الوصول لموقعك لتقديم خدمات الموقع داخل التطبيق</string>
+
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>يحتاج التطبيق الوصول لموقعك عند استخدام التطبيق وفي الخلفية لتقديم خدمات تعتمد على الموقع</string>
+
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>يحتاج التطبيق الوصول لموقعك دائمًا لتحسين خدمات الموقع</string>
+
+	<!-- Notifications -->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
+
+	<!-- Google Maps SDK -->
+	<key>GMSApiKey</key>
+	<string>YOUR_GOOGLE_MAPS_API_KEY</string>
+
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
+
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

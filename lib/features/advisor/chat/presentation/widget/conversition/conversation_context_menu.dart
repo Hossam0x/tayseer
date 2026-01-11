@@ -18,12 +18,20 @@ class ContextMenuOption {
 
 class ConversationContextMenu extends StatelessWidget {
   final bool isMyMessage;
-  final VoidCallback? onReply; // ✅ callback للرد
+  final VoidCallback? onReply;
+  final VoidCallback? onDetails;
+  final VoidCallback? onSelect;
+  final VoidCallback? onDeleteForMe; // ✅ حذف لدي
+  final VoidCallback? onDeleteForAll; // ✅ حذف لدى الجميع
 
   const ConversationContextMenu({
     super.key,
     required this.isMyMessage,
     this.onReply,
+    this.onDetails,
+    this.onSelect,
+    this.onDeleteForMe,
+    this.onDeleteForAll,
   });
 
   List<ContextMenuOption> _getMenuOptions() {
@@ -39,18 +47,31 @@ class ConversationContextMenu extends StatelessWidget {
           icon: Icons.info_outline,
           label: "التفاصيل",
           hasBorder: true,
+          onTap: onDetails,
         ),
       ContextMenuOption(
         icon: Icons.check_box_outlined,
         label: "تحديد",
         hasBorder: true,
+        onTap: onSelect,
       ),
+      // ✅ حذف لدي (للجميع)
       ContextMenuOption(
         icon: Icons.delete_outline,
-        label: "حذف",
+        label: "حذف لديّ",
         color: Colors.red,
-        hasBorder: false,
+        hasBorder: isMyMessage, // ✅ لو رسالتي، في border لأن في خيار تاني
+        onTap: onDeleteForMe,
       ),
+      // ✅ حذف لدى الجميع (فقط لرسائلي)
+      if (isMyMessage)
+        ContextMenuOption(
+          icon: Icons.delete_forever_outlined,
+          label: "حذف لدى الجميع",
+          color: Colors.red,
+          hasBorder: false,
+          onTap: onDeleteForAll,
+        ),
     ];
   }
 
@@ -58,7 +79,7 @@ class ConversationContextMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isMobile = screenSize.width < 600;
-    final containerWidth = isMobile ? 160.0 : 220.0;
+    final containerWidth = isMobile ? 180.0 : 220.0; // ✅ زودنا العرض شوية
 
     final options = _getMenuOptions();
 
@@ -71,21 +92,20 @@ class ConversationContextMenu extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children:
-            options
-                .asMap()
-                .entries
-                .map(
-                  (entry) => _buildMenuItem(
-                    entry.value.icon,
-                    entry.value.label,
-                    color: entry.value.color,
-                    hasBorder: entry.value.hasBorder,
-                    isMobile: isMobile,
-                    onTap: entry.value.onTap,
-                  ),
-                )
-                .toList(),
+        children: options
+            .asMap()
+            .entries
+            .map(
+              (entry) => _buildMenuItem(
+                entry.value.icon,
+                entry.value.label,
+                color: entry.value.color,
+                hasBorder: entry.value.hasBorder,
+                isMobile: isMobile,
+                onTap: entry.value.onTap,
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -106,24 +126,26 @@ class ConversationContextMenu extends StatelessWidget {
           horizontal: isMobile ? 12.0 : 16.0,
         ),
         decoration: BoxDecoration(
-          border:
-              hasBorder
-                  ? Border(bottom: BorderSide(color: Colors.grey.shade200))
-                  : null,
+          border: hasBorder
+              ? Border(bottom: BorderSide(color: Colors.grey.shade200))
+              : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              text,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Cairo',
-                fontSize: isMobile ? 14.0 : 16.0,
+            Expanded(
+              child: Text(
+                text,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Cairo',
+                  fontSize: isMobile ? 13.0 : 15.0, // ✅ صغرنا شوية للنص الطويل
+                ),
               ),
             ),
-            SizedBox(width: isMobile ? 12.0 : 16.0),
+            SizedBox(width: isMobile ? 8.0 : 12.0),
             Icon(icon, color: color, size: isMobile ? 20.0 : 24.0),
           ],
         ),

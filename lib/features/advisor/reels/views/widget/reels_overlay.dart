@@ -228,10 +228,10 @@ class ReelsOverlay extends StatelessWidget {
           child: ShareButton(
             height: 50,
             width: 50,
-            initialState: post.isRepostedByMe,
-            onShareTapped: (bool isShared) {
+            onShareTapped: () {
               // call Api
             },
+            isShared: post.isRepostedByMe,
           ),
           count: post.sharesCount,
         ),

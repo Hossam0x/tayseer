@@ -12,6 +12,7 @@ class PostActionsRow extends StatelessWidget {
   final bool isRepostedByMe;
   final Function(ReactionType?) onReactionChanged;
   final VoidCallback? onCommentTap;
+  final VoidCallback? onShareTap;
 
   // ✅ 1. استقبال مفتاح خارجي (اختياري)
   // ده اللي هيتبعت من ImageViewerView
@@ -32,7 +33,8 @@ class PostActionsRow extends StatelessWidget {
     required this.isRepostedByMe,
     this.onCommentTap,
     required this.onReactionChanged,
-    this.externalDestinationKey, // ضفناه هنا
+    this.externalDestinationKey,
+    this.onShareTap,
   });
 
   bool get hasReactions => likesCount > 0 || topReactions.isNotEmpty;
@@ -58,9 +60,10 @@ class PostActionsRow extends StatelessWidget {
             Gap(15.w),
 
             ShareButton(
-              initialState: isRepostedByMe,
-              onShareTapped: (isShared) {
-                print("Share state changed to: $isShared");
+              isShared: isRepostedByMe, // ✅ من الـ Cubit State
+
+              onShareTapped: () {
+                onShareTap?.call();
               },
             ),
           ],

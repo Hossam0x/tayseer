@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:io';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -16,6 +17,7 @@ class AuthCubit extends Cubit<AuthState> {
   /// Controllers and Form Keys for Registration
   final TextEditingController emailController = TextEditingController();
   final GlobalKey<FormState> registerFormKey = GlobalKey<FormState>();
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   //// Controllers and Form Keys for Consultant
   final nameAsConsultantController = TextEditingController();
@@ -35,6 +37,20 @@ class AuthCubit extends Cubit<AuthState> {
   String? specialization;
   String? jobLevel;
   String? experienceYears;
+
+  bool _isVideoLoading = false;
+
+  bool get isVideoLoading => _isVideoLoading;
+
+  void setVideoLoaded() {
+    _isVideoLoading = false;
+    emit(state.copyWith());
+  }
+
+  void setVideoLoading(bool isLoading) {
+    _isVideoLoading = isLoading;
+    emit(state.copyWith());
+  }
 
   Future<void> logInUser({
     String? email,
@@ -290,96 +306,98 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signInWithGoogle() async {
-    // emit(state.copyWith(signInWithGoogleState: CubitStates.loading));
-    //
-    // try {
-    //   await _googleSignIn.initialize(
-    //     serverClientId:
-    //         '267720438243-1bb3i9jbnllncd8o46lajmtcnp0rsj25.apps.googleusercontent.com',
-    //   );
-    //
-    //   final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
-    //
-    //   if (googleUser == null) {
-    //     emit(
-    //       state.copyWith(
-    //         signInWithGoogleState: CubitStates.failure,
-    //         errorMessage: "تم إلغاء العملية",
-    //       ),
-    //     );
-    //     emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
-    //     return;
-    //   }
-    //
-    //   // 🔹 Google authentication
-    //
-    //   emit(state.copyWith(signInWithGoogleState: CubitStates.success));
-    //   emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
-    //   if (idToken != null) {
-    //     sendAuthGoogle(idToken: idToken);
-    //   } else {
-    //     emit(
-    //       state.copyWith(
-    //         signInWithGoogleState: CubitStates.failure,
-    //         errorMessage: "idToken:$idToken",
-    //       ),
-    //     );
-    //   }
-    // } on GoogleSignInException catch (e) {
-    //   emit(
-    //     state.copyWith(
-    //       signInWithGoogleState: CubitStates.failure,
-    //       errorMessage: _getGoogleSignInErrorMessage(e.code),
-    //     ),
-    //   );
-    // } catch (e) {
-    //   emit(
-    //     state.copyWith(
-    //       signInWithGoogleState: CubitStates.failure,
-    //       errorMessage: "حدث خطأ غير متوقع",
-    //     ),
-    //   );
-    // }
+    emit(state.copyWith(signInWithGoogleState: CubitStates.loading));
+
+    try {
+      await _googleSignIn.initialize(
+        serverClientId:
+            '267720438243-1bb3i9jbnllncd8o46lajmtcnp0rsj25.apps.googleusercontent.com',
+      );
+
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+
+      if (googleUser == null) {
+        emit(
+          state.copyWith(
+            signInWithGoogleState: CubitStates.failure,
+            errorMessage: "تم إلغاء العملية",
+          ),
+        );
+        emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
+        return;
+      }
+
+      // 🔹 Google authentication
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      emit(state.copyWith(signInWithGoogleState: CubitStates.success));
+      emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
+      if (idToken != null) {
+        sendAuthGoogle(idToken: idToken);
+      } else {
+        emit(
+          state.copyWith(
+            signInWithGoogleState: CubitStates.failure,
+            errorMessage: "idToken:$idToken",
+          ),
+        );
+      }
+    } on GoogleSignInException catch (e) {
+      emit(
+        state.copyWith(
+          signInWithGoogleState: CubitStates.failure,
+          errorMessage: _getGoogleSignInErrorMessage(e.code),
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          signInWithGoogleState: CubitStates.failure,
+          errorMessage: "حدث خطأ غير متوقع",
+        ),
+      );
+    }
   }
 
   Future<void> signInWithApple() async {
-    // emit(state.copyWith(signInWithAppleState: CubitStates.loading));
-    //
-    // try {
-    //   // 🔐 1️⃣ Generate nonce
-    //   final rawNonce = _generateNonce();
-    //   final nonce = _sha256ofString(rawNonce);
-    //
-    //   // 🍎 2️⃣ Apple Sign In
-    //   final appleCredential = await SignInWithApple.getAppleIDCredential(
-    //     scopes: [
-    //       AppleIDAuthorizationScopes.email,
-    //       AppleIDAuthorizationScopes.fullName,
-    //     ],
-    //     nonce: nonce,
-    //   );
-    //
-    //   final String? idToken = appleCredential.identityToken;
-    //
-    //   if (idToken != null) {
-    //     sendAuthApple(idToken: idToken);
-    //   } else {
-    //     emit(
-    //       state.copyWith(
-    //         signInWithAppleState: CubitStates.failure,
-    //         errorMessage: "Apple ID Token is null",
-    //       ),
-    //     );
-    //   }
-    //   emit(state.copyWith(signInWithAppleState: CubitStates.success));
-    // } catch (e) {
-    //   emit(
-    //     state.copyWith(
-    //       signInWithAppleState: CubitStates.failure,
-    //       errorMessage: 'فشل تسجيل الدخول باستخدام Apple',
-    //     ),
-    //   );
-    // }
+    emit(state.copyWith(signInWithAppleState: CubitStates.loading));
+
+    try {
+      // 🔐 1️⃣ Generate nonce
+      final rawNonce = _generateNonce();
+      final nonce = _sha256ofString(rawNonce);
+
+      // 🍎 2️⃣ Apple Sign In
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
+      );
+
+      final String? idToken = appleCredential.identityToken;
+
+      if (idToken != null) {
+        sendAuthApple(idToken: idToken);
+      } else {
+        emit(
+          state.copyWith(
+            signInWithAppleState: CubitStates.failure,
+            errorMessage: "Apple ID Token is null",
+          ),
+        );
+      }
+      emit(state.copyWith(signInWithAppleState: CubitStates.success));
+    } catch (e) {
+      emit(
+        state.copyWith(
+          signInWithAppleState: CubitStates.failure,
+          errorMessage: 'فشل تسجيل الدخول باستخدام Apple',
+        ),
+      );
+    }
   }
 
   Future<void> sendAuthGoogle({required String idToken}) async {
@@ -595,7 +613,7 @@ class AuthCubit extends Cubit<AuthState> {
     bool cacheCleared = false;
 
     try {
-      // await _googleSignIn.signOut();
+      await _googleSignIn.signOut();
       googleLoggedOut = true;
       debugPrint('Google logout successful');
     } catch (e) {
@@ -639,18 +657,18 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  // String _getGoogleSignInErrorMessage(GoogleSignInExceptionCode code) {
-  //   switch (code) {
-  //     case GoogleSignInExceptionCode.canceled:
-  //       return "تم إلغاء العملية من قبل المستخدم";
-  //     case GoogleSignInExceptionCode.interrupted:
-  //       return "تمت مقاطعة عملية تسجيل الدخول";
-  //     case GoogleSignInExceptionCode.uiUnavailable:
-  //       return "واجهة المستخدم غير متاحة";
-  //     default:
-  //       return "حدث خطأ في تسجيل الدخول باستخدام Google";
-  //   }
-  // }
+  String _getGoogleSignInErrorMessage(GoogleSignInExceptionCode code) {
+    switch (code) {
+      case GoogleSignInExceptionCode.canceled:
+        return "تم إلغاء العملية من قبل المستخدم";
+      case GoogleSignInExceptionCode.interrupted:
+        return "تمت مقاطعة عملية تسجيل الدخول";
+      case GoogleSignInExceptionCode.uiUnavailable:
+        return "واجهة المستخدم غير متاحة";
+      default:
+        return "حدث خطأ في تسجيل الدخول باستخدام Google";
+    }
+  }
 
   String _generateNonce([int length = 32]) {
     const charset =

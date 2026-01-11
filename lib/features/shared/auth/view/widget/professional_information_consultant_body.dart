@@ -1,4 +1,4 @@
-import 'package:tayseer/core/utils/video_picker_helper.dart';
+import 'package:tayseer/core/utils/helper/video_picker_helper.dart';
 import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -151,9 +151,24 @@ class ProfessionalInformationAsConsultantBody extends StatelessWidget {
                       if (authCubit.pickedVideo != null)
                         Align(
                           alignment: Alignment.centerRight,
-                          child: CustomUploadedVideoPreview(
-                            video: authCubit.pickedVideo!,
-                            onRemove: authCubit.removePickedVideo,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CustomUploadedVideoPreview(
+                                video: authCubit.pickedVideo!,
+                                onRemove: authCubit.removePickedVideo,
+                                onInitialized: () => authCubit.setVideoLoaded(),
+                              ),
+                              if (authCubit.isVideoLoading)
+                                Positioned.fill(
+                                  child: Container(
+                                    color: Colors.black.withOpacity(0.35),
+                                    child: const Center(
+                                      child: CustomloadingApp(),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
 
