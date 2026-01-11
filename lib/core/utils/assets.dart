@@ -118,6 +118,8 @@ abstract class AssetsData {
   static const String messageNotify = "assets/icons/message_notify.svg";
   static const String ticketEventNotify =
       "assets/icons/ticket_event_notifiy.svg";
+  static const String graySessionIcon = "assets/icons/gray_session.svg";
+  static const String selectedSessionIcon = "assets/icons/selected_session.svg";
 
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
