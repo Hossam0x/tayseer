@@ -4,10 +4,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:tayseer/features/advisor/event/model/my_event_model.dart';
 import 'package:tayseer/my_import.dart';
 
+// Sentinel used in copyWith to allow explicitly setting nullable fields to null
+const _sentinel = Object();
+
 class EventsState {
   // ==================== Events Data ====================
   final CubitStates advisorEventsState;
   final CubitStates allEventsState;
+  final CubitStates deleteEventStatus;
   final String? errorMessage;
   final List<EventModel> advisorEvents;
   final List<EventModel> allEvents;
@@ -39,6 +43,7 @@ class EventsState {
     // Events
     this.advisorEventsState = CubitStates.initial,
     this.allEventsState = CubitStates.initial,
+    this.deleteEventStatus = CubitStates.initial,
     this.errorMessage,
     this.advisorEvents = const [],
     this.allEvents = const [],
@@ -71,12 +76,13 @@ class EventsState {
     // Events
     CubitStates? advisorEventsState,
     CubitStates? allEventsState,
+    CubitStates? deleteEventStatus,
     String? errorMessage,
     List<EventModel>? advisorEvents,
     List<EventModel>? allEvents,
     // Media
     List<XFile>? pickedImages,
-    XFile? pickedVideo,
+    Object? pickedVideo = _sentinel,
     bool? isVideoLoading,
     // Event Details
     String? duration,
@@ -99,12 +105,15 @@ class EventsState {
       // Events
       advisorEventsState: advisorEventsState ?? this.advisorEventsState,
       allEventsState: allEventsState ?? this.allEventsState,
+      deleteEventStatus: deleteEventStatus ?? this.deleteEventStatus,
       errorMessage: errorMessage ?? this.errorMessage,
       advisorEvents: advisorEvents ?? this.advisorEvents,
       allEvents: allEvents ?? this.allEvents,
       // Media
       pickedImages: pickedImages ?? this.pickedImages,
-      pickedVideo: pickedVideo ?? this.pickedVideo,
+      pickedVideo: pickedVideo == _sentinel
+          ? this.pickedVideo
+          : pickedVideo as XFile?,
       isVideoLoading: isVideoLoading ?? this.isVideoLoading,
       // Event Details
       duration: duration ?? this.duration,

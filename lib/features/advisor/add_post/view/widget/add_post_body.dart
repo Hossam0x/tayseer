@@ -1,16 +1,19 @@
 import 'package:tayseer/core/enum/add_post_enum.dart';
+import 'package:tayseer/core/utils/helper/picker_helper.dart';
+import 'package:tayseer/core/widgets/pick_image_bottom_sheet.dart';
+import 'package:tayseer/features/advisor/add_post/view/widget/ai_assistant_banner.dart';
 import 'package:tayseer/features/advisor/add_post/view/widget/custom_profile_header.dart';
-import 'package:tayseer/features/advisor/add_post/view/widget/gallery_bottom_sheet.dart';
-import 'package:tayseer/features/advisor/add_post/view/widget/gif_bottom_sheet.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_state.dart';
+import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
 import 'package:tayseer/my_import.dart';
 
 class AddPostBody extends StatelessWidget {
   const AddPostBody({super.key, required this.postType});
-  final AddPostEnum postType;
+  final AddPostEnum? postType;
   @override
   Widget build(BuildContext context) {
+    // debugPrint('AddPostBody build called with postType: ${postType?.name}');
     return BlocConsumer<AddPostCubit, AddPostState>(
       listenWhen: (previous, current) =>
           previous.addPostState != current.addPostState,
@@ -23,8 +26,6 @@ class AddPostBody extends StatelessWidget {
             builder: (context) => const CustomloadingApp(),
           );
         } else if (state.addPostState == CubitStates.success) {
-          FocusScope.of(context).unfocus();
-          context.pop(); // Dismiss loading dialog
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -32,8 +33,14 @@ class AddPostBody extends StatelessWidget {
               text: context.tr('post_published_successfully'),
             ),
           );
+          Future.delayed(const Duration(milliseconds: 500), () {
+            context.pushNamedAndRemoveUntil(
+              AppRouter.kAdvisorLayoutView,
+              predicate: (route) => false,
+            );
+          });
         } else if (state.addPostState == CubitStates.failure) {
-          context.pop(); // Dismiss loading dialog if shown
+          context.pop(); // Dismiss loading dialog
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -47,18 +54,30 @@ class AddPostBody extends StatelessWidget {
       },
       builder: (context, state) {
         final cubit = context.read<AddPostCubit>();
-
-        final hasText = state.draftText.trim().isNotEmpty;
-        final hasImages =
-            state.selectedImages.isNotEmpty ||
-            state.capturedImages.isNotEmpty ||
-            state.selectedVideos.isNotEmpty ||
-            state.selectedGifs.isNotEmpty;
         // require a selected category id before enabling publish
         final hasCategory =
             state.selectedCategoryId != null &&
             state.selectedCategoryId!.isNotEmpty;
-        final isActive = (hasText || hasImages) && hasCategory;
+
+        // Determine required media based on postType
+        final bool requiresImage = postType == AddPostEnum.post;
+        final bool requiresVideo =
+            postType == AddPostEnum.video || postType == AddPostEnum.reel;
+
+        final hasImage =
+            state.selectedImages.isNotEmpty || state.capturedImages.isNotEmpty;
+        final hasVideo =
+            state.selectedVideos.isNotEmpty || state.capturedVideo != null;
+
+        // If postType requires specific media, enforce it.
+        // For `post` we allow text-only posts (text + category) without images/videos.
+        final bool hasRequiredMedia = requiresImage
+            ? (hasImage || state.draftText.trim().isNotEmpty)
+            : requiresVideo
+            ? hasVideo
+            : (hasImage || hasVideo || state.draftText.trim().isNotEmpty);
+
+        final isActive = hasCategory && hasRequiredMedia;
 
         return CustomBackground(
           child: Scaffold(
@@ -82,7 +101,7 @@ class AddPostBody extends StatelessWidget {
                     onPressed: isActive
                         ? () => cubit.createPost(
                             categoryId: state.selectedCategoryId!,
-                            postType: "post",
+                            postType: postType?.name ?? 'post',
                           )
                         : null,
                   ),
@@ -96,8 +115,6 @@ class AddPostBody extends StatelessWidget {
                   CustomProfileHeader(
                     name: 'Anna Mary',
                     initialSubtitle: context.tr('select_group'),
-                    imageUrl:
-                        'https://pbs.twimg.com/profile_images/1519640426956963840/zgFOntNM_400x400.jpg',
                     isVerified: true,
                     groups: state.categories,
                     onGroupSelectedId: (group) =>
@@ -227,121 +244,17 @@ class AddPostBody extends StatelessWidget {
                       ),
                     ),
 
-                  // Selected GIFs
-                  if (state.selectedGifs.isNotEmpty)
-                    SizedBox(
-                      height: context.height * 0.18,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        itemCount: state.selectedGifs.length,
-                        itemBuilder: (_, index) {
-                          final gifUrl = state.selectedGifs[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Stack(
-                              children: [
-                                AspectRatio(
-                                  aspectRatio: 16 / 9,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: Image.network(
-                                      gifUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (c, e, s) => Container(
-                                        color: Colors.grey.shade300,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: GestureDetector(
-                                    onTap: () =>
-                                        cubit.removeSelectedGif(gifUrl),
-                                    child: const CircleAvatar(
-                                      radius: 12,
-                                      backgroundColor: Colors.black54,
-                                      child: Icon(
-                                        Icons.close,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                  // Selected Videos
-                  if (state.selectedVideos.isNotEmpty)
-                    SizedBox(
-                      height: context.height * 0.18,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        itemCount: state.selectedVideos.length,
-                        itemBuilder: (_, index) {
-                          final video = state.selectedVideos[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Stack(
-                              children: [
-                                AspectRatio(
-                                  aspectRatio: 16 / 9,
-                                  child: FutureBuilder(
-                                    future: video.thumbnailDataWithSize(
-                                      const ThumbnailSize(300, 300),
-                                    ),
-                                    builder: (_, snap) {
-                                      if (!snap.hasData)
-                                        return Container(
-                                          color: Colors.grey.shade300,
-                                        );
-                                      return ClipRRect(
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: Image.memory(
-                                          snap.data!,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                const Positioned(
-                                  left: 8,
-                                  top: 8,
-                                  child: Icon(
-                                    Icons.play_circle_fill,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: GestureDetector(
-                                    onTap: () =>
-                                        cubit.removeSelectedVideo(video),
-                                    child: const CircleAvatar(
-                                      radius: 12,
-                                      backgroundColor: Colors.black54,
-                                      child: Icon(
-                                        Icons.close,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                  // Captured Video (single) from Camera or CustomGallerySheet
+                  if (state.capturedVideo != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: CustomUploadedVideoPreview(
+                        height: 0.3,
+                        width: 0.9,
+                        key: ValueKey(state.capturedVideo!.path),
+                        video: state.capturedVideo!,
+                        onInitialized: () {},
+                        onRemove: () => cubit.removeCapturedVideo(),
                       ),
                     ),
                 ],
@@ -354,6 +267,10 @@ class AddPostBody extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  AiAssistantBanner(
+                    isLoading: state.isAiLoading,
+                    onTap: () => cubit.enhanceTextWithGemini(context),
+                  ),
                   Divider(color: Colors.grey, thickness: 0.5),
                   Row(
                     children: [
@@ -363,11 +280,31 @@ class AddPostBody extends StatelessWidget {
                           color: HexColor('4d4d4d'),
                           size: 28,
                         ),
-                        onPressed: () {
-                          context.pushNamed(
-                            AppRouter.kCameraView,
-                            arguments: {'cubit': cubit},
+                        onPressed: () async {
+                          // choose camera type based on postType
+                          final reqType = postType == AddPostEnum.post
+                              ? RequestType.image
+                              : (postType == AddPostEnum.video ||
+                                    postType == AddPostEnum.reel)
+                              ? RequestType.video
+                              : RequestType.common;
+
+                          final picker = MediaPickerController(
+                            config: PickerConfig(
+                              allowMultiple: false,
+                              maxCount: 1,
+                              requestType: reqType,
+                            ),
                           );
+                          final SelectedMedia? picked = await picker
+                              .pickFromCamera();
+                          if (picked != null) {
+                            if (picked.type == AssetType.image) {
+                              cubit.addCapturedImage(picked.file);
+                            } else if (picked.type == AssetType.video) {
+                              cubit.addCapturedVideo(XFile(picked.file.path));
+                            }
+                          }
                         },
                       ),
                       GestureDetector(
@@ -375,23 +312,51 @@ class AddPostBody extends StatelessWidget {
                         onTap: () {
                           showModalBottomSheet(
                             context: context,
-                            barrierColor: Colors.transparent,
-                            backgroundColor: Colors.transparent,
                             isScrollControlled: true,
-                            builder: (_) => GalleryBottomSheet(cubit: cubit),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      GestureDetector(
-                        child: AppImage(AssetsData.kGifIcon),
-                        onTap: () {
-                          showModalBottomSheet(
-                            context: context,
-                            barrierColor: Colors.transparent,
                             backgroundColor: Colors.transparent,
-                            isScrollControlled: true,
-                            builder: (_) => GifBottomSheet(cubit: cubit),
+                            builder: (_) => CustomGallerySheet(
+                              config: PickerConfig(
+                                allowMultiple: true,
+                                maxCount: 10,
+                                requestType: postType == AddPostEnum.post
+                                    ? RequestType.image
+                                    : postType == AddPostEnum.video
+                                    ? RequestType.video
+                                    : postType == AddPostEnum.reel
+                                    ? RequestType.video
+                                    : RequestType.common,
+                              ),
+                              onMediaSelected: (list) {
+                                if (list.isEmpty) return;
+
+                                final List<File> imageFiles = [];
+                                final List<File> videoFiles = [];
+
+                                for (var item in list) {
+                                  if (item.type == AssetType.video) {
+                                    // log('Video selected: ${item.file.path}');
+                                    videoFiles.add(item.file);
+                                  } else if (item.type == AssetType.image) {
+                                    // log('Image selected: ${item.file.path}');
+                                    imageFiles.add(item.file);
+                                  }
+                                }
+
+                                // Commit to cubit: captured images/videos
+                                if (imageFiles.isNotEmpty) {
+                                  for (final f in imageFiles) {
+                                    cubit.addCapturedImage(f);
+                                  }
+                                }
+
+                                if (videoFiles.isNotEmpty) {
+                                  // Only allow a single captured video — take the first one
+                                  cubit.addCapturedVideo(
+                                    XFile(videoFiles.first.path),
+                                  );
+                                }
+                              },
+                            ),
                           );
                         },
                       ),

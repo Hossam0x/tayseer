@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:tayseer/core/utils/helper/image_picker_helper.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -34,16 +33,15 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
 
   void didUpdateWidget(covariant UploadImageWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If parent cleared the initialImage (e.g., after successful upload),
-    // clear internal selection so the widget shows the placeholder.
-    if (widget.initialImage == null && _selectedXFile != null) {
-      setState(() {
-        _selectedXFile = null;
-      });
-    }
-    // If a new initialImage is provided, prefer showing it.
-    else if (widget.initialImage != null &&
-        widget.initialImage != oldWidget.initialImage) {
+    // Only clear internal selection when parent explicitly removed a previously
+    // provided `initialImage`, or when the parent replaced it with a new one.
+    final bool parentRemovedImage =
+        oldWidget.initialImage != null && widget.initialImage == null;
+    final bool parentReplacedImage =
+        widget.initialImage != null &&
+        widget.initialImage != oldWidget.initialImage;
+
+    if (parentRemovedImage || parentReplacedImage) {
       setState(() {
         _selectedXFile = null;
       });
@@ -82,4 +80,45 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
       ),
     );
   }
+}
+
+/// A FormField wrapper around [UploadImageWidget] so it can participate in
+/// form validation similar to `DatePickerField`.
+class UploadImageFormField extends FormField<XFile> {
+  UploadImageFormField({
+    super.key,
+    XFile? initialValue,
+    required ValueChanged<XFile> onImagePicked,
+    bool? isShowImage = true,
+    FormFieldSetter<XFile>? onSaved,
+    FormFieldValidator<XFile>? validator,
+    AutovalidateMode autovalidateMode = AutovalidateMode.disabled,
+  }) : super(
+         initialValue: initialValue,
+         onSaved: onSaved,
+         validator: validator,
+         autovalidateMode: autovalidateMode,
+         builder: (FormFieldState<XFile> state) {
+           return Column(
+             crossAxisAlignment: CrossAxisAlignment.start,
+             children: [
+               UploadImageWidget(
+                 isShowImage: isShowImage,
+                 initialImage: state.value ?? initialValue,
+                 onImagePicked: (img) {
+                   state.didChange(img);
+                   onImagePicked(img);
+                 },
+               ),
+               if (state.hasError) ...[
+                 const SizedBox(height: 6),
+                 Text(
+                   state.errorText ?? '',
+                   style: const TextStyle(color: Colors.red, fontSize: 11),
+                 ),
+               ],
+             ],
+           );
+         },
+       );
 }

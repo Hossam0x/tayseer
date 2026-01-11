@@ -1,12 +1,6 @@
+class LocationPermissionResult {
+  final bool granted;
+  final String? message;
 
-class LocationResult {
-  final double latitude;
-  final double longitude;
-  final String address;
-
-  LocationResult({
-    required this.latitude,
-    required this.longitude,
-    required this.address,
-  });
+  LocationPermissionResult({required this.granted, this.message});
 }

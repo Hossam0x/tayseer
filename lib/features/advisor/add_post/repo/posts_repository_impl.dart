@@ -1,6 +1,5 @@
-import 'dart:developer';
-import 'dart:io';
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/features/advisor/add_post/model/category_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -25,11 +24,12 @@ class PostsRepositoryImpl implements PostsRepository {
     required String categoryId,
     required String postType,
     List<AssetEntity>? images,
-    AssetEntity? videos,
+    List<File>? imageFiles,
+    XFile? videoFile,
   }) async {
     try {
       List<MultipartFile> uploadedImages = [];
-      if (images != null && images.isNotEmpty) {
+      if (images != null) {
         for (final asset in images) {
           final file = await asset.file;
           if (file != null) {
@@ -37,38 +37,34 @@ class PostsRepositoryImpl implements PostsRepository {
           }
         }
       }
-
-      List<MultipartFile> uploadedVideos = [];
-      if (videos != null) {
-        final file = await videos.file;
-        if (file != null) {
-          uploadedVideos.add(await _fileToMultipart(file));
+      if (imageFiles != null) {
+        for (final file in imageFiles) {
+          uploadedImages.add(await _fileToMultipart(file));
         }
       }
 
+      /// form data
       final data = <String, dynamic>{
         if (content != null) 'content': content,
         'categoryId': categoryId,
         'postType': postType,
         if (uploadedImages.isNotEmpty) 'images': uploadedImages,
-        if (uploadedVideos.isNotEmpty) 'video': uploadedVideos.first,
+        if (videoFile != null) 'videos': await uploadVideoToApi(videoFile),
       };
-      log('Create Post Data: $data');
-      log('Number of Images: $uploadedImages');
-      log('Number of Videos: $uploadedVideos');
+
       final response = await apiService.post(
         endPoint: '/posts/create',
         isFromData: true,
         isAuth: true,
         data: data,
       );
-      log('Create Post Response: $response');
+
       final success = response['success'] ?? false;
+
       if (success) {
         return right(null);
       } else {
-        final message = response['message'] ?? 'فشل إنشاء المنشور';
-        return left(ServerFailure(message));
+        return left(ServerFailure(response['message'] ?? 'فشل إنشاء المنشور'));
       }
     } on DioException catch (error) {
       final message =
@@ -83,10 +79,12 @@ class PostsRepositoryImpl implements PostsRepository {
   Future<Either<Failure, List<CategoryModel>>> getALLCategory() async {
     try {
       final response = await apiService.get(endPoint: '/category');
-      final packagesJson = response['data'] as List;
 
-      List<CategoryModel> results = packagesJson
-          .map((package) => CategoryModel.fromJson(package))
+      final data = response['data'];
+      final categoriesJson = data['categories'] as List;
+
+      List<CategoryModel> results = categoriesJson
+          .map((category) => CategoryModel.fromJson(category))
           .toList();
 
       debugPrint('category fetched: $results');

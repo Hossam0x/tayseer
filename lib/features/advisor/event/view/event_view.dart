@@ -8,11 +8,8 @@ class EventView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create:
-          (context) =>
-              EventsCubit()
-                ..getAdvisorEvents()
-                ..getAllEvents(),
+      create: (context) => EventsCubit(),
+
       child: Scaffold(body: AdvisorBackground(child: const EventBody())),
     );
   }

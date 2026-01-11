@@ -1,14 +1,34 @@
 // lib/features/advisor/event/view_model/events_cubit.dart
 
+import 'dart:async';
+
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+import 'package:tayseer/features/advisor/event/model/location_result_model.dart';
+import 'package:tayseer/features/advisor/event/model/my_event_model.dart';
 import 'package:tayseer/features/advisor/event/repo/event_repo.dart';
 import 'package:tayseer/features/advisor/event/view_model/events_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class EventsCubit extends Cubit<EventsState> {
   EventsCubit() : super(const EventsState());
+
+  //// =================== Location  controler ====================
+  final TextEditingController locationSearchController =
+      TextEditingController();
+
+  Timer? _debounce;
+
+  void onSearchChanged(String text) {
+    // cancel timer لو لسه شغال
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    // ابدأ تايمر جديد
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      getAllEvents();
+    });
+  }
 
   // ==================== Controllers ====================
   final creatEventformKey = GlobalKey<FormState>();
@@ -264,7 +284,6 @@ class EventsCubit extends Cubit<EventsState> {
     );
   }
 
-  /// تعيين الموقع يدوياً
   void setLocation({
     required double latitude,
     required double longitude,
@@ -342,11 +361,49 @@ class EventsCubit extends Cubit<EventsState> {
     }
   }
 
+  Future<void> deleteEvent(String id) async {
+    try {
+      emit(state.copyWith(deleteEventStatus: CubitStates.loading));
+
+      final either = await getIt<EventRepo>().deleteEvent(id: id);
+
+      either.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              deleteEventStatus: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (_) {
+          final updated = List<EventModel>.from(state.advisorEvents)
+            ..removeWhere((e) => e.id == id);
+          emit(
+            state.copyWith(
+              advisorEvents: updated,
+              deleteEventStatus: CubitStates.success,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          deleteEventStatus: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+  }
+
   Future<void> getAllEvents() async {
     try {
       emit(state.copyWith(allEventsState: CubitStates.loading));
 
-      final either = await getIt<EventRepo>().getAllEvents();
+      final either = await getIt<EventRepo>().getAllEvents(
+        locationSearchController.text,
+      );
 
       either.fold(
         (failure) {
@@ -425,27 +482,40 @@ class EventsCubit extends Cubit<EventsState> {
     }
   }
 
-  void _clearForm() {
+  Future _clearForm() async {
     eventTitleController.clear();
     eventDescriptionController.clear();
+    eventPriceBeforeDiscountController.clear();
+    eventPriceAfterDiscountController.clear();
+    eventPriceAfterDiscountController.clear();
     clearPickedImages();
     removePickedVideo();
     clearLocation();
+    setDuration(null);
+    setStartTime(null);
+    setEventDate(null);
+    setnumberOfAttendees(null);
+    emit(
+      state.copyWith(
+        pickedImages: const [],
+        pickedVideo: null,
+        isVideoLoading: false,
+        numberOfAttendees: null,
+        latitude: null,
+        longitude: null,
+        locationAddress: null,
+        selectedPosition: null,
+        selectedAddress: '',
+        markers: const {},
+      ),
+    );
   }
 
   @override
   Future<void> close() {
-    eventTitleController.dispose();
-    eventDescriptionController.dispose();
+  
+    _debounce?.cancel();
+
     return super.close();
   }
-}
-
-// ==================== Helper Classes ====================
-
-class LocationPermissionResult {
-  final bool granted;
-  final String? message;
-
-  LocationPermissionResult({required this.granted, this.message});
 }

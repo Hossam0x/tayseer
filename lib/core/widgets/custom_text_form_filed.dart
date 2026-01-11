@@ -3,8 +3,6 @@ import '../../my_import.dart';
 class CustomTextFormField extends StatefulWidget {
   const CustomTextFormField({
     super.key,
-
-    /// Old flags (زي ما هي)
     this.isName = false,
     this.isMail = false,
     this.isPhone = false,
@@ -13,15 +11,14 @@ class CustomTextFormField extends StatefulWidget {
     this.isPasswordFiled = false,
     this.isConfirmPasswordFiled = false,
     this.isPhoneWithCountryCode = false,
+    this.isNumber = false,
 
-    /// Old params
     this.controller,
     this.maxLines = 1,
     this.enable = true,
     this.withCountryCode = false,
     this.hintText,
 
-    /// ✅ New flexible params
     this.prefixIcon,
     this.suffixIcon,
     this.keyboardType,
@@ -32,7 +29,6 @@ class CustomTextFormField extends StatefulWidget {
     this.readOnly = false,
   });
 
-  /// Old logic
   final bool isName;
   final bool isMail;
   final bool isPasswordFiled;
@@ -41,6 +37,7 @@ class CustomTextFormField extends StatefulWidget {
   final bool isCity;
   final bool isAccountName;
   final bool isPhoneWithCountryCode;
+  final bool isNumber;
 
   final TextEditingController? controller;
   final int maxLines;
@@ -48,7 +45,6 @@ class CustomTextFormField extends StatefulWidget {
   final bool withCountryCode;
   final String? hintText;
 
-  /// New
   final IconData? prefixIcon;
   final Widget? suffixIcon;
   final TextInputType? keyboardType;
@@ -71,6 +67,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
 
   TextInputType _resolveKeyboardType() {
     if (widget.keyboardType != null) return widget.keyboardType!;
+    if (widget.isNumber) return TextInputType.number;
     if (widget.isMail) return TextInputType.emailAddress;
     if (widget.isPhone) return TextInputType.phone;
     if (widget.isName || widget.isAccountName) return TextInputType.name;
@@ -90,24 +87,18 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       onChanged: widget.onChanged,
       onTap: widget.onTap,
       style: Styles.textStyle10,
-
-      obscureText:
-          widget.isPasswordFiled || widget.isConfirmPasswordFiled
-              ? _showPassword
-              : false,
-
+      obscureText: widget.isPasswordFiled || widget.isConfirmPasswordFiled
+          ? _showPassword
+          : false,
       decoration: InputDecoration(
         filled: true,
         fillColor: AppColors.kWhiteColor,
         enabled: widget.enable,
         isDense: true,
-
         contentPadding: EdgeInsets.symmetric(
           vertical: widget.maxLines > 1 ? 12 : context.height * .022,
           horizontal: 12,
         ),
-
-        /// ✅ Borders (زي ما كانت بالظبط)
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(
@@ -130,76 +121,71 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           borderSide: const BorderSide(color: Colors.red),
         ),
         errorStyle: Styles.textStyle10.copyWith(color: Colors.red),
-
-        /// ✅ Icons
         prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon) : null,
-
         suffixIcon:
             widget.suffixIcon ??
             ((widget.isPasswordFiled || widget.isConfirmPasswordFiled)
                 ? IconButton(
-                  icon: Icon(
-                    _showPassword ? Icons.visibility_off : Icons.visibility,
-                    color: AppColors.kprimaryColor,
-                  ),
-                  onPressed: _toggleVisibility,
-                )
+                    icon: Icon(
+                      _showPassword ? Icons.visibility_off : Icons.visibility,
+                      color: AppColors.kprimaryColor,
+                    ),
+                    onPressed: _toggleVisibility,
+                  )
                 : null),
 
+        /// 🔥 هنا الـ localization
         hintText:
             widget.hintText ??
             (widget.isMail
-                ? "Example: name@example.com"
+                ? context.tr('enter_email')
                 : widget.isName
-                ? "ادخل اسمك هنا"
+                ? context.tr('enter_name')
                 : widget.isAccountName
-                ? "ادخل اسم الحساب - EX: user552"
+                ? context.tr('enter_account_name')
                 : widget.isPasswordFiled
-                ? "كلمة المرور"
+                ? context.tr('password')
                 : widget.isConfirmPasswordFiled
-                ? "تأكيد كلمة المرور"
+                ? context.tr('confirm_password')
                 : widget.isPhone
-                ? "Ex: 01XXXXXXXXX ادخل رقم الهاتف"
+                ? context.tr('enter_phone')
                 : widget.isCity
-                ? "ادخل المدينة"
-                : "ادخل النص هنا"),
+                ? context.tr('enter_city')
+                : context.tr('enter_text')),
 
         hintStyle: Styles.textStyle12.copyWith(
           color: AppColors.kprimaryColor.withOpacity(0.5),
         ),
       ),
-
-      /// ✅ Validator (لو بعته من بره ياخده – غير كده القديم)
       validator: widget.validator ?? _defaultValidator,
     );
   }
 
-  /// 🧠 Old validation logic untouched
   String? _defaultValidator(String? value) {
     final text = value?.trim() ?? '';
 
     if (widget.isMail) {
-      if (text.isEmpty) return "يجب إدخال البريد الإلكتروني";
+      if (text.isEmpty) return context.tr("email_required");
       final regex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
       if (!regex.hasMatch(text)) {
-        return "صيغة البريد الإلكتروني غير صحيحة";
+        return context.tr("invalid_email");
       }
       return null;
     }
 
     if (widget.isPasswordFiled || widget.isConfirmPasswordFiled) {
       if (text.length < 8) {
-        return "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
+        return context.tr("password_min_length");
       }
       return null;
     }
 
     if (widget.isPhone) {
-      if (text.length != 11) return "رقم الهاتف غير صحيح";
+      if (text.length != 11) return context.tr("invalid_phone");
       return null;
     }
 
-    if (text.isEmpty) return "يجب إدخال هذا الحقل";
+    if (text.isEmpty) return context.tr("field_required");
     return null;
   }
 }

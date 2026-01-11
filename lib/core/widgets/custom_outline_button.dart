@@ -12,7 +12,7 @@ class CustomOutlineButton extends StatelessWidget {
     this.isCorrectIcon = false,
     this.isSocialLinkButton = false,
     this.height = 60,
-    this.width = 70,
+    this.width = 100,
   });
 
   final String text;
@@ -26,45 +26,39 @@ class CustomOutlineButton extends StatelessWidget {
   final double? width;
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: height,
-        width: width,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xffEB7A91).withOpacity(0.3),
-              Color(0xffAC1A37).withOpacity(0.3),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Color(0xff85142B)),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
+    return Container(
+      height: height,
+      width: width,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.kprimaryColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.kprimaryTextColor),
+      ),
+      // margin: const EdgeInsets.only(right: 10, left: 10, bottom: 15),
+      child: InkWell(
+        onTap: onTap,
+        child: Row(
+          mainAxisAlignment: (corectIcons == null && normalIcon == null)
+              ? MainAxisAlignment.center
+              : MainAxisAlignment.spaceBetween,
           children: [
-            Center(
-              child: GradientText(text: text, style: Styles.textStyle20Bold),
+            if (corectIcons != null)
+              Icon(corectIcons, size: 20, color: AppColors.kprimaryColor),
+
+            Text(
+              text,
+              style: Styles.textStyle14.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.kprimaryTextColor,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (isCorrectIcon || isSocialLinkButton)
-                  Icon(corectIcons, size: 20, color: AppColors.kprimaryColor)
-                else
-                  const SizedBox(width: 20),
-
-                if (!isCorrectIcon || isSocialLinkButton)
-                  Icon(normalIcon, size: 20, color: AppColors.kprimaryColor)
-                else
-                  const SizedBox(width: 20),
-              ],
-            ),
+            if (normalIcon != null)
+              Icon(normalIcon, size: 20, color: AppColors.kprimaryColor),
           ],
         ),
       ),

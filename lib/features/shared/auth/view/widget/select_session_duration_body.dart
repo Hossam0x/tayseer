@@ -137,7 +137,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
 
                   return CustomBotton(
                     width: context.width * .9,
-                    title: state.addServiceProviderState == CubitStates.initial
+                    title: state.addServiceProviderState == CubitStates.loading
                         ? context.tr('sending')
                         : context.tr('next'),
                     useGradient: hasSelection,

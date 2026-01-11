@@ -9,7 +9,8 @@ abstract class PostsRepository {
     required String categoryId,
     required String postType,
     List<AssetEntity>? images,
-    AssetEntity? videos,
+    List<File>? imageFiles,
+    XFile? videoFile,
   });
   Future<Either<Failure, List<CategoryModel>>> getALLCategory();
 }

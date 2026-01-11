@@ -61,10 +61,6 @@ class ALayOutViewBody extends StatelessWidget {
         return [
           HomeView(onScroll: cubit.onScroll),
           const ChatView(),
-          Container(
-            color: Colors.white,
-            child: const Center(child: Text('My Space')),
-          ),
           EventView(),
           ProfileView(),
         ];

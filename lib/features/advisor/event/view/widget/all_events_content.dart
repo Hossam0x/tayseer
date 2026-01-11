@@ -10,17 +10,12 @@ class AllEventsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dummyAttendees = [
-      'https://i.pravatar.cc/150?u=1',
-      'https://i.pravatar.cc/150?u=2',
-      'https://i.pravatar.cc/150?u=3',
-    ];
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         children: [
           Gap(context.responsiveHeight(16)),
+
           GestureDetector(
             onTap: () => _showLocationBottomSheet(context),
             child: Container(
@@ -57,53 +52,76 @@ class AllEventsContent extends StatelessWidget {
 
           BlocBuilder<EventsCubit, EventsState>(
             builder: (context, state) {
-              if (state.allEventsState == CubitStates.loading) {
-                return SizedBox(
-                  height: context.height * 0.6,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    itemCount: 5,
-                    separatorBuilder:
-                        (context, index) => Gap(context.responsiveHeight(16)),
-                    itemBuilder: (context, index) => const EventCardShimmer(),
-                  ),
-                );
-              }
-
-              if (state.allEvents.isEmpty) {
-                return SizedBox(
-                  height: context.height * 0.6,
-                  child: const EmptyEventSection(),
-                );
-              }
-
-              return SizedBox(
-                height: context.height * 0.5,
-                child: ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  itemCount: state.allEvents.length,
-                  separatorBuilder:
-                      (context, index) => Gap(context.responsiveHeight(16)),
-                  itemBuilder: (context, index) {
-                    final event = state.allEvents[index];
-                    return EventCardItem(
-                      imageUrl: event.image,
-                      sessionTitle: event.title,
-                      location: event.location,
-                      advisorName: event.advisor,
-                      dateTime: '${event.date} - ${event.startTime}',
-                      price: '${event.priceAfterDiscount} EGP',
-                      oldPrice: '${event.priceBeforeDiscount} EGP',
-                      isFeatured: event.specialEvent,
-                      attendeesCount: 0,
-                      attendeesImages: dummyAttendees,
-                    );
-                  },
-                ),
+              return RefreshIndicator(
+                color: AppColors.kprimaryColor,
+                backgroundColor: Colors.white,
+                onRefresh: () async {
+                  await context.read<EventsCubit>().getAllEvents();
+                },
+                child: _buildBody(context, state),
               );
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, EventsState state) {
+    // شيمر
+    if (state.allEventsState == CubitStates.loading) {
+      return SizedBox(
+        height: context.height * 0.6,
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 20),
+          itemCount: 5,
+          separatorBuilder: (c, i) => Gap(context.responsiveHeight(16)),
+          itemBuilder: (_, __) => const EventCardShimmer(),
+        ),
+      );
+    }
+
+    if (state.allEvents.isEmpty) {
+      return SizedBox(
+        height: context.height * 0.6,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [EmptyEventSection()],
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: context.height * 0.5,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 20),
+        itemCount: state.allEvents.length,
+        separatorBuilder: (c, i) => Gap(context.responsiveHeight(16)),
+        itemBuilder: (context, index) {
+          final event = state.allEvents[index];
+          return EventCardItem(
+            enableTapAnimation: false,
+            onTap: () => context.pushNamed(
+              AppRouter.kEventDetailView,
+              arguments: {'eventId': event.id},
+            ),
+            imageUrl: event.image,
+            sessionTitle: event.title,
+            location: event.location,
+            advisorName: event.advisor,
+            dateTime: '${event.date} - ${event.startTime}',
+            price: '${event.priceAfterDiscount} EGP',
+            oldPrice: '${event.priceBeforeDiscount} EGP',
+            isFeatured: event.specialEvent,
+            attendeesCount: event.totalReservedUsers,
+            attendeesImages: event.reservations
+                .map((r) => r.image)
+                .where((i) => i.isNotEmpty)
+                .toList(),
+          );
+        },
       ),
     );
   }
@@ -113,7 +131,8 @@ class AllEventsContent extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const LocationBottomSheet(),
+      builder: (_) =>
+          LocationBottomSheet(eventsCubit: context.read<EventsCubit>()),
     );
   }
 }

@@ -13,5 +13,4 @@ const String kbaseUrl = 'https://tayser-app.com/api/v1';
 LoginData? kCurrentUserData;
 Gender? selectedGender;
 UserTypeEnum? selectedUserType = UserTypeEnum.user;
-
 String phone = '201009119795';

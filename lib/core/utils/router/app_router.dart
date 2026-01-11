@@ -2,7 +2,6 @@ import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
-import 'package:tayseer/features/advisor/add_post/view/camera_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/conversation.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
@@ -16,8 +15,12 @@ import 'package:tayseer/features/settings/view/blocked_user_view.dart';
 import 'package:tayseer/features/settings/view/edit_personal_data_view.dart';
 import 'package:tayseer/features/settings/view/settings_view.dart';
 import 'package:tayseer/features/advisor/event/view/creat_event_view.dart';
+import 'package:tayseer/features/advisor/event_detail/view/event_detail_view.dart';
+import 'package:tayseer/features/advisor/event_detail/view/update_event_view.dart';
+import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/map/map_view.dart';
 import 'package:tayseer/features/advisor/notification/presentation/view/notification_view.dart';
+import 'package:tayseer/features/advisor/session/view/session_details_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
@@ -121,6 +124,9 @@ abstract class AppRouter {
   static const kMapView = '/MapView';
   static const kCreatEventView = '/CreatEventView';
   static const notification = '/notification';
+  static const kEventDetailView = '/EventDetailView';
+  static const kUpdateEventView = '/UpdateEventView';
+  static const kSessionDetailsView = '/SessionDetailsView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -509,24 +515,36 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => const ASearchView(),
         );
+      case kSessionDetailsView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SessionDetailsView(),
+        );
+      case kEventDetailView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: settings,
+
+          builder: (_) => BlocProvider.value(
+            value: getIt<EventDetailCubit>()
+              ..fetchEventDetail(
+                args != null && args['eventId'] != null
+                    ? args['eventId'] as String
+                    : '',
+              ),
+            child: const EventDetailView(),
+          ),
+        );
       case kAddPostView:
         final args = settings.arguments as AddPostEnum;
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => BlocProvider(
-            create: (context) => AddPostCubit()
-              ..loadGallery()
-              ..loadGifs()
-              ..getALLCategory(),
+            create: (context) => AddPostCubit()..getALLCategory(),
             child: AddPostView(addPostEnum: args),
           ),
         );
-      case kCameraView:
-        final args = settings.arguments as Map<String, dynamic>;
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => CameraView(cubit: args['cubit']),
-        );
+
       case kMapView:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
@@ -539,6 +557,13 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => CreatEventView(cubit: args['cubit']),
         );
+      case kUpdateEventView:
+        final cubit = settings.arguments as EventDetailCubit;
+        return MaterialPageRoute(
+          builder: (_) =>
+              BlocProvider.value(value: cubit, child: UpdateEventView()),
+        );
+
       case kChatRequest:
         return MaterialPageRoute(
           settings: settings,

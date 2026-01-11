@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:tayseer/features/advisor/add_post/model/category_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -12,13 +11,14 @@ class AddPostState {
   final List<AssetEntity> galleryVideos;
   final List<AssetEntity> selectedImages;
   final List<File> capturedImages;
+  final XFile? capturedVideo;
   final List<AssetEntity> selectedVideos;
   final List<String> availableGifs;
-  final List<String> selectedGifs;
   final bool loading;
   final String draftText;
   final String? selectedCategoryId;
   final String? errorMessage;
+  final bool isAiLoading;
 
   const AddPostState({
     this.addPostState = CubitStates.initial,
@@ -27,8 +27,8 @@ class AddPostState {
     this.galleryAlbums = const [],
     this.selectedImages = const [],
     this.capturedImages = const [], // 🔥
+    this.capturedVideo,
     this.availableGifs = const [],
-    this.selectedGifs = const [],
     this.galleryVideos = const [],
     this.galleryVideoAlbums = const [],
     this.selectedVideos = const [],
@@ -37,6 +37,7 @@ class AddPostState {
     this.errorMessage,
     this.selectedCategoryId,
     this.categories = const [],
+    this.isAiLoading = false,
   });
 
   AddPostState copyWith({
@@ -48,14 +49,13 @@ class AddPostState {
     List<AssetPathEntity>? galleryVideoAlbums,
     List<AssetEntity>? selectedImages,
     List<File>? capturedImages, // 🔥
-    List<String>? availableGifs,
-    List<String>? selectedGifs,
-    List<AssetEntity>? galleryVideos,
-    List<AssetEntity>? selectedVideos,
+    Object? capturedVideo = _capturedVideoSentinel,
+
     bool? loading,
     String? draftText,
     String? errorMessage,
     String? selectedCategoryId,
+    bool? isAiLoading,
   }) {
     return AddPostState(
       addPostState: addPostState ?? this.addPostState,
@@ -66,13 +66,16 @@ class AddPostState {
       galleryVideoAlbums: galleryVideoAlbums ?? this.galleryVideoAlbums,
       selectedImages: selectedImages ?? this.selectedImages,
       capturedImages: capturedImages ?? this.capturedImages, // 🔥
-      availableGifs: availableGifs ?? this.availableGifs,
-      selectedGifs: selectedGifs ?? this.selectedGifs,
-      galleryVideos: galleryVideos ?? this.galleryVideos,
-      selectedVideos: selectedVideos ?? this.selectedVideos,
+      capturedVideo: identical(capturedVideo, _capturedVideoSentinel)
+          ? this.capturedVideo
+          : (capturedVideo as XFile?),
+
       loading: loading ?? this.loading,
       draftText: draftText ?? this.draftText,
       selectedCategoryId: selectedCategoryId ?? this.selectedCategoryId,
+      errorMessage: errorMessage,
     );
   }
 }
+
+const _capturedVideoSentinel = Object();

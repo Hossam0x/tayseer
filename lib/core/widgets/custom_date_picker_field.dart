@@ -74,7 +74,7 @@ class DatePickerField extends FormField<DateTime> {
                  const SizedBox(height: 6),
                  Text(
                    state.errorText!,
-                   style: const TextStyle(color: Colors.red, fontSize: 11),
+                   style: const TextStyle(color: Colors.red, fontSize: 10),
                  ),
                ],
              ],
