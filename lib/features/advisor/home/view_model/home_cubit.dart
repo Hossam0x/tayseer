@@ -12,6 +12,10 @@ class HomeCubit extends Cubit<HomeState> {
 
   HomeCubit(this.homeRepository) : super(HomeState());
 
+  void setInitialPost(PostModel post) {
+    emit(state.copyWith(posts: [post], postsState: CubitStates.success));
+  }
+
   // ═══════════════════════════════════════════════════════════
   // 📌 FETCH POSTS
   // ═══════════════════════════════════════════════════════════

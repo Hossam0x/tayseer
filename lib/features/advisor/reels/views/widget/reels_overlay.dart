@@ -6,6 +6,8 @@ import 'package:tayseer/core/widgets/post_card/circular_icon_button.dart';
 import 'package:tayseer/core/widgets/post_card/reaction_like_button.dart';
 import 'package:tayseer/core/widgets/post_card/share_button.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/home/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 // تأكد من استيراد AppImage
 
@@ -13,11 +15,16 @@ class ReelsOverlay extends StatelessWidget {
   final PostModel post;
   final dynamic Function(ReactionType?) onReactionChanged;
   final VoidCallback onShareTapped;
+  final VideoPlayerController? cachedController;
+  final GlobalKey? likeButtonKey;
+
   const ReelsOverlay({
     super.key,
     required this.post,
     required this.onReactionChanged,
     required this.onShareTapped,
+    this.cachedController,
+    this.likeButtonKey,
   });
 
   @override
@@ -204,11 +211,14 @@ class ReelsOverlay extends StatelessWidget {
       spacing: context.responsiveHeight(22),
       children: [
         _buildCircleActionBtn(
-          child: ReactionLikeButton(
-            height: 50,
-            width: 50,
-            onReactionChanged: onReactionChanged,
-            initialReaction: post.myReaction,
+          child: SizedBox(
+            key: likeButtonKey,
+            child: ReactionLikeButton(
+              height: 50,
+              width: 50,
+              onReactionChanged: onReactionChanged,
+              initialReaction: post.myReaction,
+            ),
           ),
           count: post.likesCount,
         ),
@@ -220,7 +230,18 @@ class ReelsOverlay extends StatelessWidget {
             backgroundColor: const Color(0xFFFCE9ED),
 
             onTap: () {
-              // open bottom sheet comments
+              final homeCubit = getIt<HomeCubit>();
+              homeCubit.setInitialPost(post);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PostDetailsView(
+                    post: post,
+                    homeCubit: homeCubit,
+                    cachedController: cachedController,
+                  ),
+                ),
+              );
             },
           ),
           count: post.commentsCount,

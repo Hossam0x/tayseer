@@ -5,6 +5,7 @@ import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/reels/views/widget/reels_overlay.dart';
 import 'package:tayseer/features/advisor/reels/views/widget/reels_video_background.dart';
+import 'package:tayseer/core/utils/animation/fly_animation.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -33,6 +34,8 @@ class _ReelsItemState extends State<ReelsItem>
   Timer? _iconTimer;
   late AnimationController _iconAnimController;
   late Animation<double> _iconScaleAnim;
+  VideoPlayerController? _activeController;
+  final GlobalKey _likeButtonKey = GlobalKey();
 
   @override
   void initState() {
@@ -86,6 +89,27 @@ class _ReelsItemState extends State<ReelsItem>
   // ✅ اللوجيك هنا: يشتغل لو الصفحة دي هي اللي عليها الدور + ظاهرة + اليوزر مش موقفه
   bool get _shouldPlay => widget.isCurrentPage && !_isPausedByUser;
 
+  void _handleDoubleTap(Offset tapPosition) {
+    if (!mounted) return;
+
+    FlyAnimation.flyWidget(
+      context: context,
+      startOffset: tapPosition,
+      endKey: _likeButtonKey,
+      child: _buildFlyingHeart(),
+      onComplete: () {
+        context.read<ReelsCubit>().reactToReel(
+          postId: widget.post.postId,
+          reactionType: ReactionType.love,
+        );
+      },
+    );
+  }
+
+  Widget _buildFlyingHeart() {
+    return const Icon(Icons.favorite, color: Colors.red, size: 50);
+  }
+
   @override
   Widget build(BuildContext context) {
     return VisibilityDetector(
@@ -99,8 +123,13 @@ class _ReelsItemState extends State<ReelsItem>
             videoUrl: widget.post.videoUrl ?? '',
             shouldPlay: _shouldPlay,
             onTap: _togglePlay,
+            onDoubleTap: _handleDoubleTap,
             showProgressBar: true,
             sharedController: widget.sharedController,
+            onControllerCreated: (controller) {
+              _activeController = controller;
+              if (mounted) setState(() {});
+            },
           ),
 
           // 2. Gradient Overlay
@@ -155,6 +184,8 @@ class _ReelsItemState extends State<ReelsItem>
             builder: (context, currentPost) {
               return ReelsOverlay(
                 post: currentPost,
+                cachedController: _activeController,
+                likeButtonKey: _likeButtonKey,
                 onReactionChanged: (ReactionType? reaction) {
                   context.read<ReelsCubit>().reactToReel(
                     postId: widget.post.postId,

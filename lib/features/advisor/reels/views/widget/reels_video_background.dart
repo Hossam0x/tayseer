@@ -7,16 +7,20 @@ class ReelsVideoBackground extends StatefulWidget {
   final String videoUrl;
   final bool shouldPlay;
   final VoidCallback onTap;
+  final void Function(Offset)? onDoubleTap;
   final bool showProgressBar;
   final VideoPlayerController? sharedController;
+  final ValueChanged<VideoPlayerController>? onControllerCreated;
 
   const ReelsVideoBackground({
     super.key,
     required this.videoUrl,
     required this.shouldPlay,
     required this.onTap,
+    this.onDoubleTap,
     this.showProgressBar = true,
     this.sharedController,
+    this.onControllerCreated,
   });
 
   @override
@@ -56,6 +60,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
         }
       }
       _controller!.addListener(_videoListener);
+      widget.onControllerCreated?.call(_controller!);
       if (mounted) setState(() {});
       return;
     }
@@ -82,6 +87,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
       await _controller!.setVolume(1.0);
 
       if (mounted) {
+        widget.onControllerCreated?.call(_controller!);
         setState(() {
           _isInitialized = true;
           _hasError = false;
@@ -90,11 +96,12 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
       }
     } catch (e) {
       debugPrint('❌ Error initializing video: $e');
-      if (mounted)
+      if (mounted) {
         setState(() {
           _hasError = true;
           _isInitialized = false;
         });
+      }
     }
   }
 
@@ -152,6 +159,8 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
+      onDoubleTapDown: (details) =>
+          widget.onDoubleTap?.call(details.globalPosition),
       child: Container(
         color: Colors.black,
         width: double.infinity,

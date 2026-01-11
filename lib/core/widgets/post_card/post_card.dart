@@ -237,6 +237,15 @@ class _PostCardState extends State<PostCard>
             _activeController = controller;
           },
           onReelTap: (controller) {
+            if (widget.isDetailsView) {
+              if (controller.value.isPlaying) {
+                controller.pause();
+              } else {
+                controller.play();
+              }
+              return;
+            }
+
             Navigator.push(
               context,
               MaterialPageRoute(
