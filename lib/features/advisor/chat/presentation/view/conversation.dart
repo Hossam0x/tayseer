@@ -661,7 +661,10 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
           chatEmojiIcon: AssetsData.chatEmojiIcon,
           cameraIcon: AssetsData.cameraIcon,
           onSendMessage: (message, replyMessageId) {
-            final replyToMessage = context.read<ChatInputCubit>().state.replyingToMessage;
+            final replyToMessage = context
+                .read<ChatInputCubit>()
+                .state
+                .replyingToMessage;
             context.read<ChatMessagesCubit>().sendMessage(
               widget.receiverId!,
               message,
@@ -672,7 +675,10 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
             _scrollToBottomAfterSend();
           },
           onSendMedia: (files, messageType, replyMessageId) {
-            final replyToMessage = context.read<ChatInputCubit>().state.replyingToMessage;
+            final replyToMessage = context
+                .read<ChatInputCubit>()
+                .state
+                .replyingToMessage;
             context.read<ChatMessagesCubit>().sendMediaMessage(
               chatRoomId: widget.chatRoomId!,
               messageType: messageType,

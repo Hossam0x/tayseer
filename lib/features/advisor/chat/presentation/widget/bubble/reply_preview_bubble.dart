@@ -22,7 +22,9 @@ class ReplyPreviewBubble extends StatelessWidget {
   bool get _isImageReply => _isImageUrl(replyMessage);
   bool get _isVideoReply => _isVideoUrl(replyMessage);
   bool get _isMediaReply => _isImageReply || _isVideoReply;
-  bool get _isLocalFile => replyMessage.startsWith('/') || replyMessage.startsWith('file://') || 
+  bool get _isLocalFile =>
+      replyMessage.startsWith('/') ||
+      replyMessage.startsWith('file://') ||
       (replyMessage.contains(':\\') && !replyMessage.startsWith('http'));
 
   bool _isImageUrl(String url) {
@@ -98,32 +100,32 @@ class ReplyPreviewBubble extends StatelessWidget {
               ),
             )
           : _isLocalFile
-              ? Image.file(
-                  File(replyMessage),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image, size: 20, color: Colors.grey),
-                  ),
-                )
-              : CachedNetworkImage(
-                  imageUrl: replyMessage,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Colors.grey[300],
-                    child: const Center(
-                      child: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image, size: 20, color: Colors.grey),
+          ? Image.file(
+              File(replyMessage),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: Colors.grey[300],
+                child: const Icon(Icons.image, size: 20, color: Colors.grey),
+              ),
+            )
+          : CachedNetworkImage(
+              imageUrl: replyMessage,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                color: Colors.grey[300],
+                child: const Center(
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: Colors.grey[300],
+                child: const Icon(Icons.image, size: 20, color: Colors.grey),
+              ),
+            ),
     );
   }
 

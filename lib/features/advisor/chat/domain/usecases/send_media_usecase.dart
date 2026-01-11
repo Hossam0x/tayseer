@@ -78,7 +78,7 @@ class SendMediaUseCase {
     if (params.replyMessageId != null && params.replyToMessage != null) {
       // Extract content from ChatMessage
       String? replyMessageContent;
-      
+
       // For media messages, prefer localFilePaths if available (for local messages)
       if (params.replyToMessage!.localFilePaths != null &&
           params.replyToMessage!.localFilePaths!.isNotEmpty) {
@@ -86,7 +86,7 @@ class SendMediaUseCase {
       } else if (params.replyToMessage!.contentList.isNotEmpty) {
         replyMessageContent = params.replyToMessage!.contentList.first;
       }
-      
+
       replyInfo = ReplyInfo(
         replyMessageId: params.replyMessageId,
         replyMessage: replyMessageContent,

@@ -80,7 +80,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                               fit: BoxFit.fill,
                             ),
                           ),
-                          if (notificationCount > 0)
+                          if (widget.notificationCount > 0)
                             Positioned(
                               top: context.responsiveHeight(-8),
                               right: context.responsiveWidth(-6),
