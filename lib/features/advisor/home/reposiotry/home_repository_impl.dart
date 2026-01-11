@@ -1,6 +1,7 @@
 // lib/features/advisor/home/repository/home_repository_impl.dart
 
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/advisor/home/model/comment_model.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/home/model/post_response_model.dart';
@@ -24,13 +25,8 @@ class HomeRepositoryImpl implements HomeRepository {
       );
       final postsResponse = PostsResponseModel.fromJson(response);
       return Right(postsResponse.posts);
-    } on DioException catch (error) {
-      if (error.response != null && error.response!.data != null) {
-        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
-        return Left(ServerFailure(errorMessage));
-      } else {
-        return Left(ServerFailure(error.message ?? 'Unknown error'));
-      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 
@@ -62,13 +58,8 @@ class HomeRepositoryImpl implements HomeRepository {
         data: requestData,
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
-    } on DioException catch (error) {
-      if (error.response != null && error.response!.data != null) {
-        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
-        return Left(ServerFailure(errorMessage));
-      } else {
-        return Left(ServerFailure(error.message ?? 'Unknown error'));
-      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 
@@ -84,13 +75,8 @@ class HomeRepositoryImpl implements HomeRepository {
       );
       final commentsResponse = CommentsResponseModel.fromJson(response);
       return Right(commentsResponse);
-    } on DioException catch (error) {
-      if (error.response != null && error.response!.data != null) {
-        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
-        return Left(ServerFailure(errorMessage));
-      } else {
-        return Left(ServerFailure(error.message ?? 'Unknown error'));
-      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 
@@ -106,13 +92,8 @@ class HomeRepositoryImpl implements HomeRepository {
       );
       final repliesResponse = CommentsResponseModel.fromJson(response);
       return Right(repliesResponse);
-    } on DioException catch (error) {
-      if (error.response != null && error.response!.data != null) {
-        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
-        return Left(ServerFailure(errorMessage));
-      } else {
-        return Left(ServerFailure(error.message ?? 'Unknown error'));
-      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 
@@ -132,13 +113,8 @@ class HomeRepositoryImpl implements HomeRepository {
       );
       final commentModel = CommentModel.fromJson(response['data']);
       return Right(commentModel);
-    } on DioException catch (error) {
-      if (error.response != null && error.response!.data != null) {
-        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
-        return Left(ServerFailure(errorMessage));
-      } else {
-        return Left(ServerFailure(error.message ?? 'Unknown error'));
-      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 
@@ -158,13 +134,8 @@ class HomeRepositoryImpl implements HomeRepository {
       );
       final replyModel = CommentModel.fromJson(response['data']);
       return Right(replyModel);
-    } on DioException catch (error) {
-      if (error.response != null && error.response!.data != null) {
-        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
-        return Left(ServerFailure(errorMessage));
-      } else {
-        return Left(ServerFailure(error.message ?? 'Unknown error'));
-      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 
@@ -203,13 +174,8 @@ class HomeRepositoryImpl implements HomeRepository {
         data: requestData,
       );
       return Right(response['message'] ?? 'تم تعديل التعليق بنجاح');
-    } on DioException catch (error) {
-      if (error.response != null && error.response!.data != null) {
-        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
-        return Left(ServerFailure(errorMessage));
-      } else {
-        return Left(ServerFailure(error.message ?? 'Unknown error'));
-      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 
@@ -225,17 +191,12 @@ class HomeRepositoryImpl implements HomeRepository {
         data: requestData,
       );
       return Right(response['message'] ?? 'تم تعديل الرد بنجاح');
-    } on DioException catch (error) {
-      if (error.response != null && error.response!.data != null) {
-        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
-        return Left(ServerFailure(errorMessage));
-      } else {
-        return Left(ServerFailure(error.message ?? 'Unknown error'));
-      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 
- @override
+  @override
   Future<Either<Failure, List<PostModel>>> getReels({
     required int page,
     int limit = 5,
@@ -252,13 +213,19 @@ class HomeRepositoryImpl implements HomeRepository {
               .toList() ??
           [];
       return Right(reelsList);
-    } on DioException catch (error) {
-      if (error.response != null && error.response!.data != null) {
-        final errorMessage = error.response!.data['message'] ?? 'Unknown error';
-        return Left(ServerFailure(errorMessage));
-      } else {
-        return Left(ServerFailure(error.message ?? 'Unknown error'));
-      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ImageAndNameModel>> fetchNameAndImage() async {
+    try {
+      final response = await apiService.get(endPoint: ApiEndPoint.nameAndImage);
+      final imageAndNameModel = ImageAndNameModel.fromJson(response['data']);
+      return Right(imageAndNameModel);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 }

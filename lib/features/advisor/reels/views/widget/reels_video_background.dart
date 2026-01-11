@@ -50,6 +50,9 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
       // بنقوله لو جاي من بره (حتى لو كان صامت)، علي الصوت للآخر
       await _controller!.setVolume(1.0);
 
+      // ✅ الحماية من التدمير أثناء الـ await
+      if (!mounted || _controller == null) return;
+
       if (_controller!.value.isInitialized) {
         _isInitialized = true;
         _hasError = false;
@@ -109,7 +112,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
     if (_controller == null || !mounted) return;
     final isBuffering = _controller!.value.isBuffering;
     if (isBuffering != _isBuffering) {
-      setState(() => _isBuffering = isBuffering);
+      if (mounted) setState(() => _isBuffering = isBuffering);
     }
     if (_isInitialized && !_isDragging) {
       // Avoid unnecessary redraws
@@ -228,8 +231,12 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
                 bottom: 0,
                 child: _VideoSeekBar(
                   controller: _controller!,
-                  onDragStart: () => setState(() => _isDragging = true),
-                  onDragEnd: () => setState(() => _isDragging = false),
+                  onDragStart: () {
+                    if (mounted) setState(() => _isDragging = true);
+                  },
+                  onDragEnd: () {
+                    if (mounted) setState(() => _isDragging = false);
+                  },
                   onSeek: _seekTo,
                 ),
               ),

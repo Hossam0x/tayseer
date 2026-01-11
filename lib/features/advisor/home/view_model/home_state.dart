@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 
 import '../../../../my_import.dart';
@@ -19,6 +20,10 @@ class HomeState extends Equatable {
   final bool? isShareAdded; // true = تمت الإضافة، false = تمت الإزالة
   final String? sharePostId;
 
+  // fetch name and image
+  final ImageAndNameModel? homeInfo;
+  final CubitStates fetchNameAndImageState;
+
   const HomeState({
     this.postsState = CubitStates.initial,
     this.posts = const [],
@@ -30,6 +35,10 @@ class HomeState extends Equatable {
     this.shareMessage,
     this.isShareAdded,
     this.sharePostId,
+    // 
+        this.homeInfo,
+    this.fetchNameAndImageState = CubitStates.initial,
+
   });
 
   HomeState copyWith({
@@ -43,7 +52,10 @@ class HomeState extends Equatable {
     CubitStates? shareActionState,
     String? shareMessage,
     bool? isShareAdded,
-    String? sharePostId,
+    String? sharePostId
+    ,
+    ImageAndNameModel? homeInfo,
+    CubitStates? fetchNameAndImageState,
   }) {
     return HomeState(
       postsState: postsState ?? this.postsState,
@@ -56,6 +68,8 @@ class HomeState extends Equatable {
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
       sharePostId: sharePostId ?? this.sharePostId,
+      homeInfo: homeInfo ?? this.homeInfo,
+      fetchNameAndImageState: fetchNameAndImageState ?? this.fetchNameAndImageState
     );
   }
 
@@ -71,5 +85,7 @@ class HomeState extends Equatable {
     shareMessage,
     isShareAdded,
     sharePostId,
+    homeInfo,
+    fetchNameAndImageState,
   ];
 }

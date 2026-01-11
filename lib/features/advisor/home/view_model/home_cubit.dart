@@ -1,6 +1,8 @@
 import 'dart:developer';
 
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
 import '../../../../my_import.dart';
@@ -10,10 +12,76 @@ class HomeCubit extends Cubit<HomeState> {
   final HomeRepository homeRepository;
   final int pageSize = 10;
 
-  HomeCubit(this.homeRepository) : super(HomeState());
+  HomeCubit(this.homeRepository) : super(HomeState()) {
+    _loadCachedData();
+  }
+
+  // Load cached data immediately
+  void _loadCachedData() {
+    final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
+    final cachedName = CachNetwork.getStringData(key: kMyProfileName);
+
+    if (cachedImage.isNotEmpty || cachedName.isNotEmpty) {
+      emit(
+        state.copyWith(
+          homeInfo: ImageAndNameModel(
+            image: cachedImage,
+            name: cachedName,
+            notifications: 0,
+          ),
+          fetchNameAndImageState: CubitStates.success,
+        ),
+      );
+    }
+  }
 
   void setInitialPost(PostModel post) {
     emit(state.copyWith(posts: [post], postsState: CubitStates.success));
+  }
+
+  // fetch name and image
+
+  Future<void> fetchNameAndImage() async {
+    // Show loading only if we don't have cached data
+    if (state.homeInfo == null) {
+      emit(state.copyWith(fetchNameAndImageState: CubitStates.loading));
+    }
+
+    final result = await homeRepository.fetchNameAndImage();
+
+    result.fold(
+      (failure) {
+        // Only emit failure if we don't have cached data
+        if (state.homeInfo == null) {
+          emit(
+            state.copyWith(
+              fetchNameAndImageState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        }
+      },
+      (imageAndNameModel) {
+        // Save to cache
+        CachNetwork.setData(
+          key: kMyProfileImage,
+          value: imageAndNameModel.image,
+        );
+        CachNetwork.setData(key: kMyProfileName, value: imageAndNameModel.name);
+
+        // Update state only if data changed
+        if (state.homeInfo?.image != imageAndNameModel.image ||
+            state.homeInfo?.name != imageAndNameModel.name ||
+            state.homeInfo?.notifications != imageAndNameModel.notifications) {
+          emit(
+            state.copyWith(
+              fetchNameAndImageState: CubitStates.success,
+              homeInfo: imageAndNameModel,
+            ),
+          );
+        }
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════

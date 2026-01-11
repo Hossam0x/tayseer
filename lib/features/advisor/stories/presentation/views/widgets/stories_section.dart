@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:tayseer/core/enum/add_post_enum.dart';
+import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
@@ -287,15 +288,7 @@ class _AddStoryItem extends StatelessWidget {
           Stack(
             alignment: Alignment.center,
             children: [
-              Container(
-                width: context.responsiveWidth(76),
-                height: context.responsiveWidth(76),
-                padding: EdgeInsets.all(3.r),
-                decoration: BoxDecoration(shape: BoxShape.circle),
-                child: ClipOval(
-                  child: AppImage(AssetsData.avatarImage, fit: BoxFit.cover),
-                ),
-              ),
+              MyProfileImage(width: context.responsiveWidth(76)),
               Positioned(
                 bottom: 0,
                 right: 0,

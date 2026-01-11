@@ -16,4 +16,5 @@ class ApiEndPoint {
   static const String commentLike = '/comment-likes/toggle';
   static const String updateReply = '/comment-replies/update/';
   static const String reels = '/posts/reels';
+  static const String nameAndImage = '/advisor/getNameAndImage';
 }
