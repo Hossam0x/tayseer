@@ -1,3 +1,4 @@
+import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/home_app_bar.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/home_filter_section.dart';
@@ -74,6 +75,10 @@ class HomeViewBodyState extends State<HomeViewBody> {
       child: RefreshIndicator(
         color: AppColors.kprimaryColor,
         onRefresh: () async {
+          // ✅ التعديل هنا: نوقف أي فيديو شغال قبل ما نعمل ريفريش
+          // ده بيضمن اننا نفضي الـ Decoders عشان نتجنب Error -12 والشاشة السودة
+          VideoManager.instance.stopAll();
+
           await Future.wait([
             storiesCubit.fetchStories(),
             homeCubit.fetchPosts(),
@@ -97,6 +102,8 @@ class HomeViewBodyState extends State<HomeViewBody> {
   @override
   void dispose() {
     _scrollController.dispose();
+    // ✅ يفضل كمان نوقف الفيديوهات لو خرجنا من الصفحة دي نهائياً
+    VideoManager.instance.stopAll();
     super.dispose();
   }
 }
