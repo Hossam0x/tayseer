@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
@@ -15,7 +16,6 @@ import 'package:tayseer/my_import.dart';
 class PostCard extends StatefulWidget {
   final PostModel post;
   final bool isDetailsView;
-  // لاستقبال الكنترولر من الصفحة السابقة (في حالة الديتيلز)
   final VideoPlayerController? sharedController;
 
   const PostCard({
@@ -29,18 +29,13 @@ class PostCard extends StatefulWidget {
   State<PostCard> createState() => _PostCardState();
 }
 
-// ✅ إضافة AutomaticKeepAliveClientMixin للحفاظ على الفيديو شغال في الخلفية
-class _PostCardState extends State<PostCard>
-    with AutomaticKeepAliveClientMixin {
+// ❌ تم حذف AutomaticKeepAliveClientMixin لحل مشكلة الذاكرة والشاشة السوداء
+class _PostCardState extends State<PostCard> {
   VideoPlayerController? _activeController;
-
-  @override
-  bool get wantKeepAlive => true; // ✅ يمنع تدمير الـ Widget
 
   @override
   void initState() {
     super.initState();
-    // لو جالنا كنترولر من بره (إحنا في صفحة الديتيلز)، نمسكه
     if (widget.sharedController != null) {
       _activeController = widget.sharedController;
     }
@@ -52,7 +47,6 @@ class _PostCardState extends State<PostCard>
       return;
     }
 
-    // Read HomeCubit before navigation to avoid context issues
     final homeCubit = context.read<HomeCubit>();
 
     Navigator.push(
@@ -61,26 +55,20 @@ class _PostCardState extends State<PostCard>
         builder: (context) => PostDetailsView(
           homeCubit: homeCubit,
           post: widget.post,
-          // ✅ نبعت الكنترولر الحالي عشان الفيديو يكمل
           cachedController: _activeController,
         ),
       ),
     ).then((_) {
-      // ✅ عند العودة للهوم، نتأكد إن الفيديو جاهز وممكن يكمل شغل
       if (mounted &&
           _activeController != null &&
           _activeController!.value.isInitialized) {
-        // خيار: تشغيل الفيديو تلقائياً عند العودة إذا كان واقفاً
-        // _activeController!.play();
-        setState(() {}); // تحديث الواجهة
+        setState(() {}); 
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     Widget cardContent = Container(
       padding: EdgeInsets.symmetric(
         vertical: context.responsiveHeight(14),
@@ -181,7 +169,6 @@ class _PostCardState extends State<PostCard>
       ),
     );
 
-    // ✅ التعديل هنا: لغينا الـ Hero ورجعنا الـ cardContent مباشرة
     if (!widget.isDetailsView) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: context.responsiveWidth(22)),
@@ -213,15 +200,15 @@ class _PostCardState extends State<PostCard>
             ? PostImagesGrid(
                 isFromPostDetails: widget.isDetailsView,
                 images: widget.post.images,
-                postId: widget.post.postId, // ✅ ضروري جداً
-                post: widget.post, // ✅ عشان الداتا اللي تحت في الفيو
+                postId: widget.post.postId,
+                post: widget.post,
               )
             : const SizedBox.shrink();
       case PostContentType.video:
         return RealVideoPlayer(
+          postId: widget.post.postId, // ✅ تم إضافة الـ ID
           videoUrl: widget.post.videoUrl ?? '',
           isReel: false,
-          // ✅ نمرر الكنترولر الحالي ليتم استخدامه بدلاً من إنشاء جديد
           videoController: _activeController,
           onControllerCreated: (controller) {
             _activeController = controller;
@@ -230,6 +217,7 @@ class _PostCardState extends State<PostCard>
 
       case PostContentType.reel:
         return RealVideoPlayer(
+          postId: widget.post.postId, // ✅ تم إضافة الـ ID
           videoUrl: widget.post.videoUrl ?? '',
           isReel: true,
           videoController: widget.sharedController ?? _activeController,
@@ -241,6 +229,8 @@ class _PostCardState extends State<PostCard>
               if (controller.value.isPlaying) {
                 controller.pause();
               } else {
+                // نبلغ المدير قبل التشغيل
+                VideoManager.instance.playVideo(widget.post.postId);
                 controller.play();
               }
               return;
@@ -256,6 +246,7 @@ class _PostCardState extends State<PostCard>
               ),
             ).then((_) {
               if (mounted && controller.value.isInitialized) {
+                VideoManager.instance.playVideo(widget.post.postId);
                 controller.play();
               }
             });
