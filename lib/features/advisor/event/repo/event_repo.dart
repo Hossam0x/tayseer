@@ -5,7 +5,7 @@ import 'package:tayseer/features/advisor/event/model/my_event_model.dart';
 
 abstract class EventRepo {
   Future<Either<Failure, List<EventModel>>> getAdvisorEvents();
-  Future<Either<Failure, List<EventModel>>> getAllEvents();
+  Future<Either<Failure, List<EventModel>>> getAllEvents(String? location);
   Future<Either<Failure, void>> createEvent({
     required String title,
     required String description,
@@ -21,4 +21,5 @@ abstract class EventRepo {
     required String numberOfAttendees,
     required String location,
   });
+  Future<Either<Failure, void>> deleteEvent({required String id});
 }

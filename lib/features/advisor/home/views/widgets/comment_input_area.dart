@@ -69,30 +69,26 @@ class CommentInputAreaState extends State<CommentInputArea> {
   Widget build(BuildContext context) {
     return MultiBlocListener(
       listeners: [
-        // 1. Logic: Focus & UI Reset
         BlocListener<PostDetailsCubit, PostDetailsState>(
           listenWhen: (previous, current) {
             final replyStarted =
                 previous.activeReplyId != current.activeReplyId &&
                 current.activeReplyId != null;
-            
-            // 👇 إضافة شرط التعديل أيضاً لإخفاء الكيبورد لو فتحنا تعديل
-            final editStarted = 
+
+            final editStarted =
                 previous.editingCommentId != current.editingCommentId &&
                 current.editingCommentId != null;
 
             final focusTriggered =
                 previous.focusInputTrigger != current.focusInputTrigger;
-            
+
             return replyStarted || editStarted || focusTriggered;
           },
           listener: (context, state) {
             if (state.activeReplyId != null || state.editingCommentId != null) {
-              // لو دخلنا في مود رد أو تعديل، نخفي الإيموجي ونشيل الفوكس من الانبوت السفلي
               if (_showEmojiPicker) setState(() => _showEmojiPicker = false);
               if (_focusNode.hasFocus) _focusNode.unfocus();
             } else {
-              // لو رجعنا للوضع العادي (طلبنا فوكس)
               if (_showEmojiPicker) setState(() => _showEmojiPicker = false);
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _focusNode.requestFocus();
@@ -100,8 +96,6 @@ class CommentInputAreaState extends State<CommentInputArea> {
             }
           },
         ),
-
-        // 2. Logic: Add Comment Success/Failure
         BlocListener<PostDetailsCubit, PostDetailsState>(
           listenWhen: (previous, current) =>
               previous.addingCommentState != current.addingCommentState,
@@ -113,8 +107,6 @@ class CommentInputAreaState extends State<CommentInputArea> {
                 _showEmojiPicker = false;
               });
               _focusNode.unfocus();
-              
-              // Scroll to top logic handled in View if needed
             } else if (state.addingCommentState == CubitStates.failure) {
               AppToast.error(
                 context,
@@ -124,13 +116,10 @@ class CommentInputAreaState extends State<CommentInputArea> {
           },
         ),
       ],
-      // 👇 هنا التعديل الجوهري المطلوب 👇
       child: BlocSelector<PostDetailsCubit, PostDetailsState, bool>(
-        selector: (state) => 
+        selector: (state) =>
             state.activeReplyId != null || state.editingCommentId != null,
         builder: (context, shouldHideInput) {
-          
-          // إذا كان المستخدم يرد على تعليق أو يعدل تعليقاً، نخفي الانبوت السفلي
           if (shouldHideInput) {
             return const SizedBox.shrink();
           }
@@ -159,12 +148,12 @@ class CommentInputAreaState extends State<CommentInputArea> {
                     top: false,
                     bottom: !_showEmojiPicker,
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      // 1. هنا التغيير الأول: سنترنا كل حاجة في الصف الرئيسي
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 2.h),
-                          child: const MyProfileImage(),
-                        ),
+                        // تم إزالة الـ Padding Bottom من هنا
+                        const MyProfileImage(),
+
                         Gap(12.w),
                         Expanded(
                           child: Container(
@@ -179,7 +168,8 @@ class CommentInputAreaState extends State<CommentInputArea> {
                               border: Border.all(color: Colors.grey.shade200),
                             ),
                             child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                              // 2. هنا التغيير الثاني: سنترنا محتوى الكونتينر الداخلي (النص والإيموجي)
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Expanded(
                                   child: TextField(
@@ -188,8 +178,8 @@ class CommentInputAreaState extends State<CommentInputArea> {
                                     textDirection: _textDirection,
                                     textAlign:
                                         _textDirection == TextDirection.rtl
-                                            ? TextAlign.right
-                                            : TextAlign.left,
+                                        ? TextAlign.right
+                                        : TextAlign.left,
                                     maxLines: null,
                                     keyboardType: TextInputType.multiline,
                                     style: TextStyle(
@@ -217,8 +207,9 @@ class CommentInputAreaState extends State<CommentInputArea> {
                                 GestureDetector(
                                   onTap: _toggleEmojiPicker,
                                   child: Container(
-                                    height: 45.h,
-                                    alignment: Alignment.center,
+                                    height: 45.h, // نفس ارتفاع الكونتينر
+                                    alignment:
+                                        Alignment.center, // تأكيد السنترة
                                     child: Icon(
                                       _showEmojiPicker
                                           ? Icons.keyboard_outlined
@@ -235,37 +226,40 @@ class CommentInputAreaState extends State<CommentInputArea> {
                           ),
                         ),
                         Gap(10.w),
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 10.h),
-                          child: BlocSelector<PostDetailsCubit, PostDetailsState, CubitStates>(
-                            selector: (state) => state.addingCommentState,
-                            builder: (context, addingState) {
-                              if (addingState == CubitStates.loading) {
-                                return SizedBox(
-                                  height: 26.w,
-                                  width: 26.w,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                );
-                              }
-                              return InkWell(
-                                onTap: () {
-                                  if (_controller.text.trim().isNotEmpty) {
-                                    context
-                                        .read<PostDetailsCubit>()
-                                        .addComment(_controller.text);
-                                  }
-                                },
-                                child: AppImage(
-                                  AssetsData.send,
-                                  height: 26.w,
-                                  width: 26.w,
+                        // تم إزالة الـ Padding Bottom من هنا أيضاً
+                        BlocSelector<
+                          PostDetailsCubit,
+                          PostDetailsState,
+                          CubitStates
+                        >(
+                          selector: (state) => state.addingCommentState,
+                          builder: (context, addingState) {
+                            if (addingState == CubitStates.loading) {
+                              return SizedBox(
+                                height: 20.w,
+                                width: 20.w,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3.w,
+
+                                  color: Theme.of(context).primaryColor,
                                 ),
                               );
-                            },
-                          ),
+                            }
+                            return InkWell(
+                              onTap: () {
+                                if (_controller.text.trim().isNotEmpty) {
+                                  context.read<PostDetailsCubit>().addComment(
+                                    _controller.text,
+                                  );
+                                }
+                              },
+                              child: AppImage(
+                                AssetsData.send,
+                                height: 26.w,
+                                width: 26.w,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -280,7 +274,8 @@ class CommentInputAreaState extends State<CommentInputArea> {
                         height: 250.h,
                         checkPlatformCompatibility: true,
                         emojiViewConfig: EmojiViewConfig(
-                          emojiSizeMax: 28 *
+                          emojiSizeMax:
+                              28 *
                               (foundation.defaultTargetPlatform ==
                                       TargetPlatform.iOS
                                   ? 1.30

@@ -4,21 +4,27 @@ import 'package:tayseer/core/database/message_queue_manager.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit.dart';
 import 'package:tayseer/features/advisor/event/repo/event_repo.dart';
 import 'package:tayseer/features/advisor/event/repo/event_repo_impl.dart';
+import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository.dart';
+import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository_impl.dart';
+import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository_impl.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
-import 'package:tayseer/features/advisor/chat/data/repo/chat_repo.dart';
-import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_impl.dart';
 import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_v2.dart';
 import 'package:tayseer/features/advisor/chat/data/local/chat_local_datasource.dart';
+import 'package:tayseer/features/advisor/chat/domain/chat_domain.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
+import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 import '../../my_import.dart';
@@ -67,7 +73,6 @@ Future<void> setupGetIt() async {
   // Home Cubit
   getIt.registerFactory<HomeCubit>(() => HomeCubit(getIt<HomeRepository>()));
 
-
   // Stories Feature
   getIt.registerLazySingleton<StoriesRepository>(
     () => StoriesRepositoryImpl(getIt<ApiService>()),
@@ -78,11 +83,16 @@ Future<void> setupGetIt() async {
   );
 
   /// Chat Repository
-  getIt.registerLazySingleton<ChatRepo>(
-    () => ChatRepoImpl(getIt<ApiService>()),
-  );
+
   ///// tayseerSocketHelper
   getIt.registerLazySingleton<tayseerSocketHelper>(() => tayseerSocketHelper());
+
+  /// Reels Feature
+
+  getIt.registerFactoryParam<ReelsCubit, PostModel, void>(
+    (initialPost, _) =>
+        ReelsCubit(getIt<HomeRepository>(), initialPost: initialPost),
+  );
 
   // ══════════════════════════════════════════════════════════════════════════
   // Chat V2 - Local-First Architecture (SQLite)
@@ -111,9 +121,72 @@ Future<void> setupGetIt() async {
     () => CacheCleanupManager(getIt<ChatLocalDataSource>()),
   );
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // Chat Use Cases
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// Send Message Use Case
+  getIt.registerFactory<SendMessageUseCase>(
+    () => SendMessageUseCase(getIt<ChatRepoV2>()),
+  );
+
+  /// Send Media Use Case
+  getIt.registerFactory<SendMediaUseCase>(
+    () => SendMediaUseCase(getIt<ChatRepoV2>()),
+  );
+
+  /// Load Messages Use Case
+  getIt.registerFactory<LoadMessagesUseCase>(
+    () => LoadMessagesUseCase(getIt<ChatRepoV2>()),
+  );
+
+  /// Load Older Messages Use Case
+  getIt.registerFactory<LoadOlderMessagesUseCase>(
+    () => LoadOlderMessagesUseCase(getIt<ChatRepoV2>()),
+  );
+
+  /// Delete Messages Use Case
+  getIt.registerFactory<DeleteMessagesUseCase>(
+    () => DeleteMessagesUseCase(getIt<ChatRepoV2>()),
+  );
+
+  /// Block User Use Case
+  getIt.registerFactory<BlockUserUseCase>(
+    () => BlockUserUseCase(getIt<ChatRepoV2>()),
+  );
+
+  /// Unblock User Use Case
+  getIt.registerFactory<UnblockUserUseCase>(
+    () => UnblockUserUseCase(getIt<ChatRepoV2>()),
+  );
+
+  /// ChatMessagesCubit (Refactored with Use Cases)
+  getIt.registerFactoryParam<ChatMessagesCubit, String?, void>(
+    (chatRoomId, _) => ChatMessagesCubit(
+      repo: getIt<ChatRepoV2>(),
+      sendMessageUseCase: getIt<SendMessageUseCase>(),
+      sendMediaUseCase: getIt<SendMediaUseCase>(),
+      loadMessagesUseCase: getIt<LoadMessagesUseCase>(),
+      loadOlderMessagesUseCase: getIt<LoadOlderMessagesUseCase>(),
+      deleteMessagesUseCase: getIt<DeleteMessagesUseCase>(),
+      blockUserUseCase: getIt<BlockUserUseCase>(),
+      unblockUserUseCase: getIt<UnblockUserUseCase>(),
+    ),
+  );
+
   ////event
 
   getIt.registerLazySingleton<EventRepo>(
     () => EventRepoImpl(apiService: getIt<ApiService>()),
+  );
+
+  //// Event Detail Repository
+  getIt.registerLazySingleton<EventDetailRepository>(
+    () => EventDetailRepositoryImpl(getIt<ApiService>()),
+  );
+
+  //// Event Detail Cubit
+  getIt.registerFactory<EventDetailCubit>(
+    () => EventDetailCubit(repo: getIt<EventDetailRepository>()),
   );
 }

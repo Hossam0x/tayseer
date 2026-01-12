@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -9,12 +8,13 @@ class PostImagesGrid extends StatelessWidget {
   final List<String> images;
   final String postId; // ✅ ضروري عشان الـ Hero
   final PostModel? post; // نمرره عشان نبعته للفيو
-
+  final bool isFromPostDetails;
   const PostImagesGrid({
     super.key,
     required this.images,
     required this.postId,
     this.post,
+    required this.isFromPostDetails,
   });
 
   @override
@@ -43,6 +43,7 @@ class PostImagesGrid extends StatelessWidget {
           images: images,
           initialIndex: index,
           postId: postId,
+          isFromPostDetails: isFromPostDetails,
           post: post,
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

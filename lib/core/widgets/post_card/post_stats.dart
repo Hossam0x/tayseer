@@ -4,13 +4,23 @@ import 'package:tayseer/my_import.dart';
 class PostStats extends StatelessWidget {
   final int comments;
   final int shares;
-  const PostStats({super.key, required this.comments, required this.shares});
+  final void Function() onTap;
+  const PostStats({
+    super.key,
+    required this.comments,
+    required this.shares,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      "${formatCount(comments)} ${context.tr('comments')}  . ${formatCount(shares)} ${context.tr('shares')}",
-      style: Styles.textStyle12.copyWith(color: AppColors.kGreyB3),
+    return InkWell(
+      onTap: onTap,
+
+      child: Text(
+        "${formatCount(comments)} ${context.tr('comments')}  . ${formatCount(shares)} ${context.tr('shares')}",
+        style: Styles.textStyle12.copyWith(color: AppColors.kGreyB3),
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/errors/failure.dart';
+import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/advisor/home/model/comment_model.dart';
 import 'package:tayseer/features/advisor/home/model/comments_response_model.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
@@ -54,4 +55,10 @@ abstract class HomeRepository {
     required String replyId,
     required String reply,
   });
+    Future<Either<Failure, List<PostModel>>> getReels({
+    required int page,
+    int limit,
+  });
+
+  Future<Either<Failure, ImageAndNameModel>> fetchNameAndImage();
 }

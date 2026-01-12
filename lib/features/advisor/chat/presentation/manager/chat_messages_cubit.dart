@@ -2,35 +2,132 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
+import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/enum/message_status_enum.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
-import 'package:tayseer/features/advisor/chat/data/model/chat_message/typinn_model.dart';
-import 'package:tayseer/features/advisor/chat/data/repo/chat_repo.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_state.dart';
-import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chat_message/typing_model.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chat_message/send_media_message_response.dart';
+import 'handlers/socket_listener_handler.dart';
+import 'handlers/message_state_handler.dart';
+import 'handlers/typing_handler.dart';
+import 'handlers/connectivity_handler.dart';
+import 'handlers/block_handler.dart';
+import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_v2.dart';
+import 'package:tayseer/features/advisor/chat/domain/chat_domain.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/state/chat_messages_state.dart';
 
+/// Refactored Local-First Chat Messages Cubit
+///
+/// Uses:
+/// - Freezed state for immutable, type-safe state management
+/// - Use Cases for business logic separation
+/// - Clean Architecture principles
 class ChatMessagesCubit extends Cubit<ChatMessagesState> {
-  final ChatRepo chatRepo;
-  final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
-  Timer? _typingTimer;
+  // ══════════════════════════════════════════════════════════════════════════
+  // DEPENDENCIES
+  // ══════════════════════════════════════════════════════════════════════════
 
-  // ✅ Unique Listener ID لهذا الـ Cubit
+  final ChatRepoV2 _repo;
+  final tayseerSocketHelper _socketHelper = getIt.get<tayseerSocketHelper>();
+
+  // Use Cases
+  final SendMessageUseCase _sendMessageUseCase;
+  final SendMediaUseCase _sendMediaUseCase;
+  final LoadMessagesUseCase _loadMessagesUseCase;
+  final LoadOlderMessagesUseCase _loadOlderMessagesUseCase;
+  final DeleteMessagesUseCase _deleteMessagesUseCase;
+  final BlockUserUseCase _blockUserUseCase;
+  final UnblockUserUseCase _unblockUserUseCase;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // INTERNAL STATE
+  // ══════════════════════════════════════════════════════════════════════════
+
+  StreamSubscription? _messagesSubscription;
+
   late final String _listenerId;
-
-  // ✅ حفظ الـ chatRoomId الحالي
   String? _currentChatRoomId;
+  String? _currentReceiverId;
+  SocketListenerHandler? _socketHandler;
+  late final MessageStateHandler _messageStateHandler;
+  late final TypingHandler _typingHandler;
+  late final ConnectivityHandler _connectivityHandler;
+  late final BlockHandler _blockHandler;
 
-  ChatMessagesCubit(this.chatRepo) : super(ChatMessagesState()) {
-    // إنشاء ID فريد لهذا الـ Cubit
+  // ══════════════════════════════════════════════════════════════════════════
+  // CONSTRUCTOR
+  // ══════════════════════════════════════════════════════════════════════════
+
+  ChatMessagesCubit({
+    required ChatRepoV2 repo,
+    required SendMessageUseCase sendMessageUseCase,
+    required SendMediaUseCase sendMediaUseCase,
+    required LoadMessagesUseCase loadMessagesUseCase,
+    required LoadOlderMessagesUseCase loadOlderMessagesUseCase,
+    required DeleteMessagesUseCase deleteMessagesUseCase,
+    required BlockUserUseCase blockUserUseCase,
+    required UnblockUserUseCase unblockUserUseCase,
+  }) : _repo = repo,
+       _sendMessageUseCase = sendMessageUseCase,
+       _sendMediaUseCase = sendMediaUseCase,
+       _loadMessagesUseCase = loadMessagesUseCase,
+       _loadOlderMessagesUseCase = loadOlderMessagesUseCase,
+       _deleteMessagesUseCase = deleteMessagesUseCase,
+       _blockUserUseCase = blockUserUseCase,
+       _unblockUserUseCase = unblockUserUseCase,
+       super(const ChatMessagesState.initial()) {
     _listenerId =
-        'ChatMessagesCubit_${DateTime.now().millisecondsSinceEpoch}_${hashCode}';
+        'ChatMessagesCubit_${DateTime.now().millisecondsSinceEpoch}_$hashCode';
     log('🆔 ChatMessagesCubit created with ID: $_listenerId');
+
+    _messageStateHandler = MessageStateHandler(
+      repo: _repo,
+      listenerId: _listenerId,
+      deleteMessagesUseCase: _deleteMessagesUseCase,
+      getCurrentMessages: () => state.messagesOrEmpty,
+      getCurrentPendingCount: () =>
+          state.maybeMap(loaded: (s) => s.pendingCount, orElse: () => 0),
+      onMessagesUpdated: (messages) => _emitLoaded(messages: messages),
+      onPendingCountUpdated: (count) => _emitLoaded(pendingCount: count),
+    );
+
+    _typingHandler = TypingHandler(
+      socketHelper: _socketHelper,
+      onTypingStatusChanged: (isTyping, typingInfo) => _emitLoaded(
+        isUserTyping: isTyping,
+        typingInfo: typingInfo,
+        clearTypingInfo: !isTyping,
+      ),
+    );
+
+    _connectivityHandler = ConnectivityHandler(
+      connectivity: Connectivity(),
+      repo: _repo,
+      socketHelper: _socketHelper,
+      listenerId: _listenerId,
+      onConnectivityChanged: (isOnline) => _emitLoaded(isOnline: isOnline),
+    );
+    _connectivityHandler.setupConnectivityListener();
+
+    _blockHandler = BlockHandler(
+      blockUserUseCase: _blockUserUseCase,
+      unblockUserUseCase: _unblockUserUseCase,
+      messageStateHandler: _messageStateHandler,
+      listenerId: _listenerId,
+      onBlockStatusChanged: (isBlocked) => _emitLoaded(isBlocked: isBlocked),
+      onMessagesUpdated: (messages) => _emitLoaded(messages: messages),
+    );
   }
 
-  /// ✅ Safe emit - لا يعمل emit لو الـ Cubit مقفول
+  // ══════════════════════════════════════════════════════════════════════════
+  // SAFE EMIT HELPERS
+  // ══════════════════════════════════════════════════════════════════════════
+
   void _safeEmit(ChatMessagesState newState) {
     if (!isClosed) {
       emit(newState);
@@ -39,334 +136,260 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     }
   }
 
-  Future<void> getChatMessages(String chatRoomId) async {
+  /// Helper to emit loaded state updates
+  void _emitLoaded({
+    List<ChatMessage>? messages,
+    bool? hasMoreMessages,
+    bool? isOnline,
+    int? pendingCount,
+    bool? isBlocked,
+    bool? isUserTyping,
+    TypingModel? typingInfo,
+    ChatMessage? replyingToMessage,
+    bool clearReplyingToMessage = false,
+    bool clearTypingInfo = false,
+    CubitStates? paginationState,
+    CubitStates? sendMediaState,
+  }) {
+    state.maybeMap(
+      loaded: (current) {
+        _safeEmit(
+          current.copyWith(
+            messages: messages ?? current.messages,
+            hasMoreMessages: hasMoreMessages ?? current.hasMoreMessages,
+            isOnline: isOnline ?? current.isOnline,
+            pendingCount: pendingCount ?? current.pendingCount,
+            isBlocked: isBlocked ?? current.isBlocked,
+            isUserTyping: isUserTyping ?? current.isUserTyping,
+            typingInfo: clearTypingInfo
+                ? null
+                : (typingInfo ?? current.typingInfo),
+            replyingToMessage: clearReplyingToMessage
+                ? null
+                : (replyingToMessage ?? current.replyingToMessage),
+            paginationState: paginationState ?? current.paginationState,
+            sendMediaState: sendMediaState ?? current.sendMediaState,
+          ),
+        );
+      },
+      loadingMore: (current) {
+        _safeEmit(
+          ChatMessagesState.loaded(
+            messages: messages ?? current.messages,
+            hasMoreMessages: hasMoreMessages ?? current.hasMoreMessages,
+            isOnline: isOnline ?? current.isOnline,
+            pendingCount: pendingCount ?? current.pendingCount,
+            isBlocked: isBlocked ?? current.isBlocked,
+            isUserTyping: isUserTyping ?? current.isUserTyping,
+            typingInfo: clearTypingInfo ? null : typingInfo,
+            replyingToMessage: clearReplyingToMessage
+                ? null
+                : replyingToMessage,
+          ),
+        );
+      },
+      orElse: () {
+        // For other states, create a new loaded state
+        _safeEmit(
+          ChatMessagesState.loaded(
+            messages: messages ?? [],
+            hasMoreMessages: hasMoreMessages ?? true,
+            isOnline: isOnline ?? true,
+            pendingCount: pendingCount ?? 0,
+            isBlocked: isBlocked ?? false,
+          ),
+        );
+      },
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // CONNECTIVITY HANDLING
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // INITIAL LOAD (LOCAL-FIRST)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  void setInitialBlocked(bool isBlocked) {
+    if (isBlocked) {
+      _emitLoaded(isBlocked: true);
+    }
+  }
+
+  Future<void> loadInitialMessages(
+    String chatRoomId, {
+    String? receiverId,
+  }) async {
     _currentChatRoomId = chatRoomId;
-    log('📥 [$_listenerId] Getting messages for room: $chatRoomId');
+    _currentReceiverId = receiverId;
+    log('📥 [$_listenerId] Loading for receiverId: $_currentReceiverId');
 
-    _safeEmit(state.copyWith(getChatMessages: CubitStates.loading));
+    log('📥 [$_listenerId] Loading initial messages for: $chatRoomId');
+    _safeEmit(const ChatMessagesState.loading());
 
-    final result = await chatRepo.getChatMessages(chatRoomId);
+    try {
+      _subscribeToMessages(chatRoomId);
 
-    if (isClosed) {
-      log('⚠️ [$_listenerId] Cubit closed during API call');
+      final messages = await _loadMessagesUseCase.call(chatRoomId);
+
+      if (isClosed) return;
+
+      final isBlocked = _blockHandler.checkBlockStatusFromMessages(
+        messages,
+        state.isBlockedStatus,
+      );
+
+      _safeEmit(
+        ChatMessagesState.loaded(
+          messages: messages,
+          hasMoreMessages: messages.length >= 20,
+          isBlocked: isBlocked,
+        ),
+      );
+
+      await _loadMessagesUseCase.markAsRead(chatRoomId);
+
+      log('✅ [$_listenerId] Loaded ${messages.length} messages from local DB');
+      log('🔒 [$_listenerId] Block status from messages: $isBlocked');
+    } catch (e) {
+      log('❌ [$_listenerId] Error loading messages: $e');
+      if (!isClosed) {
+        _safeEmit(ChatMessagesState.failure(message: e.toString()));
+      }
+    }
+  }
+
+  void _subscribeToMessages(String chatRoomId) {
+    _messagesSubscription?.cancel();
+    _messagesSubscription = _loadMessagesUseCase
+        .watch(chatRoomId)
+        .listen(
+          (messages) {
+            if (!isClosed) {
+              final hasMore = messages.length >= 20;
+              // Re-check block status from latest messages (after sync)
+              final isBlocked = _blockHandler.checkBlockStatusFromMessages(
+                messages,
+                state.isBlockedStatus,
+              );
+              _emitLoaded(
+                messages: messages,
+                hasMoreMessages: hasMore,
+                isBlocked: isBlocked,
+              );
+            }
+          },
+          onError: (e) {
+            log('⚠️ [$_listenerId] Message stream error: $e');
+          },
+        );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PAGINATION
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Future<void> loadOlderMessages() async {
+    if (_currentChatRoomId == null) return;
+
+    final currentMessages = state.messagesOrEmpty;
+    if (currentMessages.isEmpty) return;
+
+    final canLoad = state.maybeMap(
+      loaded: (s) =>
+          s.hasMoreMessages && s.paginationState != CubitStates.loading,
+      orElse: () => false,
+    );
+    if (!canLoad) return;
+
+    final oldestMessage = currentMessages.first;
+    final cursorTimestamp = await _loadOlderMessagesUseCase.getCursorTimestamp(
+      oldestMessage.id,
+    );
+
+    if (cursorTimestamp == null) {
+      log(
+        '⚠️ [$_listenerId] Could not get sort_timestamp for message ${oldestMessage.id}',
+      );
+      _emitLoaded(hasMoreMessages: false);
       return;
     }
 
-    result.fold(
-      (error) => _safeEmit(
-        state.copyWith(
-          getChatMessages: CubitStates.failure,
-          errorMessage: error,
-        ),
-      ),
-      (response) => _safeEmit(
-        state.copyWith(
-          getChatMessages: CubitStates.success,
-          messages: response.data.messages,
-          pagination: response.data.pagination,
-        ),
-      ),
+    log(
+      '📜 [$_listenerId] Loading older messages before timestamp: $cursorTimestamp',
     );
-  }
+    _emitLoaded(paginationState: CubitStates.loading);
 
-  void addMessageLocally(ChatMessage message) {
-    if (isClosed) {
-      log('⚠️ [$_listenerId] Cannot add message - Cubit is closed');
-      return;
+    try {
+      final olderMessages = await _loadOlderMessagesUseCase.call(
+        LoadOlderMessagesParams(
+          chatRoomId: _currentChatRoomId!,
+          cursorTimestamp: cursorTimestamp,
+        ),
+      );
+
+      if (isClosed) return;
+
+      final updatedMessages = [...olderMessages, ...currentMessages];
+
+      _emitLoaded(
+        paginationState: CubitStates.success,
+        messages: updatedMessages,
+        hasMoreMessages: olderMessages.length >= 20,
+      );
+
+      log('✅ [$_listenerId] Loaded ${olderMessages.length} older messages');
+    } catch (e) {
+      log('❌ [$_listenerId] Error loading older messages: $e');
+      if (!isClosed) {
+        _emitLoaded(paginationState: CubitStates.failure);
+      }
     }
-
-    final currentMessages = state.messages ?? [];
-    final updatedMessages = [...currentMessages, message];
-    _safeEmit(state.copyWith(messages: updatedMessages));
   }
 
-  /// ✅ تعيين الرسالة للرد عليها
-  void setReplyingToMessage(ChatMessage? message) {
-    if (isClosed) return;
-    log('📝 [$_listenerId] Setting replying to message: ${message?.id}');
-    _safeEmit(
-      state.copyWith(
-        replyingToMessage: message,
-        clearReplyingToMessage: message == null,
-      ),
-    );
-  }
+  // ══════════════════════════════════════════════════════════════════════════
+  // SEND MESSAGE (USING USE CASE)
+  // ══════════════════════════════════════════════════════════════════════════
 
-  /// ✅ إلغاء الرد
-  void cancelReply() {
-    if (isClosed) return;
-    log('❌ [$_listenerId] Cancelling reply');
-    _safeEmit(state.copyWith(clearReplyingToMessage: true));
-  }
-
-  void sendMessage(
+  Future<void> sendMessage(
     String receiverId,
     String message,
     String chatRoomId, {
     String? replyMessageId,
-  }) {
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-
-    ReplyInfo? replyInfo;
-    if (replyMessageId != null) {
-      final originalMessage = state.messages?.firstWhere(
-        (msg) => msg.id == replyMessageId,
-        orElse: () => ChatMessage(
-          id: '',
-          chatRoomId: '',
-          senderId: '',
-          senderName: '',
-          senderImage: '',
-          senderType: '',
-          isMe: false,
-          contentList: [],
-          messageType: '',
-          createdAt: '',
-          updatedAt: '',
-          isRead: false,
-        ),
-      );
-      replyInfo = ReplyInfo(
+    ChatMessage? replyToMessage,
+  }) async {
+    // Use the SendMessageUseCase
+    final result = await _sendMessageUseCase.call(
+      SendMessageParams(
+        receiverId: receiverId,
+        message: message,
+        chatRoomId: chatRoomId,
         replyMessageId: replyMessageId,
-        replyMessage: originalMessage?.content,
-        isReply: true,
-      );
-    }
-
-    final localMessage = ChatMessage(
-      id: tempId,
-      chatRoomId: chatRoomId,
-      senderId: receiverId,
-      senderName: 'Me',
-      senderImage: '',
-      senderType: 'user',
-      isMe: true,
-      contentList: [message],
-      messageType: 'text',
-      createdAt: DateTime.now().toIso8601String(),
-      updatedAt: DateTime.now().toIso8601String(),
-      isRead: false,
-      status: MessageStatusEnum.sent,
-      reply: replyInfo,
+        replyToMessage: replyToMessage,
+      ),
     );
 
-    addMessageLocally(localMessage);
-
-    final messageData = <String, dynamic>{
-      'receiverId': receiverId,
-      'content': message,
-    };
-
-    if (replyMessageId != null) {
-      messageData['replyMessageId'] = replyMessageId;
-    }
-
-    socketHelper.send('send_message', messageData, (ack) {});
-  }
-
-  /// ✅ الاستماع للرسائل الجديدة
-  void listenToNewMessages() {
-    log('🎧 [$_listenerId] Setting up new_message listener');
-
-    socketHelper.listenWithId('new_message', _listenerId, (data) {
-      _handleNewMessage(data);
-    });
-  }
-
-  /// ✅ معالجة الرسالة الجديدة
-  void _handleNewMessage(dynamic data) {
-    if (isClosed) {
-      log('⚠️ [$_listenerId] Received message but Cubit is closed - ignoring');
-      return;
-    }
-
-    if (_currentChatRoomId == null) {
-      log('⚠️ [$_listenerId] No current chatRoomId - ignoring message');
-      return;
-    }
-
-    log('📨 [$_listenerId] Processing new message');
-
-    try {
-      final newMessage = ChatMessage.fromJson(data);
-
-      if (newMessage.chatRoomId != _currentChatRoomId) {
-        log(
-          '📭 [$_listenerId] Message is for different room (${newMessage.chatRoomId}), ignoring',
-        );
-        return;
-      }
-
-      log('✅ [$_listenerId] Message is for current room');
-
-      if (newMessage.isMe) {
-        _replaceLocalMessageWithServer(newMessage);
-      } else {
-        addMessageLocally(newMessage);
-      }
-    } catch (e, stackTrace) {
-      log('❌ [$_listenerId] Error processing message: $e');
-      log('StackTrace: $stackTrace');
-    }
-  }
-
-  void _replaceLocalMessageWithServer(ChatMessage serverMessage) {
-    if (isClosed) return;
-
-    final currentMessages = state.messages ?? [];
-
-    final localMessageIndex = currentMessages.lastIndexWhere((msg) {
-      return msg.id.startsWith('temp_') &&
-          msg.chatRoomId == serverMessage.chatRoomId &&
-          msg.content == serverMessage.content &&
-          msg.isMe == true;
-    });
-
-    if (localMessageIndex != -1) {
-      log(
-        '🔄 [$_listenerId] Replacing local message at index $localMessageIndex',
-      );
-      final updatedMessages = List<ChatMessage>.from(currentMessages);
-      updatedMessages[localMessageIndex] = serverMessage;
-      _safeEmit(state.copyWith(messages: updatedMessages));
-    } else {
-      log('📝 [$_listenerId] No local message found, adding server message');
-      addMessageLocally(serverMessage);
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ✅ NEW: الاستماع لـ messages_read event
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /// ✅ الاستماع لحدث قراءة الرسائل
-  void listenToMessagesRead() {
-    log('🎧 [$_listenerId] Setting up messages_read listener');
-
-    socketHelper.listenWithId('messages_read', _listenerId, (data) {
-      _handleMessagesRead(data);
-    });
-  }
-
-  /// ✅ معالجة حدث قراءة الرسائل
-  void _handleMessagesRead(dynamic data) {
-    if (isClosed) {
-      log(
-        '⚠️ [$_listenerId] Received messages_read but Cubit is closed - ignoring',
-      );
-      return;
-    }
-
-    log('👁️ [$_listenerId] Processing messages_read event: $data');
-
-    try {
-      final chatRoomId = data['chatRoomId']?.toString();
-      final readByName = data['readByName']?.toString();
-
-      if (chatRoomId == null) {
-        log('❌ [$_listenerId] chatRoomId is null in messages_read');
-        return;
-      }
-
-      // التحقق من أن الـ event للـ chatRoom الحالي
-      if (chatRoomId != _currentChatRoomId) {
-        log(
-          '📭 [$_listenerId] messages_read is for different room ($chatRoomId), ignoring',
-        );
-        return;
-      }
-
-      log(
-        '✅ [$_listenerId] Marking all my messages as read (read by: $readByName)',
-      );
-
-      _markAllMyMessagesAsRead();
-    } catch (e, stackTrace) {
-      log('❌ [$_listenerId] Error processing messages_read: $e');
-      log('StackTrace: $stackTrace');
-    }
-  }
-
-  /// ✅ تحديث كل رسائلي لتصبح مقروءة
-  void _markAllMyMessagesAsRead() {
-    if (isClosed) return;
-
-    final currentMessages = state.messages;
-    if (currentMessages == null || currentMessages.isEmpty) {
-      log('⚠️ [$_listenerId] No messages to mark as read');
-      return;
-    }
-
-    // تحديث كل رسائلي (isMe = true) لتصبح isRead = true و status = read
-    final updatedMessages = currentMessages.map((message) {
-      if (message.isMe &&
-          (!message.isRead || message.status != MessageStatusEnum.read)) {
-        log('✅ [$_listenerId] Marking message ${message.id} as read');
-        return message.copyWith(isRead: true, status: MessageStatusEnum.read);
-      }
-      return message;
-    }).toList();
-
-    _safeEmit(state.copyWith(messages: updatedMessages));
-
-    log('✅ [$_listenerId] All my messages marked as read');
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /// ✅ الاستماع لـ typing
-  void listenToUserTyping(String currentChatRoomId) {
-    log(
-      '🎧 [$_listenerId] Setting up user_typing listener for room: $currentChatRoomId',
+    // Update UI immediately with local message
+    final currentMessages = state.messagesOrEmpty;
+    final updatedMessages = [...currentMessages, result.localMessage];
+    final currentPendingCount = state.maybeMap(
+      loaded: (s) => s.pendingCount,
+      orElse: () => 0,
     );
 
-    socketHelper.listenWithId('user_typing', _listenerId, (data) {
-      _handleUserTyping(data, currentChatRoomId);
+    _emitLoaded(
+      messages: updatedMessages,
+      pendingCount: currentPendingCount + 1,
+      clearReplyingToMessage: true,
+    );
+
+    log('📤 [$_listenerId] Message saved locally: ${result.localId}');
+
+    // Send to server via socket
+    _socketHelper.send('send_message', result.socketData, (ack) {
+      log('✅ [$_listenerId] Send message ACK: $ack');
     });
-  }
-
-  /// ✅ معالجة الـ typing
-  void _handleUserTyping(dynamic data, String currentChatRoomId) {
-    if (isClosed) {
-      log('⚠️ [$_listenerId] Received typing but Cubit is closed - ignoring');
-      return;
-    }
-
-    final userId = data['userId']?.toString();
-    final userName = data['userName']?.toString();
-    final chatRoomId = data['chatRoomId']?.toString();
-
-    log('⌨️ [$_listenerId] Typing event - Room: $chatRoomId, User: $userName');
-
-    if (chatRoomId == currentChatRoomId) {
-      log('✅ [$_listenerId] Typing is for current room');
-
-      _typingTimer?.cancel();
-
-      _safeEmit(
-        state.copyWith(
-          isUserTyping: true,
-          typingInfo: TypinnModel(
-            userId: userId ?? '',
-            userName: userName ?? '',
-            chatRoomId: chatRoomId ?? '',
-          ),
-        ),
-      );
-
-      _typingTimer = Timer(const Duration(seconds: 3), () {
-        resetTypingStatus();
-      });
-    } else {
-      log('📭 [$_listenerId] Typing is for different room, ignoring');
-    }
-  }
-
-  void resetTypingStatus() {
-    if (isClosed) return;
-
-    log('🔄 [$_listenerId] Resetting typing status');
-    _safeEmit(state.copyWith(isUserTyping: false, clearTypingInfo: true));
   }
 
   Future<void> sendMediaMessage({
@@ -375,89 +398,346 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     List<File>? images,
     List<File>? videos,
     String? replyMessageId,
+    ChatMessage? replyToMessage,
   }) async {
     if (isClosed) return;
 
-    _safeEmit(state.copyWith(sendMediaMessage: CubitStates.loading));
-
-    final result = await chatRepo.sendMediaMessage(
+    final params = SendMediaParams(
       chatRoomId: chatRoomId,
       messageType: messageType,
       images: images,
       videos: videos,
       replyMessageId: replyMessageId,
+      replyToMessage: replyToMessage,
+    );
+
+    // Step 1: Create optimistic local message with local file paths
+    final optimisticResult = await _sendMediaUseCase.createOptimisticMessage(
+      params,
     );
 
     if (isClosed) return;
 
-    result.fold(
-      (error) => _safeEmit(
-        state.copyWith(
-          sendMediaMessage: CubitStates.failure,
-          errorMessage: error,
-        ),
-      ),
+    // Step 2: Add local message to UI immediately
+    final currentMessages = state.messagesOrEmpty;
+    final currentPendingCount = state.maybeMap(
+      loaded: (s) => s.pendingCount,
+      orElse: () => 0,
+    );
+
+    _emitLoaded(
+      messages: [...currentMessages, optimisticResult.localMessage],
+      pendingCount: currentPendingCount + 1,
+      clearReplyingToMessage: true,
+      sendMediaState: CubitStates.loading,
+    );
+
+    log(
+      '📤 [$_listenerId] Media message saved locally: ${optimisticResult.localId}',
+    );
+
+    // Step 3: Upload media to server in background (with tempId)
+    final uploadParams = SendMediaParams(
+      chatRoomId: params.chatRoomId,
+      messageType: params.messageType,
+      images: params.images,
+      videos: params.videos,
+      replyMessageId: params.replyMessageId,
+      replyToMessage: params.replyToMessage,
+      tempId: optimisticResult.tempId,
+    );
+    final uploadResult = await _sendMediaUseCase.upload(uploadParams);
+
+    if (isClosed) return;
+
+    uploadResult.fold(
+      (error) {
+        log('❌ [$_listenerId] Media upload failed: $error');
+        // Update status to failed but keep showing local file
+        _updateMediaMessageStatus(
+          optimisticResult.localId,
+          MessageStatusEnum.failed,
+        );
+        _emitLoaded(sendMediaState: CubitStates.failure);
+      },
       (response) {
-        final chatMessage = ChatMessage(
-          id: response.data.id,
-          chatRoomId: response.data.chatRoomId,
-          senderId: response.data.senderId,
-          senderName: response.data.senderName,
-          senderImage: response.data.senderImage ?? '',
-          senderType: response.data.senderType,
-          isMe: response.data.isMe,
-          contentList: response.data.contentList,
-          messageType: response.data.messageType,
-          createdAt: response.data.createdAt,
-          updatedAt: response.data.updatedAt,
-          isRead: response.data.isRead,
-          reply: response.data.reply, // ✅ إضافة الـ reply من الـ response
-        );
-
-        final currentMessages = state.messages ?? [];
-        final updatedMessages = [...currentMessages, chatMessage];
-
-        _safeEmit(
-          state.copyWith(
-            sendMediaMessage: CubitStates.success,
-            sentMessage: chatMessage,
-            messages: updatedMessages,
-          ),
-        );
+        log('✅ [$_listenerId] Media uploaded: ${response.data.id}');
+        // Replace local message with server message (with URLs instead of local paths)
+        _confirmMediaMessageSent(optimisticResult.localId, response.data);
+        _emitLoaded(sendMediaState: CubitStates.success);
       },
     );
   }
 
-  void typingstart(String chatRoomId) {
-    log('🚀 [$_listenerId] Sending typing_start for room: $chatRoomId');
+  /// Update media message status when upload fails
+  void _updateMediaMessageStatus(String localId, MessageStatusEnum status) {
+    final currentMessages = state.messagesOrEmpty;
+    final index = currentMessages.indexWhere((m) => m.id == localId);
+    if (index == -1) return;
 
-    socketHelper.send('typing_start', {'chatRoomId': chatRoomId}, (ack) {
-      log('✅ typing_start ACK: $ack');
-    });
+    final updatedMessages = List<ChatMessage>.from(currentMessages);
+    updatedMessages[index] = currentMessages[index].copyWith(status: status);
+
+    _emitLoaded(messages: updatedMessages);
   }
 
-  void typingstop(String chatRoomId) {
-    log('🚀 [$_listenerId] Sending typing_stop for room: $chatRoomId');
+  /// Replace local media message with server confirmed message
+  void _confirmMediaMessageSent(String localId, SentMessage serverData) {
+    final currentMessages = state.messagesOrEmpty;
+    final index = currentMessages.indexWhere((m) => m.id == localId);
+    if (index == -1) {
+      log('⚠️ [$_listenerId] Local media message not found: $localId');
+      return;
+    }
 
-    socketHelper.send('typing_stop', {'chatRoomId': chatRoomId}, (ack) {
-      log('✅ typing_stop ACK: $ack');
-    });
+    // Create server message with URLs (no local file paths)
+    final serverMessage = ChatMessage(
+      id: serverData.id,
+      chatRoomId: serverData.chatRoomId,
+      senderId: serverData.senderId,
+      senderName: serverData.senderName,
+      senderImage: serverData.senderImage ?? '',
+      senderType: serverData.senderType,
+      isMe: serverData.isMe,
+      contentList: serverData.contentList, // Server URLs
+      messageType: serverData.messageType,
+      createdAt: serverData.createdAt,
+      updatedAt: serverData.updatedAt,
+      isRead: serverData.isRead,
+      reply: serverData.reply,
+      status: MessageStatusEnum.sent,
+      // Clear local file paths since we now have server URLs
+    );
+
+    // Update local database
+    _repo.confirmMessageSent(localId, serverData.id);
+
+    // Update state
+    final updatedMessages = List<ChatMessage>.from(currentMessages);
+    updatedMessages[index] = serverMessage;
+
+    final currentPendingCount = state.maybeMap(
+      loaded: (s) => s.pendingCount,
+      orElse: () => 0,
+    );
+
+    _emitLoaded(
+      messages: updatedMessages,
+      pendingCount: currentPendingCount > 0 ? currentPendingCount - 1 : 0,
+    );
+
+    log(
+      '✅ [$_listenerId] Media message confirmed: $localId -> ${serverData.id}',
+    );
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SOCKET LISTENERS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  void setupSocketListeners() {
+    if (_currentChatRoomId == null) return;
+
+    _socketHandler = SocketListenerHandler(
+      socketHelper: _socketHelper,
+      listenerId: _listenerId,
+      chatRoomId: _currentChatRoomId!,
+      onNewMessage: (message) {
+        if (isClosed) return;
+        if (message.messageType == 'system') {
+          _messageStateHandler.handleSystemMessage(message);
+          // Update block status if this is a block/unblock system message
+          if (message.action.isBlock || message.action.isUnblock) {
+            final newBlockStatus = message.action.isBlock;
+            _emitLoaded(isBlocked: newBlockStatus);
+            log(
+              '🔒 [$_listenerId] Block status updated from system message: $newBlockStatus',
+            );
+          }
+        } else if (message.isMe) {
+          _messageStateHandler.handleSentMessageConfirmation(message);
+        } else {
+          _messageStateHandler.handleIncomingMessage(message);
+        }
+      },
+      onMessagesRead: () {
+        _messageStateHandler.handleMessagesRead();
+      },
+      onMessageDeleted: (messageId) {
+        _messageStateHandler.handleMessageDeleted(messageId);
+      },
+      onUserTyping: (userId, userName) {
+        if (_currentChatRoomId != null) {
+          _typingHandler.handleUserTyping(
+            userId,
+            userName,
+            _currentChatRoomId!,
+          );
+        }
+      },
+    );
+
+    _socketHandler!.setupListeners();
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // TYPING INDICATORS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  void typingStart(String chatRoomId) => _typingHandler.typingStart(chatRoomId);
+
+  void typingStop(String chatRoomId) => _typingHandler.typingStop(chatRoomId);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // REPLY HANDLING
+  // ══════════════════════════════════════════════════════════════════════════
+
+  void setReplyingToMessage(ChatMessage? message) {
+    if (isClosed) return;
+    _emitLoaded(
+      replyingToMessage: message,
+      clearReplyingToMessage: message == null,
+    );
+  }
+
+  void cancelReply() {
+    if (isClosed) return;
+    _emitLoaded(clearReplyingToMessage: true);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // MESSAGE STATUS UPDATE
+  // ══════════════════════════════════════════════════════════════════════════
+
+  void updateSingleMessageStatus(String messageId, MessageStatusEnum status) {
+    final currentMessages = state.messagesOrEmpty;
+    final index = currentMessages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+
+    final updatedMessage = currentMessages[index].copyWith(status: status);
+    final updatedMessages = List<ChatMessage>.from(currentMessages);
+    updatedMessages[index] = updatedMessage;
+
+    _repo.updateMessageStatus(messageId, status.toApiString());
+
+    _emitLoaded(messages: updatedMessages);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // DELETE MESSAGES (USING USE CASE)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Future<bool> deleteMessage({
+    required String messageId,
+    required String deleteType,
+  }) async {
+    if (_currentChatRoomId == null) return false;
+
+    final result = await _deleteMessagesUseCase.call(
+      DeleteMessagesParams.single(
+        messageId: messageId,
+        chatRoomId: _currentChatRoomId!,
+        deleteType: deleteType,
+      ),
+    );
+
+    return result.fold(
+      (error) {
+        log('❌ [$_listenerId] Delete message error: $error');
+        return false;
+      },
+      (_) {
+        final updatedMessages = state.messagesOrEmpty
+            .where((m) => m.id != messageId)
+            .toList();
+        _emitLoaded(messages: updatedMessages);
+        return true;
+      },
+    );
+  }
+
+  Future<bool> deleteMessages({
+    required List<String> messageIds,
+    required String deleteType,
+  }) async {
+    if (_currentChatRoomId == null) return false;
+    if (messageIds.isEmpty) return false;
+
+    final result = await _deleteMessagesUseCase.call(
+      DeleteMessagesParams(
+        messageIds: messageIds,
+        chatRoomId: _currentChatRoomId!,
+        deleteType: deleteType,
+      ),
+    );
+
+    return result.fold(
+      (error) {
+        log('❌ [$_listenerId] Delete messages error: $error');
+        return false;
+      },
+      (_) {
+        final idsSet = messageIds.toSet();
+        final updatedMessages = state.messagesOrEmpty
+            .where((m) => !idsSet.contains(m.id))
+            .toList();
+        _emitLoaded(messages: updatedMessages);
+        return true;
+      },
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BLOCK STATUS HELPERS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BLOCK USER (USING USE CASE)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Future<Either<String, String>> blockUser({required String blockedId}) async {
+    if (_currentChatRoomId == null) {
+      return const Left('لا يوجد محادثة مفتوحة');
+    }
+
+    return _blockHandler.blockUser(
+      chatRoomId: _currentChatRoomId!,
+      blockedId: blockedId,
+    );
+  }
+
+  Future<Either<String, String>> unblockUser({
+    required String blockedId,
+  }) async {
+    if (_currentChatRoomId == null) {
+      return const Left('لا يوجد محادثة مفتوحة');
+    }
+
+    return _blockHandler.unblockUser(
+      chatRoomId: _currentChatRoomId!,
+      blockedId: blockedId,
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // CLEANUP
+  // ══════════════════════════════════════════════════════════════════════════
 
   @override
   Future<void> close() {
     log('🔴 [$_listenerId] Closing ChatMessagesCubit...');
 
-    _typingTimer?.cancel();
-    _typingTimer = null;
+    _typingHandler.dispose();
+    _messagesSubscription?.cancel();
+    _connectivityHandler.dispose();
 
-    socketHelper.offAllForListener(_listenerId);
+    _socketHandler?.dispose();
 
     _currentChatRoomId = null;
+    _currentReceiverId = null;
+    _messageStateHandler.clearPendingSystemMessages();
 
-    log('✅ [$_listenerId] ChatMessagesCubit closed and cleaned up');
-
-    socketHelper.debugPrintListeners();
+    log('✅ [$_listenerId] ChatMessagesCubit closed');
 
     return super.close();
   }

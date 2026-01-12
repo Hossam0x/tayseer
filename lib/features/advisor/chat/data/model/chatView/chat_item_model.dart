@@ -36,17 +36,13 @@ class ChatRoomsData {
   }
 
   // ✅ أضف هذا
-  ChatRoomsData copyWith({
-    List<ChatRoom>? rooms,
-    Pagination? pagination,
-  }) {
+  ChatRoomsData copyWith({List<ChatRoom>? rooms, Pagination? pagination}) {
     return ChatRoomsData(
       rooms: rooms ?? this.rooms,
       pagination: pagination ?? this.pagination,
     );
   }
 }
-
 
 class ChatRoom {
   final String id;
@@ -58,6 +54,7 @@ class ChatRoom {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final int unreadCount;
+  final bool isBlocked;
 
   ChatRoom({
     required this.id,
@@ -69,6 +66,7 @@ class ChatRoom {
     required this.createdAt,
     required this.updatedAt,
     required this.unreadCount,
+    this.isBlocked = false,
   });
 
   factory ChatRoom.fromJson(Map<String, dynamic> json) {
@@ -78,24 +76,23 @@ class ChatRoom {
           (json['users'] as List?)?.map((e) => ChatUser.fromJson(e)).toList() ??
           [],
       lastMessage:
-          json['lastMessage'] != null
-              ? LastMessage.fromJson(json['lastMessage'])
-              : null,
-      lastMessageAt:
-          json['lastMessageAt'] != null
-              ? DateTime.tryParse(json['lastMessageAt'])
-              : null,
+          json['lastMessage'] != null &&
+              json['lastMessage'] is Map<String, dynamic>
+          ? LastMessage.fromJson(json['lastMessage'])
+          : null,
+      lastMessageAt: json['lastMessageAt'] != null
+          ? DateTime.tryParse(json['lastMessageAt'])
+          : null,
       status: json['status']?.toString() ?? "",
       sender: ChatUser.fromJson(json['sender'] ?? {}),
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.tryParse(json['createdAt'])
-              : null,
-      updatedAt:
-          json['updatedAt'] != null
-              ? DateTime.tryParse(json['updatedAt'])
-              : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'])
+          : null,
       unreadCount: json['unreadCount'] ?? 0,
+      isBlocked: json['isBlocked'] ?? false,
     );
   }
 
@@ -110,6 +107,7 @@ class ChatRoom {
     DateTime? createdAt,
     DateTime? updatedAt,
     int? unreadCount,
+    bool? isBlocked,
   }) {
     return ChatRoom(
       id: id ?? this.id,
@@ -121,6 +119,7 @@ class ChatRoom {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       unreadCount: unreadCount ?? this.unreadCount,
+      isBlocked: isBlocked ?? this.isBlocked,
     );
   }
 }
@@ -187,14 +186,12 @@ class LastMessage {
       messageType: json['messageType']?.toString() ?? "text",
       senderName: json['senderName']?.toString() ?? "",
       timeAgo: json['timeAgo']?.toString() ?? "",
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.tryParse(json['createdAt'])
-              : null,
-      updatedAt:
-          json['updatedAt'] != null
-              ? DateTime.tryParse(json['updatedAt'])
-              : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'])
+          : null,
     );
   }
 

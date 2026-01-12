@@ -1,7 +1,8 @@
 import 'package:tayseer/my_import.dart';
 
-class CustomRequestsAppBar extends StatelessWidget {
-  const CustomRequestsAppBar({super.key});
+class CustomAppBar extends StatelessWidget {
+  const CustomAppBar({super.key, required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +47,7 @@ class CustomRequestsAppBar extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "الطلبات",
+                  title,
                   style: TextStyle(
                     fontSize: fontSize,
                     fontWeight: FontWeight.bold,

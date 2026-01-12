@@ -6,6 +6,7 @@ import '../media/audio_message_widget.dart';
 class MessageContentBuilder extends StatelessWidget {
   final String messageType;
   final List<String> contentList;
+  final List<String>? localFilePaths; // ✅ New parameter
   final Color textColor;
   final double fontSize;
   final double maxWidth;
@@ -14,6 +15,7 @@ class MessageContentBuilder extends StatelessWidget {
     super.key,
     required this.messageType,
     required this.contentList,
+    this.localFilePaths,
     required this.textColor,
     required this.fontSize,
     required this.maxWidth,
@@ -25,21 +27,33 @@ class MessageContentBuilder extends StatelessWidget {
       case 'image':
         return ImageMessageWidget(
           images: contentList,
+          localFilePaths: localFilePaths,
           maxWidth: maxWidth,
-          onImageTap: (index) => _openImageViewer(context, index),
+          onImageTap: (index) => _openImageViewer(
+            context,
+            index,
+            isLocal: localFilePaths != null && localFilePaths!.isNotEmpty,
+          ),
         );
 
       case 'video':
-        if (contentList.length == 1) {
+        final hasLocalFiles =
+            localFilePaths != null && localFilePaths!.isNotEmpty;
+        final displayList = hasLocalFiles ? localFilePaths! : contentList;
+
+        if (displayList.isEmpty) return const SizedBox.shrink();
+
+        if (displayList.length == 1) {
           return ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: VideoMessageWidget(
-              videoUrl: contentList.first,
+              videoUrl: displayList.first,
               maxWidth: maxWidth - 24,
+              isLocal: hasLocalFiles,
             ),
           );
         } else {
-          return _buildVideoGrid();
+          return _buildVideoGrid(displayList, isLocal: hasLocalFiles);
         }
 
       case 'audio':
@@ -62,16 +76,22 @@ class MessageContentBuilder extends StatelessWidget {
     }
   }
 
-  void _openImageViewer(BuildContext context, int index) {
+  void _openImageViewer(
+    BuildContext context,
+    int index, {
+    bool isLocal = false,
+  }) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) =>
-            FullScreenImageViewer(images: contentList, initialIndex: index),
+        builder: (context) => FullScreenImageViewer(
+          images: localFilePaths ?? contentList,
+          initialIndex: index,
+        ),
       ),
     );
   }
 
-  Widget _buildVideoGrid() {
+  Widget _buildVideoGrid(List<String> list, {required bool isLocal}) {
     final gridWidth = maxWidth - 8;
     const spacing = 4.0;
 
@@ -82,17 +102,16 @@ class MessageContentBuilder extends StatelessWidget {
         child: Wrap(
           spacing: spacing,
           runSpacing: spacing,
-          children: contentList.take(4).map((videoUrl) {
+          children: list.take(4).map((videoPath) {
             return SizedBox(
-              width: contentList.length == 1
-                  ? gridWidth
-                  : (gridWidth - spacing) / 2,
+              width: list.length == 1 ? gridWidth : (gridWidth - spacing) / 2,
               height: 120,
               child: VideoMessageWidget(
-                videoUrl: videoUrl,
-                maxWidth: contentList.length == 1
+                videoUrl: videoPath,
+                maxWidth: list.length == 1
                     ? gridWidth
                     : (gridWidth - spacing) / 2,
+                isLocal: isLocal,
               ),
             );
           }).toList(),

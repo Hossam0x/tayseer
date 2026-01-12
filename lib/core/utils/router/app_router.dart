@@ -1,13 +1,26 @@
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
-import 'package:tayseer/features/advisor/add_post/view/camera_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
-import 'package:tayseer/features/advisor/chat/presentation/view/conversition.dart';
+import 'package:tayseer/features/advisor/chat/presentation/view/conversation.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
+import 'package:tayseer/features/advisor/profille/views/boost_account_view.dart';
+import 'package:tayseer/features/advisor/profille/views/boost_properties_view.dart';
+import 'package:tayseer/features/advisor/profille/views/consultation_topics_view.dart';
+import 'package:tayseer/features/advisor/profille/views/location_selection_view.dart';
+import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
+import 'package:tayseer/features/settings/view/blocked_user_view.dart';
+import 'package:tayseer/features/settings/view/edit_personal_data_view.dart';
+import 'package:tayseer/features/settings/view/settings_view.dart';
 import 'package:tayseer/features/advisor/event/view/creat_event_view.dart';
+import 'package:tayseer/features/advisor/event_detail/view/event_detail_view.dart';
+import 'package:tayseer/features/advisor/event_detail/view/update_event_view.dart';
+import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/map/map_view.dart';
+import 'package:tayseer/features/advisor/notification/presentation/view/notification_view.dart';
+import 'package:tayseer/features/advisor/session/view/session_details_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
@@ -99,8 +112,21 @@ abstract class AppRouter {
   static const kAdvisorSearchView = '/SearchView';
   static const kAddPostView = '/AddPostView';
   static const kCameraView = '/CameraView';
+  static const kEditCertificateView = '/editCertificateView';
+  static const kSettingsView = '/settings';
+  static const kEditPersonalDataView = '/edit_personal_data';
+  static const kProfessionalInfoDashboardView = '/professional_info_dashboard';
+  static const kBoostAccountView = '/boost_account_view';
+  static const kBoostPropertiesView = '/boost_properties_view';
+  static const kLocationSelectionView = '/location_selection_view';
+  static const kConsultationTopicsView = '/converssation_topics_view';
+  static const kBlockedUsersView = '/blocked_users_view';
   static const kMapView = '/MapView';
   static const kCreatEventView = '/CreatEventView';
+  static const notification = '/notification';
+  static const kEventDetailView = '/EventDetailView';
+  static const kUpdateEventView = '/UpdateEventView';
+  static const kSessionDetailsView = '/SessionDetailsView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -113,11 +139,53 @@ abstract class AppRouter {
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      // case kOnBoardingScreen:
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) => const OnBoardingScreen(),
-      //   );
+      case kSettingsView:
+        return SlideLeftRoute(
+          page: const SettingsView(),
+          routeSettings: settings,
+        );
+
+      case kEditPersonalDataView:
+        return SlideLeftRoute(
+          page: const EditPersonalDataView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kProfessionalInfoDashboardView:
+        return SlideLeftRoute(
+          page: const ProfessionalInfoDashboardView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kBoostAccountView:
+        return SlideLeftRoute(
+          page: const BoostAccountView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kBoostPropertiesView:
+        return SlideLeftRoute(
+          page: const BoostPropertiesView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kLocationSelectionView:
+        return SlideLeftRoute(
+          page: const LocationSelectionView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kConsultationTopicsView:
+        return SlideLeftRoute(
+          page: const ConsultationTopicsView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kBlockedUsersView:
+        return SlideLeftRoute(
+          page: const BlockedUsersView(),
+          routeSettings: settings,
+        );
 
       case kHomeScreen:
         return MaterialPageRoute(
@@ -447,24 +515,36 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => const ASearchView(),
         );
+      case kSessionDetailsView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SessionDetailsView(),
+        );
+      case kEventDetailView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: settings,
+
+          builder: (_) => BlocProvider.value(
+            value: getIt<EventDetailCubit>()
+              ..fetchEventDetail(
+                args != null && args['eventId'] != null
+                    ? args['eventId'] as String
+                    : '',
+              ),
+            child: const EventDetailView(),
+          ),
+        );
       case kAddPostView:
         final args = settings.arguments as AddPostEnum;
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => BlocProvider(
-            create: (context) => AddPostCubit()
-              ..loadGallery()
-              ..loadGifs()
-              ..getALLCategory(),
+            create: (context) => AddPostCubit()..getALLCategory(),
             child: AddPostView(addPostEnum: args),
           ),
         );
-      case kCameraView:
-        final args = settings.arguments as Map<String, dynamic>;
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => CameraView(cubit: args['cubit']),
-        );
+
       case kMapView:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
@@ -477,6 +557,13 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => CreatEventView(cubit: args['cubit']),
         );
+      case kUpdateEventView:
+        final cubit = settings.arguments as EventDetailCubit;
+        return MaterialPageRoute(
+          builder: (_) =>
+              BlocProvider.value(value: cubit, child: UpdateEventView()),
+        );
+
       case kChatRequest:
         return MaterialPageRoute(
           settings: settings,
@@ -504,8 +591,43 @@ abstract class AppRouter {
             userimage:
                 (settings.arguments as Map<String, dynamic>?)?['userimage']
                     as String?,
+            isBlocked:
+                (settings.arguments as Map<String, dynamic>?)?['isBlocked']
+                    as bool? ??
+                false,
+            onBlockStatusChanged:
+                (settings.arguments
+                        as Map<String, dynamic>?)?['onBlockStatusChanged']
+                    as void Function(bool)?,
           ),
         );
+      case notification:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const NotificationView(),
+        );
+      // case kEditCertificateView:
+      //   final cert = settings.arguments as CertificateModelProfile;
+      //   return PageRouteBuilder(
+      //     settings: settings,
+      //     pageBuilder: (context, animation, secondaryAnimation) =>
+      //         EditCertificateView(certificate: cert),
+      //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      //       const begin = Offset(1.0, 0.0);
+      //       const end = Offset.zero;
+      //       const curve = Curves.easeInOut;
+
+      //       var tween = Tween(
+      //         begin: begin,
+      //         end: end,
+      //       ).chain(CurveTween(curve: curve));
+
+      //       return SlideTransition(
+      //         position: animation.drive(tween),
+      //         child: child,
+      //       );
+      //     },
+      //   );
     }
     return null;
   }

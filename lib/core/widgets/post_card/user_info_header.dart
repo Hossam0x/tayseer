@@ -28,7 +28,7 @@ class UserInfoHeader extends StatelessWidget {
           height: 50.w,
           decoration: BoxDecoration(shape: BoxShape.circle),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(25.r),
+            borderRadius: BorderRadius.circular(100.r),
             child: AppImage(avatar, fit: BoxFit.cover),
           ),
         ),

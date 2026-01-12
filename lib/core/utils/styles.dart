@@ -39,6 +39,11 @@ abstract class Styles {
     fontWeight: FontWeight.w400,
     color: Color(0xff3b3b3b),
   );
+  static final textStyle14Meduim = TextStyle(
+    fontSize: 14.sp,
+    fontWeight: FontWeight.w500,
+    color: Color(0xff3b3b3b),
+  );
   static final textStyle14SemiBold = TextStyle(
     fontSize: 14.sp,
     fontWeight: FontWeight.w600,
@@ -54,6 +59,10 @@ abstract class Styles {
   static final textStyle16 = TextStyle(
     fontSize: 16.sp,
     fontWeight: FontWeight.w400,
+  );
+  static final textStyle16Meduim = TextStyle(
+    fontSize: 16.sp,
+    fontWeight: FontWeight.w500,
   );
   static final textStyle16SemiBold = TextStyle(
     fontSize: 16.sp,
@@ -110,6 +119,10 @@ abstract class Styles {
   static final textStyle24 = TextStyle(
     fontSize: 24.sp,
     fontWeight: FontWeight.w400,
+  );
+  static final textStyle24Meduim = TextStyle(
+    fontSize: 24.sp,
+    fontWeight: FontWeight.w500,
   );
   static final textStyle24SemiBold = TextStyle(
     fontSize: 24.sp,

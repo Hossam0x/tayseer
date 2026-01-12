@@ -289,4 +289,22 @@
   "search": "Search...",
   "reply": "Reply",
   "edit": "Edit"
+  ,
+  "event_description_title": "Event Description",
+  "event_description_text": "Detailed information about the event.",
+  "event_duration": "Duration",
+  "event_duration_value": "2 hours",
+  "attendees_count": "Attendees",
+  "attendees_count_value": "120",
+  "location_title": "Location",
+  "session_title": "Session Title",
+  "session_location": "Location",
+  "session_consultant": "Consultant",
+  "session_date_time": "Date & Time",
+  "show_details": "Show Details",
+  "attendees_label": "Attendees",
+  "session_price_label": "Price",
+  "session_price_value": "150 SAR",
+  "boost_button": "Boost",
+  "edit_button": "Edit"
 }

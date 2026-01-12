@@ -22,31 +22,35 @@ class CustomDropdownFormField<T> extends StatelessWidget {
       value: value,
       validator: validator,
       isExpanded: true,
-      hint: Text(
-        hint,
-        style: Styles.textStyle12.copyWith(
-          color: AppColors.kprimaryColor.withOpacity(0.5),
-        ),
-      ),
 
       decoration: InputDecoration(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
-        ),
         filled: true,
         fillColor: AppColors.kWhiteColor,
-        enabledBorder: OutlineInputBorder(
+        isDense: true,
+
+        /// نفس الـ padding بتاع الـ CustomTextFormField
+        contentPadding: EdgeInsets.symmetric(
+          vertical: context.height * .022,
+          horizontal: 12,
+        ),
+
+        /// نفس borders بالظبط
+        border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(
             color: AppColors.kprimaryColor.withOpacity(0.3),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+            color: AppColors.kprimaryColor.withOpacity(0.5),
+            width: 0.8,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(
-            color: AppColors.kprimaryColor.withOpacity(0.3),
-          ),
+          borderSide: BorderSide(color: AppColors.kprimaryColor, width: 1),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -58,6 +62,14 @@ class CustomDropdownFormField<T> extends StatelessWidget {
         ),
         errorStyle: Styles.textStyle10.copyWith(color: Colors.red),
       ),
+
+      hint: Text(
+        hint,
+        style: Styles.textStyle12.copyWith(
+          color: AppColors.kprimaryColor.withOpacity(0.5),
+        ),
+      ),
+
       items: items,
       onChanged: onChanged,
     );

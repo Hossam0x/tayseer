@@ -32,15 +32,11 @@ class NavBarConfig {
       labelKey: "home",
     ),
     NavBarItem(
-      icon: AssetsData.chatIcon,
-      activeIcon: AssetsData.selectedChatIcon,
-      labelKey: "chat",
+      icon: AssetsData.graySessionIcon,
+      activeIcon: AssetsData.selectedSessionIcon,
+      labelKey: "sessions",
     ),
-    NavBarItem(
-      icon: AssetsData.dateIcon,
-      activeIcon: AssetsData.selectedDateIcon,
-      labelKey: "mySpace",
-    ),
+
     NavBarItem(
       icon: AssetsData.eventIcon,
       activeIcon: AssetsData.selectedEventIcon,

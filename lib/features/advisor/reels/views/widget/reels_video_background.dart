@@ -7,16 +7,20 @@ class ReelsVideoBackground extends StatefulWidget {
   final String videoUrl;
   final bool shouldPlay;
   final VoidCallback onTap;
+  final void Function(Offset)? onDoubleTap;
   final bool showProgressBar;
   final VideoPlayerController? sharedController;
+  final ValueChanged<VideoPlayerController>? onControllerCreated;
 
   const ReelsVideoBackground({
     super.key,
     required this.videoUrl,
     required this.shouldPlay,
     required this.onTap,
+    this.onDoubleTap,
     this.showProgressBar = true,
     this.sharedController,
+    this.onControllerCreated,
   });
 
   @override
@@ -46,11 +50,20 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
       // بنقوله لو جاي من بره (حتى لو كان صامت)، علي الصوت للآخر
       await _controller!.setVolume(1.0);
 
+      // ✅ الحماية من التدمير أثناء الـ await
+      if (!mounted || _controller == null) return;
+
       if (_controller!.value.isInitialized) {
         _isInitialized = true;
         _hasError = false;
+
+        // ✅ Auto-play if shouldPlay is true
+        if (widget.shouldPlay) {
+          _controller!.play();
+        }
       }
       _controller!.addListener(_videoListener);
+      widget.onControllerCreated?.call(_controller!);
       if (mounted) setState(() {});
       return;
     }
@@ -77,6 +90,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
       await _controller!.setVolume(1.0);
 
       if (mounted) {
+        widget.onControllerCreated?.call(_controller!);
         setState(() {
           _isInitialized = true;
           _hasError = false;
@@ -85,11 +99,12 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
       }
     } catch (e) {
       debugPrint('❌ Error initializing video: $e');
-      if (mounted)
+      if (mounted) {
         setState(() {
           _hasError = true;
           _isInitialized = false;
         });
+      }
     }
   }
 
@@ -97,7 +112,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
     if (_controller == null || !mounted) return;
     final isBuffering = _controller!.value.isBuffering;
     if (isBuffering != _isBuffering) {
-      setState(() => _isBuffering = isBuffering);
+      if (mounted) setState(() => _isBuffering = isBuffering);
     }
     if (_isInitialized && !_isDragging) {
       // Avoid unnecessary redraws
@@ -147,6 +162,8 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
+      onDoubleTapDown: (details) =>
+          widget.onDoubleTap?.call(details.globalPosition),
       child: Container(
         color: Colors.black,
         width: double.infinity,
@@ -214,8 +231,12 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
                 bottom: 0,
                 child: _VideoSeekBar(
                   controller: _controller!,
-                  onDragStart: () => setState(() => _isDragging = true),
-                  onDragEnd: () => setState(() => _isDragging = false),
+                  onDragStart: () {
+                    if (mounted) setState(() => _isDragging = true);
+                  },
+                  onDragEnd: () {
+                    if (mounted) setState(() => _isDragging = false);
+                  },
                   onSeek: _seekTo,
                 ),
               ),

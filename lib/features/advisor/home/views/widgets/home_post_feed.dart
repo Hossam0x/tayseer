@@ -1,4 +1,3 @@
-import 'package:tayseer/core/widgets/app_toast.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
@@ -49,6 +48,7 @@ class HomePostFeed extends StatelessWidget {
                 child: Text(
                   state.errorMessage ?? 'حدث خطأ ما',
                   style: Styles.textStyle16,
+                  textAlign: TextAlign.center,
                 ),
               ),
             );

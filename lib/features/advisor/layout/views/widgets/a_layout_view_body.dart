@@ -1,11 +1,10 @@
-// features/advisor/layout/views/widgets/a_layout_view_body.dart
-
 import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
 import 'package:tayseer/features/advisor/event/view/event_view.dart';
 import 'package:tayseer/features/advisor/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/custom_feb_menu.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
+import 'package:tayseer/features/advisor/profille/views/profile_view.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 
@@ -19,6 +18,8 @@ class ALayOutViewBody extends StatelessWidget {
     return BlocBuilder<ALayoutCubit, ALayoutState>(
       builder: (context, state) {
         final pages = _getPages(state.userType, cubit);
+
+        final bool isFabVisible = state.isNavVisible && state.currentIndex == 0;
 
         return Scaffold(
           body: Stack(
@@ -40,12 +41,13 @@ class ALayOutViewBody extends StatelessWidget {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 left: 20,
+                // استخدام المتغير لتحديد الموقع
+                bottom: isFabVisible ? 90.h : -400.h,
 
-                bottom: state.isNavVisible && state.currentIndex == 0
-                    ? 90
-                    : -400,
-
-                child: SafeArea(child: const CustomFabMenu()),
+                child: SafeArea(
+                  // تمرير المتغير للويدجت ليقوم بإغلاق نفسه عند الاختفاء
+                  child: CustomFabMenu(isVisible: isFabVisible),
+                ),
               ),
             ],
           ),
@@ -60,15 +62,8 @@ class ALayOutViewBody extends StatelessWidget {
         return [
           HomeView(onScroll: cubit.onScroll),
           const ChatView(),
-          Container(
-            color: Colors.white,
-            child: const Center(child: Text('My Space')),
-          ),
           EventView(),
-          Container(
-            color: Colors.white,
-            child: const Center(child: Text('Profile')),
-          ),
+          ProfileView(),
         ];
 
       case UserTypeEnum.user:

@@ -21,7 +21,7 @@ class ChatDatabase {
 
     return await openDatabase(
       path,
-      version: 2, // Upgraded for sort_timestamp
+      version: 4, // Upgraded for local_file_paths field
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -49,7 +49,9 @@ class ChatDatabase {
         reply_message TEXT,
         is_reply INTEGER NOT NULL DEFAULT 0,
         is_pending INTEGER NOT NULL DEFAULT 0,
-        sort_timestamp INTEGER NOT NULL DEFAULT 0
+        sort_timestamp INTEGER NOT NULL DEFAULT 0,
+        action TEXT,
+        local_file_paths TEXT
       )
     ''');
 
@@ -124,6 +126,26 @@ class ChatDatabase {
       try {
         await db.execute('DROP INDEX IF EXISTS idx_messages_created_at');
       } catch (_) {}
+    }
+
+    if (oldVersion < 3) {
+      // Add action column for system message actions (block/unblock)
+      try {
+        await db.execute('ALTER TABLE messages ADD COLUMN action TEXT');
+      } catch (_) {
+        // Column might already exist
+      }
+    }
+
+    if (oldVersion < 4) {
+      // Add local_file_paths column for optimistic media display
+      try {
+        await db.execute(
+          'ALTER TABLE messages ADD COLUMN local_file_paths TEXT',
+        );
+      } catch (_) {
+        // Column might already exist
+      }
     }
   }
 

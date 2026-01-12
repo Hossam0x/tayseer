@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_state.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart' as di;
@@ -19,17 +19,23 @@ class AddPostCubit extends Cubit<AddPostState> {
   }) async {
     emit(state.copyWith(addPostState: CubitStates.loading));
 
-    final images = state.selectedImages;
-    final videos = state.selectedVideos.isNotEmpty
-        ? state.selectedVideos.first
+    // source 1: gallery images
+    final galleryImages = state.selectedImages.isNotEmpty
+        ? state.selectedImages
+        : null;
+
+    // source 2: captured images (camera)
+    final cameraImages = state.capturedImages.isNotEmpty
+        ? state.capturedImages
         : null;
 
     final response = await _repo.createPost(
       content: contentController.text,
       categoryId: categoryId,
       postType: postType,
-      images: images.isEmpty ? null : images,
-      videos: videos,
+      images: galleryImages,
+      imageFiles: cameraImages,
+      videoFile: state.capturedVideo,
     );
 
     response.fold(
@@ -49,9 +55,8 @@ class AddPostCubit extends Cubit<AddPostState> {
             addPostState: CubitStates.success,
             loading: false,
             selectedImages: [],
-            selectedVideos: [],
             capturedImages: [],
-            selectedGifs: [],
+            capturedVideo: null,
             draftText: '',
           ),
         );
@@ -87,127 +92,6 @@ class AddPostCubit extends Cubit<AddPostState> {
     );
   }
 
-  /// Load a list of GIFs (sample URLs). In a real app this could call Giphy API.
-  Future<void> loadGifs() async {
-    // sample GIF URLs
-    final gifs = <String>[
-      'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
-      'https://media.giphy.com/media/l0HlQ7LRal9b0v2pu/giphy.gif',
-      'https://media.giphy.com/media/1xVf3Yy8z2n0Q/giphy.gif',
-      'https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/giphy.gif',
-      'https://media.giphy.com/media/5xaOcLGvzHxDKjufnLW/giphy.gif',
-    ];
-
-    emit(state.copyWith(availableGifs: gifs));
-  }
-
-  /// تحميل صور الجهاز (مرة واحدة)
-  Future<void> loadGallery() async {
-    emit(state.copyWith(loading: true));
-
-    final permission = await PhotoManager.requestPermissionExtend();
-    if (!permission.isAuth) {
-      debugPrint('❌ Permission denied!');
-      emit(state.copyWith(loading: false));
-      return;
-    }
-    debugPrint('✅ Permission granted');
-
-    // provide ordering to avoid malformed SQL (empty ORDER BY)
-    final filter = FilterOptionGroup(
-      imageOption: FilterOption(),
-      orders: [OrderOption(type: OrderOptionType.createDate, asc: false)],
-    );
-
-    final albums = await PhotoManager.getAssetPathList(
-      type: RequestType.image,
-      onlyAll: false,
-      filterOption: filter,
-    );
-    debugPrint('📁 Found ${albums.length} albums');
-
-    if (albums.isEmpty) {
-      debugPrint('⚠️ No albums found!');
-      emit(
-        state.copyWith(galleryImages: [], galleryAlbums: [], loading: false),
-      );
-      return;
-    }
-
-    // find the "All" album if present, otherwise use the first album
-    final allAlbum = albums.firstWhere(
-      (a) => a.isAll, // AssetPathEntity.isAll indicates combined album
-      orElse: () => albums.first,
-    );
-
-    List<AssetEntity> images = [];
-    try {
-      images = await allAlbum.getAssetListPaged(page: 0, size: 200);
-      debugPrint('📸 Loaded ${images.length} images from ${allAlbum.name}');
-    } catch (e) {
-      debugPrint('getAssetListPaged failed for images: $e');
-      try {
-        images = await allAlbum.getAssetListRange(start: 0, end: 200);
-        debugPrint('📸 Fallback: Loaded ${images.length} images');
-      } catch (e2) {
-        debugPrint('getAssetListRange fallback failed for images: $e2');
-        images = [];
-      }
-    }
-
-    // also load videos
-    final videoAlbums = await PhotoManager.getAssetPathList(
-      type: RequestType.video,
-      onlyAll: false,
-      filterOption: filter,
-    );
-
-    List<AssetEntity> videos = [];
-    if (videoAlbums.isNotEmpty) {
-      final allVideoAlbum = videoAlbums.firstWhere(
-        (a) => a.isAll,
-        orElse: () => videoAlbums.first,
-      );
-      try {
-        videos = await allVideoAlbum.getAssetListPaged(page: 0, size: 200);
-      } catch (e) {
-        debugPrint('getAssetListPaged failed for videos: $e');
-        try {
-          videos = await allVideoAlbum.getAssetListRange(start: 0, end: 200);
-        } catch (e2) {
-          debugPrint('getAssetListRange fallback failed for videos: $e2');
-          videos = [];
-        }
-      }
-    }
-
-    emit(
-      state.copyWith(
-        galleryImages: images,
-        galleryAlbums: albums,
-        galleryVideos: videos,
-        galleryVideoAlbums: videoAlbums,
-        loading: false,
-      ),
-    );
-    debugPrint(
-      '✅ Gallery loaded: ${images.length} images, ${videos.length} videos',
-    );
-  }
-
-  /// اختيار / إلغاء اختيار صورة من الـ BottomSheet
-  void toggleImage(AssetEntity image) {
-    final selected = List<AssetEntity>.from(state.selectedImages);
-
-    if (selected.contains(image)) {
-      selected.remove(image);
-    } else {
-      selected.add(image);
-    }
-
-    emit(state.copyWith(selectedImages: selected));
-  }
-
   /// حذف صورة من اللي تحت الـ TextField
   void removeSelected(AssetEntity image) {
     final selected = List<AssetEntity>.from(state.selectedImages);
@@ -227,47 +111,6 @@ class AddPostCubit extends Cubit<AddPostState> {
     emit(state.copyWith(draftText: text));
   }
 
-  /// Commit a list of images selected in the bottom sheet into the main selected images
-  void commitSelectedImages(List<AssetEntity> images) {
-    final selected = List<AssetEntity>.from(state.selectedImages);
-    for (final img in images) {
-      if (!selected.contains(img)) selected.add(img);
-    }
-    emit(state.copyWith(selectedImages: selected));
-  }
-
-  /// Commit selected GIF URLs from the bottom sheet into state
-  void commitSelectedGifs(List<String> gifs) {
-    final selected = List<String>.from(state.selectedGifs);
-    for (final g in gifs) {
-      if (!selected.contains(g)) selected.add(g);
-    }
-    emit(state.copyWith(selectedGifs: selected));
-  }
-
-  /// Commit a list of video AssetEntity selected in bottom sheet
-  void commitSelectedVideos(List<AssetEntity> videos) {
-    final selected = List<AssetEntity>.from(state.selectedVideos);
-    for (final v in videos) {
-      if (!selected.contains(v)) selected.add(v);
-    }
-    emit(state.copyWith(selectedVideos: selected));
-  }
-
-  /// Remove a selected video from draft
-  void removeSelectedVideo(AssetEntity video) {
-    final selected = List<AssetEntity>.from(state.selectedVideos);
-    selected.remove(video);
-    emit(state.copyWith(selectedVideos: selected));
-  }
-
-  /// Remove a selected GIF from the draft
-  void removeSelectedGif(String gifUrl) {
-    final selected = List<String>.from(state.selectedGifs);
-    selected.remove(gifUrl);
-    emit(state.copyWith(selectedGifs: selected));
-  }
-
   /// Set the selected category id from UI
   void setSelectedCategoryId(String id) {
     emit(state.copyWith(selectedCategoryId: id));
@@ -281,6 +124,78 @@ class AddPostCubit extends Cubit<AddPostState> {
       emit(state.copyWith(capturedImages: captured));
     } catch (e) {
       debugPrint('addCapturedImage error: $e');
+    }
+  }
+
+  /// 🔥 إضافة فيديو ملتقط من المعرض/الكاميرا
+  Future<void> addCapturedVideo(XFile file) async {
+    try {
+      // Only allow a single captured video — replace any existing one
+      emit(state.copyWith(capturedVideo: file));
+    } catch (e) {
+      debugPrint('addCapturedVideo error: $e');
+    }
+  }
+
+  /// Remove a captured video file
+  void removeCapturedVideo() {
+    emit(state.copyWith(capturedVideo: null));
+  }
+
+  Future<void> enhanceTextWithGemini(BuildContext context) async {
+    final currentText = contentController.text;
+
+    if (currentText.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('please_write_text_first'),
+          isError: true,
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(isAiLoading: true));
+
+    const apiKey = 'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg';
+
+    try {
+      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
+
+      final prompt =
+          '''
+You are a professional social media content creator.
+
+IMPORTANT RULES:
+1. Detect the language of the input text
+2. Rewrite the text in THE SAME LANGUAGE as the input
+3. Make it engaging, professional, and attractive for social media
+4. Add relevant emojis
+5. Do NOT translate - keep the same language
+6. Return ONLY the rewritten text, nothing else
+
+Input text: "$currentText"
+''';
+
+      final content = [Content.text(prompt)];
+      final response = await model.generateContent(content);
+
+      if (response.text != null) {
+        contentController.text = response.text!;
+        emit(state.copyWith(draftText: response.text!, isAiLoading: false));
+      }
+    } catch (e) {
+      debugPrint('Gemini AI error: $e');
+      emit(state.copyWith(isAiLoading: false));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'AI Error: ${e.toString()}',
+          isError: true,
+        ),
+      );
     }
   }
 }

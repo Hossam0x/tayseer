@@ -2,6 +2,10 @@
 
 // import 'package:tayseer/core/utils/helper/socket_helper.dart';
 
+import 'dart:developer';
+
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
+
 import '../../../../my_import.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -19,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void initState() {
-    // _initializeSocket();
+    _initializeSocket();
     super.initState();
     // _controller = AnimationController(
     //   duration: const Duration(seconds: 2),
@@ -35,19 +39,19 @@ class _SplashScreenState extends State<SplashScreen>
     _navigateBasedOnToken();
   }
 
-  // Future<void> _initializeSocket() async {
-  //   try {
-  //     final socketHelper = getIt<tayseerSocketHelper>();
+  Future<void> _initializeSocket() async {
+    try {
+      final socketHelper = getIt<tayseerSocketHelper>();
 
-  //     final connected = await socketHelper.connect();
+      final connected = await socketHelper.connect();
 
-  //     if (connected) {
-  //       log('✅ Socket connected successfully');
-  //     }
-  //   } catch (e) {
-  //     log('❌ Socket initialization error: $e');
-  //   }
-  // }
+      if (connected) {
+        log('✅ Socket connected successfully');
+      }
+    } catch (e) {
+      log('❌ Socket initialization error: $e');
+    }
+  }
 
   Future<void> _navigateBasedOnToken() async {
     await Future.delayed(const Duration(seconds: 4));

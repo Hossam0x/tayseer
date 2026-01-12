@@ -184,6 +184,8 @@ class MessageBubble extends StatelessWidget {
                         child: MessageContentBuilder(
                           messageType: messageType,
                           contentList: contentList,
+                          localFilePaths:
+                              chatMessage?.localFilePaths, // ✅ Pass local paths
                           textColor: textColor,
                           fontSize: fontSize,
                           maxWidth: maxWidth - paddingH * 2,
@@ -194,6 +196,8 @@ class MessageBubble extends StatelessWidget {
                     MessageContentBuilder(
                       messageType: messageType,
                       contentList: contentList,
+                      localFilePaths:
+                          chatMessage?.localFilePaths, // ✅ Pass local paths
                       textColor: textColor,
                       fontSize: fontSize,
                       maxWidth: maxWidth,

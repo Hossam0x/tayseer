@@ -1,6 +1,4 @@
-
 import '../../my_import.dart';
-
 
 // ignore: must_be_immutable
 class CustomOutlineButton extends StatelessWidget {
@@ -14,7 +12,7 @@ class CustomOutlineButton extends StatelessWidget {
     this.isCorrectIcon = false,
     this.isSocialLinkButton = false,
     this.height = 60,
-    this.width = 70,
+    this.width = 100,
   });
 
   final String text;
@@ -33,30 +31,33 @@ class CustomOutlineButton extends StatelessWidget {
       width: width,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.kprimaryColor),
+        color: AppColors.kprimaryColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.kprimaryTextColor),
       ),
       // margin: const EdgeInsets.only(right: 10, left: 10, bottom: 15),
       child: InkWell(
         onTap: onTap,
         child: Row(
-          // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: (corectIcons == null && normalIcon == null)
+              ? MainAxisAlignment.center
+              : MainAxisAlignment.spaceBetween,
           children: [
-            if (isCorrectIcon == true || isSocialLinkButton == true)
+            if (corectIcons != null)
               Icon(corectIcons, size: 20, color: AppColors.kprimaryColor),
-            Expanded(
-              child: Text(
-                text,
-                style: Styles.textStyle14.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.kprimaryColor,
-                ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
+
+            Text(
+              text,
+              style: Styles.textStyle14.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.kprimaryTextColor,
               ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
-            if (isCorrectIcon == false || isSocialLinkButton == true)
+
+            if (normalIcon != null)
               Icon(normalIcon, size: 20, color: AppColors.kprimaryColor),
           ],
         ),

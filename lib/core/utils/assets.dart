@@ -34,6 +34,9 @@ abstract class AssetsData {
   static const String guestLockImage = "assets/images/guest_lock.png";
   static const String emptyChatImage = "assets/images/empty_chat.png";
   static const String kEmptyEventImage = "assets/images/empty_event_image.png";
+  static const String kWoriningImage = "assets/images/worining_image.png";
+  static const String kisEmptySesessionImage =
+      "assets/images/is_empty_sesession.png";
 
   //////////////////////icons//////////////////////
   static const String kArroBackIcon = "assets/icons/arro_back.svg";
@@ -75,6 +78,7 @@ abstract class AssetsData {
   static const String selectedEventIcon = "assets/icons/selected_event.svg";
 
   static const String notificationIcon = "assets/icons/notification.svg";
+  static const String emptynotification = "assets/icons/empty_notification.png";
 
   static const String addIcon = "assets/icons/add.svg";
 
@@ -109,10 +113,59 @@ abstract class AssetsData {
   static const String deleteIcon = "assets/icons/delete_icon.svg";
   static const String reportIcon = "assets/icons/report_icon.svg";
   static const String send = "assets/icons/send.svg";
+  static const String kpinIcon = "assets/icons/pin_icon.svg";
 
   static const String postsEndIcon = "assets/icons/posts_end_icon.svg";
+
+  static const String noCommentsIcon = "assets/icons/no_comments_icon.svg";
   static const String sentMessageIcon = "assets/icons/sent_message_icon.svg";
+  static const String commentnotify = 'assets/icons/comment_notify.svg';
+  static const String consultationIcon = "assets/icons/Consultation.svg";
+  static const String followNotify = "assets/icons/follow_notify.svg";
+  static const String messageNotify = "assets/icons/message_notify.svg";
+  static const String ticketEventNotify =
+      "assets/icons/ticket_event_notifiy.svg";
+  static const String graySessionIcon = "assets/icons/gray_session.svg";
+  static const String selectedSessionIcon = "assets/icons/selected_session.svg";
+
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
       "assets/animations/loading_animations.json";
+
+  // Profile assests
+  static const String certificatePlaceholder =
+      "assets/images/certificatePlaceholder.jpg";
+  static const String boostBackground = "assets/images/boostBackground.png";
+  static const String noPersonsBlocked = "assets/images/noPersonsBlocked.png";
+  static const String editIcon = "assets/icons/editIcon.svg";
+  static const String icAdd = "assets/icons/icAdd.svg";
+  static const String settingsIcon = "assets/icons/settingsIcon.svg";
+  static const String locationIcon = "assets/icons/locationIcon.svg";
+  static const String boostIcon = "assets/icons/boost_icon.svg";
+  static const String icCamera = "assets/icons/icCamera.svg";
+  static const String icCommentLike = "assets/icons/icCommentLike.svg";
+  static const String addCertificateImage =
+      "assets/icons/addCertificateImage.svg";
+  static const String calenderIcon = "assets/icons/calenderIcon.svg";
+  static const String logoIcon = "assets/icons/logoIcon.svg";
+  static const String boostFinish = "assets/icons/boostFinish.svg";
+
+  // Settings assets
+  static const String icNotificationSettings =
+      "assets/icons/icNotificationSettings.svg";
+  static const String icEditSettings = "assets/icons/icEditSettings.svg";
+  static const String icWalletSettings = "assets/icons/icWalletSettings.svg";
+  static const String icLanguageSettings =
+      "assets/icons/icLanguageSettings.svg";
+  static const String icPackesSettinngs = "assets/icons/icPackesSettinngs.svg";
+  static const String icArchiveSettings = "assets/icons/icArchiveSettings.svg";
+  static const String icHideSettings = "assets/icons/icHideSettings.svg";
+  static const String icDatesSettings = "assets/icons/icDatesSettings.svg";
+  static const String icDurationSettings =
+      "assets/icons/icDurationSettings.svg";
+  static const String icSavedSettings = "assets/icons/icSavedSettings.svg";
+  static const String icBlockedSettings = "assets/icons/icBlockedSettings.svg";
+  static const String icInviteSettings = "assets/icons/icInviteSettings.svg";
+  static const String icManagementSettings =
+      "assets/icons/icManagementSettings.svg";
 }

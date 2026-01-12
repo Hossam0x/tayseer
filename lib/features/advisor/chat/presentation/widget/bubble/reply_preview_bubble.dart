@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
@@ -21,6 +22,10 @@ class ReplyPreviewBubble extends StatelessWidget {
   bool get _isImageReply => _isImageUrl(replyMessage);
   bool get _isVideoReply => _isVideoUrl(replyMessage);
   bool get _isMediaReply => _isImageReply || _isVideoReply;
+  bool get _isLocalFile =>
+      replyMessage.startsWith('/') ||
+      replyMessage.startsWith('file://') ||
+      (replyMessage.contains(':\\') && !replyMessage.startsWith('http'));
 
   bool _isImageUrl(String url) {
     final lowerUrl = url.toLowerCase();
@@ -92,6 +97,15 @@ class ReplyPreviewBubble extends StatelessWidget {
                 Icons.play_circle_outline,
                 color: Colors.white,
                 size: 24,
+              ),
+            )
+          : _isLocalFile
+          ? Image.file(
+              File(replyMessage),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: Colors.grey[300],
+                child: const Icon(Icons.image, size: 20, color: Colors.grey),
               ),
             )
           : CachedNetworkImage(

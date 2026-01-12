@@ -9,6 +9,8 @@ class EventModel {
   final int priceBeforeDiscount;
   final String location;
   final String image;
+  final int totalReservedUsers;
+  final List<ReservationModel> reservations;
 
   EventModel({
     required this.id,
@@ -21,6 +23,8 @@ class EventModel {
     required this.priceBeforeDiscount,
     required this.location,
     required this.image,
+    required this.totalReservedUsers,
+    required this.reservations,
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
@@ -35,6 +39,13 @@ class EventModel {
       priceBeforeDiscount: json['priceBeforeDiscount'] ?? 0,
       location: json['location'] ?? '',
       image: json['images'] ?? '',
+      totalReservedUsers: json['totalReservedUsers'] ?? 0,
+
+      reservations: json['reservations'] != null
+          ? (json['reservations'] as List)
+                .map((e) => ReservationModel.fromJson(e))
+                .toList()
+          : [],
     );
   }
 
@@ -50,6 +61,22 @@ class EventModel {
       'priceBeforeDiscount': priceBeforeDiscount,
       'location': location,
       'images': image,
+      'totalReservedUsers': totalReservedUsers,
+      'reservations': reservations.map((e) => e.toJson()).toList(),
     };
+  }
+}
+
+class ReservationModel {
+  final String image;
+
+  ReservationModel({required this.image});
+
+  factory ReservationModel.fromJson(Map<String, dynamic> json) {
+    return ReservationModel(image: json['image'] ?? '');
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'image': image};
   }
 }

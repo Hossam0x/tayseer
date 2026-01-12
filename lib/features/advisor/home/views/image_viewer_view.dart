@@ -1,13 +1,13 @@
 // ignore_for_file: avoid_print
 
 import 'dart:ui';
-import 'package:flutter/services.dart';
 import 'package:tayseer/core/utils/animation/fly_animation.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
+import 'package:tayseer/features/advisor/home/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class ImageViewerView extends StatefulWidget {
@@ -16,6 +16,7 @@ class ImageViewerView extends StatefulWidget {
   final String postId;
   final PostModel? post;
   final HomeCubit homeCubit;
+  final bool isFromPostDetails;
 
   const ImageViewerView({
     super.key,
@@ -24,6 +25,7 @@ class ImageViewerView extends StatefulWidget {
     required this.postId,
     this.post,
     required this.homeCubit,
+    required this.isFromPostDetails,
   });
 
   @override
@@ -61,14 +63,13 @@ class _ImageViewerViewState extends State<ImageViewerView>
         _dragY = _resetAnimation.value;
       });
     });
-
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _showOverlaysNotifier.dispose();
-    _resetController.dispose();  
+    _resetController.dispose();
     super.dispose();
   }
 
@@ -303,6 +304,19 @@ class _ImageViewerViewState extends State<ImageViewerView>
                     PostStats(
                       comments: post.commentsCount,
                       shares: post.sharesCount,
+                      onTap: () {
+                        widget.isFromPostDetails
+                            ? context.pop()
+                            : Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PostDetailsView(
+                                    post: post,
+                                    homeCubit: widget.homeCubit,
+                                  ),
+                                ),
+                              );
+                      },
                     ),
                     Gap(16.h),
                     PostActionsRow(
@@ -317,7 +331,19 @@ class _ImageViewerViewState extends State<ImageViewerView>
                           reactionType: reaction,
                         );
                       },
-                      onCommentTap: () => print("Open Comments"),
+                      onCommentTap: () => {
+                        widget.isFromPostDetails
+                            ? context.pop()
+                            : Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PostDetailsView(
+                                    post: post,
+                                    homeCubit: widget.homeCubit,
+                                  ),
+                                ),
+                              ),
+                      },
                       onShareTap: () =>
                           widget.homeCubit.toggleSharePost(postId: post.postId),
                     ),

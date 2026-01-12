@@ -12,6 +12,7 @@ import 'package:tayseer/features/advisor/chat/data/local/chat_local_datasource.d
 import 'package:tayseer/features/advisor/chat/data/model/chatView/chat_item_model.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/send_media_message_response.dart';
+import 'package:tayseer/features/advisor/chat/domain/repositories/i_chat_repository.dart';
 import 'package:tayseer/my_import.dart';
 
 /// Enhanced Chat Repository with Local-First Strategy
@@ -27,88 +28,11 @@ import 'package:tayseer/my_import.dart';
 /// 2. Display immediately in UI
 /// 3. Send to server
 /// 4. Update local message with server ID and status
-abstract class ChatRepoV2 {
-  /// Load initial messages for a chat room (local-first)
-  /// Returns cached messages immediately, then syncs with server
-  Future<List<ChatMessage>> loadInitialMessages(String chatRoomId);
-
-  /// Load older messages (cursor-based pagination)
-  /// Cursor = sortTimestamp of the oldest displayed message
-  Future<List<ChatMessage>> loadOlderMessages(
-    String chatRoomId, {
-    required int cursorTimestamp,
-  });
-
-  /// Get sort_timestamp for a message by ID
-  Future<int?> getMessageSortTimestamp(String messageId);
-
-  /// Save a message locally (for optimistic UI)
-  Future<void> saveMessageLocally(ChatMessage message, {String? localId});
-
-  /// Update message after server confirms
-  Future<void> confirmMessageSent(String localId, String serverId);
-
-  /// Update message status (sent/delivered/read)
-  Future<void> updateMessageStatus(String messageId, String status);
-
-  /// Mark all messages in a chat as read
-  Future<void> markChatAsRead(String chatRoomId);
-
-  /// Get all chat rooms (local-first)
-  Future<List<ChatRoom>> getChatRooms();
-
-  /// Sync chat rooms with server
-  Future<void> syncChatRooms();
-
-  /// Send media message (via HTTP)
-  Future<Either<String, SendMessageResponse>> sendMediaMessage({
-    required String chatRoomId,
-    required String messageType,
-    List<File>? images,
-    List<File>? videos,
-    String? audio,
-    String? replyMessageId,
-  });
-
-  /// Get pending messages for retry
-  Future<List<PendingMessageEntity>> getPendingMessages();
-
-  /// Add message to pending queue
-  Future<void> addToPendingQueue(PendingMessageEntity pending);
-
-  /// Remove message from pending queue
-  Future<void> removeFromPendingQueue(String localId);
-
-  /// Sync messages with server (background)
-  Future<void> syncMessagesWithServer(String chatRoomId);
-
-  /// Run cache cleanup
-  Future<void> cleanupCache();
-
-  /// Clear all local data (for logout)
-  Future<void> clearAllData();
-
-  /// Stream of messages for a chat room (for reactive UI)
-  Stream<List<ChatMessage>> watchMessages(String chatRoomId);
-
-  /// Delete a single message
-  /// [deleteType] can be 'me' or 'everyone'
-  Future<Either<String, void>> deleteMessage({
-    required String messageId,
-    required String chatRoomId,
-    required String deleteType,
-  });
-
-  /// Delete multiple messages
-  /// [deleteType] can be 'me' or 'everyone'
-  Future<Either<String, void>> deleteMessages({
-    required List<String> messageIds,
-    required String chatRoomId,
-    required String deleteType,
-  });
-
-  /// Delete message from local database only (for socket events)
-  Future<void> deleteMessageLocally(String messageId);
+///
+/// Note: This class now extends abstract interface [ChatRepoV2]
+/// and implements [IChatRepository] for domain layer compatibility
+abstract class ChatRepoV2 extends IChatRepository {
+  // Additional V2-specific methods can be added here if needed
 }
 
 class ChatRepoV2Impl implements ChatRepoV2 {
@@ -154,23 +78,55 @@ class ChatRepoV2Impl implements ChatRepoV2 {
         final serverResponse = ChatMessagesResponse.fromJson(response);
         final serverMessages = serverResponse.data.messages;
 
-        // Create a map of existing messages for fast lookup
-        final existingMessagesMap = {for (final m in currentMessages) m.id: m};
+        // Create a map of existing messages for fast lookup (excluding temp_ messages)
+        final existingMessagesMap = {
+          for (final m in currentMessages)
+            if (!m.id.startsWith('temp_')) m.id: m,
+        };
+
+        // Get temp messages for matching
+        final tempMessages = currentMessages
+            .where((m) => m.id.startsWith('temp_'))
+            .toList();
 
         // Find truly new messages AND messages with updated status
         final newMessages = <ChatMessage>[];
-        bool statusUpdated = false;
+        bool dataUpdated = false;
 
         for (final serverMsg in serverMessages) {
           final existingMsg = existingMessagesMap[serverMsg.id];
 
           if (existingMsg == null) {
-            // New message - check if it exists in DB
+            // Check if it exists in DB by server ID
             final existsInDb = await _localDataSource.messageExists(
               serverMsg.id,
             );
+
             if (!existsInDb) {
-              newMessages.add(serverMsg);
+              // Check if there's a matching temp message (same content & type)
+              final matchingTempIndex = tempMessages.indexWhere(
+                (temp) =>
+                    temp.messageType == serverMsg.messageType &&
+                    temp.content.trim() == serverMsg.content.trim(),
+              );
+
+              if (matchingTempIndex != -1) {
+                // Found matching temp message - update its ID
+                final tempMsg = tempMessages[matchingTempIndex];
+                await _localDataSource.updateMessageId(
+                  tempMsg.id,
+                  serverMsg.id,
+                );
+                // Remove from temp list to avoid duplicate matches
+                tempMessages.removeAt(matchingTempIndex);
+                dataUpdated = true;
+                print(
+                  '🔄 Updated temp message ID: ${tempMsg.id} -> ${serverMsg.id}',
+                );
+              } else {
+                // Truly new message
+                newMessages.add(serverMsg);
+              }
             }
           } else {
             // Existing message - check if status changed
@@ -179,7 +135,7 @@ class ChatRepoV2Impl implements ChatRepoV2 {
                 serverMsg.id,
                 serverMsg.status.toApiString(),
               );
-              statusUpdated = true;
+              dataUpdated = true;
               print(
                 '🔄 Updated status for ${serverMsg.id}: ${existingMsg.status} -> ${serverMsg.status}',
               );
@@ -187,16 +143,17 @@ class ChatRepoV2Impl implements ChatRepoV2 {
           }
         }
 
-        // Insert new messages to local DB
+        // Insert truly new messages to local DB
         if (newMessages.isNotEmpty) {
           await _localDataSource.insertMessages(
             newMessages.map((m) => MessageEntity.fromChatMessage(m)).toList(),
           );
           print('✅ Synced ${newMessages.length} new messages to local DB');
+          dataUpdated = true;
         }
 
         // Reload and notify UI if anything changed
-        if (newMessages.isNotEmpty || statusUpdated) {
+        if (dataUpdated) {
           final updatedMessages = await _localDataSource.getLatestMessages(
             chatRoomId,
             limit: 20,
@@ -378,11 +335,16 @@ class ChatRepoV2Impl implements ChatRepoV2 {
     List<File>? videos,
     String? audio,
     String? replyMessageId,
+    String? tempId,
   }) async {
     final Map<String, dynamic> formDataMap = {
       'messageType': messageType,
       'chatRoomId': chatRoomId,
     };
+
+    if (tempId != null && tempId.isNotEmpty) {
+      formDataMap['tempId'] = tempId;
+    }
 
     if (replyMessageId != null && replyMessageId.isNotEmpty) {
       formDataMap['replyMessageId'] = replyMessageId;
@@ -429,28 +391,8 @@ class ChatRepoV2Impl implements ChatRepoV2 {
 
       if (response['success'] == true) {
         final result = SendMessageResponse.fromJson(response);
-
-        // Save sent message to local DB
-        final sentMsg = result.data;
-        final message = ChatMessage(
-          id: sentMsg.id,
-          chatRoomId: chatRoomId,
-          senderId: sentMsg.senderId,
-          senderName: sentMsg.senderName,
-          senderImage: sentMsg.senderImage ?? '',
-          senderType: sentMsg.senderType,
-          isMe: sentMsg.isMe,
-          contentList: sentMsg.contentList,
-          messageType: sentMsg.messageType,
-          createdAt: sentMsg.createdAt,
-          updatedAt: sentMsg.updatedAt,
-          isRead: sentMsg.isRead,
-          reply: sentMsg.reply,
-        );
-        await _localDataSource.insertMessage(
-          MessageEntity.fromChatMessage(message),
-        );
-
+        // Note: Don't insert message here - the cubit handles updating
+        // the optimistic temp message via confirmMessageSent to avoid duplicates
         return Right(result);
       } else {
         return Left(response['message'] ?? 'Failed to send message');
@@ -593,9 +535,108 @@ class ChatRepoV2Impl implements ChatRepoV2 {
     }
   }
 
+  @override
+  Future<Either<String, String>> blockUser({required String blockedId}) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.blockuser,
+        isAuth: true,
+        data: {'blockedId': blockedId},
+      );
+
+      if (response['success'] == true) {
+        final message = response['message'] ?? 'تم حظر المستخدم بنجاح';
+        print('✅ User blocked successfully: $blockedId');
+        return Right(message);
+      } else {
+        final errorMessage = response['message'] ?? 'فشل حظر المستخدم';
+        print('❌ Failed to block user: $errorMessage');
+        return Left(errorMessage);
+      }
+    } catch (e) {
+      print('❌ Error blocking user: $e');
+      return Left('فشل حظر المستخدم: $e');
+    }
+  }
+
+  @override
+  Future<Either<String, String>> unblockUser({
+    required String blockedId,
+  }) async {
+    try {
+      final response = await _apiService.delete(
+        endPoint: ApiEndPoint.unblockuser,
+        data: {'blockedId': blockedId},
+      );
+
+      if (response['success'] == true) {
+        final message = response['message'] ?? 'تم إلغاء حظر المستخدم بنجاح';
+        print('✅ User unblocked successfully: $blockedId');
+        return Right(message);
+      } else {
+        final errorMessage = response['message'] ?? 'فشل إلغاء حظر المستخدم';
+        print('❌ Failed to unblock user: $errorMessage');
+        return Left(errorMessage);
+      }
+    } catch (e) {
+      print('❌ Error unblocking user: $e');
+      return Left('فشل إلغاء حظر المستخدم: $e');
+    }
+  }
+
   /// Dispose resources
   void dispose() {
     _messageStreams.forEach((_, controller) => controller.close());
     _messageStreams.clear();
+  }
+  // ==================== CHAT ROOMS (Migrated from V1) ====================
+
+  @override
+  Future<Either<String, ChatRoomsResponse>> getAllChatRooms() async {
+    try {
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.getAllchatRooms,
+      );
+      if (response['success'] == true) {
+        final chatRoomsResponse = ChatRoomsResponse.fromJson(response);
+        return Right(chatRoomsResponse);
+      } else {
+        return const Left('Failed to fetch chat rooms');
+      }
+    } catch (e) {
+      return Left('Failed to fetch chat rooms: $e');
+    }
+  }
+
+  @override
+  Future<Either<String, bool>> deleteChatRoom(String chatRoomId) async {
+    try {
+      final response = await _apiService.delete(
+        endPoint: ApiEndPoint.deleteChatRoom(chatRoomId),
+      );
+      if (response['success'] == true) {
+        return const Right(true);
+      } else {
+        return Left(response['message'] ?? 'Failed to delete chat room');
+      }
+    } catch (e) {
+      return Left('Failed to delete chat room: $e');
+    }
+  }
+
+  @override
+  Future<Either<String, bool>> archiveChatRoom(String chatRoomId) async {
+    try {
+      final response = await _apiService.patch(
+        endPoint: ApiEndPoint.archiveChatRoom(chatRoomId),
+      );
+      if (response['success'] == true) {
+        return const Right(true);
+      } else {
+        return Left(response['message'] ?? 'Failed to archive chat room');
+      }
+    } catch (e) {
+      return Left('Failed to archive chat room: $e');
+    }
   }
 }
