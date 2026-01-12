@@ -50,7 +50,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           id: 'archive',
           title: 'أرشيف',
           iconAsset: AssetsData.icArchiveSettings,
-          routeName: '',
+          routeName: AppRouter.kArchiveView,
         ),
         SettingItemModel(
           id: 'hide_story',

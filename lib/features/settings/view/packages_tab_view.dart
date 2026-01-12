@@ -10,7 +10,7 @@ class PackagesTabView extends StatelessWidget {
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
-      initialIndex: 1,
+      initialIndex: 0,
       child: Scaffold(
         body: AdvisorBackground(
           child: SafeArea(
