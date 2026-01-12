@@ -12,10 +12,15 @@ import 'package:tayseer/features/advisor/profille/views/boost_properties_view.da
 import 'package:tayseer/features/advisor/profille/views/consultation_topics_view.dart';
 import 'package:tayseer/features/advisor/profille/views/location_selection_view.dart';
 import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
+import 'package:tayseer/features/settings/view/account_management_view.dart';
+import 'package:tayseer/features/settings/view/appointments_view.dart';
 import 'package:tayseer/features/settings/view/archive_view.dart';
 import 'package:tayseer/features/settings/view/blocked_user_view.dart';
 import 'package:tayseer/features/settings/view/edit_personal_data_view.dart';
+import 'package:tayseer/features/settings/view/hide_fromstory_form_view.dart';
+import 'package:tayseer/features/settings/view/language_selection_view.dart';
 import 'package:tayseer/features/settings/view/packages_tab_view.dart';
+import 'package:tayseer/features/settings/view/settings_pricing_view.dart';
 import 'package:tayseer/features/settings/view/settings_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
@@ -119,6 +124,11 @@ abstract class AppRouter {
   static const kBlockedUsersView = '/blocked_users_view';
   static const kPackagesTabView = '/packages_tab_view';
   static const kArchiveView = '/archive_view';
+  static const kSessionPricingView = '/session_pricing_view';
+  static const kAppointmentsView = '/appointments_view';
+  static const kAccountManagementView = '/account_management_view';
+  static const kLanguageSelectionView = '/language-selection';
+  static const kHideStoryFromView = '/hide_story_from_view';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -178,6 +188,36 @@ abstract class AppRouter {
       case AppRouter.kArchiveView:
         return SlideLeftRoute(
           page: const ArchiveView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kSessionPricingView:
+        return SlideLeftRoute(
+          page: const SessionPricingView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kAppointmentsView:
+        return SlideLeftRoute(
+          page: const AppointmentsView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kAccountManagementView:
+        return SlideLeftRoute(
+          page: const AccountManagementView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kLanguageSelectionView:
+        return SlideLeftRoute(
+          page: const LanguageSelectionView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kHideStoryFromView:
+        return SlideLeftRoute(
+          page: const HideStoryFromView(),
           routeSettings: settings,
         );
 

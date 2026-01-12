@@ -10,9 +10,7 @@ class SettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => SettingsCubit(),
-      child: Scaffold(
-        body: AdvisorBackground(child: SafeArea(child: _buildBody(context))),
-      ),
+      child: Scaffold(body: AdvisorBackground(child: _buildBody(context))),
     );
   }
 
@@ -33,34 +31,41 @@ class SettingsView extends StatelessWidget {
 
     if (state is SettingsError) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
 
-          children: [
-            Gap(20.h),
-            Text(
-              state.message,
-              style: Styles.textStyle16.copyWith(color: AppColors.kWhiteColor),
-              textAlign: TextAlign.center,
-            ),
-            Gap(20.h),
-            ElevatedButton(
-              onPressed: () => context.read<SettingsCubit>().refresh(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary100,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-              ),
-              child: Text(
-                'إعادة المحاولة',
-                style: Styles.textStyle16Meduim.copyWith(
+            children: [
+              Gap(20.h),
+              Text(
+                state.message,
+                style: Styles.textStyle16.copyWith(
                   color: AppColors.kWhiteColor,
                 ),
+                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              Gap(20.h),
+              ElevatedButton(
+                onPressed: () => context.read<SettingsCubit>().refresh(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary100,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.w,
+                    vertical: 12.h,
+                  ),
+                ),
+                child: Text(
+                  'إعادة المحاولة',
+                  style: Styles.textStyle16Meduim.copyWith(
+                    color: AppColors.kWhiteColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -85,32 +90,36 @@ class SettingsView extends StatelessWidget {
           ),
 
           // المحتوى
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: Column(
-              children: [
-                Gap(16.h),
-                // زر الرجوع مع الخلفية
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w),
-                      child: Icon(
-                        Icons.arrow_back,
-                        color: AppColors.blackColor,
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Column(
+                children: [
+                  Gap(16.h),
+                  // زر الرجوع مع الخلفية
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w),
+                        child: Icon(
+                          Icons.arrow_back,
+                          color: AppColors.blackColor,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                // العنوان مع الخلفية
-                Center(child: Text('الإعدادات', style: Styles.textStyle20Bold)),
+                  // العنوان مع الخلفية
+                  Center(
+                    child: Text('الإعدادات', style: Styles.textStyle20Bold),
+                  ),
 
-                // بقية المحتوى بدون خلفية
-                Expanded(child: _buildSettingsList(context, state.settings)),
-              ],
+                  // بقية المحتوى بدون خلفية
+                  Expanded(child: _buildSettingsList(context, state.settings)),
+                ],
+              ),
             ),
           ),
         ],
@@ -211,14 +220,24 @@ class SettingsView extends StatelessWidget {
     );
   }
 
-  void _handleSettingTap(BuildContext context, SettingItemModel setting) {
+  void _handleSettingTap(BuildContext context, SettingItemModel setting) async {
     if (setting.onTap != null) {
       setting.onTap!();
       return;
     }
 
     if (setting.routeName.isNotEmpty) {
-      Navigator.pushNamed(context, setting.routeName);
+      if (setting.id == 'language') {
+        // انتظار اللغة الجديدة عند الرجوع
+        final result = await Navigator.pushNamed(context, setting.routeName);
+
+        if (result != null && result is String) {
+          // تحديث الـ cubit مباشرة
+          context.read<SettingsCubit>().updateLanguage(result);
+        }
+      } else {
+        Navigator.pushNamed(context, setting.routeName);
+      }
     }
   }
 

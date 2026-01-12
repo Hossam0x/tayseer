@@ -150,4 +150,6 @@ abstract class AssetsData {
   static const String icManagementSettings =
       "assets/icons/icManagementSettings.svg";
   static const String storyPlaceholder = "assets/images/storyPlaceholder.jpg";
+  static const String moneyTimesIcon = "assets/icons/moneyTimesIcon.svg";
+  static const String pauseIcon = "assets/icons/pauseIcon.svg";
 }

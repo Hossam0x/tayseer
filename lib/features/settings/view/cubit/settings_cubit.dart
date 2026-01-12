@@ -13,6 +13,9 @@ class SettingsCubit extends Cubit<SettingsState> {
     try {
       final prefs = await SharedPreferences.getInstance();
 
+      // Load saved language (fallback to Arabic)
+      final savedLanguage = prefs.getString('app_language') ?? 'العربية';
+
       final settings = [
         SettingItemModel(
           id: 'logos',
@@ -20,6 +23,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           iconAsset: AssetsData.icNotificationSettings,
           hasSwitch: true,
           routeName: '',
+          switchValue: prefs.getBool('setting_logos') ?? true,
         ),
         SettingItemModel(
           id: 'edit_profile',
@@ -36,9 +40,9 @@ class SettingsCubit extends Cubit<SettingsState> {
         SettingItemModel(
           id: 'language',
           title: 'اللغة',
-          subtitle: 'عربي',
+          subtitle: savedLanguage,
           iconAsset: AssetsData.icLanguageSettings,
-          routeName: '',
+          routeName: AppRouter.kLanguageSelectionView,
         ),
         SettingItemModel(
           id: 'packages',
@@ -57,19 +61,19 @@ class SettingsCubit extends Cubit<SettingsState> {
           title: 'إخفاء القصة من',
           iconAsset: AssetsData.icHideSettings,
           switchValue: prefs.getBool('setting_hide_story') ?? false,
-          routeName: '',
+          routeName: AppRouter.kHideStoryFromView,
         ),
         SettingItemModel(
           id: 'appointments',
-          title: 'الواعيد',
+          title: 'المواعيد',
           iconAsset: AssetsData.icDatesSettings,
-          routeName: '',
+          routeName: AppRouter.kAppointmentsView,
         ),
         SettingItemModel(
           id: 'session_settings',
           title: 'مدة وأسعار الجلسات',
           iconAsset: AssetsData.icDurationSettings,
-          routeName: '',
+          routeName: AppRouter.kSessionPricingView,
         ),
         SettingItemModel(
           id: 'workshops',
@@ -93,7 +97,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           id: 'account_management',
           title: 'إدارة الحساب',
           iconAsset: AssetsData.icManagementSettings,
-          routeName: '',
+          routeName: AppRouter.kAccountManagementView,
         ),
       ];
 
@@ -103,37 +107,64 @@ class SettingsCubit extends Cubit<SettingsState> {
     }
   }
 
+  /// تحديث قيمة switch وتخزينها في SharedPreferences
   Future<void> updateSwitch(String id, bool value) async {
     final currentState = state;
-    if (currentState is SettingsLoaded) {
-      // تحديث محلياً أولاً
-      final updatedSettings = currentState.settings.map((item) {
+    if (currentState is! SettingsLoaded) return;
+
+    // تحديث محلي أولاً (optimistic update)
+    final updatedSettings = currentState.settings.map((item) {
+      if (item.id == id) {
+        return item.copyWith(switchValue: value);
+      }
+      return item;
+    }).toList();
+
+    emit(SettingsLoaded(settings: updatedSettings));
+
+    // حفظ في SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('setting_$id', value);
+    } catch (e) {
+      // revert على الفشل (اختياري - يمكنك إزالته إذا لا تريد)
+      final revertedSettings = currentState.settings.map((item) {
         if (item.id == id) {
-          return item.copyWith(switchValue: value);
+          return item.copyWith(switchValue: !value);
         }
         return item;
       }).toList();
 
-      emit(SettingsLoaded(settings: updatedSettings));
-
-      // حفظ في SharedPreferences
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('setting_$id', value);
-      } catch (e) {
-        // إذا فشل الحفظ، نرجع للقيمة السابقة
-        final revertedSettings = currentState.settings.map((item) {
-          if (item.id == id) {
-            return item.copyWith(switchValue: !value);
-          }
-          return item;
-        }).toList();
-
-        emit(SettingsLoaded(settings: revertedSettings));
-      }
+      emit(SettingsLoaded(settings: revertedSettings));
     }
   }
 
+  /// تحديث اللغة المختارة + حفظها + تحديث الـ UI
+  Future<void> updateLanguage(String newLanguage) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
+
+    // حفظ في SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('app_language', newLanguage);
+    } catch (e) {
+      // يمكنك إظهار رسالة خطأ هنا إذا أردت
+      return;
+    }
+
+    // تحديث القائمة محلياً
+    final updatedSettings = currentState.settings.map((item) {
+      if (item.id == 'language') {
+        return item.copyWith(subtitle: newLanguage);
+      }
+      return item;
+    }).toList();
+
+    emit(SettingsLoaded(settings: updatedSettings));
+  }
+
+  /// إعادة تحميل الإعدادات كاملة (refresh)
   void refresh() {
     _loadSettings();
   }
