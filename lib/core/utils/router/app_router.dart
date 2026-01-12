@@ -134,6 +134,13 @@ abstract class AppRouter {
   static const kEventDetailView = '/EventDetailView';
   static const kUpdateEventView = '/UpdateEventView';
   static const kSessionDetailsView = '/SessionDetailsView';
+  static const kPackagesTabView = '/packages_tab_view';
+  static const kArchiveView = '/archive_view';
+  static const kSessionPricingView = '/session_pricing_view';
+  static const kAppointmentsView = '/appointments_view';
+  static const kAccountManagementView = '/account_management_view';
+  static const kLanguageSelectionView = '/language-selection';
+  static const kHideStoryFromView = '/hide_story_from_view';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
