@@ -1,4 +1,4 @@
-import 'package:tayseer/core/functions/pac_date.dart';
+import 'package:tayseer/core/widgets/custom_date_picker_field.dart';
 import 'package:tayseer/features/shared/auth/view/widget/certificate_card.dart';
 import 'package:tayseer/features/shared/auth/view/widget/custom_upload_image.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
@@ -10,6 +10,7 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final formkey = GlobalKey<FormState>();
     final authCubit = getIt<AuthCubit>();
     return Scaffold(
       body: CustomBackground(
@@ -17,7 +18,7 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Form(
-              key: GlobalKey<FormState>(),
+              key: formkey,
               child: BlocBuilder<AuthCubit, AuthState>(
                 bloc: authCubit,
                 builder: (context, state) {
@@ -102,46 +103,14 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
                       Gap(context.responsiveHeight(16)),
 
                       /// Date
-                      GestureDetector(
-                        onTap: () async {
-                          final date = await pickDate(context);
-                          if (date != null) {
-                            authCubit.setObtainDate(date);
-                          }
+                      DatePickerField(
+                        initialValue: authCubit.obtainDate,
+                        placeholder: context.tr('yearOfObtainment'),
+                        onDateChanged: (date) {
+                          if (date != null) authCubit.setObtainDate(date);
                         },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 15,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.kprimaryColor.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today_outlined,
-                                size: 18,
-                                color: AppColors.kprimaryColor.withOpacity(0.4),
-                              ),
-                              Gap(context.responsiveWidth(8)),
-                              Text(
-                                authCubit.obtainDate == null
-                                    ? context.tr('yearOfObtainment')
-                                    : authCubit.obtainDate!.year.toString(),
-                                style: Styles.textStyle12.copyWith(
-                                  color: AppColors.kprimaryColor.withOpacity(
-                                    0.6,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        validator: (value) =>
+                            value == null ? context.tr('required') : null,
                       ),
 
                       Gap(context.responsiveHeight(32)),
@@ -157,6 +126,7 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
                         onPressed: isAdding
                             ? null
                             : () async {
+                                if (!formkey.currentState!.validate()) return;
                                 await authCubit.addCertificateAsConsultant();
                               },
                       ),

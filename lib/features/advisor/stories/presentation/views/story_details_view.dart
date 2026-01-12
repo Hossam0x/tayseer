@@ -244,7 +244,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                     decoration: const BoxDecoration(shape: BoxShape.circle),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(
-                        22.5.r,
+                        1000.r,
                       ), // نص الـ width عشان يبقى دايرة كاملة
                       child: AppImage(
                         widget.userStories.image,

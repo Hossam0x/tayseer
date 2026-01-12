@@ -1,4 +1,8 @@
+import 'dart:developer';
+
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
 import '../../../../my_import.dart';
@@ -8,7 +12,77 @@ class HomeCubit extends Cubit<HomeState> {
   final HomeRepository homeRepository;
   final int pageSize = 10;
 
-  HomeCubit(this.homeRepository) : super(HomeState());
+  HomeCubit(this.homeRepository) : super(HomeState()) {
+    _loadCachedData();
+  }
+
+  // Load cached data immediately
+  void _loadCachedData() {
+    final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
+    final cachedName = CachNetwork.getStringData(key: kMyProfileName);
+
+    if (cachedImage.isNotEmpty || cachedName.isNotEmpty) {
+      emit(
+        state.copyWith(
+          homeInfo: ImageAndNameModel(
+            image: cachedImage,
+            name: cachedName,
+            notifications: 0,
+          ),
+          fetchNameAndImageState: CubitStates.success,
+        ),
+      );
+    }
+  }
+
+  void setInitialPost(PostModel post) {
+    emit(state.copyWith(posts: [post], postsState: CubitStates.success));
+  }
+
+  // fetch name and image
+
+  Future<void> fetchNameAndImage() async {
+    // Show loading only if we don't have cached data
+    if (state.homeInfo == null) {
+      emit(state.copyWith(fetchNameAndImageState: CubitStates.loading));
+    }
+
+    final result = await homeRepository.fetchNameAndImage();
+
+    result.fold(
+      (failure) {
+        // Only emit failure if we don't have cached data
+        if (state.homeInfo == null) {
+          emit(
+            state.copyWith(
+              fetchNameAndImageState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        }
+      },
+      (imageAndNameModel) {
+        // Save to cache
+        CachNetwork.setData(
+          key: kMyProfileImage,
+          value: imageAndNameModel.image,
+        );
+        CachNetwork.setData(key: kMyProfileName, value: imageAndNameModel.name);
+
+        // Update state only if data changed
+        if (state.homeInfo?.image != imageAndNameModel.image ||
+            state.homeInfo?.name != imageAndNameModel.name ||
+            state.homeInfo?.notifications != imageAndNameModel.notifications) {
+          emit(
+            state.copyWith(
+              fetchNameAndImageState: CubitStates.success,
+              homeInfo: imageAndNameModel,
+            ),
+          );
+        }
+      },
+    );
+  }
 
   // ═══════════════════════════════════════════════════════════
   // 📌 FETCH POSTS
@@ -129,6 +203,73 @@ class HomeCubit extends Cubit<HomeState> {
       reactionType: reactionType,
       isRemove: isRemoving,
     );
+  }
+
+  Future<void> toggleSharePost({required String postId}) async {
+    // ✅ Reset أول حاجة عشان الـ listener يشتغل كل مرة
+    emit(state.copyWith(shareActionState: CubitStates.initial));
+    // 1️⃣ إيجاد الـ Post
+    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
+    if (postIndex == -1) return;
+
+    final originalPost = state.posts[postIndex]; // ✅ احتفظ بالأصلي للـ Rollback
+    final bool isRemoving = originalPost.isRepostedByMe;
+
+    // 2️⃣ حساب العدد الجديد
+    final int newSharesCount = isRemoving
+        ? (originalPost.sharesCount - 1).clamp(0, originalPost.sharesCount)
+        : originalPost.sharesCount + 1;
+
+    // 3️⃣ ✅ Optimistic Update - تحديث فوري محلي
+    final updatedPost = originalPost.copyWith(
+      sharesCount: newSharesCount,
+      isRepostedByMe: !originalPost.isRepostedByMe,
+    );
+
+    _updatePostInList(postId, updatedPost);
+
+    // 4️⃣ API Call
+    final result = await homeRepository.sharePost(
+      postId: postId,
+      action: isRemoving ? "remove" : "add",
+    );
+
+    // 5️⃣ معالجة النتيجة
+    result.fold(
+      // ❌ فشل -> Rollback + Failure Toast
+      (failure) {
+        log('>>>>>>>>>>>>>>>>>Share Post Failed: ${failure.message}');
+        _updatePostInList(postId, originalPost); // ✅ إرجاع للأصل
+        emit(
+          state.copyWith(
+            shareActionState: CubitStates.failure,
+            shareMessage: failure.message,
+          ),
+        );
+      },
+      // ✅ نجاح -> Success Toast فقط (الـ UI متحدث بالفعل)
+      (message) {
+        log('>>>>>>>>>>>>>>>>>Share Post Success: $message');
+        emit(
+          state.copyWith(
+            shareActionState: CubitStates.success,
+            shareMessage: message,
+            isShareAdded: !isRemoving, // ✅ عشان تعرف في الـ Listener
+          ),
+        );
+      },
+    );
+  }
+
+  // ✅ Helper Method لتحديث البوست في الليست
+  void _updatePostInList(String postId, PostModel updatedPost) {
+    final currentIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (currentIndex == -1) return;
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[currentIndex] = updatedPost;
+
+    emit(state.copyWith(posts: updatedPosts));
   }
 
   // ═══════════════════════════════════════════════════════════

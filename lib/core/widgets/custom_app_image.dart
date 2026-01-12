@@ -12,7 +12,7 @@ class AppImage extends StatelessWidget {
     super.key,
     this.height,
     this.width,
-    this.fit = BoxFit.scaleDown,
+    this.fit = BoxFit.contain,
     this.color,
     this.placeholderImage,
   });
@@ -127,15 +127,10 @@ class AppImage extends StatelessWidget {
   }
 
   Widget _buildLoadingPlaceholder() {
-    return SizedBox(
-      height: height,
-      width: width,
-      child: Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey.shade400),
-        ),
-      ),
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(height: height, width: width, color: Colors.white),
     );
   }
 }

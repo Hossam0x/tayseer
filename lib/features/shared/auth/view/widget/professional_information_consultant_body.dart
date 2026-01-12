@@ -1,4 +1,4 @@
-import 'package:tayseer/core/utils/video_picker_helper.dart';
+import 'package:tayseer/core/utils/helper/video_picker_helper.dart';
 import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -151,9 +151,24 @@ class ProfessionalInformationAsConsultantBody extends StatelessWidget {
                       if (authCubit.pickedVideo != null)
                         Align(
                           alignment: Alignment.centerRight,
-                          child: CustomUploadedVideoPreview(
-                            video: authCubit.pickedVideo!,
-                            onRemove: authCubit.removePickedVideo,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CustomUploadedVideoPreview(
+                                video: authCubit.pickedVideo!,
+                                onRemove: authCubit.removePickedVideo,
+                                onInitialized: () => authCubit.setVideoLoaded(),
+                              ),
+                              if (authCubit.isVideoLoading)
+                                Positioned.fill(
+                                  child: Container(
+                                    color: Colors.black.withOpacity(0.35),
+                                    child: const Center(
+                                      child: CustomloadingApp(),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
 
@@ -166,11 +181,13 @@ class ProfessionalInformationAsConsultantBody extends StatelessWidget {
                             current.personalDataState,
                         listener: (context, state) {
                           if (state.personalDataState == CubitStates.success) {
+                            context.pop(); // Close loading dialog
                             context.pushNamed(
                               AppRouter.kConsultantUploadCertificateView,
                             );
                           } else if (state.personalDataState ==
                               CubitStates.failure) {
+                            context.pop(); // Close loading dialog
                             ScaffoldMessenger.of(context).showSnackBar(
                               CustomSnackBar(
                                 context,
@@ -179,6 +196,14 @@ class ProfessionalInformationAsConsultantBody extends StatelessWidget {
                                     'حدث خطأ أثناء إرسال البيانات ❌',
                                 isError: true,
                               ),
+                            );
+                          } else if (state.personalDataState ==
+                              CubitStates.loading) {
+                            showDialog(
+                              context: context,
+                              builder: (_) {
+                                return const CustomloadingApp();
+                              },
                             );
                           }
                         },

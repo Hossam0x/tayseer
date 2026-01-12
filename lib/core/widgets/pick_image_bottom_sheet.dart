@@ -65,7 +65,7 @@ class _CustomGallerySheetState extends State<CustomGallerySheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
+      height: context.height * 0.7,
       decoration: const BoxDecoration(
         image: DecorationImage(
           image: AssetImage(AssetsData.homeBackgroundImage),
@@ -78,55 +78,69 @@ class _CustomGallerySheetState extends State<CustomGallerySheet> {
           // --- Header ---
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              height: 40,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // centered handle
+                  Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: context.width * 0.2,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
                   ),
-                ),
-                if (widget.config.allowMultiple)
-                  AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, child) {
-                      final count = _controller.selectedCount;
-                      final bool isEnabled = count > 0 && !_isConverting;
-                      return GestureDetector(
-                        onTap: isEnabled ? _confirmSelection : null,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isEnabled ? Colors.purple : Colors.grey,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: _isConverting
-                              ? const SizedBox(
-                                  width: 15,
-                                  height: 15,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text(
-                                  "تأكيد ($count)",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                        ),
-                      );
-                    },
-                  ),
-              ],
+
+                  // confirm button on the left when multi-select
+                  if (widget.config.allowMultiple)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) {
+                          final count = _controller.selectedCount;
+                          final bool isEnabled = count > 0 && !_isConverting;
+                          return GestureDetector(
+                            onTap: isEnabled ? _confirmSelection : null,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isEnabled
+                                    ? AppColors.kprimaryColor
+                                    : Colors.grey,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: _isConverting
+                                  ? const SizedBox(
+                                      width: 15,
+                                      height: 15,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      "${context.tr('confirm')}($count)",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
 
@@ -178,9 +192,9 @@ class _CustomGallerySheetState extends State<CustomGallerySheet> {
                             borderRadius: BorderRadius.circular(15),
                             border: Border.all(color: Colors.white, width: 2),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.camera_alt,
-                            color: Colors.purple,
+                            color: AppColors.kprimaryColor,
                             size: 30,
                           ),
                         ),
@@ -271,16 +285,16 @@ class _MediaItemState extends State<_MediaItem> {
 
             // طبقة التحديد (Overlay)
             if (widget.isSelected)
-              Container(color: Colors.purple.withOpacity(0.4)),
+              Container(color: AppColors.kprimaryColor.withOpacity(0.4)),
 
             // علامة الصح
             if (widget.isMultiSelect && widget.isSelected)
-              const Positioned(
+              Positioned(
                 top: 8,
                 right: 8,
                 child: CircleAvatar(
                   radius: 10,
-                  backgroundColor: Colors.purple,
+                  backgroundColor: AppColors.kprimaryColor,
                   child: Icon(Icons.check, size: 14, color: Colors.white),
                 ),
               ),

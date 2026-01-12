@@ -9,4 +9,18 @@ class ApiEndPoint {
   static String getChatMessages(String chatRoomId) =>
       '/chat/$chatRoomId/messages';
   static const String sendChatMedia = '/chat/messages/media';
+  static const String share = '/shares';
+  static const String comments = '/comments';
+  static const String replies = '/comment-replies/comment/';
+  static const String createReply = '/comment-replies/create';
+  static const String commentLike = '/comment-likes/toggle';
+  static const String updateReply = '/comment-replies/update/';
+  static const String reels = '/posts/reels';
+  static const String nameAndImage = '/advisor/getNameAndImage';
+  static const String deleteChatMessage = '/chat/messages/';
+  static String deleteChatRoom(String chatRoomId) => '/chat/$chatRoomId';
+  static String archiveChatRoom(String chatRoomId) =>
+      '/chat/$chatRoomId/archive';
+  static const String blockuser = '/blocks/block';
+  static const String unblockuser = '/blocks/unblock';
 }

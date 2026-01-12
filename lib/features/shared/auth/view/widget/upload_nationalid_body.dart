@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/core/utils/image_picker_helper.dart';
+import 'package:tayseer/core/utils/helper/image_picker_helper.dart';
 
 class UploadNationalIdBody extends StatelessWidget {
   const UploadNationalIdBody({super.key});

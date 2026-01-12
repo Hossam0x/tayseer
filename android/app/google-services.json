@@ -1,0 +1,71 @@
+{
+  "project_info": {
+    "project_number": "267720438243",
+    "firebase_url": "https://flutter-app-d4e4e-default-rtdb.firebaseio.com",
+    "project_id": "flutter-app-d4e4e",
+    "storage_bucket": "flutter-app-d4e4e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:267720438243:android:2311e5e0774b934f9030d6",
+        "android_client_info": {
+          "package_name": "com.athr.tayser"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "267720438243-cmk2k9k1n1tbmt2l3mo1a64640k4j60l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.athr.tayser",
+            "certificate_hash": "98d3bd4f23bed61228c32ce6b93459b1e786e9d1"
+          }
+        },
+        {
+          "client_id": "267720438243-hu4tcnf7c79l2jhlcud9s0nfjpnh5g5c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.athr.tayser",
+            "certificate_hash": "a37730ec683e49a8df9bf9072638040dcd0785d7"
+          }
+        },
+        {
+          "client_id": "267720438243-uiv879ca8d6gcj3kv2k44hro9ifubvnh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.athr.tayser",
+            "certificate_hash": "a7731d0e7e5dc6924814c4100204b81e0692fb5c"
+          }
+        },
+        {
+          "client_id": "267720438243-1bb3i9jbnllncd8o46lajmtcnp0rsj25.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWHOZzYrJ7HgFC-jjgU2GI7d2yITgYeSs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "267720438243-1bb3i9jbnllncd8o46lajmtcnp0rsj25.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "267720438243-bl25r1jul2309brv15kl7hr19oar6q5f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.athr.tayser"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

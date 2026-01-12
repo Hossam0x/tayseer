@@ -34,6 +34,9 @@ abstract class AssetsData {
   static const String guestLockImage = "assets/images/guest_lock.png";
   static const String emptyChatImage = "assets/images/empty_chat.png";
   static const String kEmptyEventImage = "assets/images/empty_event_image.png";
+  static const String kWoriningImage = "assets/images/worining_image.png";
+  static const String kisEmptySesessionImage =
+      "assets/images/is_empty_sesession.png";
 
   //////////////////////icons//////////////////////
   static const String kArroBackIcon = "assets/icons/arro_back.svg";
@@ -75,6 +78,7 @@ abstract class AssetsData {
   static const String selectedEventIcon = "assets/icons/selected_event.svg";
 
   static const String notificationIcon = "assets/icons/notification.svg";
+  static const String emptynotification = "assets/icons/empty_notification.png";
 
   static const String addIcon = "assets/icons/add.svg";
 
@@ -109,6 +113,21 @@ abstract class AssetsData {
   static const String deleteIcon = "assets/icons/delete_icon.svg";
   static const String reportIcon = "assets/icons/report_icon.svg";
   static const String send = "assets/icons/send.svg";
+  static const String kpinIcon = "assets/icons/pin_icon.svg";
+
+  static const String postsEndIcon = "assets/icons/posts_end_icon.svg";
+
+  static const String noCommentsIcon = "assets/icons/no_comments_icon.svg";
+  static const String sentMessageIcon = "assets/icons/sent_message_icon.svg";
+  static const String commentnotify = 'assets/icons/comment_notify.svg';
+  static const String consultationIcon = "assets/icons/Consultation.svg";
+  static const String followNotify = "assets/icons/follow_notify.svg";
+  static const String messageNotify = "assets/icons/message_notify.svg";
+  static const String ticketEventNotify =
+      "assets/icons/ticket_event_notifiy.svg";
+  static const String graySessionIcon = "assets/icons/gray_session.svg";
+  static const String selectedSessionIcon = "assets/icons/selected_session.svg";
+
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
       "assets/animations/loading_animations.json";

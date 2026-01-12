@@ -1,6 +1,8 @@
 import 'package:tayseer/core/widgets/custom_content_switcher.dart';
+import 'package:tayseer/features/advisor/event/view/widget/all_events_content.dart';
 import 'package:tayseer/features/advisor/event/view/widget/custom_sliver_app_bar.dart';
-import 'package:tayseer/features/advisor/event/view/widget/empty_event_section.dart';
+import 'package:tayseer/features/advisor/event/view/widget/my_events_content.dart';
+import 'package:tayseer/features/advisor/event/view_model/events_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class EventBody extends StatefulWidget {
@@ -12,12 +14,21 @@ class EventBody extends StatefulWidget {
 
 class _EventBodyState extends State<EventBody> {
   int selectedIndex = 0;
+  @override
+  initState() {
+    super.initState();
+    // Preload both event lists
+    final eventsCubit = context.read<EventsCubit>();
+    eventsCubit.getAdvisorEvents();
+    eventsCubit.getAllEvents();
+  }
 
   @override
   Widget build(BuildContext context) {
     final options = [context.tr('my_event'), context.tr('all_events')];
 
     return CustomScrollView(
+      physics: const NeverScrollableScrollPhysics(),
       slivers: [
         CustomSliverAppBarEvent(title: context.tr('event_title')),
 
@@ -33,7 +44,7 @@ class _EventBodyState extends State<EventBody> {
 
         SliverToBoxAdapter(
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
+            duration: const Duration(milliseconds: 250),
             switchInCurve: Curves.easeOut,
             switchOutCurve: Curves.easeIn,
             transitionBuilder: (child, animation) {
@@ -47,62 +58,14 @@ class _EventBodyState extends State<EventBody> {
               );
             },
             child: selectedIndex == 0
-                ? _EventsContent(
+                ? MyEventsContent(
                     key: const ValueKey('my'),
-                    title: context.tr('my_events'),
+                    eventsCubit: context.read<EventsCubit>(),
                   )
-                : _EventsContent(
-                    key: const ValueKey('all'),
-                    title: context.tr('all_events'),
-                  ),
-          ),
-        ),
-
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: CustomBotton(
-              useGradient: true,
-              title: context.tr('creat_event'),
-              onPressed: () {},
-            ),
+                : AllEventsContent(key: const ValueKey('all')),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _EventsContent extends StatelessWidget {
-  const _EventsContent({super.key, required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        top: context.responsiveHeight(20),
-        bottom: context.responsiveHeight(20),
-      ),
-      child: Column(
-        children: [
-          Text(title, style: Styles.textStyle18Bold),
-          Gap(context.responsiveHeight(3)),
-
-          // Placeholder content (keeps the same look as EmptyEventSection)
-          AppImage(
-            AssetsData.kEmptyEventImage,
-            height: context.height * 0.3,
-            fit: BoxFit.contain,
-          ),
-          Gap(context.responsiveHeight(5)),
-          Text(
-            context.tr('no_events_title'),
-            textAlign: TextAlign.center,
-            style: Styles.textStyle16.copyWith(color: AppColors.kgreyColor),
-          ),
-        ],
-      ),
     );
   }
 }

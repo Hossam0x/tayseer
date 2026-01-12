@@ -1,4 +1,4 @@
-package com.example.tayseer
+package com.athr.tayser
 
 import io.flutter.embedding.android.FlutterActivity
 

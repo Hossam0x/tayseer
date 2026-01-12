@@ -13,7 +13,6 @@ class RequestBody extends StatelessWidget {
     final paddingH = isMobile ? 16.0 : 20.0;
     final paddingV = isMobile ? 8.0 : 10.0;
 
-    // قائمة وهمية بالبيانات (يمكنك جلبها من API لاحقاً)
     final List<RequestItemModel> requests = [
       RequestItemModel(
         name: "ارسال اليك احمد منصور رسالة",
@@ -45,7 +44,7 @@ class RequestBody extends StatelessWidget {
       child: Column(
         children: [
           // استدعاء البار العلوي المخصص
-          const CustomRequestsAppBar(),
+          const CustomAppBar(title: "الطلبات"),
 
           // القائمة
           Expanded(

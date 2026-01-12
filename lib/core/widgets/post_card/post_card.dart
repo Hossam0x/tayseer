@@ -9,6 +9,7 @@ import 'package:tayseer/core/widgets/post_card/post_images_grid.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
 import 'package:tayseer/features/advisor/home/views/post_details_view.dart';
+import 'package:tayseer/features/advisor/home/view_model/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostCard extends StatefulWidget {
@@ -46,7 +47,10 @@ class _PostCardState extends State<PostCard>
   }
 
   void _navigateToDetails(BuildContext context) {
-    if (widget.isDetailsView) return;
+    if (widget.isDetailsView) {
+      context.read<PostDetailsCubit>().requestInputFocus();
+      return;
+    }
 
     // Read HomeCubit before navigation to avoid context issues
     final homeCubit = context.read<HomeCubit>();
@@ -152,6 +156,7 @@ class _PostCardState extends State<PostCard>
           PostStats(
             comments: widget.post.commentsCount,
             shares: widget.post.sharesCount,
+            onTap: () => _navigateToDetails(context),
           ),
           Gap(context.responsiveHeight(8)),
           PostActionsRow(
@@ -164,6 +169,11 @@ class _PostCardState extends State<PostCard>
               context.read<HomeCubit>().reactToPost(
                 postId: widget.post.postId,
                 reactionType: react,
+              );
+            },
+            onShareTap: () {
+              context.read<HomeCubit>().toggleSharePost(
+                postId: widget.post.postId,
               );
             },
           ),
@@ -201,6 +211,7 @@ class _PostCardState extends State<PostCard>
       case PostContentType.post:
         return widget.post.images.isNotEmpty
             ? PostImagesGrid(
+                isFromPostDetails: widget.isDetailsView,
                 images: widget.post.images,
                 postId: widget.post.postId, // ✅ ضروري جداً
                 post: widget.post, // ✅ عشان الداتا اللي تحت في الفيو
@@ -226,12 +237,20 @@ class _PostCardState extends State<PostCard>
             _activeController = controller;
           },
           onReelTap: (controller) {
+            if (widget.isDetailsView) {
+              if (controller.value.isPlaying) {
+                controller.pause();
+              } else {
+                controller.play();
+              }
+              return;
+            }
+
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ReelsFeedView(
-                  posts: [widget.post, widget.post, widget.post],
-                  initialIndex: 0,
+                  post: widget.post,
                   initialController: controller,
                 ),
               ),

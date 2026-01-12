@@ -1,3 +1,7 @@
+// import 'dart:developer';
+
+// import 'package:tayseer/core/utils/helper/socket_helper.dart';
+
 import 'dart:developer';
 
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
@@ -8,6 +12,7 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _SplashScreenState createState() => _SplashScreenState();
 }
 

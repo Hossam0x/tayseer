@@ -1,3 +1,5 @@
+import 'package:tayseer/core/enum/message_status_enum.dart';
+
 class ChatMessagesResponse {
   final bool success;
   final String message;
@@ -26,10 +28,9 @@ class ChatMessagesData {
 
   factory ChatMessagesData.fromJson(Map<String, dynamic> json) {
     return ChatMessagesData(
-      messages:
-          (json['messages'] as List)
-              .map((e) => ChatMessage.fromJson(e))
-              .toList(),
+      messages: (json['messages'] as List)
+          .map((e) => ChatMessage.fromJson(e))
+          .toList(),
       pagination: MessagePagination.fromJson(json['pagination']),
     );
   }
@@ -94,8 +95,30 @@ class ReplyInfo {
   }
 }
 
+/// System message action types for block/unblock
+enum SystemMessageAction {
+  block,
+  unblock,
+  none;
+
+  static SystemMessageAction fromString(String? value) {
+    switch (value?.toLowerCase()) {
+      case 'block':
+        return SystemMessageAction.block;
+      case 'unblock':
+        return SystemMessageAction.unblock;
+      default:
+        return SystemMessageAction.none;
+    }
+  }
+
+  bool get isBlock => this == SystemMessageAction.block;
+  bool get isUnblock => this == SystemMessageAction.unblock;
+}
+
 class ChatMessage {
   final String id;
+  final String? tempId; // ✅ UUID for reliable message matching
   final String chatRoomId;
   final String senderId;
   final String senderName;
@@ -106,13 +129,23 @@ class ChatMessage {
   final String messageType;
   final String createdAt;
   final String updatedAt;
-  bool isRead; // ✅ تأكد إنها مش final عشان نقدر نغيرها
-  final ReplyInfo? reply; // ✅ معلومات الرد
+  final String? deliveredAt; // ISO timestamp for sorting
+  bool isRead;
+  final MessageStatusEnum status; // ✅ New field
+  final ReplyInfo? reply;
+  final SystemMessageAction action; // ✅ Action field for system messages
+  final List<String>?
+  localFilePaths; // ✅ Local file paths for optimistic media display
 
   String get content => contentList.isNotEmpty ? contentList.first : '';
 
+  /// Check if this message has local files (optimistic media)
+  bool get hasLocalFiles =>
+      localFilePaths != null && localFilePaths!.isNotEmpty;
+
   ChatMessage({
     required this.id,
+    this.tempId,
     required this.chatRoomId,
     required this.senderId,
     required this.senderName,
@@ -123,8 +156,12 @@ class ChatMessage {
     required this.messageType,
     required this.createdAt,
     required this.updatedAt,
+    this.deliveredAt,
     this.isRead = true,
+    this.status = MessageStatusEnum.sent, // ✅ Default value
     this.reply,
+    this.action = SystemMessageAction.none,
+    this.localFilePaths,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -138,6 +175,7 @@ class ChatMessage {
 
     return ChatMessage(
       id: json['id']?.toString() ?? "",
+      tempId: json['tempId']?.toString(),
       chatRoomId: json['chatRoomId']?.toString() ?? "",
       senderId: json['senderId']?.toString() ?? "",
       senderName: json['senderName']?.toString() ?? "",
@@ -148,14 +186,19 @@ class ChatMessage {
       messageType: json['messageType']?.toString() ?? "text",
       createdAt: json['createdAt']?.toString() ?? "",
       updatedAt: json['updatedAt']?.toString() ?? "",
+      deliveredAt: json['deliveredAt']?.toString(), // ISO timestamp
       isRead: json['isRead'] ?? true,
+      status: MessageStatusExtension.fromString(
+        json['status']?.toString(),
+      ), // ✅ Parse status
       reply: ReplyInfo.fromJson(json['reply']),
+      action: SystemMessageAction.fromString(json['action']?.toString()),
     );
   }
 
-  // ✅ أضف هذا الـ copyWith
   ChatMessage copyWith({
     String? id,
+    String? tempId,
     String? chatRoomId,
     String? senderId,
     String? senderName,
@@ -166,11 +209,17 @@ class ChatMessage {
     String? messageType,
     String? createdAt,
     String? updatedAt,
+    String? deliveredAt,
     bool? isRead,
+    MessageStatusEnum? status,
     ReplyInfo? reply,
+    SystemMessageAction? action,
+    List<String>? localFilePaths,
+    bool clearLocalFilePaths = false,
   }) {
     return ChatMessage(
       id: id ?? this.id,
+      tempId: tempId ?? this.tempId,
       chatRoomId: chatRoomId ?? this.chatRoomId,
       senderId: senderId ?? this.senderId,
       senderName: senderName ?? this.senderName,
@@ -181,8 +230,14 @@ class ChatMessage {
       messageType: messageType ?? this.messageType,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      deliveredAt: deliveredAt ?? this.deliveredAt,
       isRead: isRead ?? this.isRead,
+      status: status ?? this.status,
       reply: reply ?? this.reply,
+      action: action ?? this.action,
+      localFilePaths: clearLocalFilePaths
+          ? null
+          : (localFilePaths ?? this.localFilePaths),
     );
   }
 }
