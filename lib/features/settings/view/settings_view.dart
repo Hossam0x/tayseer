@@ -17,13 +17,10 @@ class SettingsView extends StatelessWidget {
   }
 
   Widget _buildBody(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: BlocBuilder<SettingsCubit, SettingsState>(
-        builder: (context, state) {
-          return _buildContent(context, state);
-        },
-      ),
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      builder: (context, state) {
+        return _buildContent(context, state);
+      },
     );
   }
 
@@ -69,21 +66,53 @@ class SettingsView extends StatelessWidget {
     }
 
     if (state is SettingsLoaded) {
-      return Column(
+      return Stack(
         children: [
-          Gap(16.h),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(Icons.arrow_back, color: AppColors.blackColor),
+          // الخلفية فقط للجزء العلوي
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 100.h,
+            child: Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(AssetsData.homeBarBackgroundImage),
+                  fit: BoxFit.fill,
+                ),
               ),
             ),
           ),
-          Text('الإعدادات', style: Styles.textStyle20Bold),
-          Expanded(child: _buildSettingsList(context, state.settings)),
+
+          // المحتوى
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Column(
+              children: [
+                Gap(16.h),
+                // زر الرجوع مع الخلفية
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w),
+                      child: Icon(
+                        Icons.arrow_back,
+                        color: AppColors.blackColor,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // العنوان مع الخلفية
+                Center(child: Text('الإعدادات', style: Styles.textStyle20Bold)),
+
+                // بقية المحتوى بدون خلفية
+                Expanded(child: _buildSettingsList(context, state.settings)),
+              ],
+            ),
+          ),
         ],
       );
     }
