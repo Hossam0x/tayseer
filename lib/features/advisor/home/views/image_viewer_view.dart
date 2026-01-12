@@ -312,7 +312,29 @@ class _ImageViewerViewState extends State<ImageViewerView>
                                 MaterialPageRoute(
                                   builder: (context) => PostDetailsView(
                                     post: post,
-                                    homeCubit: widget.homeCubit,
+                                    postUpdatesStream: widget.homeCubit.stream
+                                        .map((state) {
+                                          return state.posts.firstWhere(
+                                            (p) => p.postId == post.postId,
+                                            orElse: () => post,
+                                          );
+                                        }),
+                                    onReactionChanged: (postId, reactionType) {
+                                      widget.homeCubit.reactToPost(
+                                        postId: postId,
+                                        reactionType: reactionType,
+                                      );
+                                    },
+                                    onShareTap: (postId) {
+                                      widget.homeCubit.toggleSharePost(
+                                        postId: postId,
+                                      );
+                                    },
+                                    onHashtagTap: (hashtag) {
+                                      context.pushNamed(
+                                        AppRouter.kAdvisorSearchView,
+                                      );
+                                    },
                                   ),
                                 ),
                               );
@@ -339,7 +361,29 @@ class _ImageViewerViewState extends State<ImageViewerView>
                                 MaterialPageRoute(
                                   builder: (context) => PostDetailsView(
                                     post: post,
-                                    homeCubit: widget.homeCubit,
+                                    postUpdatesStream: widget.homeCubit.stream
+                                        .map((state) {
+                                          return state.posts.firstWhere(
+                                            (p) => p.postId == post.postId,
+                                            orElse: () => post,
+                                          );
+                                        }),
+                                    onReactionChanged: (postId, reactionType) {
+                                      widget.homeCubit.reactToPost(
+                                        postId: postId,
+                                        reactionType: reactionType,
+                                      );
+                                    },
+                                    onShareTap: (postId) {
+                                      widget.homeCubit.toggleSharePost(
+                                        postId: postId,
+                                      );
+                                    },
+                                    onHashtagTap: (hashtag) {
+                                      context.pushNamed(
+                                        AppRouter.kAdvisorSearchView,
+                                      );
+                                    },
                                   ),
                                 ),
                               ),

@@ -1,6 +1,7 @@
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
+import 'package:tayseer/features/advisor/home/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class HomePostFeed extends StatelessWidget {
@@ -68,7 +69,54 @@ class HomePostFeed extends StatelessWidget {
                 if (index < posts.length) {
                   return Column(
                     children: [
-                      PostCard(post: posts[index]),
+                      PostCard(
+                        post: posts[index],
+                        onReactionChanged: (postId, reactionType) {
+                          homeCubit.reactToPost(
+                            postId: postId,
+                            reactionType: reactionType,
+                          );
+                        },
+                        onShareTap: (postId) {
+                          homeCubit.toggleSharePost(postId: postId);
+                        },
+                        onNavigateToDetails: (ctx, post, controller) {
+                          Navigator.push(
+                            ctx,
+                            MaterialPageRoute(
+                              builder: (context) => PostDetailsView(
+                                post: post,
+                                cachedController: controller,
+                                postUpdatesStream: homeCubit.stream.map((
+                                  state,
+                                ) {
+                                  return state.posts.firstWhere(
+                                    (p) => p.postId == post.postId,
+                                    orElse: () => post,
+                                  );
+                                }),
+                                onReactionChanged: (postId, reactionType) {
+                                  homeCubit.reactToPost(
+                                    postId: postId,
+                                    reactionType: reactionType,
+                                  );
+                                },
+                                onShareTap: (postId) {
+                                  homeCubit.toggleSharePost(postId: postId);
+                                },
+                                onHashtagTap: (hashtag) {
+                                  context.pushNamed(
+                                    AppRouter.kAdvisorSearchView,
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        onHashtagTap: (hashtag) {
+                          context.pushNamed(AppRouter.kAdvisorSearchView);
+                        },
+                      ),
                       if (index < posts.length - 1)
                         Gap(context.responsiveHeight(12)),
                     ],

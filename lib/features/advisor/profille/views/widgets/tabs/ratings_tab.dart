@@ -44,7 +44,7 @@ class RatingsTab extends StatelessWidget {
       return const SharedEmptyState(title: "لا توجد تقييمات");
     }
 
-    return SingleChildScrollView(
+    return Padding(
       padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
       child: Column(
         children: [

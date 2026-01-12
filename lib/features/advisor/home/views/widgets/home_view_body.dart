@@ -85,6 +85,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
           ]);
         },
         child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           cacheExtent: 500.0,
           controller: _scrollController,
           slivers: [

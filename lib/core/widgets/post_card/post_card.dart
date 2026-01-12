@@ -7,22 +7,49 @@ import 'package:tayseer/core/widgets/post_card/real_video_player.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_images_grid.dart';
-import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
-import 'package:tayseer/features/advisor/home/views/post_details_view.dart';
-import 'package:tayseer/features/advisor/home/view_model/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
+/// PostCard widget - Generic reusable component for displaying posts
+///
+/// This widget is completely decoupled from any specific Cubit and can be used
+/// anywhere in the app. All interactions are handled via callback functions.
 class PostCard extends StatefulWidget {
   final PostModel post;
   final bool isDetailsView;
   final VideoPlayerController? sharedController;
+
+  /// Callback when user reacts to a post (like, love, etc.)
+  final void Function(String postId, ReactionType? reactionType)?
+  onReactionChanged;
+
+  /// Callback when user shares/reposts a post
+  final void Function(String postId)? onShareTap;
+
+  /// Callback when user taps on comment button or post to view details
+  final void Function(
+    BuildContext context,
+    PostModel post,
+    VideoPlayerController? controller,
+  )?
+  onNavigateToDetails;
+
+  /// Callback when user taps on hashtag
+  final void Function(String hashtag)? onHashtagTap;
+
+  /// Callback when user taps on "more" button in header
+  final void Function()? onMoreTap;
 
   const PostCard({
     super.key,
     required this.post,
     this.isDetailsView = false,
     this.sharedController,
+    this.onReactionChanged,
+    this.onShareTap,
+    this.onNavigateToDetails,
+    this.onHashtagTap,
+    this.onMoreTap,
   });
 
   @override
@@ -42,29 +69,9 @@ class _PostCardState extends State<PostCard> {
   }
 
   void _navigateToDetails(BuildContext context) {
-    if (widget.isDetailsView) {
-      context.read<PostDetailsCubit>().requestInputFocus();
-      return;
+    if (widget.onNavigateToDetails != null) {
+      widget.onNavigateToDetails!(context, widget.post, _activeController);
     }
-
-    final homeCubit = context.read<HomeCubit>();
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PostDetailsView(
-          homeCubit: homeCubit,
-          post: widget.post,
-          cachedController: _activeController,
-        ),
-      ),
-    ).then((_) {
-      if (mounted &&
-          _activeController != null &&
-          _activeController!.value.isInitialized) {
-        setState(() {}); 
-      }
-    });
   }
 
   @override
@@ -96,7 +103,7 @@ class _PostCardState extends State<PostCard> {
             name: widget.post.name,
             avatar: widget.post.avatar,
             isVerified: widget.post.isVerified,
-            onMoreTap: () {},
+            onMoreTap: widget.onMoreTap ?? () {},
             subtitle: Row(
               children: [
                 Flexible(
@@ -132,10 +139,11 @@ class _PostCardState extends State<PostCard> {
                 height: 1.5,
               ),
               hashtagStyle: Styles.textStyle14Bold.copyWith(color: Colors.blue),
-              onHashtagTap: (hashtag) {
-                log("User tapped on: $hashtag");
-                context.pushNamed(AppRouter.kAdvisorSearchView);
-              },
+              onHashtagTap:
+                  widget.onHashtagTap ??
+                  (hashtag) {
+                    log("User tapped on: $hashtag");
+                  },
             ),
           ),
           Gap(context.responsiveHeight(12)),
@@ -154,15 +162,14 @@ class _PostCardState extends State<PostCard> {
             isRepostedByMe: widget.post.isRepostedByMe,
             onCommentTap: () => _navigateToDetails(context),
             onReactionChanged: (react) {
-              context.read<HomeCubit>().reactToPost(
-                postId: widget.post.postId,
-                reactionType: react,
-              );
+              if (widget.onReactionChanged != null) {
+                widget.onReactionChanged!(widget.post.postId, react);
+              }
             },
             onShareTap: () {
-              context.read<HomeCubit>().toggleSharePost(
-                postId: widget.post.postId,
-              );
+              if (widget.onShareTap != null) {
+                widget.onShareTap!(widget.post.postId);
+              }
             },
           ),
         ],

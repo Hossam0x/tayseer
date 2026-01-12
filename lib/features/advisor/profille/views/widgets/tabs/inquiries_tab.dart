@@ -24,6 +24,8 @@ class InquiryTab extends StatelessWidget {
     ];
 
     return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.all(16.w),
       itemCount: inquiries.length,
       itemBuilder: (context, index) {

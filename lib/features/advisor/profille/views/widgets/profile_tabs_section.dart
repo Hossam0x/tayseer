@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/profille/view_model/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/comments_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/inquiries_tab.dart';
@@ -17,7 +17,7 @@ class ProfileTabsSection extends StatefulWidget {
 class _ProfileTabsSectionState extends State<ProfileTabsSection>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late HomeCubit _profileHomeCubit;
+  late ProfileCubit _profileCubit;
 
   final List<String> _tabs = [
     "الاستفسارات",
@@ -37,8 +37,8 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
     // إضافة listener للتحديث عند تغيير التبويب بالسحب
     _tabController.addListener(_onTabChanged);
 
-    // إنشاء HomeCubit خاص بالملف الشخصي
-    _profileHomeCubit = HomeCubit(getIt<HomeRepository>());
+    // إنشاء ProfileCubit خاص بالملف الشخصي
+    _profileCubit = ProfileCubit(getIt<HomeRepository>());
 
     // جلب منشورات المستخدم الحالي
     _loadUserPosts();
@@ -55,26 +55,27 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   void dispose() {
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
-    _profileHomeCubit.close();
+    _profileCubit.close();
     super.dispose();
   }
 
   Future<void> _loadUserPosts() async {
     // TODO: هنا تحتاج إلى تنفيذ دالة خاصة لجلب منشورات المستخدم الحالي
-    await _profileHomeCubit.fetchPosts();
+    await _profileCubit.fetchPosts();
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value: _profileHomeCubit,
+      value: _profileCubit,
+
       child: SliverToBoxAdapter(
         child: Column(
           children: [
             // Tabs Header - مرتبط مع TabController
             _buildTabsHeader(),
 
-            // Tab Content with Animation
+            // Tab Content
             _buildTabContent(),
           ],
         ),
@@ -129,28 +130,19 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   }
 
   Widget _buildTabContent() {
-    return SizedBox(
-      height: 260.h,
-      child: TabBarView(
-        controller: _tabController,
-        physics: const BouncingScrollPhysics(),
-        children: [
-          // Tab 1: الاستفسارات
-          InquiryTab(),
-
-          // Tab 2: المنشورات
-          PostsTab(),
-
-          // Tab 3: التعليقات
-          CommentsTab(),
-
-          // Tab 4: الشهادات
-          ProfileCertificatesSection(),
-
-          // Tab 5: التقييمات
-          RatingsTab(),
-        ],
-      ),
-    );
+    switch (_tabController.index) {
+      case 0:
+        return InquiryTab();
+      case 1:
+        return PostsTab();
+      case 2:
+        return CommentsTab();
+      case 3:
+        return ProfileCertificatesSection();
+      case 4:
+        return RatingsTab();
+      default:
+        return Container();
+    }
   }
 }

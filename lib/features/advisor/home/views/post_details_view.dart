@@ -1,8 +1,6 @@
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
-import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
-import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
 import 'package:tayseer/features/advisor/home/view_model/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/comment_input_area.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/comment_item_widget.dart';
@@ -10,16 +8,40 @@ import 'package:tayseer/features/advisor/home/views/widgets/comments_list_shimme
 
 import 'package:tayseer/my_import.dart';
 
+/// PostDetailsView - Generic reusable component for displaying post details
+///
+/// This view is completely decoupled from any specific Cubit and can be used
+/// anywhere in the app. Post interactions are handled via callback functions.
 class PostDetailsView extends StatefulWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
-  final HomeCubit homeCubit;
+
+  /// Optional: If you need to sync post updates from a parent cubit/state
+  /// Use this stream to update the post data dynamically
+  final Stream<PostModel>? postUpdatesStream;
+
+  /// Callback when user reacts to the post
+  final void Function(String postId, ReactionType? reactionType)?
+  onReactionChanged;
+
+  /// Callback when user shares/reposts the post
+  final void Function(String postId)? onShareTap;
+
+  /// Callback when user taps on hashtag
+  final void Function(String hashtag)? onHashtagTap;
+
+  /// Callback when user taps on "more" button
+  final void Function()? onMoreTap;
 
   const PostDetailsView({
     super.key,
     required this.post,
     this.cachedController,
-    required this.homeCubit,
+    this.postUpdatesStream,
+    this.onReactionChanged,
+    this.onShareTap,
+    this.onHashtagTap,
+    this.onMoreTap,
   });
 
   @override
@@ -55,16 +77,11 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) => PostDetailsCubit(
-            homeRepository: getIt<HomeRepository>(),
-            postId: widget.post.postId,
-          ),
-        ),
-        BlocProvider.value(value: widget.homeCubit),
-      ],
+    return BlocProvider(
+      create: (context) => PostDetailsCubit(
+        homeRepository: getIt<HomeRepository>(),
+        postId: widget.post.postId,
+      ),
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: _buildAppBar(context),
@@ -86,6 +103,11 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                   post: widget.post,
                   cachedController: widget.cachedController,
                   scrollController: _scrollController,
+                  postUpdatesStream: widget.postUpdatesStream,
+                  onReactionChanged: widget.onReactionChanged,
+                  onShareTap: widget.onShareTap,
+                  onHashtagTap: widget.onHashtagTap,
+                  onMoreTap: widget.onMoreTap,
                 ),
               ),
               const CommentInputArea(),
@@ -119,16 +141,49 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 // ═══════════════════════════════════════════════════════════
 // 📌 BODY WIDGET
 // ═══════════════════════════════════════════════════════════
-class _PostDetailsBody extends StatelessWidget {
+class _PostDetailsBody extends StatefulWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
   final ScrollController scrollController;
+  final Stream<PostModel>? postUpdatesStream;
+  final void Function(String postId, ReactionType? reactionType)?
+  onReactionChanged;
+  final void Function(String postId)? onShareTap;
+  final void Function(String hashtag)? onHashtagTap;
+  final void Function()? onMoreTap;
 
   const _PostDetailsBody({
     required this.post,
     this.cachedController,
     required this.scrollController,
+    this.postUpdatesStream,
+    this.onReactionChanged,
+    this.onShareTap,
+    this.onHashtagTap,
+    this.onMoreTap,
   });
+
+  @override
+  State<_PostDetailsBody> createState() => _PostDetailsBodyState();
+}
+
+class _PostDetailsBodyState extends State<_PostDetailsBody> {
+  late PostModel _currentPost;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPost = widget.post;
+
+    // Listen to post updates if stream is provided
+    widget.postUpdatesStream?.listen((updatedPost) {
+      if (mounted && updatedPost.postId == _currentPost.postId) {
+        setState(() {
+          _currentPost = updatedPost;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,11 +193,18 @@ class _PostDetailsBody extends StatelessWidget {
         await context.read<PostDetailsCubit>().loadComments(isRefresh: true);
       },
       child: CustomScrollView(
-        controller: scrollController, // ربط الكونترولر
+        controller: widget.scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           // 1. Post Section
-          _PostSection(post: post, cachedController: cachedController),
+          _PostSection(
+            post: _currentPost,
+            cachedController: widget.cachedController,
+            onReactionChanged: widget.onReactionChanged,
+            onShareTap: widget.onShareTap,
+            onHashtagTap: widget.onHashtagTap,
+            onMoreTap: widget.onMoreTap,
+          ),
 
           SliverToBoxAdapter(child: Gap(10.h)),
 
@@ -162,24 +224,36 @@ class _PostDetailsBody extends StatelessWidget {
 class _PostSection extends StatelessWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
+  final void Function(String postId, ReactionType? reactionType)?
+  onReactionChanged;
+  final void Function(String postId)? onShareTap;
+  final void Function(String hashtag)? onHashtagTap;
+  final void Function()? onMoreTap;
 
-  const _PostSection({required this.post, this.cachedController});
+  const _PostSection({
+    required this.post,
+    this.cachedController,
+    this.onReactionChanged,
+    this.onShareTap,
+    this.onHashtagTap,
+    this.onMoreTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
-      child: BlocBuilder<HomeCubit, HomeState>(
-        builder: (context, state) {
-          final updatedPost = state.posts.firstWhere(
-            (p) => p.postId == post.postId,
-            orElse: () => post,
-          );
-          return PostCard(
-            post: updatedPost,
-            isDetailsView: true,
-            sharedController: cachedController,
-          );
+      child: PostCard(
+        post: post,
+        isDetailsView: true,
+        sharedController: cachedController,
+        onReactionChanged: onReactionChanged,
+        onShareTap: onShareTap,
+        onNavigateToDetails: (ctx, post, controller) {
+          // في Details view، نريد فقط التركيز على حقل الإدخال
+          ctx.read<PostDetailsCubit>().requestInputFocus();
         },
+        onHashtagTap: onHashtagTap,
+        onMoreTap: onMoreTap,
       ),
     );
   }
