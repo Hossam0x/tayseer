@@ -44,7 +44,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           id: 'packages',
           title: 'الباقات',
           iconAsset: AssetsData.icPackesSettinngs,
-          routeName: '',
+          routeName: AppRouter.kPackagesTabView,
         ),
         SettingItemModel(
           id: 'archive',
@@ -56,7 +56,6 @@ class SettingsCubit extends Cubit<SettingsState> {
           id: 'hide_story',
           title: 'إخفاء القصة من',
           iconAsset: AssetsData.icHideSettings,
-
           switchValue: prefs.getBool('setting_hide_story') ?? false,
           routeName: '',
         ),
