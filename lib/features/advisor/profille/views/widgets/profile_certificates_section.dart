@@ -1,5 +1,6 @@
 import 'package:tayseer/features/advisor/profille/view_model/models/certificate_model_profile.dart';
 import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileCertificatesSection extends StatelessWidget {
@@ -9,15 +10,31 @@ class ProfileCertificatesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 24.h),
-      child: ListView.builder(
-        physics: const BouncingScrollPhysics(),
-        itemCount: 3,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: 10.h),
-            child: _buildCertificateItem(context),
-          );
-        },
+      child: Column(
+        children: [
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 3,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: EdgeInsets.only(bottom: 10.h),
+                child: _buildCertificateItem(context),
+              );
+            },
+          ),
+          Gap(24.h),
+          // Boost Button
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 35.w),
+            child: BoostButton(
+              text: "تعزيز",
+              onPressed: () {
+                // TODO: تنفيذ تعزيز الحساب
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

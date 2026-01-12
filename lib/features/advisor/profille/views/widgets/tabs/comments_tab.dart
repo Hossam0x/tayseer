@@ -72,6 +72,8 @@ class CommentsTab extends StatelessWidget {
     }
 
     return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
       itemCount: comments.length,
       itemBuilder: (context, index) {

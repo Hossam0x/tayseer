@@ -237,8 +237,25 @@ class ReelsOverlay extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) => PostDetailsView(
                     post: post,
-                    homeCubit: homeCubit,
                     cachedController: cachedController,
+                    postUpdatesStream: homeCubit.stream.map((state) {
+                      return state.posts.firstWhere(
+                        (p) => p.postId == post.postId,
+                        orElse: () => post,
+                      );
+                    }),
+                    onReactionChanged: (postId, reactionType) {
+                      homeCubit.reactToPost(
+                        postId: postId,
+                        reactionType: reactionType,
+                      );
+                    },
+                    onShareTap: (postId) {
+                      homeCubit.toggleSharePost(postId: postId);
+                    },
+                    onHashtagTap: (hashtag) {
+                      context.pushNamed(AppRouter.kAdvisorSearchView);
+                    },
                   ),
                 ),
               );
