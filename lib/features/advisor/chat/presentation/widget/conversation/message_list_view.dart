@@ -1,7 +1,4 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import '../../manager/scroll/chat_scroll_cubit.dart';
@@ -86,9 +83,8 @@ class _MessageListViewState extends State<MessageListView> {
               child: msg.messageType == 'system'
                   ? SystemMessageBubble(content: msg.content)
                   : GestureDetector(
-                      onLongPress: () {
-                        widget.onMessageLongPress?.call(msg, messageKey);
-                      },
+                      onLongPress: () =>
+                          widget.onMessageLongPress?.call(msg, messageKey),
                       child: MessageBubble(
                         chatMessage: msg,
                         isHighlighted: isHighlighted,

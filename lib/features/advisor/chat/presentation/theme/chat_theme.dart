@@ -35,8 +35,8 @@ abstract class ChatDimensions {
   static const double paddingVerticalMobile = 8.0;
   static const double paddingVerticalTablet = 10.0;
 
-  static const double fontSizeMobile = 16.0;
-  static const double fontSizeTablet = 20.0;
+  static const double fontSizeMobile = 13.0;
+  static const double fontSizeTablet = 15.0;
   static const double timeFontSizeMobile = 10.0;
   static const double timeFontSizeTablet = 12.0;
 

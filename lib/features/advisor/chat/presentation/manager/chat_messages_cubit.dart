@@ -22,6 +22,11 @@ import 'package:tayseer/features/advisor/chat/domain/chat_domain.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/state/chat_messages_state.dart';
 
 /// Refactored Local-First Chat Messages Cubit
+///
+/// Uses:
+/// - Freezed state for immutable, type-safe state management
+/// - Use Cases for business logic separation
+/// - Clean Architecture principles
 class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   // ══════════════════════════════════════════════════════════════════════════
   // DEPENDENCIES
@@ -53,9 +58,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   late final TypingHandler _typingHandler;
   late final ConnectivityHandler _connectivityHandler;
   late final BlockHandler _blockHandler;
-
-  // ✅ Flag لمنع Race Condition
-  bool _isLoadingMessages = false;
 
   // ══════════════════════════════════════════════════════════════════════════
   // CONSTRUCTOR
@@ -187,6 +189,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         );
       },
       orElse: () {
+        // For other states, create a new loaded state
         _safeEmit(
           ChatMessagesState.loaded(
             messages: messages ?? [],
@@ -201,24 +204,8 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // MARK MESSAGES AS READ
+  // CONNECTIVITY HANDLING
   // ══════════════════════════════════════════════════════════════════════════
-
-  void _markMessagesAsRead() {
-    if (_currentChatRoomId == null) return;
-
-    _socketHelper.send(
-      'mark_messages_read',
-      {'chatRoomId': _currentChatRoomId},
-      (ack) {
-        log('✅ [$_listenerId] mark_messages_read ACK: $ack');
-      },
-    );
-  }
-
-  void markMessagesAsRead() {
-    _markMessagesAsRead();
-  }
 
   // ══════════════════════════════════════════════════════════════════════════
   // INITIAL LOAD (LOCAL-FIRST)
@@ -234,27 +221,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     String chatRoomId, {
     String? receiverId,
   }) async {
-    // ✅ منع الـ double loading
-    if (_isLoadingMessages) {
-      log('⚠️ [$_listenerId] Already loading messages, skipping...');
-      return;
-    }
-
-    // ✅ لو نفس الـ chatRoom ومحمل، مش محتاج نعمل حاجة
-    if (_currentChatRoomId == chatRoomId && state.messagesOrEmpty.isNotEmpty) {
-      log('⚠️ [$_listenerId] Same chat room already loaded, skipping...');
-      return;
-    }
-
-    _isLoadingMessages = true;
-
-    // ✅ Cancel previous subscription if different chat room
-    if (_currentChatRoomId != null && _currentChatRoomId != chatRoomId) {
-      log('🔄 [$_listenerId] Switching chat room, cleaning up previous...');
-      _messagesSubscription?.cancel();
-      _socketHandler?.dispose();
-    }
-
     _currentChatRoomId = chatRoomId;
     _currentReceiverId = receiverId;
     log('📥 [$_listenerId] Loading for receiverId: $_currentReceiverId');
@@ -267,10 +233,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
       final messages = await _loadMessagesUseCase.call(chatRoomId);
 
-      if (isClosed) {
-        _isLoadingMessages = false;
-        return;
-      }
+      if (isClosed) return;
 
       final isBlocked = _blockHandler.checkBlockStatusFromMessages(
         messages,
@@ -294,8 +257,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       if (!isClosed) {
         _safeEmit(ChatMessagesState.failure(message: e.toString()));
       }
-    } finally {
-      _isLoadingMessages = false;
     }
   }
 
@@ -307,6 +268,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
           (messages) {
             if (!isClosed) {
               final hasMore = messages.length >= 20;
+              // Re-check block status from latest messages (after sync)
               final isBlocked = _blockHandler.checkBlockStatusFromMessages(
                 messages,
                 state.isBlockedStatus,
@@ -397,6 +359,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     String? replyMessageId,
     ChatMessage? replyToMessage,
   }) async {
+    // Use the SendMessageUseCase
     final result = await _sendMessageUseCase.call(
       SendMessageParams(
         receiverId: receiverId,
@@ -407,6 +370,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       ),
     );
 
+    // Update UI immediately with local message
     final currentMessages = state.messagesOrEmpty;
     final updatedMessages = [...currentMessages, result.localMessage];
     final currentPendingCount = state.maybeMap(
@@ -422,6 +386,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
     log('📤 [$_listenerId] Message saved locally: ${result.localId}');
 
+    // Send to server via socket
     _socketHelper.send('send_message', result.socketData, (ack) {
       log('✅ [$_listenerId] Send message ACK: $ack');
     });
@@ -446,12 +411,14 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       replyToMessage: replyToMessage,
     );
 
+    // Step 1: Create optimistic local message with local file paths
     final optimisticResult = await _sendMediaUseCase.createOptimisticMessage(
       params,
     );
 
     if (isClosed) return;
 
+    // Step 2: Add local message to UI immediately
     final currentMessages = state.messagesOrEmpty;
     final currentPendingCount = state.maybeMap(
       loaded: (s) => s.pendingCount,
@@ -469,6 +436,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       '📤 [$_listenerId] Media message saved locally: ${optimisticResult.localId}',
     );
 
+    // Step 3: Upload media to server in background (with tempId)
     final uploadParams = SendMediaParams(
       chatRoomId: params.chatRoomId,
       messageType: params.messageType,
@@ -485,6 +453,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     uploadResult.fold(
       (error) {
         log('❌ [$_listenerId] Media upload failed: $error');
+        // Update status to failed but keep showing local file
         _updateMediaMessageStatus(
           optimisticResult.localId,
           MessageStatusEnum.failed,
@@ -493,12 +462,14 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       },
       (response) {
         log('✅ [$_listenerId] Media uploaded: ${response.data.id}');
+        // Replace local message with server message (with URLs instead of local paths)
         _confirmMediaMessageSent(optimisticResult.localId, response.data);
         _emitLoaded(sendMediaState: CubitStates.success);
       },
     );
   }
 
+  /// Update media message status when upload fails
   void _updateMediaMessageStatus(String localId, MessageStatusEnum status) {
     final currentMessages = state.messagesOrEmpty;
     final index = currentMessages.indexWhere((m) => m.id == localId);
@@ -510,6 +481,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     _emitLoaded(messages: updatedMessages);
   }
 
+  /// Replace local media message with server confirmed message
   void _confirmMediaMessageSent(String localId, SentMessage serverData) {
     final currentMessages = state.messagesOrEmpty;
     final index = currentMessages.indexWhere((m) => m.id == localId);
@@ -518,6 +490,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       return;
     }
 
+    // Create server message with URLs (no local file paths)
     final serverMessage = ChatMessage(
       id: serverData.id,
       chatRoomId: serverData.chatRoomId,
@@ -526,17 +499,20 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       senderImage: serverData.senderImage ?? '',
       senderType: serverData.senderType,
       isMe: serverData.isMe,
-      contentList: serverData.contentList,
+      contentList: serverData.contentList, // Server URLs
       messageType: serverData.messageType,
       createdAt: serverData.createdAt,
       updatedAt: serverData.updatedAt,
       isRead: serverData.isRead,
       reply: serverData.reply,
       status: MessageStatusEnum.sent,
+      // Clear local file paths since we now have server URLs
     );
 
+    // Update local database
     _repo.confirmMessageSent(localId, serverData.id);
 
+    // Update state
     final updatedMessages = List<ChatMessage>.from(currentMessages);
     updatedMessages[index] = serverMessage;
 
@@ -562,18 +538,15 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   void setupSocketListeners() {
     if (_currentChatRoomId == null) return;
 
-    // ✅ شيل الـ listeners القديمة الأول
-    _socketHandler?.dispose();
-
     _socketHandler = SocketListenerHandler(
       socketHelper: _socketHelper,
       listenerId: _listenerId,
       chatRoomId: _currentChatRoomId!,
       onNewMessage: (message) {
         if (isClosed) return;
-
         if (message.messageType == 'system') {
           _messageStateHandler.handleSystemMessage(message);
+          // Update block status if this is a block/unblock system message
           if (message.action.isBlock || message.action.isUnblock) {
             final newBlockStatus = message.action.isBlock;
             _emitLoaded(isBlocked: newBlockStatus);
@@ -585,10 +558,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
           _messageStateHandler.handleSentMessageConfirmation(message);
         } else {
           _messageStateHandler.handleIncomingMessage(message);
-          _markMessagesAsRead();
-          log(
-            '📖 [$_listenerId] Auto marking message as read (user is in chat)',
-          );
         }
       },
       onMessagesRead: () {
@@ -719,6 +688,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
+  // BLOCK STATUS HELPERS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ══════════════════════════════════════════════════════════════════════════
   // BLOCK USER (USING USE CASE)
   // ══════════════════════════════════════════════════════════════════════════
 
@@ -751,14 +724,13 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   // ══════════════════════════════════════════════════════════════════════════
 
   @override
-  Future<void> close() async {
+  Future<void> close() {
     log('🔴 [$_listenerId] Closing ChatMessagesCubit...');
-
-    _isLoadingMessages = false;
 
     _typingHandler.dispose();
     _messagesSubscription?.cancel();
     _connectivityHandler.dispose();
+
     _socketHandler?.dispose();
 
     _currentChatRoomId = null;

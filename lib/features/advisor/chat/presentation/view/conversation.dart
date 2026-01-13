@@ -1,7 +1,6 @@
 import 'dart:developer';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/utils/assets.dart';
@@ -222,6 +221,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
     return _messageKeys[messageId]!;
   }
 
+  // حذف رسالة واحدة من context menu (يستخدم نفس منطق selection)
   void _showDeleteConfirmationForSingleMessage(
     BuildContext blocContext,
     String deleteType,
@@ -265,6 +265,7 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                 onPressed: () async {
                   Navigator.pop(dialogContext);
 
+                  // استخدام الـ cubit المحفوظ
                   final success = await cubit.deleteMessages(
                     messageIds: [message.id],
                     deleteType: deleteType,
@@ -609,10 +610,8 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                   child: SelectableMessageListView(
                     messages: state.messages,
                     scrollController: _scrollController,
-                    onMessageLongPress: (message, key) {
-                      HapticFeedback.vibrate();
-                      _showOverlay(message, key);
-                    },
+                    onMessageLongPress: (message, key) =>
+                        _showOverlay(message, key),
                     onReplyTap: _scrollToMessage,
                   ),
                 ),

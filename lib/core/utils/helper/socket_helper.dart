@@ -40,7 +40,7 @@ class tayseerSocketHelper {
     }
 
     _socket = IO.io(
-      'https://tayser-app.net',
+      'https://tayser-app.com',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()

@@ -302,13 +302,11 @@ class ImageMessageWidget extends StatelessWidget {
 class FullScreenImageViewer extends StatefulWidget {
   final List<String> images;
   final int initialIndex;
-  final bool isLocal;
 
   const FullScreenImageViewer({
     super.key,
     required this.images,
     required this.initialIndex,
-    this.isLocal = false,
   });
 
   @override
@@ -360,8 +358,16 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
             minScale: 0.5,
             maxScale: 4.0,
             child: Center(
-              // ✅ التعديل هنا - استخدام الصورة المحلية أو من الشبكة
-              child: _buildFullImage(widget.images[index]),
+              child: CachedNetworkImage(
+                imageUrl: widget.images[index],
+                fit: BoxFit.contain,
+                placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+                errorWidget: (context, url, error) => const Center(
+                  child: Icon(Icons.error, color: Colors.red, size: 50),
+                ),
+              ),
             ),
           );
         },
@@ -369,51 +375,6 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
       bottomNavigationBar: widget.images.length > 1
           ? _buildThumbnailBar()
           : null,
-    );
-  }
-
-  // ✅ دالة جديدة لبناء الصورة حسب النوع
-  Widget _buildFullImage(String imagePath) {
-    if (widget.isLocal) {
-      return Image.file(
-        File(imagePath),
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) =>
-            const Center(child: Icon(Icons.error, color: Colors.red, size: 50)),
-      );
-    }
-
-    return CachedNetworkImage(
-      imageUrl: imagePath,
-      fit: BoxFit.contain,
-      placeholder: (context, url) =>
-          const Center(child: CircularProgressIndicator(color: Colors.white)),
-      errorWidget: (context, url, error) =>
-          const Center(child: Icon(Icons.error, color: Colors.red, size: 50)),
-    );
-  }
-
-  // ✅ دالة جديدة لبناء الـ thumbnail حسب النوع
-  Widget _buildThumbnailImage(String imagePath) {
-    if (widget.isLocal) {
-      return Image.file(
-        File(imagePath),
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
-          color: Colors.grey[800],
-          child: const Icon(Icons.error, color: Colors.red),
-        ),
-      );
-    }
-
-    return CachedNetworkImage(
-      imageUrl: imagePath,
-      fit: BoxFit.cover,
-      placeholder: (context, url) => Container(color: Colors.grey[800]),
-      errorWidget: (context, url, error) => Container(
-        color: Colors.grey[800],
-        child: const Icon(Icons.error, color: Colors.red),
-      ),
     );
   }
 
@@ -449,8 +410,16 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                // ✅ استخدام الدالة الجديدة بدلاً من CachedNetworkImage مباشرة
-                child: _buildThumbnailImage(widget.images[index]),
+                child: CachedNetworkImage(
+                  imageUrl: widget.images[index],
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) =>
+                      Container(color: Colors.grey[800]),
+                  errorWidget: (context, url, error) => Container(
+                    color: Colors.grey[800],
+                    child: const Icon(Icons.error, color: Colors.red),
+                  ),
+                ),
               ),
             ),
           );

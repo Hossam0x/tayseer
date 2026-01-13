@@ -21,10 +21,13 @@ class ChatCubit extends Cubit<ChatState> {
   final ChatRepoV2 chatRepoV2;
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
+  // ✅ Unique Listener ID لهذا الـ Cubit
   late final String _listenerId;
 
+  // ✅ Track currently active chat room to prevent unread count increment
   String? _activeChatRoomId;
 
+  /// Set the currently active (opened) chat room
   void setActiveChatRoom(String? chatRoomId) {
     _activeChatRoomId = chatRoomId;
     log('🎯 [$_listenerId] Active chat room set to: $chatRoomId');
@@ -39,84 +42,27 @@ class ChatCubit extends Cubit<ChatState> {
     }
   }
 
-  /// ✅ دمج قوائم الشاتات مع إزالة التكرار (محسّن)
-  List<ChatRoom> _mergeAndSortRooms(
-    List<ChatRoom> existing,
-    List<ChatRoom> incoming,
-  ) {
-    final Map<String, ChatRoom> roomMap = {};
-
-    // إضافة الشاتات الموجودة
-    for (final room in existing) {
-      roomMap[room.id] = room;
-    }
-
-    // إضافة/تحديث الشاتات الجديدة
-    for (final room in incoming) {
-      final existingRoom = roomMap[room.id];
-      if (existingRoom == null) {
-        roomMap[room.id] = room;
-      } else {
-        final existingTime = existingRoom.lastMessageAt ?? DateTime(1970);
-        final incomingTime = room.lastMessageAt ?? DateTime(1970);
-
-        if (incomingTime.isAfter(existingTime) ||
-            incomingTime == existingTime) {
-          // ✅ الأحدث يكسب، لكن نحتفظ ببعض القيم
-          roomMap[room.id] = room.copyWith(
-            unreadCount: room.unreadCount > existingRoom.unreadCount
-                ? room.unreadCount
-                : existingRoom.unreadCount,
-            isBlocked: room.isBlocked || existingRoom.isBlocked,
-          );
-        } else {
-          // ✅ الـ existing أحدث
-          roomMap[room.id] = existingRoom.copyWith(
-            isBlocked: room.isBlocked || existingRoom.isBlocked,
-          );
-        }
-      }
-    }
-
-    // ترتيب حسب آخر رسالة
-    final merged = roomMap.values.toList();
-    merged.sort((a, b) {
-      final aTime = a.lastMessageAt ?? DateTime(1970);
-      final bTime = b.lastMessageAt ?? DateTime(1970);
-      return bTime.compareTo(aTime);
-    });
-
-    return merged;
-  }
-
+  /// ✅ Local-first: Load from cache first, then sync with server
   void fetchChatRooms() async {
-    log('🔄 [$_listenerId] Starting fetchChatRooms');
-
-    final existingRooms = state.chatRoom?.rooms ?? [];
-
     _safeEmit(state.copyWith(getallchatrooms: CubitStates.loading));
 
     // Step 1: Load from local cache first
-    List<ChatRoom> cachedRooms = [];
     try {
-      cachedRooms = await localDataSource.getAllChatRooms();
+      final cachedRooms = await localDataSource.getAllChatRooms();
       if (cachedRooms.isNotEmpty && !isClosed) {
         log(
           '📦 [$_listenerId] Loaded ${cachedRooms.length} chat rooms from cache',
         );
-
-        final mergedRooms = _mergeAndSortRooms(existingRooms, cachedRooms);
-
         _safeEmit(
           state.copyWith(
             getallchatrooms: CubitStates.success,
             chatRoom: ChatRoomsData(
-              rooms: mergedRooms,
+              rooms: cachedRooms,
               pagination: Pagination(
-                totalCount: mergedRooms.length,
+                totalCount: cachedRooms.length,
                 totalPages: 1,
                 currentPage: 1,
-                pageSize: mergedRooms.length,
+                pageSize: cachedRooms.length,
               ),
             ),
           ),
@@ -133,6 +79,7 @@ class ChatCubit extends Cubit<ChatState> {
 
     result.fold(
       (failure) {
+        // Only show failure if we don't have cached data
         if (state.chatRoom == null || state.chatRoom!.rooms.isEmpty) {
           _safeEmit(
             state.copyWith(
@@ -148,6 +95,7 @@ class ChatCubit extends Cubit<ChatState> {
           '🌐 [$_listenerId] Fetched ${chatRoomsResponse.data.rooms.length} chat rooms from server',
         );
 
+        // Update local cache
         try {
           final entities = chatRoomsResponse.data.rooms
               .map((room) => ChatRoomEntity.fromChatRoom(room))
@@ -158,22 +106,17 @@ class ChatCubit extends Cubit<ChatState> {
           log('⚠️ [$_listenerId] Failed to save to cache: $e');
         }
 
-        final currentRooms = state.chatRoom?.rooms ?? [];
-        final serverRooms = chatRoomsResponse.data.rooms;
-        final mergedRooms = _mergeAndSortRooms(currentRooms, serverRooms);
-
         _safeEmit(
           state.copyWith(
             getallchatrooms: CubitStates.success,
-            chatRoom: chatRoomsResponse.data.copyWith(rooms: mergedRooms),
+            chatRoom: chatRoomsResponse.data,
           ),
         );
-
-        log('✅ [$_listenerId] Final rooms count: ${mergedRooms.length}');
       },
     );
   }
 
+  /// ✅ الاستماع للرسائل الجديدة وتحديث آخر رسالة
   void listenToNewMessages() {
     log('🎧 [$_listenerId] Setting up new_message listener for chat list');
 
@@ -182,6 +125,7 @@ class ChatCubit extends Cubit<ChatState> {
     });
   }
 
+  /// ✅ معالجة الرسالة الجديدة لتحديث قائمة الشات
   void _handleNewMessageForChatList(dynamic data) {
     if (isClosed) {
       log('⚠️ [$_listenerId] Received message but Cubit is closed - ignoring');
@@ -203,16 +147,18 @@ class ChatCubit extends Cubit<ChatState> {
       final messageType = data['messageType']?.toString() ?? 'text';
       final messageId = data['id']?.toString() ?? '';
 
-      if (chatRoomId == null || chatRoomId.isEmpty) {
-        log('❌ [$_listenerId] chatRoomId is null or empty');
+      if (chatRoomId == null) {
+        log('❌ [$_listenerId] chatRoomId is null');
         return;
       }
 
+      // ✅ التحقق إذا كان الـ chatRoomId موجود في القائمة
       final currentChatData = state.chatRoom;
       final chatRoomExists =
           currentChatData?.rooms.any((room) => room.id == chatRoomId) ?? false;
 
       if (chatRoomExists) {
+        // ✅ الشات موجود - نحدث الـ lastMessage
         log('📝 [$_listenerId] ChatRoom exists, updating lastMessage');
         _updateChatRoomLastMessage(
           chatRoomId: chatRoomId,
@@ -227,6 +173,7 @@ class ChatCubit extends Cubit<ChatState> {
           messageType: messageType,
         );
       } else {
+        // ✅ الشات جديد - نضيفه في القائمة
         log('🆕 [$_listenerId] New ChatRoom detected, adding to list');
         _addNewChatRoom(
           chatRoomId: chatRoomId,
@@ -248,6 +195,7 @@ class ChatCubit extends Cubit<ChatState> {
     }
   }
 
+  /// ✅ إضافة ChatRoom جديد في القائمة
   void _addNewChatRoom({
     required String chatRoomId,
     required String messageId,
@@ -263,26 +211,7 @@ class ChatCubit extends Cubit<ChatState> {
   }) {
     log('🆕 [$_listenerId] Adding new ChatRoom: $chatRoomId');
 
-    final currentRooms = state.chatRoom?.rooms ?? [];
-    if (currentRooms.any((room) => room.id == chatRoomId)) {
-      log(
-        '⚠️ [$_listenerId] ChatRoom $chatRoomId already exists, updating instead',
-      );
-      _updateChatRoomLastMessage(
-        chatRoomId: chatRoomId,
-        messageId: messageId,
-        content: content,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        isMe: isMe,
-        senderId: senderId,
-        senderName: senderName,
-        senderType: senderType,
-        messageType: messageType,
-      );
-      return;
-    }
-
+    // إنشاء الـ Sender
     final sender = ChatUser(
       id: senderId,
       name: senderName,
@@ -290,6 +219,7 @@ class ChatCubit extends Cubit<ChatState> {
       userType: senderType,
     );
 
+    // إنشاء الـ LastMessage
     final lastMessage = LastMessage(
       id: messageId,
       chatRoom: chatRoomId,
@@ -303,11 +233,13 @@ class ChatCubit extends Cubit<ChatState> {
       updatedAt: DateTime.tryParse(updatedAt),
     );
 
+    // إنشاء الـ ChatRoom الجديد
+    // ✅ FIX: Don't count as unread if user is viewing this chat
     final isCurrentlyViewing = chatRoomId == _activeChatRoomId;
     final shouldCountUnread = !isMe && !isCurrentlyViewing;
     final newChatRoom = ChatRoom(
       id: chatRoomId,
-      users: [sender],
+      users: [sender], // المرسل كـ user
       lastMessage: lastMessage,
       lastMessageAt: DateTime.tryParse(createdAt) ?? DateTime.now(),
       status: 'active',
@@ -317,11 +249,11 @@ class ChatCubit extends Cubit<ChatState> {
       unreadCount: shouldCountUnread ? 1 : 0,
     );
 
-    _saveChatRoomToCache(newChatRoom);
-
+    // الحصول على القائمة الحالية
     final currentChatData = state.chatRoom;
 
     if (currentChatData == null) {
+      // لو مفيش data أصلاً، ننشئ واحدة جديدة
       log('📝 [$_listenerId] No existing chat data, creating new');
       final newChatData = ChatRoomsData(
         rooms: [newChatRoom],
@@ -340,12 +272,12 @@ class ChatCubit extends Cubit<ChatState> {
         ),
       );
     } else {
-      final updatedRooms = _mergeAndSortRooms(currentChatData.rooms, [
-        newChatRoom,
-      ]);
+      // إضافة الـ ChatRoom الجديد في أول القائمة
+      final updatedRooms = [newChatRoom, ...currentChatData.rooms];
 
+      // تحديث الـ pagination
       final updatedPagination = Pagination(
-        totalCount: updatedRooms.length,
+        totalCount: currentChatData.pagination.totalCount + 1,
         totalPages: currentChatData.pagination.totalPages,
         currentPage: currentChatData.pagination.currentPage,
         pageSize: currentChatData.pagination.pageSize,
@@ -364,16 +296,7 @@ class ChatCubit extends Cubit<ChatState> {
     log('✅ [$_listenerId] New ChatRoom added successfully');
   }
 
-  Future<void> _saveChatRoomToCache(ChatRoom chatRoom) async {
-    try {
-      final entity = ChatRoomEntity.fromChatRoom(chatRoom);
-      await localDataSource.upsertChatRoom(entity);
-      log('💾 [$_listenerId] Saved ChatRoom ${chatRoom.id} to cache');
-    } catch (e) {
-      log('⚠️ [$_listenerId] Failed to save ChatRoom to cache: $e');
-    }
-  }
-
+  /// استخراج المحتوى (سواء String أو List)
   String _extractContent(dynamic content) {
     if (content == null) return '';
     if (content is String) {
@@ -384,6 +307,7 @@ class ChatCubit extends Cubit<ChatState> {
     return '';
   }
 
+  /// ✅ تحديث آخر رسالة في ChatRoom معين
   void _updateChatRoomLastMessage({
     required String chatRoomId,
     required String messageId,
@@ -408,11 +332,12 @@ class ChatCubit extends Cubit<ChatState> {
       return;
     }
 
-    ChatRoom? updatedRoom;
+    // البحث عن الـ ChatRoom وتحديثه
     final updatedRooms = currentRooms.map((room) {
       if (room.id == chatRoomId) {
         log('✅ [$_listenerId] Updating lastMessage for room: $chatRoomId');
 
+        // إنشاء LastMessage جديدة
         final updatedLastMessage = LastMessage(
           id: messageId,
           chatRoom: chatRoomId,
@@ -426,6 +351,9 @@ class ChatCubit extends Cubit<ChatState> {
           updatedAt: DateTime.tryParse(updatedAt),
         );
 
+        // ✅ FIX: Don't increment unread count if:
+        // 1. Message is from me (isMe)
+        // 2. User is currently viewing this chat (chatRoomId == _activeChatRoomId)
         final isCurrentlyViewing = chatRoomId == _activeChatRoomId;
         final shouldIncrementUnread = !isMe && !isCurrentlyViewing;
         final newUnreadCount = shouldIncrementUnread
@@ -438,27 +366,23 @@ class ChatCubit extends Cubit<ChatState> {
           );
         }
 
-        updatedRoom = room.copyWith(
+        return room.copyWith(
           lastMessage: updatedLastMessage,
           lastMessageAt: DateTime.tryParse(createdAt) ?? DateTime.now(),
           unreadCount: newUnreadCount,
         );
-
-        return updatedRoom!;
       }
       return room;
     }).toList();
 
-    if (updatedRoom != null) {
-      _saveChatRoomToCache(updatedRoom!);
-    }
-
+    // ✅ إعادة ترتيب الشات حسب آخر رسالة (الأحدث في الأول)
     updatedRooms.sort((a, b) {
       final aTime = a.lastMessageAt ?? DateTime(1970);
       final bTime = b.lastMessageAt ?? DateTime(1970);
       return bTime.compareTo(aTime);
     });
 
+    // تحديث الـ State
     _safeEmit(
       state.copyWith(chatRoom: currentChatData.copyWith(rooms: updatedRooms)),
     );
@@ -466,18 +390,15 @@ class ChatCubit extends Cubit<ChatState> {
     log('✅ [$_listenerId] Chat list updated successfully');
   }
 
-  // ✅ إصلاح: حفظ في الـ Cache
   void markChatAsRead(String chatRoomId) {
     if (isClosed) return;
 
     final currentChatData = state.chatRoom;
     if (currentChatData == null) return;
 
-    ChatRoom? updatedRoom;
     final updatedRooms = currentChatData.rooms.map((room) {
       if (room.id == chatRoomId) {
-        updatedRoom = room.copyWith(unreadCount: 0);
-        return updatedRoom!;
+        return room.copyWith(unreadCount: 0);
       }
       return room;
     }).toList();
@@ -486,26 +407,19 @@ class ChatCubit extends Cubit<ChatState> {
       state.copyWith(chatRoom: currentChatData.copyWith(rooms: updatedRooms)),
     );
 
-    // ✅ حفظ في الـ Cache
-    if (updatedRoom != null) {
-      _saveChatRoomToCache(updatedRoom!);
-    }
-
     log('✅ [$_listenerId] Marked chat $chatRoomId as read');
   }
 
-  // ✅ إصلاح: حفظ في الـ Cache
+  /// تحديث حالة الحظر للشات
   void updateBlockStatus(String chatRoomId, bool isBlocked) {
     if (isClosed) return;
 
     final currentChatData = state.chatRoom;
     if (currentChatData == null) return;
 
-    ChatRoom? updatedRoom;
     final updatedRooms = currentChatData.rooms.map((room) {
       if (room.id == chatRoomId) {
-        updatedRoom = room.copyWith(isBlocked: isBlocked);
-        return updatedRoom!;
+        return room.copyWith(isBlocked: isBlocked);
       }
       return room;
     }).toList();
@@ -513,11 +427,6 @@ class ChatCubit extends Cubit<ChatState> {
     _safeEmit(
       state.copyWith(chatRoom: currentChatData.copyWith(rooms: updatedRooms)),
     );
-
-    // ✅ حفظ في الـ Cache
-    if (updatedRoom != null) {
-      _saveChatRoomToCache(updatedRoom!);
-    }
 
     log('✅ [$_listenerId] Updated block status for $chatRoomId: $isBlocked');
   }
@@ -525,8 +434,12 @@ class ChatCubit extends Cubit<ChatState> {
   @override
   Future<void> close() {
     log('🔴 [$_listenerId] Closing ChatCubit...');
+
+    // ✅ إزالة كل الـ listeners الخاصة بهذا الـ Cubit فقط
     socketHelper.offAllForListener(_listenerId);
+
     log('✅ [$_listenerId] ChatCubit closed and cleaned up');
+
     return super.close();
   }
 
@@ -536,11 +449,14 @@ class ChatCubit extends Cubit<ChatState> {
     });
   }
 
+  /// ✅ Delete chat room (Local-first: delete from cache immediately, then sync with server)
   Future<void> deleteChatRoom(String chatRoomId) async {
     log('🗑️ [$_listenerId] Deleting chat room: $chatRoomId');
 
+    // Step 1: Save current state for rollback if needed
     final previousChatData = state.chatRoom;
 
+    // Step 2: Remove from UI immediately (optimistic update)
     if (previousChatData != null) {
       final updatedRooms = previousChatData.rooms
           .where((room) => room.id != chatRoomId)
@@ -554,6 +470,7 @@ class ChatCubit extends Cubit<ChatState> {
       log('✅ [$_listenerId] Chat room removed from UI');
     }
 
+    // Step 3: Delete from local cache
     try {
       await localDataSource.deleteChatRoom(chatRoomId);
       log('✅ [$_listenerId] Chat room deleted from local cache');
@@ -561,27 +478,38 @@ class ChatCubit extends Cubit<ChatState> {
       log('⚠️ [$_listenerId] Failed to delete from cache: $e');
     }
 
+    // Step 4: Delete from server (in background)
     final result = await chatRepoV2.deleteChatRoom(chatRoomId);
 
     result.fold(
-      (error) => log('❌ [$_listenerId] Failed to delete from server: $error'),
-      (success) => log('✅ [$_listenerId] Chat room deleted from server'),
+      (error) {
+        log('❌ [$_listenerId] Failed to delete from server: $error');
+        // Optionally: rollback UI if server deletion fails
+        // For now, we keep the optimistic deletion
+      },
+      (success) {
+        log('✅ [$_listenerId] Chat room deleted from server');
+      },
     );
   }
 
+  /// ✅ Block user from chat list (Local-first)
   Future<Either<String, String>> blockUser({
     required String blockedId,
     required String chatRoomId,
   }) async {
     log('🚫 [$_listenerId] Blocking user: $blockedId from chat list');
 
+    // Step 1: Update UI immediately (optimistic)
     updateBlockStatus(chatRoomId, true);
 
+    // Step 2: Call server
     final result = await chatRepoV2.blockUser(blockedId: blockedId);
 
     return result.fold(
       (error) {
         log('❌ [$_listenerId] Block user failed: $error');
+        // Rollback on failure
         updateBlockStatus(chatRoomId, false);
         return Left(error);
       },
@@ -592,19 +520,23 @@ class ChatCubit extends Cubit<ChatState> {
     );
   }
 
+  /// ✅ Unblock user from chat list (Local-first)
   Future<Either<String, String>> unblockUser({
     required String blockedId,
     required String chatRoomId,
   }) async {
     log('✅ [$_listenerId] Unblocking user: $blockedId from chat list');
 
+    // Step 1: Update UI immediately (optimistic)
     updateBlockStatus(chatRoomId, false);
 
+    // Step 2: Call server
     final result = await chatRepoV2.unblockUser(blockedId: blockedId);
 
     return result.fold(
       (error) {
         log('❌ [$_listenerId] Unblock user failed: $error');
+        // Rollback on failure
         updateBlockStatus(chatRoomId, true);
         return Left(error);
       },
@@ -615,11 +547,14 @@ class ChatCubit extends Cubit<ChatState> {
     );
   }
 
+  /// ✅ Archive chat room (Local-first: remove from UI, then call API)
   Future<void> archiveChatRoom(String chatRoomId) async {
     log('📦 [$_listenerId] Archiving chat room: $chatRoomId');
 
+    // Save current state for rollback if needed
     final previousChatData = state.chatRoom;
 
+    // Remove from UI immediately (optimistic update)
     if (previousChatData != null) {
       final updatedRooms = previousChatData.rooms
           .where((room) => room.id != chatRoomId)
@@ -633,11 +568,17 @@ class ChatCubit extends Cubit<ChatState> {
       log('✅ [$_listenerId] Chat room removed from UI');
     }
 
+    // Call API to archive on server
     final result = await chatRepoV2.archiveChatRoom(chatRoomId);
 
     result.fold(
-      (error) => log('❌ [$_listenerId] Failed to archive on server: $error'),
-      (success) => log('✅ [$_listenerId] Chat room archived on server'),
+      (error) {
+        log('❌ [$_listenerId] Failed to archive on server: $error');
+        // Optionally rollback UI on failure
+      },
+      (success) {
+        log('✅ [$_listenerId] Chat room archived on server');
+      },
     );
   }
 }

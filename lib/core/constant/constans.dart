@@ -8,7 +8,7 @@ const kAppFont = 'ibmp';
 String? selectedLanguage;
 bool get isArabic => selectedLanguage == 'ar';
 bool kIsUserGuest = false;
-const String kbaseUrl = 'https://tayser-app.net/api/v1';
+const String kbaseUrl = 'https://tayser-app.com/api/v1';
 // bool kShowOnBoarding = false;
 LoginData? kCurrentUserData;
 Gender? selectedGender;
