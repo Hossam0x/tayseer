@@ -13,10 +13,13 @@ import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cu
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
@@ -219,5 +222,15 @@ Future<void> setupGetIt() async {
   /// Ratings Cubit
   getIt.registerFactory<RatingsCubit>(
     () => RatingsCubit(getIt<RatingsRepository>()),
+  );
+
+  /// Certificates Repository
+  getIt.registerLazySingleton<CertificatesRepository>(
+    () => CertificatesRepositoryImpl(getIt<ApiService>()),
+  );
+
+  /// Certificates Cubit
+  getIt.registerFactory<CertificatesCubit>(
+    () => CertificatesCubit(getIt<CertificatesRepository>()),
   );
 }

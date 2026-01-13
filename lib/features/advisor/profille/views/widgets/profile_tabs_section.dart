@@ -110,7 +110,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
             labelColor: AppColors.blackColor,
             unselectedLabelColor: AppColors.secondary400,
             labelStyle: Styles.textStyle16Bold,
-            unselectedLabelStyle: Styles.textStyle16,
+            unselectedLabelStyle: Styles.textStyle14,
             tabs: _tabs.map((tab) {
               return Tab(
                 height: 33.w,

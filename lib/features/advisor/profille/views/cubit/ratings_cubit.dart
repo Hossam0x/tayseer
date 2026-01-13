@@ -62,6 +62,7 @@ class RatingsCubit extends Cubit<RatingsState> {
         page: 1,
         limit: _pageSize,
       );
+      if (isClosed) return;
 
       result.fold(
         (failure) {

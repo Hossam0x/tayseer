@@ -29,7 +29,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     emit(state.copyWith(profileState: CubitStates.loading));
 
     final result = await _profileRepository.getAdvisorProfile();
-
+    if (isClosed) return;
     result.fold(
       (failure) => emit(
         state.copyWith(
@@ -54,12 +54,12 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (loadMore) {
       // لا تسمح بتحميل المزيد إذا كان التحميل جارياً أو لا يوجد المزيد
       if (state.isLoadingMore || !state.hasMore) return;
-
+      if (isClosed) return;
       emit(state.copyWith(isLoadingMore: true));
 
       final nextPage = state.currentPage + 1;
       final result = await _homeRepository.fetchPosts(page: nextPage);
-
+      if (isClosed) return;
       result.fold(
         (failure) {
           emit(
@@ -83,6 +83,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         },
       );
     } else {
+      if (isClosed) return;
       // التحميل الأولي
       emit(
         state.copyWith(
@@ -95,6 +96,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       );
 
       final result = await _homeRepository.fetchPosts(page: 1);
+      if (isClosed) return;
 
       result.fold(
         (failure) {
@@ -133,6 +135,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   void updateProfileImage(String newImageUrl) {
     if (state.profile != null) {
       final updatedProfile = state.profile!.copyWith(image: newImageUrl);
+      if (isClosed) return;
       emit(state.copyWith(profile: updatedProfile));
     }
   }
@@ -141,10 +144,12 @@ class ProfileCubit extends Cubit<ProfileState> {
   // 📌 CLEAR ERRORS
   // ═══════════════════════════════════════════════════════════
   void clearProfileError() {
+    if (isClosed) return;
     emit(state.copyWith(profileErrorMessage: null));
   }
 
   void clearPostsError() {
+    if (isClosed) return;
     emit(state.copyWith(postsErrorMessage: null));
   }
 }

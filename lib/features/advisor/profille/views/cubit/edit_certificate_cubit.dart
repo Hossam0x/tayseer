@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/profille/data/models/certificate_model_profile.dart';
+import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/year_picker_dialog.dart';
 import 'package:tayseer/my_import.dart';
@@ -6,13 +6,13 @@ import 'package:tayseer/my_import.dart';
 class EditCertificateCubit extends Cubit<EditCertificateState> {
   EditCertificateCubit() : super(const EditCertificateState());
 
-  void initWithCertificate(CertificateModelProfile cert) {
+  void initWithCertificate(CertificateModel cert) {
     emit(
       state.copyWith(
-        degree: cert.degree,
-        university: cert.university,
-        graduationYear: cert.graduationYear,
-        certificateImageUrl: cert.imageUrl,
+        // degree: cert.degree,
+        // university: cert.university,
+        // graduationYear: cert.graduationYear,
+        // certificateImageUrl: cert.imageUrl,
       ),
     );
   }
