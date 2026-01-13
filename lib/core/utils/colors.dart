@@ -116,6 +116,7 @@ abstract class AppColors {
   static Color blackColor = Color.fromRGBO(0, 0, 0, 1);
   static Color whiteCard2Back = Color.fromRGBO(251, 251, 251, 0.64);
   static Color whiteCardBack = Color.fromRGBO(255, 255, 255, 0.46);
+  static Color barGreyColor = Color.fromRGBO(117, 117, 117, 0.1);
 
   // Boost Colors
   static const Color primaryPink = Color(0xFFE89AB8);

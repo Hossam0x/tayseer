@@ -15,7 +15,10 @@ import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.da
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository_impl.dart';
@@ -206,5 +209,15 @@ Future<void> setupGetIt() async {
   /// Profile Cubit
   getIt.registerFactory<ProfileCubit>(
     () => ProfileCubit(getIt<ProfileRepository>(), getIt<HomeRepository>()),
+  );
+
+  /// Ratings Repository
+  getIt.registerLazySingleton<RatingsRepository>(
+    () => RatingsRepositoryImpl(getIt<ApiService>()),
+  );
+
+  /// Ratings Cubit
+  getIt.registerFactory<RatingsCubit>(
+    () => RatingsCubit(getIt<RatingsRepository>()),
   );
 }
