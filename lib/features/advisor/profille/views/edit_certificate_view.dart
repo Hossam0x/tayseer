@@ -20,93 +20,122 @@ class EditCertificateView extends StatelessWidget {
 
             return AdvisorBackground(
               child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-                child: SafeArea(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: Icon(
-                              Icons.arrow_back,
-                              color: AppColors.blackColor,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 110.h,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage(
+                              AssetsData.homeBarBackgroundImage,
                             ),
+                            fit: BoxFit.fill,
                           ),
                         ),
                       ),
-                      Text('تعديل الشهادات', style: Styles.textStyle20Bold),
-                      // Certificate Image / Preview
-                      _buildImagePickerSection(cubit, state),
+                    ),
 
-                      Gap(32.h),
-
-                      // Degree field
-                      _buildTextField(
-                        initialValue: state.degree,
-                        onChanged: cubit.updateDegree,
-                        hint: 'بكالوريوس علم النفس',
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 16.h,
                       ),
-
-                      Gap(20.h),
-
-                      // University field
-                      _buildTextField(
-                        initialValue: state.university,
-                        onChanged: cubit.updateUniversity,
-                        hint: 'جامعة الملك فيصل',
-                      ),
-
-                      Gap(20.h),
-
-                      // Graduation year
-                      _buildYearPicker(context, cubit, state),
-
-                      Gap(45.h),
-
-                      // Save Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56.h,
-                        child: GestureDetector(
-                          onTap: state.isLoading
-                              ? null
-                              : () => cubit.saveChanges(context),
-                          child: Container(
-                            width: double.infinity,
-                            height: 56.h,
-                            decoration: BoxDecoration(
-                              color: AppColors.secondary200,
-                              borderRadius: BorderRadius.circular(12.r),
+                      child: SafeArea(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 12),
+                                  child: Icon(
+                                    Icons.arrow_back,
+                                    color: AppColors.blackColor,
+                                  ),
+                                ),
+                              ),
                             ),
-                            child: Center(
-                              child: state.isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                    )
-                                  : Text(
-                                      'اضافه',
-                                      style: Styles.textStyle18SemiBold
-                                          .copyWith(
-                                            color: AppColors.kWhiteColor,
+                            Text(
+                              'تعديل الشهادات',
+                              style: Styles.textStyle20Bold,
+                            ),
+                            // Certificate Image / Preview
+                            _buildImagePickerSection(cubit, state),
+
+                            Gap(32.h),
+
+                            // Degree field
+                            _buildTextField(
+                              initialValue: state.degree,
+                              onChanged: cubit.updateDegree,
+                              hint: 'بكالوريوس علم النفس',
+                            ),
+
+                            Gap(20.h),
+
+                            // University field
+                            _buildTextField(
+                              initialValue: state.university,
+                              onChanged: cubit.updateUniversity,
+                              hint: 'جامعة الملك فيصل',
+                            ),
+
+                            Gap(20.h),
+
+                            // Graduation year
+                            _buildYearPicker(context, cubit, state),
+
+                            Gap(45.h),
+
+                            // Save Button
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56.h,
+                              child: GestureDetector(
+                                onTap: state.isLoading
+                                    ? null
+                                    : () => cubit.saveChanges(context),
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 56.h,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.secondary200,
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                  child: Center(
+                                    child: state.isLoading
+                                        ? const CircularProgressIndicator(
+                                            color: Colors.white,
+                                          )
+                                        : Text(
+                                            'اضافه',
+                                            style: Styles.textStyle18SemiBold
+                                                .copyWith(
+                                                  color: AppColors.kWhiteColor,
+                                                ),
                                           ),
-                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            Gap(20.h),
+                            CustomBotton(
+                              width: context.width * 0.9,
+                              useGradient: true,
+                              title: 'حفظ',
+                              onPressed: () {},
+                            ),
+                          ],
                         ),
                       ),
-                      Gap(20.h),
-                      CustomBotton(
-                        width: context.width * 0.9,
-                        useGradient: true,
-                        title: 'حفظ',
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             );

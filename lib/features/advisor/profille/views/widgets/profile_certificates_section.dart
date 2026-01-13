@@ -28,10 +28,10 @@ class ProfileCertificatesSection extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 35.w),
             child: BoostButton(
-              text: "تعزيز",
               onPressed: () {
-                // TODO: تنفيذ تعزيز الحساب
+                Navigator.pushNamed(context, AppRouter.kBoostAccountView);
               },
+              text: 'تعزيز',
             ),
           ),
         ],
@@ -124,7 +124,7 @@ class ProfileCertificatesSection extends StatelessWidget {
               ),
             ),
             Gap(16.w),
-            AppImage(AssetsData.editIcon),
+            AppImage(AssetsData.editIcon, width: 20.w),
           ],
         ),
       ),

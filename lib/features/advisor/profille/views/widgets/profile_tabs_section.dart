@@ -109,7 +109,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
             unselectedLabelStyle: Styles.textStyle16,
             tabs: _tabs.map((tab) {
               return Tab(
-                height: 33.h,
+                height: 33.w,
                 child: Column(
                   children: [
                     Text(tab),

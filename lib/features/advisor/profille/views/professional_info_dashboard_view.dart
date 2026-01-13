@@ -1,6 +1,6 @@
 import 'package:tayseer/features/advisor/profille/view_model/models/analysis_item.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/analytics_chart.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/boost/boost_button.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfessionalInfoDashboardView extends StatefulWidget {
@@ -25,52 +25,81 @@ class _ProfessionalInfoDashboardViewState
   Widget build(BuildContext context) {
     return Scaffold(
       body: AdvisorBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // زر العودة
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Icon(
-                        Icons.arrow_back,
-                        color: AppColors.blackColor,
-                        size: 24.w,
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 100.h,
+              child: Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(AssetsData.homeBarBackgroundImage),
+                    fit: BoxFit.fill,
+                  ),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
+              child: SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // زر العودة
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12.w),
+                          child: Icon(
+                            Icons.arrow_back,
+                            color: AppColors.blackColor,
+                            size: 24.w,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
 
-                // العنوان
-                Gap(16.h),
-                Center(
-                  child: Text(
-                    'لوحة المعلومات الاحترافية',
-                    style: Styles.textStyle24Bold.copyWith(
-                      color: AppColors.secondary800,
+                    // العنوان
+                    Center(
+                      child: Text(
+                        'لوحة المعلومات الاحترافية',
+                        style: Styles.textStyle24Bold.copyWith(
+                          color: AppColors.secondary800,
+                        ),
+                      ),
                     ),
-                  ),
+
+                    Gap(32.h),
+
+                    AnalyticsChart(),
+                    Gap(32.h),
+
+                    // قسم التحليلات السفلية
+                    _buildAnalysisSection(),
+
+                    Spacer(),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                      child: BoostButton(
+                        onPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRouter.kBoostAccountView,
+                          );
+                        },
+                        text: 'تعزيز',
+                      ),
+                    ),
+                  ],
                 ),
-
-                Gap(32.h),
-
-                AnalyticsChart(),
-                Gap(32.h),
-
-                // قسم التحليلات السفلية
-                _buildAnalysisSection(),
-
-                Spacer(),
-                BoostButton(),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

@@ -56,12 +56,14 @@ class BoostAccountView extends StatelessWidget {
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
                       child: Column(
                         children: [
+                          Gap(30.h),
                           // Logo
                           AppImage(
                             AssetsData.logoIcon,
-                            width: 350.w,
+                            width: 190.h,
                             color: AppColors.primary100,
                           ),
+                          Gap(60.h),
 
                           // Titles
                           Text(
@@ -165,30 +167,29 @@ class BoostAccountView extends StatelessWidget {
                               );
                             },
                           ),
-
                           Gap(30.h),
+                          // Bottom Button
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: 20.w,
+                              right: 20.w,
+                              bottom: 30.h,
+                              top: 10.h,
+                            ),
+                            child: CustomBotton(
+                              width: double.infinity,
+                              title: 'التالي',
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRouter.kBoostPropertiesView,
+                                );
+                              },
+                              useGradient: true,
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                  ),
-
-                  // Bottom Button
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: 20.w,
-                      right: 20.w,
-                      bottom: 30.h,
-                      top: 10.h,
-                    ),
-                    child: CustomBotton(
-                      title: 'التالي',
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRouter.kBoostPropertiesView,
-                        );
-                      },
-                      useGradient: true,
                     ),
                   ),
                 ],

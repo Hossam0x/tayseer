@@ -165,7 +165,7 @@ class CommentsTab extends StatelessWidget {
                                 Gap(8.w),
                                 Icon(
                                   Icons.public,
-                                  size: 12.sp,
+                                  size: 14.w,
                                   color: AppColors.hintText,
                                 ),
                                 Gap(4.w),
@@ -219,7 +219,7 @@ class CommentsTab extends StatelessWidget {
                     onTap: () {},
                     child: Row(
                       children: [
-                        AppImage(AssetsData.icCommentLike),
+                        AppImage(AssetsData.icCommentLike, width: 22.sp),
                         Gap(4.w),
                         Text(
                           '${comment['likes']}',
@@ -257,7 +257,8 @@ class CommentsTab extends StatelessWidget {
                   ),
                 ],
               ),
-              Divider(color: AppColors.whiteCardBack),
+              Gap(16.h),
+              Divider(color: AppColors.whiteCardBack, height: 4.h),
             ],
           ),
         );

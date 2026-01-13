@@ -10,31 +10,39 @@ class ProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: AdvisorBackground(
-        child: SafeArea(
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(child: Gap(20.h)),
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 110.h,
+              child: Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(AssetsData.homeBarBackgroundImage),
+                    fit: BoxFit.fill,
+                  ),
+                ),
+              ),
+            ),
+            // Main scrollable content
+            SafeArea(
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  const ProfileHeader(),
+                  BioInformation(),
+                  // Stories...
+                  SliverToBoxAdapter(child: Gap(20.h)),
+                  const ProfileTabsSection(),
+                  SliverToBoxAdapter(child: Gap(100.h)),
+                ],
+              ),
+            ),
 
-              // Header with profile picture, stats, bio, etc.
-              const ProfileHeader(),
-
-              // Bio and specialization
-              BioInformation(),
-
-              // Stories
-              // BlocProvider.value(
-              //   value: getIt<StoriesCubit>()..fetchStories(),
-              //   child: const ProfileStoriesSection(),
-              // ),
-
-              // Tabs with Content
-              const ProfileTabsSection(),
-
-              // Extra Space
-              SliverToBoxAdapter(child: Gap(100.h)),
-            ],
-          ),
+            // Fixed top bar
+          ],
         ),
       ),
     );

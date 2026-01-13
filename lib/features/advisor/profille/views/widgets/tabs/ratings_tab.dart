@@ -307,13 +307,10 @@ class RatingsTab extends StatelessWidget {
   void _loadMoreReviews(BuildContext context) {
     // TODO: تنفيذ تحميل المزيد من التقييمات
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "جاري تحميل المزيد من التقييمات...",
-          style: Styles.textStyle14.copyWith(color: Colors.white),
-        ),
-        backgroundColor: AppColors.kprimaryColor,
-        duration: const Duration(seconds: 2),
+      CustomSnackBar(
+        context,
+        isSuccess: true,
+        text: "جاري تحميل المزيد من التقييمات...",
       ),
     );
   }

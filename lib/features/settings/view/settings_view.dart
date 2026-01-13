@@ -106,6 +106,7 @@ class SettingsView extends StatelessWidget {
                         child: Icon(
                           Icons.arrow_back,
                           color: AppColors.blackColor,
+                          size: 24.w,
                         ),
                       ),
                     ),

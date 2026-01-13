@@ -1,5 +1,6 @@
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
+import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/settings/view/settings_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -25,17 +26,7 @@ class ProfileHeader extends StatelessWidget {
               },
               child: Stack(
                 children: [
-                  Container(
-                    width: 85.w,
-                    height: 85.w,
-                    decoration: const BoxDecoration(shape: BoxShape.circle),
-                    child: ClipOval(
-                      child: AppImage(
-                        AssetsData.avatarImage,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
+                  MyProfileImage(width: 85.w),
                   Positioned(
                     bottom: 2,
                     right: 2,
@@ -48,7 +39,7 @@ class ProfileHeader extends StatelessWidget {
                       ),
                       child: Center(
                         child: AppImage(
-                          width: 18.w,
+                          width: 10.w,
                           AssetsData.icAdd,
                           color: AppColors.kWhiteColor,
                         ),

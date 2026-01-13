@@ -40,7 +40,7 @@ class BioInformation extends StatelessWidget {
             Gap(4.h),
             Row(
               children: [
-                AppImage(AssetsData.locationIcon),
+                AppImage(AssetsData.locationIcon, width: 12.w),
                 Gap(4),
                 Text(
                   'مصر, دمياط الجديدة',
