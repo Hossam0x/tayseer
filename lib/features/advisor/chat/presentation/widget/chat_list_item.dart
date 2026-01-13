@@ -1,15 +1,31 @@
 import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chatView/chat_item_model.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_cubit.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
-import 'package:tayseer/my_import.dart';
 
 class ChatListItem extends StatelessWidget {
   final int index;
   final ChatRoom chatRoom;
-  const ChatListItem({super.key, required this.index, required this.chatRoom});
+
+  // Callbacks
+  final VoidCallback onTap;
+  final VoidCallback onArchive;
+  final VoidCallback onDelete;
+  final VoidCallback onReport;
+  final VoidCallback onToggleBlock;
+
+  const ChatListItem({
+    super.key,
+    required this.index,
+    required this.chatRoom,
+    required this.onTap,
+    required this.onArchive,
+    required this.onDelete,
+    required this.onReport,
+    required this.onToggleBlock,
+  });
 
   static const String chatArchiveIcon = "assets/icons/chat_archive.svg";
   static const String deleteIcon = "assets/icons/delete_icon.svg";
@@ -17,10 +33,9 @@ class ChatListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color dividerColor = Color(0xFFD9D9D9);
-    const Color archiveColor = Color(0xFFA12042);
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
+
     final leftPadding = isMobile ? 12.0 : 16.0;
     final containerPadding = isMobile ? 14.0 : 16.0;
     final avatarRadius = isMobile ? 25.0 : 30.0;
@@ -32,6 +47,8 @@ class ChatListItem extends StatelessWidget {
     final timeFontSize = isMobile ? 11.0 : 13.0;
     final badgeSize = isMobile ? 22.0 : 24.0;
     final badgeFontSize = isMobile ? 11.0 : 13.0;
+    const Color dividerColor = Color(0xFFD9D9D9);
+    const Color archiveColor = Color(0xFFA12042);
 
     return Padding(
       padding: EdgeInsets.only(left: leftPadding, top: 6, bottom: 6),
@@ -43,10 +60,7 @@ class ChatListItem extends StatelessWidget {
           extentRatio: 0.22,
           children: [
             CustomSlidableAction(
-              onPressed: (context) {
-                context.read<ChatCubit>().archiveChatRoom(chatRoom.id);
-                AppToast.success(context, 'تم أرشفة المحادثة بنجاح');
-              },
+              onPressed: (_) => onArchive(),
               backgroundColor: Colors.transparent,
               foregroundColor: archiveColor,
               autoClose: true,
@@ -93,17 +107,15 @@ class ChatListItem extends StatelessWidget {
 
         endActionPane: ActionPane(
           motion: const ScrollMotion(),
-
           extentRatio: 0.6,
           children: [
             CustomSlidableAction(
-              onPressed: (context) {},
+              onPressed: (_) {},
               autoClose: false,
               backgroundColor: Colors.transparent,
               padding: EdgeInsets.zero,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                   child: Container(
@@ -118,93 +130,34 @@ class ChatListItem extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _buildActionButton(
-                          context,
                           svgIcon: deleteIcon,
                           label: 'حذف',
                           color: Colors.red,
-                          onTap: () {
-                            Slidable.of(context)?.close();
-                            showConfirmationDialog(
-                              context: context,
-                              imagePath: AssetsData.deleteIcon,
-                              title: 'هل أنت متأكد من حذف المحادثة؟',
-                              subtitle:
-                                  'لن تتمكن من استعادة المحادثة بعد حذفها.',
-                              onConfirm: () {
-                                context.read<ChatCubit>().deleteChatRoom(
-                                  chatRoom.id,
-                                );
-                                // deleteConversation();
-                              },
-                            );
-                          },
+                          onTap: onDelete,
                           isMobile: isMobile,
                         ),
-
                         Container(
                           width: 1,
                           height: isMobile ? 20 : 25,
                           color: dividerColor,
                         ),
-
                         _buildActionButton(
-                          context,
                           svgIcon: reportIcon,
                           label: 'ابلاغ',
                           color: Colors.orange,
-                          onTap: () {
-                            print("Report Clicked");
-                            Slidable.of(context)?.close();
-                          },
+                          onTap: onReport,
                           isMobile: isMobile,
                         ),
-
                         Container(
                           width: 1,
                           height: isMobile ? 20 : 25,
                           color: dividerColor,
                         ),
-
                         _buildActionButton(
-                          context,
                           icon: Icons.block,
                           label: chatRoom.isBlocked ? 'إلغاء الحظر' : 'حظر',
                           color: const Color(0xFF581C25),
-                          onTap: () {
-                            Slidable.of(context)?.close();
-                            if (chatRoom.isBlocked) {
-                              // Unblock
-                              showConfirmationDialog(
-                                context: context,
-                                imagePath: AssetsData.deleteIcon,
-                                title:
-                                    'هل أنت متأكد من إلغاء حظر هذا المستخدم؟',
-                                subtitle:
-                                    'سيتمكن المستخدم من إرسال رسائل إليك مرة أخرى.',
-                                onConfirm: () {
-                                  context.read<ChatCubit>().unblockUser(
-                                    blockedId: chatRoom.sender.id,
-                                    chatRoomId: chatRoom.id,
-                                  );
-                                },
-                              );
-                            } else {
-                              // Block
-                              showConfirmationDialog(
-                                context: context,
-                                imagePath: AssetsData.deleteIcon,
-                                title: 'هل أنت متأكد من حظر هذا المستخدم؟',
-                                subtitle:
-                                    'لن يتمكن المستخدم من إرسال رسائل إليك.',
-                                onConfirm: () {
-                                  context.read<ChatCubit>().blockUser(
-                                    blockedId: chatRoom.sender.id,
-                                    chatRoomId: chatRoom.id,
-                                  );
-                                },
-                              );
-                            }
-                          },
+                          onTap: onToggleBlock,
                           isMobile: isMobile,
                         ),
                       ],
@@ -217,35 +170,7 @@ class ChatListItem extends StatelessWidget {
         ),
 
         child: GestureDetector(
-          onTap: () {
-            context.read<ChatCubit>().setActiveChatRoom(chatRoom.id);
-            context.read<ChatCubit>().markMessageRed(chatRoom.id);
-            context.read<ChatCubit>().markChatAsRead(chatRoom.id);
-            context
-                .pushNamed(
-                  AppRouter.kConversitionView,
-                  arguments: {
-                    'receiverid': chatRoom.sender.id,
-                    'chatroomid': chatRoom.id,
-                    'username': chatRoom.sender.name,
-                    'userimage': chatRoom.sender.image,
-                    'isBlocked': chatRoom.isBlocked,
-                    'onBlockStatusChanged': (bool isBlocked) {
-                      if (context.mounted) {
-                        context.read<ChatCubit>().updateBlockStatus(
-                          chatRoom.id,
-                          isBlocked,
-                        );
-                      }
-                    },
-                  },
-                )
-                .then((_) {
-                  if (context.mounted) {
-                    context.read<ChatCubit>().setActiveChatRoom(null);
-                  }
-                });
-          },
+          onTap: onTap,
           child: Container(
             color: Colors.transparent,
             padding: EdgeInsets.only(
@@ -350,8 +275,7 @@ class ChatListItem extends StatelessWidget {
     }
   }
 
-  Widget _buildActionButton(
-    BuildContext context, {
+  Widget _buildActionButton({
     IconData? icon,
     String? svgIcon,
     required String label,

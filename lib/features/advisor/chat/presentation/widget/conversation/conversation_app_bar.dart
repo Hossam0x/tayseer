@@ -66,7 +66,7 @@ class ConversationAppBar extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: isMobile ? 16 : 18,
-                            color: Colors.blue, // أو اللون المخصص
+                            color: Colors.blue,
                           ),
                         ),
                       ),

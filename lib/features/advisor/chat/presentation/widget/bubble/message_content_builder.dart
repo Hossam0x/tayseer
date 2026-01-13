@@ -25,15 +25,14 @@ class MessageContentBuilder extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (messageType) {
       case 'image':
+        final hasLocalFiles =
+            localFilePaths != null && localFilePaths!.isNotEmpty;
         return ImageMessageWidget(
           images: contentList,
           localFilePaths: localFilePaths,
           maxWidth: maxWidth,
-          onImageTap: (index) => _openImageViewer(
-            context,
-            index,
-            isLocal: localFilePaths != null && localFilePaths!.isNotEmpty,
-          ),
+          onImageTap: (index) =>
+              _openImageViewer(context, index, isLocal: hasLocalFiles),
         );
 
       case 'video':
@@ -84,8 +83,9 @@ class MessageContentBuilder extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => FullScreenImageViewer(
-          images: localFilePaths ?? contentList,
+          images: isLocal ? localFilePaths! : contentList,
           initialIndex: index,
+          isLocal: isLocal,
         ),
       ),
     );
