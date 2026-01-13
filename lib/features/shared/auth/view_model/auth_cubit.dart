@@ -879,7 +879,11 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-        (guestResponse) {
+        (guestResponse) async {
+          await CachNetwork.setData(
+            key: 'token',
+            value: guestResponse.data?.token ?? '',
+          );
           emit(
             state.copyWith(
               guestLoginState: CubitStates.success,

@@ -32,7 +32,7 @@ class GuestLoginListeners extends StatelessWidget {
           Future.delayed(const Duration(seconds: 1), () {
             context.pushReplacementNamed(
               AppRouter.kAdvisorLayoutView,
-              arguments: {'currentUserType': UserTypeEnum.asConsultant},
+              arguments: {'currentUserType': UserTypeEnum.guest},
             );
           });
         } else if (state.guestLoginState == CubitStates.failure) {

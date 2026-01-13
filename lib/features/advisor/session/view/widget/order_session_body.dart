@@ -12,27 +12,20 @@ class OrderSessionBody extends StatelessWidget {
         body: SafeArea(
           child: CustomScrollView(
             slivers: [
-              // إضافة مسافة في الأعلى
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
-              // القائمة باستخدام SliverList
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return const OrderRequestCard(
-                      name: "أحمد منصور",
-                      handle: "@fdtgsyhujkl",
-                      date: "الثلاثاء، 7 فبراير",
-                      time: "01:00 م - 02:00 م",
-                      imgUrl:
-                          "https://i.pravatar.cc/150?img=12", // صورة افتراضية
-                    );
-                  },
-                  childCount: 5, // عدد العناصر التي تريد عرضها
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  return const OrderRequestCard(
+                    name: "أحمد منصور",
+                    handle: "@fdtgsyhujkl",
+                    date: "الثلاثاء، 7 فبراير",
+                    time: "01:00 م - 02:00 م",
+                    imgUrl: "https://i.pravatar.cc/150?img=12",
+                  );
+                }, childCount: 5),
               ),
 
-              // إضافة مسافة في الأسفل
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
             ],
           ),
