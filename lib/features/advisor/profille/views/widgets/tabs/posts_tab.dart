@@ -1,7 +1,7 @@
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/advisor/profille/view_model/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/view_model/profile_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
 import 'package:tayseer/features/advisor/home/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -28,7 +28,7 @@ class PostsTab extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  state.errorMessage ?? 'حدث خطأ',
+                  'حدث خطأ',
                   style: Styles.textStyle14.copyWith(color: AppColors.kGreyB3),
                 ),
                 Gap(10.h),

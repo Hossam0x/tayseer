@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/profille/view_model/models/certificate_model_profile.dart';
+import 'package:tayseer/features/advisor/profille/data/models/certificate_model_profile.dart';
 import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
 import 'package:tayseer/my_import.dart';

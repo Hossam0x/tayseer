@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/profille/view_model/models/certificate_model_profile.dart';
+import 'package:tayseer/features/advisor/profille/data/models/certificate_model_profile.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_state.dart';
 import 'package:tayseer/my_import.dart';

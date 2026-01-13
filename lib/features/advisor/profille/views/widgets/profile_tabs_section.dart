@@ -1,4 +1,5 @@
-import 'package:tayseer/features/advisor/profille/view_model/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/comments_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/inquiries_tab.dart';
@@ -38,7 +39,10 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
     _tabController.addListener(_onTabChanged);
 
     // إنشاء ProfileCubit خاص بالملف الشخصي
-    _profileCubit = ProfileCubit(getIt<HomeRepository>());
+    _profileCubit = ProfileCubit(
+      getIt<ProfileRepository>(),
+      getIt<HomeRepository>(),
+    );
 
     // جلب منشورات المستخدم الحالي
     _loadUserPosts();

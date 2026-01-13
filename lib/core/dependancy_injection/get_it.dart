@@ -13,6 +13,9 @@ import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cu
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository_impl.dart';
@@ -188,5 +191,20 @@ Future<void> setupGetIt() async {
   //// Event Detail Cubit
   getIt.registerFactory<EventDetailCubit>(
     () => EventDetailCubit(repo: getIt<EventDetailRepository>()),
+  );
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Profile
+  // ══════════════════════════════════════════════════════════════════════════
+
+  getIt.registerLazySingleton<ProfileRepository>(
+    () => ProfileRepositoryImpl(
+      getIt<ApiService>(),
+    ), // Adjust based on your implementation
+  );
+
+  /// Profile Cubit
+  getIt.registerFactory<ProfileCubit>(
+    () => ProfileCubit(getIt<ProfileRepository>(), getIt<HomeRepository>()),
   );
 }

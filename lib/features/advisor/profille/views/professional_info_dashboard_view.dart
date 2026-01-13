@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/profille/view_model/models/analysis_item.dart';
+import 'package:tayseer/features/advisor/profille/data/models/analysis_item.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/analytics_chart.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
 import 'package:tayseer/my_import.dart';

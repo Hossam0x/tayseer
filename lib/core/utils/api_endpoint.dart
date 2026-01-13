@@ -23,4 +23,5 @@ class ApiEndPoint {
       '/chat/$chatRoomId/archive';
   static const String blockuser = '/blocks/block';
   static const String unblockuser = '/blocks/unblock';
+  static const String profileData = '/advisor/getProfile';
 }
