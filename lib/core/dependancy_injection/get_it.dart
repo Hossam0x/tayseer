@@ -20,6 +20,7 @@ import 'package:tayseer/features/advisor/profille/data/repositories/profile_repo
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
@@ -232,5 +233,9 @@ Future<void> setupGetIt() async {
   /// Certificates Cubit
   getIt.registerFactory<CertificatesCubit>(
     () => CertificatesCubit(getIt<CertificatesRepository>()),
+  );
+
+  getIt.registerFactory<EditCertificateCubit>(
+    () => EditCertificateCubit(getIt<CertificatesRepository>()),
   );
 }

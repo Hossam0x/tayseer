@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/video/video_player_widget.dart';
@@ -6,7 +7,6 @@ import 'package:tayseer/features/advisor/profille/data/models/certificate_model.
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates_state.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:intl/intl.dart';
 
 class ProfileCertificatesSection extends StatelessWidget {
   const ProfileCertificatesSection({super.key});
@@ -173,7 +173,6 @@ class _CertificatesSectionContent extends StatelessWidget {
         children: [
           // Video Section
           if (state.hasVideo) _buildVideoSection(context, state.videoUrl!),
-
           Gap(24.h),
           Text(
             "الشهادات",
@@ -182,7 +181,6 @@ class _CertificatesSectionContent extends StatelessWidget {
             ),
           ),
           Gap(12.h),
-
           // Certificates List
           if (state.hasCertificates)
             ListView.builder(
@@ -196,15 +194,14 @@ class _CertificatesSectionContent extends StatelessWidget {
                     context,
                     state.certificates[index],
                     state.isMe,
+                    state.certificates, // ⭐ أضف هنا
                   ),
                 );
               },
             )
           else
             _buildNoCertificatesSection(),
-
           Gap(24.h),
-
           // Boost Button
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 35.w),
@@ -220,22 +217,15 @@ class _CertificatesSectionContent extends StatelessWidget {
     );
   }
 
-  Widget _buildVideoSection(BuildContext context, String videoUrl) {
-    return SizedBox(
-      width: double.infinity,
-      height: 400.h,
-      child: VideoPlayerWidget(videoUrl: videoUrl, showFullScreenButton: true),
-    );
-  }
-
   Widget _buildCertificateItem(
     BuildContext context,
     CertificateModel certificate,
     bool isMe,
+    List<CertificateModel> allCertificates, // ⭐ أضف هنا
   ) {
     return GestureDetector(
       onTap: isMe
-          ? () => _navigateToEditCertificate(context, certificate)
+          ? () => _navigateToEditCertificate(context, allCertificates)
           : null,
       child: Container(
         padding: EdgeInsets.all(16.w),
@@ -321,21 +311,60 @@ class _CertificatesSectionContent extends StatelessWidget {
                 ],
               ),
             ),
-            if (isMe) ...[
-              Gap(16.w),
-              GestureDetector(
-                onTap: () => _navigateToEditCertificate(context, certificate),
-                child: AppImage(
-                  AssetsData.editIcon,
-                  width: 20.w,
-                  color: AppColors.primary400,
-                ),
+            // if (isMe) ...[
+            Gap(16.w),
+            GestureDetector(
+              onTap: () => _navigateToEditCertificate(context, allCertificates),
+              child: AppImage(
+                AssetsData.editIcon,
+                width: 20.w,
+                color: AppColors.primary400,
               ),
-            ],
+            ),
           ],
+          // ],
         ),
       ),
     );
+  }
+
+  Widget _buildVideoSection(BuildContext context, String videoUrl) {
+    return SizedBox(
+      width: double.infinity,
+      height: 400.h,
+      child: VideoPlayerWidget(videoUrl: videoUrl, showFullScreenButton: true),
+    );
+  }
+
+  void _navigateToEditCertificate(
+    BuildContext context,
+    List<CertificateModel> certificates,
+  ) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        settings: const RouteSettings(name: AppRouter.kEditCertificateView),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            EditCertificateView(certificates: certificates),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOutCubic;
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    ).then((result) {
+      if (result == true && context.mounted) {
+        context.read<CertificatesCubit>().refresh();
+      }
+    });
   }
 
   Widget _buildNoCertificatesSection() {
@@ -366,371 +395,4 @@ class _CertificatesSectionContent extends StatelessWidget {
       ),
     );
   }
-
-  void _navigateToEditCertificate(
-    BuildContext context,
-    CertificateModel certificate,
-  ) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        settings: const RouteSettings(name: AppRouter.kEditCertificateView),
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            EditCertificateView(certificate: certificate),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.easeInOutCubic;
-
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
-
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      ),
-    );
-  }
 }
-
-// class _VideoPlayerWidget extends StatefulWidget {
-//   final String videoUrl;
-
-//   const _VideoPlayerWidget({required this.videoUrl});
-
-//   @override
-//   State<_VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
-// }
-
-// class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
-//   late VideoPlayerController _videoController;
-//   late Future<void> _initializeVideoPlayerFuture;
-//   bool _isPlaying = false;
-//   bool _isMuted = false;
-//   double _playbackSpeed = 1.0;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _videoController = VideoPlayerController.networkUrl(
-//       Uri.parse(widget.videoUrl),
-//     );
-//     _initializeVideoPlayerFuture = _videoController.initialize();
-//     _videoController.addListener(_videoListener);
-//   }
-
-//   void _videoListener() {
-//     if (mounted) {
-//       setState(() {});
-//     }
-//   }
-
-//   @override
-//   void dispose() {
-//     _videoController.removeListener(_videoListener);
-//     _videoController.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return FutureBuilder(
-//       future: _initializeVideoPlayerFuture,
-//       builder: (context, snapshot) {
-//         if (snapshot.connectionState == ConnectionState.done) {
-//           return _buildVideoPlayer();
-//         } else {
-//           return Container(
-//             height: 400.h,
-//             decoration: BoxDecoration(
-//               color: Colors.grey.shade200,
-//               borderRadius: BorderRadius.circular(16.r),
-//             ),
-//             child: Center(
-//               child: CircularProgressIndicator(color: AppColors.kprimaryColor),
-//             ),
-//           );
-//         }
-//       },
-//     );
-//   }
-
-//   Widget _buildVideoPlayer() {
-//     final duration = _videoController.value.duration;
-//     final position = _videoController.value.position;
-//     final aspectRatio = _videoController.value.aspectRatio;
-
-//     return Container(
-//       decoration: BoxDecoration(
-//         borderRadius: BorderRadius.circular(16.r),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.black.withOpacity(0.1),
-//             blurRadius: 10,
-//             offset: const Offset(0, 4),
-//           ),
-//         ],
-//       ),
-//       child: ClipRRect(
-//         borderRadius: BorderRadius.circular(16.r),
-//         child: Stack(
-//           alignment: Alignment.center,
-//           children: [
-//             // Video Player
-//             AspectRatio(
-//               aspectRatio: aspectRatio > 0 ? aspectRatio : 16 / 9,
-//               child: VideoPlayer(_videoController),
-//             ),
-
-//             // Play/Pause Overlay
-//             if (!_isPlaying)
-//               GestureDetector(
-//                 onTap: _togglePlayPause,
-//                 child: Container(
-//                   width: 64.w,
-//                   height: 64.w,
-//                   decoration: BoxDecoration(
-//                     color: Colors.black.withOpacity(0.6),
-//                     shape: BoxShape.circle,
-//                   ),
-//                   child: Center(
-//                     child: Icon(
-//                       Icons.play_arrow,
-//                       color: AppColors.kWhiteColor,
-//                       size: 32.w,
-//                     ),
-//                   ),
-//                 ),
-//               ),
-
-//             // Controls Overlay
-//             Positioned(
-//               bottom: 0,
-//               left: 0,
-//               right: 0,
-//               child: Container(
-//                 padding: EdgeInsets.all(8.w),
-//                 decoration: BoxDecoration(
-//                   gradient: LinearGradient(
-//                     begin: Alignment.bottomCenter,
-//                     end: Alignment.topCenter,
-//                     colors: [Colors.black.withOpacity(0.8), Colors.transparent],
-//                   ),
-//                 ),
-//                 child: Column(
-//                   children: [
-//                     // Progress Bar
-//                     Row(
-//                       children: [
-//                         Text(
-//                           _formatDuration(position),
-//                           style: Styles.textStyle12.copyWith(
-//                             color: AppColors.kWhiteColor,
-//                           ),
-//                         ),
-//                         Expanded(
-//                           child: SliderTheme(
-//                             data: SliderThemeData(
-//                               trackHeight: 4.h,
-//                               thumbShape: RoundSliderThumbShape(
-//                                 enabledThumbRadius: 8.w,
-//                               ),
-//                               overlayShape: RoundSliderOverlayShape(
-//                                 overlayRadius: 14.w,
-//                               ),
-//                             ),
-//                             child: Slider(
-//                               value: position.inSeconds.toDouble(),
-//                               min: 0,
-//                               max: duration.inSeconds.toDouble(),
-//                               onChanged: (value) {
-//                                 _videoController.seekTo(
-//                                   Duration(seconds: value.toInt()),
-//                                 );
-//                               },
-//                               activeColor: AppColors.kprimaryColor,
-//                               inactiveColor: Colors.grey.shade400,
-//                             ),
-//                           ),
-//                         ),
-//                         Text(
-//                           _formatDuration(duration),
-//                           style: Styles.textStyle12.copyWith(
-//                             color: AppColors.kWhiteColor,
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-
-//                     // Controls
-//                     Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                       children: [
-//                         // Play/Pause
-//                         IconButton(
-//                           onPressed: _togglePlayPause,
-//                           icon: Icon(
-//                             _isPlaying
-//                                 ? Icons.pause_circle_filled
-//                                 : Icons.play_circle_filled,
-//                             color: AppColors.kWhiteColor,
-//                             size: 24.w,
-//                           ),
-//                         ),
-
-//                         // Mute/Unmute
-//                         IconButton(
-//                           onPressed: _toggleMute,
-//                           icon: Icon(
-//                             _isMuted ? Icons.volume_off : Icons.volume_up,
-//                             color: AppColors.kWhiteColor,
-//                             size: 24.w,
-//                           ),
-//                         ),
-
-//                         // Playback Speed
-//                         PopupMenuButton<double>(
-//                           icon: Icon(
-//                             Icons.speed,
-//                             color: AppColors.kWhiteColor,
-//                             size: 24.w,
-//                           ),
-//                           itemBuilder: (context) => [
-//                             PopupMenuItem(value: 0.25, child: Text('0.25x')),
-//                             PopupMenuItem(value: 0.5, child: Text('0.5x')),
-//                             PopupMenuItem(value: 0.75, child: Text('0.75x')),
-//                             PopupMenuItem(value: 1.0, child: Text('1x (عادي)')),
-//                             PopupMenuItem(value: 1.25, child: Text('1.25x')),
-//                             PopupMenuItem(value: 1.5, child: Text('1.5x')),
-//                             PopupMenuItem(value: 2.0, child: Text('2x')),
-//                           ],
-//                           onSelected: (speed) {
-//                             _videoController.setPlaybackSpeed(speed);
-//                             _playbackSpeed = speed;
-//                             ScaffoldMessenger.of(context).showSnackBar(
-//                               SnackBar(
-//                                 content: Text('سرعة التشغيل: ${speed}x'),
-//                                 duration: const Duration(seconds: 1),
-//                               ),
-//                             );
-//                           },
-//                         ),
-
-//                         // Fullscreen
-//                         IconButton(
-//                           onPressed: _toggleFullScreen,
-//                           icon: Icon(
-//                             Icons.fullscreen,
-//                             color: AppColors.kWhiteColor,
-//                             size: 24.w,
-//                           ),
-//                         ),
-
-//                         // Skip Forward 10s
-//                         IconButton(
-//                           onPressed: _skipBackward,
-//                           icon: Icon(
-//                             Icons.forward_10,
-//                             color: AppColors.kWhiteColor,
-//                             size: 24.w,
-//                           ),
-//                         ),
-//                         // Skip Backward 10s
-//                         IconButton(
-//                           onPressed: _skipForward,
-//                           icon: Icon(
-//                             Icons.replay_10,
-//                             color: AppColors.kWhiteColor,
-//                             size: 24.w,
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-
-//             // Current Speed Indicator
-//             if (_playbackSpeed != 1.0)
-//               Positioned(
-//                 top: 12.h,
-//                 left: 12.w,
-//                 child: Container(
-//                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-//                   decoration: BoxDecoration(
-//                     color: Colors.black.withOpacity(0.6),
-//                     borderRadius: BorderRadius.circular(8.r),
-//                   ),
-//                   child: Text(
-//                     '${_playbackSpeed}x',
-//                     style: Styles.textStyle12.copyWith(
-//                       color: AppColors.kWhiteColor,
-//                       fontWeight: FontWeight.bold,
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   String _formatDuration(Duration duration) {
-//     String twoDigits(int n) => n.toString().padLeft(2, '0');
-//     final hours = twoDigits(duration.inHours);
-//     final minutes = twoDigits(duration.inMinutes.remainder(60));
-//     final seconds = twoDigits(duration.inSeconds.remainder(60));
-
-//     if (duration.inHours > 0) {
-//       return '$hours:$minutes:$seconds';
-//     }
-//     return '$minutes:$seconds';
-//   }
-
-//   void _togglePlayPause() {
-//     setState(() {
-//       _isPlaying = !_isPlaying;
-//       if (_isPlaying) {
-//         _videoController.play();
-//       } else {
-//         _videoController.pause();
-//       }
-//     });
-//   }
-
-//   void _toggleMute() {
-//     setState(() {
-//       _isMuted = !_isMuted;
-//       _videoController.setVolume(_isMuted ? 0.0 : 1.0);
-//     });
-//   }
-
-//   void _skipBackward() {
-//     final newPosition =
-//         _videoController.value.position - const Duration(seconds: 10);
-//     _videoController.seekTo(newPosition);
-//   }
-
-//   void _skipForward() {
-//     final newPosition =
-//         _videoController.value.position + const Duration(seconds: 10);
-//     _videoController.seekTo(newPosition);
-//   }
-
-//   void _toggleFullScreen() {
-//     // TODO: Implement full screen mode
-//     // يمكن استخدام package مثل chewie أو video_player_controls
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(
-//         content: const Text('وضع الشاشة الكاملة قيد التطوير'),
-//         duration: const Duration(seconds: 1),
-//       ),
-//     );
-//   }
-// }
