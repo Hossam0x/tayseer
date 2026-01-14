@@ -1,6 +1,6 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
-import 'package:tayseer/features/advisor/home/view_model/post_details_cubit/post_details_cubit.dart';
+import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:flutter/foundation.dart' as foundation;
 

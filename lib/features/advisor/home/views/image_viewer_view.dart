@@ -7,7 +7,7 @@ import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
-import 'package:tayseer/features/advisor/home/views/post_details_view.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class ImageViewerView extends StatefulWidget {
