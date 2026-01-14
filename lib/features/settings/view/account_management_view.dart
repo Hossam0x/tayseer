@@ -37,7 +37,6 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Gap(16.h),
                     _buildHeader(context),
                     Gap(50.h),
                     // خيار "حذف الحساب نهائياً"
@@ -78,7 +77,11 @@ class _AccountManagementViewState extends State<AccountManagementView> {
       children: [
         GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: Icon(Icons.arrow_back, color: AppColors.blackColor),
+          child: Icon(
+            Icons.arrow_back,
+            color: AppColors.blackColor,
+            size: 24.w,
+          ),
         ),
         Padding(
           padding: const EdgeInsets.only(top: 18.0),

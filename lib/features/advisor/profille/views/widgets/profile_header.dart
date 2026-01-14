@@ -119,15 +119,15 @@ class ProfileHeader extends StatelessWidget {
                   bottom: 2,
                   right: 2,
                   child: Container(
-                    width: 22.w,
-                    height: 22.w,
+                    width: 21.w,
+                    height: 21.w,
                     decoration: BoxDecoration(
                       color: AppColors.kprimaryColor,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: AppImage(
-                        width: 10.w,
+                        width: 12.w,
                         AssetsData.icAdd,
                         color: AppColors.kWhiteColor,
                       ),

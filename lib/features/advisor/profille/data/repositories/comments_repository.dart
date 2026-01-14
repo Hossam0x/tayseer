@@ -40,12 +40,8 @@ class CommentsRepositoryImpl implements CommentsRepository {
     int limit = 10,
   }) async {
     try {
-      final advisorId = await _getAdvisorId();
-
-      final response = await _apiService.post(
-        endPoint: '/comments/advisor/comments/$advisorId',
-        data: {},
-        // query: {'page': page, 'limit': limit},
+      final response = await _apiService.get(
+        endPoint: '/comments/advisor/comments',
       );
 
       if (response['success'] == true) {
@@ -187,10 +183,5 @@ class CommentsRepositoryImpl implements CommentsRepository {
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
-  }
-
-  Future<String> _getAdvisorId() async {
-    // TODO: استبدل هذا بآلية حقيقية لجلب الـ advisorId
-    return '6947e98df9f8bce3bf355fc0';
   }
 }

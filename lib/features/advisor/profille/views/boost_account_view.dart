@@ -46,7 +46,11 @@ class BoostAccountView extends StatelessWidget {
                       alignment: Alignment.topRight,
                       child: GestureDetector(
                         onTap: () => Navigator.pop(context),
-                        child: Icon(Icons.close, color: AppColors.kWhiteColor),
+                        child: Icon(
+                          Icons.close,
+                          color: AppColors.kWhiteColor,
+                          size: 24.w,
+                        ),
                       ),
                     ),
                   ),

@@ -156,132 +156,154 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: AdvisorBackground(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // زر العودة
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Icon(
-                        Icons.arrow_back,
-                        color: AppColors.blackColor,
-                        size: 24.w,
-                      ),
+      body: AdvisorBackground(
+        child: SingleChildScrollView(
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 100.h,
+                child: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(AssetsData.homeBarBackgroundImage),
+                      fit: BoxFit.fill,
                     ),
                   ),
                 ),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 16.h,
+                  ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // العنوان
-                      Gap(8.h),
-                      Text(
-                        'تعديل البيانات الشخصية',
-                        style: Styles.textStyle20Bold.copyWith(
-                          color: AppColors.secondary800,
+                      // زر العودة
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Icon(
+                              Icons.arrow_back,
+                              color: AppColors.blackColor,
+                              size: 24.w,
+                            ),
+                          ),
                         ),
                       ),
 
-                      Gap(32.h),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                        child: Column(
+                          children: [
+                            // العنوان
+                            Text(
+                              'تعديل البيانات الشخصية',
+                              style: Styles.textStyle20Bold.copyWith(
+                                color: AppColors.secondary800,
+                              ),
+                            ),
 
-                      // قسم الصورة الشخصية (مضاف جديداً)
-                      _buildAvatarImageSection(),
+                            Gap(32.h),
 
-                      Gap(20.h),
+                            // قسم الصورة الشخصية (مضاف جديداً)
+                            _buildAvatarImageSection(),
 
-                      // حقل الاسم
-                      _buildTextField(
-                        controller: _nameController,
-                        hintText: 'أدخل اسمك',
+                            Gap(20.h),
+
+                            // حقل الاسم
+                            _buildTextField(
+                              controller: _nameController,
+                              hintText: 'أدخل اسمك',
+                            ),
+
+                            Gap(11.h),
+
+                            // حقل المعرف
+                            _buildTextField(
+                              controller: _idController,
+                              hintText: 'أدرف المعرف',
+                              prefixText: '@',
+                            ),
+
+                            Gap(11.h),
+
+                            // Dropdown للتخصص
+                            _buildDropdown(
+                              value: _selectedSpecialization,
+                              items: _specializations,
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedSpecialization = value;
+                                });
+                              },
+                              hint: 'اختر التخصص',
+                            ),
+
+                            Gap(11.h),
+
+                            // Dropdown للمنصب
+                            _buildDropdown(
+                              value: _selectedPosition,
+                              items: _positions,
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedPosition = value;
+                                });
+                              },
+                              hint: 'اختر المنصب',
+                            ),
+
+                            Gap(11.h),
+
+                            // Dropdown للخبرة
+                            _buildDropdown(
+                              value: _selectedExperience,
+                              items: _experiences,
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedExperience = value;
+                                });
+                              },
+                              hint: 'اختر سنوات الخبرة',
+                            ),
+
+                            Gap(11.h),
+
+                            // حقل السيرة الذاتية
+                            _buildBioField(),
+
+                            Gap(25.h),
+
+                            // قسم رفع الفيديو
+                            _buildVideoSection(),
+
+                            Gap(35.h),
+
+                            // زر الحفظ
+                            CustomBotton(
+                              width: context.width * 0.9,
+                              useGradient: true,
+                              title: 'حفظ',
+                              onPressed: _saveData,
+                            ),
+
+                            Gap(40.h),
+                          ],
+                        ),
                       ),
-
-                      Gap(11.h),
-
-                      // حقل المعرف
-                      _buildTextField(
-                        controller: _idController,
-                        hintText: 'أدرف المعرف',
-                        prefixText: '@',
-                      ),
-
-                      Gap(11.h),
-
-                      // Dropdown للتخصص
-                      _buildDropdown(
-                        value: _selectedSpecialization,
-                        items: _specializations,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedSpecialization = value;
-                          });
-                        },
-                        hint: 'اختر التخصص',
-                      ),
-
-                      Gap(11.h),
-
-                      // Dropdown للمنصب
-                      _buildDropdown(
-                        value: _selectedPosition,
-                        items: _positions,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedPosition = value;
-                          });
-                        },
-                        hint: 'اختر المنصب',
-                      ),
-
-                      Gap(11.h),
-
-                      // Dropdown للخبرة
-                      _buildDropdown(
-                        value: _selectedExperience,
-                        items: _experiences,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedExperience = value;
-                          });
-                        },
-                        hint: 'اختر سنوات الخبرة',
-                      ),
-
-                      Gap(11.h),
-
-                      // حقل السيرة الذاتية
-                      _buildBioField(),
-
-                      Gap(25.h),
-
-                      // قسم رفع الفيديو
-                      _buildVideoSection(),
-
-                      Gap(35.h),
-
-                      // زر الحفظ
-                      CustomBotton(
-                        width: context.width * 0.9,
-                        useGradient: true,
-                        title: 'حفظ',
-                        onPressed: _saveData,
-                      ),
-
-                      Gap(40.h),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -407,44 +429,51 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     required ValueChanged<String?> onChanged,
     required String hint,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
       children: [
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w),
-          decoration: BoxDecoration(
-            color: AppColors.kWhiteColor,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: AppColors.primary100, width: 1.0),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: AppColors.primary500,
-                size: 24.w,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w),
+              decoration: BoxDecoration(
+                color: AppColors.kWhiteColor,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppColors.primary100, width: 1.0),
               ),
-              elevation: 16,
-              style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
-              hint: Text(
-                hint,
-                style: Styles.textStyle14.copyWith(
-                  color: AppColors.secondary400,
-                ),
-                textAlign: TextAlign.right,
-              ),
-              onChanged: onChanged,
-              items: items.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  borderRadius: BorderRadius.circular(12.r),
                   value: value,
-                  child: Text(value, textAlign: TextAlign.right),
-                );
-              }).toList(),
-              dropdownColor: AppColors.kWhiteColor,
+                  isExpanded: true,
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.primary500,
+                    size: 24.w,
+                  ),
+                  elevation: 16,
+                  style: Styles.textStyle14.copyWith(
+                    color: AppColors.secondary800,
+                  ),
+                  hint: Text(
+                    hint,
+                    style: Styles.textStyle14.copyWith(
+                      color: AppColors.secondary400,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                  onChanged: onChanged,
+                  items: items.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value, textAlign: TextAlign.right),
+                    );
+                  }).toList(),
+                  dropdownColor: AppColors.kWhiteColor,
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );

@@ -1,4 +1,3 @@
-
 import 'package:tayseer/features/advisor/home/model/comment_model.dart';
 import 'package:tayseer/features/advisor/home/view_model/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/comment_content_widget.dart';
@@ -47,14 +46,18 @@ class _CommentBodySection extends StatelessWidget {
     return BlocBuilder<PostDetailsCubit, PostDetailsState>(
       // Performance Optimization: Rebuild only if editing/replying to THIS comment changes
       buildWhen: (previous, current) {
-        final isEditingThis = current.editingCommentId == comment.id ||
+        final isEditingThis =
+            current.editingCommentId == comment.id ||
             previous.editingCommentId == comment.id;
-        final isReplyingToThis = current.activeReplyId == comment.id ||
+        final isReplyingToThis =
+            current.activeReplyId == comment.id ||
             previous.activeReplyId == comment.id;
         final loadingChanged = previous.editingState != current.editingState;
-        
+
         // Rebuild if interaction status changed OR if loading state changed while editing this specific comment
-        return isEditingThis || isReplyingToThis || (isEditingThis && loadingChanged);
+        return isEditingThis ||
+            isReplyingToThis ||
+            (isEditingThis && loadingChanged);
       },
       builder: (context, state) {
         final isEditing = state.editingCommentId == comment.id;
@@ -112,15 +115,19 @@ class _ReplyInputSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<PostDetailsCubit, PostDetailsState>(
       buildWhen: (previous, current) {
-        final isReplyingToThis = current.activeReplyId == comment.id ||
+        final isReplyingToThis =
+            current.activeReplyId == comment.id ||
             previous.activeReplyId == comment.id;
-        final loadingChanged = previous.addingReplyState != current.addingReplyState;
-        
-        return isReplyingToThis || (current.activeReplyId == comment.id && loadingChanged);
+        final loadingChanged =
+            previous.addingReplyState != current.addingReplyState;
+
+        return isReplyingToThis ||
+            (current.activeReplyId == comment.id && loadingChanged);
       },
       builder: (context, state) {
         // Show input ONLY if activeReplyId matches AND we are not in edit mode for the same comment
-        final showReplyInput = state.activeReplyId == comment.id &&
+        final showReplyInput =
+            state.activeReplyId == comment.id &&
             state.editingCommentId != comment.id;
 
         if (!showReplyInput) return const SizedBox.shrink();

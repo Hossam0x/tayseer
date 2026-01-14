@@ -49,7 +49,11 @@ class SessionPricingView extends StatelessWidget {
       children: [
         GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: Icon(Icons.arrow_back, color: AppColors.blackColor),
+          child: Icon(
+            Icons.arrow_back,
+            color: AppColors.blackColor,
+            size: 24.w,
+          ),
         ),
         Padding(
           padding: const EdgeInsets.only(top: 18.0),
