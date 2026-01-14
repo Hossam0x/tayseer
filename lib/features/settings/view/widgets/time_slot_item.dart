@@ -1,10 +1,14 @@
 import 'package:tayseer/my_import.dart';
 
+typedef TimeChangedCallback = void Function(String start, String end);
+
 class TimeSlotItem extends StatefulWidget {
   final String name;
   final String initialFrom;
   final String initialTo;
   final bool initialStatus;
+  final ValueChanged<bool>? onStatusChanged;
+  final TimeChangedCallback? onTimeChanged;
 
   const TimeSlotItem({
     super.key,
@@ -12,6 +16,8 @@ class TimeSlotItem extends StatefulWidget {
     required this.initialFrom,
     required this.initialTo,
     required this.initialStatus,
+    this.onStatusChanged,
+    this.onTimeChanged,
   });
 
   @override
@@ -31,15 +37,31 @@ class _TimeSlotItemState extends State<TimeSlotItem> {
     toController = TextEditingController(text: widget.initialTo);
   }
 
+  @override
+  void didUpdateWidget(covariant TimeSlotItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialFrom != widget.initialFrom) {
+      fromController.text = widget.initialFrom;
+    }
+    if (oldWidget.initialTo != widget.initialTo) {
+      toController.text = widget.initialTo;
+    }
+    if (oldWidget.initialStatus != widget.initialStatus) {
+      isActive = widget.initialStatus;
+    }
+  }
+
   Future<void> _pickTime(bool isFrom) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _parseTime(isFrom ? fromController.text : toController.text),
       initialEntryMode: TimePickerEntryMode.dial,
     );
+
     if (picked != null) {
       final formattedTime =
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+
       setState(() {
         if (isFrom) {
           fromController.text = formattedTime;
@@ -47,6 +69,9 @@ class _TimeSlotItemState extends State<TimeSlotItem> {
           toController.text = formattedTime;
         }
       });
+
+      // إرسال القيم المحدثة
+      widget.onTimeChanged?.call(fromController.text, toController.text);
     }
   }
 
@@ -69,7 +94,10 @@ class _TimeSlotItemState extends State<TimeSlotItem> {
             ),
             Switch.adaptive(
               value: isActive,
-              onChanged: (val) => setState(() => isActive = val),
+              onChanged: (val) {
+                setState(() => isActive = val);
+                widget.onStatusChanged?.call(val);
+              },
               activeColor: Colors.white,
               activeTrackColor: AppColors.primary300,
             ),

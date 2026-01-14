@@ -1,3 +1,4 @@
+import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
@@ -133,7 +134,11 @@ class ProfileHeader extends StatelessWidget {
           // Profile picture
           GestureDetector(
             onTap: () {
-              // Navigate to add story
+              Navigator.pushNamed(
+                context,
+                AppRouter.kAddPostView,
+                arguments: AddPostEnum.story,
+              );
             },
             child: Stack(
               children: [
@@ -142,8 +147,8 @@ class ProfileHeader extends StatelessWidget {
                   bottom: 2,
                   right: 2,
                   child: Container(
-                    width: 21.w,
-                    height: 21.w,
+                    width: 22.w,
+                    height: 22.w,
                     decoration: BoxDecoration(
                       color: AppColors.kprimaryColor,
                       shape: BoxShape.circle,

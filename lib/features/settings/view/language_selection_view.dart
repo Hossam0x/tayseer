@@ -1,6 +1,14 @@
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/location_item.dart';
 import 'package:tayseer/my_import.dart';
 
+/// Model يمثل اللغة (عرض + كود)
+class AppLanguage {
+  final String code; // ar, en, fa, ru
+  final String title; // العربية، الإنجليزية ...
+
+  const AppLanguage({required this.code, required this.title});
+}
+
 class LanguageSelectionView extends StatefulWidget {
   const LanguageSelectionView({super.key});
 
@@ -9,14 +17,14 @@ class LanguageSelectionView extends StatefulWidget {
 }
 
 class _LanguageSelectionViewState extends State<LanguageSelectionView> {
-  String? _selectedLanguage;
+  AppLanguage? _selectedLanguage;
 
-  // قائمة اللغات كما في الصورة (مع تكرار الفارسية كما ظهرت عندك)
-  final List<String> _languages = [
-    'العربية',
-    'الإنجليزية',
-    'الفارسية',
-    'الروسية',
+  /// اللغات المدعومة
+  final List<AppLanguage> _languages = const [
+    AppLanguage(code: 'ar', title: 'العربية'),
+    AppLanguage(code: 'en', title: 'الإنجليزية'),
+    AppLanguage(code: 'fa', title: 'الفارسية'),
+    AppLanguage(code: 'ru', title: 'الروسية'),
   ];
 
   @override
@@ -25,12 +33,28 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
     _loadSavedLanguage();
   }
 
+  /// تحميل اللغة المحفوظة (code)
   Future<void> _loadSavedLanguage() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedLang = prefs.getString('app_language') ?? 'العربية';
+    final savedCode = prefs.getString('app_language') ?? 'ar';
+
     setState(() {
-      _selectedLanguage = savedLang;
+      _selectedLanguage = _languages.firstWhere(
+        (lang) => lang.code == savedCode,
+        orElse: () => _languages.first,
+      );
     });
+  }
+
+  /// حفظ اللغة المختارة
+  Future<void> _saveLanguage() async {
+    if (_selectedLanguage == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('app_language', _selectedLanguage!.code);
+
+    // نرجع الكود مش الاسم
+    Navigator.pop(context, _selectedLanguage!.code);
   }
 
   @override
@@ -39,6 +63,7 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
       body: AdvisorBackground(
         child: Stack(
           children: [
+            /// الخلفية العلوية
             Positioned(
               top: 0,
               left: 0,
@@ -53,10 +78,11 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                 ),
               ),
             ),
+
             SafeArea(
               child: Column(
                 children: [
-                  // Header
+                  /// Header
                   Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 20.w,
@@ -77,7 +103,7 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(top: 12.0),
+                          padding: const EdgeInsets.only(top: 12),
                           child: Text(
                             'اللغة',
                             style: Styles.textStyle24Meduim.copyWith(
@@ -89,12 +115,13 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                     ),
                   ),
 
+                  /// المحتوى
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.symmetric(horizontal: 30.w),
                       child: Column(
                         children: [
-                          // شريط البحث
+                          /// البحث (جاهز للتطوير لاحقًا)
                           TextField(
                             textAlign: TextAlign.right,
                             decoration: InputDecoration(
@@ -107,10 +134,6 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                                 color: AppColors.gray2,
                                 size: 20.sp,
                               ),
-                              prefixIconConstraints: BoxConstraints(
-                                minWidth: 40.w,
-                                minHeight: 20.h,
-                              ),
                               border: UnderlineInputBorder(
                                 borderSide: BorderSide(
                                   color: Colors.grey.shade200,
@@ -121,22 +144,16 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                                   color: Colors.grey.shade200,
                                 ),
                               ),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                              ),
                             ),
-                            onChanged: (value) {
-                              // يمكنك إضافة فلترة لاحقاً
-                            },
                           ),
+
                           Gap(20.h),
 
-                          // قائمة اللغات
+                          /// قائمة اللغات
                           ..._languages.map(
                             (lang) => LocationItem(
-                              // نستخدم نفس الكومبوننت LocationItem
-                              title: lang,
-                              isSelected: _selectedLanguage == lang,
+                              title: lang.title,
+                              isSelected: _selectedLanguage?.code == lang.code,
                               onTap: () {
                                 setState(() {
                                   _selectedLanguage = lang;
@@ -149,23 +166,11 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                     ),
                   ),
 
-                  // زر التأكيد
+                  /// زر التأكيد
                   CustomBotton(
                     title: 'تأكيد',
-                    onPressed: () async {
-                      if (_selectedLanguage != null) {
-                        // حفظ اللغة
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setString(
-                          'app_language',
-                          _selectedLanguage!,
-                        );
-
-                        // إرجاع القيمة للشاشة السابقة (Settings)
-                        Navigator.pop(context, _selectedLanguage);
-                      }
-                    },
                     useGradient: true,
+                    onPressed: _saveLanguage,
                   ),
 
                   Gap(20.h),

@@ -35,8 +35,10 @@ import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_v2.dart';
 import 'package:tayseer/features/advisor/chat/data/local/chat_local_datasource.dart';
 import 'package:tayseer/features/advisor/chat/domain/chat_domain.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit.dart';
+import 'package:tayseer/features/settings/data/models/service_provider_repository.dart';
 import 'package:tayseer/features/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/settings/view/cubit/edit_personal_data_cubit.dart';
+import 'package:tayseer/features/settings/view/cubit/service_provider_cubits.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
@@ -275,5 +277,18 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<EditPersonalDataCubit>(
     () => EditPersonalDataCubit(getIt<EditPersonalDataRepository>()),
+  );
+
+  // في service_locator.dart
+  getIt.registerLazySingleton<ServiceProviderRepository>(
+    () => ServiceProviderRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<SessionPricingCubit>(
+    () => SessionPricingCubit(getIt<ServiceProviderRepository>()),
+  );
+
+  getIt.registerFactory<AppointmentsCubit>(
+    () => AppointmentsCubit(getIt<ServiceProviderRepository>()),
   );
 }

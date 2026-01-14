@@ -4,12 +4,16 @@ class SessionPriceItem extends StatefulWidget {
   final String duration;
   final String initialPrice;
   final bool initialStatus;
+  final ValueChanged<String>? onPriceChanged;
+  final ValueChanged<bool>? onStatusChanged;
 
   const SessionPriceItem({
     super.key,
     required this.duration,
     required this.initialPrice,
     required this.initialStatus,
+    this.onPriceChanged,
+    this.onStatusChanged,
   });
 
   @override
@@ -28,6 +32,23 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
   }
 
   @override
+  void didUpdateWidget(covariant SessionPriceItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialPrice != widget.initialPrice) {
+      priceController.text = widget.initialPrice;
+    }
+    if (oldWidget.initialStatus != widget.initialStatus) {
+      isActive = widget.initialStatus;
+    }
+  }
+
+  @override
+  void dispose() {
+    priceController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -42,7 +63,10 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
             ),
             Switch.adaptive(
               value: isActive,
-              onChanged: (val) => setState(() => isActive = val),
+              onChanged: (val) {
+                setState(() => isActive = val);
+                widget.onStatusChanged?.call(val);
+              },
               activeColor: Colors.white,
               activeTrackColor: AppColors.primary300,
             ),
@@ -83,6 +107,9 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
                       child: TextField(
                         controller: priceController,
                         keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          widget.onPriceChanged?.call(value);
+                        },
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           hintStyle: Styles.textStyle16.copyWith(
