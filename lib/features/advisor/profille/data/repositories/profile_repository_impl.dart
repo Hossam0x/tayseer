@@ -12,7 +12,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, ProfileModel>> getAdvisorProfile() async {
     try {
-      final response = await _apiService.get(endPoint: '${ApiEndPoint.profileData}/695689eb57683ad28d9173a4');
+      final response = await _apiService.get(endPoint: ApiEndPoint.profileData);
 
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;

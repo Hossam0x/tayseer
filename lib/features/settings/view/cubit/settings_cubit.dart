@@ -33,7 +33,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         ),
         SettingItemModel(
           id: 'savers',
-          title: 'المحفظه',
+          title: 'المحفظة',
           iconAsset: AssetsData.icWalletSettings,
           routeName: '',
         ),

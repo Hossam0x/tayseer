@@ -67,27 +67,11 @@ class BioInformation extends StatelessWidget {
       child: Column(
         children: [
           Icon(Icons.info_outline, color: AppColors.kRedColor, size: 32.w),
-          Gap(12.h),
+          Gap(10.h),
           Text(
             errorMessage ?? 'حدث خطأ في تحميل البيانات',
             style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
-          ),
-          Gap(12.h),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.kprimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-            ),
-            onPressed: () => context.read<ProfileCubit>().fetchProfile(),
-            child: Text(
-              'إعادة المحاولة',
-              style: Styles.textStyle14Meduim.copyWith(
-                color: AppColors.kWhiteColor,
-              ),
-            ),
           ),
         ],
       ),

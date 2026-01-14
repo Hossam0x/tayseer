@@ -67,14 +67,37 @@ class ProfileHeader extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(height: 40.w),
+              GestureDetector(
+                onTap: () => _openSettings(context),
+                child: Container(
+                  padding: EdgeInsets.all(9.w),
+                  width: 50.w,
+                  height: 50.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary100,
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 2.0),
+                    child: AppImage(AssetsData.settingsIcon),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Gap(10.h),
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-          Gap(12.h),
+          Gap(10.h),
           Text(
             errorMessage ?? 'حدث خطأ أثناء تحميل البيانات',
             style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
           ),
-          Gap(16.h),
+          Gap(10.h),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.kprimaryColor,
