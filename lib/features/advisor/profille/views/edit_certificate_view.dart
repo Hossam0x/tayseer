@@ -91,18 +91,18 @@ class EditCertificateView extends StatelessWidget {
                             Gap(24.h),
                             // Add Button
                             SizedBox(
-                              width: double.infinity,
+                              width: context.width * 0.8,
                               height: 56.h,
                               child: GestureDetector(
                                 onTap: state.isLoading
                                     ? null
                                     : () => cubit.addCertificate(context),
                                 child: Container(
-                                  width: double.infinity,
+                                  width: context.width * 0.8,
                                   height: 56.h,
                                   decoration: BoxDecoration(
-                                    color: AppColors.secondary200,
-                                    borderRadius: BorderRadius.circular(12.r),
+                                    color: AppColors.secondary400,
+                                    borderRadius: BorderRadius.circular(16.r),
                                   ),
                                   child: Center(
                                     child: state.isLoading
@@ -123,15 +123,15 @@ class EditCertificateView extends StatelessWidget {
                             Gap(20.h),
                             // Certificates List
                             if (certificates.isNotEmpty) ...[
-                              Text(
-                                'الشهادات الحالية - اضغط للتعديل',
-                                style: Styles.textStyle16Meduim.copyWith(
-                                  color: AppColors.secondary800,
-                                ),
-                              ),
-                              Gap(12.h),
+                              // Text(
+                              //   'الشهادات الحالية - اضغط للتعديل',
+                              //   style: Styles.textStyle16Meduim.copyWith(
+                              //     color: AppColors.secondary800,
+                              //   ),
+                              // ),
+                              // Gap(12.h),
                               SizedBox(
-                                height: 120.h,
+                                height: 180.h,
                                 child: ListView.builder(
                                   scrollDirection: Axis.horizontal,
                                   reverse: true,
@@ -145,111 +145,208 @@ class EditCertificateView extends StatelessWidget {
                                       onTap: () =>
                                           cubit.selectCertificate(cert),
                                       child: Container(
-                                        width: 100.w,
-                                        margin: EdgeInsets.only(left: 12.w),
+                                        width: 120.w,
+                                        margin: EdgeInsets.only(left: 7.w),
                                         decoration: BoxDecoration(
+                                          color: AppColors.mainColor
+                                              .withOpacity(0.1),
                                           border: Border.all(
                                             color: isSelected
-                                                ? AppColors.kprimaryColor
-                                                : AppColors.primary100,
-                                            width: isSelected ? 3 : 1.5,
+                                                ? AppColors.primary300
+                                                : AppColors.mainColor,
+                                            width: isSelected ? 1.5 : 1,
                                           ),
                                           borderRadius: BorderRadius.circular(
-                                            12.r,
+                                            16.r,
                                           ),
                                         ),
                                         child: Column(
                                           children: [
                                             Expanded(
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.vertical(
-                                                      top: Radius.circular(
-                                                        12.r,
+                                              child: Padding(
+                                                padding: EdgeInsets.only(
+                                                  left: 14.r,
+                                                  right: 14.r,
+                                                  top: 14.r,
+                                                ),
+                                                child: ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        16.r,
                                                       ),
-                                                    ),
-                                                child: cert.image != null
-                                                    ? CachedNetworkImage(
-                                                        imageUrl: cert.image!,
-                                                        fit: BoxFit.cover,
-                                                        width: double.infinity,
-                                                        placeholder:
-                                                            (
-                                                              context,
-                                                              url,
-                                                            ) => Container(
+                                                  child: Stack(
+                                                    children: [
+                                                      cert.image != null
+                                                          ? CachedNetworkImage(
+                                                              imageUrl:
+                                                                  cert.image!,
+                                                              fit: BoxFit.cover,
+                                                              width: double
+                                                                  .infinity,
+                                                              height: double
+                                                                  .infinity,
+                                                              placeholder: (context, url) => Container(
+                                                                width: double
+                                                                    .infinity,
+                                                                height: double
+                                                                    .infinity,
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade200,
+                                                                child: Center(
+                                                                  child: CircularProgressIndicator(
+                                                                    color: AppColors
+                                                                        .kprimaryColor,
+                                                                    strokeWidth:
+                                                                        2.w,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              errorWidget:
+                                                                  (
+                                                                    context,
+                                                                    url,
+                                                                    error,
+                                                                  ) => Container(
+                                                                    width: double
+                                                                        .infinity,
+                                                                    height: double
+                                                                        .infinity,
+                                                                    color: Colors
+                                                                        .grey
+                                                                        .shade200,
+                                                                    child: Center(
+                                                                      child: Icon(
+                                                                        Icons
+                                                                            .image,
+                                                                        color: Colors
+                                                                            .grey
+                                                                            .shade400,
+                                                                        size: 40
+                                                                            .w,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                            )
+                                                          : Container(
+                                                              width: double
+                                                                  .infinity,
+                                                              height: double
+                                                                  .infinity,
                                                               color: Colors
                                                                   .grey
                                                                   .shade200,
                                                               child: Center(
-                                                                child: CircularProgressIndicator(
-                                                                  color: AppColors
-                                                                      .kprimaryColor,
-                                                                  strokeWidth:
-                                                                      2.w,
+                                                                child: Icon(
+                                                                  Icons.school,
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade400,
+                                                                  size: 40.w,
                                                                 ),
                                                               ),
                                                             ),
-                                                        errorWidget:
-                                                            (
-                                                              context,
-                                                              url,
-                                                              error,
-                                                            ) => Container(
-                                                              color: Colors
-                                                                  .grey
-                                                                  .shade200,
-                                                              child: Icon(
-                                                                Icons.image,
-                                                                color: Colors
-                                                                    .grey
-                                                                    .shade400,
-                                                              ),
-                                                            ),
-                                                      )
-                                                    : Container(
-                                                        color: Colors
-                                                            .grey
-                                                            .shade200,
-                                                        child: Icon(
-                                                          Icons.school,
-                                                          color: Colors
-                                                              .grey
-                                                              .shade400,
+
+                                                      // علامة Edit في الشمال
+                                                      Positioned(
+                                                        top: 4.r,
+                                                        left: 4.r,
+                                                        child: AppImage(
+                                                          AssetsData.editIcon,
+                                                          width: 20.w,
+                                                          color: AppColors
+                                                              .primary400,
                                                         ),
                                                       ),
+
+                                                      // علامة X في اليمين
+                                                      Positioned(
+                                                        top: 4.r,
+                                                        right: 4.r,
+                                                        child: Container(
+                                                          width: 24.r,
+                                                          height: 24.r,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                                color: Colors
+                                                                    .white,
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                              ),
+                                                          child: Center(
+                                                            child: Icon(
+                                                              Icons.close,
+                                                              size: 20.r,
+                                                              color: Colors.red,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
                                               ),
                                             ),
                                             Container(
-                                              padding: EdgeInsets.all(6.w),
-                                              decoration: BoxDecoration(
-                                                color: isSelected
-                                                    ? AppColors.kprimaryColor
-                                                          .withOpacity(0.1)
-                                                    : Colors.transparent,
-                                                borderRadius:
-                                                    BorderRadius.vertical(
-                                                      bottom: Radius.circular(
-                                                        12.r,
-                                                      ),
-                                                    ),
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 16.w,
+                                                vertical: 8.h,
                                               ),
-                                              child: Text(
-                                                cert.nameCertificate,
-                                                style: Styles.textStyle12
-                                                    .copyWith(
-                                                      color: isSelected
-                                                          ? AppColors
-                                                                .kprimaryColor
-                                                          : AppColors
-                                                                .secondary800,
-                                                      fontWeight: isSelected
-                                                          ? FontWeight.bold
-                                                          : FontWeight.normal,
-                                                    ),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                textAlign: TextAlign.center,
+                                              // decoration: BoxDecoration(
+                                              //   color: isSelected
+                                              //       ? AppColors.kprimaryColor
+                                              //             .withOpacity(0.1)
+                                              //       : Colors.transparent,
+                                              //   borderRadius:
+                                              //       BorderRadius.vertical(
+                                              //         bottom: Radius.circular(
+                                              //           12.r,
+                                              //         ),
+                                              //       ),
+                                              // ),
+                                              child: Column(
+                                                children: [
+                                                  Text(
+                                                    cert.nameCertificate,
+                                                    style: Styles.textStyle16
+                                                        .copyWith(
+                                                          color: AppColors
+                                                              .primaryText,
+                                                        ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                  Gap(4.h),
+                                                  Text(
+                                                    cert.fromWhere,
+                                                    style: Styles.textStyle16
+                                                        .copyWith(
+                                                          color: AppColors
+                                                              .primaryText,
+                                                        ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                  Gap(4.h),
+                                                  Text(
+                                                    DateFormat(
+                                                      'yyyy',
+                                                    ).format(cert.date),
+                                                    style: Styles.textStyle16
+                                                        .copyWith(
+                                                          color: AppColors
+                                                              .primaryText,
+                                                        ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ],
@@ -263,9 +360,9 @@ class EditCertificateView extends StatelessWidget {
                             ],
                             // Save Button
                             CustomBotton(
-                              width: context.width * 0.9,
+                              width: context.width * 0.8,
                               useGradient: true,
-                              title: 'حفظ',
+                              title: state.isLoading ? 'جارٍ الحفظ...' : 'حفظ',
                               onPressed: state.isLoading
                                   ? null
                                   : () => cubit.updateCertificate(context),
@@ -299,7 +396,7 @@ class EditCertificateView extends StatelessWidget {
               height: 150.h,
               width: 155.w,
               decoration: BoxDecoration(
-                color: AppColors.hintText,
+                color: Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(32.r),
                 border: Border.all(color: AppColors.primary100, width: 1.5),
               ),
@@ -325,25 +422,17 @@ class EditCertificateView extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.add_a_photo_rounded,
+                            Icons.school,
                             size: 40.w,
-                            color: AppColors.primary300,
-                          ),
-                          Gap(8.h),
-                          Text(
-                            'اضغط لإضافة/تغيير الصورة',
-                            style: Styles.textStyle14.copyWith(
-                              color: AppColors.secondary600,
-                            ),
-                            textAlign: TextAlign.center,
+                            color: Colors.grey.shade500,
                           ),
                         ],
                       ),
                     ),
             ),
             Positioned(
-              bottom: 6,
-              right: 6,
+              bottom: 10.r,
+              right: 10.r,
               child: GestureDetector(
                 onTap: cubit.pickCertificateImage,
                 child: AppImage(AssetsData.addCertificateImage),
@@ -352,8 +441,8 @@ class EditCertificateView extends StatelessWidget {
             if (state.certificateImageFile != null ||
                 state.certificateImageUrl != null)
               Positioned(
-                top: 10,
-                right: 10,
+                top: 12.r,
+                right: 12.r,
                 child: GestureDetector(
                   onTap: cubit.removeCertificateImage,
                   child: Container(
