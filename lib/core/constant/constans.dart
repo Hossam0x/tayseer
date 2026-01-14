@@ -14,3 +14,5 @@ LoginData? kCurrentUserData;
 Gender? selectedGender;
 UserTypeEnum? selectedUserType = UserTypeEnum.user;
 String phone = '201009119795';
+bool isUserAnonymous = true;
+bool get isUser => true;

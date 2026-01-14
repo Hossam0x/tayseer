@@ -1,12 +1,14 @@
+
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/home/views/widgets/anonymous_mode_banner.dart'; 
 import 'package:tayseer/features/advisor/home/views/widgets/home_app_bar.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/home_filter_section.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/home_search_bar.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stories_section.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
-import 'package:tayseer/my_import.dart';
+import 'package:tayseer/my_import.dart'; 
 
 class HomeViewBody extends StatefulWidget {
   final Function(bool isScrollingDown)? onScroll;
@@ -22,19 +24,11 @@ class HomeViewBodyState extends State<HomeViewBody> {
   double _lastOffset = 0;
   double _scrollDelta = 0;
   static const double _scrollThreshold = 20.0;
+  
   final StoriesCubit storiesCubit = getIt<StoriesCubit>();
   final HomeCubit homeCubit = getIt<HomeCubit>();
 
-  /// ميثود عشان نعمل scroll لفوق (زي فيسبوك)
-  void scrollToTop() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
+  // ❌ شلنا الـ ValueNotifier خلاص مش محتاجينه هنا
 
   @override
   void initState() {
@@ -43,6 +37,16 @@ class HomeViewBodyState extends State<HomeViewBody> {
     storiesCubit.fetchStories();
     homeCubit.fetchPosts();
     homeCubit.fetchNameAndImage();
+  }
+
+  void scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   void _scrollListener() {
@@ -58,7 +62,6 @@ class HomeViewBodyState extends State<HomeViewBody> {
 
     _lastOffset = currentOffset;
 
-    // Handle pagination
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
       homeCubit.fetchPosts(loadMore: true);
@@ -75,10 +78,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
       child: RefreshIndicator(
         color: AppColors.kprimaryColor,
         onRefresh: () async {
-          // ✅ التعديل هنا: نوقف أي فيديو شغال قبل ما نعمل ريفريش
-          // ده بيضمن اننا نفضي الـ Decoders عشان نتجنب Error -12 والشاشة السودة
           VideoManager.instance.stopAll();
-
           await Future.wait([
             storiesCubit.fetchStories(),
             homeCubit.fetchPosts(),
@@ -91,6 +91,12 @@ class HomeViewBodyState extends State<HomeViewBody> {
           slivers: [
             const HomeAppBar(notificationCount: 3),
             const HomeSearchBar(),
+
+            // ✅ كل اللوجيك بقى جوه، هنا بننده عليها بس
+            const SliverToBoxAdapter(
+              child: AnonymousModeBanner(),
+            ),
+
             const StoriesSection(),
             const HomeFilterSection(),
             HomePostFeed(homeCubit: homeCubit),
@@ -103,7 +109,6 @@ class HomeViewBodyState extends State<HomeViewBody> {
   @override
   void dispose() {
     _scrollController.dispose();
-    // ✅ يفضل كمان نوقف الفيديوهات لو خرجنا من الصفحة دي نهائياً
     VideoManager.instance.stopAll();
     super.dispose();
   }

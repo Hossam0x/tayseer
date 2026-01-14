@@ -45,7 +45,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           GradientText(
-                            text: context.tr("welcomeAdvisor"),
+                            text: isUser ? context.tr("welcome") : context.tr("welcomeAdvisor"),
                             style: Styles.textStyle24Bold,
                             gradient: AppColors.blueOrangeGradient,
                           ),
