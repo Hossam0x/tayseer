@@ -11,8 +11,8 @@ class TimeSlotModel extends Equatable {
 
   factory TimeSlotModel.fromJson(Map<String, dynamic> json) {
     return TimeSlotModel(
-      start: json['start'] as String,
-      end: json['end'] as String,
+      start: json['start']?.toString() ?? '09:00',
+      end: json['end']?.toString() ?? '17:00',
     );
   }
 
@@ -39,13 +39,22 @@ class WeeklyAvailabilityModel extends Equatable {
   });
 
   factory WeeklyAvailabilityModel.fromJson(Map<String, dynamic> json) {
-    final timeSlotsList = (json['timeSlots'] as List)
-        .map((slot) => TimeSlotModel.fromJson(slot as Map<String, dynamic>))
-        .toList();
+    List<TimeSlotModel> timeSlotsList = [];
+
+    try {
+      if (json['timeSlots'] is List) {
+        timeSlotsList = (json['timeSlots'] as List)
+            .where((slot) => slot != null)
+            .map((slot) => TimeSlotModel.fromJson(slot as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (e) {
+      print('⚠️ Error parsing timeSlots: $e');
+    }
 
     return WeeklyAvailabilityModel(
-      dayOfWeek: json['dayOfWeek'] as int,
-      isEnabled: json['isEnabled'] as bool,
+      dayOfWeek: (json['dayOfWeek'] as num?)?.toInt() ?? 0,
+      isEnabled: json['isEnabled'] as bool? ?? false,
       timeSlots: timeSlotsList,
     );
   }
@@ -102,10 +111,10 @@ class SessionTypeModel extends Equatable {
 
   factory SessionTypeModel.fromJson(Map<String, dynamic> json) {
     return SessionTypeModel(
-      duration: json['duration'] as int,
-      price: json['price'] as int,
-      currency: json['currency'] as String,
-      isEnabled: json['isEnabled'] as bool,
+      duration: (json['duration'] as num?)?.toInt() ?? 30,
+      price: (json['price'] as num?)?.toInt() ?? 0,
+      currency: json['currency']?.toString() ?? 'SAR',
+      isEnabled: json['isEnabled'] as bool? ?? true,
     );
   }
 
@@ -144,27 +153,70 @@ class ServiceProviderRequest extends Equatable {
   });
 
   factory ServiceProviderRequest.fromJson(Map<String, dynamic> json) {
+    print('📦 Parsing ServiceProviderRequest from JSON');
+
     // تحويل sessionTypes
-    final sessionTypesMap = Map<String, dynamic>.from(json['sessionTypes']);
-    final sessionTypes = sessionTypesMap.map(
-      (key, value) => MapEntry(
-        key,
-        SessionTypeModel.fromJson(value as Map<String, dynamic>),
-      ),
-    );
+    Map<String, SessionTypeModel> sessionTypesMap = {};
+    try {
+      if (json['sessionTypes'] is Map) {
+        final sessionTypesData = json['sessionTypes'] as Map<String, dynamic>;
+        sessionTypesData.forEach((key, value) {
+          try {
+            sessionTypesMap[key] = SessionTypeModel.fromJson(
+              value as Map<String, dynamic>,
+            );
+          } catch (e) {
+            print('⚠️ Error parsing session type $key: $e');
+          }
+        });
+      }
+    } catch (e) {
+      print('⚠️ Error parsing sessionTypes: $e');
+    }
 
     // تحويل weeklyAvailability
-    final weeklyAvailabilityList = (json['weeklyAvailability'] as List)
-        .map(
-          (day) =>
-              WeeklyAvailabilityModel.fromJson(day as Map<String, dynamic>),
-        )
-        .toList();
+    List<WeeklyAvailabilityModel> weeklyAvailabilityList = [];
+    try {
+      if (json['weeklyAvailability'] is List) {
+        weeklyAvailabilityList = (json['weeklyAvailability'] as List)
+            .where((day) => day != null)
+            .map(
+              (day) =>
+                  WeeklyAvailabilityModel.fromJson(day as Map<String, dynamic>),
+            )
+            .toList();
+      }
+    } catch (e) {
+      print('⚠️ Error parsing weeklyAvailability: $e');
+    }
+
+    // إذا كانت القائمة فارغة، نملأها بأيام الأسبوع السبعة
+    if (weeklyAvailabilityList.length != 7) {
+      print('📝 Creating default weekly availability (7 days)');
+      weeklyAvailabilityList = List.generate(7, (index) {
+        return WeeklyAvailabilityModel(
+          dayOfWeek: index,
+          isEnabled:
+              index == 0 ||
+              index == 1, // Saturday and Sunday enabled by default
+          timeSlots: index == 0
+              ? [
+                  TimeSlotModel(start: '10:00', end: '12:00'),
+                  TimeSlotModel(start: '14:00', end: '17:00'),
+                ]
+              : index == 1
+              ? [TimeSlotModel(start: '09:00', end: '17:00')]
+              : [],
+        );
+      });
+    }
 
     return ServiceProviderRequest(
-      sessionTypes: sessionTypes,
+      sessionTypes: sessionTypesMap.isNotEmpty
+          ? sessionTypesMap
+          : ServiceProviderRequest.defaultRequest().sessionTypes,
       weeklyAvailability: weeklyAvailabilityList,
-      timezone: json['timezone'] as String,
+      timezone: json['timezone']?.toString() ?? 'Asia/Riyadh',
     );
   }
 
@@ -203,7 +255,12 @@ class ServiceProviderRequest extends Equatable {
           isEnabled:
               index == 0 ||
               index == 1, // Saturday and Sunday enabled by default
-          timeSlots: index == 0 || index == 1
+          timeSlots: index == 0
+              ? [
+                  TimeSlotModel(start: '10:00', end: '12:00'),
+                  TimeSlotModel(start: '14:00', end: '17:00'),
+                ]
+              : index == 1
               ? [TimeSlotModel(start: '09:00', end: '17:00')]
               : [],
         );
@@ -229,21 +286,6 @@ class ServiceProviderResponse extends Equatable {
     required this.message,
     this.data,
   });
-
-  factory ServiceProviderResponse.fromJson(Map<String, dynamic> json) {
-    ServiceProviderRequest? data;
-    if (json['data'] != null) {
-      data = ServiceProviderRequest.fromJson(
-        json['data'] as Map<String, dynamic>,
-      );
-    }
-
-    return ServiceProviderResponse(
-      success: json['success'] as bool,
-      message: json['message'] as String,
-      data: data,
-    );
-  }
 
   @override
   List<Object?> get props => [success, message, data];

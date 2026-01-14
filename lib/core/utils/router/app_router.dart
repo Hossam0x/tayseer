@@ -19,7 +19,7 @@ import 'package:tayseer/features/settings/view/edit_personal_data_view.dart';
 import 'package:tayseer/features/settings/view/hide_fromstory_form_view.dart';
 import 'package:tayseer/features/settings/view/language_selection_view.dart';
 import 'package:tayseer/features/settings/view/packages_tab_view.dart';
-import 'package:tayseer/features/settings/view/settings_pricing_view.dart';
+import 'package:tayseer/features/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/settings/view/settings_view.dart';
 import 'package:tayseer/features/advisor/event/view/creat_event_view.dart';
 import 'package:tayseer/features/advisor/event_detail/view/event_detail_view.dart';

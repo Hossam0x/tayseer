@@ -78,7 +78,7 @@ class SettingsView extends StatelessWidget {
             top: 0,
             left: 0,
             right: 0,
-            height: 100.h,
+            height: 110.h,
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -164,11 +164,9 @@ class SettingsView extends StatelessWidget {
                 Container(
                   width: 48.w,
                   height: 48.w,
-                  padding: EdgeInsets.all(10.w),
+                  padding: EdgeInsets.all(13.w),
                   child: AppImage(setting.iconAsset),
                 ),
-
-                Gap(16.w),
 
                 // Title and Subtitle
                 Expanded(

@@ -1,3 +1,4 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/features/settings/data/models/service_provider_models.dart';
 import 'package:tayseer/features/settings/data/models/service_provider_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -17,7 +18,7 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
     emit(state.copyWith(state: CubitStates.loading));
 
     final result = await _repository.getServiceProvider();
-
+    if (isClosed) return;
     result.fold(
       (failure) {
         emit(
@@ -33,15 +34,20 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
             state.copyWith(
               state: CubitStates.success,
               serviceProvider: response.data,
+              originalServiceProvider: response.data,
               sessionTypes: response.data!.sessionTypes,
+              hasChanges: false,
             ),
           );
         } else {
+          final defaultRequest = ServiceProviderRequest.defaultRequest();
           emit(
             state.copyWith(
               state: CubitStates.success,
-              sessionTypes:
-                  ServiceProviderRequest.defaultRequest().sessionTypes,
+              serviceProvider: defaultRequest,
+              originalServiceProvider: defaultRequest,
+              sessionTypes: defaultRequest.sessionTypes,
+              hasChanges: false,
             ),
           );
         }
@@ -63,7 +69,15 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
         isEnabled: oldSession.isEnabled,
       );
 
-      emit(state.copyWith(sessionTypes: updatedSessionTypes));
+      // حساب التغييرات
+      final hasChanges = _hasSessionTypesChanged(updatedSessionTypes);
+
+      emit(
+        state.copyWith(
+          sessionTypes: updatedSessionTypes,
+          hasChanges: hasChanges,
+        ),
+      );
     }
   }
 
@@ -81,11 +95,38 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
         isEnabled: isEnabled,
       );
 
-      emit(state.copyWith(sessionTypes: updatedSessionTypes));
+      // حساب التغييرات
+      final hasChanges = _hasSessionTypesChanged(updatedSessionTypes);
+
+      emit(
+        state.copyWith(
+          sessionTypes: updatedSessionTypes,
+          hasChanges: hasChanges,
+        ),
+      );
     }
   }
 
-  Future<void> saveChanges() async {
+  bool _hasSessionTypesChanged(Map<String, SessionTypeModel> currentTypes) {
+    if (state.originalServiceProvider == null) return true;
+
+    final originalTypes = state.originalServiceProvider!.sessionTypes;
+
+    for (final key in currentTypes.keys) {
+      final current = currentTypes[key];
+      final original = originalTypes[key];
+
+      if (original == null) return true;
+      if (current!.price != original.price) return true;
+      if (current.isEnabled != original.isEnabled) return true;
+    }
+
+    return false;
+  }
+
+  Future<void> saveChanges(BuildContext context) async {
+    if (!state.hasChanges) return;
+
     emit(state.copyWith(isSaving: true));
 
     final currentProvider = state.serviceProvider;
@@ -98,7 +139,9 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
         : ServiceProviderRequest.defaultRequest();
 
     final result = await _repository.updateServiceProvider(request: request);
-
+    ScaffoldMessenger.of(context).showSnackBar(
+      CustomSnackBar(context, text: 'تم حفظ التغييرات بنجاح', isSuccess: true),
+    );
     result.fold(
       (failure) {
         emit(state.copyWith(isSaving: false, errorMessage: failure.message));
@@ -108,7 +151,9 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
           state.copyWith(
             isSaving: false,
             serviceProvider: response.data,
+            originalServiceProvider: response.data,
             sessionTypes: response.data?.sessionTypes ?? state.sessionTypes,
+            hasChanges: false,
           ),
         );
       },
@@ -134,7 +179,7 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
     emit(state.copyWith(state: CubitStates.loading));
 
     final result = await _repository.getServiceProvider();
-
+    if (isClosed) return;
     result.fold(
       (failure) {
         emit(
@@ -150,15 +195,20 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
             state.copyWith(
               state: CubitStates.success,
               serviceProvider: response.data,
+              originalServiceProvider: response.data,
               weeklyAvailability: response.data!.weeklyAvailability,
+              hasChanges: false,
             ),
           );
         } else {
+          final defaultRequest = ServiceProviderRequest.defaultRequest();
           emit(
             state.copyWith(
               state: CubitStates.success,
-              weeklyAvailability:
-                  ServiceProviderRequest.defaultRequest().weeklyAvailability,
+              serviceProvider: defaultRequest,
+              originalServiceProvider: defaultRequest,
+              weeklyAvailability: defaultRequest.weeklyAvailability,
+              hasChanges: false,
             ),
           );
         }
@@ -179,14 +229,21 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
       updatedAvailability[index] = WeeklyAvailabilityModel(
         dayOfWeek: oldDay.dayOfWeek,
         isEnabled: isEnabled,
-        timeSlots: oldDay.timeSlots,
+        timeSlots: isEnabled ? oldDay.timeSlots : [],
       );
 
-      emit(state.copyWith(weeklyAvailability: updatedAvailability));
+      // حساب التغييرات
+      final hasChanges = _hasAvailabilityChanged(updatedAvailability);
+
+      emit(
+        state.copyWith(
+          weeklyAvailability: updatedAvailability,
+          hasChanges: hasChanges,
+        ),
+      );
     }
   }
 
-  // في AppointmentsCubit
   void updateDayTimeSlot(int dayOfWeek, String startTime, String endTime) {
     final updatedAvailability = List<WeeklyAvailabilityModel>.from(
       state.weeklyAvailability,
@@ -203,11 +260,50 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
         timeSlots: [TimeSlotModel(start: startTime, end: endTime)],
       );
 
-      emit(state.copyWith(weeklyAvailability: updatedAvailability));
+      // حساب التغييرات
+      final hasChanges = _hasAvailabilityChanged(updatedAvailability);
+
+      emit(
+        state.copyWith(
+          weeklyAvailability: updatedAvailability,
+          hasChanges: hasChanges,
+        ),
+      );
     }
   }
 
+  bool _hasAvailabilityChanged(
+    List<WeeklyAvailabilityModel> currentAvailability,
+  ) {
+    if (state.originalServiceProvider == null) return true;
+
+    final originalAvailability =
+        state.originalServiceProvider!.weeklyAvailability;
+
+    for (int i = 0; i < currentAvailability.length; i++) {
+      final current = currentAvailability[i];
+      final original = originalAvailability[i];
+
+      if (current.isEnabled != original.isEnabled) return true;
+      if (current.timeSlots.length != original.timeSlots.length) return true;
+
+      for (int j = 0; j < current.timeSlots.length; j++) {
+        final currentSlot = current.timeSlots[j];
+        final originalSlot = original.timeSlots[j];
+
+        if (currentSlot.start != originalSlot.start ||
+            currentSlot.end != originalSlot.end) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   Future<void> saveChanges() async {
+    if (!state.hasChanges) return;
+
     emit(state.copyWith(isSaving: true));
 
     final currentProvider = state.serviceProvider;
@@ -230,8 +326,10 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
           state.copyWith(
             isSaving: false,
             serviceProvider: response.data,
+            originalServiceProvider: response.data,
             weeklyAvailability:
                 response.data?.weeklyAvailability ?? state.weeklyAvailability,
+            hasChanges: false,
           ),
         );
       },

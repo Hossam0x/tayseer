@@ -24,10 +24,14 @@ class TimeSlotItem extends StatefulWidget {
   State<TimeSlotItem> createState() => _TimeSlotItemState();
 }
 
-class _TimeSlotItemState extends State<TimeSlotItem> {
+class _TimeSlotItemState extends State<TimeSlotItem>
+    with SingleTickerProviderStateMixin {
   late bool isActive;
   late TextEditingController fromController;
   late TextEditingController toController;
+  late AnimationController _animationController;
+  late Animation<double> _heightAnimation;
+  late Animation<double> _opacityAnimation;
 
   @override
   void initState() {
@@ -35,6 +39,26 @@ class _TimeSlotItemState extends State<TimeSlotItem> {
     isActive = widget.initialStatus;
     fromController = TextEditingController(text: widget.initialFrom);
     toController = TextEditingController(text: widget.initialTo);
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _heightAnimation = Tween<double>(begin: 0, end: 70).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    _opacityAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    // تشغيل أو إيقاف الأنيميشن بناءً على حالة isActive
+    if (isActive) {
+      _animationController.forward();
+    } else {
+      _animationController.reverse();
+    }
   }
 
   @override
@@ -47,8 +71,28 @@ class _TimeSlotItemState extends State<TimeSlotItem> {
       toController.text = widget.initialTo;
     }
     if (oldWidget.initialStatus != widget.initialStatus) {
-      isActive = widget.initialStatus;
+      _toggleStatus(widget.initialStatus, animate: false);
     }
+  }
+
+  void _toggleStatus(bool val, {bool animate = true}) {
+    setState(() => isActive = val);
+
+    if (animate) {
+      if (val) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    } else {
+      if (val) {
+        _animationController.value = 1.0;
+      } else {
+        _animationController.value = 0.0;
+      }
+    }
+
+    widget.onStatusChanged?.call(val);
   }
 
   Future<void> _pickTime(bool isFrom) async {
@@ -85,6 +129,7 @@ class _TimeSlotItemState extends State<TimeSlotItem> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        // السطر العلوي: اليوم والتبديل (Switch)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -94,36 +139,55 @@ class _TimeSlotItemState extends State<TimeSlotItem> {
             ),
             Switch.adaptive(
               value: isActive,
-              onChanged: (val) {
-                setState(() => isActive = val);
-                widget.onStatusChanged?.call(val);
-              },
+              onChanged: (val) => _toggleStatus(val, animate: true),
               activeColor: Colors.white,
               activeTrackColor: AppColors.primary300,
             ),
           ],
         ),
-        Gap(8.h),
-        Row(
-          children: [
-            Text(
-              'من',
-              style: Styles.textStyle16.copyWith(
-                color: AppColors.secondaryText,
+
+        // الأنيميشن لظهور أو اختفاء حقول الوقت
+        AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Opacity(
+              opacity: _opacityAnimation.value,
+              child: SizedBox(
+                height: _heightAnimation.value,
+                child: OverflowBox(
+                  alignment: Alignment.topCenter,
+                  maxHeight: 70,
+                  child: child,
+                ),
               ),
-            ),
-            Gap(8.w),
-            Expanded(child: _buildTimeField(toController, false)),
-            Gap(8.w),
-            Text(
-              'إلى',
-              style: Styles.textStyle16.copyWith(
-                color: AppColors.secondaryText,
+            );
+          },
+          child: Column(
+            children: [
+              Gap(8.h),
+              Row(
+                children: [
+                  Text(
+                    'من',
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondaryText,
+                    ),
+                  ),
+                  Gap(8.w),
+                  Expanded(child: _buildTimeField(toController, false)),
+                  Gap(8.w),
+                  Text(
+                    'إلى',
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondaryText,
+                    ),
+                  ),
+                  Gap(8.w),
+                  Expanded(child: _buildTimeField(fromController, true)),
+                ],
               ),
-            ),
-            Gap(8.w),
-            Expanded(child: _buildTimeField(fromController, true)),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -177,6 +241,7 @@ class _TimeSlotItemState extends State<TimeSlotItem> {
 
   @override
   void dispose() {
+    _animationController.dispose();
     fromController.dispose();
     toController.dispose();
     super.dispose();
