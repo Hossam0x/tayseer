@@ -393,6 +393,7 @@ class _CommentItemState extends State<_CommentItem> {
         onSaveEdit: widget.onSaveEdit,
         onSendReply: widget.onSendReply,
         onLoadReplies: widget.onLoadReplies,
+        onLikeReply: widget.onLikeReply,
         // Replies logic inside CommentCard usually handles sub-items
         // If CommentCard iterates replies, it might rebuild them.
         // But preventing the root CommentCard from rebuilding is the big win.

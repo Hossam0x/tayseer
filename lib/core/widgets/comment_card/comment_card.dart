@@ -33,6 +33,7 @@ class CommentCard extends StatelessWidget {
   final void Function(String newContent)? onSaveEdit;
   final void Function(String replyText)? onSendReply;
   final VoidCallback? onLoadReplies;
+  final void Function(CommentModel reply)? onLikeReply;
 
   const CommentCard({
     super.key,
@@ -51,6 +52,7 @@ class CommentCard extends StatelessWidget {
     this.onSaveEdit,
     this.onSendReply,
     this.onLoadReplies,
+    this.onLikeReply,
   });
 
   @override
@@ -139,7 +141,7 @@ class CommentCard extends StatelessWidget {
               separatorBuilder: (_, __) => Gap(15.h),
               itemBuilder: (_, index) => _ReplyItem(
                 reply: comment.replies[index],
-                onLikeTap: onLikeTap,
+                onLikeTap: () => onLikeReply?.call(comment.replies[index]),
               ),
             ),
 
