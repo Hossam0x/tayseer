@@ -174,11 +174,21 @@ class _CertificatesSectionContent extends StatelessWidget {
           // Video Section
           if (state.hasVideo) _buildVideoSection(context, state.videoUrl!),
           Gap(24.h),
-          Text(
-            "الشهادات",
-            style: Styles.textStyle18Bold.copyWith(
-              color: AppColors.secondary800,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "الشهادات",
+                style: Styles.textStyle18Bold.copyWith(
+                  color: AppColors.secondary800,
+                ),
+              ),
+              CustomBotton(
+                title: 'اضافة شهادة',
+                onPressed: () {},
+                width: 120.w,
+              ),
+            ],
           ),
           Gap(12.h),
           // Certificates List
@@ -223,107 +233,102 @@ class _CertificatesSectionContent extends StatelessWidget {
     bool isMe,
     List<CertificateModel> allCertificates, // ⭐ أضف هنا
   ) {
-    return GestureDetector(
-      onTap: isMe
-          ? () => _navigateToEditCertificate(context, allCertificates)
-          : null,
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.primary100),
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Certificate Image
-            SizedBox(
-              width: 110.w,
-              height: 85.w,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16.r),
-                child: certificate.image != null
-                    ? CachedNetworkImage(
-                        imageUrl: certificate.image!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey.shade200,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.kprimaryColor,
-                              strokeWidth: 2.w,
-                            ),
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.primary100),
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Certificate Image
+          SizedBox(
+            width: 110.w,
+            height: 85.w,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16.r),
+              child: certificate.image != null
+                  ? CachedNetworkImage(
+                      imageUrl: certificate.image!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey.shade200,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.kprimaryColor,
+                            strokeWidth: 2.w,
                           ),
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey.shade200,
-                          child: Center(
-                            child: Icon(
-                              Icons.image,
-                              color: Colors.grey.shade400,
-                              size: 32.w,
-                            ),
-                          ),
-                        ),
-                      )
-                    : Container(
+                      ),
+                      errorWidget: (context, url, error) => Container(
                         color: Colors.grey.shade200,
                         child: Center(
                           child: Icon(
-                            Icons.picture_as_pdf,
+                            Icons.image,
                             color: Colors.grey.shade400,
                             size: 32.w,
                           ),
                         ),
                       ),
-              ),
-            ),
-            Gap(16.w),
-            // Certificate Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    certificate.nameCertificate,
-                    style: Styles.textStyle16Meduim.copyWith(
-                      color: AppColors.secondary800,
+                    )
+                  : Container(
+                      color: Colors.grey.shade200,
+                      child: Center(
+                        child: Icon(
+                          Icons.picture_as_pdf,
+                          color: Colors.grey.shade400,
+                          size: 32.w,
+                        ),
+                      ),
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Gap(4.h),
-                  Text(
-                    certificate.fromWhere,
-                    style: Styles.textStyle16.copyWith(
-                      color: AppColors.secondary600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Gap(4.h),
-                  Text(
-                    DateFormat('yyyy').format(certificate.date),
-                    style: Styles.textStyle16.copyWith(
-                      color: AppColors.secondary600,
-                    ),
-                  ),
-                ],
-              ),
             ),
-            // if (isMe) ...[
-            Gap(16.w),
-            GestureDetector(
-              onTap: () => _navigateToEditCertificate(context, allCertificates),
-              child: AppImage(
-                AssetsData.editIcon,
-                width: 20.w,
-                color: AppColors.primary400,
-              ),
+          ),
+          Gap(16.w),
+          // Certificate Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  certificate.nameCertificate,
+                  style: Styles.textStyle16Meduim.copyWith(
+                    color: AppColors.secondary800,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Gap(4.h),
+                Text(
+                  certificate.fromWhere,
+                  style: Styles.textStyle16.copyWith(
+                    color: AppColors.secondary600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Gap(4.h),
+                Text(
+                  DateFormat('yyyy').format(certificate.date),
+                  style: Styles.textStyle16.copyWith(
+                    color: AppColors.secondary600,
+                  ),
+                ),
+              ],
             ),
-          ],
-          // ],
-        ),
+          ),
+          // if (isMe) ...[
+          Gap(16.w),
+          GestureDetector(
+            onTap: () => _navigateToEditCertificate(context, allCertificates),
+            child: AppImage(
+              AssetsData.editIcon,
+              width: 20.w,
+              color: AppColors.primary400,
+            ),
+          ),
+        ],
+        // ],
       ),
     );
   }

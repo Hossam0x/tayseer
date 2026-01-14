@@ -13,13 +13,17 @@ import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cu
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository_impl.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/comments_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/comments_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
@@ -237,5 +241,29 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<EditCertificateCubit>(
     () => EditCertificateCubit(getIt<CertificatesRepository>()),
+  );
+
+  getIt.registerLazySingleton<CommentsRepository>(
+    () => CommentsRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<CommentsCubit>(
+    () => CommentsCubit(getIt<CommentsRepository>()),
+  );
+
+  getIt.registerLazySingleton<ArchiveRepository>(
+    () => ArchiveRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<ArchivedChatsCubit>(
+    () => ArchivedChatsCubit(getIt<ArchiveRepository>()),
+  );
+
+  getIt.registerFactory<ArchivedPostsCubit>(
+    () => ArchivedPostsCubit(getIt<ArchiveRepository>()),
+  );
+
+  getIt.registerFactory<ArchivedStoriesCubit>(
+    () => ArchivedStoriesCubit(getIt<ArchiveRepository>()),
   );
 }
