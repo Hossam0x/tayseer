@@ -4,6 +4,7 @@
 
 import 'dart:developer';
 
+import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 
 import '../../../../my_import.dart';
@@ -58,15 +59,28 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     String? token = CachNetwork.getStringData(key: 'token');
+    String? userType = CachNetwork.getStringData(key: 'user_type');
+
     if (mounted) {
-      if (token.isNotEmpty) {
+      if (token != null && token.isNotEmpty) {
+        log("token found");
+        log("userType===$userType");
+
+        if (userType == UserTypeEnum.guest.name) {
+          log("Navigating as guest");
+          context.pushReplacementNamed(
+            AppRouter.kAdvisorLayoutView,
+            arguments: {'currentUserType': UserTypeEnum.guest},
+          );
+          return; // ✅ أضف return هنا
+        }
+
         context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
       } else {
         context.pushReplacementNamed(AppRouter.kRegisrationView);
       }
     }
   }
-
   // @override
   // void dispose() {
   //   _controller.dispose();

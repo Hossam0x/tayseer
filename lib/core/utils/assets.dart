@@ -168,4 +168,18 @@ abstract class AssetsData {
   static const String icInviteSettings = "assets/icons/icInviteSettings.svg";
   static const String icManagementSettings =
       "assets/icons/icManagementSettings.svg";
+  static const String noSessionHistoryIcon =
+      "assets/icons/NoSessionHistory.png";
+  static const String experienceIcon = "assets/icons/Experience.svg";
+  static const String lname = "assets/icons/Lname.svg";
+
+  static const String conversitionIcon = "assets/icons/conversition.svg";
+  static const String rateIcon = "assets/icons/rate.svg";
+  static const String ratingSuccessIcon = "assets/icons/rating_success.png";
+  static const String anonIcon = "assets/icons/anon.svg";
+  static const String bankAccountIcon = "assets/icons/bankaccount.svg";
+  static const String cuponCodeIcon = "assets/icons/CuponCode.svg";
+  static const String doctorIcon = "assets/icons/doctor.svg";
+  static const String sessionChatTimeIcon = "assets/icons/SessionChatTime.svg";
+  static const String vodacasheIcon = "assets/icons/voda.png";
 }

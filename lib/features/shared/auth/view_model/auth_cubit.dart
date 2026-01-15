@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -883,6 +884,10 @@ class AuthCubit extends Cubit<AuthState> {
           await CachNetwork.setData(
             key: 'token',
             value: guestResponse.data?.token ?? '',
+          );
+          await CachNetwork.setData(
+            key: 'user_type',
+            value: UserTypeEnum.guest.name,
           );
           emit(
             state.copyWith(

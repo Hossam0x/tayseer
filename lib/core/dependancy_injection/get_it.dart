@@ -26,6 +26,8 @@ import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 
 import '../../my_import.dart';
 
@@ -189,4 +191,11 @@ Future<void> setupGetIt() async {
   getIt.registerFactory<EventDetailCubit>(
     () => EventDetailCubit(repo: getIt<EventDetailRepository>()),
   );
+
+  getIt.registerLazySingleton<MySpaceRepo>(
+    () => MySpaceRepo(getIt<ApiService>()),
+  );
+
+  /// MySpace Cubit
+  getIt.registerFactory<MySpaceCubit>(() => MySpaceCubit(getIt<MySpaceRepo>()));
 }

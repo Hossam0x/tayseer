@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
@@ -31,6 +33,15 @@ import 'package:tayseer/features/shared/auth/view/select_days_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
+import 'package:tayseer/features/user/my_space/data/model/booking_data.dart';
+import 'package:tayseer/features/user/my_space/data/model/sessoin_model.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/AdvisorProfile/Advisor_information.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/rating/user_rating_advisor.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/reschedule/user_reschedule.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/sessionDetails/session_details_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/sessionHistory/session_history_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/ticketSession/ticket_session_success.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/ticketSession/ticket_session_view.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
 import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
 import 'package:tayseer/features/user/questions/children_living_status_view.dart';
@@ -106,6 +117,13 @@ abstract class AppRouter {
   static const kChatRequest = '/chatrequest';
   static const kChatSearchView = '/ChatSearchView';
   static const kConversitionView = '/ConversitionView';
+  static const advisorchatprofile = '/advisorchatprofile';
+  static const sessionhistory = '/sessionhistory';
+  static const incommingsessiondetails = '/incommingsessiondetails';
+  static const kUserRescheduleView = '/UserRescheduleView';
+  static const userRatingAdvisor = '/UserRatingAdvisor';
+  static const userticketSessionView = '/UserTicketSessionView';
+  static const sessionticketsuccessview = '/SessionTicketSuccessView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -498,9 +516,15 @@ abstract class AppRouter {
             child: ActivationSuccessView(),
           ),
         );
+      case AppRouter.userRatingAdvisor:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const RatingView(),
+        );
 
       // advisor routes
       case kAdvisorLayoutView:
+        log(settings.arguments.toString());
         final args = settings.arguments as Map<String, dynamic>?;
         final userType = args != null && args['currentUserType'] != null
             ? args['currentUserType'] as UserTypeEnum
@@ -605,6 +629,44 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const NotificationView(),
+        );
+      case advisorchatprofile:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const AdvisorInformation(),
+        );
+      case sessionhistory:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SessionHistoryView(),
+        );
+      case incommingsessiondetails:
+        final args = settings.arguments as SessionDetailsModel;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => UsersessionDetailsView(sessionModel: args),
+        );
+      case kUserRescheduleView:
+        final args = settings.arguments as Map<String, dynamic>?;
+
+        final BookingData? data = args?['oldBookingData'];
+
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => UserReschedule(
+            title: args?['title'] ?? 'اعاده جدوله',
+            oldBookingData: data,
+          ),
+        );
+      case userticketSessionView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const TicketSessionView(),
+        );
+      case sessionticketsuccessview:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const BookingSuccessView(),
         );
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;

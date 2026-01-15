@@ -5,6 +5,7 @@ import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/custom_feb_menu.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/advisor/profille/views/profile_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 
@@ -75,11 +76,12 @@ class ALayOutViewBody extends StatelessWidget {
             description:
                 'أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.',
           ),
-          GuestLockWidget(
-            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-            description:
-                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-          ),
+          // GuestLockWidget(
+          //   message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
+          //   description:
+          //       'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
+          // ),
+          MySpaceView(),
           GuestLockWidget(
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:

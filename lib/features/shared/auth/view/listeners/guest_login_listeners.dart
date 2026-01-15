@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -30,6 +32,7 @@ class GuestLoginListeners extends StatelessWidget {
           );
 
           Future.delayed(const Duration(seconds: 1), () {
+            log('Navigating to Advisor Layout as Guest');
             context.pushReplacementNamed(
               AppRouter.kAdvisorLayoutView,
               arguments: {'currentUserType': UserTypeEnum.guest},

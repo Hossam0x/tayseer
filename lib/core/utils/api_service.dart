@@ -16,7 +16,8 @@ class ApiService {
         'Accept-Language': selectedLanguage ?? 'ar',
       };
       headers['Authorization'] =
-          'Bearer ${CachNetwork.getStringData(key: 'token')}';
+          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDdlOThkZjlmOGJjZTNiZjM1NWZjMCIsImVtYWlsIjoiYWJkZWxmYXRhaG1vaGFyZW1AZ21haWwuY29tIiwidHlwZSI6ImFkdmlzb3IiLCJpYXQiOjE3NjcxNjc2NzR9.hU8S3qylgVCc6yggvVDntR5OqHfbNfgAqPFOF6jm6vQ';
+      // 'Bearer ${CachNetwork.getStringData(key: 'token')}';
       headers["Accept"] = "application/json";
       final response = await _dio.get(
         "$kbaseUrl$endPoint",
