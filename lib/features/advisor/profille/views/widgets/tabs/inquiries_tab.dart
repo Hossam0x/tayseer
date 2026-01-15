@@ -24,6 +24,8 @@ class InquiryTab extends StatelessWidget {
     ];
 
     return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.all(16.w),
       itemCount: inquiries.length,
       itemBuilder: (context, index) {
@@ -36,7 +38,7 @@ class InquiryTab extends StatelessWidget {
   Widget _buildInquiryCard(Map<String, dynamic> inquiry) {
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: AppColors.whiteCardBack,
         borderRadius: BorderRadius.circular(16.r),
@@ -93,7 +95,7 @@ class InquiryTab extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppImage(AssetsData.icCamera),
+                AppImage(AssetsData.icCamera, width: 20.w),
                 Gap(6.w),
                 GradientText(text: 'رد', style: Styles.textStyle20SemiBold),
               ],

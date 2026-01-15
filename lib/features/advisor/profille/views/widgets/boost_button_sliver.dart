@@ -23,7 +23,7 @@ class BoostButtonSliver extends StatelessWidget {
     return SliverToBoxAdapter(
       child: Padding(
         padding: margin ?? EdgeInsets.symmetric(horizontal: 50.w),
-        child: _BoostButtonContent(
+        child: BoostButton(
           onPressed: onPressed,
           text: text,
           width: width,
@@ -35,14 +35,15 @@ class BoostButtonSliver extends StatelessWidget {
   }
 }
 
-class _BoostButtonContent extends StatefulWidget {
+class BoostButton extends StatefulWidget {
   final VoidCallback onPressed;
   final String text;
   final double? width;
   final double? height;
   final EdgeInsetsGeometry? padding;
 
-  const _BoostButtonContent({
+  const BoostButton({
+    super.key,
     required this.onPressed,
     required this.text,
     this.width,
@@ -51,10 +52,10 @@ class _BoostButtonContent extends StatefulWidget {
   });
 
   @override
-  State<_BoostButtonContent> createState() => __BoostButtonContentState();
+  State<BoostButton> createState() => _BoostButtonState();
 }
 
-class __BoostButtonContentState extends State<_BoostButtonContent> {
+class _BoostButtonState extends State<BoostButton> {
   // bool _isPressed = false;
 
   @override
@@ -70,7 +71,7 @@ class __BoostButtonContentState extends State<_BoostButtonContent> {
         height: widget.height ?? 56.h,
         padding:
             widget.padding ??
-            EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
+            EdgeInsets.symmetric(horizontal: 24.w, vertical: 6.h),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: const [
@@ -86,7 +87,7 @@ class __BoostButtonContentState extends State<_BoostButtonContent> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AppImage(AssetsData.boostIcon),
+            AppImage(AssetsData.boostIcon, width: 26.w, height: 26.h),
             Gap(12.w),
             Text(
               widget.text,

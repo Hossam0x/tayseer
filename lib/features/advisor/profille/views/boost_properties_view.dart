@@ -40,7 +40,12 @@ class BoostPropertiesView extends StatelessWidget {
                       SelectionTile(
                         label: 'الموقع',
                         value: 'مصر',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRouter.kLocationSelectionView,
+                          );
+                        },
                       ),
 
                       Gap(16.h),
@@ -48,7 +53,12 @@ class BoostPropertiesView extends StatelessWidget {
                       SelectionTile(
                         label: 'مواضيع الاستشارات',
                         value: 'العلاج والتوجيه الزوجي',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRouter.kConsultationTopicsView,
+                          );
+                        },
                       ),
 
                       Gap(40.h),
@@ -62,12 +72,7 @@ class BoostPropertiesView extends StatelessWidget {
               // 5. Bottom Action Button
               CustomBotton(
                 title: 'اشتراك',
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    AppRouter.kLocationSelectionView,
-                  );
-                },
+                onPressed: () {},
                 useGradient: true,
               ),
               Gap(20.h),

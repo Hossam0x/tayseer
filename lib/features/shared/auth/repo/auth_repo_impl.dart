@@ -45,6 +45,7 @@ class AuthRepoImpl implements AuthRepo {
       final fcmToken = await getFcmToken();
       final platform = Platform.isAndroid ? 'android' : 'ios';
       debugPrint('deviceId::$deviceId');
+
       final response = await apiService.post(
         endPoint: selectedUserType == UserTypeEnum.asConsultant
             ? '/advisor/login'
@@ -127,7 +128,7 @@ class AuthRepoImpl implements AuthRepo {
       final deviceId = await getDeviceId();
       final fcmToken = await getFcmToken();
       final platform = Platform.isAndroid ? 'android' : 'ios';
-
+      
       final response = await apiService.post(
         endPoint: '/auth/google',
         data: {
