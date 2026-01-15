@@ -1,66 +1,119 @@
+import 'package:tayseer/core/models/category_model.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class HomeFilterSection extends StatefulWidget {
-  const HomeFilterSection({super.key});
+class HomeFilterSection extends StatelessWidget {
+  final ScrollController? scrollController;
 
-  @override
-  State<HomeFilterSection> createState() => _HomeFilterSectionState();
-}
-
-class _HomeFilterSectionState extends State<HomeFilterSection> {
-  int _selectedIndex = 0;
-
-  static const List<String> _filters = [
-    "الكل",
-    "جديد",
-    "المقبلين على الزواج",
-    "محبين السفر",
-    "المخطوبين",
-  ];
-
-  void _onFilterSelected(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  const HomeFilterSection({super.key, this.scrollController});
 
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
       child: Padding(
-        // 1. نقلنا المارجن هنا عشان يبقى مسافة خارجية للسكشن كله
         padding: EdgeInsets.only(
           bottom: context.responsiveHeight(10),
           right: context.responsiveWidth(24),
           left: context.responsiveWidth(24),
         ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _filters.asMap().entries.map((entry) {
-              int idx = entry.key;
-              String title = entry.value;
+        child: BlocBuilder<HomeCubit, HomeState>(
+          buildWhen: (previous, current) =>
+              previous.categoriesState != current.categoriesState ||
+              previous.categories != current.categories ||
+              previous.selectedCategoryId != current.selectedCategoryId ||
+              previous.categoriesIsLoadingMore !=
+                  current.categoriesIsLoadingMore,
+          builder: (context, state) {
+            if (state.categoriesState == CubitStates.loading) {
+              return const _ShimmerLoading();
+            }
 
-              return Row(
-                children: [
-                  _FilterItem(
-                    title: title,
-                    isSelected: _selectedIndex == idx,
-                    onTap: () => _onFilterSelected(idx),
-                  ),
-                  // 3. إضافة المسافة بين العناصر يدوياً بدلاً من separated
-                  if (idx != _filters.length - 1)
-                    Gap(context.responsiveWidth(8)),
-                ],
+            if (state.categoriesState == CubitStates.failure) {
+              return _ErrorState(
+                onRetry: () => context.read<HomeCubit>().fetchCategories(),
               );
-            }).toList(),
-          ),
+            }
+
+            return _FilterList(
+              categories: state.categories,
+              selectedCategoryId: state.selectedCategoryId,
+              isLoadingMore: state.categoriesIsLoadingMore,
+              hasMore: state.categoriesHasMore,
+              scrollController: scrollController,
+            );
+          },
         ),
       ),
     );
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 📋 Filter List Widget
+// ─────────────────────────────────────────────────────────────────────────────
+class _FilterList extends StatelessWidget {
+  final List<CategoryModel> categories;
+  final String? selectedCategoryId;
+  final bool isLoadingMore;
+  final bool hasMore;
+  final ScrollController? scrollController;
+
+  const _FilterList({
+    required this.categories,
+    required this.selectedCategoryId,
+    required this.isLoadingMore,
+    required this.hasMore,
+    this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollInfo) {
+        if (!isLoadingMore &&
+            hasMore &&
+            scrollInfo.metrics.pixels >=
+                scrollInfo.metrics.maxScrollExtent * 0.9) {
+          context.read<HomeCubit>().fetchCategories(loadMore: true);
+        }
+        return false;
+      },
+      child: SingleChildScrollView(
+        controller: scrollController,
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            // "الكل" filter
+            _FilterItem(
+              title: "الكل",
+              isSelected: selectedCategoryId == null,
+              onTap: () => context.read<HomeCubit>().selectCategory(null),
+            ),
+            // Category filters
+            ...categories.map((category) {
+              return Padding(
+                padding: EdgeInsets.only(right: context.responsiveWidth(8)),
+                child: _FilterItem(
+                  title: category.name,
+                  isSelected: selectedCategoryId == category.id,
+                  onTap: () =>
+                      context.read<HomeCubit>().selectCategory(category.id),
+                ),
+              );
+            }),
+            // Loading more indicator
+            if (isLoadingMore) const _ShimmerItem(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🔘 Filter Item Widget
+// ─────────────────────────────────────────────────────────────────────────────
 class _FilterItem extends StatelessWidget {
   final String title;
   final bool isSelected;
@@ -78,10 +131,9 @@ class _FilterItem extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-
         padding: EdgeInsets.symmetric(
           horizontal: context.responsiveWidth(12),
-          vertical: context.responsiveHeight(8), // ده اللي بيعمل الطول
+          vertical: context.responsiveHeight(8),
         ),
         decoration: BoxDecoration(
           color: isSelected
@@ -94,6 +146,89 @@ class _FilterItem extends StatelessWidget {
           style: Styles.textStyle14.copyWith(
             color: isSelected ? Colors.black : AppColors.kGreyB3,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ✨ Shimmer Loading Widget
+// ─────────────────────────────────────────────────────────────────────────────
+class _ShimmerLoading extends StatelessWidget {
+  const _ShimmerLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(
+          5,
+          (index) => Padding(
+            padding: EdgeInsets.only(left: context.responsiveWidth(8)),
+            child: const _ShimmerItem(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShimmerItem extends StatelessWidget {
+  const _ShimmerItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        width: context.responsiveWidth(80),
+        height: context.responsiveHeight(35),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(6.r),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ❌ Error State Widget
+// ─────────────────────────────────────────────────────────────────────────────
+class _ErrorState extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GestureDetector(
+        onTap: onRetry,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.responsiveWidth(12),
+            vertical: context.responsiveHeight(8),
+          ),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6.r),
+            border: Border.all(color: Colors.red),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.refresh, size: 16, color: Colors.red),
+              Gap(4.w),
+              Text(
+                "فشل التحميل، اضغط للإعادة",
+                style: Styles.textStyle12.copyWith(color: Colors.red),
+              ),
+            ],
           ),
         ),
       ),

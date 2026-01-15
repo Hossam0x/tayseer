@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
-import 'package:tayseer/features/advisor/add_post/model/category_model.dart';
+import 'package:tayseer/core/models/category_model.dart';
 import 'package:tayseer/my_import.dart';
 
 import 'posts_repository.dart';
