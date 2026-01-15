@@ -1,4 +1,3 @@
-import 'package:tayseer/features/shared/auth/view/widget/session_dutration_item.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -76,7 +75,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       children: [
                         // --- خيار 30 دقيقة ---
-                        SessionDurationItem(
+                        _SessionDurationItem(
                           title: context.tr('30_minutes'),
                           isActive: state.isThirtyMinutesSelected,
                           priceController: _price30Controller,
@@ -92,7 +91,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
                         Gap(context.responsiveHeight(16)),
 
                         // --- خيار 60 دقيقة ---
-                        SessionDurationItem(
+                        _SessionDurationItem(
                           title: context.tr('60_minutes'),
                           isActive: state.isSixtyMinutesSelected,
                           priceController: _price60Controller,
@@ -161,46 +160,46 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
   }
 }
 
-// class _SessionDurationItem extends StatelessWidget {
-//   final String title;
-//   final bool isActive;
-//   final Function(bool) onSwitchChanged;
-//   final Function(String) onPriceChanged;
-//   final TextEditingController priceController;
+class _SessionDurationItem extends StatelessWidget {
+  final String title;
+  final bool isActive;
+  final Function(bool) onSwitchChanged;
+  final Function(String) onPriceChanged;
+  final TextEditingController priceController;
 
-//   const _SessionDurationItem({
-//     required this.title,
-//     required this.isActive,
-//     required this.onSwitchChanged,
-//     required this.onPriceChanged,
-//     required this.priceController,
-//   });
+  const _SessionDurationItem({
+    required this.title,
+    required this.isActive,
+    required this.onSwitchChanged,
+    required this.onPriceChanged,
+    required this.priceController,
+  });
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Column(
-//       children: [
-//         Row(
-//           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//           children: [
-//             Text(title, style: Styles.textStyle18),
-//             Transform.scale(
-//               scale: 0.8, // تصغير بسيط عشان يناسب التصميم
-//               child: Switch(
-//                 value: isActive,
-//                 onChanged: onSwitchChanged,
-//                 activeTrackColor: AppColors.kprimaryColor,
-//                 inactiveTrackColor: HexColor('b3b3b3'),
-//                 activeColor: Colors.white,
-//                 inactiveThumbColor: Colors.white,
-//                 trackOutlineColor: const WidgetStatePropertyAll(
-//                   Colors.transparent,
-//                 ),
-//                 trackOutlineWidth: const WidgetStatePropertyAll(0),
-//               ),
-//             ),
-//           ],
-//         ),
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: Styles.textStyle18),
+            Transform.scale(
+              scale: 0.8, // تصغير بسيط عشان يناسب التصميم
+              child: Switch(
+                value: isActive,
+                onChanged: onSwitchChanged,
+                activeTrackColor: AppColors.kprimaryColor,
+                inactiveTrackColor: HexColor('b3b3b3'),
+                activeColor: Colors.white,
+                inactiveThumbColor: Colors.white,
+                trackOutlineColor: const WidgetStatePropertyAll(
+                  Colors.transparent,
+                ),
+                trackOutlineWidth: const WidgetStatePropertyAll(0),
+              ),
+            ),
+          ],
+        ),
 
         AnimatedCrossFade(
           firstChild: const SizedBox(width: double.infinity),

@@ -18,8 +18,7 @@ class _RegisrationViewState extends State<RegisrationView> {
   @override
   void initState() {
     super.initState();
-    if (selectedUserType == UserTypeEnum.user)
-      context.read<AuthCubit>().getLastLogIn();
+    context.read<AuthCubit>().getLastLogIn();
   }
 
   @override
@@ -40,10 +39,13 @@ class _RegisrationViewState extends State<RegisrationView> {
                       previous.signInWithAppleState !=
                           current.signInWithAppleState ||
                       previous.signInWithGoogleState !=
-                          current.signInWithGoogleState;
+                          current.signInWithGoogleState ||
+                      previous.authGoogleState != current.authGoogleState;
                 },
                 listener: (context, state) {
                   if (state.fromScreen != 'registration') return;
+
+                  // عرض الـ loading
                   if (state.signInWithGoogleState == CubitStates.loading ||
                       state.signInWithAppleState == CubitStates.loading ||
                       state.registerState == CubitStates.loading) {
@@ -54,10 +56,16 @@ class _RegisrationViewState extends State<RegisrationView> {
                     );
                   }
 
+                  // فشل التسجيل أو الدخول
                   if (state.signInWithGoogleState == CubitStates.failure ||
                       state.signInWithAppleState == CubitStates.failure ||
-                      state.registerState == CubitStates.failure) {
-                    context.pop();
+                      state.registerState == CubitStates.failure ||
+                      state.authGoogleState == CubitStates.failure) {
+                    // إغلاق أي dialog مفتوح
+                    if (Navigator.canPop(context)) {
+                      context.pop();
+                    }
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       CustomSnackBar(
                         context,
@@ -67,21 +75,14 @@ class _RegisrationViewState extends State<RegisrationView> {
                       ),
                     );
                   }
-                  if (state.registerState == CubitStates.success) {
-                    context.pop();
 
-                    context.pushNamed(AppRouter.kUserLayoutView);
-                    // if (state.verify == true) {
-                    //   final route = routeByLastQuestion(
-                    //     state.lastQuestionNumber,
-                    //   );
-                    //   context.pushNamed(route);
-                    // } else {
-                    //   context.pushNamed(AppRouter.kOtpView);
-                    // }
-                  }
-                  if (state.signInWithGoogleState == CubitStates.success) {
-                    context.pop();
+                  // نجاح تسجيل الدخول بجوجل
+                  if (state.signInWithGoogleState == CubitStates.success &&
+                      state.authGoogleState == CubitStates.success) {
+                    if (Navigator.canPop(context)) {
+                      context.pop(); // إغلاق أي dialog
+                    }
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       CustomSnackBar(
                         context,
@@ -89,6 +90,7 @@ class _RegisrationViewState extends State<RegisrationView> {
                         isSuccess: true,
                       ),
                     );
+
                     Future.delayed(const Duration(seconds: 2), () {
                       context.pushReplacementNamed(AppRouter.kUserLayoutView);
                     });

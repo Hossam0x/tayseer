@@ -351,7 +351,12 @@ class AuthCubit extends Cubit<AuthState> {
         value: UserTypeEnum.user.name,
       );
       selectedUserType = UserTypeEnum.user;
+
       emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
+
+      debugPrint(
+        "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%$idToken",
+      );
       if (idToken != null) {
         sendAuthGoogle(idToken: idToken);
       } else {
@@ -374,6 +379,43 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           signInWithGoogleState: CubitStates.failure,
           errorMessage: "حدث خطأ غير متوقع",
+        ),
+      );
+    }
+  }
+
+  Future<void> sendAuthGoogle({required String idToken}) async {
+    emit(state.copyWith(authGoogleState: CubitStates.loading));
+
+    try {
+      final response = await _repo.authGoogle(idToken: idToken);
+
+      response.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              authGoogleState: CubitStates.failure,
+              errorMessage: failure.message,
+              fromScreen: 'registration',
+            ),
+          );
+        },
+        (_) {
+          emit(
+            state.copyWith(
+              authGoogleState: CubitStates.success,
+              fromScreen: 'registration',
+            ),
+          );
+          emit(state.copyWith(authGoogleState: CubitStates.initial));
+          emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          guestLoginState: CubitStates.failure,
+          errorMessage: e.toString(),
         ),
       );
     }
@@ -414,37 +456,6 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           signInWithAppleState: CubitStates.failure,
           errorMessage: 'فشل تسجيل الدخول باستخدام Apple',
-        ),
-      );
-    }
-  }
-
-  Future<void> sendAuthGoogle({required String idToken}) async {
-    emit(state.copyWith(authGoogleState: CubitStates.loading));
-
-    try {
-      final response = await _repo.authGoogle(idToken: idToken);
-
-      response.fold(
-        (failure) {
-          emit(
-            state.copyWith(
-              authGoogleState: CubitStates.failure,
-              errorMessage: failure.message,
-            ),
-          );
-        },
-        (_) {
-          emit(state.copyWith(authGoogleState: CubitStates.success));
-          emit(state.copyWith(authGoogleState: CubitStates.initial));
-          emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
-        },
-      );
-    } catch (e) {
-      emit(
-        state.copyWith(
-          guestLoginState: CubitStates.failure,
-          errorMessage: e.toString(),
         ),
       );
     }
@@ -878,10 +889,6 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  void clearControllers() {
-    emailController.clear();
-  }
-
   void guestLogin() async {
     emit(state.copyWith(guestLoginState: CubitStates.loading));
 
@@ -916,5 +923,16 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     }
+  }
+
+  ///// clear//////
+  void clearControllers() {
+    emailController.clear();
+  }
+
+  @override
+  Future<void> close() {
+    clearControllers();
+    return super.close();
   }
 }

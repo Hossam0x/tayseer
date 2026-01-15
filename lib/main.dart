@@ -14,6 +14,7 @@ void main() async {
   await Hive.initFlutter();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   LocalNotification().initialize();
+  
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
 
