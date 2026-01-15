@@ -71,7 +71,7 @@ class _BoostButtonState extends State<BoostButton> {
         height: widget.height ?? 56.h,
         padding:
             widget.padding ??
-            EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
+            EdgeInsets.symmetric(horizontal: 24.w, vertical: 6.h),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: const [
@@ -87,7 +87,7 @@ class _BoostButtonState extends State<BoostButton> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AppImage(AssetsData.boostIcon),
+            AppImage(AssetsData.boostIcon, width: 26.w, height: 26.h),
             Gap(12.w),
             Text(
               widget.text,

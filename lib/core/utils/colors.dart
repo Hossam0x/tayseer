@@ -105,6 +105,7 @@ abstract class AppColors {
   static Color mentionComment = Color.fromRGBO(75, 184, 249, 1);
   static Color hintText = Color.fromRGBO(153, 161, 190, 1);
   static Color secondary = Color.fromRGBO(60, 60, 67, 0.6);
+  static Color secondary50 = Color.fromRGBO(242, 242, 242, 1);
   static Color secondary100 = Color.fromRGBO(230, 230, 230, 1);
   static Color secondary200 = Color.fromRGBO(204, 204, 204, 1);
   static Color secondary300 = Color.fromRGBO(179, 179, 179, 1);
@@ -120,6 +121,8 @@ abstract class AppColors {
   static Color blackColor = Color.fromRGBO(0, 0, 0, 1);
   static Color whiteCard2Back = Color.fromRGBO(251, 251, 251, 0.64);
   static Color whiteCardBack = Color.fromRGBO(255, 255, 255, 0.46);
+  static Color barGreyColor = Color.fromRGBO(117, 117, 117, 0.1);
+  static Color mainColor = Color.fromRGBO(60, 180, 180, 1);
 
   // Boost Colors
   static const Color primaryPink = Color(0xFFE89AB8);
@@ -129,4 +132,10 @@ abstract class AppColors {
   static const Color boostUnactive = Color.fromRGBO(128, 128, 128, 1);
   static Color gray2 = Color.fromRGBO(174, 174, 178, 1);
   static Color selectLocationBack = Color.fromRGBO(255, 233, 237, 0.17);
+
+  // Settings Colors
+  static Color tabsBack = Color.fromRGBO(249, 248, 236, 1);
+  static Color titleCard = Color.fromRGBO(15, 23, 42, 1);
+  static Color backCardBaqa = Color.fromRGBO(242, 166, 181, 0.47);
+  static Color inactiveColor = Color.fromRGBO(217, 217, 217, 1);
 }

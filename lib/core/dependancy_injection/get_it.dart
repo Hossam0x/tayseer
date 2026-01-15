@@ -13,6 +13,20 @@ import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cu
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository_impl.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/comments_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/comments_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository_impl.dart';
@@ -20,6 +34,12 @@ import 'package:tayseer/features/advisor/stories/presentation/view_model/stories
 import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_v2.dart';
 import 'package:tayseer/features/advisor/chat/data/local/chat_local_datasource.dart';
 import 'package:tayseer/features/advisor/chat/domain/chat_domain.dart';
+import 'package:tayseer/features/advisor/settings/data/models/service_provider_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/story_visibility_repository.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_cubit.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
@@ -187,5 +207,97 @@ Future<void> setupGetIt() async {
   //// Event Detail Cubit
   getIt.registerFactory<EventDetailCubit>(
     () => EventDetailCubit(repo: getIt<EventDetailRepository>()),
+  );
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Profile
+  // ══════════════════════════════════════════════════════════════════════════
+
+  getIt.registerLazySingleton<ProfileRepository>(
+    () => ProfileRepositoryImpl(
+      getIt<ApiService>(),
+    ), // Adjust based on your implementation
+  );
+
+  /// Profile Cubit
+  getIt.registerFactory<ProfileCubit>(
+    () => ProfileCubit(getIt<ProfileRepository>(), getIt<HomeRepository>()),
+  );
+
+  /// Ratings Repository
+  getIt.registerLazySingleton<RatingsRepository>(
+    () => RatingsRepositoryImpl(getIt<ApiService>()),
+  );
+
+  /// Ratings Cubit
+  getIt.registerFactory<RatingsCubit>(
+    () => RatingsCubit(getIt<RatingsRepository>()),
+  );
+
+  /// Certificates Repository
+  getIt.registerLazySingleton<CertificatesRepository>(
+    () => CertificatesRepositoryImpl(getIt<ApiService>()),
+  );
+
+  /// Certificates Cubit
+  getIt.registerFactory<CertificatesCubit>(
+    () => CertificatesCubit(getIt<CertificatesRepository>()),
+  );
+
+  getIt.registerFactory<EditCertificateCubit>(
+    () => EditCertificateCubit(getIt<CertificatesRepository>()),
+  );
+
+  getIt.registerLazySingleton<CommentsRepository>(
+    () => CommentsRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<CommentsCubit>(
+    () => CommentsCubit(getIt<CommentsRepository>()),
+  );
+
+  getIt.registerLazySingleton<ArchiveRepository>(
+    () => ArchiveRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<ArchivedChatsCubit>(
+    () => ArchivedChatsCubit(getIt<ArchiveRepository>()),
+  );
+
+  getIt.registerFactory<ArchivedPostsCubit>(
+    () => ArchivedPostsCubit(getIt<ArchiveRepository>()),
+  );
+
+  getIt.registerFactory<ArchivedStoriesCubit>(
+    () => ArchivedStoriesCubit(getIt<ArchiveRepository>()),
+  );
+
+  getIt.registerLazySingleton<EditPersonalDataRepository>(
+    () => EditPersonalDataRepositoryImpl(getIt<ApiService>(), getIt<Dio>()),
+  );
+
+  getIt.registerFactory<EditPersonalDataCubit>(
+    () => EditPersonalDataCubit(getIt<EditPersonalDataRepository>()),
+  );
+
+  // في service_locator.dart
+  getIt.registerLazySingleton<ServiceProviderRepository>(
+    () => ServiceProviderRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<SessionPricingCubit>(
+    () => SessionPricingCubit(getIt<ServiceProviderRepository>()),
+  );
+
+  getIt.registerFactory<AppointmentsCubit>(
+    () => AppointmentsCubit(getIt<ServiceProviderRepository>()),
+  );
+
+  getIt.registerLazySingleton<StoryVisibilityRepository>(
+    () => StoryVisibilityRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<StoryVisibilityCubit>(
+    () => StoryVisibilityCubit(getIt<StoryVisibilityRepository>()),
   );
 }

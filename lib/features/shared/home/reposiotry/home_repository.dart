@@ -42,9 +42,9 @@ abstract class HomeRepository {
   });
 
   Future<void> likeToggle({
-     String ? commentId,
-     String ? replyId,
-      required bool isRemove,
+    String? commentId,
+    String? replyId,
+    required bool isRemove,
   });
 
   Future<Either<Failure, String>> editComment({
@@ -55,7 +55,7 @@ abstract class HomeRepository {
     required String replyId,
     required String reply,
   });
-    Future<Either<Failure, List<PostModel>>> getReels({
+  Future<Either<Failure, List<PostModel>>> getReels({
     required int page,
     int limit,
   });

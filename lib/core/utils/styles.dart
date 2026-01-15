@@ -78,6 +78,10 @@ abstract class Styles {
     fontSize: 18.sp,
     fontWeight: FontWeight.w400,
   );
+  static final textStyle18Meduim = TextStyle(
+    fontSize: 18.sp,
+    fontWeight: FontWeight.w500,
+  );
   static final textStyle18SemiBold = TextStyle(
     fontSize: 18.sp,
     fontWeight: FontWeight.w600,

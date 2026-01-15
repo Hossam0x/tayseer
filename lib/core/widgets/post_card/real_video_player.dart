@@ -254,7 +254,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
             _stateManager.canRetry(widget.postId)) {
           _retryCount++;
           _stateManager.recordError(widget.postId);
-          debugPrint('🔄 Auto-retrying... (${_retryCount}/$_maxRetries)');
+          debugPrint('🔄 Auto-retrying... ($_retryCount/$_maxRetries)');
           await Future.delayed(Duration(milliseconds: 500 * _retryCount));
           if (mounted && !_isDisposed) {
             _initializeVideo();

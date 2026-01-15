@@ -134,7 +134,7 @@ class _LocationSelectionViewState extends State<LocationSelectionView> {
                           children: [
                             AppImage(
                               AssetsData.locationIcon,
-                              height: 35.h,
+                              height: 25.h,
                               color: AppColors.primary200,
                             ),
                             Gap(6.w),
@@ -174,11 +174,11 @@ class _LocationSelectionViewState extends State<LocationSelectionView> {
                   print('المكان المختار: $_selectedLocation');
 
                   // يمكنك استخدام Provider أو Navigator لإرسال البيانات
-                  Navigator.pushNamed(
-                    context,
-                    AppRouter.kConsultationTopicsView,
-                    arguments: _selectedLocation, // أرسل البيانات
-                  );
+                  // Navigator.pushNamed(
+                  //   context,
+                  //   AppRouter.kConsultationTopicsView,
+                  //   arguments: _selectedLocation, // أرسل البيانات
+                  // );
                 }
               },
               useGradient: true,
