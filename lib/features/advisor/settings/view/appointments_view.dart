@@ -1,64 +1,65 @@
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:tayseer/features/settings/view/cubit/service_provider_cubits.dart';
-import 'package:tayseer/features/settings/view/cubit/service_provider_states.dart';
-import 'package:tayseer/features/settings/view/widgets/session_price_item.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_states.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/time_slot_item.dart';
 import 'package:tayseer/my_import.dart';
 
-class SessionPricingView extends StatelessWidget {
-  const SessionPricingView({super.key});
+class AppointmentsView extends StatelessWidget {
+  const AppointmentsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<SessionPricingCubit>(
-      create: (_) => getIt<SessionPricingCubit>(),
-      child: BlocConsumer<SessionPricingCubit, SessionPricingState>(
+    return BlocProvider<AppointmentsCubit>(
+      create: (_) => getIt<AppointmentsCubit>(),
+      child: BlocConsumer<AppointmentsCubit, AppointmentsState>(
         listener: (context, state) {
           if (state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(context, text: state.errorMessage!, isError: true),
             );
-            context.read<SessionPricingCubit>().clearError();
+            context.read<AppointmentsCubit>().clearError();
           }
 
+          // // عرض رسالة النجاح فقط عند الانتهاء من الحفظ وبدون أخطاء
           // if (state.isSaving == false &&
           //     state.errorMessage == null &&
           //     !state.hasChanges) {
           //   Future.delayed(Duration.zero, () {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   CustomSnackBar(
-          //     context,
-          //     text: 'تم حفظ التغييرات بنجاح',
-          //     isSuccess: true,
-          //   ),
-          // );
+          //     ScaffoldMessenger.of(context).showSnackBar(
+          //       CustomSnackBar(
+          //         context,
+          //         text: 'تم حفظ التغييرات بنجاح',
+          //         isSuccess: true,
+          //       ),
+          //     );
           //   });
           // }
         },
         builder: (context, state) {
-          final cubit = context.read<SessionPricingCubit>();
+          final cubit = context.read<AppointmentsCubit>();
 
           return Scaffold(
-            body: AdvisorBackground(
-              child: Stack(
-                children: [
-                  // الخلفية
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 110.h,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage(AssetsData.homeBarBackgroundImage),
-                          fit: BoxFit.fill,
-                        ),
+            body: Stack(
+              children: [
+                // الخلفية
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 110.h,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage(AssetsData.homeBarBackgroundImage),
+                        fit: BoxFit.fill,
                       ),
                     ),
                   ),
+                ),
 
-                  // المحتوى
-                  SafeArea(
+                // المحتوى
+                AdvisorBackground(
+                  child: SafeArea(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
                       child: Column(
@@ -107,7 +108,7 @@ class SessionPricingView extends StatelessWidget {
                               child: Column(
                                 children: [
                                   Expanded(
-                                    child: _buildPricingList(
+                                    child: _buildTimeSlotsList(
                                       context,
                                       state,
                                       cubit,
@@ -123,8 +124,8 @@ class SessionPricingView extends StatelessWidget {
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
@@ -147,7 +148,7 @@ class SessionPricingView extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 18.0),
           child: Text(
-            'مدة واسعار الجلسات',
+            'المواعيد',
             style: Styles.textStyle20Bold.copyWith(
               color: AppColors.secondary800,
             ),
@@ -163,20 +164,21 @@ class SessionPricingView extends StatelessWidget {
       enabled: true,
       child: ListView.separated(
         padding: EdgeInsets.symmetric(vertical: 10.h),
-        itemCount: 2, // جلستين
+        itemCount: 7, // 7 أيام
         separatorBuilder: (context, index) => Gap(20.h),
         itemBuilder: (context, index) {
           return Container(
             padding: EdgeInsets.all(16.w),
+
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // المدة والتبديل
+                // اليوم والتبديل
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      width: 100.w,
+                      width: 80.w,
                       height: 24.h,
                       decoration: BoxDecoration(
                         color: Colors.grey.shade300,
@@ -195,11 +197,11 @@ class SessionPricingView extends StatelessWidget {
                 ),
                 Gap(16.h),
 
-                // حقل السعر
+                // حقول الوقت
                 Row(
                   children: [
                     Container(
-                      width: 60.w,
+                      width: 30.w,
                       height: 20.h,
                       decoration: BoxDecoration(
                         color: Colors.grey.shade300,
@@ -213,47 +215,25 @@ class SessionPricingView extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.grey.shade300,
                           borderRadius: BorderRadius.circular(16.r),
-                          border: Border.all(
-                            color: AppColors.secondary200.withOpacity(0.5),
-                          ),
                         ),
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 24.w,
-                              height: 24.h,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade400,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            Gap(8.w),
-                            Container(
-                              width: 1.w,
-                              height: 25.h,
-                              color: Colors.grey.shade400,
-                            ),
-                            Gap(8.w),
-                            Expanded(
-                              child: Container(
-                                height: 20.h,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade400,
-                                  borderRadius: BorderRadius.circular(4.r),
-                                ),
-                              ),
-                            ),
-                            Gap(16.w),
-                            Container(
-                              width: 40.w,
-                              height: 20.h,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade400,
-                                borderRadius: BorderRadius.circular(4.r),
-                              ),
-                            ),
-                          ],
+                      ),
+                    ),
+                    Gap(8.w),
+                    Container(
+                      width: 30.w,
+                      height: 20.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(4.r),
+                      ),
+                    ),
+                    Gap(8.w),
+                    Expanded(
+                      child: Container(
+                        height: 55.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(16.r),
                         ),
                       ),
                     ),
@@ -267,31 +247,31 @@ class SessionPricingView extends StatelessWidget {
     );
   }
 
-  Widget _buildPricingList(
+  Widget _buildTimeSlotsList(
     BuildContext context,
-    SessionPricingState state,
-    SessionPricingCubit cubit,
+    AppointmentsState state,
+    AppointmentsCubit cubit,
   ) {
-    final sessionTypes = state.sessionTypes;
+    final weeklyAvailability = state.weeklyAvailability;
 
     return ListView.separated(
       padding: EdgeInsets.symmetric(vertical: 10.h),
-      itemCount: sessionTypes.length,
+      itemCount: weeklyAvailability.length,
       separatorBuilder: (context, index) => Gap(20.h),
       itemBuilder: (context, index) {
-        final sessionKey = sessionTypes.keys.elementAt(index);
-        final session = sessionTypes[sessionKey]!;
+        final day = weeklyAvailability[index];
+        final timeSlot = day.timeSlots.isNotEmpty ? day.timeSlots.first : null;
 
-        return SessionPriceItem(
-          duration: session.durationText,
-          initialPrice: session.price.toString(),
-          initialStatus: session.isEnabled,
-          onPriceChanged: (price) {
-            final priceInt = int.tryParse(price) ?? 0;
-            cubit.updateSessionPrice(sessionKey, priceInt);
-          },
+        return TimeSlotItem(
+          name: day.dayName,
+          initialFrom: timeSlot?.start ?? '00:00',
+          initialTo: timeSlot?.end ?? '00:00',
+          initialStatus: day.isEnabled,
           onStatusChanged: (isActive) {
-            cubit.toggleSessionStatus(sessionKey, isActive);
+            cubit.toggleDayStatus(day.dayOfWeek, isActive);
+          },
+          onTimeChanged: (start, end) {
+            cubit.updateDayTimeSlot(day.dayOfWeek, start, end);
           },
         );
       },
@@ -300,8 +280,8 @@ class SessionPricingView extends StatelessWidget {
 
   Widget _buildSaveButton(
     BuildContext context,
-    SessionPricingCubit cubit,
-    SessionPricingState state,
+    AppointmentsCubit cubit,
+    AppointmentsState state,
   ) {
     return CustomBotton(
       width: context.width * 0.9,
@@ -313,7 +293,7 @@ class SessionPricingView extends StatelessWidget {
           : 'لا توجد تغييرات',
       onPressed: state.isSaving || !state.hasChanges
           ? null
-          : () => cubit.saveChanges(context),
+          : () => cubit.saveChanges(),
       // backgroundColor: state.hasChanges ? null : AppColors.inactiveColor,
     );
   }

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
-import 'package:tayseer/features/settings/data/models/story_visibility_models.dart';
+import 'package:tayseer/features/advisor/settings/data/models/story_visibility_models.dart';
 
 class StoryVisibilityState extends Equatable {
   final CubitStates state;

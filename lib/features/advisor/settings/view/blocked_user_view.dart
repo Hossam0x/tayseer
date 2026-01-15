@@ -1,4 +1,4 @@
-import 'package:tayseer/features/settings/data/models/blocked_user_item.dart';
+import 'package:tayseer/features/advisor/settings/data/models/blocked_user_item.dart';
 import 'package:tayseer/my_import.dart';
 
 class BlockedUsersView extends StatefulWidget {

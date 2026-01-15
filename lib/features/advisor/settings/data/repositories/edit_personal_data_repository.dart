@@ -143,18 +143,14 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       print('📤 Full URL: $fullUrl');
 
       // إرسال الطلب
-      final response = await _dio.patch(
-        'advisor/editPersonalData',
+      final response = await _apiService.patch(
+        endPoint: '/advisor/editPersonalData',
+        isFromData: true,
         data: formData,
-        options: Options(
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
+        headers: {'Content-Type': 'multipart/form-data'},
       );
 
-      final responseData = response.data as Map<String, dynamic>;
+      final responseData = response;
       print('📥 Response: $responseData');
 
       if (responseData['success'] == true) {

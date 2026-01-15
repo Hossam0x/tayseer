@@ -1,5 +1,5 @@
 import 'package:debounce_throttle/debounce_throttle.dart';
-import 'package:tayseer/features/settings/data/repositories/story_visibility_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/story_visibility_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'story_visibility_state.dart';
 

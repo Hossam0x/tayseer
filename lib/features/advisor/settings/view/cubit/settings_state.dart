@@ -1,4 +1,4 @@
-import 'package:tayseer/features/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 
 abstract class SettingsState {
   const SettingsState();

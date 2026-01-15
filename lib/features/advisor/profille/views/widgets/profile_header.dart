@@ -6,7 +6,7 @@ import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
-import 'package:tayseer/features/settings/view/settings_view.dart';
+import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key});

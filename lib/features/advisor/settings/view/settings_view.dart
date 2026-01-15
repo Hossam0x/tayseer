@@ -1,6 +1,7 @@
-import 'package:tayseer/features/settings/data/models/setting_item_model.dart';
-import 'package:tayseer/features/settings/view/cubit/settings_cubit.dart';
-import 'package:tayseer/features/settings/view/cubit/settings_state.dart';
+import 'package:tayseer/core/widgets/custom_show_dialog.dart';
+import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class SettingsView extends StatelessWidget {
@@ -34,7 +35,6 @@ class SettingsView extends StatelessWidget {
         child: SafeArea(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-
             children: [
               Gap(20.h),
               Text(
@@ -116,9 +116,25 @@ class SettingsView extends StatelessWidget {
                   Center(
                     child: Text('الإعدادات', style: Styles.textStyle20Bold),
                   ),
+                  Gap(8.h),
 
-                  // بقية المحتوى بدون خلفية
-                  Expanded(child: _buildSettingsList(context, state.settings)),
+                  // القائمة + زر تسجيل الخروج
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // القائمة الرئيسية
+                        Expanded(
+                          child: _buildSettingsList(context, state.settings),
+                        ),
+
+                        // زر تسجيل الخروج - خارج القائمة
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 40.h, top: 16.h),
+                          child: _buildLogoutButton(context),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -136,7 +152,7 @@ class SettingsView extends StatelessWidget {
   ) {
     return ListView.separated(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.only(top: 16.h, bottom: 40.h),
+      padding: EdgeInsets.only(top: 16.h, bottom: 16.h),
       itemCount: settings.length,
       separatorBuilder: (context, index) =>
           Divider(color: AppColors.secondary100, height: 1),
@@ -219,6 +235,115 @@ class SettingsView extends StatelessWidget {
     );
   }
 
+  Widget _buildLogoutButton(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 8.w),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showLogoutConfirmation(context),
+          borderRadius: BorderRadius.circular(16.r),
+          splashColor: AppColors.kRedColor.withOpacity(0.3),
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: AppColors.kRedColor, width: 1.5),
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.kRedColor.withOpacity(0.1),
+                  AppColors.kRedColor.withOpacity(0.05),
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // أيقونة تسجيل الخروج
+                Container(
+                  width: 24.w,
+                  height: 24.w,
+                  margin: EdgeInsets.only(left: 8.w),
+                  child: Icon(
+                    Icons.logout_rounded,
+                    color: AppColors.kRedColor,
+                    size: 22.w,
+                  ),
+                ),
+
+                // النص
+                Text(
+                  'تسجيل الخروج',
+                  style: Styles.textStyle16Meduim.copyWith(
+                    color: AppColors.kRedColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    CustomshowDialogWithImage(
+      context,
+      title: 'تسجيل الخروج',
+      supTitle: 'هل أنت متأكد من تسجيل الخروج من حسابك؟',
+      imageUrl: AssetsData.icBlockedSettings,
+      bottonText: 'نعم، سجل خروج',
+      cancelText: 'إلغاء',
+      showCancelButton: true,
+      onPressed: () {
+        _performLogout(context);
+      },
+      onCancel: () {
+        // لا شيء مطلوب - سيتم إغلاق الدايلوج تلقائياً
+      },
+    );
+  }
+
+  void _performLogout(BuildContext context) async {
+    // عرض تحميل أثناء تنفيذ العملية
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) =>
+          Center(child: CircularProgressIndicator(color: AppColors.primary100)),
+    );
+
+    try {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRouter.kRegisrationView,
+        (route) => false,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // عرض رسالة نجاح باستخدام CustomSnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(context, text: 'تم تسجيل الخروج بنجاح', isSuccess: true),
+      );
+    } catch (e) {
+      Navigator.pop(context);
+
+      // عرض رسالة خطأ باستخدام CustomSnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'حدث خطأ أثناء تسجيل الخروج',
+          isError: true,
+        ),
+      );
+    }
+  }
+
   void _handleSettingTap(BuildContext context, SettingItemModel setting) async {
     if (setting.onTap != null) {
       setting.onTap!();
@@ -227,11 +352,8 @@ class SettingsView extends StatelessWidget {
 
     if (setting.routeName.isNotEmpty) {
       if (setting.id == 'language') {
-        // انتظار اللغة الجديدة عند الرجوع
         final result = await Navigator.pushNamed(context, setting.routeName);
-
         if (result != null && result is String) {
-          // تحديث الـ cubit مباشرة
           context.read<SettingsCubit>().updateLanguage(result);
         }
       } else {
@@ -253,16 +375,11 @@ class SettingsView extends StatelessWidget {
 
     // إظهار رسالة تأكيد
     if (setting.id == 'hide_story') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            value ? 'تم تفعيل إخفاء القصة' : 'تم إلغاء إخفاء القصة',
-            style: Styles.textStyle14.copyWith(color: AppColors.kWhiteColor),
-          ),
-          backgroundColor: value ? Colors.green : AppColors.secondary600,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      final message = value ? 'تم تفعيل إخفاء القصة' : 'تم إلغاء إخفاء القصة';
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(CustomSnackBar(context, text: message, isSuccess: value));
     }
   }
 }

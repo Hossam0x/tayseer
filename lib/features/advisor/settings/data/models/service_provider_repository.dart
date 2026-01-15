@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/my_import.dart';
-import '../models/service_provider_models.dart';
+import 'service_provider_models.dart';
 
 abstract class ServiceProviderRepository {
   Future<Either<Failure, ServiceProviderResponse>> getServiceProvider();

@@ -249,6 +249,8 @@ extension UpdatePersonalDataRequestExtension on UpdatePersonalDataRequest {
     String? aboutYou,
     String? image,
     String? video,
+    bool clearImage = false, // إضافة flag لحذف الصورة
+    bool clearVideo = false, // إضافة flag لحذف الفيديو
   }) {
     return UpdatePersonalDataRequest(
       name: name ?? this.name,
@@ -259,8 +261,8 @@ extension UpdatePersonalDataRequestExtension on UpdatePersonalDataRequest {
       jobGrade: jobGrade ?? this.jobGrade,
       yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
       aboutYou: aboutYou ?? this.aboutYou,
-      image: image ?? this.image,
-      video: video ?? this.video,
+      image: clearImage ? null : (image ?? this.image),
+      video: clearVideo ? null : (video ?? this.video),
     );
   }
 }

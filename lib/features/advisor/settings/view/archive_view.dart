@@ -1,7 +1,7 @@
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
-import 'package:tayseer/features/settings/view/widgets/chats_tab_view.dart';
-import 'package:tayseer/features/settings/view/widgets/posts_tab_view.dart';
-import 'package:tayseer/features/settings/view/widgets/stories_tab_view.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/chats_tab_view.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/posts_tab_view.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/stories_tab_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class ArchiveView extends StatelessWidget {

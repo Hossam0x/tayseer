@@ -1,5 +1,5 @@
-import 'package:tayseer/features/settings/view/widgets/package_card.dart';
-import 'package:tayseer/features/settings/view/widgets/subscriprion_card.dart'
+import 'package:tayseer/features/advisor/settings/view/widgets/package_card.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/subscriprion_card.dart'
     show SubscriptionCard;
 import 'package:tayseer/my_import.dart';
 

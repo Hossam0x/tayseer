@@ -1,11 +1,10 @@
-import 'package:tayseer/features/settings/data/models/edit_personal_data_models.dart';
-import 'package:tayseer/features/settings/data/repositories/edit_personal_data_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'edit_personal_data_state.dart';
 
 class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   final EditPersonalDataRepository _repository;
-  bool _shouldRemoveVideo = false; // flag لحذف الفيديو
 
   EditPersonalDataCubit(this._repository)
     : super(EditPersonalDataState.initial()) {
@@ -72,6 +71,8 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
               imagePreviewUrl: profile.image,
               videoPreviewUrl: profile.video,
               errorMessage: null,
+              shouldRemoveVideo: false,
+              shouldRemoveImage: false,
             ),
           );
         },
@@ -135,21 +136,49 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   }
 
   void updateImageFile(File? file) {
-    emit(state.copyWith(imageFile: file));
+    if (file != null) {
+      emit(
+        state.copyWith(
+          imageFile: file,
+          shouldRemoveImage: false,
+          imagePreviewUrl: file.path,
+        ),
+      );
+    }
   }
 
   void updateVideoFile(File? file, {String? previewUrl}) {
-    emit(state.copyWith(videoFile: file, videoPreviewUrl: previewUrl));
+    if (file != null) {
+      emit(
+        state.copyWith(
+          videoFile: file,
+          videoPreviewUrl: previewUrl,
+          shouldRemoveVideo: false,
+        ),
+      );
+    }
   }
 
-  // دالة جديدة لحذف الفيديو
-  void removeVideo() {
-    _shouldRemoveVideo = true;
+  // دالة لحذف الصورة
+  void removeImage() {
     emit(
       state.copyWith(
-        videoFile: null,
-        videoPreviewUrl: null,
-        currentData: state.currentData.copyWith(video: null),
+        clearImageFile: true,
+        clearImagePreviewUrl: true,
+        shouldRemoveImage: true,
+        currentData: state.currentData.copyWith(clearImage: true),
+      ),
+    );
+  }
+
+  // دالة لحذف الفيديو
+  void removeVideo() {
+    emit(
+      state.copyWith(
+        clearVideoFile: true,
+        clearVideoPreviewUrl: true,
+        shouldRemoveVideo: true,
+        currentData: state.currentData.copyWith(clearVideo: true),
       ),
     );
   }
@@ -172,6 +201,8 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
         if (uploadedImageUrl != null) {
           imageUrl = uploadedImageUrl;
         }
+      } else if (state.shouldRemoveImage) {
+        imageUrl = null;
       }
 
       // رفع الفيديو الجديد إذا كان موجوداً
@@ -183,20 +214,29 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
         if (uploadedVideoUrl != null) {
           videoUrl = uploadedVideoUrl;
         }
+      } else if (state.shouldRemoveVideo) {
+        videoUrl = null;
       }
 
       // تحديث الـ request
       final updatedRequest = state.currentData.copyWith(
         image: imageUrl,
         video: videoUrl,
+        clearImage: state.shouldRemoveImage,
+        clearVideo: state.shouldRemoveVideo,
       );
 
-      // إرسال الطلب مع flag حذف الفيديو إذا لزم
+      print('📤 Updated request - Image: $imageUrl, Video: $videoUrl');
+      print(
+        '📤 Should remove - Image: ${state.shouldRemoveImage}, Video: ${state.shouldRemoveVideo}',
+      );
+
+      // إرسال الطلب
       final result = await _repository.updatePersonalData(
         request: updatedRequest,
         imageFile: state.imageFile,
         videoFile: state.videoFile,
-        removeVideo: _shouldRemoveVideo && state.videoFile == null,
+        removeVideo: state.shouldRemoveVideo && state.videoFile == null,
       );
 
       result.fold(
@@ -204,15 +244,16 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
           emit(state.copyWith(isSaving: false, errorMessage: failure.message));
         },
         (response) {
-          // إعادة تعيين flag حذف الفيديو
-          _shouldRemoveVideo = false;
-
           emit(
             state.copyWith(
               isSaving: false,
               errorMessage: null,
               imagePreviewUrl: imageUrl,
               videoPreviewUrl: videoUrl,
+              shouldRemoveVideo: false,
+              shouldRemoveImage: false,
+              clearImageFile: true,
+              clearVideoFile: true,
               profile: state.profile?.copyWith(
                 name: updatedRequest.name ?? state.profile!.name,
                 aboutYou: updatedRequest.aboutYou ?? state.profile!.aboutYou,
@@ -223,11 +264,9 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                 professionalSpecialization:
                     updatedRequest.professionalSpecialization ??
                     state.profile!.professionalSpecialization,
-                image: updatedRequest.image ?? state.profile!.image,
-                video: updatedRequest.video ?? state.profile!.video,
+                image: imageUrl,
+                video: videoUrl,
               ),
-              imageFile: null,
-              videoFile: null,
             ),
           );
         },

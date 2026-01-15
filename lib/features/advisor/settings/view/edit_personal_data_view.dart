@@ -1,6 +1,6 @@
 import 'package:chewie/chewie.dart';
-import 'package:tayseer/features/settings/view/cubit/edit_personal_data_state.dart';
-import 'package:tayseer/features/settings/view/cubit/edit_personal_data_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class EditPersonalDataView extends StatefulWidget {
@@ -688,7 +688,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 right: 10,
                 child: GestureDetector(
                   onTap: () {
-                    cubit.updateImageFile(null);
+                    cubit.removeImage();
                   },
                   child: Container(
                     padding: EdgeInsets.all(4.w),
@@ -799,7 +799,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                   isExpanded: true,
                   icon: Icon(
                     Icons.keyboard_arrow_down_rounded,
-                    color: AppColors.primary500,
+                    color: AppColors.inactiveColor,
                     size: 24.w,
                   ),
                   elevation: 16,
@@ -973,49 +973,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                         ),
                       ),
                     ),
-
-                    // تشغيل/إيقاف الفيديو
-                    if (_chewieController != null &&
-                        _chewieController!
-                            .videoPlayerController
-                            .value
-                            .isInitialized)
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_chewieController == null ||
-                                !_chewieController!
-                                    .videoPlayerController
-                                    .value
-                                    .isInitialized) {
-                              return;
-                            }
-
-                            if (_chewieController!.isPlaying) {
-                              _chewieController!.pause();
-                            } else {
-                              _chewieController!.play();
-                            }
-                            setState(() {});
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(8.w),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.7),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              _chewieController!.isPlaying
-                                  ? Icons.pause
-                                  : Icons.play_arrow,
-                              color: Colors.white,
-                              size: 24.w,
-                            ),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
                 if (videoFile != null)

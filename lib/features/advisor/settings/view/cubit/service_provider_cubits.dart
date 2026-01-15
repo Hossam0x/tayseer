@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/features/settings/data/models/service_provider_models.dart';
-import 'package:tayseer/features/settings/data/models/service_provider_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/models/service_provider_models.dart';
+import 'package:tayseer/features/advisor/settings/data/models/service_provider_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'service_provider_states.dart';
 

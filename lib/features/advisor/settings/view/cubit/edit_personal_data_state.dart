@@ -1,8 +1,7 @@
 import 'dart:io';
-
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
-import 'package:tayseer/features/settings/data/models/edit_personal_data_models.dart';
+import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 
 class EditPersonalDataState extends Equatable {
   final CubitStates state;
@@ -14,6 +13,8 @@ class EditPersonalDataState extends Equatable {
   final bool isSaving;
   final String? videoPreviewUrl;
   final String? imagePreviewUrl;
+  final bool shouldRemoveVideo; // إضافة flag
+  final bool shouldRemoveImage; // إضافة flag
 
   const EditPersonalDataState({
     this.state = CubitStates.initial,
@@ -25,6 +26,8 @@ class EditPersonalDataState extends Equatable {
     this.isSaving = false,
     this.videoPreviewUrl,
     this.imagePreviewUrl,
+    this.shouldRemoveVideo = false,
+    this.shouldRemoveImage = false,
   });
 
   factory EditPersonalDataState.initial() {
@@ -44,17 +47,29 @@ class EditPersonalDataState extends Equatable {
     bool? isSaving,
     String? videoPreviewUrl,
     String? imagePreviewUrl,
+    bool? shouldRemoveVideo,
+    bool? shouldRemoveImage,
+    bool clearImageFile = false,
+    bool clearVideoFile = false,
+    bool clearVideoPreviewUrl = false,
+    bool clearImagePreviewUrl = false,
   }) {
     return EditPersonalDataState(
       state: state ?? this.state,
       profile: profile ?? this.profile,
       currentData: currentData ?? this.currentData,
-      imageFile: imageFile ?? this.imageFile,
-      videoFile: videoFile ?? this.videoFile,
+      imageFile: clearImageFile ? null : (imageFile ?? this.imageFile),
+      videoFile: clearVideoFile ? null : (videoFile ?? this.videoFile),
       errorMessage: errorMessage ?? this.errorMessage,
       isSaving: isSaving ?? this.isSaving,
-      videoPreviewUrl: videoPreviewUrl ?? this.videoPreviewUrl,
-      imagePreviewUrl: imagePreviewUrl ?? this.imagePreviewUrl,
+      videoPreviewUrl: clearVideoPreviewUrl
+          ? null
+          : (videoPreviewUrl ?? this.videoPreviewUrl),
+      imagePreviewUrl: clearImagePreviewUrl
+          ? null
+          : (imagePreviewUrl ?? this.imagePreviewUrl),
+      shouldRemoveVideo: shouldRemoveVideo ?? this.shouldRemoveVideo,
+      shouldRemoveImage: shouldRemoveImage ?? this.shouldRemoveImage,
     );
   }
 
@@ -78,14 +93,10 @@ class EditPersonalDataState extends Equatable {
     // تحقق من وجود ملفات جديدة
     bool filesChanged = imageFile != null || videoFile != null;
 
-    // تحقق من حذف الفيديو (videoPreviewUrl أصبح null مع أنه كان موجوداً)
-    bool videoRemoved =
-        request.video != null &&
-        currentData.video == null &&
-        videoFile == null &&
-        (videoPreviewUrl == null || videoPreviewUrl!.isEmpty);
+    // تحقق من حذف الفيديو أو الصورة
+    bool mediaRemoved = shouldRemoveVideo || shouldRemoveImage;
 
-    return textChanged || filesChanged || videoRemoved;
+    return textChanged || filesChanged || mediaRemoved;
   }
 
   @override
@@ -99,5 +110,7 @@ class EditPersonalDataState extends Equatable {
     isSaving,
     videoPreviewUrl,
     imagePreviewUrl,
+    shouldRemoveVideo,
+    shouldRemoveImage,
   ];
 }
