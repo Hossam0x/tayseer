@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:tayseer/core/widgets/comment_card/comment_content.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_input_editor.dart';
-import 'package:tayseer/features/advisor/home/model/comment_model.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
 import 'package:tayseer/my_import.dart';
 
 /// CommentCard - Reusable component for displaying comments

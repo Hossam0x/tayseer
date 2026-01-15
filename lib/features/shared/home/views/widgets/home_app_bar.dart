@@ -1,6 +1,6 @@
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
-import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
-import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class HomeAppBar extends StatefulWidget {

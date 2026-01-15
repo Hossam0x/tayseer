@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/home/model/comment_model.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
 import 'package:tayseer/my_import.dart';
 
 /// CommentContent - Displays comment information

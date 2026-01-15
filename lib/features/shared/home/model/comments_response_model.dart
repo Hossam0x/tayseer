@@ -1,6 +1,6 @@
 
 import 'package:tayseer/core/models/pagination_model.dart';
-import 'package:tayseer/features/advisor/home/model/comment_model.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
 
 class CommentsResponseModel {
   final List<CommentModel> comments;

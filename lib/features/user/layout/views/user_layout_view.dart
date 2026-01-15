@@ -7,6 +7,11 @@ class UserLayoutView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: const UserLayOutViewBody());
+    return Scaffold(
+      body: BlocProvider(
+        create: (context) => LayoutCubit(),
+        child: const UserLayOutViewBody(),
+      ),
+    );
   }
 }

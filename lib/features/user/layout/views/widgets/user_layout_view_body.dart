@@ -1,8 +1,7 @@
 import 'package:tayseer/core/enum/user_type.dart';
-import 'package:tayseer/features/advisor/home/views/home_view.dart';
+import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
-import 'package:tayseer/features/user/layout/view_model/user_layout_cubit.dart';
-import 'package:tayseer/features/user/layout/view_model/user_layout_state.dart';
+
 import 'package:tayseer/features/user/layout/views/widgets/user_nav_bar.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -11,9 +10,9 @@ class UserLayOutViewBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<UserLayoutCubit>();
+    final cubit = context.read<LayoutCubit>();
 
-    return BlocBuilder<UserLayoutCubit, UserLayoutState>(
+    return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
         final pages = _getPages(cubit);
 
@@ -21,7 +20,6 @@ class UserLayOutViewBody extends StatelessWidget {
           body: Stack(
             children: [
               IndexedStack(index: state.currentIndex, children: pages),
-
               Positioned(
                 left: 0,
                 right: 0,
@@ -32,19 +30,6 @@ class UserLayOutViewBody extends StatelessWidget {
                   child: const UserNavBar(),
                 ),
               ),
-
-              // AnimatedPositioned(
-              //   duration: const Duration(milliseconds: 300),
-              //   curve: Curves.easeInOut,
-              //   left: 20,
-              //   // استخدام المتغير لتحديد الموقع
-              //   bottom: isFabVisible ? 90.h : -400.h,
-
-              //   child: SafeArea(
-              //     // تمرير المتغير للويدجت ليقوم بإغلاق نفسه عند الاختفاء
-              //     child: CustomFabMenu(isVisible: isFabVisible),
-              //   ),
-              // ),
             ],
           ),
         );
@@ -52,7 +37,7 @@ class UserLayOutViewBody extends StatelessWidget {
     );
   }
 
-  List<Widget> _getPages(UserLayoutCubit cubit) {
+  List<Widget> _getPages(LayoutCubit cubit) {
     switch (selectedUserType) {
       case UserTypeEnum.user:
         return [

@@ -2,11 +2,11 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
-import 'package:tayseer/features/advisor/home/model/comment_model.dart';
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
-import 'package:tayseer/features/advisor/home/model/post_response_model.dart';
-import 'package:tayseer/features/advisor/home/model/comments_response_model.dart';
-import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/features/shared/home/model/post_response_model.dart';
+import 'package:tayseer/features/shared/home/model/comments_response_model.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import '../../../../my_import.dart';
 
 class HomeRepositoryImpl implements HomeRepository {

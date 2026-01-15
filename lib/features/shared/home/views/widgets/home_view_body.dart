@@ -1,11 +1,11 @@
 
 import 'package:tayseer/core/utils/video_playback_manager.dart';
-import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
-import 'package:tayseer/features/advisor/home/views/widgets/anonymous_mode_banner.dart'; 
-import 'package:tayseer/features/advisor/home/views/widgets/home_app_bar.dart';
-import 'package:tayseer/features/advisor/home/views/widgets/home_filter_section.dart';
-import 'package:tayseer/features/advisor/home/views/widgets/home_post_feed.dart';
-import 'package:tayseer/features/advisor/home/views/widgets/home_search_bar.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/shared/home/views/widgets/anonymous_mode_banner.dart'; 
+import 'package:tayseer/features/shared/home/views/widgets/home_app_bar.dart';
+import 'package:tayseer/features/shared/home/views/widgets/home_filter_section.dart';
+import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
+import 'package:tayseer/features/shared/home/views/widgets/home_search_bar.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stories_section.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart'; 

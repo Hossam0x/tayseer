@@ -31,7 +31,6 @@ import 'package:tayseer/features/shared/auth/view/select_days_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
-import 'package:tayseer/features/user/layout/view_model/user_layout_cubit.dart';
 import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
@@ -63,7 +62,7 @@ import 'package:tayseer/features/advisor/layout/views/a_layout_view.dart';
 import 'package:tayseer/features/shared/auth/view/regisration_view.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
 // import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/on_boarding_screen.dart';
-import 'package:tayseer/features/advisor/home/views/home_view.dart';
+import 'package:tayseer/features/shared/home/views/home_view.dart';
 import '../../../my_import.dart';
 
 abstract class AppRouter {
@@ -152,10 +151,7 @@ abstract class AppRouter {
         );
       case kUserLayoutView:
         return SlideLeftRoute(
-          page: BlocProvider(
-            create: (context) => UserLayoutCubit(),
-            child: const UserLayoutView(),
-          ),
+          page: const UserLayoutView(),
           routeSettings: settings,
         );
 

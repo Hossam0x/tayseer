@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/widgets/post_details_card/post_details_card.dart';
-import 'package:tayseer/features/advisor/home/model/comment_model.dart';
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
-import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/comment_input_area.dart';
 import 'package:tayseer/my_import.dart';

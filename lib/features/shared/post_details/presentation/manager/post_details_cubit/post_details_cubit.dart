@@ -1,8 +1,8 @@
 // lib/features/advisor/home/cubit/post_details_cubit.dart
 
 import 'package:equatable/equatable.dart';
-import 'package:tayseer/features/advisor/home/model/comment_model.dart';
-import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/my_import.dart';
 
 part 'post_details_state.dart';

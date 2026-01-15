@@ -1,7 +1,7 @@
 import 'package:tayseer/core/widgets/comment_card/comment_card.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
-import 'package:tayseer/features/advisor/home/model/comment_model.dart';
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/my_import.dart';
 
 /// PostDetailsCard - Reusable component for displaying post with comments
