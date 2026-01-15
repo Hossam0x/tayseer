@@ -7,7 +7,7 @@ import 'package:tayseer/core/widgets/post_card/reaction_like_button.dart';
 import 'package:tayseer/core/widgets/post_card/share_button.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
-import 'package:tayseer/features/advisor/home/views/post_details_view.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 // تأكد من استيراد AppImage
 
@@ -237,8 +237,25 @@ class ReelsOverlay extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) => PostDetailsView(
                     post: post,
-                    homeCubit: homeCubit,
                     cachedController: cachedController,
+                    postUpdatesStream: homeCubit.stream.map((state) {
+                      return state.posts.firstWhere(
+                        (p) => p.postId == post.postId,
+                        orElse: () => post,
+                      );
+                    }),
+                    onReactionChanged: (postId, reactionType) {
+                      homeCubit.reactToPost(
+                        postId: postId,
+                        reactionType: reactionType,
+                      );
+                    },
+                    onShareTap: (postId) {
+                      homeCubit.toggleSharePost(postId: postId);
+                    },
+                    onHashtagTap: (hashtag) {
+                      context.pushNamed(AppRouter.kAdvisorSearchView);
+                    },
                   ),
                 ),
               );

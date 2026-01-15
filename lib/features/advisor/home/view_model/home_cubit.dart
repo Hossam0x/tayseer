@@ -10,7 +10,7 @@ import '../reposiotry/home_repository.dart';
 
 class HomeCubit extends Cubit<HomeState> {
   final HomeRepository homeRepository;
-  final int pageSize = 10;
+  final int pageSize = 5;
 
   HomeCubit(this.homeRepository) : super(HomeState()) {
     _loadCachedData();

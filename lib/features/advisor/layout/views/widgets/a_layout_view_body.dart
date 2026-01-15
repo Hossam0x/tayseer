@@ -32,7 +32,9 @@ class ALayOutViewBody extends StatelessWidget {
                 bottom: 0,
                 child: AnimatedSlide(
                   duration: const Duration(milliseconds: 300),
-                  offset: state.isNavVisible ? Offset.zero : const Offset(0, 1),
+                  offset: (state.currentIndex != 0 || state.isNavVisible)
+                      ? Offset.zero
+                      : const Offset(0, 1),
                   child: const ANavBar(),
                 ),
               ),

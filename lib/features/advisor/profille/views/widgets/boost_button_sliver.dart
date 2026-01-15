@@ -23,7 +23,7 @@ class BoostButtonSliver extends StatelessWidget {
     return SliverToBoxAdapter(
       child: Padding(
         padding: margin ?? EdgeInsets.symmetric(horizontal: 50.w),
-        child: _BoostButtonContent(
+        child: BoostButton(
           onPressed: onPressed,
           text: text,
           width: width,
@@ -35,14 +35,15 @@ class BoostButtonSliver extends StatelessWidget {
   }
 }
 
-class _BoostButtonContent extends StatefulWidget {
+class BoostButton extends StatefulWidget {
   final VoidCallback onPressed;
   final String text;
   final double? width;
   final double? height;
   final EdgeInsetsGeometry? padding;
 
-  const _BoostButtonContent({
+  const BoostButton({
+    super.key,
     required this.onPressed,
     required this.text,
     this.width,
@@ -51,10 +52,10 @@ class _BoostButtonContent extends StatefulWidget {
   });
 
   @override
-  State<_BoostButtonContent> createState() => __BoostButtonContentState();
+  State<BoostButton> createState() => _BoostButtonState();
 }
 
-class __BoostButtonContentState extends State<_BoostButtonContent> {
+class _BoostButtonState extends State<BoostButton> {
   // bool _isPressed = false;
 
   @override

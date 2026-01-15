@@ -1,9 +1,6 @@
 import 'package:tayseer/features/advisor/profille/views/widgets/bio_information.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_header.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_tabs_section.dart';
-import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileView extends StatelessWidget {
@@ -26,21 +23,13 @@ class ProfileView extends StatelessWidget {
               BioInformation(),
 
               // Stories
-              BlocProvider.value(
-                value: getIt<StoriesCubit>()..fetchStories(),
-                child: const ProfileStoriesSection(),
-              ),
+              // BlocProvider.value(
+              //   value: getIt<StoriesCubit>()..fetchStories(),
+              //   child: const ProfileStoriesSection(),
+              // ),
 
               // Tabs with Content
               const ProfileTabsSection(),
-
-              // Boost Button
-              BoostButtonSliver(
-                text: "تعزيز",
-                onPressed: () {
-                  // TODO: تنفيذ تعزيز الحساب
-                },
-              ),
 
               // Extra Space
               SliverToBoxAdapter(child: Gap(100.h)),

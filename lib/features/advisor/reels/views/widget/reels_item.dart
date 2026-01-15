@@ -119,6 +119,7 @@ class _ReelsItemState extends State<ReelsItem>
           // 1. Video Background
           ReelsVideoBackground(
             videoUrl: widget.post.videoUrl ?? '',
+            videoId: widget.post.postId, // إضافة videoId
             shouldPlay: _shouldPlay,
             onTap: _togglePlay,
             onDoubleTap: _handleDoubleTap,

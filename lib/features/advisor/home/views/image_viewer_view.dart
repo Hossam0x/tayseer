@@ -7,7 +7,7 @@ import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
-import 'package:tayseer/features/advisor/home/views/post_details_view.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class ImageViewerView extends StatefulWidget {
@@ -312,7 +312,29 @@ class _ImageViewerViewState extends State<ImageViewerView>
                                 MaterialPageRoute(
                                   builder: (context) => PostDetailsView(
                                     post: post,
-                                    homeCubit: widget.homeCubit,
+                                    postUpdatesStream: widget.homeCubit.stream
+                                        .map((state) {
+                                          return state.posts.firstWhere(
+                                            (p) => p.postId == post.postId,
+                                            orElse: () => post,
+                                          );
+                                        }),
+                                    onReactionChanged: (postId, reactionType) {
+                                      widget.homeCubit.reactToPost(
+                                        postId: postId,
+                                        reactionType: reactionType,
+                                      );
+                                    },
+                                    onShareTap: (postId) {
+                                      widget.homeCubit.toggleSharePost(
+                                        postId: postId,
+                                      );
+                                    },
+                                    onHashtagTap: (hashtag) {
+                                      context.pushNamed(
+                                        AppRouter.kAdvisorSearchView,
+                                      );
+                                    },
                                   ),
                                 ),
                               );
@@ -339,7 +361,29 @@ class _ImageViewerViewState extends State<ImageViewerView>
                                 MaterialPageRoute(
                                   builder: (context) => PostDetailsView(
                                     post: post,
-                                    homeCubit: widget.homeCubit,
+                                    postUpdatesStream: widget.homeCubit.stream
+                                        .map((state) {
+                                          return state.posts.firstWhere(
+                                            (p) => p.postId == post.postId,
+                                            orElse: () => post,
+                                          );
+                                        }),
+                                    onReactionChanged: (postId, reactionType) {
+                                      widget.homeCubit.reactToPost(
+                                        postId: postId,
+                                        reactionType: reactionType,
+                                      );
+                                    },
+                                    onShareTap: (postId) {
+                                      widget.homeCubit.toggleSharePost(
+                                        postId: postId,
+                                      );
+                                    },
+                                    onHashtagTap: (hashtag) {
+                                      context.pushNamed(
+                                        AppRouter.kAdvisorSearchView,
+                                      );
+                                    },
                                   ),
                                 ),
                               ),
