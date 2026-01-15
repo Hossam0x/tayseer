@@ -7,9 +7,9 @@ class ANavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ALayoutCubit, ALayoutState>(
+    return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
-        final cubit = context.read<ALayoutCubit>();
+        final cubit = context.read<LayoutCubit>();
         final navItems = NavBarConfig.getNavItems(state.userType);
 
         return Container(

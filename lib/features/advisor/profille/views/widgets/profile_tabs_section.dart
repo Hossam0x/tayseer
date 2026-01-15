@@ -6,7 +6,7 @@ import 'package:tayseer/features/advisor/profille/views/widgets/tabs/inquiries_t
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 
 class ProfileTabsSection extends StatefulWidget {
   const ProfileTabsSection({super.key});

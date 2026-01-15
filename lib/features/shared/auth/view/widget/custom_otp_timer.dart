@@ -1,7 +1,5 @@
 import 'dart:async';
-
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
-
 import '../../../../../my_import.dart';
 
 class CustomOtpTimer extends StatefulWidget {
@@ -25,11 +23,12 @@ class _CustomOtpTimerState extends State<CustomOtpTimer> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_start == 0) {
         setState(() {
-          timer.cancel();
           _isTimerActive = false;
+          timer.cancel();
         });
       } else {
         setState(() {
@@ -45,18 +44,19 @@ class _CustomOtpTimerState extends State<CustomOtpTimer> {
     super.dispose();
   }
 
-  String _formatTime(int seconds) {
-    final minutes = (seconds / 60).floor();
-    final secondsRemaining = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secondsRemaining.toString().padLeft(2, '0')}';
-  }
-
-  void _resendCode() {
+  void _resetAndResend() {
+    context.read<AuthCubit>().resendCode();
     setState(() {
       _start = 300;
       _isTimerActive = true;
-      _startTimer();
     });
+    _startTimer();
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = (seconds ~/ 60);
+    final secondsRemaining = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secondsRemaining.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -67,6 +67,7 @@ class _CustomOtpTimerState extends State<CustomOtpTimer> {
         children: [
           Text(context.tr('otp_sub_title'), style: Styles.textStyle14),
           SizedBox(height: context.height * 0.05),
+
           Directionality(
             textDirection: TextDirection.ltr,
             child: Pinput(
@@ -81,12 +82,11 @@ class _CustomOtpTimerState extends State<CustomOtpTimer> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(17),
                   border: Border.all(
-                    color: const Color(0xfff8d3da), // 👈 غير سليكت
+                    color: const Color(0xfff8d3da),
                     width: 1.4,
                   ),
                 ),
               ),
-
               focusedPinTheme: PinTheme(
                 width: 50,
                 height: 50,
@@ -97,12 +97,11 @@ class _CustomOtpTimerState extends State<CustomOtpTimer> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(17),
                   border: Border.all(
-                    color: AppColors.kprimaryColor, // 👈 سليكت
+                    color: AppColors.kprimaryColor,
                     width: 1.4,
                   ),
                 ),
               ),
-
               submittedPinTheme: PinTheme(
                 width: 50,
                 height: 50,
@@ -118,58 +117,39 @@ class _CustomOtpTimerState extends State<CustomOtpTimer> {
                   ),
                 ),
               ),
-
-              onCompleted: (value) {
-                widget.onOtpSubmitted(value);
-              },
+              onCompleted: (value) => widget.onOtpSubmitted(value),
             ),
           ),
 
           SizedBox(height: context.height * 0.03),
-          if (_isTimerActive)
-            Center(
-              child: Column(
-                children: [
-                  Text(
-                    context.tr('resend_code_after'),
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      context.read<AuthCubit>().resendCode();
-                    },
-                    child: Text(
+
+          _isTimerActive
+              ? Column(
+                  children: [
+                    Text(
+                      context.tr('resend_code_after'),
+                      style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    Text(
                       _formatTime(_start),
                       style: Styles.textStyle12.copyWith(
                         color: HexColor('4d81e7'),
-                        decoration: TextDecoration.underline,
-                        decorationColor: HexColor('4d81e7'),
-                        decorationThickness: 1.5,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  _resendCode;
-
-                  context.read<AuthCubit>().resendCode();
-                },
-                child: Text(
-                  context.tr('resend_code'),
-                  style: Styles.textStyle12.copyWith(
-                    color: HexColor('4d81e7'),
-                    decoration: TextDecoration.underline,
-                    decorationColor: HexColor('4d81e7'),
-                    decorationThickness: 1.5,
+                  ],
+                )
+              : TextButton(
+                  onPressed: _resetAndResend,
+                  child: Text(
+                    context.tr('resend_code'),
+                    style: Styles.textStyle12.copyWith(
+                      color: HexColor('4d81e7'),
+                      decoration: TextDecoration.underline,
+                      decorationColor: HexColor('4d81e7'),
+                      decorationThickness: 1.5,
+                    ),
                   ),
                 ),
-              ),
-            ),
         ],
       ),
     );

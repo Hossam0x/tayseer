@@ -10,6 +10,9 @@ import 'package:tayseer/features/advisor/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository.dart';
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository_impl.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
@@ -44,7 +47,7 @@ import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_cu
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 import '../../my_import.dart';

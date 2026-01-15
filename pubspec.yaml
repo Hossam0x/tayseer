@@ -18,7 +18,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   dartz: ^0.10.1
   date_picker_timeline: ^1.2.6
-  device_info_plus: ^12.3.0
+  device_info_plus: ^11.5.0
   dio: ^5.9.0
   emoji_picker_flutter: ^4.4.0
   equatable: ^2.0.5
@@ -71,6 +71,10 @@ dependencies:
   chewie: ^1.13.0
   debounce_throttle: ^2.0.0
 
+  connectivity_plus: ^6.1.0
+  zego_uikit_signaling_plugin: ^2.8.20
+  zego_uikit_prebuilt_call: ^4.22.2
+  
 
 dev_dependencies:
   flutter_test:

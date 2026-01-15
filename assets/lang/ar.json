@@ -407,5 +407,9 @@
     "conversations": "المحادثات",
     "coming": "القادمة",
     "previous_sessions": "الجلسات السابقة",
-    "session_details": "تفاصيل الجلسة"
+    "session_details": "تفاصيل الجلسة",
+    "welcome" : "مرحباً بك",
+    "session_details": "تفاصيل الجلسة",
+    "age": "سنة",
+    "about_me": "نبذة عني"
 }

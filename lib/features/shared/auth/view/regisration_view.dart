@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:tayseer/core/enum/user_type.dart';
@@ -70,14 +69,16 @@ class _RegisrationViewState extends State<RegisrationView> {
                   }
                   if (state.registerState == CubitStates.success) {
                     context.pop();
-                    if (state.verify == true) {
-                      final route = routeByLastQuestion(
-                        state.lastQuestionNumber,
-                      );
-                      context.pushNamed(route);
-                    } else {
-                      context.pushNamed(AppRouter.kOtpView);
-                    }
+
+                    context.pushNamed(AppRouter.kUserLayoutView);
+                    // if (state.verify == true) {
+                    //   final route = routeByLastQuestion(
+                    //     state.lastQuestionNumber,
+                    //   );
+                    //   context.pushNamed(route);
+                    // } else {
+                    //   context.pushNamed(AppRouter.kOtpView);
+                    // }
                   }
                   if (state.signInWithGoogleState == CubitStates.success) {
                     context.pop();
@@ -89,7 +90,7 @@ class _RegisrationViewState extends State<RegisrationView> {
                       ),
                     );
                     Future.delayed(const Duration(seconds: 2), () {
-                      context.pushNamed(AppRouter.kChooseGenderView);
+                      context.pushReplacementNamed(AppRouter.kUserLayoutView);
                     });
                   }
                 },
@@ -202,7 +203,12 @@ class _RegisrationViewState extends State<RegisrationView> {
                                         color3: HexColor('b362ac'),
                                         text: context.tr('login_email'),
                                         icon: AssetsData.kEmailImage,
-                                        onTap: () {
+                                        onTap: () async {
+                                          await CachNetwork.setData(
+                                            key: 'user_type',
+                                            value: UserTypeEnum.user.name,
+                                          );
+                                          selectedUserType = UserTypeEnum.user;
                                           context.pushNamed(
                                             AppRouter.kRegisterView,
                                             arguments: {'authCubit': authCubit},

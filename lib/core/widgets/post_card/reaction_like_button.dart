@@ -1,11 +1,17 @@
 import 'dart:ui';
 import 'package:tayseer/core/utils/animation/fly_animation.dart';
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/my_import.dart';
 
+/// ReactionLikeButton - Handles like/reaction functionality with animations
+///
+/// Features:
+/// - Long press for reaction picker
+/// - Tap for quick like/unlike
+/// - Fly animation to reaction stack
 class ReactionLikeButton extends StatefulWidget {
   final ReactionType? initialReaction;
-  final Function(ReactionType?) onReactionChanged;
+  final void Function(ReactionType?) onReactionChanged;
   final GlobalKey? destinationKey;
   final double? height;
   final double? width;
@@ -25,12 +31,13 @@ class ReactionLikeButton extends StatefulWidget {
 
 class _ReactionLikeButtonState extends State<ReactionLikeButton> {
   final LayerLink _layerLink = LayerLink();
-
-  // ✅ 1. مفتاح للزرار نفسه (المصدر عند الضغط المباشر)
   final GlobalKey _buttonKey = GlobalKey();
 
   ReactionType? _selectedReaction;
   OverlayEntry? _overlayEntry;
+
+  double get _size => widget.width ?? 38;
+  double get _padding => _size > 38 ? 12 : 6;
 
   @override
   void initState() {
@@ -42,28 +49,31 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
   void didUpdateWidget(covariant ReactionLikeButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialReaction != widget.initialReaction) {
-      setState(() {
-        _selectedReaction = widget.initialReaction;
-      });
+      setState(() => _selectedReaction = widget.initialReaction);
     }
   }
 
-  // ... (دالة _showReactionOverlay زي ما هي) ...
+  // ══════════════════════════════════════════════════════════════════════════
+  // Overlay Management
+  // ══════════════════════════════════════════════════════════════════════════
+
   void _showReactionOverlay() {
     _hideOverlay();
 
     final isRtl = Directionality.of(context) == TextDirection.rtl;
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => Stack(
+      builder: (_) => Stack(
         children: [
+          // Dismiss on tap outside
           Positioned.fill(
             child: GestureDetector(
               onTap: _hideOverlay,
               behavior: HitTestBehavior.translucent,
-              child: Container(color: Colors.transparent),
+              child: const ColoredBox(color: Colors.transparent),
             ),
           ),
+          // Reaction bubble
           CompositedTransformFollower(
             link: _layerLink,
             showWhenUnlinked: true,
@@ -74,10 +84,9 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
             offset: Offset(0, -12.h),
             child: Material(
               color: Colors.transparent,
-              child: ReactionBubble(
+              child: _ReactionBubble(
                 onSelected: (reaction, sourceKey) {
                   _hideOverlay();
-                  // أنيميشن القائمة (Overlay)
                   _triggerFlyAnimation(reaction, sourceKey);
                 },
               ),
@@ -90,12 +99,17 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
     Overlay.of(context).insert(_overlayEntry!);
   }
 
-  // ✅ دالة موحدة لتشغيل الأنيميشن وتحديث الداتا
+  void _hideOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Reaction Handling
+  // ══════════════════════════════════════════════════════════════════════════
+
   void _triggerFlyAnimation(ReactionType reaction, GlobalKey? sourceKey) {
-    // نحدث الزرار فوراً عشان اليوزر يحس بالاستجابة
-    setState(() {
-      _selectedReaction = reaction;
-    });
+    setState(() => _selectedReaction = reaction);
 
     if (widget.destinationKey != null && sourceKey != null) {
       FlyAnimation.flyWidget(
@@ -108,51 +122,35 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
           decoration: const BoxDecoration(shape: BoxShape.circle),
           child: AppImage(getReactionAsset(reaction), fit: BoxFit.contain),
         ),
-        onComplete: () {
-          // نحدث الـ Cubit والـ Stack لما الأنيميشن يوصل
-          widget.onReactionChanged(reaction);
-        },
+        onComplete: () => widget.onReactionChanged(reaction),
       );
     } else {
-      // لو مفيش أنيميشن، نحدث الـ Cubit علطول
       widget.onReactionChanged(reaction);
     }
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // 📌 التعديل هنا في الـ ON TAP
-  // ═══════════════════════════════════════════════════════════
   void _onTap() {
     if (_selectedReaction != null) {
-      // 1. حالة الإزالة (Remove Like)
-      setState(() {
-        _selectedReaction = null;
-      });
-      // تحديث مباشر بدون أنيميشن للإزالة
+      // Remove reaction
+      setState(() => _selectedReaction = null);
       widget.onReactionChanged(null);
     } else {
-      // 2. حالة الإضافة (Add Love)
-      // بنستخدم _buttonKey كمصدر للأنيميشن
+      // Quick like with love reaction
       _triggerFlyAnimation(ReactionType.love, _buttonKey);
     }
   }
 
-  void _hideOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
+  // ══════════════════════════════════════════════════════════════════════════
+  // UI Helpers
+  // ══════════════════════════════════════════════════════════════════════════
 
-  Color getBackgroundColor() {
-    switch (_selectedReaction) {
-      case ReactionType.love:
-        return const Color(0xffD8779B);
-      case ReactionType.care:
-        return const Color(0xffDBC195);
-      case ReactionType.dislike:
-        return const Color(0xffD98D80);
-      case null:
-        return const Color(0xFFFCE9ED);
-    }
+  Color get _backgroundColor {
+    return switch (_selectedReaction) {
+      ReactionType.love => const Color(0xffD8779B),
+      ReactionType.care => const Color(0xffDBC195),
+      ReactionType.dislike => const Color(0xffD98D80),
+      null => const Color(0xFFFCE9ED),
+    };
   }
 
   @override
@@ -163,13 +161,12 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
         onTap: _onTap,
         onLongPress: _showReactionOverlay,
         child: Container(
-          // ✅ 2. ربطنا المفتاح بالزرار هنا
           key: _buttonKey,
-          width: context.responsiveWidth(widget.width ?? 38),
-          height: context.responsiveWidth(widget.height ?? 38),
-          padding: EdgeInsets.all((widget.width ?? 38) > 38 ? 12.r : 6.r),
+          width: context.responsiveWidth(_size),
+          height: context.responsiveWidth(_size),
+          padding: EdgeInsets.all(_padding.r),
           decoration: BoxDecoration(
-            color: getBackgroundColor(),
+            color: _backgroundColor,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -179,13 +176,13 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
               ),
             ],
           ),
-          child: Center(child: _buildButtonContent()),
+          child: Center(child: _buildContent()),
         ),
       ),
     );
   }
 
-  Widget _buildButtonContent() {
+  Widget _buildContent() {
     if (_selectedReaction == null) {
       return AppImage(
         AssetsData.loveDefault,
@@ -205,41 +202,45 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
           ),
         ],
       ),
-      child: Center(
-        child: AppImage(
-          getReactionAsset(_selectedReaction!),
-          height: double.infinity,
-          width: double.infinity,
-          fit: BoxFit.contain,
-        ),
+      child: AppImage(
+        getReactionAsset(_selectedReaction!),
+        height: double.infinity,
+        width: double.infinity,
+        fit: BoxFit.contain,
       ),
     );
   }
 }
-// ==========================================================
-// ✅ ReactionBubble المعدلة (بتنشئ مفاتيح للمصادر)
 
-class ReactionBubble extends StatefulWidget {
-  // ✅ تعديل الـ Callback لاستقبال المفتاح
-  final Function(ReactionType, GlobalKey?) onSelected;
+// ══════════════════════════════════════════════════════════════════════════════
+// Reaction Bubble (Overlay picker)
+// ══════════════════════════════════════════════════════════════════════════════
 
-  const ReactionBubble({required this.onSelected, super.key});
+class _ReactionBubble extends StatefulWidget {
+  final void Function(ReactionType, GlobalKey?) onSelected;
+
+  const _ReactionBubble({required this.onSelected});
 
   @override
-  State<ReactionBubble> createState() => _ReactionBubbleState();
+  State<_ReactionBubble> createState() => _ReactionBubbleState();
 }
 
-class _ReactionBubbleState extends State<ReactionBubble>
+class _ReactionBubbleState extends State<_ReactionBubble>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
 
-  // ✅ قائمة مفاتيح لكل إيموجي عشان نحدد مكانه
   final Map<ReactionType, GlobalKey> _reactionKeys = {
     ReactionType.love: GlobalKey(),
     ReactionType.care: GlobalKey(),
     ReactionType.dislike: GlobalKey(),
   };
+
+  static const _reactions = [
+    (type: ReactionType.love, color: Color(0xFFE040FB)),
+    (type: ReactionType.care, color: Color(0xFFFFD740)),
+    (type: ReactionType.dislike, color: Color(0xFFFF5252)),
+  ];
 
   @override
   void initState() {
@@ -269,7 +270,7 @@ class _ReactionBubbleState extends State<ReactionBubble>
       child: ClipRRect(
         borderRadius: BorderRadius.circular(31.r),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 7.h),
             decoration: BoxDecoration(
@@ -282,14 +283,7 @@ class _ReactionBubbleState extends State<ReactionBubble>
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildReactionItem(ReactionType.love, const Color(0xFFE040FB)),
-                _buildReactionItem(ReactionType.care, const Color(0xFFFFD740)),
-                _buildReactionItem(
-                  ReactionType.dislike,
-                  const Color(0xFFFF5252),
-                ),
-              ],
+              children: _reactions.map(_buildReactionItem).toList(),
             ),
           ),
         ),
@@ -297,41 +291,37 @@ class _ReactionBubbleState extends State<ReactionBubble>
     );
   }
 
-  Widget _buildReactionItem(ReactionType type, Color baseColor) {
+  Widget _buildReactionItem(({ReactionType type, Color color}) reaction) {
     return GestureDetector(
-      onTap: () {
-        // ✅ إرسال الريأكشن + المفتاح الخاص به
-        widget.onSelected(type, _reactionKeys[type]);
-      },
+      onTap: () =>
+          widget.onSelected(reaction.type, _reactionKeys[reaction.type]),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 4.w),
         child: Container(
           width: context.responsiveWidth(45),
           height: context.responsiveWidth(45),
           decoration: BoxDecoration(
-            color: baseColor.withOpacity(0.2),
+            color: reaction.color.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
           child: Container(
-            // ✅ ربط المفتاح هنا
-            key: _reactionKeys[type],
+            key: _reactionKeys[reaction.type],
             width: 25.w,
             height: 25.w,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Color(0xff78787880).withOpacity(0.5),
+                  color: const Color(0xff787878).withOpacity(0.5),
                   blurRadius: 4,
                   offset: const Offset(2, 2),
                 ),
               ],
             ),
             child: AppImage(
-              getReactionAsset(type),
+              getReactionAsset(reaction.type),
               fit: BoxFit.contain,
-              color: null,
             ),
           ),
         ),

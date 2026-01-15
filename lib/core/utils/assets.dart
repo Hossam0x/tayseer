@@ -127,12 +127,14 @@ abstract class AssetsData {
       "assets/icons/ticket_event_notifiy.svg";
   static const String graySessionIcon = "assets/icons/gray_session.svg";
   static const String selectedSessionIcon = "assets/icons/selected_session.svg";
+  static const String kfilterIcon = "assets/icons/filter_icon.svg";
+  static const String koneIcon = "assets/icons/one_icon.svg";
 
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
       "assets/animations/loading_animations.json";
 
-  // Profile assests
+  /////////////// Profile assests/////////////////////
   static const String certificatePlaceholder =
       "assets/images/certificatePlaceholder.jpg";
   static const String boostBackground = "assets/images/boostBackground.png";
@@ -168,6 +170,7 @@ abstract class AssetsData {
   static const String icInviteSettings = "assets/icons/icInviteSettings.svg";
   static const String icManagementSettings =
       "assets/icons/icManagementSettings.svg";
+  static const String anonymousProfile = "assets/images/anonymous_profile.png";
   static const String storyPlaceholder = "assets/images/storyPlaceholder.jpg";
   static const String moneyTimesIcon = "assets/icons/moneyTimesIcon.svg";
   static const String pauseIcon = "assets/icons/pauseIcon.svg";

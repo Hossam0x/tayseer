@@ -1,8 +1,8 @@
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
-import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/my_import.dart';
 // تأكد من استيراد ImageViewerView
-import 'package:tayseer/features/advisor/home/views/image_viewer_view.dart';
+import 'package:tayseer/features/shared/home/views/image_viewer_view.dart';
 
 class PostImagesGrid extends StatelessWidget {
   final List<String> images;
