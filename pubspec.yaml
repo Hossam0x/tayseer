@@ -65,13 +65,11 @@ dependencies:
   freezed_annotation: ^2.4.4
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^6.1.0
-  connectivity_plus: ^7.0.0
+  connectivity_plus: ^6.1.0
   skeletonizer: ^2.1.2
   intl: ^0.20.2
   chewie: ^1.13.0
   debounce_throttle: ^2.0.0
-
-  connectivity_plus: ^6.1.0
   zego_uikit_signaling_plugin: ^2.8.20
   zego_uikit_prebuilt_call: ^4.22.2
   

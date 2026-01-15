@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:tayseer/features/advisor/home/model/comment_model.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
 
 class ReplyModel extends Equatable {
   final String id;

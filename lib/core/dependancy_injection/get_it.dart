@@ -13,9 +13,6 @@ import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cu
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
-import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
-import 'package:tayseer/features/advisor/home/reposiotry/home_repository_impl.dart';
-import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository_impl.dart';
@@ -37,7 +34,6 @@ import 'package:tayseer/features/advisor/stories/presentation/view_model/stories
 import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_v2.dart';
 import 'package:tayseer/features/advisor/chat/data/local/chat_local_datasource.dart';
 import 'package:tayseer/features/advisor/chat/domain/chat_domain.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit.dart';
 import 'package:tayseer/features/advisor/settings/data/models/service_provider_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/story_visibility_repository.dart';

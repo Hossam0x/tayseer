@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
-import 'package:tayseer/features/advisor/home/model/comment_model.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
 import 'package:tayseer/features/advisor/profille/data/models/reply_comment_model.dart';
 
 class CommentsState extends Equatable {

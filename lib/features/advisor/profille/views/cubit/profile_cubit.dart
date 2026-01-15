@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/home/reposiotry/home_repository.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'profile_state.dart';

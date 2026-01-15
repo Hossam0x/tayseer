@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/advisor/home/model/comment_model.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
 import 'package:tayseer/features/advisor/profille/data/models/reply_comment_model.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/comments_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/comments_cubit.dart';

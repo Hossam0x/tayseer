@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
-import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import '../../../../my_import.dart';

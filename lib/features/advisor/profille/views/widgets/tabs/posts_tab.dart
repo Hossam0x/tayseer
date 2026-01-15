@@ -1,11 +1,8 @@
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/advisor/profille/view_model/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/view_model/profile_state.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
-import 'package:tayseer/features/advisor/home/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
 /// PostsTab - Displays user's posts in profile

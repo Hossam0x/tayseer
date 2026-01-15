@@ -1,5 +1,5 @@
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostsTabView extends StatelessWidget {
