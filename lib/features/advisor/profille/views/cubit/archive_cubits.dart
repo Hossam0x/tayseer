@@ -221,6 +221,7 @@ class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
     fetchArchivedStories();
   }
 
+  // archive_cubits.dart
   Future<void> fetchArchivedStories({bool loadMore = false}) async {
     if (loadMore) {
       if (state.isLoadingMore || !state.hasMore) return;
