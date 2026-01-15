@@ -142,22 +142,23 @@ class AdvisorProfileModel extends Equatable {
 
   factory AdvisorProfileModel.fromJson(Map<String, dynamic> json) {
     return AdvisorProfileModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      userName: json['userName'] as String,
-      image: json['image'] as String?,
-      dateOfBirth: json['dateOfBirth'] as String?,
-      gender: json['gender'] as String?,
-      professionalSpecialization: json['professionalSpecialization'] as String?,
-      jobGrade: json['jobGrade'] as String?,
-      yearsOfExperience: json['yearsOfExperience'] as String?,
-      aboutYou: json['aboutYou'] as String?,
-      video: json['video'] as String?,
-      isVerified: json['isVerified'] as bool,
-      followersCount: json['followersCount'] as int,
-      followingCount: json['followingCount'] as int,
-      rating: (json['rating'] as num).toDouble(),
-      postsCount: json['postsCount'] as int,
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      userName: json['username']?.toString() ?? '',
+      image: json['image']?.toString(),
+      dateOfBirth: json['dateOfBirth']?.toString(),
+      gender: json['gender']?.toString(),
+      professionalSpecialization: json['professionalSpecialization']
+          ?.toString(),
+      jobGrade: json['jobGrade']?.toString(),
+      yearsOfExperience: json['yearsOfExperience']?.toString(),
+      aboutYou: json['aboutYou']?.toString(),
+      video: json['videoLink']?.toString(),
+      isVerified: json['isVerified'] as bool? ?? false,
+      followersCount: (json['followers'] as num?)?.toInt() ?? 0,
+      followingCount: (json['following'] as num?)?.toInt() ?? 0,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      postsCount: (json['postsCount'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -194,4 +195,72 @@ class AdvisorProfileModel extends Equatable {
     rating,
     postsCount,
   ];
+}
+
+extension AdvisorProfileModelExtension on AdvisorProfileModel {
+  AdvisorProfileModel copyWith({
+    String? id,
+    String? name,
+    String? userName,
+    String? image,
+    String? dateOfBirth,
+    String? gender,
+    String? professionalSpecialization,
+    String? jobGrade,
+    String? yearsOfExperience,
+    String? aboutYou,
+    String? video,
+    bool? isVerified,
+    int? followersCount,
+    int? followingCount,
+    double? rating,
+    int? postsCount,
+  }) {
+    return AdvisorProfileModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      userName: userName ?? this.userName,
+      image: image ?? this.image,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      gender: gender ?? this.gender,
+      professionalSpecialization:
+          professionalSpecialization ?? this.professionalSpecialization,
+      jobGrade: jobGrade ?? this.jobGrade,
+      yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
+      aboutYou: aboutYou ?? this.aboutYou,
+      video: video ?? this.video,
+      isVerified: isVerified ?? this.isVerified,
+      followersCount: followersCount ?? this.followersCount,
+      followingCount: followingCount ?? this.followingCount,
+      rating: rating ?? this.rating,
+      postsCount: postsCount ?? this.postsCount,
+    );
+  }
+}
+
+extension UpdatePersonalDataRequestExtension on UpdatePersonalDataRequest {
+  UpdatePersonalDataRequest copyWith({
+    String? name,
+    String? dateOfBirth,
+    String? gender,
+    String? professionalSpecialization,
+    String? jobGrade,
+    String? yearsOfExperience,
+    String? aboutYou,
+    String? image,
+    String? video,
+  }) {
+    return UpdatePersonalDataRequest(
+      name: name ?? this.name,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      gender: gender ?? this.gender,
+      professionalSpecialization:
+          professionalSpecialization ?? this.professionalSpecialization,
+      jobGrade: jobGrade ?? this.jobGrade,
+      yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
+      aboutYou: aboutYou ?? this.aboutYou,
+      image: image ?? this.image,
+      video: video ?? this.video,
+    );
+  }
 }

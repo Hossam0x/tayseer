@@ -9,6 +9,7 @@ abstract class EditPersonalDataRepository {
     required UpdatePersonalDataRequest request,
     File? imageFile,
     File? videoFile,
+    bool? removeVideo,
   });
   Future<String?> uploadFile(File file, String fieldName);
 }
@@ -26,7 +27,51 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
 
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
-        final profile = AdvisorProfileModel.fromJson(data);
+
+        final yearsExp = data['yearsOfExperience'];
+        String? yearsExpString;
+
+        if (yearsExp != null) {
+          if (yearsExp is num) {
+            final intValue = yearsExp.toInt();
+            if (intValue == 2) {
+              yearsExpString = "سنتين";
+            } else if (intValue == 3) {
+              yearsExpString = "3 سنوات";
+            } else if (intValue == 5) {
+              yearsExpString = "5 سنوات";
+            } else if (intValue == 10) {
+              yearsExpString = "10 سنوات";
+            } else if (intValue > 10) {
+              yearsExpString = "أكثر من 10 سنوات";
+            } else {
+              yearsExpString = yearsExp.toString();
+            }
+          } else {
+            yearsExpString = yearsExp.toString();
+          }
+        }
+
+        final profileData = {
+          '_id': data['_id'] ?? '',
+          'name': data['name'] ?? '',
+          'username': data['username'] ?? '',
+          'image': data['image'],
+          'dateOfBirth': data['dateOfBirth'],
+          'gender': data['gender'],
+          'professionalSpecialization': data['professionalSpecialization'],
+          'jobGrade': data['jobGrade'],
+          'yearsOfExperience': yearsExpString,
+          'aboutYou': data['aboutYou'],
+          'videoLink': data['videoLink'],
+          'isVerified': data['isVerified'] ?? false,
+          'followers': data['followers'] ?? 0,
+          'following': data['following'] ?? 0,
+          'rating': (data['rating'] as num?)?.toDouble() ?? 0.0,
+          'postsCount': data['postsCount'] ?? 0,
+        };
+
+        final profile = AdvisorProfileModel.fromJson(profileData);
         return Right(profile);
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل جلب البروفايل'));
@@ -43,10 +88,15 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
     required UpdatePersonalDataRequest request,
     File? imageFile,
     File? videoFile,
+    bool? removeVideo,
   }) async {
     try {
       // إنشاء FormData
-      final formData = FormData.fromMap(request.toFormData());
+      final formData = FormData.fromMap({
+        ...request.toFormData(),
+        // إضافة flag لحذف الفيديو إذا تم الطلب
+        if (removeVideo == true) 'removeVideo': 'true',
+      });
 
       // إضافة ملف الصورة إذا كان موجوداً
       if (imageFile != null) {
@@ -78,9 +128,23 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
         );
       }
 
+      print('📤 Sending PATCH request to /advisor/editPersonalData');
+      print('📤 FormData keys: ${formData.fields.map((e) => e.key)}');
+      print('📤 Files count: ${formData.files.length}');
+      print('📤 Remove video: $removeVideo');
+
+      // استخدام baseUrl الصحيح من الـ Dio
+      final baseUrl = _dio.options.baseUrl;
+      if (baseUrl.isEmpty) {
+        return Left(ServerFailure('Base URL not configured'));
+      }
+
+      final fullUrl = '$baseUrl/advisor/editPersonalData';
+      print('📤 Full URL: $fullUrl');
+
       // إرسال الطلب
       final response = await _dio.patch(
-        '${_dio.options.baseUrl}/advisor/editPersonalData',
+        'advisor/editPersonalData',
         data: formData,
         options: Options(
           headers: {
@@ -91,6 +155,7 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       );
 
       final responseData = response.data as Map<String, dynamic>;
+      print('📥 Response: $responseData');
 
       if (responseData['success'] == true) {
         final updateResponse = UpdatePersonalDataResponse.fromJson(
@@ -106,13 +171,25 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       }
     } on DioException catch (e) {
       print('❌ Dio Error: ${e.message}');
-      if (e.response != null) {
-        print('❌ Response data: ${e.response!.data}');
+      print('❌ Dio Error Type: ${e.type}');
+      print('❌ Dio Error Response: ${e.response?.data}');
+      print('❌ Dio Error Stack: ${e.stackTrace}');
+
+      String errorMessage = 'خطأ في الاتصال بالسيرفر';
+      if (e.response?.data != null) {
+        final responseData = e.response!.data;
+        if (responseData is Map && responseData['message'] != null) {
+          errorMessage = responseData['message'].toString();
+        }
+      } else if (e.message != null) {
+        errorMessage = e.message!;
       }
-      return Left(ServerFailure.fromDioError(e));
-    } catch (e) {
+
+      return Left(ServerFailure(errorMessage));
+    } catch (e, stack) {
       print('❌ Error: $e');
-      return Left(ServerFailure(e.toString()));
+      print('❌ Stack: $stack');
+      return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
     }
   }
 
@@ -126,7 +203,7 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       });
 
       final response = await _dio.post(
-        '${_dio.options.baseUrl}/upload',
+        'upload',
         data: formData,
         options: Options(
           headers: {

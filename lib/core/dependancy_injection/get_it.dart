@@ -37,8 +37,10 @@ import 'package:tayseer/features/advisor/chat/domain/chat_domain.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit.dart';
 import 'package:tayseer/features/settings/data/models/service_provider_repository.dart';
 import 'package:tayseer/features/settings/data/repositories/edit_personal_data_repository.dart';
+import 'package:tayseer/features/settings/data/repositories/story_visibility_repository.dart';
 import 'package:tayseer/features/settings/view/cubit/edit_personal_data_cubit.dart';
 import 'package:tayseer/features/settings/view/cubit/service_provider_cubits.dart';
+import 'package:tayseer/features/settings/view/cubit/story_visibility_cubit.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
@@ -290,5 +292,13 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<AppointmentsCubit>(
     () => AppointmentsCubit(getIt<ServiceProviderRepository>()),
+  );
+
+  getIt.registerLazySingleton<StoryVisibilityRepository>(
+    () => StoryVisibilityRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<StoryVisibilityCubit>(
+    () => StoryVisibilityCubit(getIt<StoryVisibilityRepository>()),
   );
 }

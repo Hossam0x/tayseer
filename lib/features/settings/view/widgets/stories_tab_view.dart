@@ -181,7 +181,7 @@ class StoriesTabView extends StatelessWidget {
     final date = _parseDate(story.createdAt);
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(25.r),
+      borderRadius: BorderRadius.circular(30.r),
       child: Stack(
         children: [
           // Story Background Image
@@ -211,19 +211,14 @@ class StoriesTabView extends StatelessWidget {
             top: 20.h,
             right: 20.w,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14.r),
               ),
               child: Column(
                 children: [
-                  Text(
-                    date.day.toString(),
-                    style: Styles.textStyle16.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text(date.day.toString(), style: Styles.textStyle16),
                   Text(_getMonthName(date.month), style: Styles.textStyle12),
                 ],
               ),

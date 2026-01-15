@@ -28,7 +28,10 @@ class EditPersonalDataState extends Equatable {
   });
 
   factory EditPersonalDataState.initial() {
-    return EditPersonalDataState(currentData: UpdatePersonalDataRequest());
+    return EditPersonalDataState(
+      currentData: UpdatePersonalDataRequest(),
+      state: CubitStates.loading,
+    );
   }
 
   EditPersonalDataState copyWith({
@@ -59,16 +62,30 @@ class EditPersonalDataState extends Equatable {
     if (profile == null) return false;
 
     final request = profile!.toRequest();
-    return request.name != currentData.name ||
-        request.dateOfBirth != currentData.dateOfBirth ||
-        request.gender != currentData.gender ||
-        request.professionalSpecialization !=
-            currentData.professionalSpecialization ||
-        request.jobGrade != currentData.jobGrade ||
-        request.yearsOfExperience != currentData.yearsOfExperience ||
-        request.aboutYou != currentData.aboutYou ||
-        imageFile != null ||
-        videoFile != null;
+
+    // تحقق من وجود تغييرات في الحقول النصية
+    bool textChanged =
+        (request.name ?? '') != (currentData.name ?? '') ||
+        (request.dateOfBirth ?? '') != (currentData.dateOfBirth ?? '') ||
+        (request.gender ?? '') != (currentData.gender ?? '') ||
+        (request.professionalSpecialization ?? '') !=
+            (currentData.professionalSpecialization ?? '') ||
+        (request.jobGrade ?? '') != (currentData.jobGrade ?? '') ||
+        (request.yearsOfExperience ?? '') !=
+            (currentData.yearsOfExperience ?? '') ||
+        (request.aboutYou ?? '') != (currentData.aboutYou ?? '');
+
+    // تحقق من وجود ملفات جديدة
+    bool filesChanged = imageFile != null || videoFile != null;
+
+    // تحقق من حذف الفيديو (videoPreviewUrl أصبح null مع أنه كان موجوداً)
+    bool videoRemoved =
+        request.video != null &&
+        currentData.video == null &&
+        videoFile == null &&
+        (videoPreviewUrl == null || videoPreviewUrl!.isEmpty);
+
+    return textChanged || filesChanged || videoRemoved;
   }
 
   @override
