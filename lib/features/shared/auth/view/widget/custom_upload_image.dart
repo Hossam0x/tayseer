@@ -100,7 +100,7 @@ class UploadImageFormField extends FormField<XFile> {
          autovalidateMode: autovalidateMode,
          builder: (FormFieldState<XFile> state) {
            return Column(
-             crossAxisAlignment: CrossAxisAlignment.start,
+             crossAxisAlignment: CrossAxisAlignment.center,
              children: [
                UploadImageWidget(
                  isShowImage: isShowImage,

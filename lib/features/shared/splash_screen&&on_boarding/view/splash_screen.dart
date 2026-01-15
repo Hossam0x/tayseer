@@ -60,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen>
     String? token = CachNetwork.getStringData(key: 'token');
     if (mounted) {
       if (token.isNotEmpty) {
-        context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+        context.pushReplacementNamed(AppRouter.kRegisrationView);
       } else {
         context.pushReplacementNamed(AppRouter.kRegisrationView);
       }

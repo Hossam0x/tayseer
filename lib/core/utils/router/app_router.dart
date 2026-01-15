@@ -31,6 +31,9 @@ import 'package:tayseer/features/shared/auth/view/select_days_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
+import 'package:tayseer/features/user/layout/view_model/user_layout_cubit.dart';
+import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
+import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
 import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
 import 'package:tayseer/features/user/questions/children_living_status_view.dart';
@@ -71,6 +74,8 @@ abstract class AppRouter {
   static const kRegisrationView = '/RegisrationView';
   static const kRegisterView = '/RegisterView';
   static const kOtpView = '/OtpView';
+  static const kUserLayoutView = '/UserLayoutView';
+
   static const kChooseGenderView = '/ChooseGenderView';
   static const kNationalityView = '/NationalityView';
   static const kCountryView = '/CountryView';
@@ -106,6 +111,7 @@ abstract class AppRouter {
   static const kChatRequest = '/chatrequest';
   static const kChatSearchView = '/ChatSearchView';
   static const kConversitionView = '/ConversitionView';
+  static const kMarriageView = '/kMarriageView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -142,6 +148,14 @@ abstract class AppRouter {
       case kSettingsView:
         return SlideLeftRoute(
           page: const SettingsView(),
+          routeSettings: settings,
+        );
+      case kUserLayoutView:
+        return SlideLeftRoute(
+          page: BlocProvider(
+            create: (context) => UserLayoutCubit(),
+            child: const UserLayoutView(),
+          ),
           routeSettings: settings,
         );
 
@@ -497,6 +511,11 @@ abstract class AppRouter {
             value: getIt<AuthCubit>(),
             child: ActivationSuccessView(),
           ),
+        );
+      case kMarriageView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => MarriageView(),
         );
 
       // advisor routes

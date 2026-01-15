@@ -127,12 +127,14 @@ abstract class AssetsData {
       "assets/icons/ticket_event_notifiy.svg";
   static const String graySessionIcon = "assets/icons/gray_session.svg";
   static const String selectedSessionIcon = "assets/icons/selected_session.svg";
+  static const String kfilterIcon = "assets/icons/filter_icon.svg";
+  static const String koneIcon = "assets/icons/one_icon.svg";
 
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
       "assets/animations/loading_animations.json";
 
-  // Profile assests
+  /////////////// Profile assests/////////////////////
   static const String certificatePlaceholder =
       "assets/images/certificatePlaceholder.jpg";
   static const String boostBackground = "assets/images/boostBackground.png";

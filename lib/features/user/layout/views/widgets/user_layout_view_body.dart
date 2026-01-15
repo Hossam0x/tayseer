@@ -1,23 +1,22 @@
-import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
-import 'package:tayseer/features/advisor/event/view/event_view.dart';
 import 'package:tayseer/features/advisor/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/custom_feb_menu.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
-import 'package:tayseer/features/advisor/profille/views/profile_view.dart';
+import 'package:tayseer/features/user/layout/view_model/user_layout_cubit.dart';
+import 'package:tayseer/features/user/layout/view_model/user_layout_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 
-class ALayOutViewBody extends StatelessWidget {
-  const ALayOutViewBody({super.key});
+class UserLayOutViewBody extends StatelessWidget {
+  const UserLayOutViewBody({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<ALayoutCubit>();
+    final cubit = context.read<UserLayoutCubit>();
 
-    return BlocBuilder<ALayoutCubit, ALayoutState>(
+    return BlocBuilder<UserLayoutCubit, UserLayoutState>(
       builder: (context, state) {
-        final pages = _getPages(state.userType, cubit);
+        final pages = _getPages(cubit);
 
         final bool isFabVisible = state.isNavVisible && state.currentIndex == 0;
 
@@ -56,18 +55,11 @@ class ALayOutViewBody extends StatelessWidget {
     );
   }
 
-  List<Widget> _getPages(UserTypeEnum userType, ALayoutCubit cubit) {
-    switch (userType) {
-      case UserTypeEnum.asConsultant:
-        return [
-          HomeView(onScroll: cubit.onScroll),
-          const ChatView(),
-          EventView(),
-          ProfileView(),
-        ];
-
+  List<Widget> _getPages(UserLayoutCubit cubit) {
+    switch (selectedUserType) {
       case UserTypeEnum.user:
         return [
+          HomeView(onScroll: cubit.onScroll),
           GuestLockWidget(
             message: 'فرص التوافق تبدأ بعد التسجيل',
             description:
@@ -89,6 +81,7 @@ class ALayOutViewBody extends StatelessWidget {
                 'التسجيل بيسمح لك بإنشاء ملفك وعرض الملفات المناسبة لك.',
           ),
         ];
+
       case UserTypeEnum.guest:
         return [
           HomeView(onScroll: cubit.onScroll),
@@ -113,6 +106,11 @@ class ALayOutViewBody extends StatelessWidget {
                 'التسجيل بيسمح لك بإنشاء ملفك وعرض الملفات المناسبة لك.',
           ),
         ];
+
+      case UserTypeEnum.asConsultant:
+        return [];
+      default:
+        return [];
     }
   }
 }

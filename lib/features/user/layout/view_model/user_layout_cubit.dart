@@ -1,10 +1,10 @@
 // features/advisor/layout/view_model/a_layout_cubit.dart
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/features/user/layout/view_model/user_layout_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class ALayoutCubit extends Cubit<ALayoutState> {
-  ALayoutCubit({UserTypeEnum userType = UserTypeEnum.asConsultant})
-    : super(ALayoutState(userType: userType));
+class UserLayoutCubit extends Cubit<UserLayoutState> {
+  UserLayoutCubit() : super(UserLayoutState());
 
   void changeIndex(int index) {
     // لو المستخدم بالفعل في نفس الصفحة وضغط عليها تاني (زي فيسبوك)
@@ -36,6 +36,6 @@ class ALayoutCubit extends Cubit<ALayoutState> {
   }
 
   void changeUserType(UserTypeEnum userType) {
-    emit(state.copyWith(userType: userType, currentIndex: 0));
+    emit(state.copyWith(currentIndex: 0));
   }
 }
