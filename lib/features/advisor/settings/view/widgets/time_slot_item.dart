@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:tayseer/my_import.dart';
 
 typedef TimeChangedCallback = void Function(String start, String end);
@@ -137,11 +138,18 @@ class _TimeSlotItemState extends State<TimeSlotItem>
               widget.name,
               style: Styles.textStyle20.copyWith(color: AppColors.primaryText),
             ),
-            Switch.adaptive(
-              value: isActive,
-              onChanged: (val) => _toggleStatus(val, animate: true),
-              activeColor: Colors.white,
-              activeTrackColor: AppColors.primary300,
+            Transform.scale(
+              scaleX: 0.9,
+              scaleY: -0.9,
+              child: CupertinoSwitch(
+                value: isActive,
+                onChanged: (val) {
+                  setState(() => isActive = val);
+                  widget.onStatusChanged?.call(val);
+                },
+                activeColor: const Color(0xFFF06C88),
+                trackColor: AppColors.inactiveColor,
+              ),
             ),
           ],
         ),
