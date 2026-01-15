@@ -90,8 +90,8 @@ class _AnonymousModeBannerState extends State<AnonymousModeBanner> {
                   });
 
                   // ✅ تحديث المتغير العام (Global Variable) مباشرة
-                  isUserAnonymous = value;
-                  print("Global isUserAnonymous Updated to: $isUserAnonymous");
+                  // isUserAnonymous = value;
+                  // print("Global isUserAnonymous Updated to: $isUserAnonymous");
                 },
               ),
             ),

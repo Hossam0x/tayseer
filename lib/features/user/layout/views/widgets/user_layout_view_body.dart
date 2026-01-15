@@ -3,6 +3,7 @@ import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 
 import 'package:tayseer/features/user/layout/views/widgets/user_nav_bar.dart';
+import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserLayOutViewBody extends StatelessWidget {
@@ -42,11 +43,7 @@ class UserLayOutViewBody extends StatelessWidget {
       case UserTypeEnum.user:
         return [
           HomeView(onScroll: cubit.onScroll),
-          GuestLockWidget(
-            message: 'فرص التوافق تبدأ بعد التسجيل',
-            description:
-                'أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.',
-          ),
+          MarriageView(),
           GuestLockWidget(
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:

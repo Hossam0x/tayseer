@@ -32,7 +32,6 @@ import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
-import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
 import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
 import 'package:tayseer/features/user/questions/children_living_status_view.dart';
@@ -110,7 +109,6 @@ abstract class AppRouter {
   static const kChatRequest = '/chatrequest';
   static const kChatSearchView = '/ChatSearchView';
   static const kConversitionView = '/ConversitionView';
-  static const kMarriageView = '/kMarriageView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -507,11 +505,6 @@ abstract class AppRouter {
             value: getIt<AuthCubit>(),
             child: ActivationSuccessView(),
           ),
-        );
-      case kMarriageView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => MarriageView(),
         );
 
       // advisor routes
