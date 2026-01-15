@@ -1,16 +1,19 @@
 // features/advisor/layout/views/widgets/a_nav_bar.dart
+import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/nav_bar_config.dart';
+import 'package:tayseer/features/user/layout/view_model/user_layout_cubit.dart';
+import 'package:tayseer/features/user/layout/view_model/user_layout_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class ANavBar extends StatelessWidget {
-  const ANavBar({super.key});
+class UserNavBar extends StatelessWidget {
+  const UserNavBar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ALayoutCubit, ALayoutState>(
+    return BlocBuilder<UserLayoutCubit, UserLayoutState>(
       builder: (context, state) {
         final cubit = context.read<ALayoutCubit>();
-        final navItems = NavBarConfig.getNavItems(state.userType);
+        final navItems = NavBarConfig.getNavItems(selectedUserType?? UserTypeEnum.user);
 
         return Container(
           padding: EdgeInsets.only(top: context.responsiveHeight(16)),

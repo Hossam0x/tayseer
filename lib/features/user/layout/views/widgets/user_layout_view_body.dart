@@ -1,11 +1,10 @@
+import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/advisor/home/views/home_view.dart';
-import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
-import 'package:tayseer/features/advisor/layout/views/widgets/custom_feb_menu.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/layout/view_model/user_layout_cubit.dart';
 import 'package:tayseer/features/user/layout/view_model/user_layout_state.dart';
+import 'package:tayseer/features/user/layout/views/widgets/user_nav_bar.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/core/enum/user_type.dart';
 
 class UserLayOutViewBody extends StatelessWidget {
   const UserLayOutViewBody({super.key});
@@ -17,8 +16,6 @@ class UserLayOutViewBody extends StatelessWidget {
     return BlocBuilder<UserLayoutCubit, UserLayoutState>(
       builder: (context, state) {
         final pages = _getPages(cubit);
-
-        final bool isFabVisible = state.isNavVisible && state.currentIndex == 0;
 
         return Scaffold(
           body: Stack(
@@ -32,22 +29,22 @@ class UserLayOutViewBody extends StatelessWidget {
                 child: AnimatedSlide(
                   duration: const Duration(milliseconds: 300),
                   offset: state.isNavVisible ? Offset.zero : const Offset(0, 1),
-                  child: const ANavBar(),
+                  child: const UserNavBar(),
                 ),
               ),
 
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                left: 20,
-                // استخدام المتغير لتحديد الموقع
-                bottom: isFabVisible ? 90.h : -400.h,
+              // AnimatedPositioned(
+              //   duration: const Duration(milliseconds: 300),
+              //   curve: Curves.easeInOut,
+              //   left: 20,
+              //   // استخدام المتغير لتحديد الموقع
+              //   bottom: isFabVisible ? 90.h : -400.h,
 
-                child: SafeArea(
-                  // تمرير المتغير للويدجت ليقوم بإغلاق نفسه عند الاختفاء
-                  child: CustomFabMenu(isVisible: isFabVisible),
-                ),
-              ),
+              //   child: SafeArea(
+              //     // تمرير المتغير للويدجت ليقوم بإغلاق نفسه عند الاختفاء
+              //     child: CustomFabMenu(isVisible: isFabVisible),
+              //   ),
+              // ),
             ],
           ),
         );
