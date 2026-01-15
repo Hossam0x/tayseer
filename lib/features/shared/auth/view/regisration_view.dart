@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:tayseer/core/enum/user_type.dart';
-import 'package:tayseer/core/functions/route_by_last_question.dart';
 import 'package:tayseer/features/shared/auth/view/listeners/guest_login_listeners.dart';
 import 'package:tayseer/features/shared/auth/view/widget/last_login_bubble.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
@@ -19,7 +18,8 @@ class _RegisrationViewState extends State<RegisrationView> {
   @override
   void initState() {
     super.initState();
-    context.read<AuthCubit>().getLastLogIn();
+    if (selectedUserType == UserTypeEnum.user)
+      context.read<AuthCubit>().getLastLogIn();
   }
 
   @override

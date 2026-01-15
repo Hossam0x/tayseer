@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 
 import '../../../../my_import.dart';
@@ -35,10 +35,9 @@ class HomeState extends Equatable {
     this.shareMessage,
     this.isShareAdded,
     this.sharePostId,
-    // 
-        this.homeInfo,
+    //
+    this.homeInfo,
     this.fetchNameAndImageState = CubitStates.initial,
-
   });
 
   HomeState copyWith({
@@ -52,8 +51,7 @@ class HomeState extends Equatable {
     CubitStates? shareActionState,
     String? shareMessage,
     bool? isShareAdded,
-    String? sharePostId
-    ,
+    String? sharePostId,
     ImageAndNameModel? homeInfo,
     CubitStates? fetchNameAndImageState,
   }) {
@@ -69,7 +67,8 @@ class HomeState extends Equatable {
       isShareAdded: isShareAdded ?? this.isShareAdded,
       sharePostId: sharePostId ?? this.sharePostId,
       homeInfo: homeInfo ?? this.homeInfo,
-      fetchNameAndImageState: fetchNameAndImageState ?? this.fetchNameAndImageState
+      fetchNameAndImageState:
+          fetchNameAndImageState ?? this.fetchNameAndImageState,
     );
   }
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -306,7 +307,12 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signInWithGoogle() async {
-    emit(state.copyWith(signInWithGoogleState: CubitStates.loading));
+    emit(
+      state.copyWith(
+        signInWithGoogleState: CubitStates.loading,
+        fromScreen: 'registration',
+      ),
+    );
 
     try {
       await _googleSignIn.initialize(
@@ -320,6 +326,7 @@ class AuthCubit extends Cubit<AuthState> {
       if (googleUser == null) {
         emit(
           state.copyWith(
+            fromScreen: 'registration',
             signInWithGoogleState: CubitStates.failure,
             errorMessage: "تم إلغاء العملية",
           ),
@@ -332,7 +339,18 @@ class AuthCubit extends Cubit<AuthState> {
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final String? idToken = googleAuth.idToken;
 
-      emit(state.copyWith(signInWithGoogleState: CubitStates.success));
+      emit(
+        state.copyWith(
+          signInWithGoogleState: CubitStates.success,
+          fromScreen: 'registration',
+        ),
+      );
+
+      await CachNetwork.setData(
+        key: 'user_type',
+        value: UserTypeEnum.user.name,
+      );
+      selectedUserType = UserTypeEnum.user;
       emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
       if (idToken != null) {
         sendAuthGoogle(idToken: idToken);

@@ -57,7 +57,6 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateBasedOnToken() async {
     await Future.delayed(const Duration(seconds: 4));
     if (!mounted) return;
-
     String? token = CachNetwork.getStringData(key: 'token');
     if (mounted) {
       if (token.isNotEmpty) {
