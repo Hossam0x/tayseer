@@ -20,6 +20,7 @@ class HomeViewBody extends StatefulWidget {
 
 class HomeViewBodyState extends State<HomeViewBody> {
   late ScrollController _scrollController;
+  late ScrollController _filterScrollController;
   double _lastOffset = 0;
   double _scrollDelta = 0;
   static const double _scrollThreshold = 20.0;
@@ -27,20 +28,44 @@ class HomeViewBodyState extends State<HomeViewBody> {
   final StoriesCubit storiesCubit = getIt<StoriesCubit>();
   final HomeCubit homeCubit = getIt<HomeCubit>();
 
-  // ❌ شلنا الـ ValueNotifier خلاص مش محتاجينه هنا
+  // Key للـ Filter Section عشان نعمل scroll ليها
+  final GlobalKey _filterSectionKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_scrollListener);
+    _filterScrollController = ScrollController();
     storiesCubit.fetchStories();
-    homeCubit.fetchPosts();
-    homeCubit.fetchNameAndImage();
+    homeCubit.initHome();
   }
 
   void scrollToTop() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  /// Scroll للـ Filter Section + الليست الأفقية
+  void scrollToFilterSection() {
+    // 1. Scroll الصفحة للـ Filter Section
+    final context = _filterSectionKey.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+        alignment: 0.0,
+      );
+    }
+
+    // 2. Scroll الليست الأفقية لأول عنصر (الكل)
+    if (_filterScrollController.hasClients) {
+      _filterScrollController.animateTo(
         0,
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
@@ -63,7 +88,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
 
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
-      homeCubit.fetchPosts(loadMore: true);
+      homeCubit.loadMorePosts();
     }
   }
 
@@ -80,7 +105,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
           VideoManager.instance.stopAll();
           await Future.wait([
             storiesCubit.fetchStories(),
-            homeCubit.fetchPosts(),
+            homeCubit.refreshHome(),
           ]);
         },
         child: CustomScrollView(
@@ -95,8 +120,14 @@ class HomeViewBodyState extends State<HomeViewBody> {
             if (isUser) const SliverToBoxAdapter(child: AnonymousModeBanner()),
 
             const StoriesSection(),
-            const HomeFilterSection(),
-            HomePostFeed(homeCubit: homeCubit),
+            HomeFilterSection(
+              key: _filterSectionKey,
+              scrollController: _filterScrollController,
+            ),
+            HomePostFeed(
+              homeCubit: homeCubit,
+              scrollToTopCallback: scrollToFilterSection,
+            ),
           ],
         ),
       ),
@@ -106,6 +137,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _filterScrollController.dispose();
     VideoManager.instance.stopAll();
     super.dispose();
   }

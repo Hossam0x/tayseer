@@ -2,6 +2,7 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/categories_response_model.dart';
 import 'package:tayseer/features/shared/home/model/comment_model.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/shared/home/model/post_response_model.dart';
@@ -17,11 +18,12 @@ class HomeRepositoryImpl implements HomeRepository {
   @override
   Future<Either<Failure, List<PostModel>>> fetchPosts({
     required int page,
+    String? categoryId,
   }) async {
     try {
       var response = await apiService.get(
         endPoint: ApiEndPoint.posts,
-        query: {'page': page},
+        query: {'page': page, if (categoryId != null) 'categoryId': categoryId},
       );
       final postsResponse = PostsResponseModel.fromJson(response);
       return Right(postsResponse.posts);
@@ -226,6 +228,27 @@ class HomeRepositoryImpl implements HomeRepository {
       return Right(imageAndNameModel);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, CategoriesResponseModel>> fetchAllCategories(
+    final int page,
+  ) async {
+    try {
+      final response = await apiService.get(
+        endPoint: ApiEndPoint.category,
+        query: {'page': page},
+      );
+      final categoriesResponseModel = CategoriesResponseModel.fromJson(
+        response,
+      );
+      return Right(categoriesResponseModel);
+    } catch (e) {
+      if (e is DioException) {
+        return Left(ServerFailure.fromDioError(e));
+      }
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

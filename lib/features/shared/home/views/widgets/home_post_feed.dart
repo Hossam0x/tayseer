@@ -7,9 +7,14 @@ import 'package:tayseer/features/shared/post_details/presentation/views/post_det
 import 'package:tayseer/my_import.dart';
 
 class HomePostFeed extends StatelessWidget {
-  const HomePostFeed({super.key, required this.homeCubit});
+  const HomePostFeed({
+    super.key,
+    required this.homeCubit,
+    required this.scrollToTopCallback,
+  });
 
   final HomeCubit homeCubit;
+  final VoidCallback scrollToTopCallback;
 
   @override
   Widget build(BuildContext context) {
@@ -50,13 +55,28 @@ class HomePostFeed extends StatelessWidget {
     postIds: state.posts.map((p) => p.postId).toList(),
     status: state.postsState,
     isLoadingMore: state.isLoadingMore,
-    error: state.errorMessage,
+    error: state.postsErrorMessage,
+    isAllCategory: state.selectedCategoryId == null,
   );
 
   Widget _buildContent(BuildContext context, _FeedState state) {
+    // حالة التحميل
     if (state.isLoading && state.isEmpty) return _buildShimmerList();
+
+    // حالة الخطأ
     if (state.isError && state.isEmpty) return _buildError(state.error);
+
+    // حالة الـ empty في كاتيجوري معين (مش "الكل")
+    if (state.isEmpty && !state.isAllCategory) {
+      return _EmptyCategoryIndicator(onViewAllTap: _goToAllCategory);
+    }
+
     return _buildPostList(state);
+  }
+
+  void _goToAllCategory() {
+    scrollToTopCallback();
+    homeCubit.selectCategory(null);
   }
 
   Widget _buildShimmerList() => SliverList(
@@ -85,9 +105,19 @@ class HomePostFeed extends StatelessWidget {
           showGap: index < state.postIds.length - 1,
         );
       }
-      return state.isLoadingMore
-          ? const _LoadingMoreIndicator()
-          : const EndOfFeedIndicator();
+
+      // آخر عنصر - الـ indicator
+      if (state.isLoadingMore) {
+        return const _LoadingMoreIndicator();
+      }
+
+      // لو في "الكل" → الـ indicator العادي
+      if (state.isAllCategory) {
+        return const EndOfFeedIndicator();
+      }
+
+      // لو في كاتيجوري معين → indicator مختلف
+      return _EndOfCategoryIndicator(onViewAllTap: _goToAllCategory);
     }, childCount: state.postIds.length + 1),
   );
 }
@@ -101,11 +131,13 @@ class _FeedState extends Equatable {
   final CubitStates status;
   final bool isLoadingMore;
   final String? error;
+  final bool isAllCategory;
 
   const _FeedState({
     required this.postIds,
     required this.status,
     required this.isLoadingMore,
+    required this.isAllCategory,
     this.error,
   });
 
@@ -114,7 +146,13 @@ class _FeedState extends Equatable {
   bool get isError => status == CubitStates.failure;
 
   @override
-  List<Object?> get props => [postIds, status, isLoadingMore, error];
+  List<Object?> get props => [
+    postIds,
+    status,
+    isLoadingMore,
+    error,
+    isAllCategory,
+  ];
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -235,6 +273,153 @@ class EndOfFeedIndicator extends StatelessWidget {
       shape: BoxShape.circle,
     ),
   );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// End of Category Indicator (لما يوصل لآخر البوستات في كاتيجوري معين)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _EndOfCategoryIndicator extends StatelessWidget {
+  const _EndOfCategoryIndicator({required this.onViewAllTap});
+
+  final VoidCallback onViewAllTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 20.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AppImage(AssetsData.postsEndIcon, height: 110.h),
+          Gap(8.h),
+          Text(
+            'تم الوصول لنهاية المنشورات في هذه الفئة',
+            style: Styles.textStyle14.copyWith(
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          Gap(12.h),
+          GestureDetector(
+            onTap: onViewAllTap,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: AppColors.kprimaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(
+                  color: AppColors.kprimaryColor.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.grid_view_rounded,
+                    size: 16.sp,
+                    color: AppColors.kprimaryColor,
+                  ),
+                  Gap(6.w),
+                  Text(
+                    'عرض كل المنشورات',
+                    style: Styles.textStyle12.copyWith(
+                      color: AppColors.kprimaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Gap(32.h),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Empty Category Indicator (لما الكاتيجوري فاضية)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _EmptyCategoryIndicator extends StatelessWidget {
+  const _EmptyCategoryIndicator({required this.onViewAllTap});
+
+  final VoidCallback onViewAllTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppImage(AssetsData.noPosts, height: 217.h),
+            Gap(16.h),
+            Text(
+              'لا توجد منشورات في هذه الفئة',
+              style: Styles.textStyle16.copyWith(
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Gap(8.h),
+            Text(
+              'جرب استكشاف فئات أخرى',
+              style: Styles.textStyle14.copyWith(color: Colors.grey.shade400),
+              textAlign: TextAlign.center,
+            ),
+            Gap(20.h),
+            GestureDetector(
+              onTap: onViewAllTap,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.kprimaryColor,
+                      AppColors.kprimaryColor.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(25.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.kprimaryColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.explore_rounded,
+                      size: 18.sp,
+                      color: Colors.white,
+                    ),
+                    Gap(8.w),
+                    Text(
+                      'استكشف كل المنشورات',
+                      style: Styles.textStyle14.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Gap(40.h),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -10,14 +10,18 @@ import '../reposiotry/home_repository.dart';
 
 class HomeCubit extends Cubit<HomeState> {
   final HomeRepository homeRepository;
-  final int pageSize = 5;
+  static const int _pageSize = 5;
 
-  HomeCubit(this.homeRepository) : super(HomeState()) {
-    _loadCachedData();
+  HomeCubit(this.homeRepository) : super(const HomeState()) {
+    _loadCachedUserData();
   }
 
-  // Load cached data immediately
-  void _loadCachedData() {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔄 INITIALIZATION & REFRESH
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// تحميل بيانات اليوزر من الكاش عند البداية
+  void _loadCachedUserData() {
     final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
     final cachedName = CachNetwork.getStringData(key: kMyProfileName);
 
@@ -35,14 +39,33 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  void setInitialPost(PostModel post) {
-    emit(state.copyWith(posts: [post], postsState: CubitStates.success));
+  /// ريفريش كامل للصفحة - يعيد كل شيء للقيم الأولية ويحمل من جديد
+  Future<void> refreshHome() async {
+    // إعادة تعيين كل شيء للقيم الأولية (مع الحفاظ على بيانات اليوزر المخزنة)
+    emit(state.reset());
+
+    // تحميل كل البيانات من جديد بالتوازي
+    await Future.wait([
+      fetchNameAndImage(),
+      fetchCategories(),
+      _fetchPostsForCategory(null), // null = "الكل"
+    ]);
   }
 
-  // fetch name and image
+  /// تحميل البيانات الأولية للهوم
+  Future<void> initHome() async {
+    await Future.wait([
+      fetchNameAndImage(),
+      fetchCategories(),
+      _fetchPostsForCategory(null),
+    ]);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 👤 USER INFO
+  // ═══════════════════════════════════════════════════════════════════════════
 
   Future<void> fetchNameAndImage() async {
-    // Show loading only if we don't have cached data
     if (state.homeInfo == null) {
       emit(state.copyWith(fetchNameAndImageState: CubitStates.loading));
     }
@@ -51,32 +74,21 @@ class HomeCubit extends Cubit<HomeState> {
 
     result.fold(
       (failure) {
-        // Only emit failure if we don't have cached data
         if (state.homeInfo == null) {
-          emit(
-            state.copyWith(
-              fetchNameAndImageState: CubitStates.failure,
-              errorMessage: failure.message,
-            ),
-          );
+          emit(state.copyWith(fetchNameAndImageState: CubitStates.failure));
         }
       },
-      (imageAndNameModel) {
-        // Save to cache
-        CachNetwork.setData(
-          key: kMyProfileImage,
-          value: imageAndNameModel.image,
-        );
-        CachNetwork.setData(key: kMyProfileName, value: imageAndNameModel.name);
+      (data) {
+        // حفظ في الكاش
+        CachNetwork.setData(key: kMyProfileImage, value: data.image);
+        CachNetwork.setData(key: kMyProfileName, value: data.name);
 
-        // Update state only if data changed
-        if (state.homeInfo?.image != imageAndNameModel.image ||
-            state.homeInfo?.name != imageAndNameModel.name ||
-            state.homeInfo?.notifications != imageAndNameModel.notifications) {
+        // تحديث الـ State فقط لو البيانات اتغيرت
+        if (_isUserInfoChanged(data)) {
           emit(
             state.copyWith(
               fetchNameAndImageState: CubitStates.success,
-              homeInfo: imageAndNameModel,
+              homeInfo: data,
             ),
           );
         }
@@ -84,99 +96,236 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // 📌 FETCH POSTS
-  // ═══════════════════════════════════════════════════════════
-  Future<void> fetchPosts({bool loadMore = false}) async {
+  bool _isUserInfoChanged(ImageAndNameModel newData) {
+    return state.homeInfo?.image != newData.image ||
+        state.homeInfo?.name != newData.name ||
+        state.homeInfo?.notifications != newData.notifications;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📂 CATEGORIES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> fetchCategories({bool loadMore = false}) async {
     if (loadMore) {
-      if (state.isLoadingMore || !state.hasMore) return;
-      emit(state.copyWith(isLoadingMore: true));
-
-      final nextPage = state.currentPage + 1;
-      final result = await homeRepository.fetchPosts(page: nextPage);
-
-      result.fold(
-        (failure) {
-          emit(
-            state.copyWith(isLoadingMore: false, errorMessage: failure.message),
-          );
-        },
-        (newPosts) {
-          final updatedList = [...state.posts, ...newPosts];
-          emit(
-            state.copyWith(
-              posts: updatedList,
-              currentPage: nextPage,
-              hasMore: newPosts.length >= pageSize,
-              isLoadingMore: false,
-            ),
-          );
-        },
-      );
+      await _loadMoreCategories();
     } else {
-      emit(
+      await _fetchInitialCategories();
+    }
+  }
+
+  Future<void> _fetchInitialCategories() async {
+    emit(
+      state.copyWith(
+        categoriesState: CubitStates.loading,
+        categories: [],
+        categoriesCurrentPage: 1,
+        categoriesHasMore: true,
+      ),
+    );
+
+    final result = await homeRepository.fetchAllCategories(1);
+
+    result.fold(
+      (failure) => emit(
         state.copyWith(
-          postsState: CubitStates.loading,
+          categoriesState: CubitStates.failure,
+          categoriesErrorMessage: failure.message,
+        ),
+      ),
+      (response) {
+        final cats = response.data?.categories ?? [];
+        final serverPageSize = response.data?.pagination?.pageSize ?? _pageSize;
+        emit(
+          state.copyWith(
+            categoriesState: CubitStates.success,
+            categories: cats,
+            categoriesCurrentPage: 1,
+            categoriesHasMore: cats.length >= serverPageSize,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _loadMoreCategories() async {
+    if (state.categoriesIsLoadingMore || !state.categoriesHasMore) return;
+
+    emit(state.copyWith(categoriesIsLoadingMore: true));
+
+    final nextPage = state.categoriesCurrentPage + 1;
+    final result = await homeRepository.fetchAllCategories(nextPage);
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          categoriesIsLoadingMore: false,
+          categoriesErrorMessage: failure.message,
+        ),
+      ),
+      (response) {
+        final newCats = response.data?.categories ?? [];
+        final serverPageSize = response.data?.pagination?.pageSize ?? _pageSize;
+        emit(
+          state.copyWith(
+            categories: [...state.categories, ...newCats],
+            categoriesCurrentPage: nextPage,
+            categoriesHasMore: newCats.length >= serverPageSize,
+            categoriesIsLoadingMore: false,
+          ),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📝 POSTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// تغيير الكاتيجوري المختارة وتحميل البوستات
+  Future<void> selectCategory(String? categoryId) async {
+    // لو نفس الكاتيجوري، لا تفعل شيء
+    if (categoryId == state.selectedCategoryId) return;
+
+    // تغيير الكاتيجوري المختارة
+    emit(
+      state.copyWith(
+        selectedCategoryId: categoryId,
+        resetSelectedCategory: categoryId == null,
+      ),
+    );
+
+    // لو البيانات موجودة ومحملة، لا تحمل من جديد
+    final categoryData = state.categoryPostsMap[categoryId];
+    if (categoryData != null && categoryData.isLoaded) return;
+
+    // تحميل البوستات للكاتيجوري الجديدة
+    await _fetchPostsForCategory(categoryId);
+  }
+
+  /// تحميل المزيد من البوستات للكاتيجوري الحالية
+  Future<void> loadMorePosts() async {
+    final categoryId = state.selectedCategoryId;
+    final currentData = state.currentCategoryPosts;
+
+    if (currentData.isLoadingMore || !currentData.hasMore) return;
+
+    // تحديث حالة الـ loading more
+    emit(
+      state.updateCategoryPosts(
+        categoryId,
+        (data) => data.copyWith(isLoadingMore: true),
+      ),
+    );
+
+    final nextPage = currentData.currentPage + 1;
+    final result = await homeRepository.fetchPosts(
+      page: nextPage,
+      categoryId: categoryId,
+    );
+
+    result.fold(
+      (failure) => emit(
+        state.updateCategoryPosts(
+          categoryId,
+          (data) => data.copyWith(
+            isLoadingMore: false,
+            errorMessage: failure.message,
+          ),
+        ),
+      ),
+      (newPosts) => emit(
+        state.updateCategoryPosts(
+          categoryId,
+          (data) => data.copyWith(
+            posts: [...data.posts, ...newPosts],
+            currentPage: nextPage,
+            hasMore: newPosts.length >= _pageSize,
+            isLoadingMore: false,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// تحميل البوستات لكاتيجوري معينة (داخلي)
+  Future<void> _fetchPostsForCategory(String? categoryId) async {
+    // تحديث حالة الـ loading
+    emit(
+      state.updateCategoryPosts(
+        categoryId,
+        (data) => data.copyWith(
+          state: CubitStates.loading,
           posts: [],
           currentPage: 1,
           hasMore: true,
         ),
-      );
-      final result = await homeRepository.fetchPosts(page: 1);
-      result.fold(
-        (failure) {
-          emit(
-            state.copyWith(
-              postsState: CubitStates.failure,
-              errorMessage: failure.message,
-            ),
-          );
-        },
-        (postsList) {
-          emit(
-            state.copyWith(
-              postsState: CubitStates.success,
-              posts: postsList,
-              currentPage: 1,
-              hasMore: postsList.length >= pageSize,
-            ),
-          );
-        },
-      );
-    }
+      ),
+    );
+
+    final result = await homeRepository.fetchPosts(
+      page: 1,
+      categoryId: categoryId,
+    );
+
+    result.fold(
+      (failure) => emit(
+        state.updateCategoryPosts(
+          categoryId,
+          (data) => data.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        ),
+      ),
+      (postsList) => emit(
+        state.updateCategoryPosts(
+          categoryId,
+          (data) => data.copyWith(
+            state: CubitStates.success,
+            posts: postsList,
+            currentPage: 1,
+            hasMore: postsList.length >= _pageSize,
+          ),
+        ),
+      ),
+    );
   }
 
+  /// تعيين بوست ابتدائي (للاستخدام عند فتح بوست من مكان آخر)
+  void setInitialPost(PostModel post) {
+    emit(
+      state.updateCategoryPosts(
+        state.selectedCategoryId,
+        (data) => data.copyWith(posts: [post], state: CubitStates.success),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ❤️ REACTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
   void reactToPost({required String postId, ReactionType? reactionType}) {
-    // 1️⃣ إيجاد الـ Post
-    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
-    if (postIndex == -1) return;
+    final post = _findPost(postId);
+    if (post == null) return;
 
-    final post = state.posts[postIndex];
-
-    // لا تغيير
-    if (post.myReaction == reactionType) {
-      // لو نفس الريأكشن ومطلوب إزالته (لو الزرار بيعمل toggle)
-      // لكن بناء على اللوجيك بتاعك انت بتبعت null للإزالة
-      if (reactionType != null) return;
-    }
-
-    // لو مفيش تغيير (null و null)
+    // لا تغيير لو نفس الريأكشن
+    if (post.myReaction == reactionType && reactionType != null) return;
     if (post.myReaction == null && reactionType == null) return;
 
-    // 2️⃣ تحديد الحالة
     final isRemoving = reactionType == null;
     final oldReaction = post.myReaction;
 
-    // 3️⃣ حساب العدد
+    // حساب العدد الجديد
     int newLikesCount = post.likesCount;
     if (isRemoving) {
       newLikesCount = (post.likesCount - 1).clamp(0, post.likesCount);
     } else if (oldReaction == null) {
       newLikesCount = post.likesCount + 1;
     }
-    // في حالة التغيير (Change) العدد بيفضل ثابت
 
-    // 4️⃣ حساب التوب ريأكشنز
+    // حساب التوب ريأكشنز
     final newTopReactions = calculateTopReactions(
       currentTopReactions: post.topReactions,
       oldReaction: oldReaction,
@@ -184,20 +333,20 @@ class HomeCubit extends Cubit<HomeState> {
       newLikesCount: newLikesCount,
     );
 
-    // 5️⃣ التحديث
-    final updatedPost = post.copyWith(
-      likesCount: newLikesCount,
-      topReactions: newTopReactions,
-      myReaction: reactionType,
-      clearMyReaction: isRemoving,
+    // التحديث في كل الكاتيجوريز
+    emit(
+      state.updatePostInAllCategories(
+        postId,
+        (p) => p.copyWith(
+          likesCount: newLikesCount,
+          topReactions: newTopReactions,
+          myReaction: reactionType,
+          clearMyReaction: isRemoving,
+        ),
+      ),
     );
 
-    final updatedPosts = List<PostModel>.from(state.posts);
-    updatedPosts[postIndex] = updatedPost;
-
-    emit(state.copyWith(posts: updatedPosts));
-
-    // API Call
+    // API Call (Fire and forget)
     homeRepository.reactToPost(
       postId: postId,
       reactionType: reactionType,
@@ -205,41 +354,52 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔄 SHARE POST
+  // ═══════════════════════════════════════════════════════════════════════════
+
   Future<void> toggleSharePost({required String postId}) async {
-    // ✅ Reset أول حاجة عشان الـ listener يشتغل كل مرة
+    // Reset حالة الشير
     emit(state.copyWith(shareActionState: CubitStates.initial));
-    // 1️⃣ إيجاد الـ Post
-    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
-    if (postIndex == -1) return;
 
-    final originalPost = state.posts[postIndex]; // ✅ احتفظ بالأصلي للـ Rollback
-    final bool isRemoving = originalPost.isRepostedByMe;
+    final post = _findPost(postId);
+    if (post == null) return;
 
-    // 2️⃣ حساب العدد الجديد
-    final int newSharesCount = isRemoving
-        ? (originalPost.sharesCount - 1).clamp(0, originalPost.sharesCount)
-        : originalPost.sharesCount + 1;
+    final isRemoving = post.isRepostedByMe;
+    final newSharesCount = isRemoving
+        ? (post.sharesCount - 1).clamp(0, post.sharesCount)
+        : post.sharesCount + 1;
 
-    // 3️⃣ ✅ Optimistic Update - تحديث فوري محلي
-    final updatedPost = originalPost.copyWith(
-      sharesCount: newSharesCount,
-      isRepostedByMe: !originalPost.isRepostedByMe,
+    // Optimistic Update في كل الكاتيجوريز
+    emit(
+      state.updatePostInAllCategories(
+        postId,
+        (p) => p.copyWith(
+          sharesCount: newSharesCount,
+          isRepostedByMe: !p.isRepostedByMe,
+        ),
+      ),
     );
 
-    _updatePostInList(postId, updatedPost);
-
-    // 4️⃣ API Call
+    // API Call
     final result = await homeRepository.sharePost(
       postId: postId,
       action: isRemoving ? "remove" : "add",
     );
 
-    // 5️⃣ معالجة النتيجة
     result.fold(
-      // ❌ فشل -> Rollback + Failure Toast
       (failure) {
         log('>>>>>>>>>>>>>>>>>Share Post Failed: ${failure.message}');
-        _updatePostInList(postId, originalPost); // ✅ إرجاع للأصل
+        // Rollback في كل الكاتيجوريز
+        emit(
+          state.updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(
+              sharesCount: post.sharesCount,
+              isRepostedByMe: post.isRepostedByMe,
+            ),
+          ),
+        );
         emit(
           state.copyWith(
             shareActionState: CubitStates.failure,
@@ -247,67 +407,69 @@ class HomeCubit extends Cubit<HomeState> {
           ),
         );
       },
-      // ✅ نجاح -> Success Toast فقط (الـ UI متحدث بالفعل)
       (message) {
         log('>>>>>>>>>>>>>>>>>Share Post Success: $message');
         emit(
           state.copyWith(
             shareActionState: CubitStates.success,
             shareMessage: message,
-            isShareAdded: !isRemoving, // ✅ عشان تعرف في الـ Listener
+            isShareAdded: !isRemoving,
           ),
         );
       },
     );
   }
 
-  // ✅ Helper Method لتحديث البوست في الليست
-  void _updatePostInList(String postId, PostModel updatedPost) {
-    final currentIndex = state.posts.indexWhere((p) => p.postId == postId);
-    if (currentIndex == -1) return;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 💾 SAVE POST
+  // ═══════════════════════════════════════════════════════════════════════════
 
-    final updatedPosts = List<PostModel>.from(state.posts);
-    updatedPosts[currentIndex] = updatedPost;
-
-    emit(state.copyWith(posts: updatedPosts));
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // 📌 SAVE POST (Local Only)
-  // ═══════════════════════════════════════════════════════════
   void toggleSavePost({required String postId}) {
-    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
+    final post = _findPost(postId);
+    if (post == null) return;
 
-    if (postIndex == -1) return;
+    emit(
+      state.updatePostInCurrentCategory(
+        postId,
+        (p) => p.copyWith(isSaved: !p.isSaved),
+      ),
+    );
 
-    final post = state.posts[postIndex];
-
-    // تحديث الـ Post
-    final updatedPost = post.copyWith(isSaved: !post.isSaved);
-
-    // تحديث القائمة
-    final updatedPosts = List<PostModel>.from(state.posts);
-    updatedPosts[postIndex] = updatedPost;
-
-    emit(state.copyWith(posts: updatedPosts));
-
-    // homeRepository.toggleSavePost(postId: postId, isSaved: updatedPost.isSaved);
+    // TODO: API Call
+    // homeRepository.toggleSavePost(postId: postId, isSaved: !post.isSaved);
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // 📌 FOLLOW/UNFOLLOW ADVISOR (Local Only)
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 👥 FOLLOW ADVISOR
+  // ═══════════════════════════════════════════════════════════════════════════
+
   void toggleFollowAdvisor({required String advisorId}) {
-    final updatedPosts = state.posts.map((post) {
+    final currentPosts = state.posts;
+    final updatedPosts = currentPosts.map((post) {
       if (post.advisorId == advisorId) {
         return post.copyWith(isFollowing: !post.isFollowing);
       }
       return post;
     }).toList();
 
-    emit(state.copyWith(posts: updatedPosts));
+    emit(
+      state.updateCategoryPosts(
+        state.selectedCategoryId,
+        (data) => data.copyWith(posts: updatedPosts),
+      ),
+    );
 
-    // 🔜 TODO: إرسال الطلب للـ backend لاحقاً
+    // TODO: API Call
     // homeRepository.toggleFollowAdvisor(advisorId: advisorId);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔧 HELPERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  PostModel? _findPost(String postId) {
+    final posts = state.posts;
+    final index = posts.indexWhere((p) => p.postId == postId);
+    return index != -1 ? posts[index] : null;
   }
 }
