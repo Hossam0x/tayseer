@@ -138,4 +138,5 @@ abstract class AppColors {
   static Color titleCard = Color.fromRGBO(15, 23, 42, 1);
   static Color backCardBaqa = Color.fromRGBO(242, 166, 181, 0.47);
   static Color inactiveColor = Color.fromRGBO(217, 217, 217, 1);
+  static Color dropDownArrow = Color.fromRGBO(60, 60, 67, 0.3);
 }

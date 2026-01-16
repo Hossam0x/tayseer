@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/video/video_player_widget.dart';
+import 'package:tayseer/features/shared/auth/view/widget/consultant_upload_certificate_body.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
@@ -183,14 +184,24 @@ class _CertificatesSectionContent extends StatelessWidget {
                   color: AppColors.secondary800,
                 ),
               ),
-              CustomBotton(
-                title: 'اضافة شهادة',
-                onPressed: () {},
-                width: 120.w,
+              TextButton.icon(
+                onPressed: () {
+                  _navigateAddCertificate(context);
+                },
+                label: Text(
+                  'إضافة',
+                  style: Styles.textStyle16Meduim.copyWith(
+                    color: AppColors.secondary400,
+                  ),
+                ),
+                icon: Icon(
+                  Icons.add,
+                  weight: 24.w,
+                  color: AppColors.secondary400,
+                ),
               ),
             ],
           ),
-          Gap(12.h),
           // Certificates List
           if (state.hasCertificates)
             ListView.builder(
@@ -233,102 +244,102 @@ class _CertificatesSectionContent extends StatelessWidget {
     bool isMe,
     List<CertificateModel> allCertificates, // ⭐ أضف هنا
   ) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.primary100),
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Certificate Image
-          SizedBox(
-            width: 110.w,
-            height: 85.w,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16.r),
-              child: certificate.image != null
-                  ? CachedNetworkImage(
-                      imageUrl: certificate.image!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey.shade200,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.kprimaryColor,
-                            strokeWidth: 2.w,
+    return GestureDetector(
+      onTap: () => _navigateToEditCertificate(context, allCertificates),
+      child: Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.primary100),
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Certificate Image
+            SizedBox(
+              width: 110.w,
+              height: 85.w,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16.r),
+                child: certificate.image != null
+                    ? CachedNetworkImage(
+                        imageUrl: certificate.image!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey.shade200,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.kprimaryColor,
+                              strokeWidth: 2.w,
+                            ),
                           ),
                         ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey.shade200,
+                          child: Center(
+                            child: Icon(
+                              Icons.image,
+                              color: Colors.grey.shade400,
+                              size: 32.w,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Container(
                         color: Colors.grey.shade200,
                         child: Center(
                           child: Icon(
-                            Icons.image,
+                            Icons.picture_as_pdf,
                             color: Colors.grey.shade400,
                             size: 32.w,
                           ),
                         ),
                       ),
-                    )
-                  : Container(
-                      color: Colors.grey.shade200,
-                      child: Center(
-                        child: Icon(
-                          Icons.picture_as_pdf,
-                          color: Colors.grey.shade400,
-                          size: 32.w,
-                        ),
-                      ),
+              ),
+            ),
+            Gap(16.w),
+            // Certificate Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    certificate.nameCertificate,
+                    style: Styles.textStyle16Meduim.copyWith(
+                      color: AppColors.secondary800,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Gap(4.h),
+                  Text(
+                    certificate.fromWhere,
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondary600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Gap(4.h),
+                  Text(
+                    DateFormat('yyyy').format(certificate.date),
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondary600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Gap(16.w),
-          // Certificate Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  certificate.nameCertificate,
-                  style: Styles.textStyle16Meduim.copyWith(
-                    color: AppColors.secondary800,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Gap(4.h),
-                Text(
-                  certificate.fromWhere,
-                  style: Styles.textStyle16.copyWith(
-                    color: AppColors.secondary600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Gap(4.h),
-                Text(
-                  DateFormat('yyyy').format(certificate.date),
-                  style: Styles.textStyle16.copyWith(
-                    color: AppColors.secondary600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // if (isMe) ...[
-          Gap(16.w),
-          GestureDetector(
-            onTap: () => _navigateToEditCertificate(context, allCertificates),
-            child: AppImage(
+            // if (isMe) ...[
+            Gap(16.w),
+            AppImage(
               AssetsData.editIcon,
               width: 20.w,
               color: AppColors.primary400,
             ),
-          ),
-        ],
-        // ],
+          ],
+          // ],
+        ),
       ),
     );
   }
@@ -351,6 +362,34 @@ class _CertificatesSectionContent extends StatelessWidget {
         settings: const RouteSettings(name: AppRouter.kEditCertificateView),
         pageBuilder: (context, animation, secondaryAnimation) =>
             EditCertificateView(certificates: certificates),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOutCubic;
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    ).then((result) {
+      if (result == true && context.mounted) {
+        context.read<CertificatesCubit>().refresh();
+      }
+    });
+  }
+
+  void _navigateAddCertificate(BuildContext context) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        settings: const RouteSettings(name: AppRouter.kEditCertificateView),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            ConsultantUploadCertificateBody(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;

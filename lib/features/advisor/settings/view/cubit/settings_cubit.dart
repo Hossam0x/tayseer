@@ -88,6 +88,12 @@ class SettingsCubit extends Cubit<SettingsState> {
           routeName: AppRouter.kBlockedUsersView,
         ),
         SettingItemModel(
+          id: 'help_support',
+          title: 'المساعدة والدعم',
+          iconAsset: AssetsData.icHelpSettings,
+          routeName: AppRouter.kHelpSupportView,
+        ),
+        SettingItemModel(
           id: 'invite',
           title: 'دعوة',
           iconAsset: AssetsData.icInviteSettings,

@@ -16,6 +16,7 @@ import 'package:tayseer/features/advisor/settings/view/appointments_view.dart';
 import 'package:tayseer/features/advisor/settings/view/archive_view.dart';
 import 'package:tayseer/features/advisor/settings/view/blocked_user_view.dart';
 import 'package:tayseer/features/advisor/settings/view/edit_personal_data_view.dart';
+import 'package:tayseer/features/advisor/settings/view/help_support_view.dart';
 import 'package:tayseer/features/advisor/settings/view/hide_fromstory_form_view.dart';
 import 'package:tayseer/features/advisor/settings/view/language_selection_view.dart';
 import 'package:tayseer/features/advisor/settings/view/packages_tab_view.dart';
@@ -144,6 +145,7 @@ abstract class AppRouter {
   static const kAccountManagementView = '/account_management_view';
   static const kLanguageSelectionView = '/language-selection';
   static const kHideStoryFromView = '/hide_story_from_view';
+  static const kHelpSupportView = '/help_support_view';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -247,6 +249,12 @@ abstract class AppRouter {
       case AppRouter.kHideStoryFromView:
         return SlideLeftRoute(
           page: const HideStoryFromView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kHelpSupportView:
+        return SlideLeftRoute(
+          page: const HelpSupportView(),
           routeSettings: settings,
         );
 

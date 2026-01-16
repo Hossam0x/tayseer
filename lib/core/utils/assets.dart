@@ -151,6 +151,7 @@ abstract class AssetsData {
   static const String calenderIcon = "assets/icons/calenderIcon.svg";
   static const String logoIcon = "assets/icons/logoIcon.svg";
   static const String boostFinish = "assets/icons/boostFinish.svg";
+  static const String uplaodCertificate = "assets/icons/uplaodCertificate.svg";
 
   // Settings assets
   static const String icNotificationSettings =
@@ -174,4 +175,5 @@ abstract class AssetsData {
   static const String storyPlaceholder = "assets/images/storyPlaceholder.jpg";
   static const String moneyTimesIcon = "assets/icons/moneyTimesIcon.svg";
   static const String pauseIcon = "assets/icons/pauseIcon.svg";
+  static const String icHelpSettings = "assets/icons/icHelpSettings.svg";
 }
