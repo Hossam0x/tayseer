@@ -8,30 +8,22 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
   late TextEditingController nameCertificateController;
   late TextEditingController fromWhereController;
 
-  EditCertificateCubit(this._repository) : super(const EditCertificateState()) {
+  EditCertificateCubit(
+    this._repository, {
+    CertificateModel? initialCertificate, // ⭐ بارامتر جديد
+  }) : super(const EditCertificateState()) {
     nameCertificateController = TextEditingController();
     fromWhereController = TextEditingController();
+
+    // ⭐ إذا كانت هناك شهادة أولية، قم بتحميل بياناتها
+    if (initialCertificate != null) {
+      _loadCertificateData(initialCertificate);
+    }
 
     emit(
       state.copyWith(
         nameCertificateController: nameCertificateController,
         fromWhereController: fromWhereController,
-      ),
-    );
-  }
-
-  void selectCertificate(CertificateModel cert) {
-    nameCertificateController.text = cert.nameCertificate;
-    fromWhereController.text = cert.fromWhere;
-
-    emit(
-      state.copyWith(
-        nameCertificate: cert.nameCertificate,
-        fromWhere: cert.fromWhere,
-        date: cert.date,
-        certificateImageUrl: cert.image,
-        selectedCertificateId: cert.id,
-        certificateImageFile: null,
       ),
     );
   }
@@ -44,6 +36,22 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
       EditCertificateState(
         nameCertificateController: nameCertificateController,
         fromWhereController: fromWhereController,
+      ),
+    );
+  }
+
+  void _loadCertificateData(CertificateModel certificate) {
+    nameCertificateController.text = certificate.nameCertificate;
+    fromWhereController.text = certificate.fromWhere;
+
+    emit(
+      state.copyWith(
+        nameCertificate: certificate.nameCertificate,
+        fromWhere: certificate.fromWhere,
+        date: certificate.date,
+        certificateImageUrl: certificate.image,
+        selectedCertificateId: certificate.id,
+        certificateImageFile: null,
       ),
     );
   }
@@ -141,6 +149,62 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
       },
     );
   }
+
+  // في EditCertificateCubit
+  // تعديل دالة selectCertificate لتحميل البيانات بشكل صحيح
+  void selectCertificate(CertificateModel cert) {
+    nameCertificateController.text = cert.nameCertificate;
+    fromWhereController.text = cert.fromWhere;
+
+    emit(
+      state.copyWith(
+        nameCertificate: cert.nameCertificate,
+        fromWhere: cert.fromWhere,
+        date: cert.date,
+        certificateImageUrl: cert.image,
+        selectedCertificateId: cert.id,
+        certificateImageFile: null,
+      ),
+    );
+  }
+
+  // // إضافة دالة لحذف الشهادة (اختياري)
+  // Future<void> deleteCertificate(
+  //   BuildContext context,
+  //   String certificateId,
+  // ) async {
+  //   if (certificateId.isEmpty) return;
+
+  //   emit(state.copyWith(isLoading: true));
+
+  //   final result = await _repository.deleteCertificate(certificateId);
+
+  //   if (isClosed) return;
+
+  //   result.fold(
+  //     (failure) {
+  //       emit(state.copyWith(isLoading: false));
+  //       if (context.mounted) {
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           CustomSnackBar(context, text: failure.message, isError: true),
+  //         );
+  //       }
+  //     },
+  //     (response) {
+  //       emit(state.copyWith(isLoading: false));
+  //       if (context.mounted) {
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           CustomSnackBar(
+  //             context,
+  //             text: 'تم حذف الشهادة بنجاح',
+  //             isSuccess: true,
+  //           ),
+  //         );
+  //         Navigator.pop(context, true);
+  //       }
+  //     },
+  //   );
+  // }
 
   Future<void> updateCertificate(BuildContext context) async {
     if (state.selectedCertificateId == null) {
