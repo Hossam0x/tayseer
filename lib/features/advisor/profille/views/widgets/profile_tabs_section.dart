@@ -1,7 +1,6 @@
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/tabs/comments_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/inquiries_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
@@ -23,35 +22,34 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   final List<String> _tabs = [
     "الاستفسارات",
     "المنشورات",
-    "التعليقات",
     "الشهادات",
     "التقييمات",
   ];
+
+  // 🔹 متغير لحفظ آخر تاب تم الضغط عليه
+  int _previousTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
 
-    // إنشاء TabController
     _tabController = TabController(length: _tabs.length, vsync: this);
-
-    // إضافة listener للتحديث عند تغيير التبويب بالسحب
     _tabController.addListener(_onTabChanged);
 
-    // إنشاء ProfileCubit خاص بالملف الشخصي
     _profileCubit = ProfileCubit(
       getIt<ProfileRepository>(),
       getIt<HomeRepository>(),
     );
 
-    // جلب منشورات المستخدم الحالي
     _loadUserPosts();
   }
 
   void _onTabChanged() {
-    // تحديث الـ state فقط إذا كان التبويب يتغير (وليس أثناء الحركة)
     if (_tabController.indexIsChanging) {
-      setState(() {});
+      setState(() {
+        _previousTabIndex = _tabController.index;
+        print(_previousTabIndex);
+      });
     }
   }
 
@@ -64,25 +62,49 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   }
 
   Future<void> _loadUserPosts() async {
-    // TODO: هنا تحتاج إلى تنفيذ دالة خاصة لجلب منشورات المستخدم الحالي
     await _profileCubit.fetchPosts();
+  }
+
+  // 🔹 دالة للتعامل مع الضغط على التاب
+  void _handleTabTap(int index) {
+    // ✅ إذا كان المستخدم ضغط على نفس التاب المفتوح حالياً
+    if (index == _tabController.index) {
+      _refreshCurrentTab(index);
+    } else {
+      // الانتقال للتاب الجديد
+      _tabController.animateTo(index);
+    }
+  }
+
+  // 🔹 دالة لعمل refresh حسب التاب المفتوح
+  void _refreshCurrentTab(int index) {
+    switch (index) {
+      case 0:
+        // TODO: refresh للاستفسارات إذا كان عندك cubit خاص بها
+        print("Refresh الاستفسارات");
+        break;
+      case 1:
+        // Refresh للمنشورات
+        _profileCubit.fetchPosts();
+        break;
+      case 2:
+        // Refresh للشهادات - سيتم refresh من خلال BlocProvider داخل التاب
+        // يمكنك إضافة key للـ ProfileCertificatesSection لإجبارها على rebuild
+        setState(() {});
+        break;
+      case 3:
+        // Refresh للتقييمات - سيتم refresh من خلال BlocProvider داخل التاب
+        setState(() {});
+        break;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _profileCubit,
-
       child: SliverToBoxAdapter(
-        child: Column(
-          children: [
-            // Tabs Header - مرتبط مع TabController
-            _buildTabsHeader(),
-
-            // Tab Content
-            _buildTabContent(),
-          ],
-        ),
+        child: Column(children: [_buildTabsHeader(), _buildTabContent()]),
       ),
     );
   }
@@ -95,8 +117,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            padding: EdgeInsets.zero,
-            labelPadding: EdgeInsets.zero,
+            labelPadding: EdgeInsets.symmetric(horizontal: 8.w),
             tabAlignment: TabAlignment.start,
             indicatorColor: AppColors.blackColor,
             indicatorSize: TabBarIndicatorSize.label,
@@ -123,9 +144,8 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
                 ),
               );
             }).toList(),
-            onTap: (index) {
-              _tabController.animateTo(index);
-            },
+            // 🔹 استخدام الدالة الجديدة بدلاً من animateTo مباشرة
+            onTap: _handleTabTap,
           ),
           Divider(height: 1.h, color: Colors.grey.shade300),
         ],
@@ -140,11 +160,17 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
       case 1:
         return PostsTab();
       case 2:
-        return CommentsTab();
+        // 🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
+        return ProfileCertificatesSection(
+          key: ValueKey(
+            'certificates_${DateTime.now().millisecondsSinceEpoch}',
+          ),
+        );
       case 3:
-        return ProfileCertificatesSection();
-      case 4:
-        return RatingsTab();
+        // 🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
+        return RatingsTab(
+          key: ValueKey('ratings_${DateTime.now().millisecondsSinceEpoch}'),
+        );
       default:
         return Container();
     }
