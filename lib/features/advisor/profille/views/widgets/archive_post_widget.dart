@@ -131,10 +131,6 @@ class ArchivePostWidget extends StatelessWidget {
               ],
             ),
           ),
-
-          // Unarchive Button
-          Divider(height: 1, color: Colors.grey.shade200),
-          _buildUnarchiveButton(context),
         ],
       ),
     );
@@ -238,44 +234,6 @@ class ArchivePostWidget extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildUnarchiveButton(BuildContext context) {
-    return InkWell(
-      onTap: () => _confirmUnarchive(context),
-      borderRadius: BorderRadius.only(
-        bottomLeft: Radius.circular(12.r),
-        bottomRight: Radius.circular(12.r),
-      ),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-        decoration: BoxDecoration(
-          color: AppColors.kprimaryColor.withOpacity(0.05),
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(12.r),
-            bottomRight: Radius.circular(12.r),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.archive_outlined,
-              color: AppColors.kprimaryColor,
-              size: 18.w,
-            ),
-            Gap(8.w),
-            Text(
-              'إلغاء الأرشفة',
-              style: Styles.textStyle14.copyWith(
-                color: AppColors.kprimaryColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

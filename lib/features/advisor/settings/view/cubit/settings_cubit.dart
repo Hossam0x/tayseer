@@ -52,7 +52,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           id: 'savers',
           title: 'المحفظة',
           iconAsset: AssetsData.icWalletSettings,
-          routeName: '',
+          routeName: AppRouter.kWalletView,
         ),
         // في دالة _loadSettings:
         SettingItemModel(

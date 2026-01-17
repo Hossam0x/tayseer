@@ -140,4 +140,7 @@ abstract class AppColors {
   static Color backCardBaqa = Color.fromRGBO(242, 166, 181, 0.47);
   static Color inactiveColor = Color.fromRGBO(217, 217, 217, 1);
   static Color dropDownArrow = Color.fromRGBO(60, 60, 67, 0.3);
+
+  static Color pendingColor = Color.fromRGBO(246, 181, 81, 1);
+  static Color alertColor = Color.fromRGBO(229, 69, 69, 1);
 }

@@ -177,4 +177,16 @@ abstract class AssetsData {
   static const String pauseIcon = "assets/icons/pauseIcon.svg";
   static const String icHelpSettings = "assets/icons/icHelpSettings.svg";
   static const String backArrow = "assets/icons/backArrow.svg";
+
+  // Wallet Icons
+  static const String icWallet = "assets/icons/icWallet.svg";
+  static const String icBank = "assets/icons/icBank.svg";
+  static const String stcPay = "assets/icons/stcPay.svg";
+  static const String icSubscription = "assets/icons/icSubscription.svg";
+  static const String icBookSession = "assets/icons/icBookSession.svg";
+  static const String icBookEvent = "assets/icons/icBookEvent.svg";
+  static const String widthrawSend = "assets/icons/widthrawSend.svg";
+  static const String amountIcon = "assets/icons/amountIcon.svg";
+  static const String vodafoneCash = "assets/images/vodafoneCash.png";
+  static const String instaPay = "assets/images/instaPay.png";
 }

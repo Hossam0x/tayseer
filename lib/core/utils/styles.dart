@@ -168,4 +168,10 @@ abstract class Styles {
     fontSize: 28.sp,
     fontWeight: FontWeight.w700,
   );
+
+  // Size 32
+  static final textStyle32Bold = TextStyle(
+    fontSize: 30.sp,
+    fontWeight: FontWeight.w700,
+  );
 }

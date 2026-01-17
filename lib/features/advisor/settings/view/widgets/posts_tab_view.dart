@@ -193,7 +193,7 @@ class PostsTabView extends StatelessWidget {
 
                   final post = state.posts[index];
                   return ArchivePostWidget(
-                    post: post, // ⭐️ مباشرة PostModel
+                    post: post,
                     onUnarchive: () =>
                         _unarchivePost(context, post.postId, cubit),
                     onReactionChanged: (postId, reactionType) {

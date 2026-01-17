@@ -30,6 +30,11 @@ import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cu
 import 'package:tayseer/features/advisor/map/map_view.dart';
 import 'package:tayseer/features/advisor/notification/presentation/view/notification_view.dart';
 import 'package:tayseer/features/advisor/session/view/session_details_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/bookings_log_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/transactions_log_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/wallet_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/withdraw_success_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/withdraw_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
@@ -148,6 +153,11 @@ abstract class AppRouter {
   static const kHideStoryFromView = '/hide_story_from_view';
   static const kHelpSupportView = '/help_support_view';
   static const kSavedPostsView = '/saved_posts_view';
+  static const kWalletView = '/wallet_view';
+  static const kBookingsLogView = '/bookings_log_view';
+  static const kTransactionsLogView = '/transactions_log_view';
+  static const kWithdrawalView = '/widthdrawal_view';
+  static const kWithdrawSuccessView = '/widthdrawal_success_view';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -263,6 +273,36 @@ abstract class AppRouter {
       case AppRouter.kSavedPostsView:
         return SlideLeftRoute(
           page: const SavedPostsView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kWalletView:
+        return SlideLeftRoute(
+          page: const WalletView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kBookingsLogView:
+        return SlideLeftRoute(
+          page: const BookingsLogView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kTransactionsLogView:
+        return SlideLeftRoute(
+          page: const TransactionsLogView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kWithdrawalView:
+        return SlideLeftRoute(
+          page: const WithdrawView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kWithdrawSuccessView:
+        return SlideLeftRoute(
+          page: const WithdrawSuccessView(),
           routeSettings: settings,
         );
 
