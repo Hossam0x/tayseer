@@ -82,18 +82,33 @@ class PostsTab extends StatelessWidget {
   }
 
   Widget _buildErrorState(ProfileCubit profileCubit) {
-    return Center(
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
+          Gap(16.h),
           Text(
             'حدث خطأ',
-            style: Styles.textStyle14.copyWith(color: AppColors.kGreyB3),
+            style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
+            textAlign: TextAlign.center,
           ),
-          Gap(10.h),
-          TextButton(
+          Gap(24.h),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.kprimaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+            ),
             onPressed: () => profileCubit.fetchPosts(),
-            child: Text('إعادة المحاولة'),
+            child: Text(
+              'إعادة المحاولة',
+              style: Styles.textStyle14Meduim.copyWith(
+                color: AppColors.kWhiteColor,
+              ),
+            ),
           ),
         ],
       ),

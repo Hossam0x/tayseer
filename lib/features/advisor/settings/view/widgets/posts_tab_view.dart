@@ -1,171 +1,260 @@
-import 'package:tayseer/core/widgets/post_card/post_card.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/archive_post_widget.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
 
 class PostsTabView extends StatelessWidget {
   const PostsTabView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // قائمة الـ dummy posts من ملف post_model.dart
-    final posts = dummyPosts;
-
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(vertical: 10.h),
-      itemCount: posts.length,
-      itemBuilder: (context, index) {
-        final post = posts[index];
-
-        return PostCard(post: post, key: ValueKey(post.postId));
+    return BlocConsumer<ArchivedPostsCubit, ArchivedPostsState>(
+      listener: (context, state) {
+        if (state.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor: AppColors.kRedColor,
+            ),
+          );
+          context.read<ArchivedPostsCubit>().clearError();
+        }
+      },
+      builder: (context, state) {
+        switch (state.state) {
+          case CubitStates.loading:
+            return _buildSkeletonPosts();
+          case CubitStates.failure:
+            return _buildErrorPosts(context, state.errorMessage);
+          case CubitStates.success:
+            if (state.posts.isEmpty) {
+              return const SharedEmptyState(title: "لا توجد منشورات مؤرشفة");
+            }
+            return _buildPostsContent(context, state);
+          default:
+            return const SizedBox.shrink();
+        }
       },
     );
   }
-}
 
-class PostCardUI extends StatelessWidget {
-  final PostModel post;
-  final bool isDetailsView;
-  final Widget repostHeader;
-  final Widget userInfoHeader;
-  final Widget contentText;
-  final Widget postMedia;
-  final Widget postStats;
-  final Widget postActions;
-  final VoidCallback? onCardTap;
-  final EdgeInsetsGeometry? padding;
-
-  const PostCardUI({
-    super.key,
-    required this.post,
-    this.isDetailsView = false,
-    required this.repostHeader,
-    required this.userInfoHeader,
-    required this.contentText,
-    required this.postMedia,
-    required this.postStats,
-    required this.postActions,
-    this.onCardTap,
-    this.padding,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onCardTap,
-      child: Container(
-        padding:
-            padding ??
-            EdgeInsets.symmetric(
-              vertical: context.responsiveHeight(14),
-              horizontal: context.responsiveWidth(10),
+  Widget _buildSkeletonPosts() {
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
+      itemCount: 3,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: 16.h),
+          child: Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: Colors.grey.shade200),
             ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: isDetailsView
-              ? BorderRadius.zero
-              : BorderRadius.circular(15.r),
-          border: isDetailsView
-              ? null
-              : Border.all(color: Colors.grey.shade200),
-        ),
-        clipBehavior: Clip.antiAlias,
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSkeletonHeader(),
+                  Gap(15.h),
+                  _buildSkeletonTextLines(),
+                  Gap(12.h),
+                  _buildSkeletonImage(),
+                  Gap(15.h),
+                  _buildSkeletonStats(),
+                  Gap(12.h),
+                  _buildSkeletonActions(),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSkeletonHeader() => Row(
+    children: [
+      Container(
+        width: 48.w,
+        height: 48.w,
+        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      ),
+      Gap(12.w),
+      Expanded(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (post.repostedBy != null) ...[
-              repostHeader,
-              Gap(context.responsiveHeight(8)),
-            ],
-            userInfoHeader,
-            Gap(context.responsiveHeight(15)),
-            contentText,
-            Gap(context.responsiveHeight(12)),
-            postMedia,
-            Gap(context.responsiveHeight(15)),
-            postStats,
-            Gap(context.responsiveHeight(8)),
-            postActions,
+            Container(width: 120.w, height: 14.h, color: Colors.white),
+            Gap(6.h),
+            Container(width: 180.w, height: 12.h, color: Colors.white),
           ],
         ),
       ),
+    ],
+  );
+
+  Widget _buildSkeletonTextLines() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(width: double.infinity, height: 14.h, color: Colors.white),
+      Gap(8.h),
+      Container(width: 250.w, height: 14.h, color: Colors.white),
+    ],
+  );
+
+  Widget _buildSkeletonImage() => Container(
+    width: double.infinity,
+    height: 206.h,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8.r),
+    ),
+  );
+
+  Widget _buildSkeletonStats() =>
+      Container(width: 150.w, height: 12.h, color: Colors.white);
+
+  Widget _buildSkeletonActions() => Row(
+    spacing: 6.w,
+    children: List.generate(
+      3,
+      (_) => Container(
+        width: 38.w,
+        height: 38.w,
+        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      ),
+    ),
+  );
+
+  Widget _buildErrorPosts(BuildContext context, String? errorMessage) {
+    return Padding(
+      padding: EdgeInsets.all(24.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
+          Gap(16.h),
+          Text(
+            errorMessage ?? 'حدث خطأ في تحميل المنشورات المؤرشفة',
+            style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
+            textAlign: TextAlign.center,
+          ),
+          Gap(24.h),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.kprimaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+            ),
+            onPressed: () => context.read<ArchivedPostsCubit>().refresh(),
+            child: Text(
+              'إعادة المحاولة',
+              style: Styles.textStyle14Meduim.copyWith(
+                color: AppColors.kWhiteColor,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
+
+  Widget _buildPostsContent(BuildContext context, ArchivedPostsState state) {
+    final cubit = context.read<ArchivedPostsCubit>();
+
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollInfo) {
+        if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+          if (state.hasMore && !state.isLoadingMore) {
+            cubit.fetchArchivedPosts(loadMore: true);
+          }
+        }
+        return false;
+      },
+      child: Column(
+        children: [
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => cubit.refresh(),
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
+                itemCount: state.posts.length + (state.hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == state.posts.length) {
+                    return _buildLoadMoreIndicator(state);
+                  }
+
+                  final post = state.posts[index];
+                  return ArchivePostWidget(
+                    post: post, // ⭐️ مباشرة PostModel
+                    onUnarchive: () =>
+                        _unarchivePost(context, post.postId, cubit),
+                    onReactionChanged: (postId, reactionType) {
+                      cubit.reactToPost(
+                        postId: postId,
+                        reactionType: reactionType,
+                      );
+                    },
+                    onShareTap: (postId) {
+                      cubit.toggleSharePost(postId: postId);
+                    },
+                    onHashtagTap: (hashtag) {
+                      context.pushNamed(AppRouter.kAdvisorSearchView);
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+          if (state.isLoadingMore) _buildLoadingMore(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreIndicator(ArchivedPostsState state) {
+    if (!state.hasMore) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16.h),
+      child: Center(
+        child: state.isLoadingMore
+            ? CircularProgressIndicator(color: AppColors.kprimaryColor)
+            : Container(),
+      ),
+    );
+  }
+
+  Widget _buildLoadingMore() {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16.h),
+      child: Center(
+        child: CircularProgressIndicator(color: AppColors.kprimaryColor),
+      ),
+    );
+  }
+
+  Future<void> _unarchivePost(
+    BuildContext context,
+    String postId,
+    ArchivedPostsCubit cubit,
+  ) async {
+    try {
+      await cubit.unarchivePost(postId);
+      if (context.mounted) {
+        AppToast.success(context, 'تم إلغاء أرشفة المنشور');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppToast.error(context, 'حدث خطأ أثناء إلغاء الأرشفة');
+      }
+    }
+  }
 }
-
-// --- Data Generator (Mock Backend) ---
-List<PostModel> dummyPosts = [
-  // 1.
-  PostModel(
-    name: "Tech Reviewer",
-    userName: "@tech_guru_99",
-    isFollowing: true,
-    avatar: AssetsData.avatarImage,
-    isVerified: true,
-    category: "Technology",
-    timeAgo: "1 hour ago",
-    content:
-        "Finally upgraded my workspace! 🖥️✨\n\nI've been planning this overhaul for months. Switched to a dual monitor setup...",
-    images: [
-      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1504639725590-34d0984388bd?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1585565804112-f201f68c48b4?auto=format&fit=crop&w=600&q=80",
-    ],
-    contentType: PostContentType.post, // ✅
-    commentsCount: 89,
-    sharesCount: 12,
-    likesCount: 560,
-    topReactions: [ReactionType.care, ReactionType.love],
-    myReaction: null,
-    repostedBy: "أحمد علي",
-    postId: '1',
-    advisorId: '',
-  ),
-
-  // 2.
-  PostModel(
-    name: "كرتون زمان",
-    userName: "@old_school_toons",
-    isFollowing: false,
-    avatar: AssetsData.avatarImage,
-    isVerified: false,
-    category: "ترفيه",
-    timeAgo: "منذ ساعتين",
-    content:
-        "لما تصحى من النوم وتلاقي البيت كله مقلوب 😂🐇\n\nبجد  كرتون زمان يا جماعة الفيديو ده بيمثل حالتي...",
-    contentType: PostContentType.video,
-    videoUrl:
-        'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    commentsCount: 1200,
-    sharesCount: 500,
-    likesCount: 10500,
-    topReactions: [ReactionType.care, ReactionType.love],
-    myReaction: null,
-    repostedBy: null,
-    postId: '2',
-    advisorId: '',
-  ),
-
-  // 3.
-  PostModel(
-    name: "قرآن",
-    userName: "@old_school_toons",
-    isFollowing: false,
-    avatar: AssetsData.avatarImage,
-    isVerified: false,
-    category: ".",
-    timeAgo: "منذ ساعتين",
-    content: ".",
-    contentType: PostContentType.reel,
-    videoUrl:
-        "https://tayseer-app.com/uploads/post/6947e98df9f8bce3bf355fc0/1766931632045-963800153-video_2025-12-28_16-17-55.mp4",
-    commentsCount: 1200,
-    sharesCount: 500,
-    likesCount: 10500,
-    topReactions: [ReactionType.dislike, ReactionType.love],
-    myReaction: null,
-    repostedBy: null,
-    postId: '3',
-    advisorId: '',
-  ),
-];

@@ -1,4 +1,6 @@
+import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/my_import.dart';
 import 'archive_states.dart';
 
@@ -117,9 +119,12 @@ class ArchivedChatsCubit extends Cubit<ArchivedChatsState> {
 // ============================================
 // 📌 ARCHIVED POSTS CUBIT
 // ============================================
+// في features/advisor/profille/views/cubit/archive_cubits.dart
+// عدل class ArchivedPostsCubit:
+
 class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
   final ArchiveRepository _archiveRepository;
-  final int _pageSize = 20;
+  final int _pageSize = 10; // قللت من 20 لـ 10 لأنه أحسن للتجربة
 
   ArchivedPostsCubit(this._archiveRepository)
     : super(const ArchivedPostsState()) {
@@ -144,13 +149,13 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
             state.copyWith(isLoadingMore: false, errorMessage: failure.message),
           );
         },
-        (posts) {
-          final updatedPosts = [...state.posts, ...posts];
+        (newPosts) {
+          final updatedPosts = [...state.posts, ...newPosts];
           emit(
             state.copyWith(
               posts: updatedPosts,
               currentPage: nextPage,
-              hasMore: posts.length == _pageSize,
+              hasMore: newPosts.length >= _pageSize,
               isLoadingMore: false,
               state: CubitStates.success,
               errorMessage: null,
@@ -185,19 +190,139 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
             ),
           );
         },
-        (posts) {
+        (postsList) {
           emit(
             state.copyWith(
               state: CubitStates.success,
-              posts: posts,
+              posts: postsList,
               currentPage: 1,
-              hasMore: posts.length == _pageSize,
+              hasMore: postsList.length >= _pageSize,
               errorMessage: null,
             ),
           );
         },
       );
     }
+  }
+
+  Future<void> toggleSharePost({required String postId}) async {
+    final postIndex = state.posts.indexWhere(
+      (post) => post.postId == postId,
+    ); // ⭐️ post.postId
+    if (postIndex == -1) return;
+
+    final originalPost = state.posts[postIndex];
+    final bool isRemoving =
+        originalPost.isRepostedByMe; // ⭐️ مباشرة من originalPost
+
+    final int newSharesCount = isRemoving
+        ? (originalPost.sharesCount - 1).clamp(0, originalPost.sharesCount)
+        : originalPost.sharesCount + 1;
+
+    final updatedPost = originalPost.copyWith(
+      sharesCount: newSharesCount,
+      isRepostedByMe: !originalPost.isRepostedByMe,
+    );
+
+    _updatePostInList(postId, updatedPost);
+
+    final result = await _archiveRepository.shareArchivedPost(
+      postId: postId,
+      action: isRemoving ? "remove" : "add",
+    );
+
+    result.fold(
+      (failure) {
+        _updatePostInList(postId, originalPost); // Rollback
+      },
+      (message) {
+        // Success - لا حاجة لتحديث إضافي
+      },
+    );
+  }
+
+  Future<void> unarchivePost(String postId) async {
+    final postIndex = state.posts.indexWhere(
+      (post) => post.postId == postId,
+    ); // ⭐️ post.postId
+    if (postIndex == -1) return;
+
+    final removedPost = state.posts[postIndex];
+    final updatedPosts = List<PostModel>.from(
+      state.posts,
+    ); // ⭐️ PostModel بدلاً من ArchivePostModel
+    updatedPosts.removeAt(postIndex);
+
+    emit(state.copyWith(posts: updatedPosts));
+
+    try {
+      await _archiveRepository.unarchivePost(postId: postId);
+    } catch (e) {
+      // Rollback
+      updatedPosts.insert(postIndex, removedPost);
+      emit(state.copyWith(posts: updatedPosts));
+      rethrow;
+    }
+  }
+
+  void _updatePostInList(String postId, PostModel updatedPost) {
+    // ⭐️ PostModel بدلاً من ArchivePostModel
+    final currentIndex = state.posts.indexWhere(
+      (p) => p.postId == postId,
+    ); // ⭐️ p.postId
+    if (currentIndex == -1) return;
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[currentIndex] = updatedPost;
+
+    emit(state.copyWith(posts: updatedPosts));
+  }
+
+  // ⭐️ أضف هذه الوظيفة إذا لم تكن موجودة
+  void reactToPost({required String postId, ReactionType? reactionType}) {
+    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+
+    if (post.myReaction == reactionType) return;
+    if (post.myReaction == null && reactionType == null) return;
+
+    final isRemoving = reactionType == null;
+    final oldReaction = post.myReaction;
+
+    int newLikesCount = post.likesCount;
+    if (isRemoving) {
+      newLikesCount = (post.likesCount - 1).clamp(0, post.likesCount);
+    } else if (oldReaction == null) {
+      newLikesCount = post.likesCount + 1;
+    }
+
+    final newTopReactions = calculateTopReactions(
+      currentTopReactions: post.topReactions,
+      oldReaction: oldReaction,
+      newReaction: reactionType,
+      newLikesCount: newLikesCount,
+    );
+
+    final updatedPost = post.copyWith(
+      likesCount: newLikesCount,
+      topReactions: newTopReactions,
+      myReaction: reactionType,
+      clearMyReaction: isRemoving,
+    );
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[postIndex] = updatedPost;
+
+    emit(state.copyWith(posts: updatedPosts));
+
+    // API Call
+    _archiveRepository.reactToArchivedPost(
+      postId: postId,
+      reactionType: reactionType,
+      isRemove: isRemoving,
+    );
   }
 
   Future<void> refresh() async {

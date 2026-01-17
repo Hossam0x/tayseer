@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 
 // ============================================
 // 📌 USER MODEL
@@ -231,37 +232,292 @@ class ArchivedChatsResponseModel extends Equatable {
 // ============================================
 // 📌 POST MODEL (Placeholder - اضف الموديل الخاص بالمنشورات)
 // ============================================
+// في features/advisor/profille/data/models/archive_models.dart
 
+// ============================================
+// 📌 ARCHIVE POST MODEL (محدث)
+// ============================================
 class ArchivePostModel extends Equatable {
   final String id;
-  final String title;
-  final String? image;
+  final String userName;
+  final String? userImage;
+  final String? advisorId;
+  final String? content;
+  final List<String>? images;
+  final String? video;
+  final PostContentType? contentType;
+  final int? commentsCount;
+  final int? sharesCount;
+  final int? likesCount;
+  final String? category;
   final String createdAt;
-  final int likes;
-  final int comments;
+  final ReactionType? myReaction;
+  final bool? isRepostedByMe;
 
   const ArchivePostModel({
     required this.id,
-    required this.title,
-    this.image,
+    required this.userName,
+    this.userImage,
+    this.advisorId,
+    this.content,
+    this.images,
+    this.video,
+    this.contentType,
+    this.commentsCount,
+    this.sharesCount,
+    this.likesCount,
+    this.category,
     required this.createdAt,
-    required this.likes,
-    required this.comments,
+    this.myReaction,
+    this.isRepostedByMe,
   });
 
   factory ArchivePostModel.fromJson(Map<String, dynamic> json) {
+    print('📌 Parsing ArchivePostModel: $json');
+
+    try {
+      // Parse images list
+      List<String>? imagesList;
+      if (json['images'] is List) {
+        imagesList = (json['images'] as List).whereType<String>().toList();
+      }
+
+      // Parse content type
+      PostContentType? parsedContentType;
+      if (json['contentType'] != null) {
+        switch (json['contentType'].toString().toLowerCase()) {
+          case 'video':
+            parsedContentType = PostContentType.video;
+            break;
+          case 'reel':
+            parsedContentType = PostContentType.reel;
+            break;
+          case 'post':
+          default:
+            parsedContentType = PostContentType.post;
+        }
+      }
+
+      // Parse myReaction
+      ReactionType? parsedReaction;
+      if (json['myReaction'] != null) {
+        switch (json['myReaction'].toString().toLowerCase()) {
+          case 'love':
+            parsedReaction = ReactionType.love;
+            break;
+          case 'care':
+            parsedReaction = ReactionType.care;
+            break;
+          case 'dislike':
+            parsedReaction = ReactionType.dislike;
+            break;
+        }
+      }
+
+      return ArchivePostModel(
+        id: json['id']?.toString() ?? '',
+        userName: json['userName']?.toString() ?? 'مستخدم',
+        userImage: json['userImage']?.toString(),
+        advisorId: json['advisorId']?.toString(),
+        content: json['content']?.toString(),
+        images: imagesList,
+        video: json['video']?.toString(),
+        contentType: parsedContentType,
+        commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,
+        sharesCount: (json['sharesCount'] as num?)?.toInt() ?? 0,
+        likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
+        category: json['category']?.toString(),
+        createdAt:
+            json['createdAt']?.toString() ?? DateTime.now().toIso8601String(),
+        myReaction: parsedReaction,
+        isRepostedByMe: json['isRepostedByMe'] as bool? ?? false,
+      );
+    } catch (e) {
+      print('❌ Error parsing ArchivePostModel: $e');
+      print('❌ Problematic JSON: $json');
+      rethrow;
+    }
+  }
+
+  // Convert to PostModel for use with PostCard
+  PostModel toPostModel() {
+    return PostModel(
+      postId: id,
+      name: userName.split(' ').first,
+      userName: userName,
+      advisorId: advisorId ?? '',
+      isFollowing:
+          false, // Default - يمكن تعديله إذا كان الـ API يوفر هذه المعلومة
+      avatar: userImage ?? '',
+      isVerified:
+          false, // Default - يمكن تعديله إذا كان الـ API يوفر هذه المعلومة
+      category: category ?? 'عام',
+      timeAgo: _formatTimeAgo(createdAt),
+      content: content ?? '',
+      images: images ?? [],
+      contentType: contentType ?? PostContentType.post,
+      videoUrl: video,
+      commentsCount: commentsCount ?? 0,
+      sharesCount: sharesCount ?? 0,
+      likesCount: likesCount ?? 0,
+      topReactions: [], // يمكن تعديله إذا كان الـ API يوفر هذه المعلومة
+      myReaction: myReaction,
+      isRepostedByMe: isRepostedByMe ?? false,
+      isSaved: true, // المنشورات المؤرشفة تكون محفوظة تلقائياً
+    );
+  }
+
+  // Copy with method for updates
+  ArchivePostModel copyWith({
+    int? likesCount,
+    ReactionType? myReaction,
+    int? sharesCount,
+    bool? isRepostedByMe,
+  }) {
     return ArchivePostModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      image: json['image'] as String?,
-      createdAt: json['createdAt'] as String,
-      likes: json['likes'] as int,
-      comments: json['comments'] as int,
+      id: id,
+      userName: userName,
+      userImage: userImage,
+      advisorId: advisorId,
+      content: content,
+      images: images,
+      video: video,
+      contentType: contentType,
+      commentsCount: commentsCount,
+      sharesCount: sharesCount ?? this.sharesCount,
+      likesCount: likesCount ?? this.likesCount,
+      category: category,
+      createdAt: createdAt,
+      myReaction: myReaction ?? this.myReaction,
+      isRepostedByMe: isRepostedByMe ?? this.isRepostedByMe,
+    );
+  }
+
+  // Helper method to format time ago
+  String _formatTimeAgo(String dateString) {
+    try {
+      final date = DateTime.parse(dateString).toLocal();
+      final now = DateTime.now().toLocal();
+      final difference = now.difference(date);
+
+      if (difference.inSeconds < 60) {
+        return 'الآن';
+      } else if (difference.inMinutes < 60) {
+        return 'منذ ${difference.inMinutes} دقيقة';
+      } else if (difference.inHours < 24) {
+        return 'منذ ${difference.inHours} ساعة';
+      } else if (difference.inDays < 30) {
+        return 'منذ ${difference.inDays} يوم';
+      } else if (difference.inDays < 365) {
+        return 'منذ ${(difference.inDays / 30).floor()} شهر';
+      } else {
+        return 'منذ ${(difference.inDays / 365).floor()} سنة';
+      }
+    } catch (e) {
+      return 'منذ فترة';
+    }
+  }
+
+  @override
+  List<Object?> get props => [
+    id,
+    userName,
+    userImage,
+    advisorId,
+    content,
+    images,
+    video,
+    contentType,
+    commentsCount,
+    sharesCount,
+    likesCount,
+    category,
+    createdAt,
+    myReaction,
+    isRepostedByMe,
+  ];
+}
+
+// ============================================
+// 📌 ARCHIVED POSTS RESPONSE
+// ============================================
+class ArchivedPostsResponseModel extends Equatable {
+  final List<ArchivePostModel> posts;
+  final int currentPage;
+  final int totalPages;
+  final int totalCount;
+  final bool hasMore;
+
+  const ArchivedPostsResponseModel({
+    required this.posts,
+    required this.currentPage,
+    required this.totalPages,
+    required this.totalCount,
+    required this.hasMore,
+  });
+
+  factory ArchivedPostsResponseModel.fromJson(Map<String, dynamic> json) {
+    print('📦 Parsing ArchivedPostsResponseModel');
+
+    // معالجة posts
+    List<ArchivePostModel> postsList = [];
+    try {
+      if (json['posts'] is List) {
+        postsList = (json['posts'] as List).map((post) {
+          try {
+            return ArchivePostModel.fromJson(
+              post is Map<String, dynamic>
+                  ? post
+                  : (post as Map).cast<String, dynamic>(),
+            );
+          } catch (e) {
+            print('❌ Error parsing individual post: $e');
+            print('❌ Post data: $post');
+            return ArchivePostModel(
+              id: '',
+              userName: 'مستخدم',
+              createdAt: DateTime.now().toIso8601String(),
+            );
+          }
+        }).toList();
+      }
+    } catch (e) {
+      print('❌ Error parsing posts list: $e');
+    }
+
+    // معالجة pagination
+    Map<String, dynamic> pagination = {};
+    try {
+      if (json['pagination'] is Map) {
+        pagination = (json['pagination'] as Map).cast<String, dynamic>();
+      } else if (json['data'] != null && json['data']['pagination'] is Map) {
+        // محاولة بديلة إذا كان الـ pagination داخل data
+        pagination = (json['data']['pagination'] as Map)
+            .cast<String, dynamic>();
+      }
+    } catch (e) {
+      print('❌ Error parsing pagination: $e');
+    }
+
+    return ArchivedPostsResponseModel(
+      posts: postsList,
+      currentPage: (pagination['currentPage'] as num?)?.toInt() ?? 1,
+      totalPages: (pagination['totalPages'] as num?)?.toInt() ?? 1,
+      totalCount: (pagination['totalCount'] as num?)?.toInt() ?? 0,
+      hasMore:
+          ((pagination['currentPage'] as num?)?.toInt() ?? 1) <
+          ((pagination['totalPages'] as num?)?.toInt() ?? 1),
     );
   }
 
   @override
-  List<Object?> get props => [id, title, image, createdAt, likes, comments];
+  List<Object?> get props => [
+    posts,
+    currentPage,
+    totalPages,
+    totalCount,
+    hasMore,
+  ];
 }
 
 // ============================================
