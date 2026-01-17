@@ -9,6 +9,7 @@ class ProfileModel extends Equatable {
   final int followers;
   final int following;
   final bool isVerified;
+  final String? location;
 
   const ProfileModel({
     required this.name,
@@ -19,6 +20,7 @@ class ProfileModel extends Equatable {
     required this.followers,
     required this.following,
     required this.isVerified,
+    required this.location,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class ProfileModel extends Equatable {
       followers: json['followers'] ?? 0,
       following: json['following'] ?? 0,
       isVerified: json['isVerified'] ?? false,
+      location: json['location'],
     );
   }
 
@@ -43,6 +46,7 @@ class ProfileModel extends Equatable {
     'followers': followers,
     'following': following,
     'isVerified': isVerified,
+    'location': location,
   };
 
   ProfileModel copyWith({
@@ -54,6 +58,7 @@ class ProfileModel extends Equatable {
     int? followers,
     int? following,
     bool? isVerified,
+    String? location,
   }) {
     return ProfileModel(
       name: name ?? this.name,
@@ -64,6 +69,7 @@ class ProfileModel extends Equatable {
       followers: followers ?? this.followers,
       following: following ?? this.following,
       isVerified: isVerified ?? this.isVerified,
+      location: location ?? '',
     );
   }
 
@@ -77,5 +83,6 @@ class ProfileModel extends Equatable {
     followers,
     following,
     isVerified,
+    location,
   ];
 }

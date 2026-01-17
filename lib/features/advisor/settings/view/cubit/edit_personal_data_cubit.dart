@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -143,16 +144,35 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
     emit(state.copyWith(videoFile: null, videoPreviewUrl: null));
   }
 
-  Future<void> saveChanges() async {
+  Future<void> saveChanges(BuildContext context) async {
     if (state.isSaving || !state.hasChanges) return;
 
     emit(state.copyWith(isSaving: true, errorMessage: null));
 
+    String? cleanedYearsOfExperience;
+
+    if (state.currentData.yearsOfExperience != null) {
+      final exp = state.currentData.yearsOfExperience!.trim();
+
+      // استخراج الرقم فقط (طرق مختلفة حسب النمط)
+      if (exp.contains("أكثر من")) {
+        cleanedYearsOfExperience = "11";
+      } else {
+        // نأخذ أول مجموعة أرقام
+        final match = RegExp(r'(\d+)').firstMatch(exp);
+        cleanedYearsOfExperience = match?.group(1);
+      }
+    }
+
+    final requestToSend = state.currentData.copyWith(
+      yearsOfExperience: cleanedYearsOfExperience,
+    );
+
     try {
       final result = await _repository.updatePersonalData(
-        request: state.currentData,
-        imageFile: state.imageFile, // ⭐ ستمرر الملف مباشرة
-        videoFile: state.videoFile, // ⭐ ستمرر الملف مباشرة
+        request: requestToSend,
+        imageFile: state.imageFile,
+        videoFile: state.videoFile,
       );
 
       result.fold(
@@ -188,8 +208,12 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
 
           // إظهار رسالة النجاح
           if (response.success) {
-            // يمكنك إضافة SnackBar هنا
-            print('✅ تم تحديث البيانات بنجاح: ${response.message}');
+            showSafeSnackBar(
+              context: context,
+              text: 'تم تحديث البيانات بنجاح',
+              isSuccess: true,
+            );
+            Navigator.pop(context);
           }
         },
       );

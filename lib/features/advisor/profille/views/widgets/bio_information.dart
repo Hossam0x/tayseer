@@ -50,6 +50,7 @@ class BioInformation extends StatelessWidget {
           followers: 0,
           following: 0,
           isVerified: false,
+          location: '',
         ),
       ),
     );
@@ -88,10 +89,12 @@ class BioInformation extends StatelessWidget {
           _buildNameSection(profile),
 
           // Username
-          Text(
-            profile.username,
-            style: Styles.textStyle14.copyWith(color: AppColors.hintText),
-          ),
+          profile.username == ''
+              ? SizedBox()
+              : Text(
+                  profile.username,
+                  style: Styles.textStyle14.copyWith(color: AppColors.hintText),
+                ),
 
           Gap(8.h),
 
@@ -99,7 +102,7 @@ class BioInformation extends StatelessWidget {
           _buildProfessionalInfo(profile),
 
           // Location
-          _buildLocation(),
+          _buildLocation(profile),
 
           // About you
           _buildAboutYou(profile),
@@ -142,7 +145,7 @@ class BioInformation extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "استشاري نفسي وعلاقات زوجية",
+          "التخصص غير معروف",
           style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
         ),
         Gap(4.h),
@@ -157,7 +160,7 @@ class BioInformation extends StatelessWidget {
     );
   }
 
-  Widget _buildLocation() {
+  Widget _buildLocation(ProfileModel profile) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4.h),
       child: Row(
@@ -166,7 +169,7 @@ class BioInformation extends StatelessWidget {
           Gap(4.w),
           Expanded(
             child: Text(
-              'مصر, دمياط الجديدة',
+              profile.location == '' ? 'غير محدد' : profile.location!,
               style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
               overflow: TextOverflow.ellipsis,
             ),

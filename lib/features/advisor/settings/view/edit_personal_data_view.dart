@@ -1,6 +1,7 @@
 import 'package:chewie/chewie.dart';
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -18,17 +19,19 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   late TextEditingController _bioController;
 
   String? _selectedPosition;
-  String? _selectedExperience;
   String? _selectedSpecialization;
 
   final List<String> _positions = ["استشاري", "أخصائي", "مدرب", "محاضر"];
-  final List<String> _experiences = [
-    "سنتين",
-    "3 سنوات",
-    "5 سنوات",
-    "10 سنوات",
-    "أكثر من 10 سنوات",
+  final List<Map<String, String>> _experienceOptions = [
+    {"display": "سنتين", "value": "2"},
+    {"display": "3 سنوات", "value": "3"},
+    {"display": "5 سنوات", "value": "5"},
+    {"display": "10 سنوات", "value": "10"},
+    {"display": "أكثر من 10 سنوات", "value": "11"},
   ];
+
+  String? _selectedExperienceDisplay;
+  String? _selectedExperienceValue;
   final List<String> _specializations = [
     "استشاري نفسي وعلاقات زوجية",
     "طبيب نفسي",
@@ -217,7 +220,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _bioController.text = state.profile!.aboutYou ?? '';
 
     _selectedPosition = state.currentData.jobGrade;
-    _selectedExperience = state.currentData.yearsOfExperience;
+    _selectedExperienceDisplay = state.currentData.yearsOfExperience;
     _selectedSpecialization = state.currentData.professionalSpecialization;
 
     _controllersInitialized = true;
@@ -237,14 +240,10 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
       child: BlocConsumer<EditPersonalDataCubit, EditPersonalDataState>(
         listener: (context, state) {
           if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.errorMessage!,
-                  textDirection: TextDirection.rtl,
-                ),
-                backgroundColor: Colors.red,
-              ),
+            showSafeSnackBar(
+              context: context,
+              text: state.errorMessage!,
+              isError: true,
             );
             context.read<EditPersonalDataCubit>().clearError();
           }
@@ -397,16 +396,34 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                         ),
                                         Gap(11.h),
 
-                                        // Dropdown للخبرة
                                         _buildDropdown(
-                                          value: _selectedExperience,
-                                          items: _experiences,
-                                          onChanged: (value) {
+                                          value: _selectedExperienceDisplay,
+                                          items: _experienceOptions
+                                              .map((e) => e["display"]!)
+                                              .toList(),
+                                          onChanged: (displayValue) {
                                             setState(() {
-                                              _selectedExperience = value;
+                                              _selectedExperienceDisplay =
+                                                  displayValue;
+                                              final selected =
+                                                  _experienceOptions.firstWhere(
+                                                    (e) =>
+                                                        e["display"] ==
+                                                        displayValue,
+                                                    orElse: () => {"value": ""},
+                                                  );
+                                              _selectedExperienceValue =
+                                                  selected["value"];
                                             });
-                                            if (value != null) {
-                                              cubit.updateExperience(value);
+
+                                            // أرسل القيمة الرقمية للـ cubit
+                                            if (_selectedExperienceValue !=
+                                                    null &&
+                                                _selectedExperienceValue!
+                                                    .isNotEmpty) {
+                                              cubit.updateExperience(
+                                                _selectedExperienceValue!,
+                                              );
                                             }
                                           },
                                           hint: 'اختر سنوات الخبرة',
@@ -448,7 +465,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                               state.isSaving ||
                                                   !state.hasChanges
                                               ? null
-                                              : () => cubit.saveChanges(),
+                                              : () =>
+                                                    cubit.saveChanges(context),
                                         ),
                                         Gap(40.h),
                                       ],
