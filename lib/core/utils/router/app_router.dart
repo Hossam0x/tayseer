@@ -45,6 +45,7 @@ import 'package:tayseer/features/shared/auth/view/select_days_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
+import 'package:tayseer/features/user/advisor_profile/views/user_profile_view.dart';
 import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
 import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
@@ -158,6 +159,7 @@ abstract class AppRouter {
   static const kTransactionsLogView = '/transactions_log_view';
   static const kWithdrawalView = '/widthdrawal_view';
   static const kWithdrawSuccessView = '/widthdrawal_success_view';
+  static const kUserProfileView = '/userProfileView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -304,6 +306,16 @@ abstract class AppRouter {
         return SlideLeftRoute(
           page: const WithdrawSuccessView(),
           routeSettings: settings,
+        );
+
+      case kUserProfileView:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => UserProfileView(
+            advisorId: args['advisorId'] as String,
+            advisorName: args['advisorName'] as String?,
+          ),
+          settings: settings,
         );
 
       case kHomeScreen:

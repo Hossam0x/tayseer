@@ -7,6 +7,7 @@ import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_images_grid.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
+import 'package:tayseer/features/user/advisor_profile/views/user_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 
 /// ProfilePostCard - نسخة خاصة بالـ Profile
@@ -188,31 +189,47 @@ class _PostUserHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return UserInfoHeader(
-      name: post.name,
-      avatar: post.avatar,
-      isVerified: post.isVerified,
-      onMoreTap: onMoreTap ?? () {},
-      subtitle: Row(
-        children: [
-          Flexible(
-            child: Text(
-              post.category,
-              style: Styles.textStyle14.copyWith(
-                color: AppColors.kprimaryColor,
+    return GestureDetector(
+      onTap: () => _navigateToUserProfile(context),
+      child: UserInfoHeader(
+        name: post.name,
+        avatar: post.avatar,
+        isVerified: post.isVerified,
+        onMoreTap: onMoreTap ?? () {},
+        subtitle: Row(
+          children: [
+            Flexible(
+              child: Text(
+                post.category,
+                style: Styles.textStyle14.copyWith(
+                  color: AppColors.kprimaryColor,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          Gap(context.responsiveWidth(4)),
-          Text(
-            " • ${post.timeAgo}",
-            style: Styles.textStyle10.copyWith(color: HexColor("#99A1BE")),
-          ),
-          Gap(context.responsiveWidth(4)),
-          Icon(Icons.public, color: AppColors.kGreyB3, size: 12.sp),
-        ],
+            Gap(context.responsiveWidth(4)),
+            Text(
+              " • ${post.timeAgo}",
+              style: Styles.textStyle10.copyWith(color: HexColor("#99A1BE")),
+            ),
+            Gap(context.responsiveWidth(4)),
+            Icon(Icons.public, color: AppColors.kGreyB3, size: 12.sp),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToUserProfile(BuildContext context) {
+    // التحقق من أن هذا ليس بروفايل المستخدم الحالي
+    // يمكنك استخدام getIt أو أي طريقة أخرى للتحقق من الـ current user id
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            UserProfileView(advisorId: post.advisorId, advisorName: post.name),
       ),
     );
   }

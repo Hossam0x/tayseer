@@ -49,6 +49,7 @@ import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:tayseer/features/user/advisor_profile/data/repositories/user_profile_repository.dart';
 
 import '../../my_import.dart';
 
@@ -313,5 +314,9 @@ Future<void> setupGetIt() async {
 
   getIt.registerLazySingleton<SavedPostsRepository>(
     () => SavedPostsRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerLazySingleton<UserProfileRepository>(
+    () => UserProfileRepositoryImpl(getIt<ApiService>()),
   );
 }

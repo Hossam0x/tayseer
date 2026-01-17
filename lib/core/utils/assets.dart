@@ -189,4 +189,6 @@ abstract class AssetsData {
   static const String amountIcon = "assets/icons/amountIcon.svg";
   static const String vodafoneCash = "assets/images/vodafoneCash.png";
   static const String instaPay = "assets/images/instaPay.png";
+  static const String expertAdvisor = "assets/images/expertAdvisor.png";
+  static const String chatIconSVG = "assets/icons/chatIcon.svg";
 }
