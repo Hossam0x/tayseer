@@ -1,15 +1,14 @@
-import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
+import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/my_import.dart';
 import 'profile_state.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
   final ProfileRepository _profileRepository;
-  final HomeRepository _homeRepository;
   final int _pageSize = 10;
 
-  ProfileCubit(this._profileRepository, this._homeRepository)
-    : super(const ProfileState()) {
+  ProfileCubit(this._profileRepository) : super(const ProfileState()) {
     _initializeProfile();
   }
 
@@ -17,7 +16,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   // 📌 INITIALIZE PROFILE
   // ═══════════════════════════════════════════════════════════
   Future<void> _initializeProfile() async {
-    await Future.wait([fetchProfile(), fetchPosts()]); 
+    await Future.wait([fetchProfile(), fetchPosts()]);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -58,7 +57,10 @@ class ProfileCubit extends Cubit<ProfileState> {
       emit(state.copyWith(isLoadingMore: true));
 
       final nextPage = state.currentPage + 1;
-      final result = await _homeRepository.fetchPosts(page: nextPage);
+
+      // ⭐️ استخدم ProfileRepository بدل HomeRepository
+      final result = await _profileRepository.fetchSavedPosts(page: nextPage);
+
       if (isClosed) return;
       result.fold(
         (failure) {
@@ -95,7 +97,8 @@ class ProfileCubit extends Cubit<ProfileState> {
         ),
       );
 
-      final result = await _homeRepository.fetchPosts(page: 1);
+      final result = await _profileRepository.fetchSavedPosts(page: 1);
+
       if (isClosed) return;
 
       result.fold(
@@ -151,5 +154,123 @@ class ProfileCubit extends Cubit<ProfileState> {
   void clearPostsError() {
     if (isClosed) return;
     emit(state.copyWith(postsErrorMessage: null));
+  }
+
+  void reactToPost({required String postId, ReactionType? reactionType}) {
+    // 1. إيجاد الـ Post
+    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+
+    // لا تغيير
+    if (post.myReaction == reactionType) return;
+    if (post.myReaction == null && reactionType == null) return;
+
+    // 2. تحديد الحالة
+    final isRemoving = reactionType == null;
+    final oldReaction = post.myReaction;
+
+    // 3. حساب العدد
+    int newLikesCount = post.likesCount;
+    if (isRemoving) {
+      newLikesCount = (post.likesCount - 1).clamp(0, post.likesCount);
+    } else if (oldReaction == null) {
+      newLikesCount = post.likesCount + 1;
+    }
+
+    // 4. حساب التوب ريأكشنز
+    final newTopReactions = calculateTopReactions(
+      currentTopReactions: post.topReactions,
+      oldReaction: oldReaction,
+      newReaction: reactionType,
+      newLikesCount: newLikesCount,
+    );
+
+    // 5. التحديث
+    final updatedPost = post.copyWith(
+      likesCount: newLikesCount,
+      topReactions: newTopReactions,
+      myReaction: reactionType,
+      clearMyReaction: isRemoving,
+    );
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[postIndex] = updatedPost;
+
+    emit(state.copyWith(posts: updatedPosts));
+
+    // API Call
+    _profileRepository.reactToPost(
+      postId: postId,
+      reactionType: reactionType,
+      isRemove: isRemoving,
+    );
+  }
+
+  Future<void> toggleSharePost({required String postId}) async {
+    // Reset أول حاجة
+    emit(state.copyWith(shareActionState: CubitStates.initial));
+
+    // 1. إيجاد الـ Post
+    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
+    if (postIndex == -1) return;
+
+    final originalPost = state.posts[postIndex];
+    final bool isRemoving = originalPost.isRepostedByMe;
+
+    // 2. حساب العدد الجديد
+    final int newSharesCount = isRemoving
+        ? (originalPost.sharesCount - 1).clamp(0, originalPost.sharesCount)
+        : originalPost.sharesCount + 1;
+
+    // 3. Optimistic Update
+    final updatedPost = originalPost.copyWith(
+      sharesCount: newSharesCount,
+      isRepostedByMe: !originalPost.isRepostedByMe,
+    );
+
+    _updatePostInList(postId, updatedPost);
+
+    // 4. API Call
+    final result = await _profileRepository.sharePost(
+      postId: postId,
+      action: isRemoving ? "remove" : "add",
+    );
+
+    // 5. معالجة النتيجة
+    result.fold(
+      // فشل -> Rollback
+      (failure) {
+        _updatePostInList(postId, originalPost);
+        emit(
+          state.copyWith(
+            shareActionState: CubitStates.failure,
+            shareMessage: failure.message,
+          ),
+        );
+      },
+      // نجاح
+      (message) {
+        emit(
+          state.copyWith(
+            shareActionState: CubitStates.success,
+            shareMessage: message,
+            isShareAdded: !isRemoving,
+          ),
+        );
+      },
+    );
+  }
+
+  // Helper Method لتحديث البوست في الليست
+  void _updatePostInList(String postId, PostModel updatedPost) {
+    final currentIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (currentIndex == -1) return;
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[currentIndex] = updatedPost;
+
+    emit(state.copyWith(posts: updatedPosts));
   }
 }

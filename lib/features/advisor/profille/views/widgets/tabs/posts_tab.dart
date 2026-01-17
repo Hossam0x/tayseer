@@ -1,5 +1,6 @@
-import 'package:tayseer/core/widgets/post_card/post_card.dart';
+// في features/advisor/profille/views/widgets/tabs/posts_tab.dart
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_card.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -16,31 +17,54 @@ class PostsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final profileCubit = context.read<ProfileCubit>();
 
-    return BlocBuilder<ProfileCubit, ProfileState>(
-      builder: (context, state) {
-        if (state.postsState == CubitStates.loading && state.posts.isEmpty) {
-          return _buildShimmerList();
-        }
+    return BlocListener<ProfileCubit, ProfileState>(
+      listenWhen: _shouldListenToShare,
+      listener: _handleShareState,
+      child: BlocBuilder<ProfileCubit, ProfileState>(
+        builder: (context, state) {
+          if (state.postsState == CubitStates.loading && state.posts.isEmpty) {
+            return _buildShimmerList();
+          }
 
-        if (state.postsState == CubitStates.failure && state.posts.isEmpty) {
-          return _buildErrorState(profileCubit);
-        }
+          if (state.postsState == CubitStates.failure && state.posts.isEmpty) {
+            return _buildErrorState(profileCubit);
+          }
 
-        // TODO: Filter posts by current user
-        // final userPosts = state.posts.where((post) => post.advisorId == currentUserId).toList();
-        final userPosts = state.posts; // مؤقتاً نعرض كل البوستات
+          final userPosts = state.posts;
 
-        if (userPosts.isEmpty) {
-          return _buildEmptyState();
-        }
+          if (userPosts.isEmpty) {
+            return _buildEmptyState();
+          }
 
-        return RefreshIndicator(
-          color: AppColors.kprimaryColor,
-          onRefresh: () => profileCubit.fetchPosts(),
-          child: _buildPostList(userPosts, state, context, profileCubit),
-        );
-      },
+          return RefreshIndicator(
+            color: AppColors.kprimaryColor,
+            onRefresh: () => profileCubit.fetchPosts(),
+            child: _buildPostList(userPosts, state, context, profileCubit),
+          );
+        },
+      ),
     );
+  }
+
+  // ⭐️ أضف Listener functions
+  bool _shouldListenToShare(ProfileState prev, ProfileState curr) =>
+      prev.shareActionState != curr.shareActionState &&
+      curr.shareActionState != CubitStates.initial;
+
+  void _handleShareState(BuildContext context, ProfileState state) {
+    final message = state.shareMessage;
+    switch (state.shareActionState) {
+      case CubitStates.success:
+        state.isShareAdded == true
+            ? AppToast.success(context, message ?? 'تمت المشاركة بنجاح')
+            : AppToast.info(context, message ?? 'تم إلغاء المشاركة');
+        break;
+      case CubitStates.failure:
+        AppToast.error(context, message ?? 'حدث خطأ أثناء المشاركة');
+        break;
+      default:
+        break;
+    }
   }
 
   Widget _buildShimmerList() {
@@ -48,13 +72,10 @@ class PostsTab extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(vertical: 16.h),
-      itemCount: 3, // عدد عناصر Shimmer للتجربة
+      itemCount: 3,
       itemBuilder: (context, index) {
         return Column(
-          children: [
-            const PostCardShimmer(),
-            if (index < 2) Gap(16.h), // فجوة بين عناصر Shimmer
-          ],
+          children: [const PostCardShimmer(), if (index < 2) Gap(16.h)],
         );
       },
     );
@@ -82,7 +103,9 @@ class PostsTab extends StatelessWidget {
   Widget _buildEmptyState() {
     return Padding(
       padding: EdgeInsets.only(top: 100.h),
-      child: const SharedEmptyState(title: "لا توجد منشورات"),
+      child: const SharedEmptyState(
+        title: "انشأ اول منشور لك حتي تكتسب ثقة الناس .",
+      ),
     );
   }
 
@@ -102,15 +125,18 @@ class PostsTab extends StatelessWidget {
           final post = posts[index];
           return Column(
             children: [
-              PostCard(
+              ProfilePostCard(
                 post: post,
                 onReactionChanged: (postId, reactionType) {
-                  // TODO: تنفيذ الـ reaction في ProfileCubit
-                  // يمكنك استخدام: profileCubit.reactToPost(postId: postId, reactionType: reactionType)
+                  // ⭐️ استدعاء ProfileCubit الجديد
+                  profileCubit.reactToPost(
+                    postId: postId,
+                    reactionType: reactionType,
+                  );
                 },
                 onShareTap: (postId) {
-                  // TODO: تنفيذ الـ share في ProfileCubit
-                  // يمكنك استخدام: profileCubit.toggleSharePost(postId: postId)
+                  // ⭐️ استدعاء ProfileCubit الجديد
+                  profileCubit.toggleSharePost(postId: postId);
                 },
                 onNavigateToDetails: (ctx, post, controller) {
                   Navigator.push(
@@ -126,10 +152,15 @@ class PostsTab extends StatelessWidget {
                           );
                         }),
                         onReactionChanged: (postId, reactionType) {
-                          // TODO: تنفيذ الـ reaction في ProfileCubit
+                          // ⭐️ استدعاء ProfileCubit الجديد
+                          profileCubit.reactToPost(
+                            postId: postId,
+                            reactionType: reactionType,
+                          );
                         },
                         onShareTap: (postId) {
-                          // TODO: تنفيذ الـ share في ProfileCubit
+                          // ⭐️ استدعاء ProfileCubit الجديد
+                          profileCubit.toggleSharePost(postId: postId);
                         },
                         onHashtagTap: (hashtag) {
                           context.pushNamed(AppRouter.kAdvisorSearchView);
@@ -146,7 +177,6 @@ class PostsTab extends StatelessWidget {
             ],
           );
         } else {
-          // Loading more indicator - استخدام نفس الـ Shimmer عند التحميل الإضافي
           return const _LoadingMoreIndicator();
         }
       },
@@ -154,7 +184,7 @@ class PostsTab extends StatelessWidget {
   }
 }
 
-/// مؤشر التحميل الإضافي باستخدام Shimmer
+/// مؤشر التحميل الإضافي
 class _LoadingMoreIndicator extends StatelessWidget {
   const _LoadingMoreIndicator();
 

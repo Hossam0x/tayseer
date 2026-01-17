@@ -11,29 +11,32 @@ class ProfileState extends Equatable {
   final CubitStates postsState;
   final List<PostModel> posts;
   final String? postsErrorMessage;
-
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
+
+  // ⭐️ أضف Share State
+  final CubitStates shareActionState;
+  final String? shareMessage;
+  final bool? isShareAdded;
+  final String? sharePostId;
 
   const ProfileState({
     this.profileState = CubitStates.initial,
     this.profile,
     this.profileErrorMessage,
-
     this.postsState = CubitStates.initial,
     this.posts = const [],
     this.postsErrorMessage,
-
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
+    // ⭐️
+    this.shareActionState = CubitStates.initial,
+    this.shareMessage,
+    this.isShareAdded,
+    this.sharePostId,
   });
-
-  // Getter للتحقق من وجود خطأ
-  bool get hasProfileError => profileErrorMessage != null;
-  bool get hasPostsError => postsErrorMessage != null;
-  bool get hasAnyError => hasProfileError || hasPostsError;
 
   ProfileState copyWith({
     CubitStates? profileState,
@@ -45,19 +48,27 @@ class ProfileState extends Equatable {
     int? currentPage,
     bool? hasMore,
     bool? isLoadingMore,
+    // ⭐️
+    CubitStates? shareActionState,
+    String? shareMessage,
+    bool? isShareAdded,
+    String? sharePostId,
   }) {
     return ProfileState(
       profileState: profileState ?? this.profileState,
       profile: profile ?? this.profile,
       profileErrorMessage: profileErrorMessage ?? this.profileErrorMessage,
-
       postsState: postsState ?? this.postsState,
       posts: posts ?? this.posts,
       postsErrorMessage: postsErrorMessage ?? this.postsErrorMessage,
-
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      // ⭐️
+      shareActionState: shareActionState ?? this.shareActionState,
+      shareMessage: shareMessage ?? this.shareMessage,
+      isShareAdded: isShareAdded ?? this.isShareAdded,
+      sharePostId: sharePostId ?? this.sharePostId,
     );
   }
 
@@ -72,5 +83,10 @@ class ProfileState extends Equatable {
     currentPage,
     hasMore,
     isLoadingMore,
+    // ⭐️
+    shareActionState,
+    shareMessage,
+    isShareAdded,
+    sharePostId,
   ];
 }

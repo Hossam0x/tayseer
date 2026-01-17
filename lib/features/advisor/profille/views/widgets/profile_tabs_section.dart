@@ -5,7 +5,6 @@ import 'package:tayseer/features/advisor/profille/views/widgets/tabs/inquiries_t
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 
 class ProfileTabsSection extends StatefulWidget {
   const ProfileTabsSection({super.key});
@@ -36,10 +35,8 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
     _tabController = TabController(length: _tabs.length, vsync: this);
     _tabController.addListener(_onTabChanged);
 
-    _profileCubit = ProfileCubit(
-      getIt<ProfileRepository>(),
-      getIt<HomeRepository>(),
-    );
+    // ✅ إزالة HomeRepository من هنا
+    _profileCubit = ProfileCubit(getIt<ProfileRepository>());
 
     _loadUserPosts();
   }

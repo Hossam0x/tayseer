@@ -216,14 +216,12 @@ Future<void> setupGetIt() async {
   // ══════════════════════════════════════════════════════════════════════════
 
   getIt.registerLazySingleton<ProfileRepository>(
-    () => ProfileRepositoryImpl(
-      getIt<ApiService>(),
-    ), // Adjust based on your implementation
+    () => ProfileRepositoryImpl(getIt<ApiService>()),
   );
 
   /// Profile Cubit
   getIt.registerFactory<ProfileCubit>(
-    () => ProfileCubit(getIt<ProfileRepository>(), getIt<HomeRepository>()),
+    () => ProfileCubit(getIt<ProfileRepository>()),
   );
 
   /// Ratings Repository
