@@ -97,7 +97,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           id: 'workshops',
           title: 'المنشورات المحفوظه',
           iconAsset: AssetsData.icSavedSettings,
-          routeName: '',
+          routeName: AppRouter.kSavedPostsView,
         ),
         SettingItemModel(
           id: 'blocks',

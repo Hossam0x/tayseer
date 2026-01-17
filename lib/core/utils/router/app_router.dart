@@ -20,6 +20,7 @@ import 'package:tayseer/features/advisor/settings/view/help_support_view.dart';
 import 'package:tayseer/features/advisor/settings/view/hide_story_form_view.dart';
 import 'package:tayseer/features/advisor/settings/view/language_selection_view.dart';
 import 'package:tayseer/features/advisor/settings/view/packages_tab_view.dart';
+import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 import 'package:tayseer/features/advisor/event/view/creat_event_view.dart';
@@ -146,6 +147,7 @@ abstract class AppRouter {
   static const kLanguageSelectionView = '/language-selection';
   static const kHideStoryFromView = '/hide_story_from_view';
   static const kHelpSupportView = '/help_support_view';
+  static const kSavedPostsView = '/saved_posts_view';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -255,6 +257,12 @@ abstract class AppRouter {
       case AppRouter.kHelpSupportView:
         return SlideLeftRoute(
           page: const HelpSupportView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kSavedPostsView:
+        return SlideLeftRoute(
+          page: const SavedPostsView(),
           routeSettings: settings,
         );
 
