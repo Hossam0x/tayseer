@@ -146,18 +146,24 @@ class UserProfileHeader extends StatelessWidget {
           ),
           Gap(10.w),
           // Stats
-          Column(
-            children: [
-              Text(following, style: Styles.textStyle16SemiBold),
-              Text("Following", style: Styles.textStyle14),
-            ],
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowingView),
+            child: Column(
+              children: [
+                Text(following, style: Styles.textStyle16SemiBold),
+                Text("Following", style: Styles.textStyle14),
+              ],
+            ),
           ),
           Gap(20.w),
-          Column(
-            children: [
-              Text(followers, style: Styles.textStyle16SemiBold),
-              Text("Followers", style: Styles.textStyle14),
-            ],
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowersView),
+            child: Column(
+              children: [
+                Text(followers, style: Styles.textStyle16SemiBold),
+                Text("Followers", style: Styles.textStyle14),
+              ],
+            ),
           ),
           Gap(10.w),
 

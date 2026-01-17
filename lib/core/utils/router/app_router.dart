@@ -45,6 +45,8 @@ import 'package:tayseer/features/shared/auth/view/select_days_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
+import 'package:tayseer/features/shared/followers/followers_view.dart';
+import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/user/advisor_profile/views/user_profile_view.dart';
 import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
@@ -160,6 +162,8 @@ abstract class AppRouter {
   static const kWithdrawalView = '/widthdrawal_view';
   static const kWithdrawSuccessView = '/widthdrawal_success_view';
   static const kUserProfileView = '/userProfileView';
+  static const kFollowersView = '/followers_view';
+  static const kFollowingView = '/following_view';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -196,7 +200,7 @@ abstract class AppRouter {
         );
 
       case AppRouter.kBoostAccountView:
-        return SlideLeftRoute(
+        return CustomRotationRoute(
           page: const BoostAccountView(),
           routeSettings: settings,
         );
@@ -316,6 +320,18 @@ abstract class AppRouter {
             advisorName: args['advisorName'] as String?,
           ),
           settings: settings,
+        );
+
+      case AppRouter.kFollowersView:
+        return FadeScaleRoute(
+          page: const FollowersView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kFollowingView:
+        return FadeScaleRoute(
+          page: const FollowingView(),
+          routeSettings: settings,
         );
 
       case kHomeScreen:

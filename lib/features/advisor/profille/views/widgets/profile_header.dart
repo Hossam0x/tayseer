@@ -191,17 +191,23 @@ class ProfileHeader extends StatelessWidget {
           ),
 
           // Top bar with followers/following
-          Column(
-            children: [
-              Text(following, style: Styles.textStyle16SemiBold),
-              Text("Following", style: Styles.textStyle14),
-            ],
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowingView),
+            child: Column(
+              children: [
+                Text(following, style: Styles.textStyle16SemiBold),
+                Text("Following", style: Styles.textStyle14),
+              ],
+            ),
           ),
-          Column(
-            children: [
-              Text(followers, style: Styles.textStyle16SemiBold),
-              Text("Followers", style: Styles.textStyle14),
-            ],
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowersView),
+            child: Column(
+              children: [
+                Text(followers, style: Styles.textStyle16SemiBold),
+                Text("Followers", style: Styles.textStyle14),
+              ],
+            ),
           ),
 
           // Settings
