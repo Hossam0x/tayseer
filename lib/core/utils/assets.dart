@@ -176,4 +176,5 @@ abstract class AssetsData {
   static const String moneyTimesIcon = "assets/icons/moneyTimesIcon.svg";
   static const String pauseIcon = "assets/icons/pauseIcon.svg";
   static const String icHelpSettings = "assets/icons/icHelpSettings.svg";
+  static const String backArrow = "assets/icons/backArrow.svg";
 }

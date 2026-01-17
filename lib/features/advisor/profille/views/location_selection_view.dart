@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/profille/views/widgets/boost/location_item.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost/selection_item.dart';
 import 'package:tayseer/my_import.dart';
 
 class LocationSelectionView extends StatefulWidget {
@@ -150,7 +150,7 @@ class _LocationSelectionViewState extends State<LocationSelectionView> {
 
                     // Countries List
                     ..._countries.map(
-                      (country) => LocationItem(
+                      (country) => SelectionItem(
                         title: country,
                         isSelected: _selectedLocation == country,
                         onTap: () {

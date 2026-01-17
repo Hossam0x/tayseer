@@ -52,7 +52,7 @@ class _CertificatesSectionContent extends StatelessWidget {
             // Video skeleton
             Container(
               width: double.infinity,
-              height: 200.h,
+              height: 400.h,
               decoration: BoxDecoration(
                 color: Colors.grey.shade400,
                 borderRadius: BorderRadius.circular(16.r),
@@ -265,13 +265,13 @@ class _CertificatesSectionContent extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: certificate.image!,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey.shade200,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.kprimaryColor,
-                              strokeWidth: 2.w,
-                            ),
+                        placeholder: (context, url) => Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            color: Colors.white,
                           ),
                         ),
                         errorWidget: (context, url, error) => Container(
@@ -297,6 +297,7 @@ class _CertificatesSectionContent extends StatelessWidget {
                       ),
               ),
             ),
+
             Gap(16.w),
             // Certificate Details
             Expanded(

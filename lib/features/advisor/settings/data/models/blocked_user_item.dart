@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:tayseer/my_import.dart';
 
 class BlockedUserItem extends StatelessWidget {
@@ -22,10 +24,25 @@ class BlockedUserItem extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: 12.h),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 28.r,
-                backgroundColor: Colors.grey.shade200,
-                backgroundImage: AssetImage(AssetsData.avatarImage),
+              Container(
+                width: 56.r,
+                height: 56.r,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey.shade200,
+                ),
+                child: ClipOval(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.asset(AssetsData.avatarImage, fit: BoxFit.cover),
+                      BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                        child: Container(color: Colors.white.withOpacity(0.1)),
+                      ),
+                    ],
+                  ),
+                ),
               ),
 
               SizedBox(width: 12.w),

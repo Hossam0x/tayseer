@@ -1,4 +1,5 @@
 import 'package:chewie/chewie.dart';
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -300,7 +301,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                       top: 0,
                       left: 0,
                       right: 0,
-                      height: 100.h,
+                      height: 105.h,
                       child: Container(
                         decoration: BoxDecoration(
                           image: DecorationImage(
@@ -321,38 +322,16 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // زر العودة
-                            Align(
-                              alignment: Alignment.bottomRight,
-                              child: GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  child: Icon(
-                                    Icons.arrow_back,
-                                    color: AppColors.blackColor,
-                                    size: 24.w,
-                                  ),
-                                ),
-                              ),
+                            SimpleAppBar(
+                              title: 'تعديل البيانات الشخصية',
+                              isLargeTitle: true,
                             ),
-
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 25.0,
                               ),
                               child: Column(
                                 children: [
-                                  // العنوان
-                                  Text(
-                                    'تعديل البيانات الشخصية',
-                                    style: Styles.textStyle20Bold.copyWith(
-                                      color: AppColors.secondary800,
-                                    ),
-                                  ),
-
                                   Gap(32.h),
 
                                   // Loading state with Skeleton

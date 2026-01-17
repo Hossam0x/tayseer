@@ -1,8 +1,15 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:tayseer/core/functions/get_language_code_name.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/core/notifications/message_config.dart';
 
 class SettingsCubit extends Cubit<SettingsState> {
+  final LocalNotification _notificationService = LocalNotification();
+
   SettingsCubit() : super(SettingsInitial()) {
     _loadSettings();
   }
@@ -16,14 +23,24 @@ class SettingsCubit extends Cubit<SettingsState> {
       // Load saved language (fallback to Arabic)
       final savedLanguage = prefs.getString('app_language') ?? 'العربية';
 
+      // Get initial notification status
+      final notificationStatus = await _getNotificationStatus();
+
       final settings = [
         SettingItemModel(
-          id: 'logos',
-          title: 'الشعارات',
+          id: 'notifications',
+          title: 'الاشعارات',
           iconAsset: AssetsData.icNotificationSettings,
           hasSwitch: true,
           routeName: '',
-          switchValue: prefs.getBool('setting_logos') ?? true,
+          switchValue: notificationStatus,
+          onTap: () async {
+            // Handle switch toggle
+            await _toggleNotificationSetting(
+              'notifications',
+              !notificationStatus,
+            );
+          },
         ),
         SettingItemModel(
           id: 'edit_profile',
@@ -37,10 +54,11 @@ class SettingsCubit extends Cubit<SettingsState> {
           iconAsset: AssetsData.icWalletSettings,
           routeName: '',
         ),
+        // في دالة _loadSettings:
         SettingItemModel(
           id: 'language',
           title: 'اللغة',
-          subtitle: savedLanguage,
+          subtitle: getLanguageName(savedLanguage),
           iconAsset: AssetsData.icLanguageSettings,
           routeName: AppRouter.kLanguageSelectionView,
         ),
@@ -98,6 +116,9 @@ class SettingsCubit extends Cubit<SettingsState> {
           title: 'دعوة',
           iconAsset: AssetsData.icInviteSettings,
           routeName: '',
+          onTap: () async {
+            await _shareAppLink();
+          },
         ),
         SettingItemModel(
           id: 'account_management',
@@ -113,61 +134,190 @@ class SettingsCubit extends Cubit<SettingsState> {
     }
   }
 
-  /// تحديث قيمة switch وتخزينها في SharedPreferences
-  Future<void> updateSwitch(String id, bool value) async {
+  // في دالة updateLanguage:
+  /// تحديث اللغة المختارة + حفظها + تحديث الـ UI
+  Future<void> updateLanguage(String languageName, BuildContext context) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
-    // تحديث محلي أولاً (optimistic update)
+    // الحصول على الكود من اسم اللغة
+    final languageCode = getLanguageCode(languageName);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('app_language', languageCode);
+
+      // تحديث القائمة محلياً بعرض اسم اللغة
+      final updatedSettings = currentState.settings.map((item) {
+        if (item.id == 'language') {
+          return item.copyWith(subtitle: languageName);
+        }
+        return item;
+      }).toList();
+
+      emit(SettingsLoaded(settings: updatedSettings));
+
+      // عرض رسالة نجاح
+      showSafeSnackBar(
+        context: context,
+        text: 'تم تحديث اللغة إلى $languageName',
+        isSuccess: true,
+      );
+    } catch (e) {
+      showSafeSnackBar(
+        context: context,
+        text: 'حدث خطأ في تحديث اللغة ⚠️',
+        isError: true,
+      );
+    }
+  }
+
+  /// الحصول على حالة الاشعارات الحالية
+  Future<bool> _getNotificationStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('notifications_enabled') ?? true;
+  }
+
+  Future<void> _shareAppLink() async {
+    try {
+      // رابط التطبيق - يمكنك تغييره
+      const String appLink =
+          'https://play.google.com/store/apps/details?id=com.tayseer.app';
+      const String message = 'جرب تطبيق تيسير الآن! 😊\n$appLink';
+
+      await Share.share(message, subject: 'دعوة لتطبيق تيسير');
+    } catch (e) {
+      debugPrint('❌ خطأ في المشاركة: $e');
+    }
+  }
+
+  /// التحكم في الاشعارات (فتح/قفل)
+  Future<void> _toggleNotificationSetting(String id, bool newValue) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
+
+    // تحديث محلي أولاً
     final updatedSettings = currentState.settings.map((item) {
       if (item.id == id) {
-        return item.copyWith(switchValue: value);
+        return item.copyWith(switchValue: newValue);
       }
       return item;
     }).toList();
 
     emit(SettingsLoaded(settings: updatedSettings));
 
-    // حفظ في SharedPreferences
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('setting_$id', value);
+
+      if (newValue) {
+        // تفعيل الاشعارات
+        await _enableNotifications();
+        await prefs.setBool('notifications_enabled', true);
+      } else {
+        // تعطيل الاشعارات
+        await _disableNotifications();
+        await prefs.setBool('notifications_enabled', false);
+      }
     } catch (e) {
-      // revert على الفشل (اختياري - يمكنك إزالته إذا لا تريد)
+      // التراجع عند الخطأ
       final revertedSettings = currentState.settings.map((item) {
         if (item.id == id) {
-          return item.copyWith(switchValue: !value);
+          return item.copyWith(switchValue: !newValue);
         }
         return item;
       }).toList();
 
       emit(SettingsLoaded(settings: revertedSettings));
+      rethrow;
     }
   }
 
-  /// تحديث اللغة المختارة + حفظها + تحديث الـ UI
-  Future<void> updateLanguage(String newLanguage) async {
-    final currentState = state;
-    if (currentState is! SettingsLoaded) return;
-
-    // حفظ في SharedPreferences
+  /// تفعيل الاشعارات في النظام والتطبيق
+  Future<void> _enableNotifications() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('app_language', newLanguage);
-    } catch (e) {
-      // يمكنك إظهار رسالة خطأ هنا إذا أردت
-      return;
-    }
+      // 1. طلب إذن النظام
+      final messaging = FirebaseMessaging.instance;
+      final settings = await messaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
 
-    // تحديث القائمة محلياً
-    final updatedSettings = currentState.settings.map((item) {
-      if (item.id == 'language') {
-        return item.copyWith(subtitle: newLanguage);
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        // 2. إعادة الاشتراك في المواضيع
+        await messaging.subscribeToTopic("all");
+
+        // 3. تشغيل عرض الاشعارات في الخلفية
+        if (Platform.isIOS) {
+          await messaging.setForegroundNotificationPresentationOptions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+        }
+
+        debugPrint('✅ تم تفعيل الاشعارات بنجاح');
+      } else {
+        debugPrint('❌ المستخدم رفض إذن الاشعارات');
+        throw Exception('تم رفض إذن الاشعارات');
       }
-      return item;
-    }).toList();
+    } catch (e) {
+      debugPrint('❌ خطأ في تفعيل الاشعارات: $e');
+      rethrow;
+    }
+  }
 
-    emit(SettingsLoaded(settings: updatedSettings));
+  /// تعطيل الاشعارات في النظام والتطبيق
+  Future<void> _disableNotifications() async {
+    try {
+      // 1. إلغاء الاشتراك من جميع المواضيع
+      final messaging = FirebaseMessaging.instance;
+      await messaging.unsubscribeFromTopic("all");
+
+      // 2. إلغاء جميع الاشعارات المحلية
+      await _notificationService.clearAllNotifications();
+
+      // 3. تعطيل عرض الاشعارات في الخلفية
+      if (Platform.isIOS) {
+        await messaging.setForegroundNotificationPresentationOptions(
+          alert: false,
+          badge: false,
+          sound: false,
+        );
+      }
+
+      debugPrint('✅ تم تعطيل الاشعارات بنجاح');
+    } catch (e) {
+      debugPrint('❌ خطأ في تعطيل الاشعارات: $e');
+      rethrow;
+    }
+  }
+
+  /// تحديث قيمة switch (للاستخدام العام)
+  Future<void> updateSwitch(String id, bool value, BuildContext context) async {
+    try {
+      SnackBarService().clearAll(context);
+
+      await _toggleNotificationSetting(id, value);
+
+      showSafeSnackBar(
+        context: context,
+        text: value ? 'تم تفعيل الاشعارات ✅' : 'تم تعطيل الاشعارات 🔕',
+        isSuccess: value,
+        duration: const Duration(milliseconds: 1500),
+      );
+    } catch (e) {
+      showSafeSnackBar(
+        context: context,
+        text: 'حدث خطأ في تحديث الإعدادات ⚠️',
+        isError: true,
+      );
+    }
   }
 
   /// إعادة تحميل الإعدادات كاملة (refresh)

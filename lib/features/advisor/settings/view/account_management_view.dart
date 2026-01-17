@@ -1,8 +1,8 @@
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_state.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AccountManagementView extends StatefulWidget {
   const AccountManagementView({super.key});
@@ -45,7 +45,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                     top: 0,
                     left: 0,
                     right: 0,
-                    height: 120.h,
+                    height: 105.h,
                     child: Container(
                       decoration: BoxDecoration(
                         image: DecorationImage(
@@ -61,7 +61,8 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildHeader(context),
+                          Gap(16.h),
+                          SimpleAppBar(title: 'ادارة الحساب'),
                           Gap(50.h),
                           // خيار "حذف الحساب نهائياً"
                           _buildOptionCard(
@@ -105,32 +106,6 @@ class _AccountManagementViewState extends State<AccountManagementView> {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Icon(
-            Icons.arrow_back,
-            color: AppColors.blackColor,
-            size: 24.w,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 18.0),
-          child: Text(
-            'ادارة الحساب',
-            style: Styles.textStyle24Meduim.copyWith(
-              color: AppColors.secondary700,
-            ),
-          ),
-        ),
-        const SizedBox(width: 24),
-      ],
     );
   }
 

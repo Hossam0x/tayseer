@@ -15,7 +15,7 @@ class BoostAccountView extends StatelessWidget {
           children: [
             // 1. Background Image Placeholder
             Positioned.fill(
-              child: Image.asset(AssetsData.boostBackground, fit: BoxFit.cover),
+              child: Image.asset(AssetsData.boostBackground, fit: BoxFit.fill),
             ),
             // 2. Pink Gradient Overlay
             Positioned.fill(
@@ -29,7 +29,7 @@ class BoostAccountView extends StatelessWidget {
                       AppColors.primaryPink.withOpacity(0.5),
                       AppColors.primary100,
                     ],
-                    stops: const [0.0, 0.4, 0.8],
+                    stops: const [0.0, 0.4, 0.65],
                   ),
                 ),
               ),
@@ -40,26 +40,32 @@ class BoostAccountView extends StatelessWidget {
               child: Column(
                 children: [
                   // Header: Close Button
-                  Padding(
-                    padding: EdgeInsets.only(top: 40.h, right: 40.w),
-                    child: Align(
-                      alignment: Alignment.topRight,
-                      child: GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Icon(
-                          Icons.close,
-                          color: AppColors.kWhiteColor,
-                          size: 24.w,
-                        ),
-                      ),
-                    ),
-                  ),
-
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
                       child: Column(
                         children: [
+                          Padding(
+                            padding: EdgeInsets.only(top: 30.h, right: 10.w),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: Align(
+                                alignment: Alignment.topRight,
+                                child: InkWell(
+                                  onTap: () => Navigator.pop(context),
+                                  borderRadius: BorderRadius.circular(24.r),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(10.w),
+                                    child: Icon(
+                                      Icons.close,
+                                      color: AppColors.kWhiteColor,
+                                      size: 24.w,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                           Gap(30.h),
                           // Logo
                           AppImage(

@@ -1,4 +1,5 @@
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -66,167 +67,121 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
           final cubit = context.read<StoryVisibilityCubit>();
 
           return Scaffold(
-            body: Stack(
-              children: [
-                // الخلفية العلوية
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 100.h,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(AssetsData.homeBarBackgroundImage),
-                        fit: BoxFit.fill,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Header مع زر إغلاق
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 10.h,
+                    ),
+                    child: SimpleAppBar(
+                      title: 'إخفاء القصة من',
+                      icon: Icons.close,
+                    ),
+                  ),
+
+                  // حقل البحث
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 30.w),
+                    child: TextField(
+                      controller: _searchController,
+                      textAlign: TextAlign.right,
+                      decoration: InputDecoration(
+                        hintText: 'بحث عن مستخدم...',
+                        hintStyle: Styles.textStyle16.copyWith(
+                          color: AppColors.gray2,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: AppColors.gray2,
+                          size: 20.sp,
+                        ),
+                        prefixIconConstraints: BoxConstraints(
+                          minWidth: 40.w,
+                          minHeight: 20.h,
+                        ),
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                        suffixIcon: state.isLoading
+                            ? SizedBox(
+                                width: 20.w,
+                                height: 20.h,
+                                child: Padding(
+                                  padding: EdgeInsets.all(8.w),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primary300,
+                                  ),
+                                ),
+                              )
+                            : null,
                       ),
                     ),
                   ),
-                ),
 
-                // المحتوى
-                SafeArea(
-                  child: Column(
-                    children: [
-                      // Header مع زر إغلاق
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20.w,
-                          vertical: 10.h,
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: IconButton(
-                                icon: Icon(
-                                  Icons.close,
-                                  color: AppColors.blackColor,
-                                  size: 24.w,
-                                ),
-                                onPressed: () => Navigator.pop(context),
+                  Gap(16.h),
+
+                  // زر اختيار الكل
+                  if (state.state == CubitStates.success &&
+                      state.users.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 30.w),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => cubit.selectAllUsers(),
+                            child: Text(
+                              state.hasSelections &&
+                                      state.selectedUsers.length ==
+                                          state.users.length
+                                  ? 'إلغاء اختيار الكل'
+                                  : 'اختيار الكل',
+                              style: Styles.textStyle14.copyWith(
+                                color: AppColors.primary400,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                'إخفاء القصة من',
-                                style: Styles.textStyle24Meduim.copyWith(
-                                  color: AppColors.secondary700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+                    ),
 
-                      // حقل البحث
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 30.w),
-                        child: TextField(
-                          controller: _searchController,
-                          textAlign: TextAlign.right,
-                          decoration: InputDecoration(
-                            hintText: 'بحث عن مستخدم...',
-                            hintStyle: Styles.textStyle16.copyWith(
-                              color: AppColors.gray2,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: AppColors.gray2,
-                              size: 20.sp,
-                            ),
-                            prefixIconConstraints: BoxConstraints(
-                              minWidth: 40.w,
-                              minHeight: 20.h,
-                            ),
-                            border: UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade200,
-                              ),
-                            ),
-                            enabledBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade200,
-                              ),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                            suffixIcon: state.isLoading
-                                ? SizedBox(
-                                    width: 20.w,
-                                    height: 20.h,
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.w),
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: AppColors.primary300,
-                                      ),
-                                    ),
-                                  )
-                                : null,
-                          ),
-                        ),
+                  Gap(8.h),
+
+                  // قائمة المستخدمين
+                  Expanded(child: _buildUsersList(context, state, cubit)),
+
+                  // زر التأكيد في الأسفل
+                  if (state.hasSelections)
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 30.w,
+                        vertical: 16.h,
                       ),
-
-                      Gap(16.h),
-
-                      // زر اختيار الكل
-                      if (state.state == CubitStates.success &&
-                          state.users.isNotEmpty)
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 30.w),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              TextButton(
-                                onPressed: () => cubit.selectAllUsers(),
-                                child: Text(
-                                  state.hasSelections &&
-                                          state.selectedUsers.length ==
-                                              state.users.length
-                                      ? 'إلغاء اختيار الكل'
-                                      : 'اختيار الكل',
-                                  style: Styles.textStyle14.copyWith(
-                                    color: AppColors.primary400,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                      child: CustomBotton(
+                        title: state.isUnrestricting
+                            ? 'جاري الإلغاء...'
+                            : 'إلغاء الإخفاء عن ${state.selectedUsers.length} مستخدم',
+                        onPressed: state.isUnrestricting
+                            ? null
+                            : () => _showConfirmationDialog(
+                                context,
+                                cubit,
+                                state,
                               ),
-                            ],
-                          ),
-                        ),
-
-                      Gap(8.h),
-
-                      // قائمة المستخدمين
-                      Expanded(child: _buildUsersList(context, state, cubit)),
-
-                      // زر التأكيد في الأسفل
-                      if (state.hasSelections)
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 30.w,
-                            vertical: 16.h,
-                          ),
-                          child: CustomBotton(
-                            title: state.isUnrestricting
-                                ? 'جاري الإلغاء...'
-                                : 'إلغاء الإخفاء عن ${state.selectedUsers.length} مستخدم',
-                            onPressed: state.isUnrestricting
-                                ? null
-                                : () => _showConfirmationDialog(
-                                    context,
-                                    cubit,
-                                    state,
-                                  ),
-                            useGradient: true,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+                        useGradient: true,
+                      ),
+                    ),
+                ],
+              ),
             ),
           );
         },

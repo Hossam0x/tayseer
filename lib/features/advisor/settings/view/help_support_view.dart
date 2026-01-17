@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/my_import.dart';
 
 class HelpSupportView extends StatefulWidget {
@@ -49,30 +50,7 @@ class _HelpSupportViewState extends State<HelpSupportView> {
                 child: Column(
                   children: [
                     Gap(16.h),
-
-                    /// زر الرجوع
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Icon(
-                          Icons.arrow_back,
-                          color: AppColors.blackColor,
-                          size: 24.w,
-                        ),
-                      ),
-                    ),
-
-                    Gap(8.h),
-
-                    /// العنوان
-                    Center(
-                      child: Text(
-                        'المساعدة والدعم',
-                        style: Styles.textStyle20Bold,
-                      ),
-                    ),
-
+                    SimpleAppBar(title: 'المساعدة والدعم', isLargeTitle: true),
                     Gap(36.h),
 
                     Expanded(

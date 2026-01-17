@@ -17,7 +17,7 @@ import 'package:tayseer/features/advisor/settings/view/archive_view.dart';
 import 'package:tayseer/features/advisor/settings/view/blocked_user_view.dart';
 import 'package:tayseer/features/advisor/settings/view/edit_personal_data_view.dart';
 import 'package:tayseer/features/advisor/settings/view/help_support_view.dart';
-import 'package:tayseer/features/advisor/settings/view/hide_fromstory_form_view.dart';
+import 'package:tayseer/features/advisor/settings/view/hide_story_form_view.dart';
 import 'package:tayseer/features/advisor/settings/view/language_selection_view.dart';
 import 'package:tayseer/features/advisor/settings/view/packages_tab_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';

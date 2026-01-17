@@ -91,13 +91,14 @@ abstract class AppColors {
   static Color kGrey666 = HexColor('666666'); // new color 666666
 
   // Profile Colors
-  static Color primary50 = Color.fromRGBO(252, 235, 238, 1);
+  static Color primary50 = Color.fromRGBO(252, 233, 237, 1);
   static Color primary100 = Color.fromRGBO(248, 211, 218, 1);
   static Color primary200 = Color.fromRGBO(241, 166, 181, 1);
   static Color primary300 = Color.fromRGBO(235, 122, 145, 1);
   static Color primary400 = Color.fromRGBO(228, 78, 108, 1);
   static Color primary500 = Color.fromRGBO(172, 26, 55, 1);
   static Color primary600 = Color.fromRGBO(177, 27, 57, 1);
+  static Color primary800 = Color.fromRGBO(89, 13, 28, 1);
   static Color primary900 = Color.fromRGBO(44, 7, 14, 1);
   static Color cBackground100 = Color.fromRGBO(242, 166, 181, 0.56);
   static Color blueText = Color.fromRGBO(25, 41, 92, 1);

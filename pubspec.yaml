@@ -72,6 +72,7 @@ dependencies:
   debounce_throttle: ^2.0.0
   zego_uikit_signaling_plugin: ^2.8.20
   zego_uikit_prebuilt_call: ^4.22.2
+  share_plus: ^12.0.1
   
 
 dev_dependencies:
