@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:http_parser/http_parser.dart';
 import 'package:tayseer/my_import.dart';
 import '../models/edit_personal_data_models.dart';
 
@@ -11,14 +10,12 @@ abstract class EditPersonalDataRepository {
     File? videoFile,
     bool? removeVideo,
   });
-  Future<String?> uploadFile(File file, String fieldName);
 }
 
 class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
   final ApiService _apiService;
-  final Dio _dio;
 
-  EditPersonalDataRepositoryImpl(this._apiService, this._dio);
+  EditPersonalDataRepositoryImpl(this._apiService);
 
   @override
   Future<Either<Failure, AdvisorProfileModel>> getAdvisorProfile() async {
@@ -91,62 +88,44 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
     bool? removeVideo,
   }) async {
     try {
-      // إنشاء FormData
-      final formData = FormData.fromMap({
-        ...request.toFormData(),
-        // إضافة flag لحذف الفيديو إذا تم الطلب
-        if (removeVideo == true) 'removeVideo': 'true',
-      });
+      // ⭐ إنشاء FormData وإضافة البيانات النصية
+      final Map<String, dynamic> formDataMap = {};
 
-      // إضافة ملف الصورة إذا كان موجوداً
-      if (imageFile != null) {
-        final fileName = imageFile.path.split('/').last;
-        formData.files.add(
-          MapEntry(
-            'image',
-            await MultipartFile.fromFile(
-              imageFile.path,
-              filename: fileName,
-              contentType: MediaType('image', 'jpeg'),
-            ),
-          ),
-        );
+      // إضافة الحقول النصية
+      if (request.name != null && request.name!.isNotEmpty) {
+        formDataMap['name'] = request.name!;
       }
 
-      // إضافة ملف الفيديو إذا كان موجوداً
-      if (videoFile != null) {
-        final fileName = videoFile.path.split('/').last;
-        formData.files.add(
-          MapEntry(
-            'video',
-            await MultipartFile.fromFile(
-              videoFile.path,
-              filename: fileName,
-              contentType: MediaType('video', 'mp4'),
-            ),
-          ),
-        );
+      if (request.professionalSpecialization != null &&
+          request.professionalSpecialization!.isNotEmpty) {
+        formDataMap['ProfessionalSpecialization'] =
+            request.professionalSpecialization!;
+      }
+
+      if (request.jobGrade != null && request.jobGrade!.isNotEmpty) {
+        formDataMap['JobGrade'] = request.jobGrade!;
+      }
+
+      if (request.yearsOfExperience != null &&
+          request.yearsOfExperience!.isNotEmpty) {
+        formDataMap['yearsOfExperience'] = request.yearsOfExperience!;
+      }
+
+      if (request.aboutYou != null && request.aboutYou!.isNotEmpty) {
+        formDataMap['aboutYou'] = request.aboutYou!;
       }
 
       print('📤 Sending PATCH request to /advisor/editPersonalData');
-      print('📤 FormData keys: ${formData.fields.map((e) => e.key)}');
-      print('📤 Files count: ${formData.files.length}');
+      print('📤 Text fields: $formDataMap');
+      print('📤 Has image file: ${imageFile != null}');
+      print('📤 Has video file: ${videoFile != null}');
       print('📤 Remove video: $removeVideo');
 
-      // استخدام baseUrl الصحيح من الـ Dio
-      final baseUrl = _dio.options.baseUrl;
-      if (baseUrl.isEmpty) {
-        return Left(ServerFailure('Base URL not configured'));
-      }
-
-      final fullUrl = '$baseUrl/advisor/editPersonalData';
-      print('📤 Full URL: $fullUrl');
-
-      // إرسال الطلب
+      // ⭐ إرسال الطلب باستخدام ApiService مع isFromData: true
       final response = await _apiService.patch(
         endPoint: '/advisor/editPersonalData',
+        data: formDataMap,
         isFromData: true,
-        data: formData,
         headers: {'Content-Type': 'multipart/form-data'},
       );
 
@@ -169,7 +148,6 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       print('❌ Dio Error: ${e.message}');
       print('❌ Dio Error Type: ${e.type}');
       print('❌ Dio Error Response: ${e.response?.data}');
-      print('❌ Dio Error Stack: ${e.stackTrace}');
 
       String errorMessage = 'خطأ في الاتصال بالسيرفر';
       if (e.response?.data != null) {
@@ -186,39 +164,6 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       print('❌ Error: $e');
       print('❌ Stack: $stack');
       return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
-    }
-  }
-
-  @override
-  Future<String?> uploadFile(File file, String fieldName) async {
-    try {
-      final fileName = file.path.split('/').last;
-
-      final formData = FormData.fromMap({
-        fieldName: await MultipartFile.fromFile(file.path, filename: fileName),
-      });
-
-      final response = await _dio.post(
-        'upload',
-        data: formData,
-        options: Options(
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
-      );
-
-      final responseData = response.data as Map<String, dynamic>;
-
-      if (responseData['success'] == true) {
-        return responseData['data']['url'] as String?;
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print('❌ Error uploading file: $e');
-      return null;
     }
   }
 }

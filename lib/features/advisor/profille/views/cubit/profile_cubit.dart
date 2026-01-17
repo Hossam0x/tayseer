@@ -17,7 +17,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   // 📌 INITIALIZE PROFILE
   // ═══════════════════════════════════════════════════════════
   Future<void> _initializeProfile() async {
-    await Future.wait([fetchProfile(), fetchPosts()]);
+    await Future.wait([fetchProfile(), fetchPosts()]); 
   }
 
   // ═══════════════════════════════════════════════════════════

@@ -1,4 +1,5 @@
 import 'package:chewie/chewie.dart';
+import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_cubit.dart';
@@ -20,7 +21,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   String? _selectedExperience;
   String? _selectedSpecialization;
 
-  // قوائم الاختيار
   final List<String> _positions = ["استشاري", "أخصائي", "مدرب", "محاضر"];
   final List<String> _experiences = [
     "سنتين",
@@ -37,14 +37,9 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     "مستشار أسري",
   ];
 
-  // Video player controllers
   VideoPlayerController? _videoPlayerController;
   ChewieController? _chewieController;
-
-  // Track video URL to avoid reinitializing
   String? _currentVideoUrl;
-
-  // Track if controllers are initialized
   bool _controllersInitialized = false;
 
   @override
@@ -77,15 +72,11 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   }
 
   Future<void> _initializeVideoPlayer(String videoUrl) async {
-    // Don't reinitialize if it's the same video
     if (_currentVideoUrl == videoUrl && _videoPlayerController != null) {
       return;
     }
 
-    // Dispose old player
     _disposeVideoPlayer();
-
-    // Set current video URL
     _currentVideoUrl = videoUrl;
 
     try {
@@ -147,22 +138,21 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
 
       if (fileSizeInMB > 4) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: 'حجم الفيديو يجب أن يكون أقل من 4 ميجابايت',
-            isError: true,
+          SnackBar(
+            content: Text(
+              'حجم الفيديو يجب أن يكون أقل من 4 ميجابايت',
+              textDirection: TextDirection.rtl,
+            ),
+            backgroundColor: Colors.red,
           ),
         );
         return;
       }
 
-      // Dispose old video player
       _disposeVideoPlayer();
 
-      // Initialize video player for local file
       try {
         _videoPlayerController = VideoPlayerController.file(file);
-
         await _videoPlayerController!.initialize();
 
         if (mounted) {
@@ -190,7 +180,13 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
       } catch (e) {
         print('Error initializing local video player: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: 'تعذر تحميل الفيديو', isError: true),
+          SnackBar(
+            content: Text(
+              'تعذر تحميل الفيديو',
+              textDirection: TextDirection.rtl,
+            ),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -207,10 +203,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
 
   void _removeVideo(EditPersonalDataCubit cubit) async {
     _disposeVideoPlayer();
-
-    // استدعاء دالة الحذف في الـ Cubit
     cubit.removeVideo();
-
     setState(() {
       _currentVideoUrl = null;
     });
@@ -219,19 +212,16 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   void _initializeControllers(EditPersonalDataState state) {
     if (_controllersInitialized || state.profile == null) return;
 
-    // Initialize controllers once
     _nameController.text = state.profile!.name;
     _idController.text = state.profile!.userName;
     _bioController.text = state.profile!.aboutYou ?? '';
 
-    // Set dropdown values from currentData
     _selectedPosition = state.currentData.jobGrade;
     _selectedExperience = state.currentData.yearsOfExperience;
     _selectedSpecialization = state.currentData.professionalSpecialization;
 
     _controllersInitialized = true;
 
-    // Initialize video player
     final videoUrl = state.videoPreviewUrl;
     if (videoUrl != null &&
         videoUrl.isNotEmpty &&
@@ -248,19 +238,23 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         listener: (context, state) {
           if (state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(context, text: state.errorMessage!, isError: true),
+              SnackBar(
+                content: Text(
+                  state.errorMessage!,
+                  textDirection: TextDirection.rtl,
+                ),
+                backgroundColor: Colors.red,
+              ),
             );
             context.read<EditPersonalDataCubit>().clearError();
           }
 
-          // Initialize controllers when data is loaded
           if (state.state == CubitStates.success && state.profile != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!_controllersInitialized) {
                 _initializeControllers(state);
               }
 
-              // Update video player if URL changed
               final videoUrl = state.videoPreviewUrl;
               if (videoUrl != null &&
                   videoUrl.isNotEmpty &&
@@ -270,24 +264,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
               }
             });
           }
-
-          // // عرض رسالة النجاح بعد الحفظ
-          // if (state.isSaving == false && state.errorMessage == null) {
-          //   if (state.state == CubitStates.success &&
-          //       state.hasChanges == false) {
-          //     ScaffoldMessenger.of(context).showSnackBar(
-          //       CustomSnackBar(
-          //         context,
-          //         text: 'تم حفظ البيانات بنجاح',
-          //         isSuccess: true,
-          //       ),
-          //     );
-
-          //     Future.delayed(const Duration(seconds: 1), () {
-          //       if (mounted) Navigator.pop(context);
-          //     });
-          //   }
-          // }
         },
         builder: (context, state) {
           final cubit = context.read<EditPersonalDataCubit>();
@@ -334,7 +310,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                 children: [
                                   Gap(32.h),
 
-                                  // Loading state with Skeleton
                                   if (state.state == CubitStates.loading)
                                     _buildSkeletonLoading()
                                   else if (state.state == CubitStates.failure)
@@ -370,27 +345,24 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                       children: [
                                         // قسم الصورة الشخصية
                                         _buildAvatarImageSection(cubit, state),
-
                                         Gap(20.h),
 
-                                        // حقل الاسم
-                                        _buildTextField(
+                                        // حقل الاسم باستخدام ProfileTextField
+                                        ProfileTextField(
                                           controller: _nameController,
-                                          hintText: 'أدخل اسمك',
                                           onChanged: (value) =>
                                               cubit.updateName(value),
+                                          hint: 'أدخل اسمك',
                                         ),
-
                                         Gap(11.h),
 
                                         // حقل المعرف
-                                        _buildTextField(
+                                        ProfileTextField(
                                           controller: _idController,
-                                          hintText: 'أدرف المعرف',
-                                          prefixText: '@',
-                                          readOnly: true,
+                                          onChanged: (value) {},
+                                          hint: 'المعرف',
+                                          enabled: false,
                                         ),
-
                                         Gap(11.h),
 
                                         // Dropdown للتخصص
@@ -407,7 +379,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           },
                                           hint: 'اختر التخصص',
                                         ),
-
                                         Gap(11.h),
 
                                         // Dropdown للمنصب
@@ -424,7 +395,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           },
                                           hint: 'اختر المنصب',
                                         ),
-
                                         Gap(11.h),
 
                                         // Dropdown للخبرة
@@ -441,17 +411,30 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           },
                                           hint: 'اختر سنوات الخبرة',
                                         ),
-
                                         Gap(11.h),
 
-                                        // حقل السيرة الذاتية
-                                        _buildBioField(cubit, state),
-
+                                        // حقل السيرة الذاتية باستخدام ProfileTextField
+                                        ProfileTextField(
+                                          controller: _bioController,
+                                          onChanged: (value) =>
+                                              cubit.updateBio(value),
+                                          hint: 'اكتب سيرتك الذاتية هنا...',
+                                          maxLines: 4,
+                                        ),
+                                        Gap(6.h),
+                                        Text(
+                                          '${_bioController.text.length}/250',
+                                          style: Styles.textStyle14.copyWith(
+                                            color:
+                                                _bioController.text.length > 250
+                                                ? AppColors.kRedColor
+                                                : AppColors.secondary400,
+                                          ),
+                                        ),
                                         Gap(25.h),
 
-                                        // قسم رفع الفيديو مع Preview
+                                        // قسم رفع الفيديو
                                         _buildVideoSection(cubit, state),
-
                                         Gap(35.h),
 
                                         // زر الحفظ
@@ -467,7 +450,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                               ? null
                                               : () => cubit.saveChanges(),
                                         ),
-
                                         Gap(40.h),
                                       ],
                                     ),
@@ -488,13 +470,9 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     );
   }
 
-  // ============================================
-  // 📌 WIDGET: SKELETON LOADING
-  // ============================================
   Widget _buildSkeletonLoading() {
     return Column(
       children: [
-        // Skeleton for avatar
         Center(
           child: Container(
             height: 150.h,
@@ -512,22 +490,34 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             ),
           ),
         ),
-
         Gap(20.h),
-
-        // Skeleton for text fields
-        _buildSkeletonField(height: 48.h),
+        Container(
+          height: 48.h,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.secondary100,
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
         Gap(11.h),
-        _buildSkeletonField(height: 48.h),
+        Container(
+          height: 48.h,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.secondary100,
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
         Gap(11.h),
-        _buildSkeletonField(height: 48.h),
+        Container(
+          height: 48.h,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.secondary100,
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
         Gap(11.h),
-        _buildSkeletonField(height: 48.h),
-        Gap(11.h),
-        _buildSkeletonField(height: 48.h),
-        Gap(11.h),
-
-        // Skeleton for bio field
         Container(
           height: 150.h,
           width: double.infinity,
@@ -536,10 +526,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             borderRadius: BorderRadius.circular(12.r),
           ),
         ),
-
         Gap(25.h),
-
-        // Skeleton for video section
         Container(
           height: 250.h,
           width: double.infinity,
@@ -547,30 +534,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             color: AppColors.secondary100,
             borderRadius: BorderRadius.circular(12.r),
           ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.video_camera_back_rounded,
-                  size: 40.w,
-                  color: AppColors.secondary300,
-                ),
-                Gap(12.h),
-                Text(
-                  'جاري تحميل البيانات...',
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.secondary400,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
-
         Gap(35.h),
-
-        // Skeleton for save button
         Container(
           height: 48.h,
           width: context.width * 0.9,
@@ -580,17 +545,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSkeletonField({required double height}) {
-    return Container(
-      height: height,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.secondary100,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
     );
   }
 
@@ -635,22 +589,10 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                         errorBuilder: (context, error, stackTrace) {
                           return _buildDefaultAvatar();
                         },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          );
-                        },
                       ),
                     )
                   : _buildDefaultAvatar(),
             ),
-
             Positioned(
               bottom: 8,
               right: 8,
@@ -659,28 +601,17 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 child: AppImage(AssetsData.addCertificateImage, width: 30.w),
               ),
             ),
-
-            // زر حذف الصورة
             if (imageFile != null || (imageUrl != null && imageUrl.isNotEmpty))
               Positioned(
                 top: 10,
                 right: 10,
                 child: GestureDetector(
-                  onTap: () {
-                    cubit.removeImage();
-                  },
+                  onTap: () => cubit.removeImage(),
                   child: Container(
                     padding: EdgeInsets.all(4.w),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppColors.kWhiteColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Icon(
                       Icons.close,
@@ -708,153 +639,46 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    String? hintText,
-    String? prefixText,
-    bool readOnly = false,
-    ValueChanged<String>? onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextFormField(
-          controller: controller,
-          textAlign: TextAlign.right,
-          readOnly: readOnly,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: Styles.textStyle14.copyWith(
-              color: AppColors.secondary400,
-            ),
-            prefixText: prefixText,
-            prefixStyle: Styles.textStyle14.copyWith(
-              color: AppColors.secondary800,
-            ),
-            filled: true,
-            fillColor: readOnly ? AppColors.primary50 : AppColors.kWhiteColor,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary100, width: 1.0),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
-              borderSide: BorderSide(color: AppColors.primary500, width: 2.0),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 10.w,
-              vertical: 10.h,
-            ),
-          ),
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDropdown({
     required String? value,
     required List<String> items,
     required ValueChanged<String?> onChanged,
     required String hint,
   }) {
-    return Stack(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w),
-              decoration: BoxDecoration(
-                color: AppColors.kWhiteColor,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.primary100, width: 1.0),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  borderRadius: BorderRadius.circular(12.r),
-                  value: value,
-                  isExpanded: true,
-                  icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: AppColors.inactiveColor,
-                    size: 24.w,
-                  ),
-                  elevation: 16,
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.secondary800,
-                  ),
-                  hint: Text(
-                    hint,
-                    style: Styles.textStyle14.copyWith(
-                      color: AppColors.secondary400,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                  onChanged: onChanged,
-                  items: items.map<DropdownMenuItem<String>>((String item) {
-                    return DropdownMenuItem<String>(
-                      value: item,
-                      child: Text(item, textAlign: TextAlign.right),
-                    );
-                  }).toList(),
-                  dropdownColor: AppColors.kWhiteColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBioField(
-    EditPersonalDataCubit cubit,
-    EditPersonalDataState state,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.kWhiteColor,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: AppColors.primary100, width: 1.0),
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w),
+      decoration: BoxDecoration(
+        color: AppColors.kWhiteColor,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.primary100, width: 1.0),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          borderRadius: BorderRadius.circular(12.r),
+          value: value,
+          isExpanded: true,
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.inactiveColor,
+            size: 24.w,
           ),
-          child: TextFormField(
-            controller: _bioController,
-            maxLines: 4,
-            maxLength: 250,
+          elevation: 16,
+          style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
+          hint: Text(
+            hint,
+            style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
             textAlign: TextAlign.right,
-            onChanged: (value) {
-              cubit.updateBio(value);
-            },
-            decoration: InputDecoration(
-              hintText: 'اكتب سيرتك الذاتية هنا...',
-              hintStyle: Styles.textStyle14.copyWith(
-                color: AppColors.secondary400,
-              ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 16.w,
-                vertical: 14.h,
-              ),
-              counterText: '',
-            ),
-            style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
           ),
+          onChanged: onChanged,
+          items: items.map<DropdownMenuItem<String>>((String item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item, textAlign: TextAlign.right),
+            );
+          }).toList(),
+          dropdownColor: AppColors.kWhiteColor,
         ),
-        Gap(6.h),
-        Text(
-          '${_bioController.text.length}/250',
-          style: Styles.textStyle14.copyWith(
-            color: _bioController.text.length > 250
-                ? AppColors.kRedColor
-                : AppColors.secondary400,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -872,7 +696,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (hasVideo)
-          // عرض الفيديو مع Preview
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -884,7 +707,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
               children: [
                 Stack(
                   children: [
-                    // Video Preview
                     Container(
                       width: double.infinity,
                       height: 250.h,
@@ -924,8 +746,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                               ),
                             ),
                     ),
-
-                    // زر حذف الفيديو
                     Positioned(
                       top: 10,
                       right: 10,
@@ -936,13 +756,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.kWhiteColor,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
                           ),
                           child: Icon(
                             Icons.close,
@@ -979,7 +792,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             ),
           )
         else
-          // زر رفع الفيديو
           GestureDetector(
             onTap: () => _pickVideo(cubit),
             child: Container(
@@ -989,11 +801,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
               decoration: BoxDecoration(
                 color: AppColors.kWhiteColor,
                 borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: AppColors.primary100,
-                  width: 1.0,
-                  style: BorderStyle.solid,
-                ),
+                border: Border.all(color: AppColors.primary100, width: 1.0),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1015,14 +823,10 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
               ),
             ),
           ),
-        // رسالة حجم الفيديو
         Gap(8.h),
         Text(
           'يجب أن يكون حجم الفيديو أقل من 4 MB',
-          style: Styles.textStyle14.copyWith(
-            color: AppColors.secondary400,
-            fontWeight: FontWeight.w500,
-          ),
+          style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
         ),
       ],
     );

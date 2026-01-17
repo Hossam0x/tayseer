@@ -275,7 +275,7 @@ Future<void> setupGetIt() async {
   );
 
   getIt.registerLazySingleton<EditPersonalDataRepository>(
-    () => EditPersonalDataRepositoryImpl(getIt<ApiService>(), getIt<Dio>()),
+    () => EditPersonalDataRepositoryImpl(getIt<ApiService>()),
   );
 
   getIt.registerFactory<EditPersonalDataCubit>(
