@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:tayseer/my_import.dart';
 
 typedef TimeChangedCallback = void Function(String start, String end);
@@ -137,11 +138,28 @@ class _TimeSlotItemState extends State<TimeSlotItem>
               widget.name,
               style: Styles.textStyle20.copyWith(color: AppColors.primaryText),
             ),
-            Switch.adaptive(
-              value: isActive,
-              onChanged: (val) => _toggleStatus(val, animate: true),
-              activeColor: Colors.white,
-              activeTrackColor: AppColors.primary300,
+            Transform.scale(
+              scaleX: 0.9,
+              scaleY: -0.9,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final screenWidth = MediaQuery.of(context).size.width;
+                  final scaleFactor = screenWidth > 600 ? 1.5 : 1.0;
+
+                  return Transform.scale(
+                    scale: scaleFactor,
+                    child: CupertinoSwitch(
+                      value: isActive,
+                      onChanged: (val) {
+                        setState(() => isActive = val);
+                        widget.onStatusChanged?.call(val);
+                      },
+                      activeColor: const Color(0xFFF06C88),
+                      trackColor: AppColors.inactiveColor,
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -156,7 +174,7 @@ class _TimeSlotItemState extends State<TimeSlotItem>
                 height: _heightAnimation.value,
                 child: OverflowBox(
                   alignment: Alignment.topCenter,
-                  maxHeight: 70,
+                  maxHeight: 70.h,
                   child: child,
                 ),
               ),
@@ -201,12 +219,12 @@ class _TimeSlotItemState extends State<TimeSlotItem>
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.9),
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.inactiveColor, width: 2.w),
+          border: Border.all(color: AppColors.inactiveColor),
         ),
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Row(
           children: [
-            Icon(Icons.access_time, color: AppColors.inactiveColor),
+            Icon(Icons.access_time, color: AppColors.inactiveColor, size: 22.w),
             Gap(8.w),
             VerticalDivider(
               indent: 15.h,

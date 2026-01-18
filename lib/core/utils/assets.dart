@@ -152,6 +152,7 @@ abstract class AssetsData {
   static const String calenderIcon = "assets/icons/calenderIcon.svg";
   static const String logoIcon = "assets/icons/logoIcon.svg";
   static const String boostFinish = "assets/icons/boostFinish.svg";
+  static const String uplaodCertificate = "assets/icons/uplaodCertificate.svg";
 
   // Settings assets
   static const String icNotificationSettings =
@@ -175,4 +176,21 @@ abstract class AssetsData {
   static const String storyPlaceholder = "assets/images/storyPlaceholder.jpg";
   static const String moneyTimesIcon = "assets/icons/moneyTimesIcon.svg";
   static const String pauseIcon = "assets/icons/pauseIcon.svg";
+  static const String icHelpSettings = "assets/icons/icHelpSettings.svg";
+  static const String backArrow = "assets/icons/backArrow.svg";
+
+  // Wallet Icons
+  static const String icWallet = "assets/icons/icWallet.svg";
+  static const String icBank = "assets/icons/icBank.svg";
+  static const String stcPay = "assets/icons/stcPay.svg";
+  static const String icSubscription = "assets/icons/icSubscription.svg";
+  static const String icBookSession = "assets/icons/icBookSession.svg";
+  static const String icBookEvent = "assets/icons/icBookEvent.svg";
+  static const String widthrawSend = "assets/icons/widthrawSend.svg";
+  static const String amountIcon = "assets/icons/amountIcon.svg";
+  static const String vodafoneCash = "assets/images/vodafoneCash.png";
+  static const String instaPay = "assets/images/instaPay.png";
+  static const String expertAdvisor = "assets/images/expertAdvisor.png";
+  static const String chatIconSVG = "assets/icons/chatIcon.svg";
+  static const String filterIcon = "assets/icons/filterIcon.svg";
 }

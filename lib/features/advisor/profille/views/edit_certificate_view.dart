@@ -1,3 +1,5 @@
+import 'package:tayseer/core/widgets/profile_text_field.dart';
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart'
     show CertificateModel;
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
@@ -8,16 +10,23 @@ import 'package:intl/intl.dart';
 
 class EditCertificateView extends StatelessWidget {
   final List<CertificateModel> certificates;
+  final CertificateModel? selectedCertificate;
 
-  const EditCertificateView({super.key, required this.certificates});
+  const EditCertificateView({
+    super.key,
+    required this.certificates,
+    this.selectedCertificate,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // ⭐ استخدم نفس الـ repository من الـ CertificatesCubit
     final certificatesRepository = getIt<CertificatesRepository>();
 
     return BlocProvider(
-      create: (context) => EditCertificateCubit(certificatesRepository),
+      create: (context) => EditCertificateCubit(
+        certificatesRepository,
+        initialCertificate: selectedCertificate,
+      ),
       child: Scaffold(
         body: BlocBuilder<EditCertificateCubit, EditCertificateState>(
           builder: (context, state) {
@@ -52,35 +61,23 @@ class EditCertificateView extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 12),
-                                  child: Icon(
-                                    Icons.arrow_back,
-                                    color: AppColors.blackColor,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Text(
-                              'إضافة / تعديل الشهادات',
-                              style: Styles.textStyle20Bold,
+                            SimpleAppBar(
+                              title: ' تعديل الشهادات',
+                              isLargeTitle: true,
                             ),
                             // Certificate Image / Preview
                             _buildImagePickerSection(cubit, state),
                             Gap(32.h),
                             // Name Certificate field
-                            _buildTextField(
+                            ProfileTextField(
                               controller: state.nameCertificateController!,
                               onChanged: cubit.updateNameCertificate,
                               hint: 'اسم الشهادة (مثال: بكالوريوس علم النفس)',
                             ),
+
                             Gap(20.h),
-                            // From Where field
-                            _buildTextField(
+
+                            ProfileTextField(
                               controller: state.fromWhereController!,
                               onChanged: cubit.updateFromWhere,
                               hint: 'من أين (مثال: جامعة الملك فيصل)',
@@ -96,7 +93,7 @@ class EditCertificateView extends StatelessWidget {
                               child: GestureDetector(
                                 onTap: state.isLoading
                                     ? null
-                                    : () => cubit.addCertificate(context),
+                                    : () => cubit.updateCertificate(context),
                                 child: Container(
                                   width: context.width * 0.8,
                                   height: 56.h,
@@ -110,7 +107,7 @@ class EditCertificateView extends StatelessWidget {
                                             color: Colors.white,
                                           )
                                         : Text(
-                                            'اضافة',
+                                            'تحديث',
                                             style: Styles.textStyle18SemiBold
                                                 .copyWith(
                                                   color: AppColors.kWhiteColor,
@@ -120,16 +117,10 @@ class EditCertificateView extends StatelessWidget {
                                 ),
                               ),
                             ),
+
                             Gap(20.h),
                             // Certificates List
                             if (certificates.isNotEmpty) ...[
-                              // Text(
-                              //   'الشهادات الحالية - اضغط للتعديل',
-                              //   style: Styles.textStyle16Meduim.copyWith(
-                              //     color: AppColors.secondary800,
-                              //   ),
-                              // ),
-                              // Gap(12.h),
                               SizedBox(
                                 height: 180.h,
                                 child: ListView.builder(
@@ -254,8 +245,6 @@ class EditCertificateView extends StatelessWidget {
                                                         child: AppImage(
                                                           AssetsData.editIcon,
                                                           width: 20.w,
-                                                          color: AppColors
-                                                              .primary400,
                                                         ),
                                                       ),
 
@@ -360,6 +349,7 @@ class EditCertificateView extends StatelessWidget {
                             ],
                             // Save Button
                             CustomBotton(
+                              height: 54.h,
                               width: context.width * 0.8,
                               useGradient: true,
                               title: state.isLoading ? 'جارٍ الحفظ...' : 'حفظ',
@@ -435,7 +425,7 @@ class EditCertificateView extends StatelessWidget {
               right: 10.r,
               child: GestureDetector(
                 onTap: cubit.pickCertificateImage,
-                child: AppImage(AssetsData.addCertificateImage),
+                child: AppImage(AssetsData.addCertificateImage, width: 32.w),
               ),
             ),
             if (state.certificateImageFile != null ||
@@ -471,32 +461,32 @@ class EditCertificateView extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required ValueChanged<String> onChanged,
-    String? hint,
-  }) {
-    return TextFormField(
-      controller: controller, // ⭐ استخدم controller بدل initialValue
-      onChanged: onChanged,
-      textAlign: TextAlign.right,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: Styles.textStyle14.copyWith(color: AppColors.secondary400),
-        filled: true,
-        fillColor: AppColors.kWhiteColor,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: BorderSide(color: AppColors.primary100),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: BorderSide(color: AppColors.primary500, width: 2.0),
-        ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-      ),
-    );
-  }
+  // Widget _buildTextField({
+  //   required TextEditingController controller,
+  //   required ValueChanged<String> onChanged,
+  //   String? hint,
+  // }) {
+  //   return TextFormField(
+  //     controller: controller,
+  //     onChanged: onChanged,
+  //     textAlign: TextAlign.right,
+  //     decoration: InputDecoration(
+  //       hintText: hint,
+  //       hintStyle: Styles.textStyle14.copyWith(color: AppColors.secondary400),
+  //       filled: true,
+  //       fillColor: AppColors.kWhiteColor,
+  //       enabledBorder: OutlineInputBorder(
+  //         borderRadius: BorderRadius.circular(8.r),
+  //         borderSide: BorderSide(color: AppColors.primary100),
+  //       ),
+  //       focusedBorder: OutlineInputBorder(
+  //         borderRadius: BorderRadius.circular(8.r),
+  //         borderSide: BorderSide(color: AppColors.primary500),
+  //       ),
+  //       contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+  //     ),
+  //   );
+  // }
 
   Widget _buildDatePicker(
     BuildContext context,
@@ -510,11 +500,11 @@ class EditCertificateView extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.kWhiteColor,
           borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(color: AppColors.primary100, width: 1.0),
+          border: Border.all(color: AppColors.primary100),
         ),
         child: Row(
           children: [
-            AppImage(AssetsData.calenderIcon),
+            AppImage(AssetsData.calenderIcon, width: 22.h),
             SizedBox(
               width: 30,
               height: 20,
@@ -527,7 +517,7 @@ class EditCertificateView extends StatelessWidget {
                     : 'اختر التاريخ',
                 style: Styles.textStyle14.copyWith(
                   color: state.date == null
-                      ? AppColors.secondary400
+                      ? AppColors.primary200
                       : AppColors.secondary800,
                 ),
                 textAlign: TextAlign.right,

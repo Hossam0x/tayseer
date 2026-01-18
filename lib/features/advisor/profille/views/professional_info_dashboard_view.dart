@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/data/models/analysis_item.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/analytics_chart.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
@@ -48,32 +49,10 @@ class _ProfessionalInfoDashboardViewState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // زر العودة
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          child: Icon(
-                            Icons.arrow_back,
-                            color: AppColors.blackColor,
-                            size: 24.w,
-                          ),
-                        ),
-                      ),
+                    SimpleAppBar(
+                      title: 'لوحة المعلومات الاحترافية',
+                      isLargeTitle: true,
                     ),
-
-                    // العنوان
-                    Center(
-                      child: Text(
-                        'لوحة المعلومات الاحترافية',
-                        style: Styles.textStyle24Bold.copyWith(
-                          color: AppColors.secondary800,
-                        ),
-                      ),
-                    ),
-
                     Gap(32.h),
 
                     AnalyticsChart(),

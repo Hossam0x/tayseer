@@ -1,4 +1,8 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
@@ -11,7 +15,10 @@ class SettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => SettingsCubit(),
-      child: Scaffold(body: AdvisorBackground(child: _buildBody(context))),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: AdvisorBackground(child: _buildBody(context)),
+      ),
     );
   }
 
@@ -24,12 +31,6 @@ class SettingsView extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context, SettingsState state) {
-    if (state is SettingsLoading) {
-      return Center(
-        child: CircularProgressIndicator(color: AppColors.primary100),
-      );
-    }
-
     if (state is SettingsError) {
       return Center(
         child: SafeArea(
@@ -73,12 +74,11 @@ class SettingsView extends StatelessWidget {
     if (state is SettingsLoaded) {
       return Stack(
         children: [
-          // الخلفية فقط للجزء العلوي
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: 110.h,
+            height: 105.h,
             child: Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -88,56 +88,41 @@ class SettingsView extends StatelessWidget {
               ),
             ),
           ),
-
-          // المحتوى
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: Column(
-                children: [
-                  Gap(16.h),
-                  // زر الرجوع مع الخلفية
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w),
-                        child: Icon(
-                          Icons.arrow_back,
-                          color: AppColors.blackColor,
-                          size: 24.w,
-                        ),
-                      ),
-                    ),
+          Column(
+            children: [
+              // الخلفية فقط للجزء العلوي
+              SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Column(
+                    children: [
+                      Gap(16.h),
+                      SimpleAppBar(title: 'الاعدادات'),
+                    ],
                   ),
-
-                  // العنوان مع الخلفية
-                  Center(
-                    child: Text('الإعدادات', style: Styles.textStyle20Bold),
-                  ),
-                  Gap(8.h),
-
-                  // القائمة + زر تسجيل الخروج
-                  Expanded(
-                    child: Column(
-                      children: [
-                        // القائمة الرئيسية
-                        Expanded(
-                          child: _buildSettingsList(context, state.settings),
-                        ),
-
-                        // زر تسجيل الخروج - خارج القائمة
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 40.h, top: 16.h),
-                          child: _buildLogoutButton(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+
+              // القائمة الرئيسية
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.transparent, // خلفية شفافة
+                  ),
+                  child: Column(
+                    children: [
+                      // قائمة الإعدادات
+                      Expanded(
+                        child: _buildSettingsList(context, state.settings),
+                      ),
+
+                      // زر تسجيل الخروج - بدون مساحات زائدة
+                      _buildLogoutButton(context),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       );
@@ -152,7 +137,12 @@ class SettingsView extends StatelessWidget {
   ) {
     return ListView.separated(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.only(top: 16.h, bottom: 16.h),
+      padding: EdgeInsets.only(
+        top: 16.h,
+        bottom: 16.h,
+        right: 20.w,
+        left: 20.w,
+      ),
       itemCount: settings.length,
       separatorBuilder: (context, index) =>
           Divider(color: AppColors.secondary100, height: 1),
@@ -164,19 +154,35 @@ class SettingsView extends StatelessWidget {
   }
 
   Widget _buildSettingItem(BuildContext context, SettingItemModel setting) {
+    final isNotificationsItem = setting.id == 'notifications';
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _handleSettingTap(context, setting),
+          onTap: isNotificationsItem
+              ? null
+              : () => _handleSettingTap(context, setting),
           borderRadius: BorderRadius.circular(16.r),
-          splashColor: AppColors.primary100,
+          // splashColor: isNotificationsItem
+          //     ? Colors.transparent,
+          highlightColor: isNotificationsItem ? Colors.transparent : null,
           child: Container(
-            padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+            padding: isNotificationsItem
+                ? EdgeInsets.only(
+                    top: 12.h,
+                    bottom: 12.h,
+                    right: 12.w,
+                    left: 8.w,
+                  )
+                : EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16.r),
+              color: Colors.transparent,
+            ),
             child: Row(
               children: [
-                // Icon Container
                 Container(
                   width: 48.w,
                   height: 48.w,
@@ -184,7 +190,6 @@ class SettingsView extends StatelessWidget {
                   child: AppImage(setting.iconAsset),
                 ),
 
-                // Title and Subtitle
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,41 +197,44 @@ class SettingsView extends StatelessWidget {
                       Text(
                         setting.title,
                         style: Styles.textStyle16Meduim.copyWith(
-                          color: AppColors.secondary800,
+                          color: isNotificationsItem
+                              ? AppColors.secondary800.withOpacity(0.9)
+                              : AppColors.secondary800,
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                // Switch or Arrow
                 if (setting.hasSwitch)
-                  Transform.scale(
-                    scale: 1,
-                    child: Switch.adaptive(
-                      value: setting.switchValue,
-                      onChanged: (value) =>
-                          _handleSwitchChange(context, setting, value),
-                      inactiveThumbColor: AppColors.primary100,
-                      activeTrackColor: AppColors.secondary300,
-                      inactiveTrackColor: AppColors.kWhiteColor,
+                  IgnorePointer(
+                    ignoring: false,
+                    child: Transform.scale(
+                      scaleX: -1,
+                      scaleY: 1,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final screenWidth = MediaQuery.of(context).size.width;
+                          final scaleFactor = screenWidth > 600 ? 1.5 : 1.0;
+
+                          return Transform.scale(
+                            scale: scaleFactor,
+                            child: CupertinoSwitch(
+                              value: setting.switchValue,
+                              activeColor: const Color(0xFFF06C88),
+                              trackColor: AppColors.dropDownArrow,
+                              onChanged: (value) {
+                                final cubit = context.read<SettingsCubit>();
+                                cubit.updateSwitch(setting.id, value, context);
+                              },
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   )
                 else
-                  setting.subtitle != null
-                      ? Row(
-                          children: [
-                            Text(
-                              setting.subtitle!,
-                              style: Styles.textStyle16.copyWith(
-                                color: AppColors.secondary,
-                              ),
-                            ),
-                            Gap(4.w),
-                            Icon(Icons.arrow_forward_ios_rounded, size: 18.w),
-                          ],
-                        )
-                      : Icon(Icons.arrow_forward_ios_rounded, size: 18.w),
+                  _buildTrailingWidget(setting),
               ],
             ),
           ),
@@ -235,54 +243,63 @@ class SettingsView extends StatelessWidget {
     );
   }
 
+  Widget _buildTrailingWidget(SettingItemModel setting) {
+    if (setting.id == 'invite' || setting.id == 'account_management') {
+      return const SizedBox(width: 0);
+    }
+
+    return setting.subtitle != null
+        ? Row(
+            children: [
+              Text(
+                setting.subtitle!,
+                style: Styles.textStyle16.copyWith(color: AppColors.secondary),
+              ),
+              Gap(4.w),
+              Icon(Icons.arrow_forward_ios_rounded, size: 18.w),
+            ],
+          )
+        : Icon(Icons.arrow_forward_ios_rounded, size: 18.w);
+  }
+
   Widget _buildLogoutButton(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 8.w),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showLogoutConfirmation(context),
-          borderRadius: BorderRadius.circular(16.r),
-          splashColor: AppColors.kRedColor.withOpacity(0.3),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16.r),
-              border: Border.all(color: AppColors.kRedColor, width: 1.5),
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.kRedColor.withOpacity(0.1),
-                  AppColors.kRedColor.withOpacity(0.05),
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+      width: double.infinity,
+      margin: EdgeInsets.only(left: 50.w, right: 50.w, bottom: 30.h),
+      child: InkWell(
+        onTap: () => _showLogoutConfirmation(context),
+        borderRadius: BorderRadius.circular(16.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.kRedColor, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.kRedColor.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // أيقونة تسجيل الخروج
-                Container(
-                  width: 24.w,
-                  height: 24.w,
-                  margin: EdgeInsets.only(left: 8.w),
-                  child: Icon(
-                    Icons.logout_rounded,
-                    color: AppColors.kRedColor,
-                    size: 22.w,
-                  ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.logout_rounded,
+                color: AppColors.kRedColor,
+                size: 22.w,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                'تسجيل الخروج',
+                style: Styles.textStyle16Meduim.copyWith(
+                  color: AppColors.kRedColor,
+                  fontWeight: FontWeight.w600,
                 ),
-
-                // النص
-                Text(
-                  'تسجيل الخروج',
-                  style: Styles.textStyle16Meduim.copyWith(
-                    color: AppColors.kRedColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -301,14 +318,11 @@ class SettingsView extends StatelessWidget {
       onPressed: () {
         _performLogout(context);
       },
-      onCancel: () {
-        // لا شيء مطلوب - سيتم إغلاق الدايلوج تلقائياً
-      },
+      onCancel: () {},
     );
   }
 
   void _performLogout(BuildContext context) async {
-    // عرض تحميل أثناء تنفيذ العملية
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -317,6 +331,12 @@ class SettingsView extends StatelessWidget {
     );
 
     try {
+      try {
+        await FirebaseMessaging.instance.unsubscribeFromTopic("all");
+      } catch (e) {
+        debugPrint('⚠️ Error unsubscribing from topics: $e');
+      }
+
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRouter.kRegisrationView,
@@ -326,27 +346,24 @@ class SettingsView extends StatelessWidget {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
 
-      // عرض رسالة نجاح باستخدام CustomSnackBar
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(context, text: 'تم تسجيل الخروج بنجاح', isSuccess: true),
+      showSafeSnackBar(
+        context: context,
+        text: 'تم تسجيل الخروج بنجاح',
+        isSuccess: true,
       );
     } catch (e) {
       Navigator.pop(context);
-
-      // عرض رسالة خطأ باستخدام CustomSnackBar
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: 'حدث خطأ أثناء تسجيل الخروج',
-          isError: true,
-        ),
+      showSafeSnackBar(
+        context: context,
+        text: 'حدث خطأ أثناء تسجيل الخروج',
+        isError: true,
       );
     }
   }
 
   void _handleSettingTap(BuildContext context, SettingItemModel setting) async {
     if (setting.onTap != null) {
-      setting.onTap!();
+      await setting.onTap!();
       return;
     }
 
@@ -354,32 +371,12 @@ class SettingsView extends StatelessWidget {
       if (setting.id == 'language') {
         final result = await Navigator.pushNamed(context, setting.routeName);
         if (result != null && result is String) {
-          context.read<SettingsCubit>().updateLanguage(result);
+          // النتيجة الآن هي اسم اللغة (العربية، الإنجليزية...)
+          context.read<SettingsCubit>().updateLanguage(result, context);
         }
       } else {
         Navigator.pushNamed(context, setting.routeName);
       }
-    }
-  }
-
-  void _handleSwitchChange(
-    BuildContext context,
-    SettingItemModel setting,
-    bool value,
-  ) {
-    context.read<SettingsCubit>().updateSwitch(setting.id, value);
-
-    if (setting.onSwitchChanged != null) {
-      setting.onSwitchChanged!(value);
-    }
-
-    // إظهار رسالة تأكيد
-    if (setting.id == 'hide_story') {
-      final message = value ? 'تم تفعيل إخفاء القصة' : 'تم إلغاء إخفاء القصة';
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(CustomSnackBar(context, text: message, isSuccess: value));
     }
   }
 }

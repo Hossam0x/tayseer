@@ -12,10 +12,8 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
   Future<Either<Failure, CertificatesAndVideosResponse>>
   getCertificatesAndVideos() async {
     try {
-      final advisorId = await _getAdvisorId();
-
       final response = await _apiService.get(
-        endPoint: '/advisor/getAllCertificatesAndVideos/$advisorId',
+        endPoint: '/advisor/getAllCertificatesAndVideos',
       );
 
       if (response['success'] == true) {
@@ -44,26 +42,77 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
     File? image,
   }) async {
     try {
-      final data = {
+      // ⭐ إنشاء Map بدلاً من FormData
+      final Map<String, dynamic> data = {
         'nameCertificate': nameCertificate,
         'fromWhere': fromWhere,
         'date': date.toIso8601String(),
       };
 
-      // if (image != null) {
-      //   data['image'] = await MultipartFile.fromFile(image.path);
-      // }
+      // ⭐ إضافة الصورة كـ MultipartFile إذا كانت موجودة
+      if (image != null && image.existsSync()) {
+        final String fileName = image.path.split('/').last;
 
-      final response = await _apiService.post(
-        endPoint: '/advisor/addCertificate',
-        data: data,
-        isFromData: true,
-      );
+        // ⭐ في Dio، نضيف الملفات بشكل مختلف عند استخدام FormData.fromMap()
+        // لكن بما أن ApiService يستخدم FormData.fromMap(data)، نحتاج طريقة أخرى
 
-      if (response['success'] == true) {
-        return Right(response);
+        // ⭐ الحل: إنشاء FormData مباشرة وإضافة الحقول والملفات
+        final FormData formData = FormData();
+
+        // إضافة الحقول النصية
+        formData.fields.addAll([
+          MapEntry('nameCertificate', nameCertificate),
+          MapEntry('fromWhere', fromWhere),
+          MapEntry('date', date.toIso8601String()),
+        ]);
+
+        // إضافة الملف
+        formData.files.add(
+          MapEntry(
+            'certificateImage',
+            await MultipartFile.fromFile(image.path, filename: fileName),
+          ),
+        );
+
+        // ⭐ استخدام dio مباشرة للطلب
+        final dio = Dio();
+
+        // الحصول على الهيدرات
+        final Map<String, dynamic> headers = {
+          'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
+          'Accept': 'application/json',
+        };
+
+        final response = await dio.post(
+          '$kbaseUrl/advisor/addCertificate',
+          data: formData,
+          options: Options(headers: headers),
+        );
+
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          return Right(responseData);
+        } else {
+          return Left(
+            ServerFailure(responseData['message'] ?? 'فشل إضافة الشهادة'),
+          );
+        }
       } else {
-        return Left(ServerFailure(response['message'] ?? 'فشل إضافة الشهادة'));
+        // ⭐ إذا لم تكن هناك صورة، استخدم ApiService العادي
+        final response = await _apiService.post(
+          endPoint: '/advisor/addCertificate',
+          data: data,
+          isFromData: true,
+        );
+
+        if (response['success'] == true) {
+          return Right(response);
+        } else {
+          return Left(
+            ServerFailure(response['message'] ?? 'فشل إضافة الشهادة'),
+          );
+        }
       }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
@@ -81,35 +130,79 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
     File? image,
   }) async {
     try {
-      final data = {
+      // ⭐ إنشاء Map بدلاً من FormData
+      final Map<String, dynamic> data = {
         'nameCertificate': nameCertificate,
         'fromWhere': fromWhere,
         'date': date.toIso8601String(),
       };
 
-      // if (image != null) {
-      //   data['image'] = await MultipartFile.fromFile(image.path);
-      // }
+      // ⭐ إذا كانت هناك صورة
+      if (image != null && image.existsSync()) {
+        final String fileName = image.path.split('/').last;
 
-      final response = await _apiService.post(
-        endPoint: '/advisor/updateCertificate/$certificateId',
-        data: data,
-        isFromData: true,
-      );
+        // ⭐ إنشاء FormData مباشرة
+        final FormData formData = FormData();
 
-      if (response['success'] == true) {
-        return Right(response);
+        // إضافة الحقول النصية
+        formData.fields.addAll([
+          MapEntry('nameCertificate', nameCertificate),
+          MapEntry('fromWhere', fromWhere),
+          MapEntry('date', date.toIso8601String()),
+        ]);
+
+        // إضافة الملف
+        formData.files.add(
+          MapEntry(
+            'certificateImage',
+            await MultipartFile.fromFile(image.path, filename: fileName),
+          ),
+        );
+
+        // ⭐ استخدام dio مباشرة
+        final dio = Dio();
+
+        // الحصول على الهيدرات
+        final Map<String, dynamic> headers = {
+          'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
+          'Accept': 'application/json',
+        };
+
+        final response = await dio.patch(
+          '$kbaseUrl/advisor/updateCertificate/$certificateId',
+          data: formData,
+          options: Options(headers: headers),
+        );
+
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          return Right(responseData);
+        } else {
+          return Left(
+            ServerFailure(responseData['message'] ?? 'فشل تحديث الشهادة'),
+          );
+        }
       } else {
-        return Left(ServerFailure(response['message'] ?? 'فشل تحديث الشهادة'));
+        // ⭐ إذا لم تكن هناك صورة، استخدم ApiService العادي
+        final response = await _apiService.patch(
+          endPoint: '/advisor/updateCertificate/$certificateId',
+          data: data,
+          isFromData: true,
+        );
+
+        if (response['success'] == true) {
+          return Right(response);
+        } else {
+          return Left(
+            ServerFailure(response['message'] ?? 'فشل تحديث الشهادة'),
+          );
+        }
       }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
-  }
-
-  Future<String> _getAdvisorId() async {
-    return '6947e98df9f8bce3bf355fc0';
   }
 }

@@ -10,6 +10,10 @@ import 'package:tayseer/features/advisor/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository.dart';
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
@@ -45,6 +49,7 @@ import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:tayseer/features/user/advisor_profile/data/repositories/user_profile_repository.dart';
 
 import '../../my_import.dart';
 
@@ -214,14 +219,12 @@ Future<void> setupGetIt() async {
   // ══════════════════════════════════════════════════════════════════════════
 
   getIt.registerLazySingleton<ProfileRepository>(
-    () => ProfileRepositoryImpl(
-      getIt<ApiService>(),
-    ), // Adjust based on your implementation
+    () => ProfileRepositoryImpl(getIt<ApiService>()),
   );
 
   /// Profile Cubit
   getIt.registerFactory<ProfileCubit>(
-    () => ProfileCubit(getIt<ProfileRepository>(), getIt<HomeRepository>()),
+    () => ProfileCubit(getIt<ProfileRepository>()),
   );
 
   /// Ratings Repository
@@ -273,7 +276,7 @@ Future<void> setupGetIt() async {
   );
 
   getIt.registerLazySingleton<EditPersonalDataRepository>(
-    () => EditPersonalDataRepositoryImpl(getIt<ApiService>(), getIt<Dio>()),
+    () => EditPersonalDataRepositoryImpl(getIt<ApiService>()),
   );
 
   getIt.registerFactory<EditPersonalDataCubit>(
@@ -299,5 +302,21 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<StoryVisibilityCubit>(
     () => StoryVisibilityCubit(getIt<StoryVisibilityRepository>()),
+  );
+
+  getIt.registerLazySingleton<AccountManagementRepository>(
+    () => AccountManagementRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<AccountManagementCubit>(
+    () => AccountManagementCubit(getIt<AccountManagementRepository>()),
+  );
+
+  getIt.registerLazySingleton<SavedPostsRepository>(
+    () => SavedPostsRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerLazySingleton<UserProfileRepository>(
+    () => UserProfileRepositoryImpl(getIt<ApiService>()),
   );
 }

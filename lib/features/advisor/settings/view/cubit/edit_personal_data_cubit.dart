@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -28,28 +29,6 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
         },
         (profile) {
           final yearsExp = profile.yearsOfExperience;
-          String? yearsExpString;
-
-          if (yearsExp != null) {
-            if (int.tryParse(yearsExp) != null) {
-              final intValue = int.parse(yearsExp);
-              if (intValue == 2) {
-                yearsExpString = "سنتين";
-              } else if (intValue == 3) {
-                yearsExpString = "3 سنوات";
-              } else if (intValue == 5) {
-                yearsExpString = "5 سنوات";
-              } else if (intValue == 10) {
-                yearsExpString = "10 سنوات";
-              } else if (intValue > 10) {
-                yearsExpString = "أكثر من 10 سنوات";
-              } else {
-                yearsExpString = yearsExp.toString();
-              }
-            } else {
-              yearsExpString = yearsExp;
-            }
-          }
 
           final initialRequest = UpdatePersonalDataRequest(
             name: profile.name,
@@ -57,7 +36,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
             gender: profile.gender,
             professionalSpecialization: profile.professionalSpecialization,
             jobGrade: profile.jobGrade,
-            yearsOfExperience: yearsExpString,
+            yearsOfExperience: yearsExp,
             aboutYou: profile.aboutYou,
             image: profile.image,
             video: profile.video,
@@ -71,8 +50,6 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
               imagePreviewUrl: profile.image,
               videoPreviewUrl: profile.video,
               errorMessage: null,
-              shouldRemoveVideo: false,
-              shouldRemoveImage: false,
             ),
           );
         },
@@ -127,6 +104,16 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
     }
   }
 
+  void updateUsername(String username) {
+    if (username != state.currentData.username) {
+      emit(
+        state.copyWith(
+          currentData: state.currentData.copyWith(username: username),
+        ),
+      );
+    }
+  }
+
   void updateBio(String bio) {
     if (bio != state.currentData.aboutYou) {
       emit(
@@ -140,8 +127,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
       emit(
         state.copyWith(
           imageFile: file,
-          shouldRemoveImage: false,
-          imagePreviewUrl: file.path,
+          imagePreviewUrl: file.path, // عرض معاينة محلية
         ),
       );
     }
@@ -152,91 +138,48 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
       emit(
         state.copyWith(
           videoFile: file,
-          videoPreviewUrl: previewUrl,
-          shouldRemoveVideo: false,
+          videoPreviewUrl: previewUrl ?? file.path,
         ),
       );
     }
   }
 
-  // دالة لحذف الصورة
+  // في الكوبيت
   void removeImage() {
     emit(
       state.copyWith(
-        clearImageFile: true,
-        clearImagePreviewUrl: true,
-        shouldRemoveImage: true,
-        currentData: state.currentData.copyWith(clearImage: true),
+        imageFile: null,
+        imagePreviewUrl: null,
+        // ⭐ إضافة flag للحذف
+        currentData: state.currentData.copyWith(image: ""),
       ),
     );
   }
 
-  // دالة لحذف الفيديو
   void removeVideo() {
     emit(
       state.copyWith(
-        clearVideoFile: true,
-        clearVideoPreviewUrl: true,
-        shouldRemoveVideo: true,
-        currentData: state.currentData.copyWith(clearVideo: true),
+        videoFile: null,
+        videoPreviewUrl: null,
+        // ⭐ إضافة flag للحذف
+        currentData: state.currentData.copyWith(video: ""),
       ),
     );
   }
 
-  Future<void> saveChanges() async {
+  Future<void> saveChanges(BuildContext context) async {
     if (state.isSaving || !state.hasChanges) return;
 
     emit(state.copyWith(isSaving: true, errorMessage: null));
 
     try {
-      String? imageUrl = state.imagePreviewUrl;
-      String? videoUrl = state.videoPreviewUrl;
+      // ⭐ إرسال البيانات كما هي بدون تنظيف
+      final requestToSend = state.currentData;
 
-      // رفع الصورة الجديدة إذا كانت موجودة
-      if (state.imageFile != null) {
-        final uploadedImageUrl = await _repository.uploadFile(
-          state.imageFile!,
-          'image',
-        );
-        if (uploadedImageUrl != null) {
-          imageUrl = uploadedImageUrl;
-        }
-      } else if (state.shouldRemoveImage) {
-        imageUrl = null;
-      }
-
-      // رفع الفيديو الجديد إذا كان موجوداً
-      if (state.videoFile != null) {
-        final uploadedVideoUrl = await _repository.uploadFile(
-          state.videoFile!,
-          'video',
-        );
-        if (uploadedVideoUrl != null) {
-          videoUrl = uploadedVideoUrl;
-        }
-      } else if (state.shouldRemoveVideo) {
-        videoUrl = null;
-      }
-
-      // تحديث الـ request
-      final updatedRequest = state.currentData.copyWith(
-        image: imageUrl,
-        video: videoUrl,
-        clearImage: state.shouldRemoveImage,
-        clearVideo: state.shouldRemoveVideo,
-      );
-
-      print('📤 Updated request - Image: $imageUrl, Video: $videoUrl');
-      print(
-        '📤 Should remove - Image: ${state.shouldRemoveImage}, Video: ${state.shouldRemoveVideo}',
-      );
-
-      // إرسال الطلب
       final result = await _repository.updatePersonalData(
-        request: updatedRequest,
+        request: requestToSend,
         imageFile: state.imageFile,
         videoFile: state.videoFile,
-        removeVideo: state.shouldRemoveVideo && state.videoFile == null,
       );
 
       result.fold(
@@ -244,31 +187,41 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
           emit(state.copyWith(isSaving: false, errorMessage: failure.message));
         },
         (response) {
+          // تحديث البروفايل بعد الحفظ الناجح
+          final updatedProfile = state.profile?.copyWith(
+            name: state.currentData.name ?? state.profile!.name,
+            professionalSpecialization:
+                state.currentData.professionalSpecialization ??
+                state.profile!.professionalSpecialization,
+            jobGrade: state.currentData.jobGrade ?? state.profile!.jobGrade,
+            yearsOfExperience:
+                state.currentData.yearsOfExperience ?? // ⭐ String
+                state.profile!.yearsOfExperience,
+            aboutYou: state.currentData.aboutYou ?? state.profile!.aboutYou,
+            image: response.data?['image'] ?? state.profile!.image,
+            video: response.data?['videoLink'] ?? state.profile!.video,
+          );
+
           emit(
             state.copyWith(
               isSaving: false,
               errorMessage: null,
-              imagePreviewUrl: imageUrl,
-              videoPreviewUrl: videoUrl,
-              shouldRemoveVideo: false,
-              shouldRemoveImage: false,
-              clearImageFile: true,
-              clearVideoFile: true,
-              profile: state.profile?.copyWith(
-                name: updatedRequest.name ?? state.profile!.name,
-                aboutYou: updatedRequest.aboutYou ?? state.profile!.aboutYou,
-                jobGrade: updatedRequest.jobGrade ?? state.profile!.jobGrade,
-                yearsOfExperience:
-                    updatedRequest.yearsOfExperience ??
-                    state.profile!.yearsOfExperience,
-                professionalSpecialization:
-                    updatedRequest.professionalSpecialization ??
-                    state.profile!.professionalSpecialization,
-                image: imageUrl,
-                video: videoUrl,
-              ),
+              profile: updatedProfile,
+              // مسح الملفات المؤقتة بعد الحفظ
+              imageFile: null,
+              videoFile: null,
             ),
           );
+
+          // إظهار رسالة النجاح
+          if (response.success) {
+            showSafeSnackBar(
+              context: context,
+              text: 'تم تحديث البيانات بنجاح',
+              isSuccess: true,
+            );
+            Navigator.pop(context);
+          }
         },
       );
     } catch (e) {
