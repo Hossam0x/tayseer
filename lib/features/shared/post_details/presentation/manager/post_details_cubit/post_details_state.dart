@@ -5,23 +5,28 @@ class PostDetailsState extends Equatable {
   final CubitStates commentsState;
   final List<CommentModel> comments;
   final String? errorMessage;
-  
+
   // Pagination
   final int currentPage;
   final int totalPages;
   final bool isLoadingMore;
 
   // Interaction Logic
-  final String? activeReplyId;      // ID الكومنت المفتوح للرد
-  final String? editingCommentId;   // ID الكومنت المفتوح للتعديل
-  final int focusInputTrigger;      
+  final String? activeReplyId;
+  final String? editingCommentId;
+  final int focusInputTrigger;
 
   // Action States
-  final CubitStates addingCommentState; // للكومنت الرئيسي
-  final CubitStates addingReplyState;   // <--- جديد: للردود
-    final CubitStates editingState; // <--- جديد: حالة التعديل
+  final CubitStates addingCommentState;
+  final CubitStates addingReplyState;
+  final CubitStates editingState;
 
-  
+  // ✅ Optimistic Update
+  final String? pendingCommentTempId;
+
+  // ✅ Auto-Scroll
+  final String? scrollToCommentId;
+  final int scrollTrigger;
 
   const PostDetailsState({
     this.commentsState = CubitStates.initial,
@@ -34,8 +39,11 @@ class PostDetailsState extends Equatable {
     this.editingCommentId,
     this.focusInputTrigger = 0,
     this.addingCommentState = CubitStates.initial,
-    this.addingReplyState = CubitStates.initial, // <--- القيمة الافتراضية
-    this.editingState = CubitStates.initial, // <--- القيمة الافتراضية
+    this.addingReplyState = CubitStates.initial,
+    this.editingState = CubitStates.initial,
+    this.pendingCommentTempId,
+    this.scrollToCommentId,
+    this.scrollTrigger = 0,
   });
 
   bool get hasMoreComments => currentPage < totalPages;
@@ -53,8 +61,15 @@ class PostDetailsState extends Equatable {
     bool? clearEditingCommentId,
     int? focusInputTrigger,
     CubitStates? addingCommentState,
-    CubitStates? addingReplyState, // <---
-    CubitStates? editingState, // <---
+    CubitStates? addingReplyState,
+    CubitStates? editingState,
+    // Optimistic Update
+    String? pendingCommentTempId,
+    bool? clearPendingCommentTempId,
+    // Auto-Scroll
+    String? scrollToCommentId,
+    bool? clearScrollToCommentId,
+    int? scrollTrigger,
   }) {
     return PostDetailsState(
       commentsState: commentsState ?? this.commentsState,
@@ -63,16 +78,25 @@ class PostDetailsState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      activeReplyId: (clearActiveReplyId == true) 
-          ? null 
+      activeReplyId: (clearActiveReplyId == true)
+          ? null
           : (activeReplyId ?? this.activeReplyId),
-      editingCommentId: (clearEditingCommentId == true) 
-          ? null 
+      editingCommentId: (clearEditingCommentId == true)
+          ? null
           : (editingCommentId ?? this.editingCommentId),
       focusInputTrigger: focusInputTrigger ?? this.focusInputTrigger,
       addingCommentState: addingCommentState ?? this.addingCommentState,
-      addingReplyState: addingReplyState ?? this.addingReplyState, // <---
-      editingState: editingState ?? this.editingState, // <---
+      addingReplyState: addingReplyState ?? this.addingReplyState,
+      editingState: editingState ?? this.editingState,
+      // Optimistic Update
+      pendingCommentTempId: (clearPendingCommentTempId == true)
+          ? null
+          : (pendingCommentTempId ?? this.pendingCommentTempId),
+      // Auto-Scroll
+      scrollToCommentId: (clearScrollToCommentId == true)
+          ? null
+          : (scrollToCommentId ?? this.scrollToCommentId),
+      scrollTrigger: scrollTrigger ?? this.scrollTrigger,
     );
   }
 
@@ -88,7 +112,10 @@ class PostDetailsState extends Equatable {
         editingCommentId,
         focusInputTrigger,
         addingCommentState,
-        addingReplyState, // <---
-        editingState, // <---
+        addingReplyState,
+        editingState,
+        pendingCommentTempId,
+        scrollToCommentId,
+        scrollTrigger,
       ];
 }

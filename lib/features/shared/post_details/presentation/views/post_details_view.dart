@@ -133,15 +133,15 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
   late PostModel _currentPost;
   StreamSubscription<PostModel>? _postSubscription;
 
+  // ✅ لتخزين الـ GlobalKeys للكومنتات
+  final Map<String, GlobalKey> _commentKeys = {};
+
   @override
   void initState() {
     super.initState();
     _currentPost = widget.post;
-
-    // ✅ Store subscription for cleanup
-    _postSubscription = widget.callbacks.postUpdatesStream?.listen(
-      _onPostUpdated,
-    );
+    _postSubscription =
+        widget.callbacks.postUpdatesStream?.listen(_onPostUpdated);
   }
 
   void _onPostUpdated(PostModel updatedPost) {
@@ -152,8 +152,41 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
 
   @override
   void dispose() {
-    _postSubscription?.cancel(); // ✅ Prevent memory leak
+    _postSubscription?.cancel();
     super.dispose();
+  }
+
+  // ✅ UPDATED: Method للـ scroll لكومنت معين
+  void _scrollToComment(String commentId, {bool isForReply = false}) {
+    final key = _commentKeys[commentId];
+    if (key?.currentContext == null) return;
+
+    // Scroll أولي
+    Scrollable.ensureVisible(
+      key!.currentContext!,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+      alignment: isForReply ? 0.2 : 0.3, // للـ reply نخليه أعلى شوية
+    );
+
+    // ✅ NEW: لو الـ scroll للـ Reply، ننتظر الـ Keyboard تظهر ونعمل scroll تاني
+    if (isForReply) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (key.currentContext != null && mounted) {
+          Scrollable.ensureVisible(
+            key.currentContext!,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            alignment: 0.1, // نخليه قريب من الأعلى عشان الـ TextField يبان
+          );
+        }
+      });
+    }
+  }
+
+  // ✅ الحصول على GlobalKey لكومنت معين
+  GlobalKey _getKeyForComment(String commentId) {
+    return _commentKeys.putIfAbsent(commentId, () => GlobalKey());
   }
 
   @override
@@ -163,47 +196,69 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
       onRefresh: () async {
         await context.read<PostDetailsCubit>().loadComments(isRefresh: true);
       },
-      child: BlocSelector<PostDetailsCubit, PostDetailsState, _CommentsUIState>(
-        selector: _selectCommentsState,
-        builder: (context, uiState) {
-          final cubit = context.read<PostDetailsCubit>();
-
-          return PostDetailsCard(
-            post: _currentPost,
-            cachedController: widget.cachedController,
-            scrollController: widget.scrollController,
-            callbacks: widget.callbacks,
-            onCommentTap: () => cubit.requestInputFocus(),
-            // Comments Data
-            comments: uiState.comments,
-            isLoadingComments: uiState.isLoading,
-            hasMoreComments: uiState.hasMore,
-            isLoadingMore: uiState.isLoadingMore,
-            commentsError: uiState.error,
-            // State
-            editingCommentId: uiState.editingCommentId,
-            activeReplyId: uiState.activeReplyId,
-            isEditLoading: uiState.isEditLoading,
-            isReplyLoading: uiState.isReplyLoading,
-            // Comments Callbacks
-            onLoadMore: cubit.loadMoreComments,
-            onRetry: cubit.loadComments,
-            onLikeComment: (comment, isReply) =>
-                cubit.toggleLike(isReply, comment.id),
-            onReplyTap: cubit.toggleReply,
-            onEditTap: cubit.toggleEdit,
-            onCancelEdit: cubit.cancelEdit,
-            onCancelReply: cubit.cancelReply,
-            onSaveEdit: (commentId, content, isReply) =>
-                cubit.saveEditedComment(
-              commentId: commentId,
-              newContent: content,
-              isReply: isReply,
-            ),
-            onSendReply: cubit.addReply,
-            onLoadReplies: cubit.loadReplies,
-          );
+      // ✅ UPDATED: Listener للـ Auto-Scroll
+      child: BlocListener<PostDetailsCubit, PostDetailsState>(
+        listenWhen: (prev, curr) =>
+            prev.scrollTrigger != curr.scrollTrigger &&
+            curr.scrollToCommentId != null,
+        listener: (context, state) {
+          if (state.scrollToCommentId != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              // ✅ نحدد لو الـ scroll ده للـ Reply
+              final isForReply = state.activeReplyId == state.scrollToCommentId;
+              
+              _scrollToComment(
+                state.scrollToCommentId!,
+                isForReply: isForReply,
+              );
+              context.read<PostDetailsCubit>().clearScrollTarget();
+            });
+          }
         },
+        child: BlocSelector<PostDetailsCubit, PostDetailsState, _CommentsUIState>(
+          selector: _selectCommentsState,
+          builder: (context, uiState) {
+            final cubit = context.read<PostDetailsCubit>();
+
+            return PostDetailsCard(
+              post: _currentPost,
+              cachedController: widget.cachedController,
+              scrollController: widget.scrollController,
+              callbacks: widget.callbacks,
+              onCommentTap: () => cubit.requestInputFocus(),
+              // Comments Data
+              comments: uiState.comments,
+              isLoadingComments: uiState.isLoading,
+              hasMoreComments: uiState.hasMore,
+              isLoadingMore: uiState.isLoadingMore,
+              commentsError: uiState.error,
+              // State
+              editingCommentId: uiState.editingCommentId,
+              activeReplyId: uiState.activeReplyId,
+              isEditLoading: uiState.isEditLoading,
+              isReplyLoading: uiState.isReplyLoading,
+              // ✅ Pass the key getter
+              getCommentKey: _getKeyForComment,
+              // Comments Callbacks
+              onLoadMore: cubit.loadMoreComments,
+              onRetry: cubit.loadComments,
+              onLikeComment: (comment, isReply) =>
+                  cubit.toggleLike(isReply, comment.id),
+              onReplyTap: cubit.toggleReply,
+              onEditTap: cubit.toggleEdit,
+              onCancelEdit: cubit.cancelEdit,
+              onCancelReply: cubit.cancelReply,
+              onSaveEdit: (commentId, content, isReply) =>
+                  cubit.saveEditedComment(
+                commentId: commentId,
+                newContent: content,
+                isReply: isReply,
+              ),
+              onSendReply: cubit.addReply,
+              onLoadReplies: cubit.loadReplies,
+            );
+          },
+        ),
       ),
     );
   }

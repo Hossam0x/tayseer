@@ -31,7 +31,8 @@ class PostDetailsCard extends StatelessWidget {
   final void Function(String commentId)? onEditTap;
   final VoidCallback? onCancelEdit;
   final VoidCallback? onCancelReply;
-  final void Function(String commentId, String content, bool isReply)? onSaveEdit;
+  final void Function(String commentId, String content, bool isReply)?
+  onSaveEdit;
   final void Function(String commentId, String text)? onSendReply;
   final void Function(String commentId)? onLoadReplies;
 
@@ -40,6 +41,9 @@ class PostDetailsCard extends StatelessWidget {
   final String? activeReplyId;
   final bool isEditLoading;
   final bool isReplyLoading;
+
+  /// ✅ Function to get the Key for a comment by its ID
+  final GlobalKey Function(String commentId)? getCommentKey;
 
   const PostDetailsCard({
     super.key,
@@ -70,6 +74,7 @@ class PostDetailsCard extends StatelessWidget {
     this.activeReplyId,
     this.isEditLoading = false,
     this.isReplyLoading = false,
+    this.getCommentKey,
   });
 
   @override
@@ -117,7 +122,7 @@ class PostDetailsCard extends StatelessWidget {
       return const SliverToBoxAdapter(child: _EmptyCommentsState());
     }
 
-    // Comments List
+    // ✅ FIX: تمرير getCommentKey للـ _CommentsList
     return _CommentsList(
       comments: comments,
       hasMore: hasMoreComments,
@@ -135,6 +140,7 @@ class PostDetailsCard extends StatelessWidget {
       onSaveEdit: onSaveEdit,
       onSendReply: onSendReply,
       onLoadReplies: onLoadReplies,
+      getCommentKey: getCommentKey, // ✅ هنا الـ FIX
     );
   }
 }
@@ -188,9 +194,11 @@ class _CommentsList extends StatelessWidget {
   final void Function(String commentId)? onEditTap;
   final VoidCallback? onCancelEdit;
   final VoidCallback? onCancelReply;
-  final void Function(String commentId, String content, bool isReply)? onSaveEdit;
+  final void Function(String commentId, String content, bool isReply)?
+  onSaveEdit;
   final void Function(String commentId, String text)? onSendReply;
   final void Function(String commentId)? onLoadReplies;
+  final GlobalKey Function(String commentId)? getCommentKey;
 
   const _CommentsList({
     required this.comments,
@@ -209,52 +217,55 @@ class _CommentsList extends StatelessWidget {
     this.onSaveEdit,
     this.onSendReply,
     this.onLoadReplies,
+    this.getCommentKey,
   });
 
   @override
   Widget build(BuildContext context) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          // Pagination
-          if (index == comments.length) {
-            return _buildPaginationWidget();
-          }
+      delegate: SliverChildBuilderDelegate((context, index) {
+        // Pagination
+        if (index == comments.length) {
+          return _buildPaginationWidget();
+        }
 
-          final comment = comments[index];
-          final isLast = index == comments.length - 1;
+        final comment = comments[index];
+        final isLast = index == comments.length - 1;
 
-          return Column(
-            children: [
-              _CommentItem(
-                key: ValueKey(comment.id),
+        return Column(
+          children: [
+            // ✅ الـ GlobalKey على Container wrapper
+            Container(
+              key: getCommentKey?.call(comment.id),
+              child: _CommentItem(
                 comment: comment,
                 isEditing: editingCommentId == comment.id,
                 isReplying: activeReplyId == comment.id,
                 isEditLoading: editingCommentId == comment.id && isEditLoading,
                 isReplyLoading: activeReplyId == comment.id && isReplyLoading,
+                getReplyKey: getCommentKey,
                 onLikeTap: () => onLikeComment?.call(comment, false),
                 onReplyTap: () => onReplyTap?.call(comment.id),
                 onEditTap: () => onEditTap?.call(comment.id),
                 onCancelEdit: onCancelEdit,
                 onCancelReply: onCancelReply,
-                onSaveEdit: (content) => onSaveEdit?.call(comment.id, content, false),
+                onSaveEdit: (content) =>
+                    onSaveEdit?.call(comment.id, content, false),
                 onSendReply: (text) => onSendReply?.call(comment.id, text),
                 onLoadReplies: () => onLoadReplies?.call(comment.id),
                 onLikeReply: (reply) => onLikeComment?.call(reply, true),
                 onSaveReplyEdit: (replyId, content) =>
                     onSaveEdit?.call(replyId, content, true),
               ),
-              if (!isLast)
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  child: Divider(color: Colors.grey.shade200, height: 1.h),
-                ),
-            ],
-          );
-        },
-        childCount: comments.length + (hasMore || isLoadingMore ? 1 : 0),
-      ),
+            ),
+            if (!isLast)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                child: Divider(color: Colors.grey.shade200, height: 1.h),
+              ),
+          ],
+        );
+      }, childCount: comments.length + (hasMore || isLoadingMore ? 1 : 0)),
     );
   }
 
@@ -297,9 +308,9 @@ class _CommentItem extends StatefulWidget {
   final VoidCallback? onLoadReplies;
   final void Function(CommentModel reply)? onLikeReply;
   final void Function(String replyId, String content)? onSaveReplyEdit;
+  final GlobalKey Function(String commentId)? getReplyKey;
 
   const _CommentItem({
-    super.key,
     required this.comment,
     this.isEditing = false,
     this.isReplying = false,
@@ -315,6 +326,7 @@ class _CommentItem extends StatefulWidget {
     this.onLoadReplies,
     this.onLikeReply,
     this.onSaveReplyEdit,
+    this.getReplyKey,
   });
 
   @override
@@ -332,7 +344,13 @@ class _CommentItemState extends State<_CommentItem> {
 
   @override
   Widget build(BuildContext context) {
-    final shouldRebuild = _cachedWidget == null ||
+    // ✅ لو الكومنت مؤقت، اعرضه بشكل Disabled
+    if (widget.comment.isTemp) {
+      return _buildTempComment(context);
+    }
+
+    final shouldRebuild =
+        _cachedWidget == null ||
         widget.comment != _lastComment ||
         widget.isEditing != _lastIsEditing ||
         widget.isReplying != _lastIsReplying ||
@@ -369,6 +387,53 @@ class _CommentItemState extends State<_CommentItem> {
     }
 
     return _cachedWidget!;
+  }
+
+  // ✅ Widget للكومنت المؤقت
+  Widget _buildTempComment(BuildContext context) {
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+
+    return IgnorePointer(
+      ignoring: true,
+      child: Opacity(
+        opacity: 0.5,
+        child: Stack(
+          children: [
+            CommentCard(
+              comment: widget.comment,
+              isReply: false,
+              isEditing: false,
+              isReplying: false,
+              isEditLoading: false,
+              isReplyLoading: false,
+              isLoadingReplies: false,
+              onLikeTap: null,
+              onReplyTap: null,
+              onEditTap: null,
+              onCancelEdit: null,
+              onCancelReply: null,
+              onSaveEdit: null,
+              onSendReply: null,
+              onLoadReplies: null,
+              onLikeReply: null,
+            ),
+            Positioned(
+              left: isRtl ? null : 8.w,
+              right: isRtl ? 8.w : null,
+              top: 8.h,
+              child: SizedBox(
+                width: 16.w,
+                height: 16.w,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.w,
+                  color: AppColors.kprimaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
