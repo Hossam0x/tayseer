@@ -10,47 +10,40 @@ class MessageInputSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "عبر عن اعجابك بـ$name وابدأ بالدردشة معه",
+          "$name ${context.tr('messge_profil_title')}",
           style: Styles.textStyle14Bold,
         ),
         Text(
-          "لن يتم خصم رصيد إلى عند أول رد",
+          context.tr('messge_profil_sub_title'),
           style: Styles.textStyle10.copyWith(color: Colors.grey),
         ),
         Gap(10.h),
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 15.h),
           decoration: BoxDecoration(
-            color: const Color(0xFFFEF9E8),
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: Colors.amber.shade100),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25.r),
           ),
           child: Column(
             children: [
               TextField(
                 decoration: InputDecoration(
-                  hintText: "اكتب رسالتك...",
+                  fillColor: HexColor('f9f8ec'),
+                  filled: true,
+                  hintText: context.tr('type_your_message'),
                   hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
-                  border: InputBorder.none,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25.r),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
-                maxLines: 3,
-                minLines: 2,
+                maxLines: 4,
               ),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                  ),
-                  child: Text(
-                    "إرسال",
-                    style: Styles.textStyle14Bold.copyWith(color: Colors.white),
-                  ),
-                ),
+              Gap(20.h),
+              CustomBotton(
+                backGroundcolor: AppColors.kgreyColor,
+                title: context.tr('send_reply'),
+                onPressed: () {},
               ),
             ],
           ),

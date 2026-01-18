@@ -201,8 +201,9 @@ class ProfessionalInformationAsConsultantBody extends StatelessWidget {
                               CubitStates.loading) {
                             showDialog(
                               context: context,
+                              barrierDismissible: false,
                               builder: (_) {
-                                return const CustomloadingApp();
+                                return Center(child: const CustomloadingApp());
                               },
                             );
                           }

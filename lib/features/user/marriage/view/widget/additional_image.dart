@@ -20,8 +20,12 @@ class AdditionalImageSection extends StatelessWidget {
             bottom: 15.h,
             left: 15.w,
             child: CircleAvatar(
-              backgroundColor: Colors.white70,
-              child: Icon(Icons.star, color: Colors.amber, size: 20.sp),
+              backgroundColor: HexColor('cccab3'),
+              child: Icon(
+                Icons.star,
+                color: AppColors.kWhiteColor,
+                size: 20.sp,
+              ),
             ),
           ),
         ],

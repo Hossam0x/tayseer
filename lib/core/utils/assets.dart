@@ -129,6 +129,7 @@ abstract class AssetsData {
   static const String selectedSessionIcon = "assets/icons/selected_session.svg";
   static const String kfilterIcon = "assets/icons/filter_icon.svg";
   static const String koneIcon = "assets/icons/one_icon.svg";
+  static const String kfavoriteIcon = "assets/icons/favorite_icon.svg";
 
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =

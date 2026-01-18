@@ -2,7 +2,7 @@ import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:zego_uikit_signaling_plugin/zego_uikit_signaling_plugin.dart';
 
-class CollService {
+class CallService {
   /// on App's user login
   Future<void> onUserLogin(String id, String username) async {
     /// 1.2.1. initialized ZegoUIKitPrebuiltCallInvitationService

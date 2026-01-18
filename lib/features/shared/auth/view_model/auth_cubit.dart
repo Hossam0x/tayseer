@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/functions/sign_in_%20google_error.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -18,7 +21,12 @@ class AuthCubit extends Cubit<AuthState> {
   /// Controllers and Form Keys for Registration
   final TextEditingController emailController = TextEditingController();
   final GlobalKey<FormState> registerFormKey = GlobalKey<FormState>();
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    // لو محتاج idToken لازم تضيف serverClientId
+    // serverClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+  );
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   //// Controllers and Form Keys for Consultant
   final nameAsConsultantController = TextEditingController();
@@ -315,13 +323,7 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     try {
-      await _googleSignIn.initialize(
-        serverClientId:
-            '267720438243-1bb3i9jbnllncd8o46lajmtcnp0rsj25.apps.googleusercontent.com',
-      );
-
-      final GoogleSignInAccount? googleUser = await _googleSignIn
-          .authenticate();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
         emit(
@@ -335,50 +337,61 @@ class AuthCubit extends Cubit<AuthState> {
         return;
       }
 
-      // 🔹 Google authentication
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-      final String? idToken = googleAuth.idToken;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
-      emit(
-        state.copyWith(
-          signInWithGoogleState: CubitStates.success,
-          fromScreen: 'registration',
-        ),
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
 
-      await CachNetwork.setData(
-        key: 'user_type',
-        value: UserTypeEnum.user.name,
-      );
-      selectedUserType = UserTypeEnum.user;
+      final UserCredential userCredential = await _firebaseAuth
+          .signInWithCredential(credential);
 
-      emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
+      final String? firebaseIdToken = await userCredential.user?.getIdToken();
 
-      debugPrint(
-        "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%$idToken",
-      );
-      if (idToken != null) {
-        sendAuthGoogle(idToken: idToken);
+      if (firebaseIdToken != null) {
+        emit(
+          state.copyWith(
+            signInWithGoogleState: CubitStates.success,
+            fromScreen: 'registration',
+          ),
+        );
+
+        await CachNetwork.setData(
+          key: 'user_type',
+          value: UserTypeEnum.user.name,
+        );
+        selectedUserType = UserTypeEnum.user;
+
+        sendAuthGoogle(idToken: firebaseIdToken);
       } else {
         emit(
           state.copyWith(
             signInWithGoogleState: CubitStates.failure,
-            errorMessage: "idToken:$idToken",
+            errorMessage: "فشل في الحصول على Firebase Token",
           ),
         );
       }
-    } on GoogleSignInException catch (e) {
+    } on FirebaseAuthException catch (e) {
       emit(
         state.copyWith(
           signInWithGoogleState: CubitStates.failure,
-          errorMessage: _getGoogleSignInErrorMessage(e.code),
+          errorMessage: e.message ?? "خطأ في Firebase",
+        ),
+      );
+    } on PlatformException catch (e) {
+      emit(
+        state.copyWith(
+          signInWithGoogleState: CubitStates.failure,
+          errorMessage: getGoogleSignInErrorMessage(e.code),
         ),
       );
     } catch (e) {
       emit(
         state.copyWith(
           signInWithGoogleState: CubitStates.failure,
-          errorMessage: "حدث خطأ غير متوقع",
+          errorMessage: "حدث خطأ غير متوقع: $e",
         ),
       );
     }
@@ -395,26 +408,44 @@ class AuthCubit extends Cubit<AuthState> {
           emit(
             state.copyWith(
               authGoogleState: CubitStates.failure,
+              signInWithGoogleState: CubitStates.failure,
               errorMessage: failure.message,
               fromScreen: 'registration',
             ),
           );
+
+          Future.delayed(const Duration(milliseconds: 100), () {
+            emit(
+              state.copyWith(
+                authGoogleState: CubitStates.initial,
+                signInWithGoogleState: CubitStates.initial,
+              ),
+            );
+          });
         },
         (_) {
           emit(
             state.copyWith(
               authGoogleState: CubitStates.success,
+              signInWithGoogleState: CubitStates.success,
               fromScreen: 'registration',
             ),
           );
-          emit(state.copyWith(authGoogleState: CubitStates.initial));
-          emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
+          Future.delayed(const Duration(milliseconds: 100), () {
+            emit(
+              state.copyWith(
+                authGoogleState: CubitStates.initial,
+                signInWithGoogleState: CubitStates.initial,
+              ),
+            );
+          });
         },
       );
     } catch (e) {
       emit(
         state.copyWith(
-          guestLoginState: CubitStates.failure,
+          authGoogleState: CubitStates.failure,
+          signInWithGoogleState: CubitStates.failure,
           errorMessage: e.toString(),
         ),
       );
@@ -644,6 +675,9 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       await _googleSignIn.signOut();
+
+      await _firebaseAuth.signOut();
+
       googleLoggedOut = true;
       debugPrint('Google logout successful');
     } catch (e) {
@@ -684,19 +718,6 @@ class AuthCubit extends Cubit<AuthState> {
 
       await Future.delayed(const Duration(seconds: 3));
       emit(state.copyWith(logoutState: CubitStates.initial));
-    }
-  }
-
-  String _getGoogleSignInErrorMessage(GoogleSignInExceptionCode code) {
-    switch (code) {
-      case GoogleSignInExceptionCode.canceled:
-        return "تم إلغاء العملية من قبل المستخدم";
-      case GoogleSignInExceptionCode.interrupted:
-        return "تمت مقاطعة عملية تسجيل الدخول";
-      case GoogleSignInExceptionCode.uiUnavailable:
-        return "واجهة المستخدم غير متاحة";
-      default:
-        return "حدث خطأ في تسجيل الدخول باستخدام Google";
     }
   }
 
