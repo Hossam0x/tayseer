@@ -176,6 +176,7 @@ abstract class AssetsData {
   static const String storyPlaceholder = "assets/images/storyPlaceholder.jpg";
   static const String moneyTimesIcon = "assets/icons/moneyTimesIcon.svg";
   static const String pauseIcon = "assets/icons/pauseIcon.svg";
+  static const String noPosts = "assets/images/no_posts.png";
   static const String icHelpSettings = "assets/icons/icHelpSettings.svg";
   static const String backArrow = "assets/icons/backArrow.svg";
 

@@ -1,29 +1,19 @@
 import 'package:tayseer/core/widgets/comment_card/comment_card.dart';
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/shared/home/model/comment_model.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/my_import.dart';
 
-/// PostDetailsCard - Reusable component for displaying post with comments
-///
-/// Completely decoupled from any specific Cubit.
-/// Use [PostDetailsWrapper] to connect it to a Cubit.
-///
-/// Performance Features:
-/// - Separated post and comments sections
-/// - Comments list uses ID-based selector for granular rebuilds
-/// - Each comment rebuilds independently
 class PostDetailsCard extends StatelessWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
   final ScrollController? scrollController;
 
-  // Post Callbacks
-  final void Function(String postId, ReactionType? reactionType)?
-  onReactionChanged;
-  final void Function(String postId)? onShareTap;
-  final void Function(String hashtag)? onHashtagTap;
-  final VoidCallback? onMoreTap;
+  /// Bundled callbacks for post actions
+  final PostCallbacks callbacks;
+
+  /// Callback when comment input should be focused
   final VoidCallback? onCommentTap;
 
   // Comments Data
@@ -41,8 +31,7 @@ class PostDetailsCard extends StatelessWidget {
   final void Function(String commentId)? onEditTap;
   final VoidCallback? onCancelEdit;
   final VoidCallback? onCancelReply;
-  final void Function(String commentId, String content, bool isReply)?
-  onSaveEdit;
+  final void Function(String commentId, String content, bool isReply)? onSaveEdit;
   final void Function(String commentId, String text)? onSendReply;
   final void Function(String commentId)? onLoadReplies;
 
@@ -57,11 +46,7 @@ class PostDetailsCard extends StatelessWidget {
     required this.post,
     this.cachedController,
     this.scrollController,
-    // Post Callbacks
-    this.onReactionChanged,
-    this.onShareTap,
-    this.onHashtagTap,
-    this.onMoreTap,
+    this.callbacks = const PostCallbacks(),
     this.onCommentTap,
     // Comments Data
     this.comments = const [],
@@ -97,10 +82,7 @@ class PostDetailsCard extends StatelessWidget {
         _PostSection(
           post: post,
           cachedController: cachedController,
-          onReactionChanged: onReactionChanged,
-          onShareTap: onShareTap,
-          onHashtagTap: onHashtagTap,
-          onMoreTap: onMoreTap,
+          callbacks: callbacks,
           onCommentTap: onCommentTap,
         ),
 
@@ -164,20 +146,13 @@ class PostDetailsCard extends StatelessWidget {
 class _PostSection extends StatelessWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
-  final void Function(String postId, ReactionType? reactionType)?
-  onReactionChanged;
-  final void Function(String postId)? onShareTap;
-  final void Function(String hashtag)? onHashtagTap;
-  final VoidCallback? onMoreTap;
+  final PostCallbacks callbacks;
   final VoidCallback? onCommentTap;
 
   const _PostSection({
     required this.post,
     this.cachedController,
-    this.onReactionChanged,
-    this.onShareTap,
-    this.onHashtagTap,
-    this.onMoreTap,
+    required this.callbacks,
     this.onCommentTap,
   });
 
@@ -188,18 +163,15 @@ class _PostSection extends StatelessWidget {
         post: post,
         isDetailsView: true,
         sharedController: cachedController,
-        onReactionChanged: onReactionChanged,
-        onShareTap: onShareTap,
+        callbacks: callbacks,
         onNavigateToDetails: (_, __, ___) => onCommentTap?.call(),
-        onHashtagTap: onHashtagTap,
-        onMoreTap: onMoreTap,
       ),
     );
   }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Comments List (Optimized)
+// Comments List
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _CommentsList extends StatelessWidget {
@@ -216,8 +188,7 @@ class _CommentsList extends StatelessWidget {
   final void Function(String commentId)? onEditTap;
   final VoidCallback? onCancelEdit;
   final VoidCallback? onCancelReply;
-  final void Function(String commentId, String content, bool isReply)?
-  onSaveEdit;
+  final void Function(String commentId, String content, bool isReply)? onSaveEdit;
   final void Function(String commentId, String text)? onSendReply;
   final void Function(String commentId)? onLoadReplies;
 
@@ -243,46 +214,47 @@ class _CommentsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        // Load More / Pagination
-        if (index == comments.length) {
-          return _buildPaginationWidget();
-        }
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          // Pagination
+          if (index == comments.length) {
+            return _buildPaginationWidget();
+          }
 
-        final comment = comments[index];
-        final isLast = index == comments.length - 1;
+          final comment = comments[index];
+          final isLast = index == comments.length - 1;
 
-        return Column(
-          children: [
-            _CommentItem(
-              key: ValueKey(comment.id),
-              comment: comment,
-              isEditing: editingCommentId == comment.id,
-              isReplying: activeReplyId == comment.id,
-              isEditLoading: editingCommentId == comment.id && isEditLoading,
-              isReplyLoading: activeReplyId == comment.id && isReplyLoading,
-              onLikeTap: () => onLikeComment?.call(comment, false),
-              onReplyTap: () => onReplyTap?.call(comment.id),
-              onEditTap: () => onEditTap?.call(comment.id),
-              onCancelEdit: onCancelEdit,
-              onCancelReply: onCancelReply,
-              onSaveEdit: (content) =>
-                  onSaveEdit?.call(comment.id, content, false),
-              onSendReply: (text) => onSendReply?.call(comment.id, text),
-              onLoadReplies: () => onLoadReplies?.call(comment.id),
-              // Pass callbacks for replies
-              onLikeReply: (reply) => onLikeComment?.call(reply, true),
-              onSaveReplyEdit: (replyId, content) =>
-                  onSaveEdit?.call(replyId, content, true),
-            ),
-            if (!isLast)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 12.h),
-                child: Divider(color: Colors.grey.shade200, height: 1.h),
+          return Column(
+            children: [
+              _CommentItem(
+                key: ValueKey(comment.id),
+                comment: comment,
+                isEditing: editingCommentId == comment.id,
+                isReplying: activeReplyId == comment.id,
+                isEditLoading: editingCommentId == comment.id && isEditLoading,
+                isReplyLoading: activeReplyId == comment.id && isReplyLoading,
+                onLikeTap: () => onLikeComment?.call(comment, false),
+                onReplyTap: () => onReplyTap?.call(comment.id),
+                onEditTap: () => onEditTap?.call(comment.id),
+                onCancelEdit: onCancelEdit,
+                onCancelReply: onCancelReply,
+                onSaveEdit: (content) => onSaveEdit?.call(comment.id, content, false),
+                onSendReply: (text) => onSendReply?.call(comment.id, text),
+                onLoadReplies: () => onLoadReplies?.call(comment.id),
+                onLikeReply: (reply) => onLikeComment?.call(reply, true),
+                onSaveReplyEdit: (replyId, content) =>
+                    onSaveEdit?.call(replyId, content, true),
               ),
-          ],
-        );
-      }, childCount: comments.length + (hasMore || isLoadingMore ? 1 : 0)),
+              if (!isLast)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  child: Divider(color: Colors.grey.shade200, height: 1.h),
+                ),
+            ],
+          );
+        },
+        childCount: comments.length + (hasMore || isLoadingMore ? 1 : 0),
+      ),
     );
   }
 
@@ -360,9 +332,8 @@ class _CommentItemState extends State<_CommentItem> {
 
   @override
   Widget build(BuildContext context) {
-    final shouldRebuild =
-        _cachedWidget == null ||
-        widget.comment != _lastComment || // Relies on Equatable or Ref equality
+    final shouldRebuild = _cachedWidget == null ||
+        widget.comment != _lastComment ||
         widget.isEditing != _lastIsEditing ||
         widget.isReplying != _lastIsReplying ||
         widget.isEditLoading != _lastIsEditLoading ||
@@ -394,9 +365,6 @@ class _CommentItemState extends State<_CommentItem> {
         onSendReply: widget.onSendReply,
         onLoadReplies: widget.onLoadReplies,
         onLikeReply: widget.onLikeReply,
-        // Replies logic inside CommentCard usually handles sub-items
-        // If CommentCard iterates replies, it might rebuild them.
-        // But preventing the root CommentCard from rebuilding is the big win.
       );
     }
 

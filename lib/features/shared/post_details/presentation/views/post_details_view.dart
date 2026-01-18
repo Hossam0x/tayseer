@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_details_card/post_details_card.dart';
 import 'package:tayseer/features/shared/home/model/comment_model.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
@@ -7,31 +9,18 @@ import 'package:tayseer/features/shared/post_details/presentation/manager/post_d
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/comment_input_area.dart';
 import 'package:tayseer/my_import.dart';
 
-/// PostDetailsView - Optimized view for displaying post details with comments
-///
-/// Performance Features:
-/// - Uses BlocSelector for granular rebuilds
-/// - Comments list rebuilds only on structural changes
-/// - Individual comments rebuild independently
 class PostDetailsView extends StatefulWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
-  final Stream<PostModel>? postUpdatesStream;
-  final void Function(String postId, ReactionType? reactionType)?
-  onReactionChanged;
-  final void Function(String postId)? onShareTap;
-  final void Function(String hashtag)? onHashtagTap;
-  final VoidCallback? onMoreTap;
+
+  /// Bundled callbacks for post actions
+  final PostCallbacks callbacks;
 
   const PostDetailsView({
     super.key,
     required this.post,
     this.cachedController,
-    this.postUpdatesStream,
-    this.onReactionChanged,
-    this.onShareTap,
-    this.onHashtagTap,
-    this.onMoreTap,
+    this.callbacks = const PostCallbacks(),
   });
 
   @override
@@ -88,11 +77,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                   post: widget.post,
                   cachedController: widget.cachedController,
                   scrollController: _scrollController,
-                  postUpdatesStream: widget.postUpdatesStream,
-                  onReactionChanged: widget.onReactionChanged,
-                  onShareTap: widget.onShareTap,
-                  onHashtagTap: widget.onHashtagTap,
-                  onMoreTap: widget.onMoreTap,
+                  callbacks: widget.callbacks,
                 ),
               ),
               const CommentInputArea(),
@@ -124,29 +109,20 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Body Widget (Handles stream updates)
+// Body Widget
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _PostDetailsBody extends StatefulWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
   final ScrollController scrollController;
-  final Stream<PostModel>? postUpdatesStream;
-  final void Function(String postId, ReactionType? reactionType)?
-  onReactionChanged;
-  final void Function(String postId)? onShareTap;
-  final void Function(String hashtag)? onHashtagTap;
-  final VoidCallback? onMoreTap;
+  final PostCallbacks callbacks;
 
   const _PostDetailsBody({
     required this.post,
     this.cachedController,
     required this.scrollController,
-    this.postUpdatesStream,
-    this.onReactionChanged,
-    this.onShareTap,
-    this.onHashtagTap,
-    this.onMoreTap,
+    required this.callbacks,
   });
 
   @override
@@ -155,17 +131,29 @@ class _PostDetailsBody extends StatefulWidget {
 
 class _PostDetailsBodyState extends State<_PostDetailsBody> {
   late PostModel _currentPost;
+  StreamSubscription<PostModel>? _postSubscription;
 
   @override
   void initState() {
     super.initState();
     _currentPost = widget.post;
 
-    widget.postUpdatesStream?.listen((updatedPost) {
-      if (mounted && updatedPost.postId == _currentPost.postId) {
-        setState(() => _currentPost = updatedPost);
-      }
-    });
+    // ✅ Store subscription for cleanup
+    _postSubscription = widget.callbacks.postUpdatesStream?.listen(
+      _onPostUpdated,
+    );
+  }
+
+  void _onPostUpdated(PostModel updatedPost) {
+    if (mounted && updatedPost.postId == _currentPost.postId) {
+      setState(() => _currentPost = updatedPost);
+    }
+  }
+
+  @override
+  void dispose() {
+    _postSubscription?.cancel(); // ✅ Prevent memory leak
+    super.dispose();
   }
 
   @override
@@ -184,11 +172,7 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
             post: _currentPost,
             cachedController: widget.cachedController,
             scrollController: widget.scrollController,
-            // Post Callbacks
-            onReactionChanged: widget.onReactionChanged,
-            onShareTap: widget.onShareTap,
-            onHashtagTap: widget.onHashtagTap,
-            onMoreTap: widget.onMoreTap,
+            callbacks: widget.callbacks,
             onCommentTap: () => cubit.requestInputFocus(),
             // Comments Data
             comments: uiState.comments,
@@ -202,22 +186,22 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
             isEditLoading: uiState.isEditLoading,
             isReplyLoading: uiState.isReplyLoading,
             // Comments Callbacks
-            onLoadMore: () => cubit.loadMoreComments(),
-            onRetry: () => cubit.loadComments(),
+            onLoadMore: cubit.loadMoreComments,
+            onRetry: cubit.loadComments,
             onLikeComment: (comment, isReply) =>
                 cubit.toggleLike(isReply, comment.id),
-            onReplyTap: (id) => cubit.toggleReply(id),
-            onEditTap: (id) => cubit.toggleEdit(id),
-            onCancelEdit: () => cubit.cancelEdit(),
-            onCancelReply: () => cubit.cancelReply(),
+            onReplyTap: cubit.toggleReply,
+            onEditTap: cubit.toggleEdit,
+            onCancelEdit: cubit.cancelEdit,
+            onCancelReply: cubit.cancelReply,
             onSaveEdit: (commentId, content, isReply) =>
                 cubit.saveEditedComment(
-                  commentId: commentId,
-                  newContent: content,
-                  isReply: isReply,
-                ),
-            onSendReply: (commentId, text) => cubit.addReply(commentId, text),
-            onLoadReplies: (commentId) => cubit.loadReplies(commentId),
+              commentId: commentId,
+              newContent: content,
+              isReply: isReply,
+            ),
+            onSendReply: cubit.addReply,
+            onLoadReplies: cubit.loadReplies,
           );
         },
       ),
@@ -242,7 +226,7 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// State Model for BlocSelector
+// State Model
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _CommentsUIState extends Equatable {
@@ -270,14 +254,14 @@ class _CommentsUIState extends Equatable {
 
   @override
   List<Object?> get props => [
-    comments,
-    isLoading,
-    hasMore,
-    isLoadingMore,
-    error,
-    editingCommentId,
-    activeReplyId,
-    isEditLoading,
-    isReplyLoading,
-  ];
+        comments,
+        isLoading,
+        hasMore,
+        isLoadingMore,
+        error,
+        editingCommentId,
+        activeReplyId,
+        isEditLoading,
+        isReplyLoading,
+      ];
 }

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
@@ -7,9 +8,14 @@ import 'package:tayseer/features/shared/post_details/presentation/views/post_det
 import 'package:tayseer/my_import.dart';
 
 class HomePostFeed extends StatelessWidget {
-  const HomePostFeed({super.key, required this.homeCubit});
+  const HomePostFeed({
+    super.key,
+    required this.homeCubit,
+    required this.scrollToTopCallback,
+  });
 
   final HomeCubit homeCubit;
+  final VoidCallback scrollToTopCallback;
 
   @override
   Widget build(BuildContext context) {
@@ -50,13 +56,28 @@ class HomePostFeed extends StatelessWidget {
     postIds: state.posts.map((p) => p.postId).toList(),
     status: state.postsState,
     isLoadingMore: state.isLoadingMore,
-    error: state.errorMessage,
+    error: state.postsErrorMessage,
+    isAllCategory: state.selectedCategoryId == null,
   );
 
   Widget _buildContent(BuildContext context, _FeedState state) {
+    // حالة التحميل
     if (state.isLoading && state.isEmpty) return _buildShimmerList();
+
+    // حالة الخطأ
     if (state.isError && state.isEmpty) return _buildError(state.error);
+
+    // حالة الـ empty في كاتيجوري معين (مش "الكل")
+    if (state.isEmpty && !state.isAllCategory) {
+      return _EmptyCategoryIndicator(onViewAllTap: _goToAllCategory);
+    }
+
     return _buildPostList(state);
+  }
+
+  void _goToAllCategory() {
+    scrollToTopCallback();
+    homeCubit.selectCategory(null);
   }
 
   Widget _buildShimmerList() => SliverList(
@@ -80,14 +101,25 @@ class HomePostFeed extends StatelessWidget {
     delegate: SliverChildBuilderDelegate((context, index) {
       if (index < state.postIds.length) {
         return _PostItem(
+          key: ValueKey(state.postIds[index]),
           postId: state.postIds[index],
           homeCubit: homeCubit,
           showGap: index < state.postIds.length - 1,
         );
       }
-      return state.isLoadingMore
-          ? const _LoadingMoreIndicator()
-          : const EndOfFeedIndicator();
+
+      // آخر عنصر - الـ indicator
+      if (state.isLoadingMore) {
+        return const _LoadingMoreIndicator();
+      }
+
+      // لو في "الكل" → الـ indicator العادي
+      if (state.isAllCategory) {
+        return const EndOfFeedIndicator();
+      }
+
+      // لو في كاتيجوري معين → indicator مختلف
+      return _EndOfCategoryIndicator(onViewAllTap: _goToAllCategory);
     }, childCount: state.postIds.length + 1),
   );
 }
@@ -101,11 +133,13 @@ class _FeedState extends Equatable {
   final CubitStates status;
   final bool isLoadingMore;
   final String? error;
+  final bool isAllCategory;
 
   const _FeedState({
     required this.postIds,
     required this.status,
     required this.isLoadingMore,
+    required this.isAllCategory,
     this.error,
   });
 
@@ -114,15 +148,22 @@ class _FeedState extends Equatable {
   bool get isError => status == CubitStates.failure;
 
   @override
-  List<Object?> get props => [postIds, status, isLoadingMore, error];
+  List<Object?> get props => [
+    postIds,
+    status,
+    isLoadingMore,
+    error,
+    isAllCategory,
+  ];
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Post Item Widget (Optimized - rebuilds only when its post changes)
 // ══════════════════════════════════════════════════════════════════════════════
 
-class _PostItem extends StatelessWidget {
+class _PostItem extends StatefulWidget {
   const _PostItem({
+    super.key,
     required this.postId,
     required this.homeCubit,
     this.showGap = false,
@@ -133,33 +174,59 @@ class _PostItem extends StatelessWidget {
   final bool showGap;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        BlocSelector<HomeCubit, HomeState, PostModel?>(
-          selector: (state) =>
-              state.posts.where((p) => p.postId == postId).firstOrNull,
-          builder: (context, post) {
-            if (post == null) return const SizedBox.shrink();
-            return PostCard(
-              post: post,
-              onReactionChanged: _onReaction,
-              onShareTap: _onShare,
-              onNavigateToDetails: _onNavigateToDetails,
-              onHashtagTap: (_) =>
-                  context.pushNamed(AppRouter.kAdvisorSearchView),
-            );
-          },
-        ),
-        if (showGap) Gap(12.h),
-      ],
+  State<_PostItem> createState() => _PostItemState();
+}
+
+class _PostItemState extends State<_PostItem> {
+  // ✅ Cache stream & callbacks - created once in initState
+  late final Stream<PostModel> _postStream;
+  late final PostCallbacks _callbacks;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeStreamAndCallbacks();
+  }
+
+  void _initializeStreamAndCallbacks() {
+    // ✅ Create stream once with distinct to prevent duplicate updates
+    _postStream = widget.homeCubit.stream
+        .map(
+          (state) => state.posts.firstWhere(
+            (p) => p.postId == widget.postId,
+            orElse: () => _getFallbackPost(state),
+          ),
+        )
+        .distinct();
+
+    // ✅ Create callbacks once
+    _callbacks = PostCallbacks(
+      postUpdatesStream: _postStream,
+      onReactionChanged: _onReaction,
+      onShareTap: _onShare,
+      onHashtagTap: _onHashtagTap,
     );
   }
 
-  void _onReaction(String id, ReactionType? type) =>
-      homeCubit.reactToPost(postId: id, reactionType: type);
+  PostModel _getFallbackPost(HomeState state) {
+    // Try to get existing post or return current one
+    final existingPost = state.posts
+        .where((p) => p.postId == widget.postId)
+        .firstOrNull;
+    return existingPost!;
+  }
 
-  void _onShare(String id) => homeCubit.toggleSharePost(postId: id);
+  void _onReaction(String id, ReactionType? type) {
+    widget.homeCubit.reactToPost(postId: id, reactionType: type);
+  }
+
+  void _onShare(String id) {
+    widget.homeCubit.toggleSharePost(postId: id);
+  }
+
+  void _onHashtagTap(String hashtag) {
+    context.pushNamed(AppRouter.kAdvisorSearchView);
+  }
 
   void _onNavigateToDetails(
     BuildContext ctx,
@@ -172,17 +239,30 @@ class _PostItem extends StatelessWidget {
         builder: (_) => PostDetailsView(
           post: post,
           cachedController: controller,
-          postUpdatesStream: homeCubit.stream.map(
-            (s) => s.posts.firstWhere(
-              (p) => p.postId == post.postId,
-              orElse: () => post,
-            ),
-          ),
-          onReactionChanged: _onReaction,
-          onShareTap: _onShare,
-          onHashtagTap: (_) => ctx.pushNamed(AppRouter.kAdvisorSearchView),
+          callbacks: _callbacks,
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        BlocSelector<HomeCubit, HomeState, PostModel?>(
+          selector: (state) =>
+              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+          builder: (context, post) {
+            if (post == null) return const SizedBox.shrink();
+            return PostCard(
+              post: post,
+              callbacks: _callbacks,
+              onNavigateToDetails: _onNavigateToDetails,
+            );
+          },
+        ),
+        if (widget.showGap) Gap(12.h),
+      ],
     );
   }
 }
@@ -235,6 +315,153 @@ class EndOfFeedIndicator extends StatelessWidget {
       shape: BoxShape.circle,
     ),
   );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// End of Category Indicator (لما يوصل لآخر البوستات في كاتيجوري معين)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _EndOfCategoryIndicator extends StatelessWidget {
+  const _EndOfCategoryIndicator({required this.onViewAllTap});
+
+  final VoidCallback onViewAllTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 20.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AppImage(AssetsData.postsEndIcon, height: 110.h),
+          Gap(8.h),
+          Text(
+            'تم الوصول لنهاية المنشورات في هذه الفئة',
+            style: Styles.textStyle14.copyWith(
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          Gap(12.h),
+          GestureDetector(
+            onTap: onViewAllTap,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: AppColors.kprimaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(
+                  color: AppColors.kprimaryColor.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.grid_view_rounded,
+                    size: 16.sp,
+                    color: AppColors.kprimaryColor,
+                  ),
+                  Gap(6.w),
+                  Text(
+                    'عرض كل المنشورات',
+                    style: Styles.textStyle12.copyWith(
+                      color: AppColors.kprimaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Gap(32.h),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Empty Category Indicator (لما الكاتيجوري فاضية)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _EmptyCategoryIndicator extends StatelessWidget {
+  const _EmptyCategoryIndicator({required this.onViewAllTap});
+
+  final VoidCallback onViewAllTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppImage(AssetsData.noPosts, height: 217.h),
+            Gap(16.h),
+            Text(
+              'لا توجد منشورات في هذه الفئة',
+              style: Styles.textStyle16.copyWith(
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Gap(8.h),
+            Text(
+              'جرب استكشاف فئات أخرى',
+              style: Styles.textStyle14.copyWith(color: Colors.grey.shade400),
+              textAlign: TextAlign.center,
+            ),
+            Gap(20.h),
+            GestureDetector(
+              onTap: onViewAllTap,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.kprimaryColor,
+                      AppColors.kprimaryColor.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(25.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.kprimaryColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.explore_rounded,
+                      size: 18.sp,
+                      color: Colors.white,
+                    ),
+                    Gap(8.w),
+                    Text(
+                      'استكشف كل المنشورات',
+                      style: Styles.textStyle14.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Gap(40.h),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

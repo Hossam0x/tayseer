@@ -1,3 +1,5 @@
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
+import 'package:tayseer/core/widgets/post_card/post_card.dart';
 // في features/advisor/profille/views/widgets/tabs/posts_tab.dart
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_card.dart';
@@ -115,96 +117,81 @@ class PostsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: EdgeInsets.only(top: 100.h),
-      child: const SharedEmptyState(
-        title: "انشأ اول منشور لك حتي تكتسب ثقة الناس .",
-      ),
-    );
-  }
+        // TODO: Filter posts by current user
+        // final userPosts = state.posts.where((post) => post.advisorId == currentUserId).toList();
+        final userPosts = state.posts; // مؤقتاً نعرض كل البوستات
 
-  Widget _buildPostList(
-    List<PostModel> posts,
-    ProfileState state,
-    BuildContext context,
-    ProfileCubit profileCubit,
-  ) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.symmetric(vertical: 16.h),
-      itemCount: posts.length + (state.isLoadingMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index < posts.length) {
-          final post = posts[index];
-          return Column(
-            children: [
-              ProfilePostCard(
-                post: post,
-                onReactionChanged: (postId, reactionType) {
-                  // ⭐️ استدعاء ProfileCubit الجديد
-                  profileCubit.reactToPost(
-                    postId: postId,
-                    reactionType: reactionType,
-                  );
-                },
-                onShareTap: (postId) {
-                  // ⭐️ استدعاء ProfileCubit الجديد
-                  profileCubit.toggleSharePost(postId: postId);
-                },
-                onNavigateToDetails: (ctx, post, controller) {
-                  Navigator.push(
-                    ctx,
-                    MaterialPageRoute(
-                      builder: (context) => PostDetailsView(
-                        post: post,
-                        cachedController: controller,
-                        postUpdatesStream: profileCubit.stream.map((state) {
-                          return state.posts.firstWhere(
+        if (userPosts.isEmpty) {
+          return const SharedEmptyState(title: "لا توجد منشورات");
+        }
+
+        return RefreshIndicator(
+          color: AppColors.kprimaryColor,
+          onRefresh: () => profileCubit.fetchPosts(),
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(vertical: 16.h),
+            itemCount: userPosts.length + (state.isLoadingMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index < userPosts.length) {
+                final post = userPosts[index];
+                
+                // ✅ Create callbacks once per post
+                final callbacks = PostCallbacks(
+                  postUpdatesStream: profileCubit.stream
+                      .map((s) => s.posts.firstWhere(
                             (p) => p.postId == post.postId,
                             orElse: () => post,
-                          );
-                        }),
-                        onReactionChanged: (postId, reactionType) {
-                          // ⭐️ استدعاء ProfileCubit الجديد
-                          profileCubit.reactToPost(
-                            postId: postId,
-                            reactionType: reactionType,
-                          );
-                        },
-                        onShareTap: (postId) {
-                          // ⭐️ استدعاء ProfileCubit الجديد
-                          profileCubit.toggleSharePost(postId: postId);
-                        },
-                        onHashtagTap: (hashtag) {
-                          context.pushNamed(AppRouter.kAdvisorSearchView);
-                        },
-                      ),
+                          ))
+                      .distinct(),
+                  onReactionChanged: (postId, reactionType) {
+                    // TODO: تنفيذ الـ reaction في ProfileCubit
+                  },
+                  onShareTap: (postId) {
+                    // TODO: تنفيذ الـ share في ProfileCubit
+                  },
+                  onHashtagTap: (hashtag) {
+                    context.pushNamed(AppRouter.kAdvisorSearchView);
+                  },
+                );
+
+                return Column(
+                  children: [
+                    PostCard(
+                      post: post,
+                      callbacks: callbacks,
+                      onNavigateToDetails: (ctx, post, controller) {
+                        Navigator.push(
+                          ctx,
+                          MaterialPageRoute(
+                            builder: (_) => PostDetailsView(
+                              post: post,
+                              cachedController: controller,
+                              callbacks: callbacks,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-                onHashtagTap: (hashtag) {
-                  context.pushNamed(AppRouter.kAdvisorSearchView);
-                },
-              ),
-              if (index < posts.length - 1) Gap(16.h),
-            ],
-          );
-        } else {
-          return const _LoadingMoreIndicator();
-        }
+                    if (index < userPosts.length - 1) Gap(16.h),
+                  ],
+                );
+              } else {
+                // Loading more indicator
+                return Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.kprimaryColor,
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        );
       },
     );
-  }
-}
-
-/// مؤشر التحميل الإضافي
-class _LoadingMoreIndicator extends StatelessWidget {
-  const _LoadingMoreIndicator();
-
-  @override
-  Widget build(BuildContext context) {
-    return const PostCardShimmer();
   }
 }
