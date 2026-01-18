@@ -1,4 +1,3 @@
-// features/advisor/user_profile/data/repositories/user_profile_repository.dart
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/user/advisor_profile/data/models/user_profile_model.dart';
@@ -34,13 +33,24 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   ) async {
     try {
       final response = await _apiService.get(
-        endPoint: ApiEndPoint.profileData,
+        endPoint: '/advisor/getProfile',
         query: {'advisorId': advisorId},
       );
 
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
-        final profile = UserProfileModel.fromJson(data);
+
+        // ⭐ تنظيف نص سنوات الخبرة
+        String? yearsExpString = data['yearsOfExperience']?.toString();
+        if (yearsExpString != null && yearsExpString.isNotEmpty) {
+          yearsExpString = yearsExpString.replaceAll(" من الخبرة", "");
+        }
+
+        // ⭐ إنشاء بيانات معدلة
+        final profileData = Map<String, dynamic>.from(data);
+        profileData['yearsOfExperience'] = yearsExpString;
+
+        final profile = UserProfileModel.fromJson(profileData);
         return Right(profile);
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل جلب البروفايل'));
@@ -84,8 +94,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   Future<Either<Failure, String>> toggleFollowUser(String advisorId) async {
     try {
       final response = await _apiService.post(
-        endPoint: '/advisor/follow',
-        data: {'advisorId': advisorId},
+        endPoint: '/advisor/toggle-follow/$advisorId',
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
     } on DioException catch (e) {

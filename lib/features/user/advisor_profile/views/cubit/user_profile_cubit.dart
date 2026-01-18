@@ -10,7 +10,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
   final int _pageSize = 10;
 
   UserProfileCubit(this._repository, this.advisorId)
-      : super(const UserProfileState()) {
+    : super(const UserProfileState()) {
     _initializeProfile();
   }
 
@@ -126,30 +126,51 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     await Future.wait([fetchProfile(), fetchPosts(loadMore: false)]);
   }
 
+  // ⭐ تحديث دالة toggleFollow لتشمل التحقق من حالة التحميل
   Future<void> toggleFollow() async {
-    if (state.profile == null) return;
+    if (state.profile == null || state.profile!.isMe) return;
 
-    emit(state.copyWith(followActionState: CubitStates.initial));
+    if (state.followActionState == CubitStates.loading) return;
+
+    emit(
+      state.copyWith(
+        followActionState: CubitStates.loading,
+        followMessage: null,
+      ),
+    );
 
     final currentFollowState = state.profile!.isFollowing;
     final newFollowerCount = currentFollowState
         ? (state.profile!.followers - 1).clamp(0, state.profile!.followers)
         : state.profile!.followers + 1;
 
+    // ⭐ تحديث مؤقت للواجهة
     final optimisticProfile = state.profile!.copyWith(
       isFollowing: !currentFollowState,
       followers: newFollowerCount,
     );
 
-    emit(state.copyWith(profile: optimisticProfile));
+    emit(
+      state.copyWith(
+        profile: optimisticProfile,
+        followActionState: CubitStates.loading,
+      ),
+    );
 
+    // ⭐ استدعاء الـ API
     final result = await _repository.toggleFollowUser(advisorId);
+
+    if (isClosed) return;
 
     result.fold(
       (failure) {
+        // ⭐ الرجوع للحالة السابقة عند الفشل
         emit(
           state.copyWith(
-            profile: state.profile,
+            profile: state.profile?.copyWith(
+              isFollowing: currentFollowState,
+              followers: state.profile!.followers,
+            ),
             followActionState: CubitStates.failure,
             followMessage: failure.message,
           ),

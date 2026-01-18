@@ -111,38 +111,46 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
         children: [
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            labelPadding: EdgeInsets.symmetric(horizontal: 8.w),
-            tabAlignment: TabAlignment.start,
-            indicatorColor: AppColors.blackColor,
-            indicatorSize: TabBarIndicatorSize.label,
-            indicatorPadding: EdgeInsets.zero,
-            indicator: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: AppColors.blackColor, width: 1.5.h),
-              ),
-            ),
-            dividerHeight: 0,
-            labelColor: AppColors.blackColor,
-            unselectedLabelColor: AppColors.secondary400,
-            labelStyle: Styles.textStyle16Bold,
-            unselectedLabelStyle: Styles.textStyle14,
-            tabs: _tabs.map((tab) {
-              return Tab(
-                height: 33.w,
-                child: Column(
-                  children: [
-                    Text(tab),
-                    Gap(4.h),
-                    Container(width: 75.w, color: Colors.transparent),
-                  ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                labelPadding: EdgeInsets.symmetric(horizontal: 8.w),
+                // tabAlignment: TabAlignment.start,
+                indicatorColor: AppColors.blackColor,
+                indicatorSize: TabBarIndicatorSize.label,
+                indicatorPadding: EdgeInsets.zero,
+                indicator: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: AppColors.blackColor,
+                      width: 1.5.h,
+                    ),
+                  ),
                 ),
-              );
-            }).toList(),
-            // 🔹 استخدام الدالة الجديدة بدلاً من animateTo مباشرة
-            onTap: _handleTabTap,
+                dividerHeight: 0,
+                labelColor: AppColors.blackColor,
+                unselectedLabelColor: AppColors.secondary400,
+                labelStyle: Styles.textStyle16Bold,
+                unselectedLabelStyle: Styles.textStyle14,
+                tabs: _tabs.map((tab) {
+                  return Tab(
+                    height: 33.w,
+                    child: Column(
+                      children: [
+                        Text(tab),
+                        Gap(4.h),
+                        Container(width: 75.w, color: Colors.transparent),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                // 🔹 استخدام الدالة الجديدة بدلاً من animateTo مباشرة
+                onTap: _handleTabTap,
+              ),
+            ],
           ),
           Divider(height: 1.h, color: Colors.grey.shade300),
         ],

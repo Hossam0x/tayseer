@@ -25,29 +25,9 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
 
+        // ⭐ تعديل هنا: إبقاء القيمة كما هي (String)
         final yearsExp = data['yearsOfExperience'];
-        String? yearsExpString;
-
-        if (yearsExp != null) {
-          if (yearsExp is num) {
-            final intValue = yearsExp.toInt();
-            if (intValue == 2) {
-              yearsExpString = "سنتين";
-            } else if (intValue == 3) {
-              yearsExpString = "3 سنوات";
-            } else if (intValue == 5) {
-              yearsExpString = "5 سنوات";
-            } else if (intValue == 10) {
-              yearsExpString = "10 سنوات";
-            } else if (intValue > 10) {
-              yearsExpString = "أكثر من 10 سنوات";
-            } else {
-              yearsExpString = yearsExp.toString();
-            }
-          } else {
-            yearsExpString = yearsExp.toString();
-          }
-        }
+        String? yearsExpString = yearsExp?.toString(); // ⭐ تحويل إلى String فقط
 
         final profileData = {
           '_id': data['_id'] ?? '',
@@ -58,7 +38,7 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
           'gender': data['gender'],
           'professionalSpecialization': data['professionalSpecialization'],
           'jobGrade': data['jobGrade'],
-          'yearsOfExperience': yearsExpString,
+          'yearsOfExperience': yearsExpString, // ⭐ String
           'aboutYou': data['aboutYou'],
           'videoLink': data['videoLink'],
           'isVerified': data['isVerified'] ?? false,
@@ -88,43 +68,83 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
     bool? removeVideo,
   }) async {
     try {
-      // ⭐ إنشاء FormData وإضافة البيانات النصية
-      final Map<String, dynamic> formDataMap = {};
+      final formData = FormData();
 
-      // إضافة الحقول النصية
+      // إضافة الحقول النصية مع مراعاة الـ mapping العكسي
       if (request.name != null && request.name!.isNotEmpty) {
-        formDataMap['name'] = request.name!;
+        formData.fields.add(MapEntry('name', request.name!));
       }
 
+      if (request.username != null && request.username!.isNotEmpty) {
+        formData.fields.add(MapEntry('username', request.username!));
+      }
+
+      // ⭐ تحويل professionalSpecialization إلى القيمة المتوقعة من الباكند
       if (request.professionalSpecialization != null &&
           request.professionalSpecialization!.isNotEmpty) {
-        formDataMap['ProfessionalSpecialization'] =
-            request.professionalSpecialization!;
+        // هنا قد تحتاج إلى mapping عكسي إذا كان الباكند يتوقع قيماً محددة
+        formData.fields.add(
+          MapEntry(
+            'ProfessionalSpecialization',
+            request.professionalSpecialization!,
+          ),
+        );
       }
 
       if (request.jobGrade != null && request.jobGrade!.isNotEmpty) {
-        formDataMap['JobGrade'] = request.jobGrade!;
+        formData.fields.add(MapEntry('JobGrade', request.jobGrade!));
       }
 
       if (request.yearsOfExperience != null &&
           request.yearsOfExperience!.isNotEmpty) {
-        formDataMap['yearsOfExperience'] = request.yearsOfExperience!;
+        formData.fields.add(
+          MapEntry('yearsOfExperience', request.yearsOfExperience!),
+        );
       }
 
       if (request.aboutYou != null && request.aboutYou!.isNotEmpty) {
-        formDataMap['aboutYou'] = request.aboutYou!;
+        formData.fields.add(MapEntry('aboutYou', request.aboutYou!));
+      }
+
+      // ⭐ معالجة الصورة
+      if (imageFile != null) {
+        formData.files.add(
+          MapEntry(
+            'image',
+            await MultipartFile.fromFile(
+              imageFile.path,
+              filename: 'profile_image.jpg',
+            ),
+          ),
+        );
+      } else if (request.image == "") {
+        // ⭐ إذا كانت الصورة محذوفة، أرسل قيمة فارغة
+        formData.fields.add(MapEntry('image', ''));
+      }
+
+      // ⭐ معالجة الفيديو
+      if (videoFile != null) {
+        formData.files.add(
+          MapEntry(
+            'video',
+            await MultipartFile.fromFile(
+              videoFile.path,
+              filename: 'intro_video.mp4',
+            ),
+          ),
+        );
+      } else if (request.video == "") {
+        // ⭐ إذا كان الفيديو محذوفاً، أرسل قيمة فارغة
+        formData.fields.add(MapEntry('video', ''));
       }
 
       print('📤 Sending PATCH request to /advisor/editPersonalData');
-      print('📤 Text fields: $formDataMap');
-      print('📤 Has image file: ${imageFile != null}');
-      print('📤 Has video file: ${videoFile != null}');
-      print('📤 Remove video: $removeVideo');
+      print('📤 Has image to delete: ${request.image == ""}');
+      print('📤 Has video to delete: ${request.video == ""}');
 
-      // ⭐ إرسال الطلب باستخدام ApiService مع isFromData: true
       final response = await _apiService.patch(
         endPoint: '/advisor/editPersonalData',
-        data: formDataMap,
+        data: formData,
         isFromData: true,
         headers: {'Content-Type': 'multipart/form-data'},
       );

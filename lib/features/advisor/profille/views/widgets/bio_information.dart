@@ -46,11 +46,13 @@ class BioInformation extends StatelessWidget {
           image: '',
           username: '@username',
           aboutYou: 'وصف قصير عن المستخدم',
-          yearsOfExperience: 0,
+          yearsOfExperience: 'سنتين',
           followers: 0,
           following: 0,
           isVerified: false,
           location: '',
+          professionalSpecialization: null,
+          jobGrade: null,
         ),
       ),
     );
@@ -80,6 +82,10 @@ class BioInformation extends StatelessWidget {
   }
 
   Widget _buildBioContent(BuildContext context, ProfileModel profile) {
+    // ⭐ استخدام extension methods
+    final displaySpecialization = profile.displaySpecialization;
+    final displayYearsExperience = profile.displayYearsExperience;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
@@ -88,23 +94,22 @@ class BioInformation extends StatelessWidget {
           // Name with verification badge
           _buildNameSection(profile),
 
-          // Username
-          profile.username == ''
-              ? SizedBox()
-              : Text(
-                  profile.username,
-                  style: Styles.textStyle14.copyWith(color: AppColors.hintText),
-                ),
+          // Username - عرض فقط إذا كان موجوداً
+          if (profile.username.isNotEmpty) ...[
+            Text(
+              profile.username,
+              style: Styles.textStyle14.copyWith(color: AppColors.hintText),
+            ),
+            Gap(8.h),
+          ],
 
-          Gap(8.h),
+          // Professional info - عرض فقط إذا كان هناك بيانات
+          _buildProfessionalInfo(displaySpecialization, displayYearsExperience),
 
-          // Professional info
-          _buildProfessionalInfo(profile),
-
-          // Location
+          // Location - عرض فقط إذا كان موجوداً
           _buildLocation(profile),
 
-          // About you
+          // About you - عرض فقط إذا كان موجوداً
           _buildAboutYou(profile),
 
           // Consultation packages
@@ -127,40 +132,60 @@ class BioInformation extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (profile.isVerified)
-          Padding(
-            padding: EdgeInsets.only(left: 8.w),
-            child: Icon(
-              Icons.verified,
-              color: AppColors.kprimaryColor,
-              size: 20.w,
-            ),
-          ),
       ],
     );
   }
 
-  Widget _buildProfessionalInfo(ProfileModel profile) {
+  Widget _buildProfessionalInfo(
+    String? displaySpecialization,
+    String? displayYearsExperience,
+  ) {
+    final hasSpecialization =
+        displaySpecialization != null && displaySpecialization.isNotEmpty;
+    final hasYearsExperience =
+        displayYearsExperience != null && displayYearsExperience.isNotEmpty;
+
+    // ⭐ إذا لم يكن هناك بيانات، لا تعرض أي شيء
+    if (!hasSpecialization && !hasYearsExperience) {
+      return SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "التخصص غير معروف",
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
-        ),
-        Gap(4.h),
-        if (profile.yearsOfExperience > 0)
+        // ⭐ عرض التخصص إذا كان موجوداً
+        if (hasSpecialization)
           Text(
-            "${profile.yearsOfExperience} سنين من الخبرة",
+            displaySpecialization,
+            style: Styles.textStyle14.copyWith(
+              color: AppColors.secondary800,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+        // ⭐ المسافة بين التخصص وسنوات الخبرة
+        if (hasSpecialization && hasYearsExperience) Gap(4.h),
+
+        // ⭐ عرض سنوات الخبرة إذا كانت موجودة
+        if (hasYearsExperience)
+          Text(
+            '$displayYearsExperience من الخبرة',
             style: Styles.textStyle14Meduim.copyWith(
               color: AppColors.secondary800,
             ),
           ),
+
+        Gap(8.h),
       ],
     );
   }
 
   Widget _buildLocation(ProfileModel profile) {
+    final hasLocation =
+        profile.location != null && profile.location!.isNotEmpty;
+
+    if (!hasLocation) return SizedBox.shrink();
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4.h),
       child: Row(
@@ -169,7 +194,7 @@ class BioInformation extends StatelessWidget {
           Gap(4.w),
           Expanded(
             child: Text(
-              profile.location == '' ? 'غير محدد' : profile.location!,
+              profile.location!,
               style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
               overflow: TextOverflow.ellipsis,
             ),
@@ -180,15 +205,24 @@ class BioInformation extends StatelessWidget {
   }
 
   Widget _buildAboutYou(ProfileModel profile) {
+    final hasAboutYou = profile.aboutYou.isNotEmpty;
+
+    if (!hasAboutYou) return SizedBox.shrink();
+
     return Padding(
       padding: EdgeInsets.only(top: 8.h, bottom: 24.h),
-      child: Text(
-        profile.aboutYou.isNotEmpty ? profile.aboutYou : 'لا يوجد وصف للمستخدم',
-        style: Styles.textStyle14.copyWith(
-          color: AppColors.infoText,
-          height: 1.5,
-        ),
-        textAlign: TextAlign.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            profile.aboutYou,
+            style: Styles.textStyle14.copyWith(
+              color: AppColors.infoText,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.start,
+          ),
+        ],
       ),
     );
   }

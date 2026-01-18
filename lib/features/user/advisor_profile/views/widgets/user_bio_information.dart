@@ -67,12 +67,14 @@ class UserBioInformation extends StatelessWidget {
           image: '',
           username: '@username',
           aboutYou: 'وصف قصير عن المستخدم',
-          yearsOfExperience: 0,
+          yearsOfExperience: null,
           followers: 0,
           following: 0,
           isVerified: false,
           location: '',
           isMe: false,
+          professionalSpecialization: null,
+          jobGrade: null,
         ),
       ),
     );
@@ -102,6 +104,10 @@ class UserBioInformation extends StatelessWidget {
   }
 
   Widget _buildBioContent(BuildContext context, UserProfileModel profile) {
+    // ⭐ استخدام extension methods
+    final displaySpecialization = profile.displaySpecialization;
+    final displayYearsExperience = profile.displayYearsExperience;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
@@ -110,26 +116,26 @@ class UserBioInformation extends StatelessWidget {
           // Name with verification badge
           _buildNameSection(profile),
 
-          // Username
-          if (profile.username.isNotEmpty)
+          // Username - عرض فقط إذا كان موجوداً
+          if (profile.username.isNotEmpty) ...[
             Text(
               profile.username,
               style: Styles.textStyle14.copyWith(color: AppColors.hintText),
             ),
+            Gap(8.h),
+          ],
 
-          Gap(8.h),
+          // Professional info - عرض فقط إذا كان هناك بيانات
+          _buildProfessionalInfo(displaySpecialization, displayYearsExperience),
 
-          // Professional info
-          _buildProfessionalInfo(profile),
-
-          // Location
+          // Location - عرض فقط إذا كان موجوداً
           _buildLocation(profile),
 
-          // About you
+          // About you - عرض فقط إذا كان موجوداً
           _buildAboutYou(profile),
 
-          // Follow Button (only if not my profile)
-          if (!profile.isMe) _buildFollowButton(context, profile),
+          // ⭐ Follow Button (only if not my profile)
+          if (!profile.isMe) _buildFollowSection(context, profile),
         ],
       ),
     );
@@ -144,41 +150,65 @@ class UserBioInformation extends StatelessWidget {
           style: Styles.textStyle20SemiBold.copyWith(color: AppColors.blueText),
           overflow: TextOverflow.ellipsis,
         ),
-        AppImage(AssetsData.expertAdvisor, width: 24.w),
-        // if (profile.isVerified)
-        //   Padding(
-        //     padding: EdgeInsets.only(left: 8.w),
-        //     child: Icon(
-        //       Icons.verified,
-        //       color: AppColors.kprimaryColor,
-        //       size: 20.w,
-        //     ),
-        //   ),
-      ],
-    );
-  }
-
-  Widget _buildProfessionalInfo(UserProfileModel profile) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "التخصص غير معروف",
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
-        ),
-        Gap(4.h),
-        if (profile.yearsOfExperience > 0)
-          Text(
-            "${profile.yearsOfExperience} سنين من الخبرة",
-            style: Styles.textStyle14Meduim.copyWith(
-              color: AppColors.secondary800,
-            ),
+        if (profile.isVerified)
+          Padding(
+            padding: EdgeInsets.only(left: 8.w),
+            child: AppImage(AssetsData.expertAdvisor, width: 24.w),
           ),
       ],
     );
   }
 
+  Widget _buildProfessionalInfo(
+    String? displaySpecialization,
+    String? displayYearsExperience,
+  ) {
+    final hasSpecialization =
+        displaySpecialization != null && displaySpecialization.isNotEmpty;
+    final hasYearsExperience =
+        displayYearsExperience != null && displayYearsExperience.isNotEmpty;
+
+    // ⭐ إذا لم يكن هناك بيانات، لا تعرض أي شيء
+    if (!hasSpecialization && !hasYearsExperience) {
+      return SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ⭐ عرض التخصص إذا كان موجوداً
+        if (hasSpecialization)
+          Text(
+            displaySpecialization,
+            style: Styles.textStyle14.copyWith(
+              color: AppColors.secondary800,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+        // ⭐ المسافة بين التخصص وسنوات الخبرة
+        if (hasSpecialization && hasYearsExperience) Gap(4.h),
+
+        // ⭐ عرض سنوات الخبرة إذا كانت موجودة
+        if (hasYearsExperience)
+          Text(
+            '$displayYearsExperience من الخبرة',
+            style: Styles.textStyle14Meduim.copyWith(
+              color: AppColors.secondary800,
+            ),
+          ),
+
+        Gap(8.h),
+      ],
+    );
+  }
+
   Widget _buildLocation(UserProfileModel profile) {
+    final hasLocation =
+        profile.location != null && profile.location!.isNotEmpty;
+
+    if (!hasLocation) return SizedBox.shrink();
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4.h),
       child: Row(
@@ -187,9 +217,7 @@ class UserBioInformation extends StatelessWidget {
           Gap(4.w),
           Expanded(
             child: Text(
-              profile.location?.isEmpty ?? true
-                  ? 'غير محدد'
-                  : profile.location!,
+              profile.location!,
               style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
               overflow: TextOverflow.ellipsis,
             ),
@@ -200,20 +228,30 @@ class UserBioInformation extends StatelessWidget {
   }
 
   Widget _buildAboutYou(UserProfileModel profile) {
+    final hasAboutYou = profile.aboutYou.isNotEmpty;
+
+    if (!hasAboutYou) return SizedBox.shrink();
+
     return Padding(
       padding: EdgeInsets.only(top: 8.h, bottom: 24.h),
-      child: Text(
-        profile.aboutYou.isNotEmpty ? profile.aboutYou : 'لا يوجد وصف للمستخدم',
-        style: Styles.textStyle14.copyWith(
-          color: AppColors.infoText,
-          height: 1.5,
-        ),
-        textAlign: TextAlign.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            profile.aboutYou,
+            style: Styles.textStyle14.copyWith(
+              color: AppColors.infoText,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.start,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildFollowButton(BuildContext context, UserProfileModel profile) {
+  // ⭐ تحديث قسم المتابعة والرسائل
+  Widget _buildFollowSection(BuildContext context, UserProfileModel profile) {
     return BlocBuilder<UserProfileCubit, UserProfileState>(
       buildWhen: (previous, current) =>
           previous.profile?.isFollowing != current.profile?.isFollowing ||
@@ -226,6 +264,7 @@ class UserBioInformation extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 10.w),
           child: Row(
             children: [
+              // زر المتابعة
               Expanded(
                 child: CustomBotton(
                   height: 54.h,
@@ -246,16 +285,28 @@ class UserBioInformation extends StatelessWidget {
                   elevation: 0,
                 ),
               ),
+
               Gap(13.w),
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 13.h, horizontal: 16.w),
-                decoration: BoxDecoration(
-                  color: AppColors.primary100,
-                  borderRadius: BorderRadius.circular(10.r),
-                  border: Border.all(color: AppColors.primary500),
+
+              // زر المحادثة (يظهر فقط إذا كان المستخدم يتابع أو كان صديقاً)
+              if (isFollowing) // ⭐ يظهر فقط إذا كان يتابع
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 13.h,
+                    horizontal: 16.w,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary100,
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(color: AppColors.primary500),
+                  ),
+                  child: GestureDetector(
+                    onTap: () {
+                      // TODO: افتح شات مع المستخدم
+                    },
+                    child: AppImage(AssetsData.chatIconSVG, width: 22.w),
+                  ),
                 ),
-                child: AppImage(AssetsData.chatIconSVG, width: 22.w),
-              ),
             ],
           ),
         );

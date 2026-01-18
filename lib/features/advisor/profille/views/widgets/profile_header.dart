@@ -162,30 +162,6 @@ class ProfileHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (isVerified)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    child: Container(
-                      width: 24.w,
-                      height: 24.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.kWhiteColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.kprimaryColor,
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.verified,
-                          color: AppColors.kprimaryColor,
-                          size: 14.w,
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),

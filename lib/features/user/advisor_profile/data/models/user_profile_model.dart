@@ -1,4 +1,4 @@
-// features/advisor/user_profile/data/models/user_profile_model.dart
+// features/user/advisor_profile/data/models/user_profile_model.dart
 import 'package:equatable/equatable.dart';
 
 class UserProfileModel extends Equatable {
@@ -6,7 +6,7 @@ class UserProfileModel extends Equatable {
   final String image;
   final String username;
   final String aboutYou;
-  final int yearsOfExperience;
+  final String? yearsOfExperience; // ⭐ تغيير إلى String
   final int followers;
   final int following;
   final bool isVerified;
@@ -14,13 +14,15 @@ class UserProfileModel extends Equatable {
   final String? videoLink;
   final bool isMe;
   final bool isFollowing;
+  final String? professionalSpecialization; // ⭐ إضافة
+  final String? jobGrade; // ⭐ إضافة
 
   const UserProfileModel({
     required this.name,
     required this.image,
     required this.username,
     required this.aboutYou,
-    required this.yearsOfExperience,
+    this.yearsOfExperience, // ⭐ String
     required this.followers,
     required this.following,
     required this.isVerified,
@@ -28,6 +30,8 @@ class UserProfileModel extends Equatable {
     this.videoLink,
     required this.isMe,
     this.isFollowing = false,
+    this.professionalSpecialization, // ⭐
+    this.jobGrade, // ⭐
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -36,14 +40,18 @@ class UserProfileModel extends Equatable {
       image: json['image'] ?? '',
       username: json['username'] ?? '',
       aboutYou: json['aboutYou'] ?? '',
-      yearsOfExperience: json['yearsOfExperience'] ?? 0,
+      yearsOfExperience: json['yearsOfExperience']?.toString(), // ⭐ String
       followers: json['followers'] ?? 0,
       following: json['following'] ?? 0,
       isVerified: json['isVerified'] ?? false,
       location: json['location'],
       videoLink: json['videoLink'],
       isMe: json['isMe'] ?? false,
-      isFollowing: json['isFollowing'] ?? false,
+      isFollowing: json['isFollowing'] ?? json['isFollowed'] ?? false,
+      professionalSpecialization:
+          json['professionalSpecialization']?.toString() ??
+          json['ProfessionalSpecialization']?.toString(),
+      jobGrade: json['jobGrade']?.toString() ?? json['JobGrade']?.toString(),
     );
   }
 
@@ -60,6 +68,8 @@ class UserProfileModel extends Equatable {
     'videoLink': videoLink,
     'isMe': isMe,
     'isFollowing': isFollowing,
+    'professionalSpecialization': professionalSpecialization,
+    'jobGrade': jobGrade,
   };
 
   UserProfileModel copyWith({
@@ -67,7 +77,7 @@ class UserProfileModel extends Equatable {
     String? image,
     String? username,
     String? aboutYou,
-    int? yearsOfExperience,
+    String? yearsOfExperience,
     int? followers,
     int? following,
     bool? isVerified,
@@ -75,6 +85,8 @@ class UserProfileModel extends Equatable {
     String? videoLink,
     bool? isMe,
     bool? isFollowing,
+    String? professionalSpecialization,
+    String? jobGrade,
   }) {
     return UserProfileModel(
       name: name ?? this.name,
@@ -89,6 +101,9 @@ class UserProfileModel extends Equatable {
       videoLink: videoLink ?? this.videoLink,
       isMe: isMe ?? this.isMe,
       isFollowing: isFollowing ?? this.isFollowing,
+      professionalSpecialization:
+          professionalSpecialization ?? this.professionalSpecialization,
+      jobGrade: jobGrade ?? this.jobGrade,
     );
   }
 
@@ -106,5 +121,64 @@ class UserProfileModel extends Equatable {
     videoLink,
     isMe,
     isFollowing,
+    professionalSpecialization,
+    jobGrade,
   ];
+}
+
+// ⭐ إضافة Extension للتحويل
+extension UserProfileModelExtension on UserProfileModel {
+  // خريطة تحويل التخصصات
+  static const Map<String, String> _specializationMapping = {
+    "doctor": "طبيب نفسي",
+    "psychology": "استشاري نفسي وعلاقات زوجية",
+    "psychiatrist": "طبيب نفسي",
+    "psychologist": "أخصائي نفسي",
+    "life_coach": "مدرب حياة",
+    "family_counselor": "مستشار أسري",
+  };
+
+  // خريطة تحويل المناصب
+  static const Map<String, String> _jobGradeMapping = {
+    "advisor": "استشاري",
+    "junior": "أخصائي",
+    "trainer": "مدرب",
+    "lecturer": "محاضر",
+  };
+
+  // الحصول على التخصص للعرض
+  String? get displaySpecialization {
+    if (professionalSpecialization == null ||
+        professionalSpecialization!.isEmpty) {
+      return null;
+    }
+
+    return _specializationMapping[professionalSpecialization] ??
+        professionalSpecialization;
+  }
+
+  // الحصول على المنصب للعرض
+  String? get displayJobGrade {
+    if (jobGrade == null || jobGrade!.isEmpty) {
+      return null;
+    }
+
+    return _jobGradeMapping[jobGrade] ?? jobGrade;
+  }
+
+  // تنظيف نص سنوات الخبرة
+  String? get displayYearsExperience {
+    if (yearsOfExperience == null || yearsOfExperience!.isEmpty) {
+      return null;
+    }
+
+    return yearsOfExperience!.replaceAll(" من الخبرة", "");
+  }
+
+  // التحقق مما إذا كان هناك بيانات للعرض
+  bool get hasProfessionalInfo {
+    return (displaySpecialization != null &&
+            displaySpecialization!.isNotEmpty) ||
+        (displayYearsExperience != null && displayYearsExperience!.isNotEmpty);
+  }
 }

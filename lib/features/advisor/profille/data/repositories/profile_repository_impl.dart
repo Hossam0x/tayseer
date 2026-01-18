@@ -1,4 +1,3 @@
-// features/advisor/profile/data/repositories/profile_repository_impl.dart
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/my_import.dart';
@@ -17,7 +16,25 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
-        final profile = ProfileModel.fromJson(data);
+
+        // تنظيف نص سنوات الخبرة
+        String? yearsExpString = data['yearsOfExperience']?.toString();
+        if (yearsExpString != null && yearsExpString.isNotEmpty) {
+          yearsExpString = yearsExpString.replaceAll(" من الخبرة", "");
+        }
+
+        // إنشاء بيانات البروفايل مع الحقول الجديدة
+        final profileData = Map<String, dynamic>.from(data);
+        profileData['yearsOfExperience'] = yearsExpString;
+
+        // ⭐ تأكد من وجود الحقول الجديدة في الـ Response
+        profileData['professionalSpecialization'] =
+            data['ProfessionalSpecialization'] ??
+            data['professionalSpecialization'];
+
+        profileData['jobGrade'] = data['JobGrade'] ?? data['jobGrade'];
+
+        final profile = ProfileModel.fromJson(profileData);
         return Right(profile);
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل جلب البروفايل'));

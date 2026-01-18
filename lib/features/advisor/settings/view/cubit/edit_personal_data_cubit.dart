@@ -28,9 +28,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
           );
         },
         (profile) {
-          // تحويل سنوات الخبرة الرقمية إلى نصية للعرض
           final yearsExp = profile.yearsOfExperience;
-          String? yearsExpString = yearsExp;
 
           final initialRequest = UpdatePersonalDataRequest(
             name: profile.name,
@@ -38,7 +36,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
             gender: profile.gender,
             professionalSpecialization: profile.professionalSpecialization,
             jobGrade: profile.jobGrade,
-            yearsOfExperience: yearsExpString,
+            yearsOfExperience: yearsExp,
             aboutYou: profile.aboutYou,
             image: profile.image,
             video: profile.video,
@@ -106,6 +104,16 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
     }
   }
 
+  void updateUsername(String username) {
+    if (username != state.currentData.username) {
+      emit(
+        state.copyWith(
+          currentData: state.currentData.copyWith(username: username),
+        ),
+      );
+    }
+  }
+
   void updateBio(String bio) {
     if (bio != state.currentData.aboutYou) {
       emit(
@@ -136,12 +144,27 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
     }
   }
 
+  // في الكوبيت
   void removeImage() {
-    emit(state.copyWith(imageFile: null, imagePreviewUrl: null));
+    emit(
+      state.copyWith(
+        imageFile: null,
+        imagePreviewUrl: null,
+        // ⭐ إضافة flag للحذف
+        currentData: state.currentData.copyWith(image: ""),
+      ),
+    );
   }
 
   void removeVideo() {
-    emit(state.copyWith(videoFile: null, videoPreviewUrl: null));
+    emit(
+      state.copyWith(
+        videoFile: null,
+        videoPreviewUrl: null,
+        // ⭐ إضافة flag للحذف
+        currentData: state.currentData.copyWith(video: ""),
+      ),
+    );
   }
 
   Future<void> saveChanges(BuildContext context) async {
@@ -149,26 +172,10 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
 
     emit(state.copyWith(isSaving: true, errorMessage: null));
 
-    String? cleanedYearsOfExperience;
-
-    if (state.currentData.yearsOfExperience != null) {
-      final exp = state.currentData.yearsOfExperience!.trim();
-
-      // استخراج الرقم فقط (طرق مختلفة حسب النمط)
-      if (exp.contains("أكثر من")) {
-        cleanedYearsOfExperience = "11";
-      } else {
-        // نأخذ أول مجموعة أرقام
-        final match = RegExp(r'(\d+)').firstMatch(exp);
-        cleanedYearsOfExperience = match?.group(1);
-      }
-    }
-
-    final requestToSend = state.currentData.copyWith(
-      yearsOfExperience: cleanedYearsOfExperience,
-    );
-
     try {
+      // ⭐ إرسال البيانات كما هي بدون تنظيف
+      final requestToSend = state.currentData;
+
       final result = await _repository.updatePersonalData(
         request: requestToSend,
         imageFile: state.imageFile,
@@ -188,7 +195,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                 state.profile!.professionalSpecialization,
             jobGrade: state.currentData.jobGrade ?? state.profile!.jobGrade,
             yearsOfExperience:
-                state.currentData.yearsOfExperience ??
+                state.currentData.yearsOfExperience ?? // ⭐ String
                 state.profile!.yearsOfExperience,
             aboutYou: state.currentData.aboutYou ?? state.profile!.aboutYou,
             image: response.data?['image'] ?? state.profile!.image,

@@ -18,10 +18,42 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   late TextEditingController _idController;
   late TextEditingController _bioController;
 
-  String? _selectedPosition;
-  String? _selectedSpecialization;
+  // ⭐ خرائط تحويل للتخصصات
+  final Map<String, String> _specializationMapping = {
+    "doctor": "طبيب نفسي",
+    "psychology": "استشاري نفسي وعلاقات زوجية",
+    "psychiatrist": "طبيب نفسي",
+    "psychologist": "أخصائي نفسي",
+    "life_coach": "مدرب حياة",
+    "family_counselor": "مستشار أسري",
+  };
+
+  // ⭐ خرائط تحويل للمناصب
+  final Map<String, String> _positionMapping = {
+    "advisor": "استشاري",
+    "junior": "أخصائي",
+    "trainer": "مدرب",
+    "lecturer": "محاضر",
+  };
+
+  // ⭐ خرائط تحويل لسنوات الخبرة
+  final Map<String, String> _experienceMapping = {
+    "2": "سنتين",
+    "3": "3 سنوات",
+    "5": "5 سنوات",
+    "10": "10 سنوات",
+    "11": "أكثر من 10 سنوات",
+  };
 
   final List<String> _positions = ["استشاري", "أخصائي", "مدرب", "محاضر"];
+  final List<String> _specializations = [
+    "استشاري نفسي وعلاقات زوجية",
+    "طبيب نفسي",
+    "أخصائي نفسي",
+    "مدرب حياة",
+    "مستشار أسري",
+  ];
+
   final List<Map<String, String>> _experienceOptions = [
     {"display": "سنتين", "value": "2"},
     {"display": "3 سنوات", "value": "3"},
@@ -30,15 +62,77 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     {"display": "أكثر من 10 سنوات", "value": "11"},
   ];
 
+  String? _selectedPosition;
+  String? _selectedSpecialization;
   String? _selectedExperienceDisplay;
   String? _selectedExperienceValue;
-  final List<String> _specializations = [
-    "استشاري نفسي وعلاقات زوجية",
-    "طبيب نفسي",
-    "أخصائي نفسي",
-    "مدرب حياة",
-    "مستشار أسري",
-  ];
+
+  // ⭐ دالة لتحويل القيمة من الباكند إلى قيمة للعرض
+  String? _mapFromBackend(String? backendValue, Map<String, String> mapping) {
+    if (backendValue == null) return null;
+
+    // أولاً: تحقق إذا كانت القيمة موجودة مباشرة في الـ mapping
+    if (mapping.containsKey(backendValue)) {
+      return mapping[backendValue];
+    }
+
+    // ثانياً: تحقق إذا كانت القيمة موجودة في القيم (العكس)
+    final matchingKey = mapping.entries
+        .firstWhere(
+          (entry) => entry.value == backendValue,
+          orElse: () => MapEntry("", ""),
+        )
+        .key;
+
+    return matchingKey.isNotEmpty ? mapping[matchingKey] : backendValue;
+  }
+
+  // ⭐ دالة لتحويل القيمة من الواجهة إلى قيمة للباكند
+  String? _mapToBackend(String? displayValue, Map<String, String> mapping) {
+    if (displayValue == null) return null;
+
+    // ابحث عن الـ key الذي يحتوي على الـ value
+    final matchingEntry = mapping.entries.firstWhere(
+      (entry) => entry.value == displayValue,
+      orElse: () => MapEntry("", ""),
+    );
+
+    return matchingEntry.key.isEmpty ? displayValue : matchingEntry.key;
+  }
+
+  // ⭐ دالة خاصة لسنوات الخبرة (بسبب الـ " من الخبرة")
+  String? _normalizeExperienceFromBackend(String? backendValue) {
+    if (backendValue == null) return null;
+
+    // تحويل "10 سنوات من الخبرة" → "10 سنوات"
+    final normalized = backendValue.replaceAll(" من الخبرة", "");
+
+    // تحقق في الـ mapping
+    if (_experienceMapping.values.contains(normalized)) {
+      return normalized;
+    }
+
+    // إذا كانت تحتوي على رقم، حاول إيجاد أقرب تطابق
+    final match = RegExp(r'(\d+)').firstMatch(backendValue);
+    if (match != null) {
+      final years = match.group(1);
+      return _experienceMapping[years] ?? backendValue;
+    }
+
+    return backendValue;
+  }
+
+  // ⭐ دالة لاستخراج القيمة الرقمية من نص الخبرة
+  String _getValueFromExperience(String displayValue) {
+    if (displayValue.contains("سنتين")) return "2";
+    if (displayValue.contains("3 سنوات")) return "3";
+    if (displayValue.contains("5 سنوات")) return "5";
+    if (displayValue.contains("10 سنوات")) return "10";
+    if (displayValue.contains("أكثر من")) return "11";
+
+    final match = RegExp(r'(\d+)').firstMatch(displayValue);
+    return match?.group(1) ?? displayValue;
+  }
 
   VideoPlayerController? _videoPlayerController;
   ChewieController? _chewieController;
@@ -219,9 +313,25 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _idController.text = state.profile!.userName;
     _bioController.text = state.profile!.aboutYou ?? '';
 
-    _selectedPosition = state.currentData.jobGrade;
-    _selectedExperienceDisplay = state.currentData.yearsOfExperience;
-    _selectedSpecialization = state.currentData.professionalSpecialization;
+    // ⭐ تحويل القيم من الباكند إلى قيم للعرض
+    _selectedPosition = _mapFromBackend(
+      state.currentData.jobGrade,
+      _positionMapping,
+    );
+
+    _selectedSpecialization = _mapFromBackend(
+      state.currentData.professionalSpecialization,
+      _specializationMapping,
+    );
+
+    // ⭐ معالجة سنوات الخبرة بشكل خاص
+    final yearsExp = state.currentData.yearsOfExperience;
+    if (yearsExp != null && yearsExp.isNotEmpty) {
+      _selectedExperienceDisplay = _normalizeExperienceFromBackend(yearsExp);
+      _selectedExperienceValue = _getValueFromExperience(
+        _selectedExperienceDisplay!,
+      );
+    }
 
     _controllersInitialized = true;
 
@@ -354,82 +464,28 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           hint: 'أدخل اسمك',
                                         ),
                                         Gap(11.h),
-
-                                        // حقل المعرف
+                                        Gap(11.h),
                                         ProfileTextField(
-                                          controller: _idController,
-                                          onChanged: (value) {},
-                                          hint: 'المعرف',
-                                          enabled: false,
+                                          controller: TextEditingController(
+                                            text: state.profile?.userName ?? '',
+                                          ),
+                                          onChanged: (value) =>
+                                              cubit.updateUsername(value),
+                                          hint: 'اسم المستخدم',
                                         ),
                                         Gap(11.h),
 
                                         // Dropdown للتخصص
-                                        _buildDropdown(
-                                          value: _selectedSpecialization,
-                                          items: _specializations,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              _selectedSpecialization = value;
-                                            });
-                                            if (value != null) {
-                                              cubit.updateSpecialization(value);
-                                            }
-                                          },
-                                          hint: 'اختر التخصص',
-                                        ),
+                                        _buildSpecializationDropdown(cubit),
                                         Gap(11.h),
 
                                         // Dropdown للمنصب
-                                        _buildDropdown(
-                                          value: _selectedPosition,
-                                          items: _positions,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              _selectedPosition = value;
-                                            });
-                                            if (value != null) {
-                                              cubit.updatePosition(value);
-                                            }
-                                          },
-                                          hint: 'اختر المنصب',
-                                        ),
+                                        _buildPositionDropdown(cubit),
                                         Gap(11.h),
 
-                                        _buildDropdown(
-                                          value: _selectedExperienceDisplay,
-                                          items: _experienceOptions
-                                              .map((e) => e["display"]!)
-                                              .toList(),
-                                          onChanged: (displayValue) {
-                                            setState(() {
-                                              _selectedExperienceDisplay =
-                                                  displayValue;
-                                              final selected =
-                                                  _experienceOptions.firstWhere(
-                                                    (e) =>
-                                                        e["display"] ==
-                                                        displayValue,
-                                                    orElse: () => {"value": ""},
-                                                  );
-                                              _selectedExperienceValue =
-                                                  selected["value"];
-                                            });
-
-                                            // أرسل القيمة الرقمية للـ cubit
-                                            if (_selectedExperienceValue !=
-                                                    null &&
-                                                _selectedExperienceValue!
-                                                    .isNotEmpty) {
-                                              cubit.updateExperience(
-                                                _selectedExperienceValue!,
-                                              );
-                                            }
-                                          },
-                                          hint: 'اختر سنوات الخبرة',
-                                        ),
+                                        // Dropdown للخبرة
+                                        _buildExperienceDropdown(cubit),
                                         Gap(11.h),
-
                                         // حقل السيرة الذاتية باستخدام ProfileTextField
                                         ProfileTextField(
                                           controller: _bioController,
@@ -573,6 +629,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   ) {
     final imageUrl = state.imagePreviewUrl;
     final imageFile = state.imageFile;
+    // ⭐ تحقق إذا كانت الصورة محذوفة
+    final isImageDeleted = state.currentData.image == "";
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -586,7 +644,9 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 color: AppColors.hintText,
                 borderRadius: BorderRadius.circular(32.r),
               ),
-              child: imageFile != null
+              child: isImageDeleted
+                  ? _buildDefaultAvatar() // ⭐ عرض الصورة الافتراضية إذا تم الحذف
+                  : imageFile != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(32.r),
                       child: Image.file(
@@ -620,7 +680,9 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 child: AppImage(AssetsData.addCertificateImage, width: 30.w),
               ),
             ),
-            if (imageFile != null || (imageUrl != null && imageUrl.isNotEmpty))
+            if (!isImageDeleted &&
+                (imageFile != null ||
+                    (imageUrl != null && imageUrl.isNotEmpty)))
               Positioned(
                 top: 10,
                 right: 10,
@@ -663,8 +725,16 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
     required String hint,
+    bool isExperience = false, // ⭐ إضافة باراميتر للتمييز
   }) {
     final bool isTablet = MediaQuery.of(context).size.width > 600;
+
+    // ⭐ إذا كان dropdown الخبرة وكانت القيمة غير موجودة، نضيفها مؤقتاً
+    List<String> effectiveItems = List.from(items);
+    if (isExperience && value != null && !effectiveItems.contains(value)) {
+      effectiveItems = [value, ...effectiveItems];
+    }
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: 10.w,
@@ -693,7 +763,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             textAlign: TextAlign.right,
           ),
           onChanged: onChanged,
-          items: items.map<DropdownMenuItem<String>>((String item) {
+          items: effectiveItems.map<DropdownMenuItem<String>>((String item) {
             return DropdownMenuItem<String>(
               value: item,
               child: Text(item, textAlign: TextAlign.right),
@@ -711,9 +781,12 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   ) {
     final videoFile = state.videoFile;
     final videoPreviewUrl = state.videoPreviewUrl;
+    // ⭐ تحقق إذا كان الفيديو محذوفاً
+    final isVideoDeleted = state.currentData.video == "";
     final hasVideo =
-        videoFile != null ||
-        (videoPreviewUrl != null && videoPreviewUrl.isNotEmpty);
+        !isVideoDeleted &&
+        (videoFile != null ||
+            (videoPreviewUrl != null && videoPreviewUrl.isNotEmpty));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -836,9 +909,13 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                   ),
                   Gap(12.h),
                   Text(
-                    'اضغط لرفع فيديو التعريف',
+                    isVideoDeleted
+                        ? 'تم حذف الفيديو (اضغط لإضافة فيديو جديد)'
+                        : 'اضغط لرفع فيديو التعريف',
                     style: Styles.textStyle16.copyWith(
-                      color: AppColors.secondary600,
+                      color: isVideoDeleted
+                          ? AppColors.kRedColor
+                          : AppColors.secondary600,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -852,6 +929,71 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
         ),
       ],
+    );
+  }
+
+  // ⭐ دالة منفصلة لكل dropdown
+  Widget _buildSpecializationDropdown(EditPersonalDataCubit cubit) {
+    return _buildDropdown(
+      value: _selectedSpecialization,
+      items: _specializations,
+      onChanged: (displayValue) {
+        setState(() {
+          _selectedSpecialization = displayValue;
+        });
+        if (displayValue != null) {
+          // تحويل القيمة للباكند
+          final backendValue = _mapToBackend(
+            displayValue,
+            _specializationMapping,
+          );
+          cubit.updateSpecialization(backendValue ?? displayValue);
+        }
+      },
+      hint: 'اختر التخصص',
+    );
+  }
+
+  Widget _buildPositionDropdown(EditPersonalDataCubit cubit) {
+    return _buildDropdown(
+      value: _selectedPosition,
+      items: _positions,
+      onChanged: (displayValue) {
+        setState(() {
+          _selectedPosition = displayValue;
+        });
+        if (displayValue != null) {
+          // تحويل القيمة للباكند
+          final backendValue = _mapToBackend(displayValue, _positionMapping);
+          cubit.updatePosition(backendValue ?? displayValue);
+        }
+      },
+      hint: 'اختر المنصب',
+    );
+  }
+
+  Widget _buildExperienceDropdown(EditPersonalDataCubit cubit) {
+    return _buildDropdown(
+      value: _selectedExperienceDisplay,
+      items: _experienceOptions.map((e) => e["display"]!).toList(),
+      onChanged: (displayValue) {
+        setState(() {
+          _selectedExperienceDisplay = displayValue;
+          final selected = _experienceOptions.firstWhere(
+            (e) => e["display"] == displayValue,
+            orElse: () => {
+              "value": _getValueFromExperience(displayValue ?? ""),
+            },
+          );
+          _selectedExperienceValue = selected["value"];
+        });
+
+        if (_selectedExperienceValue != null &&
+            _selectedExperienceValue!.isNotEmpty) {
+          cubit.updateExperience(_selectedExperienceValue!);
+        }
+      },
+      hint: 'اختر سنوات الخبرة',
     );
   }
 }
