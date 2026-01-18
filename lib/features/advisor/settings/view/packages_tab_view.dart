@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/package_card.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/subscriprion_card.dart'
@@ -43,31 +44,9 @@ class PackagesTabView extends StatelessWidget {
                     ),
 
                     // Tab Bar Container
-                    Container(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: 40.w,
-                        vertical: 10.h,
-                      ),
-                      padding: EdgeInsets.all(2.5.w),
-                      decoration: BoxDecoration(
-                        color: AppColors.tabsBack,
-                        borderRadius: BorderRadius.circular(15.r),
-                        border: Border.all(color: AppColors.primary100),
-                      ),
-                      child: TabBar(
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        dividerColor: Colors.transparent,
-                        indicator: BoxDecoration(
-                          color: AppColors.primary300,
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        labelColor: AppColors.secondary950,
-                        unselectedLabelColor: AppColors.blackColor,
-                        tabs: const [
-                          Tab(text: 'الباقات'),
-                          Tab(text: 'الاشتراكات'),
-                        ],
-                      ),
+                    const CustomToggleTabBar(
+                      firstTabText: 'الباقات',
+                      secondTabText: 'الاشتراكات',
                     ),
 
                     Expanded(
@@ -155,9 +134,9 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
         children: [
           // Selection Bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
+            padding: EdgeInsets.symmetric(horizontal: 30.w),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 23, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 23.w, vertical: 8.h),
               decoration: BoxDecoration(
                 color: AppColors.secondary950,
                 borderRadius: BorderRadius.circular(30),
@@ -174,6 +153,7 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
                   Icon(
                     Icons.keyboard_arrow_down,
                     color: AppColors.secondary300,
+                    size: 24.h,
                   ),
                 ],
               ),
@@ -183,7 +163,7 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
 
           Expanded(
             child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 6.h),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
               children: [...currentPackages],
             ),
           ),
@@ -355,18 +335,20 @@ class _SubscriptionsTabContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-      children: const [
+      children: [
         SubscriptionCard(
           title: 'باقة شاملة اولي',
           dateStart: '12/10/2020',
           dateEnd: '13/11/2020',
           isExpiring: true,
         ),
+        Gap(10.h),
         SubscriptionCard(
           title: 'باقة شاملة اولي',
           dateStart: '12/10/2020',
           dateEnd: '13/11/2020',
         ),
+        Gap(10.h),
         SubscriptionCard(
           title: 'باقة شاملة اولي',
           dateStart: '12/10/2020',

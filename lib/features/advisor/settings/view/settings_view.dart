@@ -170,7 +170,12 @@ class SettingsView extends StatelessWidget {
           highlightColor: isNotificationsItem ? Colors.transparent : null,
           child: Container(
             padding: isNotificationsItem
-                ? EdgeInsets.only(top: 12.h, bottom: 12.h, right: 12.w)
+                ? EdgeInsets.only(
+                    top: 12.h,
+                    bottom: 12.h,
+                    right: 12.w,
+                    left: 8.w,
+                  )
                 : EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16.r),
@@ -207,13 +212,23 @@ class SettingsView extends StatelessWidget {
                     child: Transform.scale(
                       scaleX: -1,
                       scaleY: 1,
-                      child: CupertinoSwitch(
-                        value: setting.switchValue,
-                        activeColor: const Color(0xFFF06C88),
-                        trackColor: AppColors.dropDownArrow,
-                        onChanged: (value) {
-                          final cubit = context.read<SettingsCubit>();
-                          cubit.updateSwitch(setting.id, value, context);
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final screenWidth = MediaQuery.of(context).size.width;
+                          final scaleFactor = screenWidth > 600 ? 1.5 : 1.0;
+
+                          return Transform.scale(
+                            scale: scaleFactor,
+                            child: CupertinoSwitch(
+                              value: setting.switchValue,
+                              activeColor: const Color(0xFFF06C88),
+                              trackColor: AppColors.dropDownArrow,
+                              onChanged: (value) {
+                                final cubit = context.read<SettingsCubit>();
+                                cubit.updateSwitch(setting.id, value, context);
+                              },
+                            ),
+                          );
                         },
                       ),
                     ),

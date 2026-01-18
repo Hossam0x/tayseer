@@ -69,21 +69,36 @@ class ArchiveView extends StatelessWidget {
                             borderRadius: BorderRadius.circular(15.r),
                             border: Border.all(color: AppColors.primary100),
                           ),
-                          child: TabBar(
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            dividerColor: Colors.transparent,
-                            indicator: BoxDecoration(
-                              color: AppColors.primary300,
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            labelColor: AppColors.secondary950,
-                            unselectedLabelColor: AppColors.blackColor,
-                            labelStyle: Styles.textStyle14SemiBold,
-                            tabs: const [
-                              Tab(text: 'المحادثات'),
-                              Tab(text: 'المنشورات'),
-                              Tab(text: 'القصص'),
-                            ],
+                          child: Builder(
+                            builder: (context) {
+                              final bool isTablet =
+                                  MediaQuery.of(context).size.width > 600;
+                              return TabBar(
+                                indicatorSize: TabBarIndicatorSize.tab,
+                                dividerColor: Colors.transparent,
+                                indicator: BoxDecoration(
+                                  color: AppColors.primary300,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                                labelStyle: isTablet
+                                    ? Styles.textStyle16
+                                    : Styles.textStyle20,
+                                labelPadding: isTablet
+                                    ? EdgeInsets.symmetric(
+                                        horizontal: 24.w,
+                                        vertical: 12.h,
+                                      )
+                                    : EdgeInsets.zero,
+                                labelColor: AppColors.secondary950,
+                                unselectedLabelColor: AppColors.blackColor,
+                                unselectedLabelStyle: Styles.textStyle16,
+                                tabs: const [
+                                  Tab(text: 'المحادثات'),
+                                  Tab(text: 'المنشورات'),
+                                  Tab(text: 'القصص'),
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ),

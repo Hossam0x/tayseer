@@ -72,6 +72,8 @@ class _HelpSupportViewState extends State<HelpSupportView> {
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16.w),
                             child: CustomBotton(
+                              height: 54.h,
+                              width: double.infinity,
                               title: 'إرسال',
                               useGradient: true,
                               onPressed: () {
@@ -155,6 +157,7 @@ class _HelpSupportViewState extends State<HelpSupportView> {
                     child: Icon(
                       Icons.keyboard_arrow_down,
                       color: AppColors.dropDownArrow,
+                      size: 24.w,
                     ),
                   ),
 

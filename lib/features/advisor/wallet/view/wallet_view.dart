@@ -34,7 +34,10 @@ class WalletView extends StatelessWidget {
                   child: Column(
                     children: [
                       Gap(16.h),
-                      SimpleAppBar(title: 'محفظتى'),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.h),
+                        child: SimpleAppBar(title: 'محفظتى'),
+                      ),
                       SizedBox(height: 20.h),
                       const CustomToggleTabBar(
                         firstTabText: 'محفظتي',
@@ -125,6 +128,8 @@ class WalletView extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 40.w),
             child: CustomBotton(
+              height: 54.h,
+              width: double.infinity,
               title: 'سحب',
               onPressed: () {
                 Navigator.pushNamed(context, AppRouter.kWithdrawalView);

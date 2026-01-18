@@ -1,5 +1,4 @@
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/tabs/inquiries_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
 import 'package:tayseer/features/user/advisor_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/advisor_profile/views/widgets/user_posts_tab.dart';
@@ -17,7 +16,7 @@ class _UserProfileTabsSectionState extends State<UserProfileTabsSection>
   late TabController _tabController;
 
   final List<String> _tabs = [
-    "الاستفسارات",
+    // "الاستفسارات",
     "المنشورات",
     "الشهادات",
     "التقييمات",
@@ -45,18 +44,17 @@ class _UserProfileTabsSectionState extends State<UserProfileTabsSection>
 
   void _refreshCurrentTab(int index) {
     switch (index) {
+      // case 0:
+      //   print("Refresh الاستفسارات");
+      //   break;
       case 0:
-        // TODO: refresh للاستفسارات إذا كان عندك cubit خاص بها
-        print("Refresh الاستفسارات");
-        break;
-      case 1:
         context.read<UserProfileCubit>().fetchPosts();
         break;
-      case 2:
+      case 1:
         // Refresh للشهادات
         setState(() {});
         break;
-      case 3:
+      case 2:
         // Refresh للتقييمات
         setState(() {});
         break;
@@ -115,18 +113,18 @@ class _UserProfileTabsSectionState extends State<UserProfileTabsSection>
 
   Widget _buildTabContent() {
     switch (_tabController.index) {
+      // case 0:
+      //   return InquiryTab();
       case 0:
-        return InquiryTab();
-      case 1:
         return const UserPostsTab();
-      case 2:
+      case 1:
         // 🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
         return ProfileCertificatesSection(
           key: ValueKey(
             'certificates_${DateTime.now().millisecondsSinceEpoch}',
           ),
         );
-      case 3:
+      case 2:
         // 🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
         return RatingsTab(
           key: ValueKey('ratings_${DateTime.now().millisecondsSinceEpoch}'),

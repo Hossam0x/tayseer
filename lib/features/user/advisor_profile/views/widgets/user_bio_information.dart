@@ -228,6 +228,8 @@ class UserBioInformation extends StatelessWidget {
             children: [
               Expanded(
                 child: CustomBotton(
+                  height: 54.h,
+                  width: double.infinity,
                   title: isFollowing ? 'متابَع' : 'متابعة',
                   onPressed: isLoading
                       ? null
@@ -238,7 +240,6 @@ class UserBioInformation extends StatelessWidget {
                   titleColor: isFollowing
                       ? AppColors.kprimaryColor
                       : AppColors.kWhiteColor,
-                  width: double.infinity,
                   radius: 10.r,
                   useGradient: isFollowing ? false : true,
                   isLoading: isLoading,
@@ -247,13 +248,13 @@ class UserBioInformation extends StatelessWidget {
               ),
               Gap(13.w),
               Container(
-                padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+                padding: EdgeInsets.symmetric(vertical: 13.h, horizontal: 16.w),
                 decoration: BoxDecoration(
                   color: AppColors.primary100,
                   borderRadius: BorderRadius.circular(10.r),
                   border: Border.all(color: AppColors.primary500),
                 ),
-                child: AppImage(AssetsData.chatIconSVG),
+                child: AppImage(AssetsData.chatIconSVG, width: 22.w),
               ),
             ],
           ),

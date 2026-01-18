@@ -182,6 +182,8 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 30.w),
                 child: CustomBotton(
+                  height: 54.h,
+                  width: double.infinity,
                   title: 'تأكيد',
                   useGradient: true,
                   onPressed: _saveLanguage,

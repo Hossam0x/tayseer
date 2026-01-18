@@ -77,19 +77,15 @@ class SnackBarService {
     return SnackBar(
       behavior: SnackBarBehavior.floating,
       elevation: 8,
-      margin: const EdgeInsets.only(bottom: 40, right: 20, left: 20),
+      margin: EdgeInsets.only(bottom: 40.h, right: 20.w, left: 20.w),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       duration: duration,
       backgroundColor: backgroundColor,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
       content: Text(
         text,
         textAlign: TextAlign.center,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Styles.textStyle14SemiBold.copyWith(color: textColor),
       ),
     );
   }

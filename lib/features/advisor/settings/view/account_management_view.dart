@@ -82,18 +82,23 @@ class _AccountManagementViewState extends State<AccountManagementView> {
 
                           const Spacer(),
                           // زر "تأكيد" في الأسفل
-                          CustomBotton(
-                            title: state.state == CubitStates.loading
-                                ? 'جاري المعالجة...'
-                                : 'تأكيد',
-                            onPressed:
-                                (selectedAction != null &&
-                                    state.state != CubitStates.loading)
-                                ? () => _handleConfirm(context, state)
-                                : null,
-                            useGradient:
-                                selectedAction != null &&
-                                state.state != CubitStates.loading,
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20.w),
+                            child: CustomBotton(
+                              height: 54.h,
+                              width: double.infinity,
+                              title: state.state == CubitStates.loading
+                                  ? 'جاري المعالجة...'
+                                  : 'تأكيد',
+                              onPressed:
+                                  (selectedAction != null &&
+                                      state.state != CubitStates.loading)
+                                  ? () => _handleConfirm(context, state)
+                                  : null,
+                              useGradient:
+                                  selectedAction != null &&
+                                  state.state != CubitStates.loading,
+                            ),
                           ),
                           Gap(30.h),
                         ],

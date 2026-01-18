@@ -187,6 +187,7 @@ class BoostAccountView extends StatelessWidget {
                               top: 10.h,
                             ),
                             child: CustomBotton(
+                              height: 54.h,
                               width: double.infinity,
                               title: 'التالي',
                               onPressed: () {

@@ -349,6 +349,7 @@ class EditCertificateView extends StatelessWidget {
                             ],
                             // Save Button
                             CustomBotton(
+                              height: 54.h,
                               width: context.width * 0.8,
                               useGradient: true,
                               title: state.isLoading ? 'جارٍ الحفظ...' : 'حفظ',
@@ -503,7 +504,7 @@ class EditCertificateView extends StatelessWidget {
         ),
         child: Row(
           children: [
-            AppImage(AssetsData.calenderIcon),
+            AppImage(AssetsData.calenderIcon, width: 22.h),
             SizedBox(
               width: 30,
               height: 20,

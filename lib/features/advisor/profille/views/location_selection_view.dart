@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/selection_item.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -50,27 +51,7 @@ class _LocationSelectionViewState extends State<LocationSelectionView> {
             // Header with Close Button and Title
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: IconButton(
-                      icon: Icon(Icons.close, color: AppColors.secondary600),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12.0),
-                    child: Text(
-                      'الموقع',
-                      style: Styles.textStyle24Meduim.copyWith(
-                        color: AppColors.secondary700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              child: SimpleAppBar(title: 'الموقع', icon: Icons.close),
             ),
 
             Expanded(
@@ -166,22 +147,27 @@ class _LocationSelectionViewState extends State<LocationSelectionView> {
             ),
 
             // Confirm Button
-            CustomBotton(
-              title: 'تأكيد',
-              onPressed: () {
-                if (_selectedLocation != null) {
-                  // أرسل الموقع المختار للشاشة السابقة أو احفظه
-                  print('المكان المختار: $_selectedLocation');
+            Padding(
+              padding: EdgeInsets.only(left: 40.w, right: 40.w, bottom: 20.h),
+              child: CustomBotton(
+                height: 54.h,
+                width: double.infinity,
+                title: 'تأكيد',
+                onPressed: () {
+                  if (_selectedLocation != null) {
+                    // أرسل الموقع المختار للشاشة السابقة أو احفظه
+                    print('المكان المختار: $_selectedLocation');
 
-                  // يمكنك استخدام Provider أو Navigator لإرسال البيانات
-                  // Navigator.pushNamed(
-                  //   context,
-                  //   AppRouter.kConsultationTopicsView,
-                  //   arguments: _selectedLocation, // أرسل البيانات
-                  // );
-                }
-              },
-              useGradient: true,
+                    // يمكنك استخدام Provider أو Navigator لإرسال البيانات
+                    // Navigator.pushNamed(
+                    //   context,
+                    //   AppRouter.kConsultationTopicsView,
+                    //   arguments: _selectedLocation, // أرسل البيانات
+                    // );
+                  }
+                },
+                useGradient: true,
+              ),
             ),
 
             Gap(20.h),

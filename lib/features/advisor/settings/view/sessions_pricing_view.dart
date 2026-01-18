@@ -279,7 +279,8 @@ class SessionPricingView extends StatelessWidget {
     SessionPricingState state,
   ) {
     return CustomBotton(
-      width: context.width * 0.9,
+      height: 54.h,
+      width: double.infinity,
       useGradient: true,
       title: state.isSaving
           ? 'جاري الحفظ...'

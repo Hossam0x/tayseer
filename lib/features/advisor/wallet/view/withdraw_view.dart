@@ -349,7 +349,7 @@ class WithdrawView extends StatelessWidget {
           onTap: () => context.read<WithdrawCubit>().pickImagesFromGallery(),
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 70.w, vertical: 16.h),
-            height: 160.h,
+            // height: 160.h,
             decoration: BoxDecoration(
               color: AppColors.whiteCardBack,
               borderRadius: BorderRadius.circular(16.r),
@@ -360,7 +360,7 @@ class WithdrawView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AppImage(AssetsData.uplaodCertificate, width: 35.w),
-                  Gap(8.h),
+                  Gap(12.h),
                   Text(
                     textAlign: TextAlign.center,
                     'يرجى رفع صورتك الشخصية مع صورة البطاقة (الوجه والظهر).',
@@ -368,7 +368,7 @@ class WithdrawView extends StatelessWidget {
                       color: AppColors.mentionBlue,
                     ),
                   ),
-                  Gap(8.h),
+                  Gap(12.h),
                   Text(
                     'PNG, JPG, GIF UP TO 5 MB',
                     style: Styles.textStyle14.copyWith(
@@ -502,16 +502,21 @@ class WithdrawView extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-            CustomBotton(
-              title: state.isLoading ? 'يتم الطلب...' : 'سحب',
-              onPressed: () {
-                Navigator.pushReplacementNamed(
-                  context,
-                  AppRouter.kWithdrawSuccessView,
-                );
-              },
-              useGradient: true,
-              isLoading: state.isLoading,
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: CustomBotton(
+                height: 54.h,
+                width: double.infinity,
+                title: state.isLoading ? 'يتم الطلب...' : 'سحب',
+                onPressed: () {
+                  Navigator.pushReplacementNamed(
+                    context,
+                    AppRouter.kWithdrawSuccessView,
+                  );
+                },
+                useGradient: true,
+                isLoading: state.isLoading,
+              ),
             ),
           ],
         );

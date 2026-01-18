@@ -101,7 +101,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
               child: Center(
                 child: Icon(
                   Icons.video_library,
-                  size: 50,
+                  size: 50.w,
                   color: AppColors.primary300,
                 ),
               ),
@@ -456,7 +456,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
 
                                         // زر الحفظ
                                         CustomBotton(
-                                          width: context.width * 0.9,
+                                          height: 54.h,
+                                          width: double.infinity,
                                           useGradient: true,
                                           title: state.isSaving
                                               ? 'جاري الحفظ...'
@@ -663,12 +664,16 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     required ValueChanged<String?> onChanged,
     required String hint,
   }) {
+    final bool isTablet = MediaQuery.of(context).size.width > 600;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w),
+      padding: EdgeInsets.symmetric(
+        horizontal: 10.w,
+        vertical: isTablet ? 12.h : 0,
+      ),
       decoration: BoxDecoration(
         color: AppColors.kWhiteColor,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.primary100, width: 1.0),
+        border: Border.all(color: AppColors.primary100),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(

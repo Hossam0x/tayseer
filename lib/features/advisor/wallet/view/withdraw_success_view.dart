@@ -87,12 +87,17 @@ class WithdrawSuccessView extends StatelessWidget {
                   const Spacer(flex: 2),
 
                   // زر "تم"
-                  CustomBotton(
-                    title: 'تم',
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    useGradient: true,
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    child: CustomBotton(
+                      height: 54.h,
+                      width: double.infinity,
+                      title: 'تم',
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      useGradient: true,
+                    ),
                   ),
 
                   const Gap(40),

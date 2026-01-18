@@ -1,7 +1,8 @@
+import 'dart:developer';
+
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/tabs/inquiries_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
 import 'package:tayseer/my_import.dart';
@@ -19,9 +20,9 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   late ProfileCubit _profileCubit;
 
   final List<String> _tabs = [
-    "الاستفسارات",
+    // "الاستفسارات",
     "المنشورات",
-    "الشهادات",
+    "المؤهلات",
     "التقييمات",
   ];
 
@@ -45,7 +46,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
     if (_tabController.indexIsChanging) {
       setState(() {
         _previousTabIndex = _tabController.index;
-        print(_previousTabIndex);
+        log('$_previousTabIndex');
       });
     }
   }
@@ -76,20 +77,19 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   // 🔹 دالة لعمل refresh حسب التاب المفتوح
   void _refreshCurrentTab(int index) {
     switch (index) {
+      // case 0:
+      //   print("Refresh الاستفسارات");
+      //   break;
       case 0:
-        // TODO: refresh للاستفسارات إذا كان عندك cubit خاص بها
-        print("Refresh الاستفسارات");
-        break;
-      case 1:
         // Refresh للمنشورات
         _profileCubit.fetchPosts();
         break;
-      case 2:
+      case 1:
         // Refresh للشهادات - سيتم refresh من خلال BlocProvider داخل التاب
         // يمكنك إضافة key للـ ProfileCertificatesSection لإجبارها على rebuild
         setState(() {});
         break;
-      case 3:
+      case 2:
         // Refresh للتقييمات - سيتم refresh من خلال BlocProvider داخل التاب
         setState(() {});
         break;
@@ -152,19 +152,19 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
 
   Widget _buildTabContent() {
     switch (_tabController.index) {
+      // case 0:
+      //   return InquiryTab();
       case 0:
-        return InquiryTab();
-      case 1:
         return PostsTab();
-      case 2:
+      case 1:
         // 🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
         return ProfileCertificatesSection(
           key: ValueKey(
             'certificates_${DateTime.now().millisecondsSinceEpoch}',
           ),
         );
-      case 3:
-        // 🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
+      case 2:
+        // س🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
         return RatingsTab(
           key: ValueKey('ratings_${DateTime.now().millisecondsSinceEpoch}'),
         );

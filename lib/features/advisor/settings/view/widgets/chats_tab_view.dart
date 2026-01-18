@@ -45,47 +45,59 @@ class ChatsTabView extends StatelessWidget {
   Widget _buildSkeletonChats() {
     return Skeletonizer(
       enabled: true,
-      child: ListView.separated(
-        padding: EdgeInsets.symmetric(vertical: 10.h),
-        itemCount: 5,
-        separatorBuilder: (context, index) =>
-            Divider(color: AppColors.hintText),
-        itemBuilder: (context, index) {
-          return ListTile(
-            trailing: Container(
-              width: 50.w,
-              height: 12.h,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(4.r),
-              ),
-            ),
-            title: Container(
-              width: 100.w,
-              height: 16.h,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(4.r),
-              ),
-            ),
-            subtitle: Container(
-              width: 80.w,
-              height: 14.h,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(4.r),
-              ),
-            ),
-            leading: ClipOval(
-              child: Container(
-                width: 60.r,
-                height: 60.r,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade400,
-                  borderRadius: BorderRadius.circular(30.r),
+      child: Builder(
+        builder: (context) {
+          final bool isTablet = MediaQuery.of(context).size.width > 600;
+
+          return ListView.separated(
+            padding: EdgeInsets.symmetric(vertical: isTablet ? 15.h : 10.h),
+            itemCount: 5,
+            separatorBuilder: (context, index) =>
+                Divider(color: AppColors.hintText),
+            itemBuilder: (context, index) {
+              return ListTile(
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 20.w : 16.w,
+                  vertical: isTablet ? 12.h : 8.h,
                 ),
-              ),
-            ),
+                trailing: Container(
+                  width: isTablet ? 70.w : 50.w,
+                  height: isTablet ? 16.h : 12.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(isTablet ? 6.r : 4.r),
+                  ),
+                ),
+                title: Container(
+                  width: isTablet ? 140.w : 100.w,
+                  height: isTablet ? 20.h : 16.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(isTablet ? 6.r : 4.r),
+                  ),
+                ),
+                subtitle: Container(
+                  width: isTablet ? 100.w : 80.w,
+                  height: isTablet ? 16.h : 14.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(isTablet ? 6.r : 4.r),
+                  ),
+                ),
+                leading: ClipOval(
+                  child: Container(
+                    width: isTablet ? 80.r : 60.r,
+                    height: isTablet ? 80.r : 60.r,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(
+                        isTablet ? 40.r : 30.r,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           );
         },
       ),

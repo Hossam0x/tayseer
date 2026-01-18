@@ -196,7 +196,7 @@ class _CertificatesSectionContent extends StatelessWidget {
                 ),
                 icon: Icon(
                   Icons.add,
-                  weight: 24.w,
+                  size: 22.w,
                   color: AppColors.secondary400,
                 ),
               ),
@@ -302,11 +302,14 @@ class _CertificatesSectionContent extends StatelessWidget {
                       child: Image.network(
                         certificate.image!,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Icon(Icons.school, color: Colors.grey.shade400),
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.school,
+                          color: Colors.grey.shade400,
+                          size: 22.w,
+                        ),
                       ),
                     )
-                  : Icon(Icons.school, color: Colors.grey.shade400),
+                  : Icon(Icons.school, color: Colors.grey.shade400, size: 22.w),
             ),
             SizedBox(width: 16.w),
             // التفاصيل

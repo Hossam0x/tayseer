@@ -73,6 +73,7 @@ class AddCertificateView extends StatelessWidget {
                             Gap(24.h),
                             // Add Button
                             CustomBotton(
+                              height: 54.h,
                               width: context.width * 0.8,
                               title: state.isLoading
                                   ? 'جاري الإضافة....'
@@ -176,7 +177,7 @@ class AddCertificateView extends StatelessWidget {
         ),
         child: Row(
           children: [
-            AppImage(AssetsData.calenderIcon),
+            AppImage(AssetsData.calenderIcon, width: 22.h),
             SizedBox(
               width: 30,
               height: 20,
