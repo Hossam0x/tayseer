@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -60,46 +61,42 @@ class PostsTab extends StatelessWidget {
             itemBuilder: (context, index) {
               if (index < userPosts.length) {
                 final post = userPosts[index];
+                
+                // ✅ Create callbacks once per post
+                final callbacks = PostCallbacks(
+                  postUpdatesStream: profileCubit.stream
+                      .map((s) => s.posts.firstWhere(
+                            (p) => p.postId == post.postId,
+                            orElse: () => post,
+                          ))
+                      .distinct(),
+                  onReactionChanged: (postId, reactionType) {
+                    // TODO: تنفيذ الـ reaction في ProfileCubit
+                  },
+                  onShareTap: (postId) {
+                    // TODO: تنفيذ الـ share في ProfileCubit
+                  },
+                  onHashtagTap: (hashtag) {
+                    context.pushNamed(AppRouter.kAdvisorSearchView);
+                  },
+                );
+
                 return Column(
                   children: [
                     PostCard(
                       post: post,
-                      onReactionChanged: (postId, reactionType) {
-                        // TODO: تنفيذ الـ reaction في ProfileCubit
-                      },
-                      onShareTap: (postId) {
-                        // TODO: تنفيذ الـ share في ProfileCubit
-                      },
+                      callbacks: callbacks,
                       onNavigateToDetails: (ctx, post, controller) {
                         Navigator.push(
                           ctx,
                           MaterialPageRoute(
-                            builder: (context) => PostDetailsView(
+                            builder: (_) => PostDetailsView(
                               post: post,
                               cachedController: controller,
-                              postUpdatesStream: profileCubit.stream.map((
-                                state,
-                              ) {
-                                return state.posts.firstWhere(
-                                  (p) => p.postId == post.postId,
-                                  orElse: () => post,
-                                );
-                              }),
-                              onReactionChanged: (postId, reactionType) {
-                                // TODO: تنفيذ الـ reaction في ProfileCubit
-                              },
-                              onShareTap: (postId) {
-                                // TODO: تنفيذ الـ share في ProfileCubit
-                              },
-                              onHashtagTap: (hashtag) {
-                                context.pushNamed(AppRouter.kAdvisorSearchView);
-                              },
+                              callbacks: callbacks,
                             ),
                           ),
                         );
-                      },
-                      onHashtagTap: (hashtag) {
-                        context.pushNamed(AppRouter.kAdvisorSearchView);
                       },
                     ),
                     if (index < userPosts.length - 1) Gap(16.h),

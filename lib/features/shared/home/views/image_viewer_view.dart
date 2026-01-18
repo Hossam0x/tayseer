@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:tayseer/core/utils/animation/fly_animation.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -16,11 +17,8 @@ class ImageViewerView extends StatefulWidget {
   final PostModel? post;
   final bool isFromPostDetails;
 
-  // ✅ Callbacks
-  final Stream<PostModel>? postUpdatesStream;
-  final void Function(String postId, ReactionType? reactionType)? onReactionChanged;
-  final void Function(String postId)? onShareTap;
-  final void Function(String hashtag)? onHashtagTap;
+  /// Bundled callbacks for post actions
+  final PostCallbacks callbacks;
 
   const ImageViewerView({
     super.key,
@@ -29,10 +27,7 @@ class ImageViewerView extends StatefulWidget {
     required this.postId,
     this.post,
     required this.isFromPostDetails,
-    this.postUpdatesStream,
-    this.onReactionChanged,
-    this.onShareTap,
-    this.onHashtagTap,
+    this.callbacks = const PostCallbacks(),
   });
 
   @override
@@ -47,12 +42,13 @@ class _ImageViewerViewState extends State<ImageViewerView>
   final ValueNotifier<bool> _showOverlaysNotifier = ValueNotifier(true);
   final GlobalKey _reactionDestinationKey = GlobalKey();
 
+  // Drag variables
   double _dragY = 0.0;
   bool _isDragging = false;
   late AnimationController _resetController;
   late Animation<double> _resetAnimation;
 
-  // ✅ Local post state
+  // ✅ Stream subscription (prevent memory leak)
   late PostModel? _currentPost;
   StreamSubscription<PostModel>? _postSubscription;
 
@@ -63,32 +59,41 @@ class _ImageViewerViewState extends State<ImageViewerView>
     _pageController = PageController(initialPage: widget.initialIndex);
     _currentPost = widget.post;
 
-    // ✅ Listen to post updates
-    _postSubscription = widget.postUpdatesStream?.listen((updatedPost) {
-      if (mounted && updatedPost.postId == widget.postId) {
-        setState(() => _currentPost = updatedPost);
-      }
-    });
+    // ✅ Store subscription for cleanup
+    _postSubscription = widget.callbacks.postUpdatesStream?.listen(
+      _onPostUpdated,
+    );
 
     _resetController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _resetController.addListener(() {
-      setState(() {
-        _dragY = _resetAnimation.value;
-      });
-    });
+    _resetController.addListener(_onResetAnimation);
+  }
+
+  void _onPostUpdated(PostModel updatedPost) {
+    if (mounted && updatedPost.postId == widget.postId) {
+      setState(() => _currentPost = updatedPost);
+    }
+  }
+
+  void _onResetAnimation() {
+    setState(() => _dragY = _resetAnimation.value);
   }
 
   @override
   void dispose() {
-    _postSubscription?.cancel();
+    _postSubscription?.cancel(); // ✅ Prevent memory leak
     _pageController.dispose();
     _showOverlaysNotifier.dispose();
+    _resetController.removeListener(_onResetAnimation);
     _resetController.dispose();
     super.dispose();
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Gesture Handlers
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _onImageTap() {
     if (_isDragging) return;
@@ -101,16 +106,14 @@ class _ImageViewerViewState extends State<ImageViewerView>
   }
 
   void _onVerticalDragUpdate(DragUpdateDetails details) {
-    setState(() {
-      _dragY += details.delta.dy;
-    });
+    setState(() => _dragY += details.delta.dy);
   }
 
   void _onVerticalDragEnd(DragEndDetails details) {
     _isDragging = false;
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double threshold = screenHeight * 0.15;
-    final double velocity = details.primaryVelocity ?? 0;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final threshold = screenHeight * 0.15;
+    final velocity = details.primaryVelocity ?? 0;
 
     if (_dragY.abs() > threshold || velocity.abs() > 1000) {
       Navigator.pop(context);
@@ -123,46 +126,63 @@ class _ImageViewerViewState extends State<ImageViewerView>
     }
   }
 
-  // ✅ Handle double tap with callback
   void _handleDoubleTap(Offset tapPosition) {
     if (!_showOverlaysNotifier.value) {
       _showOverlaysNotifier.value = true;
     }
+    
     FlyAnimation.flyWidget(
       context: context,
       startOffset: tapPosition,
       endKey: _reactionDestinationKey,
       child: _buildFlyingHeart(),
       onComplete: () {
-        // ✅ استخدام الـ callback
-        widget.onReactionChanged?.call(widget.postId, ReactionType.love);
+        widget.callbacks.onReactionChanged?.call(widget.postId, ReactionType.love);
       },
     );
   }
 
-  Widget _buildFlyingHeart() {
-    return Container(
-      width: 40.w,
-      height: 40.w,
-      decoration: const BoxDecoration(shape: BoxShape.circle),
-      child: AppImage(getReactionAsset(ReactionType.love), fit: BoxFit.contain),
+  // ══════════════════════════════════════════════════════════════════════════
+  // Navigation
+  // ══════════════════════════════════════════════════════════════════════════
+
+  void _navigateToPostDetails(PostModel post) {
+    if (widget.isFromPostDetails) {
+      context.pop();
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PostDetailsView(
+          post: post,
+          callbacks: widget.callbacks,
+        ),
+      ),
     );
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // Build Methods
+  // ══════════════════════════════════════════════════════════════════════════
+
   @override
   Widget build(BuildContext context) {
-    final double dragRatio =
-        (_dragY.abs() / MediaQuery.of(context).size.height).clamp(0.0, 1.0);
-    final double backgroundOpacity = (1.0 - dragRatio * 2).clamp(0.0, 1.0);
-    final double scale = (1.0 - dragRatio * 0.3).clamp(0.5, 1.0);
+    final dragRatio = (_dragY.abs() / MediaQuery.of(context).size.height)
+        .clamp(0.0, 1.0);
+    final backgroundOpacity = (1.0 - dragRatio * 2).clamp(0.0, 1.0);
+    final scale = (1.0 - dragRatio * 0.3).clamp(0.5, 1.0);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
         fit: StackFit.expand,
         children: [
+          // Background
           Container(color: Colors.black.withOpacity(backgroundOpacity)),
 
+          // Draggable Content
           GestureDetector(
             onVerticalDragStart: _onVerticalDragStart,
             onVerticalDragUpdate: _onVerticalDragUpdate,
@@ -176,50 +196,58 @@ class _ImageViewerViewState extends State<ImageViewerView>
             ),
           ),
 
-          AnimatedOpacity(
-            duration: const Duration(milliseconds: 200),
-            opacity: _isDragging ? 0.0 : 1.0,
-            child: ValueListenableBuilder<bool>(
-              valueListenable: _showOverlaysNotifier,
-              builder: (context, showOverlays, child) {
-                return Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 300),
-                      top: showOverlays ? 0 : -150,
-                      left: 0,
-                      right: 0,
-                      child: _ViewerHeader(
-                        currentIndex: _currentIndex,
-                        totalImages: widget.images.length,
-                        onClose: () => Navigator.pop(context),
-                      ),
-                    ),
-
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 300),
-                      top: showOverlays ? context.responsiveHeight(120) : -100,
-                      right: context.responsiveWidth(24),
-                      child: _GlassCounter(
-                        current: _currentIndex + 1,
-                        total: widget.images.length,
-                      ),
-                    ),
-
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 300),
-                      bottom: showOverlays ? 0 : -200,
-                      left: 0,
-                      right: 0,
-                      child: _buildBottomBar(context),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
+          // Overlays
+          _buildOverlays(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOverlays() {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 200),
+      opacity: _isDragging ? 0.0 : 1.0,
+      child: ValueListenableBuilder<bool>(
+        valueListenable: _showOverlaysNotifier,
+        builder: (context, showOverlays, _) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // Header
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                top: showOverlays ? 0 : -150,
+                left: 0,
+                right: 0,
+                child: _ViewerHeader(
+                  currentIndex: _currentIndex,
+                  totalImages: widget.images.length,
+                  onClose: () => Navigator.pop(context),
+                ),
+              ),
+
+              // Counter
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                top: showOverlays ? context.responsiveHeight(120) : -100,
+                right: context.responsiveWidth(24),
+                child: _GlassCounter(
+                  current: _currentIndex + 1,
+                  total: widget.images.length,
+                ),
+              ),
+
+              // Bottom Bar
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                bottom: showOverlays ? 0 : -200,
+                left: 0,
+                right: 0,
+                child: _buildBottomBar(),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -228,9 +256,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
     return PageView.builder(
       controller: _pageController,
       itemCount: widget.images.length,
-      onPageChanged: (index) {
-        setState(() => _currentIndex = index);
-      },
+      onPageChanged: (index) => setState(() => _currentIndex = index),
       itemBuilder: (context, index) {
         final imageUrl = widget.images[index];
         return GestureDetector(
@@ -256,8 +282,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
     );
   }
 
-  // ✅ Bottom bar with callbacks
-  Widget _buildBottomBar(BuildContext context) {
+  Widget _buildBottomBar() {
     final post = _currentPost;
     if (post == null) return const SizedBox.shrink();
 
@@ -280,6 +305,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
           child: SafeArea(
             top: false,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 PostStats(
@@ -294,13 +320,12 @@ class _ImageViewerViewState extends State<ImageViewerView>
                   topReactions: post.topReactions,
                   myReaction: post.myReaction,
                   isRepostedByMe: post.isRepostedByMe,
-                  // ✅ استخدام callbacks
                   onReactionChanged: (reaction) {
-                    widget.onReactionChanged?.call(post.postId, reaction);
+                    widget.callbacks.onReactionChanged?.call(post.postId, reaction);
                   },
                   onCommentTap: () => _navigateToPostDetails(post),
                   onShareTap: () {
-                    widget.onShareTap?.call(post.postId);
+                    widget.callbacks.onShareTap?.call(post.postId);
                   },
                 ),
                 Gap(16.h),
@@ -312,31 +337,18 @@ class _ImageViewerViewState extends State<ImageViewerView>
     );
   }
 
-  // ✅ Navigate with callbacks
-  void _navigateToPostDetails(PostModel post) {
-    if (widget.isFromPostDetails) {
-      context.pop();
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PostDetailsView(
-          post: post,
-          // ✅ تمرير نفس الـ callbacks
-          postUpdatesStream: widget.postUpdatesStream,
-          onReactionChanged: widget.onReactionChanged,
-          onShareTap: widget.onShareTap,
-          onHashtagTap: widget.onHashtagTap,
-        ),
-      ),
+  Widget _buildFlyingHeart() {
+    return Container(
+      width: 40.w,
+      height: 40.w,
+      decoration: const BoxDecoration(shape: BoxShape.circle),
+      child: AppImage(getReactionAsset(ReactionType.love), fit: BoxFit.contain),
     );
   }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Header
+// Header Widget
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _ViewerHeader extends StatelessWidget {
@@ -377,27 +389,7 @@ class _ViewerHeader extends StatelessWidget {
                   onTap: onClose,
                   child: Icon(Icons.close, color: Colors.white, size: 28.sp),
                 ),
-                if (totalImages > 1)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: List.generate(totalImages, (index) {
-                      final isActive = index == currentIndex;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: EdgeInsets.symmetric(horizontal: 3.w),
-                        width: isActive ? 8.w : 6.w,
-                        height: isActive ? 8.w : 6.w,
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? HexColor("#AC1A37")
-                              : Colors.white.withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                      );
-                    }),
-                  )
-                else
-                  const SizedBox(),
+                if (totalImages > 1) _buildDots() else const SizedBox(),
                 Icon(Icons.info_outline, color: Colors.white, size: 26.sp),
               ],
             ),
@@ -406,10 +398,31 @@ class _ViewerHeader extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildDots() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(totalImages, (index) {
+        final isActive = index == currentIndex;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: EdgeInsets.symmetric(horizontal: 3.w),
+          width: isActive ? 8.w : 6.w,
+          height: isActive ? 8.w : 6.w,
+          decoration: BoxDecoration(
+            color: isActive
+                ? HexColor("#AC1A37")
+                : Colors.white.withOpacity(0.5),
+            shape: BoxShape.circle,
+          ),
+        );
+      }),
+    );
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Counter
+// Counter Widget
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _GlassCounter extends StatelessWidget {

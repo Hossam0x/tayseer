@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
@@ -100,6 +101,7 @@ class HomePostFeed extends StatelessWidget {
     delegate: SliverChildBuilderDelegate((context, index) {
       if (index < state.postIds.length) {
         return _PostItem(
+          key: ValueKey(state.postIds[index]),
           postId: state.postIds[index],
           homeCubit: homeCubit,
           showGap: index < state.postIds.length - 1,
@@ -159,8 +161,9 @@ class _FeedState extends Equatable {
 // Post Item Widget (Optimized - rebuilds only when its post changes)
 // ══════════════════════════════════════════════════════════════════════════════
 
-class _PostItem extends StatelessWidget {
+class _PostItem extends StatefulWidget {
   const _PostItem({
+    super.key,
     required this.postId,
     required this.homeCubit,
     this.showGap = false,
@@ -171,40 +174,59 @@ class _PostItem extends StatelessWidget {
   final bool showGap;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        BlocSelector<HomeCubit, HomeState, PostModel?>(
-          selector: (state) =>
-              state.posts.where((p) => p.postId == postId).firstOrNull,
-          builder: (context, post) {
-            if (post == null) return const SizedBox.shrink();
-            return PostCard(
-              post: post,
-              onReactionChanged: _onReaction,
-              onShareTap: _onShare,
-              onNavigateToDetails: _onNavigateToDetails,
-              onHashtagTap: (_) =>
-                  context.pushNamed(AppRouter.kAdvisorSearchView),
-              // ✅ أضف هذا السطر
-              postUpdatesStream: homeCubit.stream.map(
-                (s) => s.posts.firstWhere(
-                  (p) => p.postId == postId,
-                  orElse: () => post,
-                ),
-              ),
-            );
-          },
-        ),
-        if (showGap) Gap(12.h),
-      ],
+  State<_PostItem> createState() => _PostItemState();
+}
+
+class _PostItemState extends State<_PostItem> {
+  // ✅ Cache stream & callbacks - created once in initState
+  late final Stream<PostModel> _postStream;
+  late final PostCallbacks _callbacks;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeStreamAndCallbacks();
+  }
+
+  void _initializeStreamAndCallbacks() {
+    // ✅ Create stream once with distinct to prevent duplicate updates
+    _postStream = widget.homeCubit.stream
+        .map(
+          (state) => state.posts.firstWhere(
+            (p) => p.postId == widget.postId,
+            orElse: () => _getFallbackPost(state),
+          ),
+        )
+        .distinct();
+
+    // ✅ Create callbacks once
+    _callbacks = PostCallbacks(
+      postUpdatesStream: _postStream,
+      onReactionChanged: _onReaction,
+      onShareTap: _onShare,
+      onHashtagTap: _onHashtagTap,
     );
   }
 
-  void _onReaction(String id, ReactionType? type) =>
-      homeCubit.reactToPost(postId: id, reactionType: type);
+  PostModel _getFallbackPost(HomeState state) {
+    // Try to get existing post or return current one
+    final existingPost = state.posts
+        .where((p) => p.postId == widget.postId)
+        .firstOrNull;
+    return existingPost!;
+  }
 
-  void _onShare(String id) => homeCubit.toggleSharePost(postId: id);
+  void _onReaction(String id, ReactionType? type) {
+    widget.homeCubit.reactToPost(postId: id, reactionType: type);
+  }
+
+  void _onShare(String id) {
+    widget.homeCubit.toggleSharePost(postId: id);
+  }
+
+  void _onHashtagTap(String hashtag) {
+    context.pushNamed(AppRouter.kAdvisorSearchView);
+  }
 
   void _onNavigateToDetails(
     BuildContext ctx,
@@ -217,17 +239,30 @@ class _PostItem extends StatelessWidget {
         builder: (_) => PostDetailsView(
           post: post,
           cachedController: controller,
-          postUpdatesStream: homeCubit.stream.map(
-            (s) => s.posts.firstWhere(
-              (p) => p.postId == post.postId,
-              orElse: () => post,
-            ),
-          ),
-          onReactionChanged: _onReaction,
-          onShareTap: _onShare,
-          onHashtagTap: (_) => ctx.pushNamed(AppRouter.kAdvisorSearchView),
+          callbacks: _callbacks,
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        BlocSelector<HomeCubit, HomeState, PostModel?>(
+          selector: (state) =>
+              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+          builder: (context, post) {
+            if (post == null) return const SizedBox.shrink();
+            return PostCard(
+              post: post,
+              callbacks: _callbacks,
+              onNavigateToDetails: _onNavigateToDetails,
+            );
+          },
+        ),
+        if (widget.showGap) Gap(12.h),
+      ],
     );
   }
 }
