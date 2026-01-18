@@ -18,7 +18,7 @@ class PostDetailsView extends StatefulWidget {
   final VideoPlayerController? cachedController;
   final Stream<PostModel>? postUpdatesStream;
   final void Function(String postId, ReactionType? reactionType)?
-  onReactionChanged;
+      onReactionChanged;
   final void Function(String postId)? onShareTap;
   final void Function(String hashtag)? onHashtagTap;
   final VoidCallback? onMoreTap;
@@ -88,6 +88,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                   post: widget.post,
                   cachedController: widget.cachedController,
                   scrollController: _scrollController,
+                  // ✅ Pass stream and callbacks
                   postUpdatesStream: widget.postUpdatesStream,
                   onReactionChanged: widget.onReactionChanged,
                   onShareTap: widget.onShareTap,
@@ -133,7 +134,7 @@ class _PostDetailsBody extends StatefulWidget {
   final ScrollController scrollController;
   final Stream<PostModel>? postUpdatesStream;
   final void Function(String postId, ReactionType? reactionType)?
-  onReactionChanged;
+      onReactionChanged;
   final void Function(String postId)? onShareTap;
   final void Function(String hashtag)? onHashtagTap;
   final VoidCallback? onMoreTap;
@@ -184,7 +185,8 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
             post: _currentPost,
             cachedController: widget.cachedController,
             scrollController: widget.scrollController,
-            // Post Callbacks
+            // ✅ Pass stream and callbacks to PostDetailsCard
+            postUpdatesStream: widget.postUpdatesStream,
             onReactionChanged: widget.onReactionChanged,
             onShareTap: widget.onShareTap,
             onHashtagTap: widget.onHashtagTap,
@@ -212,10 +214,10 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
             onCancelReply: () => cubit.cancelReply(),
             onSaveEdit: (commentId, content, isReply) =>
                 cubit.saveEditedComment(
-                  commentId: commentId,
-                  newContent: content,
-                  isReply: isReply,
-                ),
+              commentId: commentId,
+              newContent: content,
+              isReply: isReply,
+            ),
             onSendReply: (commentId, text) => cubit.addReply(commentId, text),
             onLoadReplies: (commentId) => cubit.loadReplies(commentId),
           );
@@ -230,9 +232,8 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
       isLoading: state.commentsState == CubitStates.loading,
       hasMore: state.hasMoreComments,
       isLoadingMore: state.isLoadingMore,
-      error: state.commentsState == CubitStates.failure
-          ? state.errorMessage
-          : null,
+      error:
+          state.commentsState == CubitStates.failure ? state.errorMessage : null,
       editingCommentId: state.editingCommentId,
       activeReplyId: state.activeReplyId,
       isEditLoading: state.editingState == CubitStates.loading,
@@ -270,14 +271,14 @@ class _CommentsUIState extends Equatable {
 
   @override
   List<Object?> get props => [
-    comments,
-    isLoading,
-    hasMore,
-    isLoadingMore,
-    error,
-    editingCommentId,
-    activeReplyId,
-    isEditLoading,
-    isReplyLoading,
-  ];
+        comments,
+        isLoading,
+        hasMore,
+        isLoadingMore,
+        error,
+        editingCommentId,
+        activeReplyId,
+        isEditLoading,
+        isReplyLoading,
+      ];
 }

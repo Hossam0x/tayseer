@@ -186,6 +186,13 @@ class _PostItem extends StatelessWidget {
               onNavigateToDetails: _onNavigateToDetails,
               onHashtagTap: (_) =>
                   context.pushNamed(AppRouter.kAdvisorSearchView),
+              // ✅ أضف هذا السطر
+              postUpdatesStream: homeCubit.stream.map(
+                (s) => s.posts.firstWhere(
+                  (p) => p.postId == postId,
+                  orElse: () => post,
+                ),
+              ),
             );
           },
         ),

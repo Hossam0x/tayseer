@@ -31,6 +31,9 @@ class PostCard extends StatefulWidget {
   final void Function(String hashtag)? onHashtagTap;
   final VoidCallback? onMoreTap;
 
+  // ✅ أضف هذا
+  final Stream<PostModel>? postUpdatesStream;
+
   const PostCard({
     super.key,
     required this.post,
@@ -41,6 +44,7 @@ class PostCard extends StatefulWidget {
     this.onNavigateToDetails,
     this.onHashtagTap,
     this.onMoreTap,
+    this.postUpdatesStream, // ✅ أضف هذا
   });
 
   @override
@@ -112,6 +116,11 @@ class _PostCardState extends State<PostCard> {
             isDetailsView: widget.isDetailsView,
             sharedController: widget.sharedController,
             onControllerCreated: (c) => _activeController = c,
+            // ✅ أضف هذه
+            postUpdatesStream: widget.postUpdatesStream,
+            onReactionChanged: widget.onReactionChanged,
+            onShareTap: widget.onShareTap,
+            onHashtagTap: widget.onHashtagTap,
           ),
           Gap(context.responsiveHeight(15)),
 
@@ -272,11 +281,22 @@ class _PostMedia extends StatefulWidget {
   final VideoPlayerController? sharedController;
   final void Function(VideoPlayerController) onControllerCreated;
 
+  // ✅ أضف هذه
+  final Stream<PostModel>? postUpdatesStream;
+  final void Function(String postId, ReactionType? reactionType)?
+  onReactionChanged;
+  final void Function(String postId)? onShareTap;
+  final void Function(String hashtag)? onHashtagTap;
+
   const _PostMedia({
     required this.post,
     required this.isDetailsView,
     this.sharedController,
     required this.onControllerCreated,
+    this.postUpdatesStream,
+    this.onReactionChanged,
+    this.onShareTap,
+    this.onHashtagTap,
   });
 
   @override
@@ -302,6 +322,11 @@ class _PostMediaState extends State<_PostMedia> {
                 images: widget.post.images,
                 postId: widget.post.postId,
                 post: widget.post,
+                // ✅ مرر الـ callbacks
+                postUpdatesStream: widget.postUpdatesStream,
+                onReactionChanged: widget.onReactionChanged,
+                onShareTap: widget.onShareTap,
+                onHashtagTap: widget.onHashtagTap,
               )
             : const SizedBox.shrink();
 

@@ -18,9 +18,12 @@ class PostDetailsCard extends StatelessWidget {
   final VideoPlayerController? cachedController;
   final ScrollController? scrollController;
 
+  // ✅ Stream for real-time post updates (for ImageViewer)
+  final Stream<PostModel>? postUpdatesStream;
+
   // Post Callbacks
   final void Function(String postId, ReactionType? reactionType)?
-  onReactionChanged;
+      onReactionChanged;
   final void Function(String postId)? onShareTap;
   final void Function(String hashtag)? onHashtagTap;
   final VoidCallback? onMoreTap;
@@ -42,7 +45,7 @@ class PostDetailsCard extends StatelessWidget {
   final VoidCallback? onCancelEdit;
   final VoidCallback? onCancelReply;
   final void Function(String commentId, String content, bool isReply)?
-  onSaveEdit;
+      onSaveEdit;
   final void Function(String commentId, String text)? onSendReply;
   final void Function(String commentId)? onLoadReplies;
 
@@ -57,6 +60,8 @@ class PostDetailsCard extends StatelessWidget {
     required this.post,
     this.cachedController,
     this.scrollController,
+    // ✅ Stream
+    this.postUpdatesStream,
     // Post Callbacks
     this.onReactionChanged,
     this.onShareTap,
@@ -97,6 +102,8 @@ class PostDetailsCard extends StatelessWidget {
         _PostSection(
           post: post,
           cachedController: cachedController,
+          // ✅ Pass stream and callbacks
+          postUpdatesStream: postUpdatesStream,
           onReactionChanged: onReactionChanged,
           onShareTap: onShareTap,
           onHashtagTap: onHashtagTap,
@@ -164,8 +171,12 @@ class PostDetailsCard extends StatelessWidget {
 class _PostSection extends StatelessWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
+  
+  // ✅ Stream for ImageViewer updates
+  final Stream<PostModel>? postUpdatesStream;
+  
   final void Function(String postId, ReactionType? reactionType)?
-  onReactionChanged;
+      onReactionChanged;
   final void Function(String postId)? onShareTap;
   final void Function(String hashtag)? onHashtagTap;
   final VoidCallback? onMoreTap;
@@ -174,6 +185,7 @@ class _PostSection extends StatelessWidget {
   const _PostSection({
     required this.post,
     this.cachedController,
+    this.postUpdatesStream,
     this.onReactionChanged,
     this.onShareTap,
     this.onHashtagTap,
@@ -188,6 +200,8 @@ class _PostSection extends StatelessWidget {
         post: post,
         isDetailsView: true,
         sharedController: cachedController,
+        // ✅ Pass stream to PostCard → PostImagesGrid → ImageViewerView
+        postUpdatesStream: postUpdatesStream,
         onReactionChanged: onReactionChanged,
         onShareTap: onShareTap,
         onNavigateToDetails: (_, __, ___) => onCommentTap?.call(),
@@ -217,7 +231,7 @@ class _CommentsList extends StatelessWidget {
   final VoidCallback? onCancelEdit;
   final VoidCallback? onCancelReply;
   final void Function(String commentId, String content, bool isReply)?
-  onSaveEdit;
+      onSaveEdit;
   final void Function(String commentId, String text)? onSendReply;
   final void Function(String commentId)? onLoadReplies;
 
@@ -360,9 +374,8 @@ class _CommentItemState extends State<_CommentItem> {
 
   @override
   Widget build(BuildContext context) {
-    final shouldRebuild =
-        _cachedWidget == null ||
-        widget.comment != _lastComment || // Relies on Equatable or Ref equality
+    final shouldRebuild = _cachedWidget == null ||
+        widget.comment != _lastComment ||
         widget.isEditing != _lastIsEditing ||
         widget.isReplying != _lastIsReplying ||
         widget.isEditLoading != _lastIsEditLoading ||
@@ -394,9 +407,6 @@ class _CommentItemState extends State<_CommentItem> {
         onSendReply: widget.onSendReply,
         onLoadReplies: widget.onLoadReplies,
         onLikeReply: widget.onLikeReply,
-        // Replies logic inside CommentCard usually handles sub-items
-        // If CommentCard iterates replies, it might rebuild them.
-        // But preventing the root CommentCard from rebuilding is the big win.
       );
     }
 
