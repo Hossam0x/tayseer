@@ -46,15 +46,17 @@ class CustomOutlineButton extends StatelessWidget {
             if (corectIcons != null)
               Icon(corectIcons, size: 20, color: AppColors.kprimaryColor),
 
-            Text(
-              text,
-              style: Styles.textStyle14.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.kprimaryTextColor,
+            Center(
+              child: Text(
+                text,
+                style: Styles.textStyle14.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.kprimaryTextColor,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
             ),
 
             if (normalIcon != null)
