@@ -1,46 +1,33 @@
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/core/widgets/post_card/real_video_player.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_images_grid.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
 import 'package:tayseer/my_import.dart';
 
-/// PostCard - Optimized reusable component for displaying posts
-///
-/// Performance Features:
-/// - Static parts are const where possible
-/// - Dynamic parts (reactions, shares) are isolated
-/// - Video controller managed efficiently
 class PostCard extends StatefulWidget {
   final PostModel post;
   final bool isDetailsView;
   final VideoPlayerController? sharedController;
-  final void Function(String postId, ReactionType? reactionType)?
-  onReactionChanged;
-  final void Function(String postId)? onShareTap;
-  final void Function(
-    BuildContext context,
-    PostModel post,
-    VideoPlayerController? controller,
-  )?
-  onNavigateToDetails;
-  final void Function(String hashtag)? onHashtagTap;
-  final VoidCallback? onMoreTap;
+
+  /// Bundled callbacks for post actions
+  final PostCallbacks callbacks;
+
+  /// Callback for navigating to post details
+  final NavigateToDetailsCallback? onNavigateToDetails;
 
   const PostCard({
     super.key,
     required this.post,
     this.isDetailsView = false,
     this.sharedController,
-    this.onReactionChanged,
-    this.onShareTap,
+    this.callbacks = const PostCallbacks(),
     this.onNavigateToDetails,
-    this.onHashtagTap,
-    this.onMoreTap,
   });
 
   @override
@@ -65,15 +52,15 @@ class _PostCardState extends State<PostCard> {
   }
 
   void _handleReaction(ReactionType? type) {
-    widget.onReactionChanged?.call(widget.post.postId, type);
+    widget.callbacks.onReactionChanged?.call(widget.post.postId, type);
   }
 
   void _handleShare() {
-    widget.onShareTap?.call(widget.post.postId);
+    widget.callbacks.onShareTap?.call(widget.post.postId);
   }
 
   void _handleHashtag(String hashtag) {
-    widget.onHashtagTap?.call(hashtag);
+    widget.callbacks.onHashtagTap?.call(hashtag);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -88,17 +75,20 @@ class _PostCardState extends State<PostCard> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Repost Header (Static)
+          // Repost Header
           if (widget.post.repostedBy != null) ...[
             _RepostHeader(repostedBy: widget.post.repostedBy!),
             Gap(context.responsiveHeight(8)),
           ],
 
-          // User Info (Static)
-          _PostUserHeader(post: widget.post, onMoreTap: widget.onMoreTap),
+          // User Info
+          _PostUserHeader(
+            post: widget.post,
+            onMoreTap: widget.callbacks.onMoreTap,
+          ),
           Gap(context.responsiveHeight(15)),
 
-          // Content Text (Static)
+          // Content Text
           _PostContent(
             content: widget.post.content,
             onTap: _navigateToDetails,
@@ -106,16 +96,17 @@ class _PostCardState extends State<PostCard> {
           ),
           Gap(context.responsiveHeight(12)),
 
-          // Media (Static)
+          // Media
           _PostMedia(
             post: widget.post,
             isDetailsView: widget.isDetailsView,
             sharedController: widget.sharedController,
             onControllerCreated: (c) => _activeController = c,
+            callbacks: widget.callbacks,
           ),
           Gap(context.responsiveHeight(15)),
 
-          // Stats (Static except counts)
+          // Stats
           PostStats(
             comments: widget.post.commentsCount,
             shares: widget.post.sharesCount,
@@ -123,7 +114,7 @@ class _PostCardState extends State<PostCard> {
           ),
           Gap(context.responsiveHeight(8)),
 
-          // Actions Row (Dynamic - handles reactions/shares)
+          // Actions Row
           PostActionsRow(
             topReactions: widget.post.topReactions,
             likesCount: widget.post.likesCount,
@@ -149,7 +140,7 @@ class _PostCardState extends State<PostCard> {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Static Sub-Widgets (Won't rebuild on reaction/share changes)
+// Static Sub-Widgets
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _CardContainer extends StatelessWidget {
@@ -167,9 +158,8 @@ class _CardContainer extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: isDetailsView
-            ? BorderRadius.zero
-            : BorderRadius.circular(15.r),
+        borderRadius:
+            isDetailsView ? BorderRadius.zero : BorderRadius.circular(15.r),
         border: isDetailsView ? null : Border.all(color: Colors.grey.shade200),
       ),
       clipBehavior: Clip.antiAlias,
@@ -266,17 +256,23 @@ class _PostContent extends StatelessWidget {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Post Media
+// ══════════════════════════════════════════════════════════════════════════════
+
 class _PostMedia extends StatefulWidget {
   final PostModel post;
   final bool isDetailsView;
   final VideoPlayerController? sharedController;
   final void Function(VideoPlayerController) onControllerCreated;
+  final PostCallbacks callbacks;
 
   const _PostMedia({
     required this.post,
     required this.isDetailsView,
     this.sharedController,
     required this.onControllerCreated,
+    required this.callbacks,
   });
 
   @override
@@ -302,6 +298,7 @@ class _PostMediaState extends State<_PostMedia> {
                 images: widget.post.images,
                 postId: widget.post.postId,
                 post: widget.post,
+                callbacks: widget.callbacks,
               )
             : const SizedBox.shrink();
 
@@ -341,8 +338,10 @@ class _PostMediaState extends State<_PostMedia> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            ReelsFeedView(post: widget.post, initialController: controller),
+        builder: (_) => ReelsFeedView(
+          post: widget.post,
+          initialController: controller,
+        ),
       ),
     ).then((_) {
       if (mounted && controller.value.isInitialized) {

@@ -3,12 +3,13 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/errors/failure.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/categories_response_model.dart';
 import 'package:tayseer/features/shared/home/model/comment_model.dart';
 import 'package:tayseer/features/shared/home/model/comments_response_model.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 
 abstract class HomeRepository {
-  Future<Either<Failure, List<PostModel>>> fetchPosts({required int page});
+  Future<Either<Failure, List<PostModel>>> fetchPosts({required int page, String? categoryId});
 
   Future<void> reactToPost({
     required String postId,
@@ -61,4 +62,8 @@ abstract class HomeRepository {
   });
 
   Future<Either<Failure, ImageAndNameModel>> fetchNameAndImage();
+  Future<Either<Failure, CategoriesResponseModel>> fetchAllCategories(
+    final int page
+  );
+
 }

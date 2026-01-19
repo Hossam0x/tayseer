@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "com.athr.tayser"
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = 36 // <-- غيرنا من 34 إلى 36
         versionCode = 1
         versionName = "1.0"

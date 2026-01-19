@@ -1,3 +1,5 @@
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
+import 'package:tayseer/core/widgets/post_card/post_card.dart';
 // في features/advisor/profille/views/widgets/tabs/posts_tab.dart
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_card.dart';
