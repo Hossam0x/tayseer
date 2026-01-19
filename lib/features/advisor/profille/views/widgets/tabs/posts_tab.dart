@@ -1,6 +1,4 @@
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
-import 'package:tayseer/core/widgets/post_card/post_card.dart';
-// في features/advisor/profille/views/widgets/tabs/posts_tab.dart
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_card.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
@@ -162,26 +160,28 @@ class PostsTab extends StatelessWidget {
                       builder: (context) => PostDetailsView(
                         post: post,
                         cachedController: controller,
-                        postUpdatesStream: profileCubit.stream.map((state) {
-                          return state.posts.firstWhere(
-                            (p) => p.postId == post.postId,
-                            orElse: () => post,
-                          );
-                        }),
-                        onReactionChanged: (postId, reactionType) {
-                          // ⭐️ استدعاء ProfileCubit الجديد
-                          profileCubit.reactToPost(
-                            postId: postId,
-                            reactionType: reactionType,
-                          );
-                        },
-                        onShareTap: (postId) {
-                          // ⭐️ استدعاء ProfileCubit الجديد
-                          profileCubit.toggleSharePost(postId: postId);
-                        },
-                        onHashtagTap: (hashtag) {
-                          context.pushNamed(AppRouter.kAdvisorSearchView);
-                        },
+                        callbacks: PostCallbacks(
+                          postUpdatesStream: profileCubit.stream.map((state) {
+                            return state.posts.firstWhere(
+                              (p) => p.postId == post.postId,
+                              orElse: () => post,
+                            );
+                          }),
+                          onReactionChanged: (postId, reactionType) {
+                            // ⭐️ استدعاء ProfileCubit الجديد
+                            profileCubit.reactToPost(
+                              postId: postId,
+                              reactionType: reactionType,
+                            );
+                          },
+                          onShareTap: (postId) {
+                            // ⭐️ استدعاء ProfileCubit الجديد
+                            profileCubit.toggleSharePost(postId: postId);
+                          },
+                          onHashtagTap: (hashtag) {
+                            context.pushNamed(AppRouter.kAdvisorSearchView);
+                          },
+                        ),
                       ),
                     ),
                   );

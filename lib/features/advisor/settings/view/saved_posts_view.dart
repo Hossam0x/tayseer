@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_card.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
@@ -291,21 +292,25 @@ class SavedPostsView extends StatelessWidget {
         builder: (_) => PostDetailsView(
           post: post,
           cachedController: controller,
-          postUpdatesStream: cubit.stream.map((state) {
-            return state.posts.firstWhere(
-              (p) => p.postId == post.postId,
-              orElse: () => post,
-            );
-          }),
-          onReactionChanged: (postId, reactionType) {
-            // TODO: يمكنك إضافة reaction logic لاحقاً
-          },
-          onShareTap: (postId) {
-            // TODO: يمكنك إضافة share logic لاحقاً
-          },
-          onHashtagTap: (hashtag) {
-            context.pushNamed(AppRouter.kAdvisorSearchView);
-          },
+         callbacks: PostCallbacks(
+             postUpdatesStream: cubit.stream.map((state) {
+                          return state.posts.firstWhere(
+                            (p) => p.postId == post.postId,
+                            orElse: () => post,
+                          );
+                        }),
+                        onReactionChanged: (postId, reactionType) {
+                          cubit.reactToPost(
+                            postId: postId,
+                            reactionType: reactionType,
+                          );
+                        },
+                        onShareTap: (postId) {
+                          cubit.toggleSharePost(postId: postId);
+                        },
+                        onHashtagTap: (hashtag) {
+                          context.pushNamed(AppRouter.kAdvisorSearchView);
+                        },),
         ),
       ),
     );
