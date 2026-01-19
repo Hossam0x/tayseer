@@ -41,65 +41,90 @@ class StoriesTabView extends StatelessWidget {
   }
 
   Widget _buildSkeletonStories() {
-    return Skeletonizer(
-      enabled: true,
-      child: GridView.builder(
-        padding: EdgeInsets.all(20.w),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 10.w,
-          mainAxisSpacing: 10.h,
-          childAspectRatio: 0.8,
-        ),
-        itemCount: 9,
-        itemBuilder: (context, index) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(25.r),
-            child: Container(
-              color: Colors.grey.shade400,
-              child: Stack(
-                children: [
+    return GridView.builder(
+      padding: EdgeInsets.all(20.w),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 10.w,
+        mainAxisSpacing: 10.h,
+        childAspectRatio: 0.8,
+      ),
+      itemCount: 9, // 9 عناصر للـ skeleton
+      itemBuilder: (context, index) {
+        return Skeletonizer(
+          enabled: true,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30.r),
+              color: Colors.grey.shade100,
+            ),
+            child: Stack(
+              children: [
+                // Skeleton للصورة
+                Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30.r),
+                    color: Colors.grey.shade300,
+                  ),
+                ),
+                // Skeleton للتاريخ
+                Positioned(
+                  top: 20.h,
+                  right: 20.w,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 20.w,
+                          height: 20.h,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade400,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                        ),
+                        Gap(2.h),
+                        Container(
+                          width: 40.w,
+                          height: 12.h,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade400,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Skeleton للعلامة الخاصة (Special Badge)
+                if (index % 3 == 0)
                   Positioned(
                     top: 20.h,
-                    right: 20.w,
+                    left: 20.w,
                     child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8.w,
-                        vertical: 4.h,
-                      ),
+                      width: 24.w,
+                      height: 24.h,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 20.w,
-                            height: 16.h,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade400,
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                          ),
-                          Gap(2.h),
-                          Container(
-                            width: 40.w,
-                            height: 12.h,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade400,
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                          ),
-                        ],
+                        color: Colors.grey.shade400,
+                        shape: BoxShape.circle,
                       ),
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -155,23 +180,28 @@ class StoriesTabView extends StatelessWidget {
       },
       child: RefreshIndicator(
         onRefresh: () => context.read<ArchivedStoriesCubit>().refresh(),
-        child: GridView.builder(
-          padding: EdgeInsets.all(20.w),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 10.w,
-            mainAxisSpacing: 10.h,
-            childAspectRatio: 0.8,
-          ),
-          itemCount: state.stories.length + (state.hasMore ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == state.stories.length) {
-              return _buildLoadMoreIndicator();
-            }
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.all(20.w),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 10.w,
+                  mainAxisSpacing: 10.h,
+                  childAspectRatio: 0.8,
+                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  if (index == state.stories.length) {
+                    return _buildLoadMoreIndicator(state);
+                  }
 
-            final story = state.stories[index];
-            return _buildStoryItem(context, story);
-          },
+                  final story = state.stories[index];
+                  return _buildStoryItem(context, story);
+                }, childCount: state.stories.length + (state.hasMore ? 1 : 0)),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -183,67 +213,127 @@ class StoriesTabView extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(30.r),
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          // Story Background Image
-          story.image != null
-              ? Image.network(
-                  story.image!,
-                  height: double.infinity,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return AppImage(
-                      AssetsData.storyPlaceholder,
-                      height: double.infinity,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    );
-                  },
-                )
-              : AppImage(
-                  AssetsData.storyPlaceholder,
-                  height: double.infinity,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+          // Story Media (Image/Video)
+          if (story.mediaType == 'image' && story.image != null)
+            _buildStoryImage(story.image!)
+          else if (story.mediaType == 'video' && story.video != null)
+            _buildStoryVideo(story.video!)
+          else
+            _buildPlaceholder(),
+
+          // Content Overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.7),
+                    Colors.transparent,
+                    Colors.transparent,
+                  ],
                 ),
-          // Date Badge (Matches UI image)
+                borderRadius: BorderRadius.circular(30.r),
+              ),
+            ),
+          ),
+
+          // Date Badge
           Positioned(
             top: 20.h,
             right: 20.w,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(date.day.toString(), style: Styles.textStyle16),
-                  Text(_getMonthName(date.month), style: Styles.textStyle12),
+                  Text(
+                    date.day.toString(),
+                    style: Styles.textStyle16Meduim.copyWith(
+                      color: AppColors.secondary950,
+                    ),
+                  ),
+                  Gap(2.h),
+                  Text(
+                    _getMonthName(date.month),
+                    style: Styles.textStyle12.copyWith(color: AppColors.gray2),
+                  ),
                 ],
               ),
             ),
           ),
-          // View Count
+
+          // Special Badge
+          if (story.isSpecial)
+            Positioned(
+              top: 20.h,
+              left: 20.w,
+              child: Container(
+                padding: EdgeInsets.all(6.w),
+                decoration: BoxDecoration(
+                  color: AppColors.kprimaryColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.star, color: Colors.white, size: 16.sp),
+              ),
+            ),
+
+          // Content
+          if (story.content != null && story.content!.isNotEmpty)
+            Positioned(
+              bottom: 15.h,
+              right: 15.w,
+              left: 15.w,
+              child: Text(
+                story.content!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Styles.textStyle14.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+          // Like Icon
           Positioned(
-            bottom: 8.h,
-            left: 8.w,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.remove_red_eye, size: 14.sp, color: Colors.white),
-                  Gap(4.w),
-                  Text(
-                    '${story.views}',
-                    style: Styles.textStyle12.copyWith(color: Colors.white),
-                  ),
-                ],
-              ),
+            bottom: 15.h,
+            left: 15.w,
+            child: Row(
+              children: [
+                Icon(
+                  story.isLiked ? Icons.favorite : Icons.favorite_border,
+                  color: story.isLiked ? Colors.red : Colors.white,
+                  size: 18.sp,
+                ),
+                Gap(4.w),
+                Text(
+                  '${story.likedBy.length}',
+                  style: Styles.textStyle12.copyWith(color: Colors.white),
+                ),
+              ],
             ),
           ),
         ],
@@ -251,16 +341,119 @@ class StoriesTabView extends StatelessWidget {
     );
   }
 
-  Widget _buildLoadMoreIndicator() {
+  Widget _buildStoryImage(String imageUrl) {
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+
+        // Skeleton أثناء التحميل
+        return Container(
+          color: Colors.grey.shade300,
+          child: Center(
+            child: Container(
+              width: 40.w,
+              height: 40.h,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return _buildPlaceholder();
+      },
+    );
+  }
+
+  Widget _buildStoryVideo(String videoUrl) {
+    // يمكنك استخدام video_player package هنا
+    return Stack(
+      children: [
+        Container(
+          color: Colors.grey.shade300,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.play_circle_filled,
+                  color: Colors.white,
+                  size: 40.sp,
+                ),
+                Gap(8.h),
+                Text(
+                  'فيديو',
+                  style: Styles.textStyle14.copyWith(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Positioned(
+        //   bottom: 10.h,
+        //   right: 10.w,
+        //   child: Container(
+        //     padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+        //     decoration: BoxDecoration(
+        //       color: Colors.black.withOpacity(0.7),
+        //       borderRadius: BorderRadius.circular(8.r),
+        //     ),
+        //     child: Text(
+        //       _formatDuration(story.videoDuration),
+        //       style: Styles.textStyle12.copyWith(color: Colors.white),
+        //     ),
+        //   ),
+        // ),
+      ],
+    );
+  }
+
+  Widget _buildPlaceholder() {
     return Container(
-      alignment: Alignment.center,
-      child: CircularProgressIndicator(color: AppColors.kprimaryColor),
+      color: AppColors.primary100,
+      child: Center(
+        child: Icon(Icons.photo, color: AppColors.primary300, size: 40.sp),
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreIndicator(ArchivedStoriesState state) {
+    if (!state.hasMore) return SizedBox.shrink();
+
+    if (state.isLoadingMore) {
+      return Skeletonizer(
+        enabled: true,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30.r),
+            color: Colors.grey.shade100,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30.r),
+        color: Colors.transparent,
+      ),
+      child: Center(
+        child: Icon(
+          Icons.arrow_downward,
+          color: AppColors.primary300,
+          size: 24.sp,
+        ),
+      ),
     );
   }
 
   DateTime _parseDate(String dateString) {
     try {
-      return DateTime.parse(dateString);
+      return DateTime.parse(dateString).toLocal();
     } catch (e) {
       return DateTime.now();
     }
@@ -283,4 +476,11 @@ class StoriesTabView extends StatelessWidget {
     ];
     return months[month - 1];
   }
+
+  // String _formatDuration(double seconds) {
+  //   final duration = Duration(seconds: seconds.toInt());
+  //   final minutes = duration.inMinutes;
+  //   final remainingSeconds = duration.inSeconds % 60;
+  //   return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  // }
 }

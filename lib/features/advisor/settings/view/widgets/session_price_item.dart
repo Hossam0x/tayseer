@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:tayseer/my_import.dart';
 
 class SessionPriceItem extends StatefulWidget {
@@ -61,14 +62,18 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
               widget.duration,
               style: Styles.textStyle20.copyWith(color: AppColors.primaryText),
             ),
-            Switch.adaptive(
-              value: isActive,
-              onChanged: (val) {
-                setState(() => isActive = val);
-                widget.onStatusChanged?.call(val);
-              },
-              activeColor: Colors.white,
-              activeTrackColor: AppColors.primary300,
+            Transform.scale(
+              scaleX: 0.9,
+              scaleY: -0.9,
+              child: CupertinoSwitch(
+                value: isActive,
+                onChanged: (val) {
+                  setState(() => isActive = val);
+                  widget.onStatusChanged?.call(val);
+                },
+                activeColor: const Color(0xFFF06C88),
+                trackColor: AppColors.inactiveColor,
+              ),
             ),
           ],
         ),

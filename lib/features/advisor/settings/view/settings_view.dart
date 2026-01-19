@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
@@ -11,7 +12,10 @@ class SettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => SettingsCubit(),
-      child: Scaffold(body: AdvisorBackground(child: _buildBody(context))),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: AdvisorBackground(child: _buildBody(context)),
+      ),
     );
   }
 
@@ -129,7 +133,12 @@ class SettingsView extends StatelessWidget {
 
                         // زر تسجيل الخروج - خارج القائمة
                         Padding(
-                          padding: EdgeInsets.only(bottom: 40.h, top: 16.h),
+                          padding: EdgeInsets.only(
+                            bottom: 40.h,
+                            top: 16.h,
+                            right: 20.w,
+                            left: 20.w,
+                          ),
                           child: _buildLogoutButton(context),
                         ),
                       ],
@@ -202,14 +211,14 @@ class SettingsView extends StatelessWidget {
                 // Switch or Arrow
                 if (setting.hasSwitch)
                   Transform.scale(
-                    scale: 1,
-                    child: Switch.adaptive(
+                    scaleX: -0.9,
+                    scaleY: 0.9,
+                    child: CupertinoSwitch(
                       value: setting.switchValue,
+                      activeColor: const Color(0xFFF06C88),
+                      trackColor: AppColors.inactiveColor,
                       onChanged: (value) =>
                           _handleSwitchChange(context, setting, value),
-                      inactiveThumbColor: AppColors.primary100,
-                      activeTrackColor: AppColors.secondary300,
-                      inactiveTrackColor: AppColors.kWhiteColor,
                     ),
                   )
                 else

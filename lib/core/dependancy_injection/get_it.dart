@@ -10,6 +10,8 @@ import 'package:tayseer/features/advisor/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository.dart';
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
@@ -299,5 +301,13 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<StoryVisibilityCubit>(
     () => StoryVisibilityCubit(getIt<StoryVisibilityRepository>()),
+  );
+
+  getIt.registerLazySingleton<AccountManagementRepository>(
+    () => AccountManagementRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<AccountManagementCubit>(
+    () => AccountManagementCubit(getIt<AccountManagementRepository>()),
   );
 }

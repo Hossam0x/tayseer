@@ -110,31 +110,25 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
     int page = 1,
     int limit = 20,
   }) async {
-    // TODO: استبدل هذا بالـ endpoint الحقيقي عندما يكون جاهزاً
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await _apiService.get(
+        endPoint: '/posts/archived',
+        query: {'page': page, 'limit': limit},
+      );
 
-      // بيانات تجريبية
-      final posts = [
-        ArchivePostModel(
-          id: '1',
-          title: 'منشور مؤرشف 1',
-          image: 'https://example.com/image1.jpg',
-          createdAt: '2024-01-13T10:00:00Z',
-          likes: 15,
-          comments: 3,
-        ),
-        ArchivePostModel(
-          id: '2',
-          title: 'منشور مؤرشف 2',
-          image: 'https://example.com/image2.jpg',
-          createdAt: '2024-01-12T10:00:00Z',
-          likes: 25,
-          comments: 5,
-        ),
-      ];
-
-      return Right(posts);
+      if (response['success'] == true) {
+        final List<dynamic> data = response['data'] ?? [];
+        final posts = data
+            .map((post) => ArchivePostModel.fromJson(post))
+            .toList();
+        return Right(posts);
+      } else {
+        return Left(
+          ServerFailure(
+            response['message']?.toString() ?? 'فشل جلب المنشورات المؤرشفة',
+          ),
+        );
+      }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -147,30 +141,45 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
     int page = 1,
     int limit = 20,
   }) async {
-    // TODO: استبدل هذا بالـ endpoint الحقيقي عندما يكون جاهزاً
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await _apiService.get(
+        endPoint: '/stories/archived',
+        query: {'page': page, 'limit': limit},
+      );
 
-      // بيانات تجريبية
-      final stories = [
-        ArchiveStoryModel(
-          id: '1',
-          image: 'https://example.com/story1.jpg',
-          createdAt: '2024-01-13T10:00:00Z',
-          views: 150,
-        ),
-        ArchiveStoryModel(
-          id: '2',
-          image: 'https://example.com/story2.jpg',
-          createdAt: '2024-01-12T10:00:00Z',
-          views: 200,
-        ),
-      ];
+      // Debug: طباعة الـ response
+      print('📌 Stories Response: $response');
 
-      return Right(stories);
+      if (response['success'] == true) {
+        final List<dynamic> data = response['data'] ?? [];
+        print('📦 Stories count: ${data.length}');
+
+        // Debug: طباعة كل قصة
+        for (var i = 0; i < data.length; i++) {
+          print('   Story $i: ${data[i]}');
+        }
+
+        final stories = data
+            .map((story) => ArchiveStoryModel.fromJson(story))
+            .toList();
+
+        return Right(stories);
+      } else {
+        final errorMessage =
+            response['message']?.toString() ?? 'فشل جلب القصص المؤرشفة';
+        print('❌ Stories Error: $errorMessage');
+        return Left(ServerFailure(errorMessage));
+      }
     } on DioException catch (e) {
+      print('❌ Stories Dio Error: ${e.message}');
+      if (e.response != null) {
+        print('❌ Response Data: ${e.response?.data}');
+        print('❌ Response Status: ${e.response?.statusCode}');
+      }
       return Left(ServerFailure.fromDioError(e));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ Stories General Error: $e');
+      print('❌ Stack Trace: $stackTrace');
       return Left(ServerFailure(e.toString()));
     }
   }
