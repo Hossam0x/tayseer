@@ -28,6 +28,7 @@ class CommenterModel {
     );
   }
 }
+
 class CommentModel {
   final String id;
   final String comment;
@@ -43,7 +44,7 @@ class CommentModel {
   final bool isLoadingReplies;
   final int repliesCurrentPage;
   final int repliesTotalPages;
-  
+
   // ✅ NEW: للتفريق بين الكومنت المؤقت والحقيقي
   final bool isTemp;
 

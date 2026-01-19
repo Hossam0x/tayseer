@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/user/advisor_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/my_import.dart';
 

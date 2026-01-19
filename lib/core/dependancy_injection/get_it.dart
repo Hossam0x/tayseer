@@ -47,7 +47,7 @@ import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_cu
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:tayseer/features/user/advisor_profile/data/repositories/user_profile_repository.dart';
 

@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/category_model.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 
 import '../../../../my_import.dart';
 
@@ -47,6 +47,12 @@ class HomeState extends Equatable {
   bool get isLoadingMore => currentCategoryPosts.isLoadingMore;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 📦 Save Action State
+  // ─────────────────────────────────────────────────────────────────────────
+  final CubitStates saveActionState;
+  final String? saveMessage;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 🏗️ Constructor
   // ─────────────────────────────────────────────────────────────────────────
   const HomeState({
@@ -68,6 +74,10 @@ class HomeState extends Equatable {
     // User Info
     this.homeInfo,
     this.fetchNameAndImageState = CubitStates.initial,
+
+    // Save
+    this.saveActionState = CubitStates.initial,
+    this.saveMessage,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -93,6 +103,10 @@ class HomeState extends Equatable {
     // User Info
     ImageAndNameModel? homeInfo,
     CubitStates? fetchNameAndImageState,
+
+    // Save
+    CubitStates? saveActionState,
+    String? saveMessage,
   }) {
     return HomeState(
       // Posts
@@ -119,6 +133,10 @@ class HomeState extends Equatable {
       homeInfo: homeInfo ?? this.homeInfo,
       fetchNameAndImageState:
           fetchNameAndImageState ?? this.fetchNameAndImageState,
+
+      // Save
+      saveActionState: saveActionState ?? this.saveActionState,
+      saveMessage: saveMessage ?? this.saveMessage,
     );
   }
 
@@ -213,6 +231,9 @@ class HomeState extends Equatable {
     // User Info
     homeInfo,
     fetchNameAndImageState,
+    // Save
+    saveActionState,
+    saveMessage,
   ];
 }
 

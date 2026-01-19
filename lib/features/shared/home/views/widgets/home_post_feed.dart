@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -21,9 +21,20 @@ class HomePostFeed extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: homeCubit,
-      child: BlocListener<HomeCubit, HomeState>(
-        listenWhen: _shouldListenToShare,
-        listener: _handleShareState,
+      child: MultiBlocListener(
+        listeners: [
+          // 📢 1. Share Listener
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: _shouldListenToShare, // دالة الشرط
+            listener: _handleShareFeedback, // دالة التنفيذ
+          ),
+
+          // 💾 2. Save Listener
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: _shouldListenToSave, // دالة الشرط
+            listener: _handleSaveFeedback, // دالة التنفيذ
+          ),
+        ],
         child: BlocSelector<HomeCubit, HomeState, _FeedState>(
           selector: _selectFeedState,
           builder: (context, state) => _buildContent(context, state),
@@ -32,11 +43,28 @@ class HomePostFeed extends StatelessWidget {
     );
   }
 
-  bool _shouldListenToShare(HomeState prev, HomeState curr) =>
-      prev.shareActionState != curr.shareActionState &&
-      curr.shareActionState != CubitStates.initial;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🎧 Listen Conditions (شروط الاستماع)
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  void _handleShareState(BuildContext context, HomeState state) {
+  /// هل تغيرت حالة الشير؟
+  bool _shouldListenToShare(HomeState prev, HomeState curr) {
+    return prev.shareActionState != curr.shareActionState &&
+        curr.shareActionState != CubitStates.initial;
+  }
+
+  /// هل تغيرت حالة الحفظ؟
+  bool _shouldListenToSave(HomeState prev, HomeState curr) {
+    return prev.saveActionState != curr.saveActionState &&
+        curr.saveActionState != CubitStates.initial;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🎮 Action Handlers (دوال تنفيذ التوست)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// التعامل مع توست المشاركة
+  void _handleShareFeedback(BuildContext context, HomeState state) {
     final message = state.shareMessage;
     switch (state.shareActionState) {
       case CubitStates.success:
@@ -46,6 +74,21 @@ class HomePostFeed extends StatelessWidget {
         break;
       case CubitStates.failure:
         AppToast.error(context, message ?? 'حدث خطأ أثناء المشاركة');
+        break;
+      default:
+        break;
+    }
+  }
+
+  /// التعامل مع توست الحفظ
+  void _handleSaveFeedback(BuildContext context, HomeState state) {
+    final message = state.saveMessage;
+    switch (state.saveActionState) {
+      case CubitStates.success:
+        AppToast.success(context, message ?? 'تمت العملية بنجاح');
+        break;
+      case CubitStates.failure:
+        AppToast.error(context, message ?? 'حدث خطأ أثناء الحفظ');
         break;
       default:
         break;
@@ -205,7 +248,12 @@ class _PostItemState extends State<_PostItem> {
       onReactionChanged: _onReaction,
       onShareTap: _onShare,
       onHashtagTap: _onHashtagTap,
+      onSave: _onSave,
     );
+  }
+
+  void _onSave(String postId) {
+    widget.homeCubit.toggleSavePost(postId: postId);
   }
 
   PostModel _getFallbackPost(HomeState state) {

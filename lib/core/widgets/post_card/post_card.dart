@@ -2,11 +2,12 @@ import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
+import 'package:tayseer/core/widgets/post_card/post_options_bottom_sheet.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/core/widgets/post_card/real_video_player.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
 import 'package:tayseer/core/widgets/post_card/post_images_grid.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -84,7 +85,26 @@ class _PostCardState extends State<PostCard> {
           // User Info
           _PostUserHeader(
             post: widget.post,
-            onMoreTap: widget.callbacks.onMoreTap,
+            onMoreTap: () => PostOptionsBottomSheet.show(
+              context,
+              post: widget.post,
+
+              // ربط الـ Callbacks من كلاس PostCallbacks
+              onEdit: () => widget.callbacks.onEdit?.call(widget.post),
+              onDelete: () =>
+                  widget.callbacks.onDelete?.call(widget.post.postId),
+              onArchive: () =>
+                  widget.callbacks.onArchive?.call(widget.post.postId),
+              onShare: () =>
+                  widget.callbacks.onShareTap?.call(widget.post.postId),
+
+              onReport: () =>
+                  widget.callbacks.onReport?.call(widget.post.postId),
+              onHide: () => widget.callbacks.onHide?.call(widget.post.postId),
+              onSave: () => widget.callbacks.onSave?.call(widget.post.postId),
+              onBlock: () =>
+                  widget.callbacks.onBlock?.call(widget.post.advisorId),
+            ),
           ),
           Gap(context.responsiveHeight(15)),
 
@@ -158,8 +178,9 @@ class _CardContainer extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            isDetailsView ? BorderRadius.zero : BorderRadius.circular(15.r),
+        borderRadius: isDetailsView
+            ? BorderRadius.zero
+            : BorderRadius.circular(15.r),
         border: isDetailsView ? null : Border.all(color: Colors.grey.shade200),
       ),
       clipBehavior: Clip.antiAlias,
@@ -338,10 +359,8 @@ class _PostMediaState extends State<_PostMedia> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ReelsFeedView(
-          post: widget.post,
-          initialController: controller,
-        ),
+        builder: (_) =>
+            ReelsFeedView(post: widget.post, initialController: controller),
       ),
     ).then((_) {
       if (mounted && controller.value.isInitialized) {

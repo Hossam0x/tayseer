@@ -4,9 +4,9 @@ import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/errors/failure.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/categories_response_model.dart';
-import 'package:tayseer/features/shared/home/model/comment_model.dart';
+import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/model/comments_response_model.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 
 abstract class HomeRepository {
   Future<Either<Failure, List<PostModel>>> fetchPosts({required int page, String? categoryId});
@@ -66,4 +66,6 @@ abstract class HomeRepository {
     final int page
   );
 
+
+Future<Either<Failure, String>> savedPost({required String postId , required bool isRemove,});
 }

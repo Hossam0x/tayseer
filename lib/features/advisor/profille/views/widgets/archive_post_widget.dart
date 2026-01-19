@@ -3,7 +3,7 @@ import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class ArchivePostWidget extends StatelessWidget {

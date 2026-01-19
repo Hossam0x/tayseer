@@ -25,4 +25,6 @@ class ApiEndPoint {
   static const String unblockuser = '/blocks/unblock';
   static const String profileData = '/advisor/getProfile';
   static const String category = '/category';
+
+  static const String savePost = '/saved-posts';
 }

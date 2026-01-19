@@ -17,4 +17,10 @@ class AppStrings {
   static const String report = "report";
   static const String hide = "hide";
   static const String noComments = "no_comments";
+
+  static const String share = "share";
+  static const String archive = "archive";
+  static const String delete = "delete";
+  static const String block = "block";
+  static const String save = "save";
 }

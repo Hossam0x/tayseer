@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import '../../../../my_import.dart';
 import '../reposiotry/home_repository.dart';
@@ -424,19 +424,63 @@ class HomeCubit extends Cubit<HomeState> {
   // 💾 SAVE POST
   // ═══════════════════════════════════════════════════════════════════════════
 
-  void toggleSavePost({required String postId}) {
+  Future<void> toggleSavePost({required String postId}) async {
+    // 1. العثور على البوست
     final post = _findPost(postId);
     if (post == null) return;
 
+    // تحديد الحالة الحالية والإجراء المطلوب
+    final isCurrentlySaved = post.isSaved;
+    final isRemove = isCurrentlySaved;
+
+    // 2. Optimistic Update (تحديث الواجهة فوراً)
+    // ⚠️ بنصفر الـ saveActionState هنا عشان نجهز لاستقبال النتيجة
     emit(
-      state.updatePostInCurrentCategory(
-        postId,
-        (p) => p.copyWith(isSaved: !p.isSaved),
-      ),
+      state
+          .updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(isSaved: !isCurrentlySaved),
+          )
+          .copyWith(saveActionState: CubitStates.initial),
     );
 
-    // TODO: API Call
-    // homeRepository.toggleSavePost(postId: postId, isSaved: !post.isSaved);
+    // 3. استدعاء السيرفر
+    final result = await homeRepository.savedPost(
+      postId: postId,
+      isRemove: isRemove,
+    );
+
+    // 4. التعامل مع النتيجة
+    result.fold(
+      (failure) {
+        log('>>>>>>>>>>>>>>>>> Save Post Failed: ${failure.message}');
+
+        // Rollback: في حالة الفشل نرجع الحالة زي ما كانت
+        // ⚠️ ونبعت حالة Failure عشان التوست الأحمر يظهر
+        emit(
+          state
+              .updatePostInAllCategories(
+                postId,
+                (p) => p.copyWith(isSaved: isCurrentlySaved),
+              )
+              .copyWith(
+                saveActionState: CubitStates.failure,
+                saveMessage: failure.message,
+              ),
+        );
+      },
+      (message) {
+        log('>>>>>>>>>>>>>>>>> Save Post Success: $message');
+
+        // النجاح: الـ UI متحدث بالفعل (Optimistic)، بس محتاجين نبعت Success عشان التوست الأخضر
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.success,
+            saveMessage: message,
+          ),
+        );
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

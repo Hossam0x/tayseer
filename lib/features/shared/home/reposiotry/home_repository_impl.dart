@@ -3,8 +3,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/categories_response_model.dart';
-import 'package:tayseer/features/shared/home/model/comment_model.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/comment_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/model/post_response_model.dart';
 import 'package:tayseer/features/shared/home/model/comments_response_model.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -249,6 +249,24 @@ class HomeRepositoryImpl implements HomeRepository {
         return Left(ServerFailure.fromDioError(e));
       }
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+
+  @override
+  Future<Either<Failure, String>> savedPost({required String postId , required bool isRemove}) async {
+    try {
+      final Map<String, dynamic> requestData = {
+        "postId": postId,
+      };
+      var response = await apiService.post(
+        endPoint: "${ApiEndPoint.savePost}?action=${isRemove ? "remove" : "add"}",
+        data: requestData,
+       
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
 }
