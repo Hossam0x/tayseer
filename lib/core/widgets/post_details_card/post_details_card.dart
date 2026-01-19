@@ -391,46 +391,27 @@ class _CommentItemState extends State<_CommentItem> {
 
   // ✅ Widget للكومنت المؤقت
   Widget _buildTempComment(BuildContext context) {
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
-
     return IgnorePointer(
       ignoring: true,
       child: Opacity(
         opacity: 0.5,
-        child: Stack(
-          children: [
-            CommentCard(
-              comment: widget.comment,
-              isReply: false,
-              isEditing: false,
-              isReplying: false,
-              isEditLoading: false,
-              isReplyLoading: false,
-              isLoadingReplies: false,
-              onLikeTap: null,
-              onReplyTap: null,
-              onEditTap: null,
-              onCancelEdit: null,
-              onCancelReply: null,
-              onSaveEdit: null,
-              onSendReply: null,
-              onLoadReplies: null,
-              onLikeReply: null,
-            ),
-            Positioned(
-              left: isRtl ? null : 8.w,
-              right: isRtl ? 8.w : null,
-              top: 8.h,
-              child: SizedBox(
-                width: 16.w,
-                height: 16.w,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.w,
-                  color: AppColors.kprimaryColor,
-                ),
-              ),
-            ),
-          ],
+        child: CommentCard(
+          comment: widget.comment,
+          isReply: false,
+          isEditing: false,
+          isReplying: false,
+          isEditLoading: false,
+          isReplyLoading: false,
+          isLoadingReplies: false,
+          onLikeTap: null,
+          onReplyTap: null,
+          onEditTap: null,
+          onCancelEdit: null,
+          onCancelReply: null,
+          onSaveEdit: null,
+          onSendReply: null,
+          onLoadReplies: null,
+          onLikeReply: null,
         ),
       ),
     );

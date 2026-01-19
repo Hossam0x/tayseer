@@ -73,7 +73,7 @@ dependencies:
   file_picker: ^10.3.8
   
   firebase_core: ^3.8.1
-  firebase_auth: ^5.3.4
+  firebase_auth: ^5.7.0
   firebase_messaging: ^15.1.6
   
   # Google Sign In
