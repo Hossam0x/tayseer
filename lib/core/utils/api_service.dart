@@ -16,7 +16,7 @@ class ApiService {
         'Accept-Language': selectedLanguage ?? 'ar',
       };
       headers['Authorization'] =
-          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDdlOThkZjlmOGJjZTNiZjM1NWZjMCIsImVtYWlsIjoiYWJkZWxmYXRhaG1vaGFyZW1AZ21haWwuY29tIiwidHlwZSI6ImFkdmlzb3IiLCJpYXQiOjE3NjcxNjc2NzR9.hU8S3qylgVCc6yggvVDntR5OqHfbNfgAqPFOF6jm6vQ';
+          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NGJkN2EyOGI1N2QzMmQ2YjIwYjMyYSIsImVtYWlsIjoia2hhbGVkZWxraGFtaXN5NDc1QGdtYWlsLmNvbSIsInVzZXJUeXBlIjoiVXNlciIsImlhdCI6MTc2ODc0Mzg2MiwiZXhwIjo0OTI0NTAzODYyfQ.n2XdTGx2y0E9bfyzjqx9gar9tPFrSg584exyUHEKUCE';
       // 'Bearer ${CachNetwork.getStringData(key: 'token')}';
       headers["Accept"] = "application/json";
       final response = await _dio.get(
@@ -47,7 +47,8 @@ class ApiService {
       final mergedHeaders = {
         // 'Accept-Language': selectedLanguage ?? 'ar',
         // 'Accept': 'application/json',
-        'Authorization': "Bearer ${CachNetwork.getStringData(key: 'token')}",
+        'Authorization':
+            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NGJkN2EyOGI1N2QzMmQ2YjIwYjMyYSIsImVtYWlsIjoia2hhbGVkZWxraGFtaXN5NDc1QGdtYWlsLmNvbSIsInVzZXJUeXBlIjoiVXNlciIsImlhdCI6MTc2ODc0Mzg2MiwiZXhwIjo0OTI0NTAzODYyfQ.n2XdTGx2y0E9bfyzjqx9gar9tPFrSg584exyUHEKUCE',
         ...?headers,
       };
 
@@ -76,7 +77,7 @@ class ApiService {
         'Accept-Language': selectedLanguage ?? 'ar',
       };
       mergedHeaders['Authorization'] =
-          'Bearer ${CachNetwork.getStringData(key: 'token')}';
+          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NGJkN2EyOGI1N2QzMmQ2YjIwYjMyYSIsImVtYWlsIjoia2hhbGVkZWxraGFtaXN5NDc1QGdtYWlsLmNvbSIsInVzZXJUeXBlIjoiVXNlciIsImlhdCI6MTc2ODc0Mzg2MiwiZXhwIjo0OTI0NTAzODYyfQ.n2XdTGx2y0E9bfyzjqx9gar9tPFrSg584exyUHEKUCE';
       mergedHeaders["Accept"] = "application/json";
 
       if (headers != null) {
@@ -109,7 +110,8 @@ class ApiService {
     try {
       final mergedHeaders = <String, dynamic>{
         'Accept-Language': selectedLanguage ?? 'ar',
-        'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
+        'Authorization':
+            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NGJkN2EyOGI1N2QzMmQ2YjIwYjMyYSIsImVtYWlsIjoia2hhbGVkZWxraGFtaXN5NDc1QGdtYWlsLmNvbSIsInVzZXJUeXBlIjoiVXNlciIsImlhdCI6MTc2ODc0Mzg2MiwiZXhwIjo0OTI0NTAzODYyfQ.n2XdTGx2y0E9bfyzjqx9gar9tPFrSg584exyUHEKUCE',
         'Accept': 'application/json',
         ...?headers,
       };

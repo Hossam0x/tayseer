@@ -13,6 +13,7 @@ class SessionCard extends StatelessWidget {
   final String timeRange;
   final String imageUrl;
   final bool isBlur;
+  final bool isNow; // ✅ إضافة جديدة
   final VoidCallback? onTapDetails;
   final VoidCallback? onTapJoin;
 
@@ -26,30 +27,31 @@ class SessionCard extends StatelessWidget {
     required this.timeRange,
     required this.imageUrl,
     required this.isBlur,
+    this.isNow = false, // ✅ قيمة افتراضية
     this.onTapDetails,
     this.onTapJoin,
   });
 
   @override
   Widget build(BuildContext context) {
+    // ✅ تحديد إذا كان يجب عرض زر الانضمام
+    final bool showJoinButton = isNow;
+
     final isActive = style == SessionCardStyle.active;
     final isWhite = style == SessionCardStyle.white;
 
     Color backgroundColor;
-
     Border? border;
 
-    if (isActive) {
+    if (isActive || isNow) {
+      // ✅ إضافة isNow للشرط
       backgroundColor = const Color(0xFFF49FA5);
-
       border = null;
     } else if (isWhite) {
       backgroundColor = Colors.white;
-
       border = Border.all(color: Colors.grey.shade200);
     } else {
       backgroundColor = const Color(0xFFF9E3E7);
-
       border = Border.all(color: const Color(0xFFE5B0B6));
     }
 
@@ -92,38 +94,29 @@ class SessionCard extends StatelessWidget {
                   Text(
                     handle,
                     style: Styles.textStyle14.copyWith(
-                      color: isActive ? Colors.black : AppColors.kgreyColor,
+                      color: (isActive || isNow)
+                          ? Colors.black
+                          : AppColors.kgreyColor,
                     ),
                   ),
                 ],
               ),
               const Spacer(),
-              // الزر
-              isActive
-                  ? CustomBotton(
-                      useGradient: true,
-                      height: context.height * 0.075,
-                      width: context.width * 0.3,
-                      onPressed: onTapJoin,
-                      title: buttonText,
-                    )
-                  : CustomOutlineButton(
-                      onTap: onTapDetails,
-                      height: context.height * 0.075,
-                      width: context.width * 0.3,
-                      text: buttonText,
-                    ),
+              // ✅ الزر بناءً على isNow
+              _buildActionButton(context, showJoinButton, isActive),
             ],
           ),
           SizedBox(height: context.height * 0.02),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
-              color: isActive
+              color: (isActive || isNow)
                   ? Colors.white.withOpacity(0.3)
                   : const Color(0xFFFCEFF1).withOpacity(0.5),
               borderRadius: BorderRadius.circular(16),
-              border: isActive ? null : Border.all(color: Colors.white),
+              border: (isActive || isNow)
+                  ? null
+                  : Border.all(color: Colors.white),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -197,6 +190,43 @@ class SessionCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  // ✅ دالة منفصلة لبناء الزر
+  Widget _buildActionButton(
+    BuildContext context,
+    bool showJoinButton,
+    bool isActive,
+  ) {
+    // إذا كانت الجلسة الآن - عرض زر انضم
+    if (showJoinButton) {
+      return CustomBotton(
+        useGradient: true,
+        height: context.height * 0.075,
+        width: context.width * 0.3,
+        onPressed: onTapJoin,
+        title: "انضم",
+      );
+    }
+
+    // إذا كانت الحالة active
+    if (isActive) {
+      return CustomBotton(
+        useGradient: true,
+        height: context.height * 0.075,
+        width: context.width * 0.3,
+        onPressed: onTapJoin,
+        title: buttonText,
+      );
+    }
+
+    // الحالة الافتراضية - زر outline
+    return CustomOutlineButton(
+      onTap: onTapDetails,
+      height: context.height * 0.075,
+      width: context.width * 0.3,
+      text: buttonText,
     );
   }
 }

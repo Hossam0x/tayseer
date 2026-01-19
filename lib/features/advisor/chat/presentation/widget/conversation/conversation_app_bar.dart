@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
+import 'package:tayseer/core/utils/router/app_router.dart';
 
 class ConversationAppBar extends StatelessWidget {
-  final String videoIcon;
+  // final String videoIcon;
   final String phoneIcon;
   final String? username;
   final String? userimage;
   final String? receiverId;
+  final bool isHaveSession;
+  final VoidCallback? onProfileTap;
   final Function(String blockedId)? onBlockUser;
 
   const ConversationAppBar({
     super.key,
-    required this.videoIcon,
+    // required this.videoIcon,
     required this.phoneIcon,
     this.username,
     this.userimage,
     this.receiverId,
+    this.isHaveSession = true,
+    this.onProfileTap,
     this.onBlockUser,
   });
 
@@ -47,10 +53,13 @@ class ConversationAppBar extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: isMobile ? 8 : 12),
-                CircleAvatar(
-                  radius: isMobile ? 20 : 24,
-                  backgroundImage: NetworkImage(
-                    userimage ?? 'https://i.pravatar.cc/150?img=5',
+                GestureDetector(
+                  onTap: onProfileTap,
+                  child: CircleAvatar(
+                    radius: isMobile ? 20 : 24,
+                    backgroundImage: NetworkImage(
+                      userimage ?? 'https://i.pravatar.cc/150?img=5',
+                    ),
                   ),
                 ),
                 SizedBox(width: isMobile ? 8 : 12),
@@ -83,17 +92,25 @@ class ConversationAppBar extends StatelessWidget {
             ),
           ),
 
-          // ✅ الجزء الأيمن (تم التعديل لإضافة القائمة)
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                onPressed: () {},
-                icon: SvgPicture.asset(videoIcon, width: isMobile ? 20 : 24),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: SvgPicture.asset(phoneIcon, width: isMobile ? 20 : 24),
+                onPressed: isHaveSession
+                    ? () {
+                        context.pushNamed(
+                          AppRouter.voiceCallView,
+                          arguments: receiverId,
+                        );
+                      }
+                    : null,
+                icon: SvgPicture.asset(
+                  phoneIcon,
+                  width: isMobile ? 20 : 24,
+                  colorFilter: isHaveSession
+                      ? null
+                      : const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+                ),
               ),
 
               Theme(

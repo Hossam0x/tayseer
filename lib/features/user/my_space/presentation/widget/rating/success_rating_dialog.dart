@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil
-import 'package:tayseer/core/utils/assets.dart';
+// lib/features/user/my_space/presentation/widget/rating/success_rating_dialog.dart
+
+import 'package:tayseer/my_import.dart';
 
 class SuccessRatingDialog extends StatelessWidget {
   const SuccessRatingDialog({super.key});
@@ -37,8 +37,8 @@ class SuccessRatingDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 24.w), // مارجن جانبي
-      padding: EdgeInsets.all(20.r), // بادينج داخلي
+      margin: EdgeInsets.symmetric(horizontal: 24.w),
+      padding: EdgeInsets.all(20.r),
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(25.r),
@@ -55,11 +55,12 @@ class SuccessRatingDialog extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // --- زر الإغلاق ---
           Align(
             alignment: Alignment.centerRight,
             child: IconButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                context.popUntil(routeName: AppRouter.incommingsessiondetails);
+              },
               icon: Icon(
                 Icons.close,
                 color: const Color(0xFF530D1D),
@@ -68,7 +69,6 @@ class SuccessRatingDialog extends StatelessWidget {
             ),
           ),
 
-          // --- النص ---
           Text(
             "! تم ارسال تقييمك بنجاح",
             style: TextStyle(
@@ -80,10 +80,9 @@ class SuccessRatingDialog extends StatelessWidget {
           ),
           SizedBox(height: 20.h),
 
-          // --- الصورة ---
           Image.asset(
             AssetsData.ratingSuccessIcon,
-            height: 180.h, // ارتفاع الصورة
+            height: 180.h,
             fit: BoxFit.contain,
           ),
           SizedBox(height: 30.h),

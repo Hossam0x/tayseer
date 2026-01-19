@@ -24,4 +24,16 @@ class ApiEndPoint {
   static const String blockuser = '/blocks/block';
   static const String unblockuser = '/blocks/unblock';
   static const String advisorUserChat = '/chat/advisor-user';
+  static String advisorChatProfile(String userId) =>
+      '/session/user-sessions/$userId';
+  static String sessionDetails(String sessionId) =>
+      '/session/session-details/$sessionId';
+  static String cancelSession(String sessionId) => "/session/cancel/$sessionId";
+  static String getValidDaysAndHours(String sessionId, int month) =>
+      "/session/valid-days-and-hours/$sessionId?month=$month";
+  static const String createSession = "/session/create";
+  static const String discountcodeValidate = "/discount-code/isValidCode";
+  static const String paysession = "/session/pay";
+  static const String rateadvisor = "/advisor-rating";
+  static String updatesession(String sessionId) => "/session/update/$sessionId";
 }

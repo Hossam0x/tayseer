@@ -1,16 +1,39 @@
+import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/user/my_space/data/model/advisor_chat_model.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_space_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class MySpaceCubit extends Cubit<MySpaceState> {
   final MySpaceRepo mySpaceRepo;
+  final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
-  MySpaceCubit(this.mySpaceRepo) : super(const MySpaceState());
+  late final String _listenerId;
+  String? _activeChatRoomId;
 
-  /// Fetch Advisor Chat Rooms
+  MySpaceCubit(this.mySpaceRepo) : super(const MySpaceState()) {
+    _listenerId =
+        'MySpaceCubit_${DateTime.now().millisecondsSinceEpoch}_$hashCode';
+    log('🆔 MySpaceCubit created with ID: $_listenerId');
+  }
+
+  void _safeEmit(MySpaceState newState) {
+    if (!isClosed) {
+      emit(newState);
+    } else {
+      log('⚠️ [$_listenerId] Attempted to emit after close');
+    }
+  }
+
+  void setActiveChatRoom(String? chatRoomId) {
+    _activeChatRoomId = chatRoomId;
+    log('🎯 [$_listenerId] Active chat room set to: $chatRoomId');
+  }
+
   Future<void> getAdvisorChat() async {
-    emit(state.copyWith(advisorChatState: CubitStates.loading));
+    _safeEmit(state.copyWith(advisorChatState: CubitStates.loading));
 
     CubitStates.printState(
       stateName: "MySpaceCubit - getAdvisorChat",
@@ -26,7 +49,7 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           state: CubitStates.failure,
         );
 
-        emit(
+        _safeEmit(
           state.copyWith(
             advisorChatState: CubitStates.failure,
             errorMessage: failure.message,
@@ -39,7 +62,7 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           state: CubitStates.success,
         );
 
-        emit(
+        _safeEmit(
           state.copyWith(
             advisorChatState: CubitStates.success,
             advisorChatModel: advisorChatModel,
@@ -49,8 +72,268 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     );
   }
 
+  /// Listen to new messages from socket
+  bool _isListening = false;
+
+  void listenToNewMessages() {
+    if (_isListening) {
+      log('⚠️ [$_listenerId] Already listening to new messages');
+      return;
+    }
+
+    _isListening = true;
+    log('🎧 [$_listenerId] Setting up new_message listener for user chat list');
+
+    socketHelper.listenWithId('new_message', _listenerId, (data) {
+      _handleNewMessageForChatList(data);
+    });
+  }
+
+  /// Handle new message and update chat list
+  void _handleNewMessageForChatList(dynamic data) {
+    if (isClosed) {
+      log('⚠️ [$_listenerId] Received message but Cubit is closed - ignoring');
+      return;
+    }
+
+    log('📨 [$_listenerId] Processing new message for user chat list update');
+    log('📨 [$_listenerId] Raw data: $data');
+
+    try {
+      final chatRoomId = data['chatRoomId']?.toString();
+      final content = data['content'];
+      final createdAt = data['createdAt']?.toString() ?? '';
+      final updatedAt = data['updatedAt']?.toString() ?? '';
+      final isMe = data['isMe'] ?? false;
+      final senderName = data['senderName']?.toString() ?? '';
+      final messageType = data['messageType']?.toString() ?? 'text';
+      final messageId = data['id']?.toString() ?? '';
+
+      log(
+        '📨 [$_listenerId] Extracted - chatRoomId: $chatRoomId, messageId: $messageId, content: $content',
+      );
+
+      if (chatRoomId == null) {
+        log('❌ [$_listenerId] chatRoomId is null');
+        return;
+      }
+
+      final currentChatData = state.advisorChatModel?.data;
+      log(
+        '📨 [$_listenerId] Current chat data exists: ${currentChatData != null}',
+      );
+      log(
+        '📨 [$_listenerId] Total chat rooms: ${currentChatData?.chatRooms.length ?? 0}',
+      );
+
+      final chatRoomExists =
+          currentChatData?.chatRooms.any((room) => room.id == chatRoomId) ??
+          false;
+
+      log('📨 [$_listenerId] ChatRoom exists: $chatRoomExists');
+
+      if (chatRoomExists) {
+        log('📝 [$_listenerId] ChatRoom exists, updating lastMessage');
+        _updateChatRoomLastMessage(
+          chatRoomId: chatRoomId,
+          messageId: messageId,
+          content: _extractContent(content),
+          createdAt: createdAt,
+          updatedAt: updatedAt,
+          isMe: isMe,
+          senderName: senderName,
+          messageType: messageType,
+        );
+      } else {
+        log(
+          '🆕 [$_listenerId] New ChatRoom detected (will be fetched on next refresh)',
+        );
+        // Optionally trigger a refresh to fetch new chat rooms
+        // getAdvisorChat();
+      }
+    } catch (e, stackTrace) {
+      log('❌ [$_listenerId] Error processing new message: $e');
+      log('StackTrace: $stackTrace');
+    }
+  }
+
+  /// Update last message in a chat room
+  void _updateChatRoomLastMessage({
+    required String chatRoomId,
+    required String messageId, 
+    required String content,
+    required String createdAt,
+    required String updatedAt,
+    required bool isMe,
+    required String senderName,
+    required String messageType,
+  }) {
+    final currentChatData = state.advisorChatModel?.data;
+    if (currentChatData == null) {
+      log('❌ [$_listenerId] No chat data available');
+      return;
+    }
+
+    final currentRooms = currentChatData.chatRooms;
+    if (currentRooms.isEmpty) {
+      log('❌ [$_listenerId] No chat rooms available');
+      return;
+    }
+
+    final updatedRooms = currentRooms.map((room) {
+      if (room.id == chatRoomId) {
+        log('✅ [$_listenerId] Updating lastMessage for room: $chatRoomId');
+
+        final updatedLastMessage = LastMessageModel(
+          id: messageId.isNotEmpty
+              ? messageId
+              : (room.lastMessage?.id ?? ''), // Use new ID if available
+          sender: room.lastMessage?.sender ?? '',
+          senderType: room.lastMessage?.senderType ?? '',
+          content: content,
+          messageType: messageType,
+          chatRoom: chatRoomId,
+          createdAt: DateTime.tryParse(createdAt) ?? DateTime.now(),
+          updatedAt: DateTime.tryParse(updatedAt) ?? DateTime.now(),
+          senderName: senderName,
+          timeAgo: 'الآن',
+        );
+
+        // Don't increment unread count if user is viewing this chat
+        final isCurrentlyViewing = chatRoomId == _activeChatRoomId;
+        final shouldIncrementUnread = !isMe && !isCurrentlyViewing;
+        final newUnreadCount = shouldIncrementUnread
+            ? room.unreadCount + 1
+            : room.unreadCount;
+
+        if (!isMe && isCurrentlyViewing) {
+          log(
+            '🔕 [$_listenerId] Skipping unread increment - user is viewing this chat',
+          );
+          // ✅ مهم جداً: نبعت للسيرفر إننا قرينا الرسالة دي حالاً
+          markMessageAsReadOnSocket(chatRoomId);
+        }
+
+        return AdvisorChatRoomModel(
+          id: room.id,
+          isBlocked: room.isBlocked,
+          isHaveSession: room.isHaveSession,
+          users: room.users,
+          lastMessage: updatedLastMessage,
+          lastMessageAt: DateTime.tryParse(createdAt) ?? DateTime.now(),
+          status: room.status,
+          sender: room.sender,
+          createdAt: room.createdAt,
+          updatedAt: DateTime.tryParse(updatedAt) ?? DateTime.now(),
+          unreadCount: newUnreadCount,
+        );
+      }
+      return room;
+    }).toList();
+
+    // Sort by latest message
+    updatedRooms.sort((a, b) {
+      final aTime = a.lastMessageAt ?? DateTime(1970);
+      final bTime = b.lastMessageAt ?? DateTime(1970);
+      return bTime.compareTo(aTime);
+    });
+
+    final updatedData = AdvisorChatData(
+      chatRooms: updatedRooms,
+      pagination: currentChatData.pagination,
+    );
+
+    final updatedModel = AdvisorChatModel(
+      success: state.advisorChatModel?.success ?? true,
+      message: state.advisorChatModel?.message ?? '',
+      data: updatedData,
+    );
+
+    _safeEmit(
+      state.copyWith(
+        advisorChatModel: updatedModel,
+        lastUpdateTime: DateTime.now(), // Force rebuild
+      ),
+    );
+
+    log('✅ [$_listenerId] User chat list updated successfully');
+  }
+
+  /// Extract content from message
+  String _extractContent(dynamic content) {
+    if (content == null) return '';
+    if (content is String) {
+      return content;
+    } else if (content is List && content.isNotEmpty) {
+      return content.first.toString();
+    }
+    return '';
+  }
+
+  /// Mark chat as read
+  void markChatAsRead(String chatRoomId) {
+    if (isClosed) return;
+
+    final currentChatData = state.advisorChatModel?.data;
+    if (currentChatData == null) return;
+
+    final updatedRooms = currentChatData.chatRooms.map((room) {
+      if (room.id == chatRoomId) {
+        return AdvisorChatRoomModel(
+          id: room.id,
+          isBlocked: room.isBlocked,
+          isHaveSession: room.isHaveSession,
+          users: room.users,
+          lastMessage: room.lastMessage,
+          lastMessageAt: room.lastMessageAt,
+          status: room.status,
+          sender: room.sender,
+          createdAt: room.createdAt,
+          updatedAt: room.updatedAt,
+          unreadCount: 0,
+        );
+      }
+      return room;
+    }).toList();
+
+    final updatedData = AdvisorChatData(
+      chatRooms: updatedRooms,
+      pagination: currentChatData.pagination,
+    );
+
+    final updatedModel = AdvisorChatModel(
+      success: state.advisorChatModel?.success ?? true,
+      message: state.advisorChatModel?.message ?? '',
+      data: updatedData,
+    );
+
+    _safeEmit(
+      state.copyWith(
+        advisorChatModel: updatedModel,
+        lastUpdateTime: DateTime.now(),
+      ),
+    );
+
+    log('✅ [$_listenerId] Marked chat $chatRoomId as read');
+  }
+
+  /// Send mark as read to socket
+  void markMessageAsReadOnSocket(String chatRoomId) {
+    socketHelper.send('mark_messages_read', {'chatRoomId': chatRoomId}, (ack) {
+      log('✅ [$_listenerId] mark_messages_read ACK: $ack');
+    });
+  }
+
   /// Reset State
   void resetState() {
-    emit(const MySpaceState());
+    _safeEmit(const MySpaceState());
+  }
+
+  @override
+  Future<void> close() {
+    log('🔴 [$_listenerId] Closing MySpaceCubit...');
+    socketHelper.offAllForListener(_listenerId);
+    log('✅ [$_listenerId] MySpaceCubit closed and cleaned up');
+    return super.close();
   }
 }

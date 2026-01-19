@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_space_state.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/my_space_list_view_item.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/session_history/empty_session_widget.dart';
 import 'package:tayseer/my_import.dart';
 
 class MySpaceConsultationContent extends StatefulWidget {
@@ -18,7 +19,6 @@ class _MySpaceConsultationContentState
   @override
   void initState() {
     super.initState();
-    // جلب البيانات عند بناء الـ Widget
     context.read<MySpaceCubit>().getAdvisorChat();
   }
 
@@ -26,7 +26,9 @@ class _MySpaceConsultationContentState
   Widget build(BuildContext context) {
     return BlocBuilder<MySpaceCubit, MySpaceState>(
       buildWhen: (previous, current) =>
-          previous.advisorChatState != current.advisorChatState,
+          previous.advisorChatState != current.advisorChatState ||
+          previous.advisorChatModel != current.advisorChatModel ||
+          previous.lastUpdateTime != current.lastUpdateTime,
       builder: (context, state) {
         // Loading State
         if (state.advisorChatState == CubitStates.loading) {
@@ -43,7 +45,10 @@ class _MySpaceConsultationContentState
           final chatRooms = state.advisorChatModel?.data.chatRooms ?? [];
 
           if (chatRooms.isEmpty) {
-            return _buildEmptyWidget();
+            return EmptySessionsState(
+              title: 'لا يوجد استشارات',
+              subtitle: 'احجز جلسه لتتمكن من حل مشاكلك النفسيه',
+            );
           }
 
           return RefreshIndicator(
@@ -55,7 +60,9 @@ class _MySpaceConsultationContentState
 
                 // الحصول على المستخدم الآخر
                 final otherUser = chatRoom.users.isNotEmpty
-                    ? chatRoom.users.first
+                    ? chatRoom.users.firstWhere(
+                        (user) => user.id == chatRoom.sender.id,
+                      )
                     : chatRoom.sender;
 
                 return MySpaceListItem(
@@ -67,10 +74,31 @@ class _MySpaceConsultationContentState
                   lastUpdate: chatRoom.lastMessageAt ?? chatRoom.updatedAt,
                   unreadCount: chatRoom.unreadCount,
                   onTap: () {
-                    context.pushNamed(
-                      AppRouter.advisorchatprofile,
-                      arguments: chatRoom,
-                    );
+                    final cubit = context.read<MySpaceCubit>();
+                    cubit.markChatAsRead(chatRoom.id);
+                    cubit.setActiveChatRoom(chatRoom.id);
+                    cubit.markMessageAsReadOnSocket(chatRoom.id);
+
+                    context
+                        .pushNamed(
+                          AppRouter.kConversitionView,
+                          arguments: {
+                            'chatroomid': chatRoom.id,
+                            'receiverid': otherUser.id,
+                            'username': otherUser.name,
+                            'userimage': otherUser.image,
+                            'isBlocked': chatRoom.isBlocked,
+                            'isHaveSession': chatRoom.isHaveSession,
+                          },
+                        )
+                        .then((_) {
+                          // عند العودة من الشات، نصفر الشات النشط
+                          if (context.mounted) {
+                            cubit.setActiveChatRoom(null);
+                            // وكمان ممكن نعمل getAdvisorChat عشان نحدث القائمة بالكامل تأكيداً
+                            cubit.getAdvisorChat();
+                          }
+                        });
                   },
                   onArchive: () {
                     AppToast.success(context, 'تم أرشفة الاستشارة بنجاح');
@@ -120,25 +148,25 @@ class _MySpaceConsultationContentState
     );
   }
 
-  Widget _buildEmptyWidget() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 64.sp,
-            color: Colors.grey.shade400,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            'لا توجد استشارات حتى الآن',
-            style: TextStyle(fontSize: 16.sp, color: Colors.grey.shade600),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildEmptyWidget() {
+  //   return Center(
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         Icon(
+  //           Icons.chat_bubble_outline,
+  //           size: 64.sp,
+  //           color: Colors.grey.shade400,
+  //         ),
+  //         SizedBox(height: 16.h),
+  //         Text(
+  //           'لا توجد استشارات حتى الآن',
+  //           style: TextStyle(fontSize: 16.sp, color: Colors.grey.shade600),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   void _showDeleteDialog(BuildContext context, String chatId) {
     showDialog(

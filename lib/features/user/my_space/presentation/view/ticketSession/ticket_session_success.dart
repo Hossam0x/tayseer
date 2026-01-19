@@ -20,7 +20,9 @@ class BookingSuccessView extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.popUntil(
+                      routeName: AppRouter.advisorchatprofile,
+                    ),
                     icon: Icon(
                       Icons.close,
                       color: const Color(0xFF530D1D),

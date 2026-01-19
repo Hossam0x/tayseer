@@ -1,396 +1,258 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tayseer/core/widgets/custom_outline_button.dart';
-import 'package:tayseer/features/user/my_space/data/enum/session_enum.dart';
-import 'package:tayseer/features/user/my_space/data/model/booking_data.dart';
-import 'package:tayseer/features/user/my_space/data/model/sessoin_model.dart';
+import 'package:tayseer/core/enum/cubit_states.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
+import 'package:tayseer/core/utils/router/app_router.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
+import 'package:tayseer/features/user/my_space/data/helper/session_detailes_helper.dart';
+import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/session_detailes/sesion_detailes_cubit.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/session_detailes/session_detailes_state.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/reschedule/section_lable.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/action_button.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/cancel_search_listener.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/card_wipper_widget.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/error_state_widget.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/payment_card_widget.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/person_info_card.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/price_detailes_card_widget.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/session_data_card_widget.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/session_detailes_app_bar.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/session_detailes_shimmer.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/status_card_widget.dart';
 import 'package:tayseer/my_import.dart';
 
-class UsersessionDetailsViewBody extends StatelessWidget {
-  final SessionDetailsModel session;
+class UserSessionDetailsViewBody extends StatefulWidget {
+  const UserSessionDetailsViewBody({super.key, required this.sessionId});
 
-  const UsersessionDetailsViewBody({super.key, required this.session});
+  final String sessionId;
+
+  @override
+  State<UserSessionDetailsViewBody> createState() =>
+      _UserSessionDetailsViewBodyState();
+}
+
+class _UserSessionDetailsViewBodyState extends State<UserSessionDetailsViewBody>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  bool _animationStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupAnimations();
+  }
+
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Column(
         children: [
-          _buildAppBar(context),
+          const SessionDetailsAppBar(),
+          Expanded(child: _buildBody()),
+        ],
+      ),
+    );
+  }
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionLabel(title: "بيانات الشخص"),
-                  _PersonInfoCard(session: session),
-                  SizedBox(height: 20.h),
+  Widget _buildBody() {
+    return BlocConsumer<SesionDetailesCubit, SessionDetailesState>(
+      // ✅ تعديل الـ buildWhen لتشمل تغييرات البيانات
+      buildWhen: (previous, current) {
+        final stateChanged =
+            previous.getSessionDetailesState != current.getSessionDetailesState;
+        final dataChanged =
+            previous.sessionDetailsData != current.sessionDetailsData;
 
-                  _SectionLabel(title: "حالة الحجز"),
-                  _StatusCard(status: session.status),
-                  SizedBox(height: 20.h),
+        log('BuildWhen: stateChanged=$stateChanged, dataChanged=$dataChanged');
 
-                  _SectionLabel(title: "بيانات الجلسة"),
-                  _SessionDataCard(date: session.date, time: session.time),
-                  SizedBox(height: 20.h),
+        return stateChanged || dataChanged;
+      },
+      listenWhen: (previous, current) {
+        return previous.getSessionDetailesState !=
+                current.getSessionDetailesState ||
+            previous.sessionDetailsData != current.sessionDetailsData;
+      },
+      listener: _handleStateChanges,
+      builder: (context, state) {
+        log(
+          'Builder: state=${state.getSessionDetailesState}, hasData=${state.sessionDetailsData != null}',
+        );
 
-                  _SectionLabel(title: "بيانات السعر"),
-                  _PriceDetailsCard(totalPrice: session.priceTotal),
-                  SizedBox(height: 20.h),
+        if (state.getSessionDetailesState == CubitStates.loading) {
+          return const SessionDetailsShimmer();
+        }
 
-                  _SectionLabel(title: "وسيلة الدفع"),
-                  _PaymentMethodCard(),
-                  SizedBox(height: 30.h),
+        if (state.getSessionDetailesState == CubitStates.failure) {
+          return ErrorStateWidget(
+            errorMessage: state.errorMessage,
+            onRetry: _retryLoading,
+          );
+        }
 
-                  // 3. Dynamic Buttons Section
-                  _ActionButtons(status: session.status),
-                  SizedBox(height: 30.h),
-                ],
+        if (state.sessionDetailsData != null) {
+          // ✅ شغل الـ animation مرة واحدة بس
+          if (!_animationStarted) {
+            _animationStarted = true;
+            _animationController.forward();
+          }
+
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: _SuccessContent(
+              key: ValueKey(
+                state.sessionDetailsData!.date.toString() +
+                    state.sessionDetailsData!.timeRange.from,
               ),
+              data: state.sessionDetailsData!,
             ),
-          ),
-        ],
-      ),
+          );
+        }
+
+        return const SizedBox();
+      },
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.black, size: 24.sp),
-            onPressed: () => Navigator.pop(context),
-          ),
-          Text(
-            "تفاصيل الجلسة",
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          SizedBox(width: 40.w), // To balance the back button
-        ],
-      ),
-    );
+  void _handleStateChanges(BuildContext context, SessionDetailesState state) {
+    log('Listener: state changed to ${state.getSessionDetailesState}');
+
+    if (state.sessionDetailsData != null) {
+      log(
+        'Listener: Session data updated - date: ${state.sessionDetailsData!.date}, time: ${state.sessionDetailsData!.timeRange.from}',
+      );
+    }
+  }
+
+  void _retryLoading() {
+    context.read<SesionDetailesCubit>().getSessionDetailes(widget.sessionId);
   }
 }
 
-// -----------------------------------------------------------------------------
-// --- Helper Widgets (Clean Architecture approach) ---
-// -----------------------------------------------------------------------------
+/// Success Content Widget
+class _SuccessContent extends StatelessWidget {
+  final SessionDetailsDataResponse data;
 
-class _SectionLabel extends StatelessWidget {
-  final String title;
-  const _SectionLabel({required this.title});
+  const _SuccessContent({super.key, required this.data});
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8.h),
-      child: Text(
-        title,
-        style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
-      ),
+    final status = SessionDetailsHelper.parseStatus(data.status);
+
+    // ✅ Log للتأكد من البيانات
+    log(
+      '_SuccessContent: Building with date=${data.date}, time=${data.timeRange.from}-${data.timeRange.to}, duration=${data.duration}',
     );
-  }
-}
 
-class _PersonInfoCard extends StatelessWidget {
-  final SessionDetailsModel session;
-  const _PersonInfoCard({required this.session});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(15.r),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 25.r,
-            backgroundImage: NetworkImage(session.imageUrl),
-          ),
-          SizedBox(width: 15.w),
-          Column(
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+          physics: const BouncingScrollPhysics(),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                session.advisorName,
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                session.advisorHandle,
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusCard extends StatelessWidget {
-  final SessionStatus status;
-  const _StatusCard({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    // Logic for styling based on status
-    Color bgColor;
-    Color iconColor;
-    String text;
-    IconData icon;
-
-    switch (status) {
-      case SessionStatus.confirmed:
-        bgColor = const Color(0xFFFFF0F3); // Pinkish
-        iconColor = const Color(0xFFD65A73);
-        text = "مؤكدة - تم التأكيد الموعد من الاستشاري";
-        icon = Icons.check_circle_outline;
-        break;
-      case SessionStatus.completed:
-        bgColor = const Color(0xFFF0FFF4); // Greenish
-        iconColor = const Color(0xFF28A745);
-        text = "مكتملة";
-        icon = Icons.check_circle_outline;
-        break;
-      case SessionStatus.pending:
-        bgColor = const Color(0xFFFFFAF0); // Yellowish
-        iconColor = const Color(0xFFEAA800);
-        text = "قيد المراجعة - بانتظار تأكيد الطبيب للموعد";
-        icon = Icons.access_time_filled_outlined;
-        break;
-      case SessionStatus.rejected:
-        bgColor = const Color(0xFFFFF0F0); // Reddish
-        iconColor = const Color(0xFFDC3545);
-        text = "مرفوضة - يرجى اختيار موعد آخر";
-        icon = Icons.cancel_outlined;
-        break;
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 15.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 10.w),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(8.r),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: iconColor, size: 20.sp),
-            SizedBox(width: 8.w),
-            Flexible(
-              child: Text(
-                text,
-                style: TextStyle(
-                  color: iconColor,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SessionDataCard extends StatelessWidget {
-  final String date;
-  final String time;
-  const _SessionDataCard({required this.date, required this.time});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(15.r),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Column(
-        children: [
-          _rowItem(Icons.calendar_today_outlined, date),
-          SizedBox(height: 10.h),
-          _rowItem(Icons.access_time, time),
-          SizedBox(height: 10.h),
-          _rowItem(Icons.video_camera_front_outlined, "مكالمة فيديو"),
-        ],
-      ),
-    );
-  }
-
-  Widget _rowItem(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, color: const Color(0xFFD65A73), size: 20.sp),
-        SizedBox(width: 10.w),
-        Text(
-          text,
-          style: TextStyle(fontSize: 14.sp, color: Colors.grey[800]),
-        ),
-      ],
-    );
-  }
-}
-
-class _PriceDetailsCard extends StatelessWidget {
-  final String totalPrice;
-  const _PriceDetailsCard({required this.totalPrice});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(15.r),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Column(
-        children: [
-          _priceRow("سعر الجلسة", "180 ر.س"),
-          _priceRow("الضرائب", "10 ر.س"),
-          _priceRow("الرسوم", "10 ر.س"),
-          _priceRow("ضريبة القيمة المضافة", "20 ر.س"),
-          _priceRow("رسوم التطبيق", "-30 ر.س"),
-          _priceRow("الخصم", "-50 ر.س"),
-          Divider(height: 30.h, color: Colors.grey[300]),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "الإجمالي",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
-              ),
-              Text(
-                totalPrice,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.sp,
-                  color: const Color(0xFFD65A73),
+              // Person Info Section
+              const SectionLabel(title: "بيانات الشخص"),
+              CardWrapper(
+                child: PersonInfoCard(
+                  name: data.advisor.name,
+                  handle: "@${data.advisor.name}",
+                  imageUrl: data.advisor.image,
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+              SizedBox(height: 20.h),
 
-  Widget _priceRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
-          ),
-          Text(
-            value,
-            style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
-  }
-}
+              // Status Section
+              const SectionLabel(title: "حالة الحجز"),
+              CardWrapper(child: StatusCard(status: status)),
+              SizedBox(height: 20.h),
 
-class _PaymentMethodCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(15.r),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.credit_card, color: Colors.orange[800], size: 24.sp),
-          SizedBox(width: 10.w),
-          Text(
-            "ماستركارد تنتهي بـ 4567",
-            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
-}
+              // Session Data Section
+              const SectionLabel(title: "بيانات الجلسة"),
+              CardWrapper(
+                child: SessionDataCard(
+                  date: SessionDetailsHelper.formatDateArabic(data.date),
+                  time: "${data.timeRange.from} - ${data.timeRange.to}",
+                  duration: "${data.duration} دقيقة",
+                  isAnonymous: data.isAnonymous,
+                ),
+              ),
+              SizedBox(height: 20.h),
 
-class _ActionButtons extends StatelessWidget {
-  final SessionStatus status;
-  const _ActionButtons({required this.status});
+              // Price Section
+              const SectionLabel(title: "بيانات السعر"),
+              CardWrapper(child: PriceDetailsCard(pricing: data.pricing)),
+              SizedBox(height: 20.h),
 
-  @override
-  Widget build(BuildContext context) {
-    // 1. حالة المؤكدة: لا توجد أزرار
-    if (status == SessionStatus.confirmed) {
-      return const SizedBox.shrink();
-    }
+              // Payment Method Section
+              const SectionLabel(title: "وسيلة الدفع"),
+              CardWrapper(
+                child: PaymentMethodCard(paymentMethod: data.paymentMethods),
+              ),
+              SizedBox(height: 30.h),
 
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          CustomBotton(
-            useGradient: true,
-            title: "إعادة جدولة",
-            onPressed: () {
-              BookingData myOldData = BookingData(
-                day: 15,
-                duration: "90 دقيقة",
-                time: "10:00 ص",
-                paymentMethodIndex: 1,
-              );
-
-              context.pushNamed(
-                AppRouter.kUserRescheduleView,
-                arguments: {
-                  "oldBookingData": myOldData,
-                  "title": "اعاده جدوله",
+              // Action Buttons
+              ActionButtons(
+                status: status,
+                sessionData: data,
+                onReschedule: () {
+                  context.pushNamed(
+                    AppRouter.kUserRescheduleView,
+                    arguments: {
+                      "oldBookingData": data,
+                      "advisorId": data.advisor.id,
+                    },
+                  );
                 },
-              );
-            },
+                onCancel: () {
+                  showConfirmationDialog(
+                    context: context,
+                    imagePath: AssetsData.cancelDialogIcon,
+                    title: "هل تريد إلغاء الحجز ؟",
+                    subtitle:
+                        "هل انت متأكد انك تريد إلغاء حجز الجلسه مع المستشار لحل مشاكل علاقاتك التي تواجهها !",
+                    onConfirm: () {
+                      context.read<SesionDetailesCubit>().cancelSession(
+                        data.sessionId,
+                      );
+                    },
+                  );
+                },
+                onRateAdvisor: () {
+                  context.pushNamed(
+                    AppRouter.userRatingAdvisor,
+                    arguments: {"sessiondata": data},
+                  );
+                },
+              ),
+              SizedBox(height: 30.h),
+            ],
           ),
-          SizedBox(height: 10.h),
-
-          CustomOutlineButton(
-            height: 50,
-            width: 339.w,
-            text: status == SessionStatus.completed
-                ? "تقييم الاستشاري"
-                : "إلغاء الحجز",
-            onTap: () {
-              if (status == SessionStatus.completed) {
-                context.pushNamed(AppRouter.userRatingAdvisor);
-              } else {}
-            },
-          ),
-        ],
-      ),
+        ),
+        CancelSearchListener(),
+      ],
     );
   }
 }

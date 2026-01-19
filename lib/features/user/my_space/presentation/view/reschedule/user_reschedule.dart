@@ -1,22 +1,40 @@
+// lib/features/user/my_space/presentation/view/user_reschedule.dart
+
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/widgets/advisor_background.dart';
 import 'package:tayseer/features/user/my_space/data/model/booking_data.dart';
+import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
+import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/create_session/create_session_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/reschedule/user_reschedule_view_body.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserReschedule extends StatelessWidget {
-  const UserReschedule({super.key, this.oldBookingData, required this.title});
-  final BookingData? oldBookingData;
+  const UserReschedule({
+    super.key,
+    this.oldBookingData,
+    required this.title,
+    required this.advisorId,
+  });
+
+  final SessionDetailsDataResponse? oldBookingData;
   final String title;
+  final String advisorId;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AdvisorBackground(
-        child: UserRescheduleViewBody(
-          oldBookingData: oldBookingData,
-          title: title,
+    return BlocProvider(
+      create: (context) =>
+          AvailableSlotsCubit(getIt.get<MySpaceRepo>())
+            ..getAvailableSlots(advisorId),
+      child: Scaffold(
+        body: AdvisorBackground(
+          child: UserRescheduleViewBody(
+            oldBookingData: oldBookingData,
+            title: title,
+            advisorId: advisorId,
+          ),
         ),
       ),
     );

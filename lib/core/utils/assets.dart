@@ -182,4 +182,6 @@ abstract class AssetsData {
   static const String doctorIcon = "assets/icons/doctor.svg";
   static const String sessionChatTimeIcon = "assets/icons/SessionChatTime.svg";
   static const String vodacasheIcon = "assets/icons/voda.png";
+  static const String durationIcon = "assets/icons/duration_icon.svg";
+  static const String cancelDialogIcon = "assets/icons/cancel_dialog_icon.png";
 }

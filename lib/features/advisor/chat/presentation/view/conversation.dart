@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
+import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/state/chat_messages_state.dart';
@@ -34,6 +35,7 @@ class ChatScreenWithOverlay extends StatefulWidget {
   final String? username;
   final String? userimage;
   final bool isBlocked;
+  final bool isHaveSession;
   final void Function(bool isBlocked)? onBlockStatusChanged;
 
   const ChatScreenWithOverlay({
@@ -43,6 +45,7 @@ class ChatScreenWithOverlay extends StatefulWidget {
     this.username,
     this.userimage,
     this.isBlocked = false,
+    this.isHaveSession = true,
     this.onBlockStatusChanged,
   });
 
@@ -446,9 +449,16 @@ class _ChatScreenWithOverlayState extends State<ChatScreenWithOverlay> {
                               ConversationAppBar(
                                 username: widget.username,
                                 userimage: widget.userimage,
-                                videoIcon: AssetsData.videoIcon,
                                 phoneIcon: AssetsData.phoneIcon,
                                 receiverId: widget.receiverId,
+                                isHaveSession: widget.isHaveSession,
+                                onProfileTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppRouter.advisorchatprofile,
+                                    arguments: {'advisorid': widget.receiverId},
+                                  );
+                                },
                                 onBlockUser: (blockedId) async {
                                   // حظر فوري بدون انتظار
                                   await context

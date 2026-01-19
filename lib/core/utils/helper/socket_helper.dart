@@ -28,7 +28,9 @@ class tayseerSocketHelper {
     _connectionCompleter = Completer<bool>();
     log('🔧 Initializing socket connection...');
 
-    final String? token = CachNetwork.getStringData(key: 'token');
+    // final String? token = CachNetwork.getStringData(key: 'token');
+    final String? token =
+        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NGJkN2EyOGI1N2QzMmQ2YjIwYjMyYSIsImVtYWlsIjoia2hhbGVkZWxraGFtaXN5NDc1QGdtYWlsLmNvbSIsInVzZXJUeXBlIjoiVXNlciIsInR5cGUiOiJsb2dpbl92ZXJpZnkiLCJpYXQiOjE3Njg3MjQxNzEsImV4cCI6MTc2ODcyNTA3MX0.-bRbKKH6ZzjTkRuwPL0wGLRXUGi5iK-UJkhrByFYmDw";
 
     log('Token: $token');
 

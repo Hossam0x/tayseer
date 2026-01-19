@@ -1,13 +1,17 @@
+// lib/features/user/my_space/presentation/widget/rating/feedback_text_field.dart
+
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class FeedbackTextField extends StatelessWidget {
-  const FeedbackTextField({super.key});
+  final TextEditingController? controller;
+
+  const FeedbackTextField({super.key, this.controller});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 150.h, // الارتفاع
+      height: 150.h,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15.r),
@@ -21,6 +25,7 @@ class FeedbackTextField extends StatelessWidget {
         ],
       ),
       child: TextField(
+        controller: controller,
         maxLines: 5,
         textAlign: TextAlign.right,
         decoration: InputDecoration(

@@ -33,7 +33,10 @@ import 'package:tayseer/features/shared/auth/view/select_days_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
+import 'package:tayseer/features/user/my_space/data/model/advisorprofile/session_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/booking_data.dart';
+import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
+import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessoin_model.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/AdvisorProfile/Advisor_information.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/rating/user_rating_advisor.dart';
@@ -42,6 +45,8 @@ import 'package:tayseer/features/user/my_space/presentation/view/sessionDetails/
 import 'package:tayseer/features/user/my_space/presentation/view/sessionHistory/session_history_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/ticketSession/ticket_session_success.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/ticketSession/ticket_session_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/voic_call/voice_call_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/session_history/session_history_view_body.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
 import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
 import 'package:tayseer/features/user/questions/children_living_status_view.dart';
@@ -145,6 +150,7 @@ abstract class AppRouter {
   static const kEventDetailView = '/EventDetailView';
   static const kUpdateEventView = '/UpdateEventView';
   static const kSessionDetailsView = '/SessionDetailsView';
+  static const voiceCallView = '/VoiceCallView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -517,9 +523,11 @@ abstract class AppRouter {
           ),
         );
       case AppRouter.userRatingAdvisor:
+        final args = settings.arguments as Map<String, dynamic>;
+        final data = args['sessiondata'] as SessionDetailsDataResponse;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const RatingView(),
+          builder: (_) => RatingView(data: data),
         );
 
       // advisor routes
@@ -619,6 +627,10 @@ abstract class AppRouter {
                 (settings.arguments as Map<String, dynamic>?)?['isBlocked']
                     as bool? ??
                 false,
+            isHaveSession:
+                (settings.arguments as Map<String, dynamic>?)?['isHaveSession']
+                    as bool? ??
+                true,
             onBlockStatusChanged:
                 (settings.arguments
                         as Map<String, dynamic>?)?['onBlockStatusChanged']
@@ -631,42 +643,67 @@ abstract class AppRouter {
           builder: (_) => const NotificationView(),
         );
       case advisorchatprofile:
+        final args = settings.arguments as Map<String, dynamic>;
+
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const AdvisorInformation(),
+          builder: (_) =>
+              AdvisorInformation(userid: args['advisorid'] as String),
         );
-      case sessionhistory:
+      case AppRouter.sessionhistory:
+        final args = settings.arguments as Map<String, dynamic>?;
+
+        final upcoming = args?['upcoming'];
+        final expired = args?['expired'];
+
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const SessionHistoryView(),
+          builder: (_) => SessionHistoryViewBody(
+            upcomingSessions: upcoming is List<SessionModel>
+                ? upcoming
+                : (upcoming as List?)?.cast<SessionModel>() ?? [],
+            expiredSessions: expired is List<SessionModel>
+                ? expired
+                : (expired as List?)?.cast<SessionModel>() ?? [],
+          ),
         );
       case incommingsessiondetails:
-        final args = settings.arguments as SessionDetailsModel;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => UsersessionDetailsView(sessionModel: args),
+          builder: (_) =>
+              UsersessionDetailsView(sessionId: settings.arguments as String),
         );
       case kUserRescheduleView:
         final args = settings.arguments as Map<String, dynamic>?;
 
-        final BookingData? data = args?['oldBookingData'];
+        final SessionDetailsDataResponse? data = args?['oldBookingData'];
 
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => UserReschedule(
+            advisorId: args?['advisorId'] ?? '',
             title: args?['title'] ?? 'اعاده جدوله',
             oldBookingData: data,
           ),
         );
-      case userticketSessionView:
+      // في app_router.dart
+
+      case AppRouter.userticketSessionView:
+        final sessionData = settings.arguments as SessionData;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const TicketSessionView(),
+          builder: (_) => TicketSessionView(sessionData: sessionData),
         );
       case sessionticketsuccessview:
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const BookingSuccessView(),
+        );
+      case AppRouter.voiceCallView:
+        final sessionId = settings.arguments as String;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => CallPage(callID: sessionId),
         );
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;

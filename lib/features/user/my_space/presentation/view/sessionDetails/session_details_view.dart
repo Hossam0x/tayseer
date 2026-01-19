@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
-// استبدل هذا المسار بمسار الموديل لديك
-import 'package:tayseer/features/user/my_space/data/model/sessoin_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/session_detailes/sesion_detailes_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/session_details_view_body.dart';
 import 'package:tayseer/my_import.dart';
 
 class UsersessionDetailsView extends StatelessWidget {
-  final SessionDetailsModel sessionModel;
-
-  const UsersessionDetailsView({super.key, required this.sessionModel});
+  const UsersessionDetailsView({super.key, required this.sessionId});
+  final String sessionId;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
-      body: AdvisorBackground(
-        child: UsersessionDetailsViewBody(session: sessionModel),
+    return BlocProvider(
+      create: (context) =>
+          SesionDetailesCubit(getIt<MySpaceRepo>())
+            ..getSessionDetailes(sessionId),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
+        body: AdvisorBackground(
+          child: UserSessionDetailsViewBody(sessionId: sessionId),
+        ),
       ),
     );
   }

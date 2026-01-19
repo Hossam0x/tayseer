@@ -10,7 +10,11 @@ class MySpaceView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MySpaceCubit>(
-      create: (context) => getIt<MySpaceCubit>(),
+      create: (context) {
+        final cubit = getIt<MySpaceCubit>();
+        cubit.listenToNewMessages();
+        return cubit;
+      },
       child: const Scaffold(body: MySpaceViewBody()),
     );
   }

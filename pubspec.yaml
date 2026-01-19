@@ -7,18 +7,17 @@ version: 1.0.0+1
 environment:
   sdk: ">=3.8.1 <4.0.0"
 
-
 dependencies:
   flutter:
     sdk: flutter
 
-  audioplayers: ^6.0.0
+  # مكتبات أساسية
   cached_network_image: ^3.4.1
   camera: ^0.10.0
   cupertino_icons: ^1.0.8
   dartz: ^0.10.1
   date_picker_timeline: ^1.2.6
-  device_info_plus: ^12.3.0
+  device_info_plus: ^11.5.0
   dio: ^5.9.0
   emoji_picker_flutter: ^4.4.0
   equatable: ^2.0.5
@@ -65,8 +64,9 @@ dependencies:
   freezed_annotation: ^2.4.4
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^6.1.0
-  connectivity_plus: ^7.0.0
-
+  connectivity_plus: ^6.0.5
+  # ⬇️ إصدار أقدم متوافق مع كل شيء
+  zego_uikit_prebuilt_call: ^4.16.17
 
 dev_dependencies:
   flutter_test:
@@ -100,6 +100,5 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  
   remove_alpha_ios: true
   image_path: "assets/icons/app_logo_icon.png"
