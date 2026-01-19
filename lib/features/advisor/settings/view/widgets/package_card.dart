@@ -2,7 +2,7 @@ import 'package:tayseer/my_import.dart';
 
 class PackageCard extends StatelessWidget {
   final String title;
-  final List<String> features;
+  final List<String>? features;
   final String price;
   final String savings;
   final bool isFeatured;
@@ -11,7 +11,7 @@ class PackageCard extends StatelessWidget {
   const PackageCard({
     super.key,
     required this.title,
-    required this.features,
+    this.features,
     required this.price,
     required this.savings,
     this.isFeatured = false,
@@ -38,42 +38,58 @@ class PackageCard extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Styles.textStyle14SemiBold.copyWith(
-                  color: AppColors.titleCard,
-                ),
-              ),
-              Gap(8.h),
-              ...features.map(
-                (f) => Text(
-                  '• $f',
-                  style: Styles.textStyle12.copyWith(
-                    color: AppColors.secondary600,
-                  ),
-                ),
-              ),
-              Gap(12.h),
-              GradientText(text: '$price EGP', style: Styles.textStyle20Bold),
-              Gap(8.h),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: AppColors.tabsBack,
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                child: Text(
-                  'وفر $savings Egp',
-                  style: Styles.textStyle14Meduim.copyWith(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Styles.textStyle14SemiBold.copyWith(
                     color: AppColors.titleCard,
                   ),
                 ),
-              ),
-            ],
+
+                Gap(8.h),
+
+                // عرض features فقط إذا كانت موجودة
+                if (features != null && features!.isNotEmpty)
+                  Column(
+                    children: features!
+                        .map(
+                          (f) => Text(
+                            '• $f',
+                            style: Styles.textStyle12.copyWith(
+                              color: AppColors.secondary600,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+
+                Gap(12.h),
+
+                GradientText(text: '$price EGP', style: Styles.textStyle20Bold),
+
+                Gap(8.h),
+
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.tabsBack,
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Text(
+                    'وفر $savings Egp',
+                    style: Styles.textStyle14Meduim.copyWith(
+                      color: AppColors.titleCard,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
+
+          Gap(16.w),
 
           CustomBotton(
             title: 'اشتراك',

@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:http_parser/http_parser.dart';
 import 'package:tayseer/my_import.dart';
 import '../models/edit_personal_data_models.dart';
 
@@ -11,14 +10,12 @@ abstract class EditPersonalDataRepository {
     File? videoFile,
     bool? removeVideo,
   });
-  Future<String?> uploadFile(File file, String fieldName);
 }
 
 class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
   final ApiService _apiService;
-  final Dio _dio;
 
-  EditPersonalDataRepositoryImpl(this._apiService, this._dio);
+  EditPersonalDataRepositoryImpl(this._apiService);
 
   @override
   Future<Either<Failure, AdvisorProfileModel>> getAdvisorProfile() async {
@@ -28,29 +25,9 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
 
+        // ⭐ تعديل هنا: إبقاء القيمة كما هي (String)
         final yearsExp = data['yearsOfExperience'];
-        String? yearsExpString;
-
-        if (yearsExp != null) {
-          if (yearsExp is num) {
-            final intValue = yearsExp.toInt();
-            if (intValue == 2) {
-              yearsExpString = "سنتين";
-            } else if (intValue == 3) {
-              yearsExpString = "3 سنوات";
-            } else if (intValue == 5) {
-              yearsExpString = "5 سنوات";
-            } else if (intValue == 10) {
-              yearsExpString = "10 سنوات";
-            } else if (intValue > 10) {
-              yearsExpString = "أكثر من 10 سنوات";
-            } else {
-              yearsExpString = yearsExp.toString();
-            }
-          } else {
-            yearsExpString = yearsExp.toString();
-          }
-        }
+        String? yearsExpString = yearsExp?.toString(); // ⭐ تحويل إلى String فقط
 
         final profileData = {
           '_id': data['_id'] ?? '',
@@ -61,7 +38,7 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
           'gender': data['gender'],
           'professionalSpecialization': data['professionalSpecialization'],
           'jobGrade': data['jobGrade'],
-          'yearsOfExperience': yearsExpString,
+          'yearsOfExperience': yearsExpString, // ⭐ String
           'aboutYou': data['aboutYou'],
           'videoLink': data['videoLink'],
           'isVerified': data['isVerified'] ?? false,
@@ -91,62 +68,84 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
     bool? removeVideo,
   }) async {
     try {
-      // إنشاء FormData
-      final formData = FormData.fromMap({
-        ...request.toFormData(),
-        // إضافة flag لحذف الفيديو إذا تم الطلب
-        if (removeVideo == true) 'removeVideo': 'true',
-      });
+      final formData = FormData();
 
-      // إضافة ملف الصورة إذا كان موجوداً
+      // إضافة الحقول النصية مع مراعاة الـ mapping العكسي
+      if (request.name != null && request.name!.isNotEmpty) {
+        formData.fields.add(MapEntry('name', request.name!));
+      }
+
+      if (request.username != null && request.username!.isNotEmpty) {
+        formData.fields.add(MapEntry('username', request.username!));
+      }
+
+      // ⭐ تحويل professionalSpecialization إلى القيمة المتوقعة من الباكند
+      if (request.professionalSpecialization != null &&
+          request.professionalSpecialization!.isNotEmpty) {
+        // هنا قد تحتاج إلى mapping عكسي إذا كان الباكند يتوقع قيماً محددة
+        formData.fields.add(
+          MapEntry(
+            'ProfessionalSpecialization',
+            request.professionalSpecialization!,
+          ),
+        );
+      }
+
+      if (request.jobGrade != null && request.jobGrade!.isNotEmpty) {
+        formData.fields.add(MapEntry('JobGrade', request.jobGrade!));
+      }
+
+      if (request.yearsOfExperience != null &&
+          request.yearsOfExperience!.isNotEmpty) {
+        formData.fields.add(
+          MapEntry('yearsOfExperience', request.yearsOfExperience!),
+        );
+      }
+
+      if (request.aboutYou != null && request.aboutYou!.isNotEmpty) {
+        formData.fields.add(MapEntry('aboutYou', request.aboutYou!));
+      }
+
+      // ⭐ معالجة الصورة
       if (imageFile != null) {
-        final fileName = imageFile.path.split('/').last;
         formData.files.add(
           MapEntry(
             'image',
             await MultipartFile.fromFile(
               imageFile.path,
-              filename: fileName,
-              contentType: MediaType('image', 'jpeg'),
+              filename: 'profile_image.jpg',
             ),
           ),
         );
+      } else if (request.image == "") {
+        // ⭐ إذا كانت الصورة محذوفة، أرسل قيمة فارغة
+        formData.fields.add(MapEntry('image', ''));
       }
 
-      // إضافة ملف الفيديو إذا كان موجوداً
+      // ⭐ معالجة الفيديو
       if (videoFile != null) {
-        final fileName = videoFile.path.split('/').last;
         formData.files.add(
           MapEntry(
             'video',
             await MultipartFile.fromFile(
               videoFile.path,
-              filename: fileName,
-              contentType: MediaType('video', 'mp4'),
+              filename: 'intro_video.mp4',
             ),
           ),
         );
+      } else if (request.video == "") {
+        // ⭐ إذا كان الفيديو محذوفاً، أرسل قيمة فارغة
+        formData.fields.add(MapEntry('video', ''));
       }
 
       print('📤 Sending PATCH request to /advisor/editPersonalData');
-      print('📤 FormData keys: ${formData.fields.map((e) => e.key)}');
-      print('📤 Files count: ${formData.files.length}');
-      print('📤 Remove video: $removeVideo');
+      print('📤 Has image to delete: ${request.image == ""}');
+      print('📤 Has video to delete: ${request.video == ""}');
 
-      // استخدام baseUrl الصحيح من الـ Dio
-      final baseUrl = _dio.options.baseUrl;
-      if (baseUrl.isEmpty) {
-        return Left(ServerFailure('Base URL not configured'));
-      }
-
-      final fullUrl = '$baseUrl/advisor/editPersonalData';
-      print('📤 Full URL: $fullUrl');
-
-      // إرسال الطلب
       final response = await _apiService.patch(
         endPoint: '/advisor/editPersonalData',
-        isFromData: true,
         data: formData,
+        isFromData: true,
         headers: {'Content-Type': 'multipart/form-data'},
       );
 
@@ -169,7 +168,6 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       print('❌ Dio Error: ${e.message}');
       print('❌ Dio Error Type: ${e.type}');
       print('❌ Dio Error Response: ${e.response?.data}');
-      print('❌ Dio Error Stack: ${e.stackTrace}');
 
       String errorMessage = 'خطأ في الاتصال بالسيرفر';
       if (e.response?.data != null) {
@@ -186,39 +184,6 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       print('❌ Error: $e');
       print('❌ Stack: $stack');
       return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
-    }
-  }
-
-  @override
-  Future<String?> uploadFile(File file, String fieldName) async {
-    try {
-      final fileName = file.path.split('/').last;
-
-      final formData = FormData.fromMap({
-        fieldName: await MultipartFile.fromFile(file.path, filename: fileName),
-      });
-
-      final response = await _dio.post(
-        'upload',
-        data: formData,
-        options: Options(
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
-      );
-
-      final responseData = response.data as Map<String, dynamic>;
-
-      if (responseData['success'] == true) {
-        return responseData['data']['url'] as String?;
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print('❌ Error uploading file: $e');
-      return null;
     }
   }
 }

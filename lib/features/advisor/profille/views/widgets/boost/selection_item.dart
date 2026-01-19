@@ -1,11 +1,11 @@
 import 'package:tayseer/my_import.dart';
 
-class LocationItem extends StatelessWidget {
+class SelectionItem extends StatelessWidget {
   final String title;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const LocationItem({
+  const SelectionItem({
     super.key,
     required this.title,
     this.isSelected = false,
@@ -21,10 +21,11 @@ class LocationItem extends StatelessWidget {
         margin: EdgeInsets.symmetric(vertical: 4.h),
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFFF1F3) : Colors.transparent,
+          color: isSelected ? AppColors.primary50 : Colors.transparent,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
-            color: isSelected ? const Color(0xFFF18DA3) : Colors.transparent,
+            color: isSelected ? AppColors.primary600 : Colors.transparent,
+            width: 0.5,
           ),
         ),
         child: Row(
@@ -38,8 +39,8 @@ class LocationItem extends StatelessWidget {
             if (isSelected)
               Container(
                 padding: EdgeInsets.all(3),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFD65670),
+                decoration: BoxDecoration(
+                  color: AppColors.primary400,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.check, color: Colors.white, size: 16.sp),

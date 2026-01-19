@@ -1,4 +1,5 @@
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_states.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/session_price_item.dart';
@@ -46,7 +47,7 @@ class SessionPricingView extends StatelessWidget {
                     top: 0,
                     left: 0,
                     right: 0,
-                    height: 110.h,
+                    height: 105.h,
                     child: Container(
                       decoration: BoxDecoration(
                         image: DecorationImage(
@@ -64,7 +65,7 @@ class SessionPricingView extends StatelessWidget {
                       child: Column(
                         children: [
                           Gap(16.h),
-                          _buildHeader(context),
+                          SimpleAppBar(title: 'مدة واسعار الجلسات'),
                           Gap(30.h),
 
                           // Loading State with Skeletonizer
@@ -129,32 +130,6 @@ class SessionPricingView extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Icon(
-            Icons.arrow_back,
-            color: AppColors.blackColor,
-            size: 24.w,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 18.0),
-          child: Text(
-            'مدة واسعار الجلسات',
-            style: Styles.textStyle20Bold.copyWith(
-              color: AppColors.secondary800,
-            ),
-          ),
-        ),
-        SizedBox(width: 24.w), // لتحقيق التوازن
-      ],
     );
   }
 
@@ -304,7 +279,8 @@ class SessionPricingView extends StatelessWidget {
     SessionPricingState state,
   ) {
     return CustomBotton(
-      width: context.width * 0.9,
+      height: 54.h,
+      width: double.infinity,
       useGradient: true,
       title: state.isSaving
           ? 'جاري الحفظ...'
@@ -314,7 +290,7 @@ class SessionPricingView extends StatelessWidget {
       onPressed: state.isSaving || !state.hasChanges
           ? null
           : () => cubit.saveChanges(context),
-      // backgroundColor: state.hasChanges ? null : AppColors.inactiveColor,
+      backGroundcolor: state.hasChanges ? null : AppColors.inactiveColor,
     );
   }
 }

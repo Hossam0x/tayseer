@@ -65,6 +65,23 @@ class CommentInputAreaState extends State<CommentInputArea> {
     }
   }
 
+  // ✅ NEW: Method لإرسال الكومنت
+  void _sendComment() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    // 1️⃣ مسح الـ TextField فوراً (قبل الـ API call)
+    _controller.clear();
+    setState(() {
+      _textDirection = TextDirection.rtl;
+      _showEmojiPicker = false;
+    });
+    _focusNode.unfocus();
+
+    // 2️⃣ إرسال الكومنت للـ Cubit
+    context.read<PostDetailsCubit>().addComment(text);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
@@ -73,11 +90,11 @@ class CommentInputAreaState extends State<CommentInputArea> {
           listenWhen: (previous, current) {
             final replyStarted =
                 previous.activeReplyId != current.activeReplyId &&
-                current.activeReplyId != null;
+                    current.activeReplyId != null;
 
             final editStarted =
                 previous.editingCommentId != current.editingCommentId &&
-                current.editingCommentId != null;
+                    current.editingCommentId != null;
 
             final focusTriggered =
                 previous.focusInputTrigger != current.focusInputTrigger;
@@ -96,23 +113,20 @@ class CommentInputAreaState extends State<CommentInputArea> {
             }
           },
         ),
+        // ✅ MODIFIED: Listener للـ addingCommentState
         BlocListener<PostDetailsCubit, PostDetailsState>(
           listenWhen: (previous, current) =>
               previous.addingCommentState != current.addingCommentState,
           listener: (context, state) {
-            if (state.addingCommentState == CubitStates.success) {
-              _controller.clear();
-              setState(() {
-                _textDirection = TextDirection.rtl;
-                _showEmojiPicker = false;
-              });
-              _focusNode.unfocus();
-            } else if (state.addingCommentState == CubitStates.failure) {
+            // ❌ فقط في حالة الفشل نعرض Toast
+            // (الـ TextField اتمسح فعلاً في _sendComment)
+            if (state.addingCommentState == CubitStates.failure) {
               AppToast.error(
                 context,
                 state.errorMessage ?? "حدث خطأ أثناء إضافة التعليق",
               );
             }
+            // ✅ Success: مش محتاج نعمل حاجة لأن الكومنت ظاهر فعلاً
           },
         ),
       ],
@@ -148,12 +162,9 @@ class CommentInputAreaState extends State<CommentInputArea> {
                     top: false,
                     bottom: !_showEmojiPicker,
                     child: Row(
-                      // 1. هنا التغيير الأول: سنترنا كل حاجة في الصف الرئيسي
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // تم إزالة الـ Padding Bottom من هنا
                         const MyProfileImage(),
-
                         Gap(12.w),
                         Expanded(
                           child: Container(
@@ -168,7 +179,6 @@ class CommentInputAreaState extends State<CommentInputArea> {
                               border: Border.all(color: Colors.grey.shade200),
                             ),
                             child: Row(
-                              // 2. هنا التغيير الثاني: سنترنا محتوى الكونتينر الداخلي (النص والإيموجي)
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Expanded(
@@ -178,8 +188,8 @@ class CommentInputAreaState extends State<CommentInputArea> {
                                     textDirection: _textDirection,
                                     textAlign:
                                         _textDirection == TextDirection.rtl
-                                        ? TextAlign.right
-                                        : TextAlign.left,
+                                            ? TextAlign.right
+                                            : TextAlign.left,
                                     maxLines: null,
                                     keyboardType: TextInputType.multiline,
                                     style: TextStyle(
@@ -207,9 +217,8 @@ class CommentInputAreaState extends State<CommentInputArea> {
                                 GestureDetector(
                                   onTap: _toggleEmojiPicker,
                                   child: Container(
-                                    height: 45.h, // نفس ارتفاع الكونتينر
-                                    alignment:
-                                        Alignment.center, // تأكيد السنترة
+                                    height: 45.h,
+                                    alignment: Alignment.center,
                                     child: Icon(
                                       _showEmojiPicker
                                           ? Icons.keyboard_outlined
@@ -226,40 +235,14 @@ class CommentInputAreaState extends State<CommentInputArea> {
                           ),
                         ),
                         Gap(10.w),
-                        // تم إزالة الـ Padding Bottom من هنا أيضاً
-                        BlocSelector<
-                          PostDetailsCubit,
-                          PostDetailsState,
-                          CubitStates
-                        >(
-                          selector: (state) => state.addingCommentState,
-                          builder: (context, addingState) {
-                            if (addingState == CubitStates.loading) {
-                              return SizedBox(
-                                height: 20.w,
-                                width: 20.w,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 3.w,
-
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              );
-                            }
-                            return InkWell(
-                              onTap: () {
-                                if (_controller.text.trim().isNotEmpty) {
-                                  context.read<PostDetailsCubit>().addComment(
-                                    _controller.text,
-                                  );
-                                }
-                              },
-                              child: AppImage(
-                                AssetsData.send,
-                                height: 26.w,
-                                width: 26.w,
-                              ),
-                            );
-                          },
+                        // ✅ MODIFIED: زر الإرسال
+                        InkWell(
+                          onTap: _sendComment,
+                          child: AppImage(
+                            AssetsData.send,
+                            height: 26.w,
+                            width: 26.w,
+                          ),
                         ),
                       ],
                     ),
@@ -274,8 +257,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
                         height: 250.h,
                         checkPlatformCompatibility: true,
                         emojiViewConfig: EmojiViewConfig(
-                          emojiSizeMax:
-                              28 *
+                          emojiSizeMax: 28 *
                               (foundation.defaultTargetPlatform ==
                                       TargetPlatform.iOS
                                   ? 1.30

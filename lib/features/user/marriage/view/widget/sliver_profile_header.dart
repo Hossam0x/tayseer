@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
 import 'package:tayseer/my_import.dart';
 
 class SliverProfileHeader extends StatelessWidget {
@@ -40,10 +41,7 @@ class SliverProfileHeader extends StatelessWidget {
               ),
             ),
 
-            GestureDetector(
-              onTap: () {},
-              child: AppImage(AssetsData.koneIcon, width: 30, height: 30),
-            ),
+            const AnimatedBeFirstButton(),
           ],
         ),
       ),
@@ -116,28 +114,6 @@ class SliverProfileHeader extends StatelessWidget {
                           )
                           .toList(),
                     ),
-                    Gap(20.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildCircleButton(
-                          Icons.check,
-                          AppColors.kprimaryTextColor,
-                          HexColor('f8d3da'),
-                        ),
-                        _buildCircleButton(
-                          Icons.star,
-                          Colors.white,
-                          HexColor('cccab3'),
-                        ),
-
-                        _buildCircleButton(
-                          Icons.close,
-                          Colors.white,
-                          HexColor('e44e6c'),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -161,14 +137,6 @@ class SliverProfileHeader extends StatelessWidget {
           Text(text, style: Styles.textStyle10.copyWith(color: Colors.white)),
         ],
       ),
-    );
-  }
-
-  Widget _buildCircleButton(IconData icon, Color iconColor, Color bgColor) {
-    return CircleAvatar(
-      radius: 28.r,
-      backgroundColor: bgColor,
-      child: Icon(icon, color: iconColor, size: 30),
     );
   }
 

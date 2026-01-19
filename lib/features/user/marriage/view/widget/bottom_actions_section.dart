@@ -5,29 +5,66 @@ class BottomActionsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color bgColor = const Color(0xFFFCE7EE);
+
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 10.h),
+      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
       decoration: BoxDecoration(
-        color: Colors.pink.shade50,
-        borderRadius: BorderRadius.circular(12.r),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white, width: 1),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildActionItem(Icons.flag_outlined, "إبلاغ"),
-          _buildActionItem(Icons.block, "حظر"),
-          _buildActionItem(Icons.share, "مشاركة الملف"),
-        ],
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildActionItem(
+                Icons.report_gmailerrorred_rounded,
+                "ابلاغ",
+                AppColors.kscandryTextColor,
+              ),
+            ),
+
+            _buildVerticalDivider(),
+
+            Expanded(
+              child: _buildActionItem(
+                Icons.block_flipped,
+                "حظر",
+                AppColors.kscandryTextColor,
+              ),
+            ),
+
+            _buildVerticalDivider(),
+
+            Expanded(
+              child: _buildActionItem(
+                Icons.ios_share_rounded,
+                "مشاركة الملف",
+                AppColors.kscandryTextColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildActionItem(IconData icon, String label) {
+  Widget _buildVerticalDivider() {
+    return Container(width: 1, height: 40.h, color: Colors.white);
+  }
+
+  Widget _buildActionItem(IconData icon, String label, Color color) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: Colors.pink, size: 20.sp),
-        Gap(4.h),
-        Text(label, style: Styles.textStyle10Bold.copyWith(color: Colors.pink)),
+        Icon(icon, color: color, size: 26.sp),
+        Gap(8.h),
+        Text(
+          label,
+          style: Styles.textStyle12SemiBold.copyWith(color: color, height: 1),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }

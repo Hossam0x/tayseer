@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:tayseer/core/functions/count_formate.dart';
 import 'package:tayseer/core/widgets/follow_button.dart';
 import 'package:tayseer/core/widgets/post_card/circular_icon_button.dart';
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/reaction_like_button.dart';
 import 'package:tayseer/core/widgets/post_card/share_button.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
@@ -238,7 +239,8 @@ class ReelsOverlay extends StatelessWidget {
                   builder: (context) => PostDetailsView(
                     post: post,
                     cachedController: cachedController,
-                    postUpdatesStream: homeCubit.stream.map((state) {
+                    callbacks: PostCallbacks(
+                       postUpdatesStream: homeCubit.stream.map((state) {
                       return state.posts.firstWhere(
                         (p) => p.postId == post.postId,
                         orElse: () => post,
@@ -256,6 +258,7 @@ class ReelsOverlay extends StatelessWidget {
                     onHashtagTap: (hashtag) {
                       context.pushNamed(AppRouter.kAdvisorSearchView);
                     },
+                    ),
                   ),
                 ),
               );

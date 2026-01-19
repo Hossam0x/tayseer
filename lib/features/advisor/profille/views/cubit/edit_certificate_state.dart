@@ -8,8 +8,8 @@ class EditCertificateState {
   final String? certificateImageUrl;
   final bool isLoading;
   final String? selectedCertificateId;
-  final TextEditingController? nameCertificateController; // ⭐ أضف
-  final TextEditingController? fromWhereController; // ⭐ أضف
+  final TextEditingController? nameCertificateController;
+  final TextEditingController? fromWhereController;
 
   const EditCertificateState({
     this.nameCertificate = '',

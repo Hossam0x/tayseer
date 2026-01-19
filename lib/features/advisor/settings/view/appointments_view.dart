@@ -1,4 +1,5 @@
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_states.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/time_slot_item.dart';
@@ -39,33 +40,33 @@ class AppointmentsView extends StatelessWidget {
           final cubit = context.read<AppointmentsCubit>();
 
           return Scaffold(
-            body: Stack(
-              children: [
-                // الخلفية
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 110.h,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(AssetsData.homeBarBackgroundImage),
-                        fit: BoxFit.fill,
+            body: AdvisorBackground(
+              child: Stack(
+                children: [
+                  // الخلفية
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 110.h,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage(AssetsData.homeBarBackgroundImage),
+                          fit: BoxFit.fill,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                // المحتوى
-                AdvisorBackground(
-                  child: SafeArea(
+                  // المحتوى
+                  SafeArea(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
                       child: Column(
                         children: [
                           Gap(16.h),
-                          _buildHeader(context),
+                          SimpleAppBar(title: 'المواعيد'),
                           Gap(30.h),
 
                           // Loading State with Skeletonizer
@@ -124,38 +125,12 @@ class AppointmentsView extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
       ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Icon(
-            Icons.arrow_back,
-            color: AppColors.blackColor,
-            size: 24.w,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 18.0),
-          child: Text(
-            'المواعيد',
-            style: Styles.textStyle20Bold.copyWith(
-              color: AppColors.secondary800,
-            ),
-          ),
-        ),
-        SizedBox(width: 24.w), // لتحقيق التوازن
-      ],
     );
   }
 
@@ -284,7 +259,8 @@ class AppointmentsView extends StatelessWidget {
     AppointmentsState state,
   ) {
     return CustomBotton(
-      width: context.width * 0.9,
+      height: 54.h,
+      width: double.infinity,
       useGradient: true,
       title: state.isSaving
           ? 'جاري الحفظ...'
@@ -293,8 +269,8 @@ class AppointmentsView extends StatelessWidget {
           : 'لا توجد تغييرات',
       onPressed: state.isSaving || !state.hasChanges
           ? null
-          : () => cubit.saveChanges(),
-      // backgroundColor: state.hasChanges ? null : AppColors.inactiveColor,
+          : () => cubit.saveChanges(context),
+      backGroundcolor: state.hasChanges ? null : AppColors.inactiveColor,
     );
   }
 }

@@ -16,9 +16,11 @@ import 'package:tayseer/features/advisor/settings/view/appointments_view.dart';
 import 'package:tayseer/features/advisor/settings/view/archive_view.dart';
 import 'package:tayseer/features/advisor/settings/view/blocked_user_view.dart';
 import 'package:tayseer/features/advisor/settings/view/edit_personal_data_view.dart';
-import 'package:tayseer/features/advisor/settings/view/hide_fromstory_form_view.dart';
+import 'package:tayseer/features/advisor/settings/view/help_support_view.dart';
+import 'package:tayseer/features/advisor/settings/view/hide_story_form_view.dart';
 import 'package:tayseer/features/advisor/settings/view/language_selection_view.dart';
 import 'package:tayseer/features/advisor/settings/view/packages_tab_view.dart';
+import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 import 'package:tayseer/features/advisor/event/view/creat_event_view.dart';
@@ -28,6 +30,11 @@ import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cu
 import 'package:tayseer/features/advisor/map/map_view.dart';
 import 'package:tayseer/features/advisor/notification/presentation/view/notification_view.dart';
 import 'package:tayseer/features/advisor/session/view/session_details_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/bookings_log_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/transactions_log_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/wallet_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/withdraw_success_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/withdraw_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
@@ -38,6 +45,9 @@ import 'package:tayseer/features/shared/auth/view/select_days_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
+import 'package:tayseer/features/shared/followers/followers_view.dart';
+import 'package:tayseer/features/shared/followers/following_view.dart';
+import 'package:tayseer/features/user/advisor_profile/views/user_profile_view.dart';
 import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
 import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
@@ -144,6 +154,16 @@ abstract class AppRouter {
   static const kAccountManagementView = '/account_management_view';
   static const kLanguageSelectionView = '/language-selection';
   static const kHideStoryFromView = '/hide_story_from_view';
+  static const kHelpSupportView = '/help_support_view';
+  static const kSavedPostsView = '/saved_posts_view';
+  static const kWalletView = '/wallet_view';
+  static const kBookingsLogView = '/bookings_log_view';
+  static const kTransactionsLogView = '/transactions_log_view';
+  static const kWithdrawalView = '/widthdrawal_view';
+  static const kWithdrawSuccessView = '/widthdrawal_success_view';
+  static const kUserProfileView = '/userProfileView';
+  static const kFollowersView = '/followers_view';
+  static const kFollowingView = '/following_view';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -180,7 +200,7 @@ abstract class AppRouter {
         );
 
       case AppRouter.kBoostAccountView:
-        return SlideLeftRoute(
+        return CustomRotationRoute(
           page: const BoostAccountView(),
           routeSettings: settings,
         );
@@ -247,6 +267,70 @@ abstract class AppRouter {
       case AppRouter.kHideStoryFromView:
         return SlideLeftRoute(
           page: const HideStoryFromView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kHelpSupportView:
+        return SlideLeftRoute(
+          page: const HelpSupportView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kSavedPostsView:
+        return SlideLeftRoute(
+          page: const SavedPostsView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kWalletView:
+        return SlideLeftRoute(
+          page: const WalletView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kBookingsLogView:
+        return SlideLeftRoute(
+          page: const BookingsLogView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kTransactionsLogView:
+        return SlideLeftRoute(
+          page: const TransactionsLogView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kWithdrawalView:
+        return SlideLeftRoute(
+          page: const WithdrawView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kWithdrawSuccessView:
+        return SlideLeftRoute(
+          page: const WithdrawSuccessView(),
+          routeSettings: settings,
+        );
+
+      case kUserProfileView:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => UserProfileView(
+            advisorId: args['advisorId'] as String,
+            advisorName: args['advisorName'] as String?,
+          ),
+          settings: settings,
+        );
+
+      case AppRouter.kFollowersView:
+        return FadeScaleRoute(
+          page: const FollowersView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kFollowingView:
+        return FadeScaleRoute(
+          page: const FollowingView(),
           routeSettings: settings,
         );
 

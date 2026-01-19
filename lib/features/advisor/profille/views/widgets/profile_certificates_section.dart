@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:tayseer/features/advisor/profille/views/add_certificate_view.dart';
 import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/video/video_player_widget.dart';
@@ -51,7 +52,7 @@ class _CertificatesSectionContent extends StatelessWidget {
             // Video skeleton
             Container(
               width: double.infinity,
-              height: 200.h,
+              height: 400.h,
               decoration: BoxDecoration(
                 color: Colors.grey.shade400,
                 borderRadius: BorderRadius.circular(16.r),
@@ -183,14 +184,24 @@ class _CertificatesSectionContent extends StatelessWidget {
                   color: AppColors.secondary800,
                 ),
               ),
-              CustomBotton(
-                title: 'اضافة شهادة',
-                onPressed: () {},
-                width: 120.w,
+              TextButton.icon(
+                onPressed: () {
+                  _navigateToAddCertificate(context);
+                },
+                label: Text(
+                  'إضافة',
+                  style: Styles.textStyle16Meduim.copyWith(
+                    color: AppColors.secondary400,
+                  ),
+                ),
+                icon: Icon(
+                  Icons.add,
+                  size: 22.w,
+                  color: AppColors.secondary400,
+                ),
               ),
             ],
           ),
-          Gap(12.h),
           // Certificates List
           if (state.hasCertificates)
             ListView.builder(
@@ -204,7 +215,6 @@ class _CertificatesSectionContent extends StatelessWidget {
                     context,
                     state.certificates[index],
                     state.isMe,
-                    state.certificates, // ⭐ أضف هنا
                   ),
                 );
               },
@@ -227,130 +237,14 @@ class _CertificatesSectionContent extends StatelessWidget {
     );
   }
 
-  Widget _buildCertificateItem(
-    BuildContext context,
-    CertificateModel certificate,
-    bool isMe,
-    List<CertificateModel> allCertificates, // ⭐ أضف هنا
-  ) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.primary100),
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Certificate Image
-          SizedBox(
-            width: 110.w,
-            height: 85.w,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16.r),
-              child: certificate.image != null
-                  ? CachedNetworkImage(
-                      imageUrl: certificate.image!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey.shade200,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.kprimaryColor,
-                            strokeWidth: 2.w,
-                          ),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey.shade200,
-                        child: Center(
-                          child: Icon(
-                            Icons.image,
-                            color: Colors.grey.shade400,
-                            size: 32.w,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Container(
-                      color: Colors.grey.shade200,
-                      child: Center(
-                        child: Icon(
-                          Icons.picture_as_pdf,
-                          color: Colors.grey.shade400,
-                          size: 32.w,
-                        ),
-                      ),
-                    ),
-            ),
-          ),
-          Gap(16.w),
-          // Certificate Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  certificate.nameCertificate,
-                  style: Styles.textStyle16Meduim.copyWith(
-                    color: AppColors.secondary800,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Gap(4.h),
-                Text(
-                  certificate.fromWhere,
-                  style: Styles.textStyle16.copyWith(
-                    color: AppColors.secondary600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Gap(4.h),
-                Text(
-                  DateFormat('yyyy').format(certificate.date),
-                  style: Styles.textStyle16.copyWith(
-                    color: AppColors.secondary600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // if (isMe) ...[
-          Gap(16.w),
-          GestureDetector(
-            onTap: () => _navigateToEditCertificate(context, allCertificates),
-            child: AppImage(
-              AssetsData.editIcon,
-              width: 20.w,
-              color: AppColors.primary400,
-            ),
-          ),
-        ],
-        // ],
-      ),
-    );
-  }
-
-  Widget _buildVideoSection(BuildContext context, String videoUrl) {
-    return SizedBox(
-      width: double.infinity,
-      height: 400.h,
-      child: VideoPlayerWidget(videoUrl: videoUrl, showFullScreenButton: true),
-    );
-  }
-
-  void _navigateToEditCertificate(
-    BuildContext context,
-    List<CertificateModel> certificates,
-  ) {
+  // إضافة دالة التنقل لإضافة الشهادة
+  void _navigateToAddCertificate(BuildContext context) {
     Navigator.push(
       context,
       PageRouteBuilder(
-        settings: const RouteSettings(name: AppRouter.kEditCertificateView),
+        // settings: const RouteSettings(name: AppRouter.kAddCertificateView),
         pageBuilder: (context, animation, secondaryAnimation) =>
-            EditCertificateView(certificates: certificates),
+            const AddCertificateView(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
@@ -370,6 +264,146 @@ class _CertificatesSectionContent extends StatelessWidget {
         context.read<CertificatesCubit>().refresh();
       }
     });
+  }
+
+  Widget _buildCertificateItem(
+    BuildContext context,
+    CertificateModel certificate,
+    bool isMe,
+  ) {
+    // ⭐ تحقق من وجود بيانات الشهادة
+    if (certificate.nameCertificate.isEmpty) {
+      return Container(); // أو عرض عنصر فارغ
+    }
+
+    return GestureDetector(
+      onTap: () => _navigateToEditCertificate(context, certificate),
+      child: Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.primary100),
+          borderRadius: BorderRadius.circular(16.r),
+          color: AppColors.whiteCardBack,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // الصورة
+            Container(
+              width: 110.w,
+              height: 90.w,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.r),
+                color: Colors.grey.shade100,
+              ),
+              child: certificate.image != null && certificate.image!.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(12.r),
+                      child: Image.network(
+                        certificate.image!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.school,
+                          color: Colors.grey.shade400,
+                          size: 22.w,
+                        ),
+                      ),
+                    )
+                  : Icon(Icons.school, color: Colors.grey.shade400, size: 22.w),
+            ),
+            SizedBox(width: 16.w),
+            // التفاصيل
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    certificate.nameCertificate,
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    certificate.fromWhere,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.grey.shade600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    DateFormat('yyyy').format(certificate.date),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // if (isMe)
+            AppImage(AssetsData.editIcon, width: 20.w),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // تعديل دالة التنقل لتأخذ الشهادة المفردة
+  void _navigateToEditCertificate(
+    BuildContext context,
+    CertificateModel selectedCertificate,
+  ) {
+    final certificatesCubit = context.read<CertificatesCubit>();
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        settings: const RouteSettings(name: AppRouter.kEditCertificateView),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          // ⭐ استخدام BlocProvider.value لنقل الـ Cubit الحالي
+          return BlocProvider.value(
+            value: certificatesCubit,
+            child: EditCertificateView(
+              certificates: certificatesCubit.state.certificates,
+              selectedCertificate: selectedCertificate,
+            ),
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOutCubic;
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    ).then((result) {
+      if (result == true && context.mounted) {
+        certificatesCubit.refresh();
+      }
+    });
+  }
+
+  Widget _buildVideoSection(BuildContext context, String videoUrl) {
+    return SizedBox(
+      width: double.infinity,
+      height: 400.h,
+      child: VideoPlayerWidget(videoUrl: videoUrl, showFullScreenButton: true),
+    );
   }
 
   Widget _buildNoCertificatesSection() {

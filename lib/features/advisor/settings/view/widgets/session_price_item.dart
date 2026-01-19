@@ -65,14 +65,24 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
             Transform.scale(
               scaleX: 0.9,
               scaleY: -0.9,
-              child: CupertinoSwitch(
-                value: isActive,
-                onChanged: (val) {
-                  setState(() => isActive = val);
-                  widget.onStatusChanged?.call(val);
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final screenWidth = MediaQuery.of(context).size.width;
+                  final scaleFactor = screenWidth > 600 ? 1.5 : 1.0;
+
+                  return Transform.scale(
+                    scale: scaleFactor,
+                    child: CupertinoSwitch(
+                      value: isActive,
+                      onChanged: (val) {
+                        setState(() => isActive = val);
+                        widget.onStatusChanged?.call(val);
+                      },
+                      activeColor: const Color(0xFFF06C88),
+                      trackColor: AppColors.inactiveColor,
+                    ),
+                  );
                 },
-                activeColor: const Color(0xFFF06C88),
-                trackColor: AppColors.inactiveColor,
               ),
             ),
           ],

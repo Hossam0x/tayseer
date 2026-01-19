@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/my_import.dart';
 import '../models/archive_models.dart';
 
@@ -10,15 +11,29 @@ abstract class ArchiveRepository {
 
   Future<Either<Failure, void>> unarchiveChat(String chatId);
 
-  Future<Either<Failure, List<ArchivePostModel>>> getArchivedPosts({
-    int page = 1,
-    int limit = 20,
-  });
-
   Future<Either<Failure, List<ArchiveStoryModel>>> getArchivedStories({
     int page = 1,
     int limit = 20,
   });
+
+  Future<Either<Failure, List<PostModel>>> getArchivedPosts({
+    required int page,
+    required int limit,
+  });
+
+  // ⭐️ أضف methods للـ Like و Share
+  Future<void> reactToArchivedPost({
+    required String postId,
+    required ReactionType? reactionType,
+    required bool isRemove,
+  });
+
+  Future<Either<Failure, String>> shareArchivedPost({
+    required String postId,
+    required String action,
+  });
+
+  Future<void> unarchivePost({required String postId});
 }
 
 class ArchiveRepositoryImpl implements ArchiveRepository {
@@ -106,33 +121,82 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   }
 
   @override
-  Future<Either<Failure, List<ArchivePostModel>>> getArchivedPosts({
-    int page = 1,
-    int limit = 20,
+  Future<Either<Failure, List<PostModel>>> getArchivedPosts({
+    required int page,
+    required int limit,
   }) async {
     try {
       final response = await _apiService.get(
-        endPoint: '/posts/archived',
+        endPoint: '/posts/all',
         query: {'page': page, 'limit': limit},
       );
 
+      print('🔍 API Response for archived posts: ${response.toString()}');
+
       if (response['success'] == true) {
-        final List<dynamic> data = response['data'] ?? [];
-        final posts = data
-            .map((post) => ArchivePostModel.fromJson(post))
-            .toList();
-        return Right(posts);
+        // ⭐️ استخدم نفس parsing مثل Home
+        final postsList =
+            (response['data']?['postsDto'] as List<dynamic>?)
+                ?.map((e) => PostModel.fromJson(e))
+                .toList() ??
+            [];
+
+        print('🔍 Parsed ${postsList.length} archived posts');
+        return Right(postsList);
       } else {
         return Left(
-          ServerFailure(
-            response['message']?.toString() ?? 'فشل جلب المنشورات المؤرشفة',
-          ),
+          ServerFailure(response['message'] ?? 'فشل جلب المنشورات المؤرشفة'),
         );
       }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<void> reactToArchivedPost({
+    required String postId,
+    required ReactionType? reactionType,
+    required bool isRemove,
+  }) async {
+    final Map<String, dynamic> requestData = {
+      "postId": postId,
+      "action": isRemove ? "remove" : "add",
+    };
+    if (!isRemove) {
+      requestData["type"] = reactionType!.name;
+    }
+    await _apiService.post(endPoint: ApiEndPoint.like, data: requestData);
+  }
+
+  @override
+  Future<Either<Failure, String>> shareArchivedPost({
+    required String postId,
+    required String action,
+  }) async {
+    try {
+      final Map<String, dynamic> requestData = {"postId": postId};
+      var response = await _apiService.post(
+        endPoint: "${ApiEndPoint.share}?action=$action",
+        data: requestData,
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<void> unarchivePost({required String postId}) async {
+    try {
+      await _apiService.post(endPoint: "/likes/$postId");
+    } catch (e) {
+      debugPrint('❌ Error unarchiving post: $e');
+      rethrow;
     }
   }
 

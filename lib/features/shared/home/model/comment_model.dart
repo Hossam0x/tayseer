@@ -28,7 +28,6 @@ class CommenterModel {
     );
   }
 }
-
 class CommentModel {
   final String id;
   final String comment;
@@ -44,6 +43,9 @@ class CommentModel {
   final bool isLoadingReplies;
   final int repliesCurrentPage;
   final int repliesTotalPages;
+  
+  // ✅ NEW: للتفريق بين الكومنت المؤقت والحقيقي
+  final bool isTemp;
 
   const CommentModel({
     required this.id,
@@ -60,6 +62,7 @@ class CommentModel {
     this.isLoadingReplies = false,
     this.repliesCurrentPage = 0,
     this.repliesTotalPages = 1,
+    this.isTemp = false, // ✅ Default = false
   });
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {
@@ -74,6 +77,28 @@ class CommentModel {
       isOwner: json['isOwner'] ?? false,
       commenter: CommenterModel.fromJson(json['commenter'] ?? {}),
       isFollowing: json['isFollowing'] ?? false,
+      isTemp: false, // اللي جاي من السيرفر مش temp
+    );
+  }
+
+  // ✅ NEW: Factory لإنشاء كومنت مؤقت
+  factory CommentModel.temp({
+    required String tempId,
+    required String content,
+    required CommenterModel commenter,
+  }) {
+    return CommentModel(
+      id: tempId,
+      comment: content,
+      likes: 0,
+      repliesNumber: 0,
+      timeAgo: 'الآن',
+      createdAt: DateTime.now().toIso8601String(),
+      isLiked: false,
+      isOwner: true,
+      commenter: commenter,
+      isFollowing: false,
+      isTemp: true, // ✅ هذا كومنت مؤقت
     );
   }
 
@@ -92,6 +117,7 @@ class CommentModel {
     bool? isLoadingReplies,
     int? repliesCurrentPage,
     int? repliesTotalPages,
+    bool? isTemp, // ✅ NEW
   }) {
     return CommentModel(
       id: id ?? this.id,
@@ -108,6 +134,7 @@ class CommentModel {
       isLoadingReplies: isLoadingReplies ?? this.isLoadingReplies,
       repliesCurrentPage: repliesCurrentPage ?? this.repliesCurrentPage,
       repliesTotalPages: repliesTotalPages ?? this.repliesTotalPages,
+      isTemp: isTemp ?? this.isTemp, // ✅ NEW
     );
   }
 

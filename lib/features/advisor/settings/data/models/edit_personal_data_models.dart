@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 // ============================================
 class UpdatePersonalDataRequest extends Equatable {
   final String? name;
+  final String? username; // ⭐ أضف هذا
   final String? dateOfBirth;
   final String? gender;
   final String? professionalSpecialization;
@@ -16,6 +17,7 @@ class UpdatePersonalDataRequest extends Equatable {
 
   const UpdatePersonalDataRequest({
     this.name,
+    this.username, // ⭐ أضف هذا
     this.dateOfBirth,
     this.gender,
     this.professionalSpecialization,
@@ -29,6 +31,8 @@ class UpdatePersonalDataRequest extends Equatable {
   Map<String, dynamic> toJson() {
     return {
       if (name != null && name!.isNotEmpty) 'name': name,
+      if (username != null && username!.isNotEmpty)
+        'username': username, // ⭐ أضف هذا
       if (dateOfBirth != null && dateOfBirth!.isNotEmpty)
         'dateOfBirth': dateOfBirth,
       if (gender != null && gender!.isNotEmpty) 'gender': gender,
@@ -44,25 +48,10 @@ class UpdatePersonalDataRequest extends Equatable {
     };
   }
 
-  Map<String, dynamic> toFormData() {
-    return {
-      if (name != null && name!.isNotEmpty) 'name': name,
-      if (dateOfBirth != null && dateOfBirth!.isNotEmpty)
-        'dateOfBirth': dateOfBirth,
-      if (gender != null && gender!.isNotEmpty) 'gender': gender,
-      if (professionalSpecialization != null &&
-          professionalSpecialization!.isNotEmpty)
-        'ProfessionalSpecialization': professionalSpecialization,
-      if (jobGrade != null && jobGrade!.isNotEmpty) 'JobGrade': jobGrade,
-      if (yearsOfExperience != null && yearsOfExperience!.isNotEmpty)
-        'yearsOfExperience': yearsOfExperience,
-      if (aboutYou != null && aboutYou!.isNotEmpty) 'aboutYou': aboutYou,
-    };
-  }
-
   @override
   List<Object?> get props => [
     name,
+    username, // ⭐ أضف هذا
     dateOfBirth,
     gender,
     professionalSpecialization,
@@ -240,6 +229,7 @@ extension AdvisorProfileModelExtension on AdvisorProfileModel {
 
 extension UpdatePersonalDataRequestExtension on UpdatePersonalDataRequest {
   UpdatePersonalDataRequest copyWith({
+    String? username,
     String? name,
     String? dateOfBirth,
     String? gender,
@@ -249,10 +239,11 @@ extension UpdatePersonalDataRequestExtension on UpdatePersonalDataRequest {
     String? aboutYou,
     String? image,
     String? video,
-    bool clearImage = false, // إضافة flag لحذف الصورة
-    bool clearVideo = false, // إضافة flag لحذف الفيديو
+    bool clearImage = false,
+    bool clearVideo = false,
   }) {
     return UpdatePersonalDataRequest(
+      username: username ?? this.username,
       name: name ?? this.name,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
@@ -261,8 +252,10 @@ extension UpdatePersonalDataRequestExtension on UpdatePersonalDataRequest {
       jobGrade: jobGrade ?? this.jobGrade,
       yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
       aboutYou: aboutYou ?? this.aboutYou,
-      image: clearImage ? null : (image ?? this.image),
-      video: clearVideo ? null : (video ?? this.video),
+      image: clearImage
+          ? ""
+          : (image ?? this.image), // ⭐ إرسال string فارغ للحذف
+      video: clearVideo ? "" : (video ?? this.video),
     );
   }
 }

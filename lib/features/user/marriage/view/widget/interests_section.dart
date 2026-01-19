@@ -1,7 +1,8 @@
+import 'package:tayseer/features/user/marriage/view/widget/build_Icon_tag.dart';
 import 'package:tayseer/my_import.dart';
 
 class InterestsSection extends StatelessWidget {
-  final List<String> interests;
+  final List<Map<String, dynamic>> interests;
 
   const InterestsSection({super.key, required this.interests});
 
@@ -10,23 +11,16 @@ class InterestsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("اهتماماتي", style: Styles.textStyle16Bold),
+        Text(context.tr('my_interests'), style: Styles.textStyle16Bold),
         Gap(10.h),
         Wrap(
           spacing: 10.w,
           runSpacing: 8.h,
-          children: interests.map((i) => _buildInterest(i)).toList(),
+          children: interests
+              .map((i) => buildIconTag(i['label'], i['icon']))
+              .toList(),
         ),
       ],
-    );
-  }
-
-  Widget _buildInterest(String text) {
-    return Chip(
-      avatar: const Icon(Icons.favorite, color: Colors.pink, size: 16),
-      label: Text(text, style: Styles.textStyle12),
-      backgroundColor: Colors.pink.shade50,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     );
   }
 }

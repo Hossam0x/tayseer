@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/chats_tab_view.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/posts_tab_view.dart';
@@ -32,7 +33,7 @@ class ArchiveView extends StatelessWidget {
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: 100.h,
+                  height: 105.h,
                   child: Container(
                     decoration: BoxDecoration(
                       image: DecorationImage(
@@ -51,24 +52,7 @@ class ArchiveView extends StatelessWidget {
                           horizontal: 20.w,
                           vertical: 15.h,
                         ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: IconButton(
-                                icon: const Icon(Icons.arrow_back),
-                                onPressed: () => Navigator.pop(context),
-                              ),
-                            ),
-                            Text(
-                              'الأرشيف',
-                              style: Styles.textStyle24Meduim.copyWith(
-                                color: AppColors.secondary700,
-                              ),
-                            ),
-                          ],
-                        ),
+                        child: SimpleAppBar(title: 'الأرشيف'),
                       ),
 
                       // Three-Tab Bar Container (Matches your Packages style)
@@ -85,21 +69,36 @@ class ArchiveView extends StatelessWidget {
                             borderRadius: BorderRadius.circular(15.r),
                             border: Border.all(color: AppColors.primary100),
                           ),
-                          child: TabBar(
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            dividerColor: Colors.transparent,
-                            indicator: BoxDecoration(
-                              color: AppColors.primary300,
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            labelColor: AppColors.secondary950,
-                            unselectedLabelColor: AppColors.blackColor,
-                            labelStyle: Styles.textStyle14SemiBold,
-                            tabs: const [
-                              Tab(text: 'المحادثات'),
-                              Tab(text: 'المنشورات'),
-                              Tab(text: 'القصص'),
-                            ],
+                          child: Builder(
+                            builder: (context) {
+                              final bool isTablet =
+                                  MediaQuery.of(context).size.width > 600;
+                              return TabBar(
+                                indicatorSize: TabBarIndicatorSize.tab,
+                                dividerColor: Colors.transparent,
+                                indicator: BoxDecoration(
+                                  color: AppColors.primary300,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                                labelStyle: isTablet
+                                    ? Styles.textStyle16
+                                    : Styles.textStyle20,
+                                labelPadding: isTablet
+                                    ? EdgeInsets.symmetric(
+                                        horizontal: 24.w,
+                                        vertical: 12.h,
+                                      )
+                                    : EdgeInsets.zero,
+                                labelColor: AppColors.secondary950,
+                                unselectedLabelColor: AppColors.blackColor,
+                                unselectedLabelStyle: Styles.textStyle16,
+                                tabs: const [
+                                  Tab(text: 'المحادثات'),
+                                  Tab(text: 'المنشورات'),
+                                  Tab(text: 'القصص'),
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ),

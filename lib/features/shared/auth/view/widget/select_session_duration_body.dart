@@ -213,14 +213,18 @@ class _SessionDurationItem extends StatelessWidget {
                   child: SizedBox(
                     height: 50,
                     child: CustomTextFormField(
+                      onChanged: onPriceChanged,
                       isNumber: true,
                       controller: priceController,
                       hintText: '0',
-                      prefixIcon: AppImage(
-                        AssetsData.kWalletIcon,
-                        width: 5,
-                        height: 5,
-                        fit: BoxFit.contain,
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: AppImage(
+                          AssetsData.kWalletIcon,
+                          width: 30,
+                          height: 30,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                       suffixIcon: Row(
                         mainAxisSize: MainAxisSize.min,

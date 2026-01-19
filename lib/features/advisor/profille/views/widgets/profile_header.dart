@@ -162,46 +162,28 @@ class ProfileHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (isVerified)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    child: Container(
-                      width: 24.w,
-                      height: 24.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.kWhiteColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.kprimaryColor,
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.verified,
-                          color: AppColors.kprimaryColor,
-                          size: 14.w,
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
 
           // Top bar with followers/following
-          Column(
-            children: [
-              Text(following, style: Styles.textStyle16SemiBold),
-              Text("Following", style: Styles.textStyle14),
-            ],
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowingView),
+            child: Column(
+              children: [
+                Text(following, style: Styles.textStyle16SemiBold),
+                Text("Following", style: Styles.textStyle14),
+              ],
+            ),
           ),
-          Column(
-            children: [
-              Text(followers, style: Styles.textStyle16SemiBold),
-              Text("Followers", style: Styles.textStyle14),
-            ],
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowersView),
+            child: Column(
+              children: [
+                Text(followers, style: Styles.textStyle16SemiBold),
+                Text("Followers", style: Styles.textStyle14),
+              ],
+            ),
           ),
 
           // Settings

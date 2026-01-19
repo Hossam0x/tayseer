@@ -376,7 +376,15 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> with RouteAware {
                   ),
                 ],
               )
-            : CircularProgressIndicator(color: AppColors.kprimaryColor),
+            : Shimmer.fromColors(
+                baseColor: Colors.grey.shade300,
+                highlightColor: Colors.grey.shade100,
+                child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  color: Colors.white,
+                ),
+              ),
       ),
     );
   }
