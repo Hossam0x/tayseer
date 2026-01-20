@@ -1,16 +1,16 @@
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
-import 'package:tayseer/features/user/advisor_profile/data/repositories/user_profile_repository.dart';
+import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/my_import.dart';
-import 'user_profile_state.dart';
+import 'user_advisor_profile_state.dart';
 
-class UserProfileCubit extends Cubit<UserProfileState> {
-  final UserProfileRepository _repository;
+class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
+  final UserAdvisorProfileRepository _repository;
   final String advisorId;
   final int _pageSize = 10;
 
-  UserProfileCubit(this._repository, this.advisorId)
-    : super(const UserProfileState()) {
+  UserAdvisorProfileCubit(this._repository, this.advisorId)
+    : super(const UserAdvisorProfileState()) {
     _initializeProfile();
   }
 

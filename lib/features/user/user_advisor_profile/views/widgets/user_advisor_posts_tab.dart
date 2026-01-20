@@ -5,21 +5,21 @@ import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_car
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
-import 'package:tayseer/features/user/advisor_profile/views/cubit/user_profile_cubit.dart';
-import 'package:tayseer/features/user/advisor_profile/views/cubit/user_profile_state.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class UserPostsTab extends StatelessWidget {
-  const UserPostsTab({super.key});
+class UserAdvisorPostsTab extends StatelessWidget {
+  const UserAdvisorPostsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final userProfileCubit = context.read<UserProfileCubit>();
+    final userProfileCubit = context.read<UserAdvisorProfileCubit>();
 
-    return BlocListener<UserProfileCubit, UserProfileState>(
+    return BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
       listenWhen: _shouldListenToShare,
       listener: _handleShareState,
-      child: BlocBuilder<UserProfileCubit, UserProfileState>(
+      child: BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
         builder: (context, state) {
           if (state.postsState == CubitStates.loading && state.posts.isEmpty) {
             return _buildShimmerList();
@@ -45,11 +45,14 @@ class UserPostsTab extends StatelessWidget {
     );
   }
 
-  bool _shouldListenToShare(UserProfileState prev, UserProfileState curr) =>
+  bool _shouldListenToShare(
+    UserAdvisorProfileState prev,
+    UserAdvisorProfileState curr,
+  ) =>
       prev.shareActionState != curr.shareActionState &&
       curr.shareActionState != CubitStates.initial;
 
-  void _handleShareState(BuildContext context, UserProfileState state) {
+  void _handleShareState(BuildContext context, UserAdvisorProfileState state) {
     final message = state.shareMessage;
     switch (state.shareActionState) {
       case CubitStates.success:
@@ -79,7 +82,7 @@ class UserPostsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorState(UserProfileCubit cubit) {
+  Widget _buildErrorState(UserAdvisorProfileCubit cubit) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
       child: Column(
@@ -122,9 +125,9 @@ class UserPostsTab extends StatelessWidget {
 
   Widget _buildPostList(
     List<PostModel> posts,
-    UserProfileState state,
+    UserAdvisorProfileState state,
     BuildContext context,
-    UserProfileCubit cubit,
+    UserAdvisorProfileCubit cubit,
   ) {
     return ListView.builder(
       shrinkWrap: true,
@@ -152,26 +155,25 @@ class UserPostsTab extends StatelessWidget {
                         post: post,
                         cachedController: controller,
                         callbacks: PostCallbacks(
-                        postUpdatesStream: cubit.stream.map((state) {
-                          return state.posts.firstWhere(
-                            (p) => p.postId == post.postId,
-                            orElse: () => post,
-                          );
-                        }),
-                        onReactionChanged: (postId, reactionType) {
-                          cubit.reactToPost(
-                            postId: postId,
-                            reactionType: reactionType,
-                          );
-                        },
-                        onShareTap: (postId) {
-                          cubit.toggleSharePost(postId: postId);
-                        },
-                        onHashtagTap: (hashtag) {
-                          context.pushNamed(AppRouter.kAdvisorSearchView);
-                        },
+                          postUpdatesStream: cubit.stream.map((state) {
+                            return state.posts.firstWhere(
+                              (p) => p.postId == post.postId,
+                              orElse: () => post,
+                            );
+                          }),
+                          onReactionChanged: (postId, reactionType) {
+                            cubit.reactToPost(
+                              postId: postId,
+                              reactionType: reactionType,
+                            );
+                          },
+                          onShareTap: (postId) {
+                            cubit.toggleSharePost(postId: postId);
+                          },
+                          onHashtagTap: (hashtag) {
+                            context.pushNamed(AppRouter.kAdvisorSearchView);
+                          },
                         ),
-                       
                       ),
                     ),
                   );

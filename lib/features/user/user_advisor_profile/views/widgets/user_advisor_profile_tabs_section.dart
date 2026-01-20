@@ -1,17 +1,19 @@
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
-import 'package:tayseer/features/user/advisor_profile/views/cubit/user_profile_cubit.dart';
-import 'package:tayseer/features/user/advisor_profile/views/widgets/user_posts_tab.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_posts_tab.dart';
 import 'package:tayseer/my_import.dart';
 
-class UserProfileTabsSection extends StatefulWidget {
-  const UserProfileTabsSection({super.key});
+class UserAdvisorProfileTabsSection extends StatefulWidget {
+  const UserAdvisorProfileTabsSection({super.key});
 
   @override
-  State<UserProfileTabsSection> createState() => _UserProfileTabsSectionState();
+  State<UserAdvisorProfileTabsSection> createState() =>
+      _UserAdvisorProfileTabsSectionState();
 }
 
-class _UserProfileTabsSectionState extends State<UserProfileTabsSection>
+class _UserAdvisorProfileTabsSectionState
+    extends State<UserAdvisorProfileTabsSection>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -48,7 +50,7 @@ class _UserProfileTabsSectionState extends State<UserProfileTabsSection>
       //   print("Refresh الاستفسارات");
       //   break;
       case 0:
-        context.read<UserProfileCubit>().fetchPosts();
+        context.read<UserAdvisorProfileCubit>().fetchPosts();
         break;
       case 1:
         // Refresh للشهادات
@@ -126,7 +128,7 @@ class _UserProfileTabsSectionState extends State<UserProfileTabsSection>
       // case 0:
       //   return InquiryTab();
       case 0:
-        return const UserPostsTab();
+        return const UserAdvisorPostsTab();
       case 1:
         // 🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
         return ProfileCertificatesSection(
