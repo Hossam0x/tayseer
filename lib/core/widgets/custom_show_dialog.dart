@@ -16,7 +16,7 @@ void CustomshowDialog(
     barrierLabel: "Barrier",
     transitionDuration: Duration(milliseconds: 300),
     pageBuilder: (context, anim1, anim2) {
-      return SizedBox(); // هذا لن يُستخدم، التحريك يكون بالـ transitionBuilder
+      return SizedBox();
     },
     transitionBuilder: (context, anim1, anim2, child) {
       return Transform.scale(
@@ -47,7 +47,6 @@ void CustomshowDialog(
               TextButton(
                 onPressed: islogIn
                     ? () {
-                        // context.pushReplacementNamed(AppRouter.kLoginScreen);
                         CachNetwork.removeData(key: 'token');
                       }
                     : onPressed,
@@ -66,18 +65,27 @@ void CustomshowDialog(
   );
 }
 
+// ✅ تعديل الدالة لتقبل صورة أو أيقونة
 void CustomshowDialogWithImage(
   BuildContext context, {
   required String title,
   required String supTitle,
-  required String imageUrl,
+  String? imageUrl,           // ✅ صورة (اختياري)
+  IconData? icon,             // ✅ أيقونة (اختياري)
+  Color? iconColor,           // ✅ لون الأيقونة (اختياري)
+  Color? iconBackgroundColor, // ✅ لون خلفية الأيقونة (اختياري)
   required String bottonText,
   required void Function() onPressed,
-  // ✅ Optional parameters
   String? cancelText,
   void Function()? onCancel,
   bool showCancelButton = false,
 }) {
+  // ✅ التأكد إن واحد منهم على الأقل موجود
+  assert(
+    imageUrl != null || icon != null,
+    'يجب توفير إما imageUrl أو icon',
+  );
+
   HapticFeedback.mediumImpact();
 
   showGeneralDialog(
@@ -91,6 +99,9 @@ void CustomshowDialogWithImage(
         title: title,
         supTitle: supTitle,
         imageUrl: imageUrl,
+        icon: icon,
+        iconColor: iconColor,
+        iconBackgroundColor: iconBackgroundColor,
         bottonText: bottonText,
         onPressed: onPressed,
         cancelText: cancelText,
@@ -105,7 +116,10 @@ void CustomshowDialogWithImage(
 class _DialogContent extends StatelessWidget {
   final String title;
   final String supTitle;
-  final String imageUrl;
+  final String? imageUrl;           // ✅ صورة
+  final IconData? icon;             // ✅ أيقونة
+  final Color? iconColor;           // ✅ لون الأيقونة
+  final Color? iconBackgroundColor; // ✅ لون خلفية الأيقونة
   final String bottonText;
   final void Function() onPressed;
   final String? cancelText;
@@ -116,7 +130,10 @@ class _DialogContent extends StatelessWidget {
   const _DialogContent({
     required this.title,
     required this.supTitle,
-    required this.imageUrl,
+    this.imageUrl,
+    this.icon,
+    this.iconColor,
+    this.iconBackgroundColor,
     required this.bottonText,
     required this.onPressed,
     required this.animation,
@@ -151,15 +168,14 @@ class _DialogContent extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: Container(
-                  // ✅ الخلفية المتدرجة
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Color(0xFFE8B4B8), // وردي فاتح
-                        Color(0xFFF5E6E8), // وردي أفتح
-                        Color(0xFFFAF5F5), // أبيض مائل للوردي
+                        Color(0xFFE8B4B8),
+                        Color(0xFFF5E6E8),
+                        Color(0xFFFAF5F5),
                         Colors.white,
                       ],
                     ),
@@ -169,22 +185,12 @@ class _DialogContent extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // الصورة/الأيقونة
                         _buildImage(),
-
                         const SizedBox(height: 24),
-
-                        // العنوان
                         _buildTitle(),
-
                         const SizedBox(height: 12),
-
-                        // العنوان الفرعي
                         _buildSubtitle(),
-
                         const SizedBox(height: 28),
-
-                        // الأزرار
                         _buildButtons(context),
                       ],
                     ),
@@ -198,8 +204,46 @@ class _DialogContent extends StatelessWidget {
     );
   }
 
+  // ✅ تعديل الدالة لتعرض صورة أو أيقونة
   Widget _buildImage() {
-    return AppImage(imageUrl, width: 90, height: 90)
+    Widget imageWidget;
+
+    if (imageUrl != null) {
+      // ✅ عرض الصورة
+      imageWidget = AppImage(imageUrl!, width: 90, height: 90);
+    } else if (icon != null) {
+      // ✅ عرض الأيقونة داخل دائرة
+      imageWidget = Container(
+        width: 90,
+        height: 90,
+        decoration: BoxDecoration(
+          color: iconBackgroundColor ?? Colors.red.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          size: 50,
+          color: iconColor ?? Colors.red,
+        ),
+      );
+    } else {
+      // ✅ في حالة عدم وجود أي منهم (احتياطي)
+      imageWidget = Container(
+        width: 90,
+        height: 90,
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.info_outline,
+          size: 50,
+          color: Colors.grey,
+        ),
+      );
+    }
+
+    return imageWidget
         .animate()
         .scale(
           begin: const Offset(0, 0),
@@ -264,10 +308,8 @@ class _DialogContent extends StatelessWidget {
 
   Widget _buildButtons(BuildContext context) {
     if (showCancelButton || cancelText != null) {
-      // زرين جنب بعض
       return Row(
         children: [
-          // زر التأكيد (نعم) - أخضر
           Expanded(
             child: _AnimatedDialogButton(
               text: bottonText,
@@ -280,10 +322,7 @@ class _DialogContent extends StatelessWidget {
               delay: const Duration(milliseconds: 400),
             ),
           ),
-
           const SizedBox(width: 12),
-
-          // زر الإلغاء (لا) - أحمر
           Expanded(
             child: _AnimatedDialogButton(
               text: cancelText ?? context.tr('no'),
@@ -300,7 +339,6 @@ class _DialogContent extends StatelessWidget {
       );
     }
 
-    // زر واحد فقط
     return _AnimatedDialogButton(
       text: bottonText,
       backgroundColor: AppColors.kprimaryColor,
@@ -315,7 +353,6 @@ class _DialogContent extends StatelessWidget {
   }
 }
 
-/// زر متحرك للـ Dialog
 class _AnimatedDialogButton extends StatefulWidget {
   final String text;
   final Color backgroundColor;
@@ -399,10 +436,10 @@ class _AnimatedDialogButtonState extends State<_AnimatedDialogButton> {
 
 void CustomSHowDetailsDialog(
   BuildContext context, {
-  String? title, // عنوان الدايلوج (مثلاً: ارسال تحية)
-  String? buttonLabel, // نص الزر (مثلاً: ارسال)
-  VoidCallback? onSendPressed, // أكشن زر الارسال
-  required Widget contantWidget, // المحتوى (التيكست فيلد)
+  String? title,
+  String? buttonLabel,
+  VoidCallback? onSendPressed,
+  required Widget contantWidget,
 }) {
   showGeneralDialog(
     context: context,
@@ -411,14 +448,13 @@ void CustomSHowDetailsDialog(
     barrierColor: Colors.black.withOpacity(0.5),
     transitionDuration: const Duration(milliseconds: 300),
     pageBuilder: (_, __, ___) {
-      return const SizedBox(); // غير مستخدم هنا لأننا نستخدم transitionBuilder
+      return const SizedBox();
     },
     transitionBuilder: (context, animation, secondaryAnimation, child) {
-      // انيميشن الانبثاق (Scale + Fade)
       return ScaleTransition(
         scale: CurvedAnimation(
           parent: animation,
-          curve: Curves.easeOutBack, // يعطي تأثير الارتداد الخفيف (Pop effect)
+          curve: Curves.easeOutBack,
         ),
         child: FadeTransition(
           opacity: animation,
@@ -429,14 +465,13 @@ void CustomSHowDetailsDialog(
                 margin: EdgeInsets.symmetric(horizontal: 20.w),
                 padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
                 decoration: BoxDecoration(
-                  // ✅ الخلفية المتدرجة (مثل الصورة)
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Color(0xFFFCE4EC), // وردي فاتح جداً
-                      Color(0xFFF3E5F5), // بنفسجي فاتح جداً
-                      Color(0xFFE1F5FE), // أزرق سماوي فاتح
+                      Color(0xFFFCE4EC),
+                      Color(0xFFF3E5F5),
+                      Color(0xFFE1F5FE),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(24.r),
@@ -451,11 +486,9 @@ void CustomSHowDetailsDialog(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 1. الهيدر (عنوان + زر إغلاق)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // زر الإغلاق
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
                           icon: Icon(
@@ -466,33 +499,26 @@ void CustomSHowDetailsDialog(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
-                        // العنوان
                         Text(
                           title ?? "ارسال تحية",
                           style: Styles.textStyle16Bold.copyWith(
-                            color: const Color(0xFF5D1028), // لون نبيتي غامق
+                            color: const Color(0xFF5D1028),
                           ),
                         ),
-                        // مسافة وهمية عشان العنوان يبقى في النص بالظبط
                         SizedBox(width: 24.sp),
                       ],
                     ),
-
                     Gap(20.h),
-
-                    // 2. المحتوى (الخلفية البيضاء)
                     Container(
                       width: double.infinity,
-                      padding: EdgeInsets.all(12.w), // حواف داخلية
+                      padding: EdgeInsets.all(12.w),
                       decoration: BoxDecoration(
-                        color: Colors.white, // خلفية بيضاء للمحتوى
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(16.r),
                       ),
                       child: contantWidget,
                     ),
-
                     Gap(24.h),
-
                     CustomBotton(
                       useGradient: true,
                       title: context.tr('send'),

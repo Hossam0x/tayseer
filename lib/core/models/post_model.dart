@@ -47,6 +47,8 @@ PostContentType _parseContentType(String? value) {
 
 // --- Post Model ---
 class PostModel {
+  // ✅ Spelling corrected: isHidden
+  final bool isHidden;
   final String postId;
   final String name;
   final String userName;
@@ -73,7 +75,15 @@ class PostModel {
   final ReactionType? myReaction;
   final bool isRepostedByMe;
   final String? repostedBy;
+
+
+
+  // local 
   final bool isSaved;
+  final bool isMine;
+    final bool isBlocked; 
+
+  
 
   PostModel({
     required this.postId,
@@ -97,9 +107,11 @@ class PostModel {
     this.repostedBy,
     this.isRepostedByMe = false,
     this.isSaved = false,
+    this.isMine = false,
+    this.isHidden = false, 
+    this.isBlocked = false
   });
 
-  // ✅ fromJson Factory Constructor
   factory PostModel.fromJson(Map<String, dynamic> json) {
     return PostModel(
       userName: json['userName'] ?? '',
@@ -112,8 +124,7 @@ class PostModel {
       category: json['category'] ?? '',
       timeAgo: json['timeAgo'] ?? '',
       content: json['content'] ?? '',
-      images:
-          (json['images'] as List<dynamic>?)
+      images: (json['images'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
@@ -122,8 +133,7 @@ class PostModel {
       commentsCount: json['commentsCount'] ?? 0,
       sharesCount: json['sharesCount'] ?? 0,
       likesCount: json['likesCount'] ?? 0,
-      topReactions:
-          (json['topReactions'] as List<dynamic>?)
+      topReactions: (json['topReactions'] as List<dynamic>?)
               ?.map((e) => _parseReactionType(e.toString()))
               .whereType<ReactionType>()
               .toList() ??
@@ -132,10 +142,11 @@ class PostModel {
       isRepostedByMe: json['isRepostedByMe'] ?? false,
       repostedBy: json['repostedBy'],
       isSaved: json['isSaved'] ?? false,
+      isMine: json['isMine'] ?? false,
     );
   }
 
-  // ✅ Helper Getters
+  // Helper Getters
   bool get hasNoReactions => likesCount == 0 && topReactions.isEmpty;
   bool get hasReactions => likesCount > 0 || topReactions.isNotEmpty;
   bool get hasImages => images.isNotEmpty;
@@ -160,11 +171,14 @@ class PostModel {
     int? likesCount,
     List<ReactionType>? topReactions,
     ReactionType? myReaction,
-    bool clearMyReaction = false, // ✅ للتعامل مع null
+    bool clearMyReaction = false,
     bool? isRepostedByMe,
     String? repostedBy,
     bool? isSaved,
     String? userName,
+    bool? isMine, 
+    bool? isHidden, 
+    bool? isBlocked, 
   }) {
     return PostModel(
       postId: postId ?? this.postId,
@@ -188,6 +202,9 @@ class PostModel {
       repostedBy: repostedBy ?? this.repostedBy,
       isSaved: isSaved ?? this.isSaved,
       userName: userName ?? this.userName,
+      isMine: isMine ?? this.isMine,     
+      isHidden: isHidden ?? this.isHidden, 
+      isBlocked: isBlocked ?? this.isBlocked
     );
   }
 }
