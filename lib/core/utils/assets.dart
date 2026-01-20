@@ -37,6 +37,7 @@ abstract class AssetsData {
   static const String kWoriningImage = "assets/images/worining_image.png";
   static const String kisEmptySesessionImage =
       "assets/images/is_empty_sesession.png";
+  static const String kLangImage = "assets/images/lang_imge.png";
 
   //////////////////////icons//////////////////////
   static const String kArroBackIcon = "assets/icons/arro_back.svg";

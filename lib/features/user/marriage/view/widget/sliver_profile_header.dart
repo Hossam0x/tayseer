@@ -1,10 +1,10 @@
 import 'dart:ui';
-
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
+import 'package:tayseer/features/user/marriage/view/widget/image_viewer_gallery.dart';
 import 'package:tayseer/my_import.dart';
 
 class SliverProfileHeader extends StatelessWidget {
-  final String imageUrl;
+  final List<String> images;
   final String name;
   final int age;
   final String location;
@@ -12,7 +12,7 @@ class SliverProfileHeader extends StatelessWidget {
 
   const SliverProfileHeader({
     super.key,
-    required this.imageUrl,
+    required this.images,
     required this.name,
     required this.age,
     required this.location,
@@ -21,6 +21,8 @@ class SliverProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String coverImage = images.isNotEmpty ? images.first : '';
+
     return SliverAppBar(
       expandedHeight: context.height * 0.85,
       pinned: true,
@@ -40,17 +42,31 @@ class SliverProfileHeader extends StatelessWidget {
                 child: AppImage(AssetsData.kfilterIcon, width: 20, height: 20),
               ),
             ),
-
             const AnimatedBeFirstButton(),
           ],
         ),
       ),
-
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
           children: [
-            AppImage(imageUrl, fit: BoxFit.cover),
+            GestureDetector(
+              onTap: () {
+                if (images.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ImageViewerGallery(images: images, initialIndex: 0),
+                    ),
+                  );
+                }
+              },
+              child: Hero(
+                tag: coverImage,
+                child: AppImage(coverImage, fit: BoxFit.cover),
+              ),
+            ),
 
             Positioned(
               bottom: 20.h,

@@ -41,6 +41,7 @@ import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
 import 'package:tayseer/features/advisor/search/view/a_search_view.dart';
 import 'package:tayseer/features/shared/auth/view/consultant_upload_certificate_view.dart';
 import 'package:tayseer/features/shared/auth/view/professional_information_consultant_view.dart';
+import 'package:tayseer/features/shared/auth/view/regisration_advisor_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_days_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
@@ -75,7 +76,7 @@ import 'package:tayseer/features/user/questions/smoking_view.dart';
 import 'package:tayseer/features/user/questions/social_status_view.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/advisor/layout/views/a_layout_view.dart';
-import 'package:tayseer/features/shared/auth/view/regisration_view.dart';
+import 'package:tayseer/features/shared/auth/view/regisration_user_view.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
 // import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/on_boarding_screen.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
@@ -164,6 +165,7 @@ abstract class AppRouter {
   static const kUserProfileView = '/userProfileView';
   static const kFollowersView = '/followers_view';
   static const kFollowingView = '/following_view';
+  static const kRegisrationAdvisorView = '/RegisrationAdvisorView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -720,6 +722,14 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const ChatSearchView(),
+        );
+      case kRegisrationAdvisorView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const RegisrationAdvisorView(),
+          ),
         );
       case kConversitionView:
         return MaterialPageRoute(
