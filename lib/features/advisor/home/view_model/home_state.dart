@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 
 import '../../../../my_import.dart';
 
@@ -13,6 +14,7 @@ class HomeState extends Equatable {
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
+  final SessionStartModel? sessionStartModel;
 
   // 📌 حالة الشير
   final CubitStates shareActionState;
@@ -35,10 +37,10 @@ class HomeState extends Equatable {
     this.shareMessage,
     this.isShareAdded,
     this.sharePostId,
-    // 
-        this.homeInfo,
+    //
+    this.homeInfo,
     this.fetchNameAndImageState = CubitStates.initial,
-
+    this.sessionStartModel,
   });
 
   HomeState copyWith({
@@ -52,8 +54,8 @@ class HomeState extends Equatable {
     CubitStates? shareActionState,
     String? shareMessage,
     bool? isShareAdded,
-    String? sharePostId
-    ,
+    String? sharePostId,
+    SessionStartModel? sessionStartModel,
     ImageAndNameModel? homeInfo,
     CubitStates? fetchNameAndImageState,
   }) {
@@ -69,7 +71,9 @@ class HomeState extends Equatable {
       isShareAdded: isShareAdded ?? this.isShareAdded,
       sharePostId: sharePostId ?? this.sharePostId,
       homeInfo: homeInfo ?? this.homeInfo,
-      fetchNameAndImageState: fetchNameAndImageState ?? this.fetchNameAndImageState
+      fetchNameAndImageState:
+          fetchNameAndImageState ?? this.fetchNameAndImageState,
+      sessionStartModel: sessionStartModel ?? this.sessionStartModel,
     );
   }
 
@@ -87,5 +91,6 @@ class HomeState extends Equatable {
     sharePostId,
     homeInfo,
     fetchNameAndImageState,
+    sessionStartModel,
   ];
 }

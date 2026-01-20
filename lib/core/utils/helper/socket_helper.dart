@@ -30,7 +30,7 @@ class tayseerSocketHelper {
 
     // final String? token = CachNetwork.getStringData(key: 'token');
     final String? token =
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NGJkN2EyOGI1N2QzMmQ2YjIwYjMyYSIsImVtYWlsIjoia2hhbGVkZWxraGFtaXN5NDc1QGdtYWlsLmNvbSIsInVzZXJUeXBlIjoiVXNlciIsInR5cGUiOiJsb2dpbl92ZXJpZnkiLCJpYXQiOjE3Njg3MjQxNzEsImV4cCI6MTc2ODcyNTA3MX0.-bRbKKH6ZzjTkRuwPL0wGLRXUGi5iK-UJkhrByFYmDw";
+        'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NGJkN2EyOGI1N2QzMmQ2YjIwYjMyYSIsImVtYWlsIjoia2hhbGVkZWxraGFtaXN5NDc1QGdtYWlsLmNvbSIsInVzZXJUeXBlIjoiVXNlciIsImlhdCI6MTc2ODc0Mzg2MiwiZXhwIjo0OTI0NTAzODYyfQ.n2XdTGx2y0E9bfyzjqx9gar9tPFrSg584exyUHEKUCE';
 
     log('Token: $token');
 

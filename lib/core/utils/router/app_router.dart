@@ -5,7 +5,7 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
-import 'package:tayseer/features/advisor/chat/presentation/view/conversation.dart';
+import 'package:tayseer/features/advisor/chat/presentation/view/advisor_chat_screen.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
 import 'package:tayseer/features/advisor/profille/views/boost_account_view.dart';
@@ -609,7 +609,7 @@ abstract class AppRouter {
       case kConversitionView:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => ChatScreenWithOverlay(
+          builder: (_) => AdvisorChatScreen(
             receiverId: settings.arguments != null
                 ? (settings.arguments as Map<String, dynamic>)['receiverid']
                       as String

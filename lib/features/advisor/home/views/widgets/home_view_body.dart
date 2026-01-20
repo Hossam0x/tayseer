@@ -1,8 +1,13 @@
+import 'dart:developer';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/home_app_bar.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/home_filter_section.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/advisor/home/views/widgets/home_search_bar.dart';
+import 'package:tayseer/features/advisor/home/views/widgets/session_started_listener.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stories_section.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -21,6 +26,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
   double _lastOffset = 0;
   double _scrollDelta = 0;
   static const double _scrollThreshold = 20.0;
+
   final StoriesCubit storiesCubit = getIt<StoriesCubit>();
   final HomeCubit homeCubit = getIt<HomeCubit>();
 
@@ -39,6 +45,8 @@ class HomeViewBodyState extends State<HomeViewBody> {
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_scrollListener);
+
+    // Fetch initial data
     storiesCubit.fetchStories();
     homeCubit.fetchPosts();
     homeCubit.fetchNameAndImage();
@@ -71,25 +79,32 @@ class HomeViewBodyState extends State<HomeViewBody> {
         BlocProvider.value(value: storiesCubit),
         BlocProvider.value(value: homeCubit),
       ],
-      child: RefreshIndicator(
-        color: AppColors.kprimaryColor,
-        onRefresh: () async {
-          await Future.wait([
-            storiesCubit.fetchStories(),
-            homeCubit.fetchPosts(),
-          ]);
-        },
-        child: CustomScrollView(
-          cacheExtent: 500.0,
-          controller: _scrollController,
-          slivers: [
-            const HomeAppBar(notificationCount: 3),
-            const HomeSearchBar(),
-            const StoriesSection(),
-            const HomeFilterSection(),
-            HomePostFeed(homeCubit: homeCubit),
-          ],
-        ),
+      child: Stack(
+        children: [
+          RefreshIndicator(
+            color: AppColors.kprimaryColor,
+            onRefresh: () async {
+              await Future.wait([
+                storiesCubit.fetchStories(),
+                homeCubit.fetchPosts(),
+              ]);
+            },
+            child: CustomScrollView(
+              cacheExtent: 500.0,
+              controller: _scrollController,
+              slivers: [
+                const HomeAppBar(notificationCount: 3),
+                const HomeSearchBar(),
+                const StoriesSection(),
+                const HomeFilterSection(),
+                HomePostFeed(homeCubit: homeCubit),
+              ],
+            ),
+          ),
+
+          // BlocListener Session Started
+          const SessionStartedListener(),
+        ],
       ),
     );
   }

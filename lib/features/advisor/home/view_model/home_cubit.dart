@@ -2,9 +2,11 @@ import 'dart:developer';
 
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/advisor/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/home/view_model/home_state.dart';
+import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 import '../../../../my_import.dart';
 import '../reposiotry/home_repository.dart';
 
@@ -14,6 +16,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   HomeCubit(this.homeRepository) : super(HomeState()) {
     _loadCachedData();
+    sessionStart();
   }
 
   // Load cached data immediately
@@ -306,8 +309,24 @@ class HomeCubit extends Cubit<HomeState> {
     }).toList();
 
     emit(state.copyWith(posts: updatedPosts));
+  }
 
-    // 🔜 TODO: إرسال الطلب للـ backend لاحقاً
-    // homeRepository.toggleFollowAdvisor(advisorId: advisorId);
+  final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
+
+  void sessionStart() {
+    log('📡 Setting up Session Start Listener');
+    socketHelper.listen('sessionStarted', (data) {
+      log('📡 Session Started Event Received: $data');
+
+      final response = SessionStartModel.fromJson(data);
+
+      // Emit جديد مع event
+      emit(state.copyWith(sessionStartModel: response));
+
+      // بعد لحظة نصفره عشان listener يتريجر لكل حدث جديد
+      Future.delayed(Duration(milliseconds: 100), () {
+        emit(state.copyWith(sessionStartModel: null));
+      });
+    });
   }
 }
