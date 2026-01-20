@@ -1,4 +1,5 @@
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostOptionsBottomSheet extends StatelessWidget {
@@ -86,6 +87,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
               icon: Icons.delete_outline_rounded,
               onTap: onDelete,
               isDestructive: true,
+              isDelete: true,
             ),
           ]
         : [
@@ -125,7 +127,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
           ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -195,8 +197,12 @@ class PostOptionsBottomSheet extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        Navigator.pop(context);
-        if (item.onTap != null) item.onTap!();
+        if (item.isDelete) {
+          _showDeleteConfirmation(context); // ✅ نمرر context الـ BottomSheet
+        } else {
+          Navigator.pop(context);
+          if (item.onTap != null) item.onTap!();
+        }
       },
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 20.h),
@@ -214,6 +220,25 @@ class PostOptionsBottomSheet extends StatelessWidget {
       ),
     );
   }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr(AppStrings.deletePost),
+      supTitle: context.tr(AppStrings.deletePostConfirmation),
+      imageUrl: AssetsData.deleteIcon,
+      bottonText: context.tr(AppStrings.yes),
+      onPressed: () {
+        Navigator.pop(context); // أغلق الديالوج
+        if (onDelete != null) onDelete!(); // ✅ نفذ الحذف
+      },
+      showCancelButton: true,
+      cancelText: context.tr(AppStrings.no),
+      onCancel: () {
+        Navigator.pop(context);
+      },
+    );
+  }
 }
 
 class OptionItem {
@@ -221,11 +246,13 @@ class OptionItem {
   final IconData icon;
   final VoidCallback? onTap;
   final bool isDestructive;
+  final bool isDelete;
   final Color? color;
 
   OptionItem({
     required this.text,
     required this.icon,
+    this.isDelete = false,
     this.onTap,
     this.isDestructive = false,
     this.color,

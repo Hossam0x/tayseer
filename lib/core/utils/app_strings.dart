@@ -23,4 +23,10 @@ class AppStrings {
   static const String delete = "delete";
   static const String block = "block";
   static const String save = "save";
+
+
+  static const String deletePost = "delete_post";
+  static const String deletePostConfirmation = "delete_post_confirmation";
+  static const String yes = "yes";
+  static const String no = "no";
 }

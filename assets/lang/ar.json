@@ -427,5 +427,7 @@
     "send": "إرسال",
     "share": "مشاركة",
     "archive": "أرشيف",
-    "block": "حظر"
+    "block": "حظر",
+    "delete_post": "حذف المنشور",
+    "delete_post_confirmation": "هل أنت متأكد من حذف هذا المنشور؟"
 }
