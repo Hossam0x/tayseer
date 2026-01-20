@@ -252,19 +252,38 @@ class HomeRepositoryImpl implements HomeRepository {
     }
   }
 
-
   @override
-  Future<Either<Failure, String>> savedPost({required String postId , required bool isRemove}) async {
+  Future<Either<Failure, String>> savedPost({
+    required String postId,
+    required bool isRemove,
+  }) async {
     try {
-      final Map<String, dynamic> requestData = {
-        "postId": postId,
-      };
+      final Map<String, dynamic> requestData = {"postId": postId};
       var response = await apiService.post(
-        endPoint: "${ApiEndPoint.savePost}?action=${isRemove ? "remove" : "add"}",
+        endPoint:
+            "${ApiEndPoint.savePost}?action=${isRemove ? "remove" : "add"}",
         data: requestData,
-       
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> deletePost({required String postId}) async {
+    try {
+      var response = await apiService.delete(
+        endPoint: "${ApiEndPoint.deletePost}$postId",
+      );
+
+      // ✅ تحقق من success flag أو status
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم حذف المنشور بنجاح');
+      } else {
+        // ❌ السيرفر رجع error message
+        return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+      }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }

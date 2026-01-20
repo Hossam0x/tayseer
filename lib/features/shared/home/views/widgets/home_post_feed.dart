@@ -34,6 +34,12 @@ class HomePostFeed extends StatelessWidget {
             listenWhen: _shouldListenToSave, // دالة الشرط
             listener: _handleSaveFeedback, // دالة التنفيذ
           ),
+
+          // 3. delete post Listener
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: _shouldListenToDelete, // دالة الشرط
+            listener: _handleDeleteFeedback, // دالة التنفيذ
+          ),
         ],
         child: BlocSelector<HomeCubit, HomeState, _FeedState>(
           selector: _selectFeedState,
@@ -59,6 +65,13 @@ class HomePostFeed extends StatelessWidget {
         curr.saveActionState != CubitStates.initial;
   }
 
+  /// هل تغيرت حالة الحذف؟
+
+  bool _shouldListenToDelete(HomeState prev, HomeState curr) {
+    return prev.deletePostActionState != curr.deletePostActionState &&
+        curr.deletePostActionState != CubitStates.initial;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 🎮 Action Handlers (دوال تنفيذ التوست)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -74,6 +87,21 @@ class HomePostFeed extends StatelessWidget {
         break;
       case CubitStates.failure:
         AppToast.error(context, message ?? 'حدث خطأ أثناء المشاركة');
+        break;
+      default:
+        break;
+    }
+  }
+
+  /// التعامل مع توست الحذف
+  void _handleDeleteFeedback(BuildContext context, HomeState state) {
+    final message = state.deletePostMessage;
+    switch (state.deletePostActionState) {
+      case CubitStates.success:
+        AppToast.success(context, message ?? 'تمت العملية بنجاح');
+        break;
+      case CubitStates.failure:
+        AppToast.error(context, message ?? 'حدث خطأ أثناء الحذف');
         break;
       default:
         break;
@@ -249,7 +277,12 @@ class _PostItemState extends State<_PostItem> {
       onShareTap: _onShare,
       onHashtagTap: _onHashtagTap,
       onSave: _onSave,
+      onDelete: _onDelete,
     );
+  }
+
+  void _onDelete(String postId) {
+    widget.homeCubit.deletePost(postId: postId);
   }
 
   void _onSave(String postId) {

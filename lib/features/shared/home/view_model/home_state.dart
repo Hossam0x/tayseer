@@ -53,6 +53,12 @@ class HomeState extends Equatable {
   final String? saveMessage;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 📦 delete post
+  // ─────────────────────────────────────────────────────────────────────────
+  final String? deletePostMessage;
+  final CubitStates deletePostActionState;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 🏗️ Constructor
   // ─────────────────────────────────────────────────────────────────────────
   const HomeState({
@@ -78,6 +84,10 @@ class HomeState extends Equatable {
     // Save
     this.saveActionState = CubitStates.initial,
     this.saveMessage,
+
+    // delete post
+    this.deletePostMessage,
+    this.deletePostActionState = CubitStates.initial,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -107,6 +117,10 @@ class HomeState extends Equatable {
     // Save
     CubitStates? saveActionState,
     String? saveMessage,
+
+    // delete post
+    String? deletePostMessage,
+    CubitStates? deletePostActionState,
   }) {
     return HomeState(
       // Posts
@@ -137,12 +151,37 @@ class HomeState extends Equatable {
       // Save
       saveActionState: saveActionState ?? this.saveActionState,
       saveMessage: saveMessage ?? this.saveMessage,
+
+      // delete post
+      deletePostMessage: deletePostMessage ?? this.deletePostMessage,
+      deletePostActionState:
+          deletePostActionState ?? this.deletePostActionState,
     );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
   // 🔧 Helper Methods
   // ─────────────────────────────────────────────────────────────────────────
+
+  /// إدراج بوست في مكان معين في كاتيجوري معينة (للـ Rollback)
+  HomeState insertPostInCategory({
+    required String? categoryId,
+    required PostModel post,
+    required int index,
+  }) {
+    return updateCategoryPosts(categoryId, (data) {
+      final posts = List<PostModel>.from(data.posts);
+
+      // إدراج البوست في مكانه الأصلي
+      if (index >= 0 && index <= posts.length) {
+        posts.insert(index, post);
+      } else {
+        posts.insert(0, post);
+      }
+
+      return data.copyWith(posts: posts);
+    });
+  }
 
   /// تحديث بيانات كاتيجوري معينة
   HomeState updateCategoryPosts(
@@ -234,6 +273,10 @@ class HomeState extends Equatable {
     // Save
     saveActionState,
     saveMessage,
+
+    // delete post
+    deletePostMessage,
+    deletePostActionState,
   ];
 }
 

@@ -484,6 +484,64 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // 🗑 DELETE POST
+  // ═══════════════════════════════════════════════════════════════════════════
+  void deletePost({required String postId}) {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    // ✅ حفظ البيانات الأصلية للـ Rollback
+    final originalIndex = state.posts.indexWhere((p) => p.postId == postId);
+    final originalCategoryId = state.selectedCategoryId;
+
+    // 1. Optimistic Update
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+    emit(
+      state
+          .updateCategoryPosts(
+            state.selectedCategoryId,
+            (data) => data.copyWith(posts: updatedPosts),
+          )
+          .copyWith(deletePostActionState: CubitStates.initial),
+    );
+
+    // 2. Server Request
+    homeRepository.deletePost(postId: postId).then((result) {
+      result.fold(
+        (failure) {
+          log('>>>>>>>>>>>>>>>>> Delete Post Failed: ${failure.message}');
+
+          // ✅ Rollback باستخدام الـ Helper Method
+          emit(
+            state.insertPostInCategory(
+              categoryId: originalCategoryId,
+              post: post,
+              index: originalIndex,
+            ),
+          );
+
+          emit(
+            state.copyWith(
+              deletePostActionState: CubitStates.failure,
+              deletePostMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          log('>>>>>>>>>>>>>>>>> Delete Post Success: $message');
+
+          emit(
+            state.copyWith(
+              deletePostActionState: CubitStates.success,
+              deletePostMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // 👥 FOLLOW ADVISOR
   // ═══════════════════════════════════════════════════════════════════════════
 
