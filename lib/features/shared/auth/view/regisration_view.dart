@@ -146,8 +146,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                           Hero(
                             tag: 'app_logo',
                             child: SizedBox(
-                              height: context.height * 0.35,
-                              width: context.width * 0.75,
+                              height: context.height * 0.25,
+                              width: context.width * 0.65,
                               child: AppImage(
                                 AssetsData.kAppLogotayseerImage,
                                 fit: BoxFit.cover,
