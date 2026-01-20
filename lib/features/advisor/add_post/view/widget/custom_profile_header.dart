@@ -42,7 +42,7 @@ class _CustomProfileHeaderState extends State<CustomProfileHeader> {
           /// الصورة الشخصية
           ClipRRect(
             borderRadius: BorderRadius.circular(30),
-            child: MyProfileImage(size: 60),
+            child: MyProfileImage(size: 60, imageUrl: kCurrentUserData?.image),
           ),
           Gap(context.responsiveWidth(12)),
 

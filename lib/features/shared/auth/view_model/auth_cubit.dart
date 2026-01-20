@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/sign_in_%20google_error.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
@@ -105,7 +104,6 @@ class AuthCubit extends Cubit<AuthState> {
           state.copyWith(
             registerState: CubitStates.success,
             verify: data.data?.verify,
-            lastQuestionNumber: data.data?.lastQuestionNumber ?? 1,
             fromScreen: fromRegistrationScreen == true
                 ? 'register'
                 : 'registration',
@@ -357,12 +355,6 @@ class AuthCubit extends Cubit<AuthState> {
             fromScreen: 'registration',
           ),
         );
-
-        await CachNetwork.setData(
-          key: 'user_type',
-          value: UserTypeEnum.user.name,
-        );
-        selectedUserType = UserTypeEnum.user;
 
         sendAuthGoogle(idToken: firebaseIdToken);
       } else {

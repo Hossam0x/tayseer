@@ -113,7 +113,7 @@ class AddPostBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CustomProfileHeader(
-                    name: 'Anna Mary',
+                    name: kCurrentUserData?.name??'elkhamisy',
                     initialSubtitle: context.tr('select_group'),
                     isVerified: true,
                     groups: state.categories,
