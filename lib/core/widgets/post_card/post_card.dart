@@ -187,42 +187,29 @@ class _HiddenPostUI extends StatelessWidget {
         vertical: context.responsiveHeight(16),
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF5F6), // خلفية وردي فاتح جداً
-        borderRadius: BorderRadius.circular(20.r), // تدوير الحواف
-        border: Border.all(
-          color: const Color(0xFFFFCDD2), // حدود وردي فاتح
-          width: 1,
-        ),
+        color: const Color(0xFFFCF7FA),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.primary100, width: 1.sp),
       ),
       child: Row(
         children: [
-          // 1. أيقونة (إلغاء الإخفاء أو أيقونة توضيحية) - يمين حسب الصورة
           Icon(
-            Icons.layers_clear_outlined, // أيقونة مشابهة للصورة
-            color: const Color(0xFFEF5350), // لون وردي/أحمر
+            Icons.layers_clear_outlined,
+            color: AppColors.primary300,
             size: 24.sp,
           ),
 
-          Gap(context.responsiveWidth(12)),
+          Gap(8.w),
 
-          // 2. النص
           Expanded(
             child: Text(
-              context.tr(
-                AppStrings.postHiddenMessage,
-              ), // "تم إخفاء هذا المنشور..."
-              style: Styles.textStyle14.copyWith(
-                color: const Color(0xFF424242), // رمادي غامق
-                height: 1.3,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              context.tr(AppStrings.postHiddenMessage),
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
             ),
           ),
 
-          Gap(context.responsiveWidth(12)),
+          Gap(8.w),
 
-          // 3. زر الإلغاء
           GestureDetector(
             onTap: onUndo,
             child: Container(
@@ -231,16 +218,14 @@ class _HiddenPostUI extends StatelessWidget {
                 vertical: context.responsiveHeight(8),
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFFF48FB1), // لون الخلفية (وردي غامق)
+                color: AppColors.primary200,
                 borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: const Color(0xFFEC407A), // حدود أغمق قليلاً
-                ),
+                border: Border.all(color: AppColors.primary400),
               ),
               child: Text(
-                context.tr(AppStrings.cancel), // "إلغاء"
+                context.tr(AppStrings.cancel),
                 style: Styles.textStyle14SemiBold.copyWith(
-                  color: const Color(0xFF880E4F), // لون النص (نبيتي/وردي غامق)
+                  color: AppColors.primary400,
                 ),
               ),
             ),
