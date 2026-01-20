@@ -23,6 +23,8 @@ class ApiEndPoint {
       '/chat/$chatRoomId/archive';
   static const String blockuser = '/blocks/block';
   static const String unblockuser = '/blocks/unblock';
+  static const String profileData = '/advisor/getProfile';
+  static const String category = '/category';
   static const String advisorUserChat = '/chat/advisor-user';
   static String advisorChatProfile(String userId) =>
       '/session/user-sessions/$userId';

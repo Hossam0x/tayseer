@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
+import 'package:tayseer/core/video/video_state_manager.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ReelsVideoBackground extends StatefulWidget {
   final String videoUrl;
+  final String? videoId; // إضافة videoId للتتبع
   final bool shouldPlay;
   final VoidCallback onTap;
   final void Function(Offset)? onDoubleTap;
@@ -15,6 +17,7 @@ class ReelsVideoBackground extends StatefulWidget {
   const ReelsVideoBackground({
     super.key,
     required this.videoUrl,
+    this.videoId,
     required this.shouldPlay,
     required this.onTap,
     this.onDoubleTap,
@@ -33,7 +36,17 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   bool _hasError = false;
   bool _isBuffering = false;
   bool _isDragging = false;
+  bool _isDisposed = false;
+  bool _isSpeedUp = false;
+  bool _showSpeedIndicator = false;
   final _videoCacheManager = VideoCacheManager();
+  final _stateManager = VideoStateManager();
+
+  // لتتبع محاولات إعادة التحميل
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
+
+  String get _videoId => widget.videoId ?? widget.videoUrl.hashCode.toString();
 
   @override
   void initState() {
@@ -42,29 +55,33 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   }
 
   Future<void> _initializeVideo() async {
+    if (_isDisposed) return;
+
     // 1. Shared Controller Logic
     if (widget.sharedController != null) {
       _controller = widget.sharedController;
 
-      // ✅ ده السطر اللي هيحل المشكلة:
       // بنقوله لو جاي من بره (حتى لو كان صامت)، علي الصوت للآخر
       await _controller!.setVolume(1.0);
 
-      // ✅ الحماية من التدمير أثناء الـ await
-      if (!mounted || _controller == null) return;
+      // الحماية من التدمير أثناء الـ await
+      if (!mounted || _controller == null || _isDisposed) return;
 
       if (_controller!.value.isInitialized) {
         _isInitialized = true;
         _hasError = false;
 
-        // ✅ Auto-play if shouldPlay is true
+        // استرجاع آخر موضع
+        await _restorePosition();
+
+        // Auto-play if shouldPlay is true
         if (widget.shouldPlay) {
           _controller!.play();
         }
       }
       _controller!.addListener(_videoListener);
       widget.onControllerCreated?.call(_controller!);
-      if (mounted) setState(() {});
+      if (mounted && !_isDisposed) setState(() {});
       return;
     }
 
@@ -72,16 +89,18 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
       final cachedFile = await _videoCacheManager.getCachedFile(
         widget.videoUrl,
       );
-      if (!mounted) return;
+      if (!mounted || _isDisposed) return;
 
       if (cachedFile != null) {
         _controller = VideoPlayerController.file(cachedFile);
+        debugPrint('📁 Reels: Loading from cache');
       } else {
         _controller = VideoPlayerController.networkUrl(
           Uri.parse(widget.videoUrl),
           videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
         );
         _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
+        debugPrint('🌐 Reels: Loading from network');
       }
 
       _controller!.addListener(_videoListener);
@@ -89,53 +108,135 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
       await _controller!.setLooping(true);
       await _controller!.setVolume(1.0);
 
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         widget.onControllerCreated?.call(_controller!);
+
+        // استرجاع آخر موضع
+        await _restorePosition();
+
         setState(() {
           _isInitialized = true;
           _hasError = false;
         });
+
+        // تسجيل نجاح التحميل
+        _stateManager.markAsLoaded(_videoId);
+        _retryCount = 0;
+
         if (widget.shouldPlay) _controller!.play();
       }
     } catch (e) {
       debugPrint('❌ Error initializing video: $e');
-      if (mounted) {
-        setState(() {
-          _hasError = true;
-          _isInitialized = false;
-        });
+      if (mounted && !_isDisposed) {
+        // تسجيل الخطأ وإعادة المحاولة تلقائياً
+        if (_retryCount < _maxRetries && _stateManager.canRetry(_videoId)) {
+          _retryCount++;
+          _stateManager.recordError(_videoId);
+          debugPrint('🔄 Auto-retrying... (${_retryCount}/$_maxRetries)');
+          await Future.delayed(Duration(milliseconds: 500 * _retryCount));
+          if (mounted && !_isDisposed) {
+            _initializeVideo();
+          }
+        } else {
+          setState(() {
+            _hasError = true;
+            _isInitialized = false;
+          });
+        }
       }
     }
   }
 
-  void _videoListener() {
-    if (_controller == null || !mounted) return;
-    final isBuffering = _controller!.value.isBuffering;
-    if (isBuffering != _isBuffering) {
-      if (mounted) setState(() => _isBuffering = isBuffering);
+  Future<void> _restorePosition() async {
+    if (_controller == null) return;
+
+    try {
+      if (!_controller!.value.isInitialized) return;
+
+      final lastPosition = _stateManager.getLastPosition(_videoId);
+      if (lastPosition != null && lastPosition.inSeconds > 0) {
+        // لا نستعيد إذا كان قريب جداً من البداية أو النهاية
+        final duration = _controller!.value.duration;
+        if (lastPosition < duration - const Duration(seconds: 2)) {
+          await _controller!.seekTo(lastPosition);
+          debugPrint('📍 Restored reel position: ${lastPosition.inSeconds}s');
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Cannot restore position, controller disposed');
     }
-    if (_isInitialized && !_isDragging) {
-      // Avoid unnecessary redraws
+  }
+
+  void _savePosition() {
+    if (_controller == null || widget.sharedController != null) return;
+
+    try {
+      if (_controller!.value.isInitialized) {
+        final position = _controller!.value.position;
+        if (position.inSeconds > 0) {
+          _stateManager.savePosition(_videoId, position);
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Cannot save position, controller disposed');
+    }
+  }
+
+  void _videoListener() {
+    if (_controller == null || !mounted || _isDisposed) return;
+
+    try {
+      final value = _controller!.value;
+
+      // تتبع حالة التخزين المؤقت
+      final isBuffering = value.isBuffering;
+      if (isBuffering != _isBuffering) {
+        // تأخير setState لتجنب خطأ build scope
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_isDisposed)
+            setState(() => _isBuffering = isBuffering);
+        });
+      }
+
+      // حفظ الموضع دورياً (كل 5 ثواني تقريباً)
+      if (_isInitialized &&
+          !_isDragging &&
+          value.position.inSeconds % 5 == 0 &&
+          value.position.inSeconds > 0) {
+        _savePosition();
+      }
+    } catch (e) {
+      debugPrint('⚠️ Controller disposed in listener');
     }
   }
 
   @override
   void didUpdateWidget(covariant ReelsVideoBackground oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_isInitialized && _controller != null) {
-      if (widget.shouldPlay && !oldWidget.shouldPlay) {
-        _controller!.play();
-      } else if (!widget.shouldPlay && oldWidget.shouldPlay) {
-        _controller!.pause();
+    if (_isInitialized && _controller != null && !_isDisposed) {
+      try {
+        if (widget.shouldPlay && !oldWidget.shouldPlay) {
+          _controller!.play();
+        } else if (!widget.shouldPlay && oldWidget.shouldPlay) {
+          _savePosition(); // حفظ قبل الإيقاف
+          _controller!.pause();
+        }
+      } catch (e) {
+        debugPrint('⚠️ Controller disposed in didUpdateWidget');
       }
     }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
+
+    // حفظ الموضع قبل التدمير
+    _savePosition();
+
     if (_controller != null) {
       _controller!.removeListener(_videoListener);
-      // ✅ Protection: Don't dispose if shared
+      // Protection: Don't dispose if shared
       if (widget.sharedController == null) {
         _controller!.dispose();
       }
@@ -145,11 +246,22 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   }
 
   void _retryInitialization() {
+    if (_isDisposed) return;
+
+    // إعادة تعيين حالة الخطأ
+    _stateManager.resetErrorCount(_videoId);
+    _videoCacheManager.resetFailedStatus(widget.videoUrl);
+    _retryCount = 0;
+
     setState(() {
       _hasError = false;
       _isInitialized = false;
     });
-    if (widget.sharedController == null) _controller?.dispose();
+
+    if (widget.sharedController == null && _controller != null) {
+      _controller!.removeListener(_videoListener);
+      _controller!.dispose();
+    }
     _controller = null;
     _initializeVideo();
   }
@@ -158,12 +270,54 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
     _controller?.seekTo(position);
   }
 
+  void _onLongPressStart(LongPressStartDetails details) {
+    if (_controller == null || !_isInitialized) return;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final tapPosition = details.localPosition.dx;
+
+    // Check if tap is on left or right third of the screen
+    final isOnSide =
+        tapPosition < screenWidth / 3 || tapPosition > screenWidth * 2 / 3;
+
+    if (isOnSide) {
+      setState(() {
+        _isSpeedUp = true;
+        _showSpeedIndicator = true;
+      });
+      _controller?.setPlaybackSpeed(2.0);
+    }
+  }
+
+  void _onLongPressEnd(LongPressEndDetails details) {
+    if (_isSpeedUp) {
+      setState(() {
+        _isSpeedUp = false;
+        _showSpeedIndicator = false;
+      });
+      _controller?.setPlaybackSpeed(1.0);
+    }
+  }
+
+  void _onLongPressCancel() {
+    if (_isSpeedUp) {
+      setState(() {
+        _isSpeedUp = false;
+        _showSpeedIndicator = false;
+      });
+      _controller?.setPlaybackSpeed(1.0);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
       onDoubleTapDown: (details) =>
           widget.onDoubleTap?.call(details.globalPosition),
+      onLongPressStart: _onLongPressStart,
+      onLongPressEnd: _onLongPressEnd,
+      onLongPressCancel: _onLongPressCancel,
       child: Container(
         color: Colors.black,
         width: double.infinity,
@@ -197,6 +351,41 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
                 child: CircularProgressIndicator(
                   color: Colors.white,
                   strokeWidth: 2,
+                ),
+              ),
+
+            // Speed Indicator (2x)
+            if (_showSpeedIndicator)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 75.h,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.fast_forward, color: Colors.white, size: 20),
+                        SizedBox(width: 6),
+                        Text(
+                          '2x',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
 

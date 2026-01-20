@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'dart:io';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/features/shared/auth/model/guest_response_model.dart';
@@ -45,6 +44,7 @@ class AuthRepoImpl implements AuthRepo {
       final fcmToken = await getFcmToken();
       final platform = Platform.isAndroid ? 'android' : 'ios';
       debugPrint('deviceId::$deviceId');
+
       final response = await apiService.post(
         endPoint: selectedUserType == UserTypeEnum.asConsultant
             ? '/advisor/login'
@@ -138,10 +138,10 @@ class AuthRepoImpl implements AuthRepo {
           'deviceId': deviceId,
         },
       );
-
+      debugPrint('authGoogle idToken $idToken');
       final success = response['success'] ?? true;
 
-      if (success == false) {
+      if (success == true) {
         final authGoogleResponse = AccountResponse.fromJson(response);
         await CachNetwork.setData(
           key: 'token',
@@ -474,7 +474,6 @@ class AuthRepoImpl implements AuthRepo {
     try {
       final response = await apiService.post(
         endPoint: '/advisor/addServiceProvider',
-        isAuth: true,
         data: body,
       );
 

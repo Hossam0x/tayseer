@@ -55,12 +55,12 @@ class CachNetwork {
     return sharedPref.getInt(key) ?? 0;
   }
 
-  static Future<bool?> getBoolData({required String key}) async {
-    return await sharedPref.getBool(key) ?? false;
+  static bool? getBoolData({required String key}) {
+    return sharedPref.getBool(key) ?? false;
   }
 
   static Future<dynamic> getData({required String key}) async {
-    return await sharedPref.get(key);
+    return sharedPref.get(key);
   }
 
   static Future<bool> removeData({required String key}) async {

@@ -1,6 +1,6 @@
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/reels/views/widget/reels_item.dart';
 import 'package:tayseer/my_import.dart';

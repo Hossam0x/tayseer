@@ -6,7 +6,7 @@ class AutoDirectionHashtagText extends StatelessWidget {
   final TextStyle? style;
   final TextStyle? hashtagStyle;
   final Function(String)? onHashtagTap;
-  
+
   // 1. المتغيرات الجديدة للتحكم في قص النص
   final int? maxLines;
   final TextOverflow? overflow;
@@ -28,12 +28,12 @@ class AutoDirectionHashtagText extends StatelessWidget {
     final bool isArabic = _isArabicText(text);
 
     return SizedBox(
-      width: double.infinity, 
+      width: double.infinity,
       child: RichText(
         textAlign: isArabic ? TextAlign.right : TextAlign.left,
         textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
         maxLines: maxLines,
-        overflow: overflow ?? TextOverflow.clip, 
+        overflow: overflow ?? TextOverflow.clip,
         text: TextSpan(
           style: style ?? const TextStyle(color: Colors.black),
           children: _parseText(text),
@@ -45,7 +45,19 @@ class AutoDirectionHashtagText extends StatelessWidget {
   /// فحص إذا كان النص يبدأ بحرف عربي
   bool _isArabicText(String text) {
     if (text.trim().isEmpty) return true;
-    return RegExp(r"^[\u0600-\u06FF]").hasMatch(text.trim());
+
+    // البحث عن أول حرف (عربي أو إنجليزي) وتجاهل الإيموجي والرموز والأرقام في البداية
+    // ملاحظة: الأرقام والرموز لا يتم التقاطها بواسطة التعبير النمطي أدناه وبالتالي يتم تجاهلها
+    final RegExp letterRegex = RegExp(r'[a-zA-Z\u0600-\u06FF]');
+    final Match? match = letterRegex.firstMatch(text);
+
+    if (match != null) {
+      // التحقق مما إذا كان الحرف الذي تم إيجاده عربياً
+      return RegExp(r'^[\u0600-\u06FF]').hasMatch(match.group(0)!);
+    }
+
+    // إذا لم يتم العثور على أي حروف (مثلاً النص عبارة عن إيموجي أو أرقام فقط)، نعتبره عربي
+    return true;
   }
 
   List<TextSpan> _parseText(String text) {
@@ -59,7 +71,8 @@ class AutoDirectionHashtagText extends StatelessWidget {
         spans.add(
           TextSpan(
             text: hashtag,
-            style: hashtagStyle ??
+            style:
+                hashtagStyle ??
                 const TextStyle(
                   color: Colors.blue,
                   fontWeight: FontWeight.bold,

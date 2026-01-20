@@ -399,72 +399,111 @@ class _AnimatedDialogButtonState extends State<_AnimatedDialogButton> {
 
 void CustomSHowDetailsDialog(
   BuildContext context, {
-  required String imageUrl,
-  required Widget contantWidget,
+  String? title, // عنوان الدايلوج (مثلاً: ارسال تحية)
+  String? buttonLabel, // نص الزر (مثلاً: ارسال)
+  VoidCallback? onSendPressed, // أكشن زر الارسال
+  required Widget contantWidget, // المحتوى (التيكست فيلد)
 }) {
-  showDialog(
+  showGeneralDialog(
     context: context,
-    builder: (context) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          return Dialog(
-            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SizedBox(
-              width: constraints.maxWidth,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: IconButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      icon: Icon(Icons.close, color: AppColors.kprimaryColor),
-                    ),
+    barrierLabel: "Barrier",
+    barrierDismissible: true,
+    barrierColor: Colors.black.withOpacity(0.5),
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (_, __, ___) {
+      return const SizedBox(); // غير مستخدم هنا لأننا نستخدم transitionBuilder
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      // انيميشن الانبثاق (Scale + Fade)
+      return ScaleTransition(
+        scale: CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack, // يعطي تأثير الارتداد الخفيف (Pop effect)
+        ),
+        child: FadeTransition(
+          opacity: animation,
+          child: Center(
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                margin: EdgeInsets.symmetric(horizontal: 20.w),
+                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
+                decoration: BoxDecoration(
+                  // ✅ الخلفية المتدرجة (مثل الصورة)
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFFCE4EC), // وردي فاتح جداً
+                      Color(0xFFF3E5F5), // بنفسجي فاتح جداً
+                      Color(0xFFE1F5FE), // أزرق سماوي فاتح
+                    ],
                   ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: constraints.maxWidth * 0.2,
-                      vertical: constraints.maxHeight * 0.02,
+                  borderRadius: BorderRadius.circular(24.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(100),
-                      child: AppImage(imageUrl, height: 100, fit: BoxFit.fill)
-                          .animate()
-                          .slideY(
-                            duration: const Duration(milliseconds: 1000),
-                            curve: Curves.easeOutQuart,
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 1. الهيدر (عنوان + زر إغلاق)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // زر الإغلاق
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: Icon(
+                            Icons.close,
+                            color: Colors.grey.shade600,
+                            size: 24.sp,
                           ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                        // العنوان
+                        Text(
+                          title ?? "ارسال تحية",
+                          style: Styles.textStyle16Bold.copyWith(
+                            color: const Color(0xFF5D1028), // لون نبيتي غامق
+                          ),
+                        ),
+                        // مسافة وهمية عشان العنوان يبقى في النص بالظبط
+                        SizedBox(width: 24.sp),
+                      ],
                     ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: constraints.maxWidth * 0.1,
+
+                    Gap(20.h),
+
+                    // 2. المحتوى (الخلفية البيضاء)
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(12.w), // حواف داخلية
+                      decoration: BoxDecoration(
+                        color: Colors.white, // خلفية بيضاء للمحتوى
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      child: contantWidget,
                     ),
-                    child: contantWidget,
-                  ),
-                  const SizedBox(height: 20),
-                  // Padding(
-                  //   padding: const EdgeInsets.all(8.0),
-                  //   child: CustomBotton(
-                  //     title: "إغلاق",
-                  //     onPressed: () {
-                  //       Navigator.of(context).pop();
-                  //     },
-                  //     backGroundcolor: AppColors.kLightPurpleColor,
-                  //     titleColor: AppColors.kprimaryColor,
-                  //   ).animate().slideY(
-                  //     begin: 1,
-                  //     duration: const Duration(milliseconds: 1000),
-                  //     curve: Curves.easeOutQuart,
-                  //   ),
-                  // ),
-                ],
+
+                    Gap(24.h),
+
+                    CustomBotton(
+                      useGradient: true,
+                      title: context.tr('send'),
+                      onPressed: onSendPressed,
+                    ),
+                  ],
+                ),
               ),
             ),
-          );
-        },
+          ),
+        ),
       );
     },
   );

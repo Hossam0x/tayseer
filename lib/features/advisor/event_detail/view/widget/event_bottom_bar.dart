@@ -14,7 +14,8 @@ class EventBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      width: context.width,
+      padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -48,7 +49,7 @@ class EventBottomBar extends StatelessWidget {
             ),
             const Spacer(),
             CustomBotton(
-              width: context.width * .3,
+              width: context.width * .25,
               useGradient: true,
               onPressed: onBoostPressed,
               title: context.tr('boost_button'),
@@ -57,7 +58,7 @@ class EventBottomBar extends StatelessWidget {
             CustomOutlineButton(
               height: 50,
               isSocialLinkButton: true,
-              width: context.width * .3,
+              width: context.width * .25,
               onTap: onEditPressed,
               text: context.tr('edit_button'),
             ),

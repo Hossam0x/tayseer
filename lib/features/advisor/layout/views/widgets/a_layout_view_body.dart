@@ -1,6 +1,6 @@
 import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
 import 'package:tayseer/features/advisor/event/view/event_view.dart';
-import 'package:tayseer/features/advisor/home/views/home_view.dart';
+import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/custom_feb_menu.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
@@ -14,9 +14,9 @@ class ALayOutViewBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<ALayoutCubit>();
+    final cubit = context.read<LayoutCubit>();
 
-    return BlocBuilder<ALayoutCubit, ALayoutState>(
+    return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
         final pages = _getPages(state.userType, cubit);
 
@@ -33,7 +33,9 @@ class ALayOutViewBody extends StatelessWidget {
                 bottom: 0,
                 child: AnimatedSlide(
                   duration: const Duration(milliseconds: 300),
-                  offset: state.isNavVisible ? Offset.zero : const Offset(0, 1),
+                  offset: (state.currentIndex != 0 || state.isNavVisible)
+                      ? Offset.zero
+                      : const Offset(0, 1),
                   child: const ANavBar(),
                 ),
               ),
@@ -57,7 +59,7 @@ class ALayOutViewBody extends StatelessWidget {
     );
   }
 
-  List<Widget> _getPages(UserTypeEnum userType, ALayoutCubit cubit) {
+  List<Widget> _getPages(UserTypeEnum userType, LayoutCubit cubit) {
     switch (userType) {
       case UserTypeEnum.asConsultant:
         return [
@@ -68,6 +70,28 @@ class ALayOutViewBody extends StatelessWidget {
         ];
 
       case UserTypeEnum.user:
+        return [
+          GuestLockWidget(
+            message: 'فرص التوافق تبدأ بعد التسجيل',
+            description:
+                'أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.',
+          ),
+          GuestLockWidget(
+            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
+            description:
+                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
+          ),
+          GuestLockWidget(
+            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
+            description:
+                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
+          ),
+          GuestLockWidget(
+            message: 'إنشاء ملفك الشخصي أولًا',
+            description:
+                'التسجيل بيسمح لك بإنشاء ملفك وعرض الملفات المناسبة لك.',
+          ),
+        ];
       case UserTypeEnum.guest:
         return [
           HomeView(onScroll: cubit.onScroll),

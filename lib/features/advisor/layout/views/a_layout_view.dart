@@ -18,7 +18,7 @@ class ALayoutView extends StatelessWidget {
     log("ALayoutView with userType: $currentUserType");
     return Scaffold(
       body: BlocProvider(
-        create: (context) => ALayoutCubit(userType: currentUserType),
+        create: (context) => LayoutCubit(userType: currentUserType),
         child: const ALayOutViewBody(),
       ),
     );

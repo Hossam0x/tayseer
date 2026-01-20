@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
 
 List<ReactionType> calculateTopReactions({
   required List<ReactionType> currentTopReactions,

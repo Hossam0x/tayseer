@@ -92,8 +92,14 @@ class _StoriesListViewState extends State<_StoriesListView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _AddStoryItem(),
-          Gap(context.responsiveWidth(14)),
+          if (!isUser) ...[
+            Padding(
+              padding: EdgeInsetsDirectional.only(
+                end: context.responsiveWidth(14),
+              ),
+              child: const _AddStoryItem(),
+            ),
+          ],
           ...widget.stories.map(
             (userStory) => Padding(
               key: ValueKey(userStory.userId),

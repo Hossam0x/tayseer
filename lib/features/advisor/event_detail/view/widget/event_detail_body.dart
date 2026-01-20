@@ -15,7 +15,6 @@ class EventDetailBody extends StatelessWidget {
       body: SingleChildScrollView(
         child: BlocBuilder<EventDetailCubit, EventDetailState>(
           builder: (context, state) {
-            // Loading -> show shimmer placeholders
             if (state.eventDetailStatus == CubitStates.loading) {
               return Column(
                 children: [
@@ -102,7 +101,7 @@ class EventDetailBody extends StatelessWidget {
                       child: AppImage(
                         event?.images ??
                             'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2070&auto=format&fit=crop',
-                        fit: BoxFit.cover,
+                        fit: BoxFit.fill,
                       ),
                     ),
                     Positioned(

@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/consultation_topic_item.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -50,23 +51,9 @@ class _ConsultationTopicsViewState extends State<ConsultationTopicsView> {
             // --- Header ---
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: IconButton(
-                      icon: Icon(Icons.close, color: AppColors.secondary600),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  Text(
-                    'مواضيع الاستشارات',
-                    style: Styles.textStyle24Meduim.copyWith(
-                      color: AppColors.secondary700,
-                    ),
-                  ),
-                ],
+              child: SimpleAppBar(
+                title: 'مواضيع الاستشارات',
+                icon: Icons.close,
               ),
             ),
 
@@ -120,8 +107,10 @@ class _ConsultationTopicsViewState extends State<ConsultationTopicsView> {
 
             // --- Confirm Button ---
             Padding(
-              padding: EdgeInsets.symmetric(vertical: 20.h),
+              padding: EdgeInsets.only(left: 40.w, right: 40.w, bottom: 20.h),
               child: CustomBotton(
+                height: 54.h,
+                width: double.infinity,
                 title: 'تأكيد',
                 onPressed: () {
                   print("Selected: $selectedTopics");

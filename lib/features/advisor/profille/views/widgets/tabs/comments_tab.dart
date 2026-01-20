@@ -1,4 +1,11 @@
+import 'package:flutter/services.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
+import 'package:tayseer/features/shared/home/model/comment_model.dart';
+import 'package:tayseer/features/advisor/profille/data/models/reply_comment_model.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/comments_repository.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/comments_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/comments_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class CommentsTab extends StatelessWidget {
@@ -6,264 +13,471 @@ class CommentsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // بيانات تجريبية للتعليقات
-    final List<Map<String, dynamic>> comments = [
-      {
-        'userName': 'احمد علي',
-        'userImage': 'assets/images/user1.jpg',
-        'userId': 'ahmed_ali',
-        'isVerified': true,
-        'comment':
-            'شكراً لك على هذه المعلومات القيمة، كانت مفيدة جداً لمشروعي.',
-        'timestamp': 'منذ يومين',
-        'likes': 15,
-        'replies': 3,
-        'postOwner': 'محمد خالد',
-      },
-      {
-        'userName': 'سارة محمد',
-        'userImage': 'assets/images/user2.jpg',
-        'userId': 'sara_mohamed',
-        'isVerified': false,
-        'comment': 'هل يمكنك توضيح النقطة الثانية أكثر؟ أريد فهمها بشكل أفضل.',
-        'timestamp': 'منذ 5 ساعات',
-        'likes': 8,
-        'replies': 1,
-        'postOwner': 'أحمد سعيد',
-      },
-      {
-        'userName': 'خالد حسن',
-        'userImage': 'assets/images/user3.jpg',
-        'userId': 'khaled_hassan',
-        'isVerified': true,
-        'comment':
-            'أتفق معك تماماً في هذه النقاط، خاصة فيما يتعلق بإدارة المخاطر.',
-        'timestamp': 'منذ ساعة',
-        'likes': 23,
-        'replies': 7,
-        'postOwner': 'فاطمة عمر',
-      },
-      {
-        'userName': 'نورا أحمد',
-        'userImage': 'assets/images/user4.jpg',
-        'userId': 'nora_ahmed',
-        'isVerified': true,
-        'comment': 'شكراً على التوضيح المفصل، هل لديك مصادر إضافية عن الموضوع؟',
-        'timestamp': 'منذ 3 أيام',
-        'likes': 12,
-        'replies': 4,
-        'postOwner': 'ياسر علي',
-      },
-      {
-        'userName': 'عمر خالد',
-        'userImage': 'assets/images/user5.jpg',
-        'userId': 'omar_khaled',
-        'isVerified': false,
-        'comment': 'تجربة رائعة، استفدت كثيراً من هذه النصائح العملية.',
-        'timestamp': 'منذ أسبوع',
-        'likes': 31,
-        'replies': 9,
-        'postOwner': 'ريم أحمد',
-      },
-    ];
+    return BlocProvider<CommentsCubit>(
+      create: (_) => getIt<CommentsCubit>(),
+      child: const _CommentsTabContent(),
+    );
+  }
+}
 
-    if (comments.isEmpty) {
-      return const SharedEmptyState(title: "لا توجد تعليقات");
-    }
+class _CommentsTabContent extends StatelessWidget {
+  const _CommentsTabContent();
 
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-      itemCount: comments.length,
-      itemBuilder: (context, index) {
-        final comment = comments[index];
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title
-              Row(
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<CommentsCubit, CommentsState>(
+      listener: (context, state) {
+        if (state.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor: AppColors.kRedColor,
+            ),
+          );
+          context.read<CommentsCubit>().clearError();
+        }
+      },
+      builder: (context, state) {
+        switch (state.state) {
+          case CubitStates.loading:
+            return _buildSkeletonComments();
+          case CubitStates.failure:
+            return _buildErrorComments(context, state.errorMessage);
+          case CubitStates.success:
+            if (state.comments.isEmpty) {
+              return const SharedEmptyState(title: "لا توجد تعليقات");
+            }
+            return _buildCommentsContent(context, state);
+          default:
+            return const SizedBox.shrink();
+        }
+      },
+    );
+  }
+
+  Widget _buildSkeletonComments() {
+    return Skeletonizer(
+      enabled: true,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+        child: Column(
+          children: List.generate(
+            3,
+            (index) => Padding(
+              padding: EdgeInsets.only(bottom: 16.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'أرسل إليك',
-                    style: Styles.textStyle12.copyWith(
-                      color: AppColors.hintText,
-                    ),
-                  ),
-                  Gap(4.h),
-                  Text(
-                    '@ahmed',
-                    style: Styles.textStyle12.copyWith(
-                      color: AppColors.mentionComment,
-                    ),
-                  ),
-                ],
-              ),
-              // Header مع الصورة والمعلومات
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // معلومات المستخدم
-                  Expanded(
-                    child: Row(
-                      children: [
-                        // الصورة الشخصية
-                        SizedBox(
-                          width: 45.w,
-                          height: 45.h,
-                          child: CircleAvatar(
-                            radius: 18.r,
-                            backgroundColor: const Color(0xFFE5E7EB),
-                            backgroundImage: AssetImage(AssetsData.avatarImage),
-                            child: comment['userImage'] == null
-                                ? Icon(
-                                    Icons.person,
-                                    color: Colors.black38,
-                                    size: 20.sp,
-                                  )
-                                : null,
-                          ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 12.w,
+                        height: 12.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade400,
+                          borderRadius: BorderRadius.circular(10.r),
                         ),
-                        Gap(12.h),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                      Gap(4.w),
+                      Container(
+                        width: 50.w,
+                        height: 12.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade400,
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Gap(12.h),
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
                           children: [
-                            // اسم المستخدم والعلامة الزرقاء
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                            Container(
+                              width: 45.w,
+                              height: 45.h,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade400,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            Gap(12.w),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  comment['userName'],
-                                  style: Styles.textStyle14Bold.copyWith(
-                                    color: const Color(0xFF111827),
-                                  ),
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 80.w,
+                                      height: 16.h,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade400,
+                                        borderRadius: BorderRadius.circular(
+                                          10.r,
+                                        ),
+                                      ),
+                                    ),
+                                    Gap(4.w),
+                                    Container(
+                                      width: 16.w,
+                                      height: 16.h,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade400,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 Gap(4.h),
-                                if (comment['isVerified'] as bool)
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 4.w),
-                                    child: Icon(
-                                      Icons.verified,
-                                      color: const Color(0xFF3B82F6),
-                                      size: 16.sp,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            // Username واليوزرنيم والوقت
-                            Gap(4.h),
-                            Row(
-                              children: [
-                                Text(
-                                  '.@${comment['userId']}',
-                                  style: Styles.textStyle14.copyWith(
-                                    color: AppColors.secondary300,
-                                  ),
-                                ),
-                                Gap(8.w),
-                                Icon(
-                                  Icons.public,
-                                  size: 12.sp,
-                                  color: AppColors.hintText,
-                                ),
-                                Gap(4.w),
-                                Text(
-                                  comment['timestamp'],
-                                  style: Styles.textStyle10.copyWith(
-                                    color: AppColors.hintText,
+                                Container(
+                                  width: 120.w,
+                                  height: 12.h,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade400,
+                                    borderRadius: BorderRadius.circular(10.r),
                                   ),
                                 ),
                               ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-
-                  // زر النقاط الثلاث
-                  GestureDetector(
-                    onTap: () {
-                      _showCommentOptions(context, comment);
-                    },
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(shape: BoxShape.circle),
-                      child: Icon(
-                        Icons.more_vert,
-                        color: AppColors.hintText,
-                        size: 22.sp,
                       ),
+                      Container(
+                        width: 24.w,
+                        height: 24.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade400,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Gap(12.h),
+                  // Comment text
+                  Container(
+                    width: double.infinity,
+                    height: 60.h,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                  ),
+                  Gap(12.h),
+                  // Actions
+                  Container(
+                    width: 100.w,
+                    height: 20.h,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(10.r),
                     ),
                   ),
                 ],
               ),
-              Gap(4.h),
-
-              // نص التعليق
-              Text(
-                comment['comment'],
-                style: Styles.textStyle14.copyWith(color: AppColors.blackColor),
-              ),
-
-              Gap(12.h),
-
-              // الأكشن (إعجابك والرد)
-              Row(
-                children: [
-                  // أيقونة القلب وعدد الإعجابات
-                  InkWell(
-                    onTap: () {},
-                    child: Row(
-                      children: [
-                        AppImage(AssetsData.icCommentLike),
-                        Gap(4.w),
-                        Text(
-                          '${comment['likes']}',
-                          style: Styles.textStyle14.copyWith(
-                            color: const Color(0xFF6B7280),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Gap(4.w),
-                        Text(
-                          'إعجابك',
-                          style: Styles.textStyle14.copyWith(
-                            color: const Color(0xFF6B7280),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Gap(12.w),
-                  // فاصلة
-                  Text(
-                    '•',
-                    style: Styles.textStyle14.copyWith(
-                      color: const Color(0xFF6B7280),
-                    ),
-                  ),
-                  Gap(12.w),
-
-                  Text(
-                    'رد',
-                    style: Styles.textStyle14.copyWith(
-                      color: const Color(0xFF6B7280),
-                    ),
-                  ),
-                ],
-              ),
-              Divider(color: AppColors.whiteCardBack),
-            ],
+            ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  void _showCommentOptions(BuildContext context, Map<String, dynamic> comment) {
+  Widget _buildErrorComments(BuildContext context, String? errorMessage) {
+    return Padding(
+      padding: EdgeInsets.all(24.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
+          Gap(16.h),
+          Text(
+            errorMessage ?? 'حدث خطأ في تحميل التعليقات',
+            style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
+            textAlign: TextAlign.center,
+          ),
+          Gap(24.h),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.kprimaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+            ),
+            onPressed: () => context.read<CommentsCubit>().refresh(),
+            child: Text(
+              'إعادة المحاولة',
+              style: Styles.textStyle14Meduim.copyWith(
+                color: AppColors.kWhiteColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentsContent(BuildContext context, CommentsState state) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollInfo) {
+        if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+          if (state.hasMore && !state.isLoadingMore) {
+            context.read<CommentsCubit>().fetchComments(loadMore: true);
+          }
+        }
+        return false;
+      },
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // قائمة التعليقات
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              itemCount: state.comments.length + (state.hasMore ? 1 : 0),
+              separatorBuilder: (context, index) => Gap(16.h),
+              itemBuilder: (context, index) {
+                if (index == state.comments.length) {
+                  return _buildLoadMoreIndicator(state);
+                }
+
+                final comment = state.comments[index];
+                return _buildCommentItem(context, comment, state.isMe);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommentItem(
+    BuildContext context,
+    CommentModel comment,
+    bool isMe,
+  ) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title
+          Row(
+            children: [
+              Text(
+                'أرسل إليك',
+                style: Styles.textStyle12.copyWith(color: AppColors.hintText),
+              ),
+              Gap(4.h),
+              Text(
+                comment.commenter.userName,
+                style: Styles.textStyle12.copyWith(
+                  color: AppColors.mentionComment,
+                ),
+              ),
+            ],
+          ),
+          // Header مع الصورة والمعلومات
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // معلومات المستخدم
+              Expanded(
+                child: Row(
+                  children: [
+                    // الصورة الشخصية
+                    SizedBox(
+                      width: 45.w,
+                      height: 45.h,
+                      child: CircleAvatar(
+                        radius: 18.r,
+                        backgroundColor: const Color(0xFFE5E7EB),
+                        backgroundImage: comment.commenter.avatar != null
+                            ? NetworkImage(comment.commenter.avatar!)
+                            : AssetImage(AssetsData.avatarImage)
+                                  as ImageProvider,
+                        child: comment.commenter.avatar == null
+                            ? Icon(
+                                Icons.person,
+                                color: Colors.black38,
+                                size: 20.sp,
+                              )
+                            : null,
+                      ),
+                    ),
+                    Gap(12.h),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // اسم المستخدم والعلامة الزرقاء
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              comment.commenter.name,
+                              style: Styles.textStyle14Bold.copyWith(
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+                            Gap(4.h),
+                            if (comment.commenter.isVerified)
+                              Padding(
+                                padding: EdgeInsets.only(left: 4.w),
+                                child: Icon(
+                                  Icons.verified,
+                                  color: const Color(0xFF3B82F6),
+                                  size: 16.sp,
+                                ),
+                              ),
+                          ],
+                        ),
+                        // Username واليوزرنيم والوقت
+                        Gap(4.h),
+                        Row(
+                          children: [
+                            Text(
+                              comment.commenter.userName,
+                              style: Styles.textStyle14.copyWith(
+                                color: AppColors.secondary300,
+                              ),
+                            ),
+                            Gap(8.w),
+                            Icon(
+                              Icons.public,
+                              size: 14.w,
+                              color: AppColors.hintText,
+                            ),
+                            Gap(4.w),
+                            Text(
+                              comment.timeAgo,
+                              style: Styles.textStyle10.copyWith(
+                                color: AppColors.hintText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // زر النقاط الثلاث
+              GestureDetector(
+                onTap: () {
+                  _showCommentOptions(context, comment, isMe);
+                },
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(shape: BoxShape.circle),
+                  child: Icon(
+                    Icons.more_vert,
+                    color: AppColors.hintText,
+                    size: 22.sp,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Gap(4.h),
+
+          // نص التعليق
+          Text(
+            comment.comment,
+            style: Styles.textStyle14.copyWith(color: AppColors.blackColor),
+          ),
+
+          Gap(12.h),
+
+          // الأكشن (إعجابك والرد)
+          Row(
+            children: [
+              // أيقونة القلب وعدد الإعجابات
+              InkWell(
+                onTap: () {
+                  context.read<CommentsCubit>().toggleLikeComment(comment.id);
+                },
+                child: Row(
+                  children: [
+                    Icon(
+                      comment.isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: comment.isLiked ? Colors.red : AppColors.hintText,
+                      size: 22.sp,
+                    ),
+                    Gap(4.w),
+                    Text(
+                      '${comment.likes}',
+                      style: Styles.textStyle14.copyWith(
+                        color: const Color(0xFF6B7280),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Gap(4.w),
+                    Text(
+                      'إعجابك',
+                      style: Styles.textStyle14.copyWith(
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Gap(12.w),
+              // فاصلة
+              Text(
+                '•',
+                style: Styles.textStyle14.copyWith(
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+              Gap(12.w),
+
+              // عرض الردود
+              if (comment.repliesNumber > 0)
+                InkWell(
+                  onTap: () {
+                    _showRepliesDialog(context, comment);
+                  },
+                  child: Text(
+                    '${comment.repliesNumber} رد',
+                    style: Styles.textStyle14.copyWith(
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          Gap(16.h),
+          Divider(color: AppColors.whiteCardBack, height: 4.h),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreIndicator(CommentsState state) {
+    if (!state.hasMore) return SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.all(16.w),
+      child: Center(
+        child: state.isLoadingMore
+            ? CircularProgressIndicator(color: AppColors.kprimaryColor)
+            : Container(),
+      ),
+    );
+  }
+
+  void _showCommentOptions(
+    BuildContext context,
+    CommentModel comment,
+    bool isMe,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -320,16 +534,17 @@ class CommentsTab extends StatelessWidget {
               ),
 
               // زر حذف التعليق (فقط إذا كان التعليق للمستخدم)
-              _buildOptionItem(
-                context: context,
-                icon: Icons.delete_outlined,
-                text: "حذف التعليق",
-                textColor: Colors.red,
-                onTap: () {
-                  Navigator.pop(context);
-                  _deleteComment(context, comment);
-                },
-              ),
+              if (isMe || comment.isOwner)
+                _buildOptionItem(
+                  context: context,
+                  icon: Icons.delete_outlined,
+                  text: "حذف التعليق",
+                  textColor: Colors.red,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _deleteComment(context, comment);
+                  },
+                ),
 
               Gap(32.h),
             ],
@@ -360,9 +575,29 @@ class CommentsTab extends StatelessWidget {
     );
   }
 
+  void _showRepliesDialog(BuildContext context, CommentModel comment) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return Dialog(
+          insetPadding: EdgeInsets.all(16.w),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          child: BlocProvider<RepliesCubit>(
+            create: (_) =>
+                RepliesCubit(getIt<CommentsRepository>(), comment.id),
+            child: _RepliesDialogContent(comment: comment),
+          ),
+        );
+      },
+    );
+  }
+
   // دالة نسخ التعليق
-  void _copyComment(BuildContext context, Map<String, dynamic> comment) {
-    // TODO: تنفيذ نسخ النص
+  void _copyComment(BuildContext context, CommentModel comment) {
+    Clipboard.setData(ClipboardData(text: comment.comment));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -376,7 +611,7 @@ class CommentsTab extends StatelessWidget {
   }
 
   // دالة مشاركة التعليق
-  void _shareComment(BuildContext context, Map<String, dynamic> comment) {
+  void _shareComment(BuildContext context, CommentModel comment) {
     // TODO: تنفيذ المشاركة
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -391,12 +626,12 @@ class CommentsTab extends StatelessWidget {
   }
 
   // دالة الرد على التعليق
-  void _replyToComment(BuildContext context, Map<String, dynamic> comment) {
+  void _replyToComment(BuildContext context, CommentModel comment) {
+    final TextEditingController controller = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) {
-        final TextEditingController controller = TextEditingController();
-
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
@@ -450,20 +685,41 @@ class CommentsTab extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(context);
-                      // TODO: حفظ الرد في API
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            "تم إرسال الرد بنجاح",
-                            style: Styles.textStyle14.copyWith(
-                              color: Colors.white,
+                      await showDialog(
+                        context: context,
+                        builder: (context) {
+                          return BlocProvider.value(
+                            value: context.read<RepliesCubit>(),
+                            child: BlocBuilder<RepliesCubit, RepliesState>(
+                              builder: (context, state) {
+                                return AlertDialog(
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        color: AppColors.kprimaryColor,
+                                      ),
+                                      Gap(16.h),
+                                      Text(
+                                        'جاري إرسال الرد...',
+                                        style: Styles.textStyle14,
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
-                          ),
-                          backgroundColor: Colors.green,
-                        ),
+                          );
+                        },
                       );
+
+                      await context.read<RepliesCubit>().createReply(
+                        controller.text,
+                      );
+
+                      Navigator.pop(context);
                     },
                     child: Text(
                       "إرسال",
@@ -482,7 +738,7 @@ class CommentsTab extends StatelessWidget {
   }
 
   // دالة حذف التعليق
-  void _deleteComment(BuildContext context, Map<String, dynamic> comment) {
+  void _deleteComment(BuildContext context, CommentModel comment) {
     showDialog(
       context: context,
       builder: (context) {
@@ -531,7 +787,7 @@ class CommentsTab extends StatelessWidget {
                     ),
                     onPressed: () {
                       Navigator.pop(context);
-                      // TODO: حذف التعليق من API
+                      context.read<CommentsCubit>().deleteComment(comment.id);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -553,6 +809,177 @@ class CommentsTab extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RepliesDialogContent extends StatelessWidget {
+  final CommentModel comment;
+
+  const _RepliesDialogContent({required this.comment});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('الردود', style: Styles.textStyle18Bold),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close, size: 24.sp),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1),
+
+          // Replies list
+          Expanded(
+            child: BlocBuilder<RepliesCubit, RepliesState>(
+              builder: (context, state) {
+                if (state.state == CubitStates.loading) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
+                if (state.state == CubitStates.failure) {
+                  return Center(child: Text(state.errorMessage ?? 'حدث خطأ'));
+                }
+
+                if (state.replies.isEmpty) {
+                  return Center(child: Text('لا توجد ردود بعد'));
+                }
+
+                return ListView.builder(
+                  padding: EdgeInsets.all(16.w),
+                  itemCount: state.replies.length,
+                  itemBuilder: (context, index) {
+                    final reply = state.replies[index];
+                    return _buildReplyItem(context, reply);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReplyItem(BuildContext context, ReplyModel reply) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 20.r,
+            backgroundImage: reply.commenter.avatar != null
+                ? NetworkImage(reply.commenter.avatar!)
+                : null,
+            child: reply.commenter.avatar == null
+                ? Icon(Icons.person, size: 18.sp)
+                : null,
+          ),
+          Gap(12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(reply.commenter.name, style: Styles.textStyle14Bold),
+                    Text(
+                      reply.timeAgo,
+                      style: Styles.textStyle12.copyWith(
+                        color: AppColors.hintText,
+                      ),
+                    ),
+                  ],
+                ),
+                Gap(4.h),
+                Text(reply.comment, style: Styles.textStyle14),
+                Gap(8.h),
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        context.read<RepliesCubit>().toggleLikeReply(reply.id);
+                      },
+                      child: Row(
+                        children: [
+                          Icon(
+                            reply.isLiked
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: reply.isLiked
+                                ? Colors.red
+                                : AppColors.hintText,
+                            size: 18.sp,
+                          ),
+                          Gap(4.w),
+                          Text('${reply.likes}'),
+                        ],
+                      ),
+                    ),
+                    if (reply.isOwner)
+                      Row(
+                        children: [
+                          Gap(16.w),
+                          InkWell(
+                            onTap: () {
+                              _deleteReply(context, reply);
+                            },
+                            child: Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                              size: 18.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteReply(BuildContext context, ReplyModel reply) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('حذف الرد'),
+          content: Text('هل تريد حذف هذا الرد؟'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('إلغاء'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.read<RepliesCubit>().deleteReply(reply.id);
+              },
+              child: Text('حذف', style: TextStyle(color: Colors.red)),
             ),
           ],
         );

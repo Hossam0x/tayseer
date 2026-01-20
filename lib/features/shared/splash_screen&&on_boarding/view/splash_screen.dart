@@ -57,25 +57,14 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateBasedOnToken() async {
     await Future.delayed(const Duration(seconds: 4));
     if (!mounted) return;
-
     String? token = CachNetwork.getStringData(key: 'token');
     String? userType = CachNetwork.getStringData(key: 'user_type');
 
     if (mounted) {
-      if (token != null && token.isNotEmpty) {
-        log("token found");
-        log("userType===$userType");
-
-        if (userType == UserTypeEnum.guest.name) {
-          log("Navigating as guest");
-          context.pushReplacementNamed(
-            AppRouter.kAdvisorLayoutView,
-            arguments: {'currentUserType': UserTypeEnum.guest},
-          );
-          return; // ✅ أضف return هنا
-        }
-
-        context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+      if (token.isNotEmpty) {
+        selectedUserType == UserTypeEnum.asConsultant
+            ? context.pushReplacementNamed(AppRouter.kAdvisorLayoutView)
+            : context.pushReplacementNamed(AppRouter.kUserLayoutView);
       } else {
         context.pushReplacementNamed(AppRouter.kRegisrationView);
       }
