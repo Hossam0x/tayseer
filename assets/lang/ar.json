@@ -429,5 +429,6 @@
     "archive": "أرشيف",
     "block": "حظر",
     "delete_post": "حذف المنشور",
-    "delete_post_confirmation": "هل أنت متأكد من حذف هذا المنشور؟"
+    "delete_post_confirmation": "هل أنت متأكد من حذف هذا المنشور؟",
+    "post_hidden_message":"تم اخفاء هذا المنشور. سترى منشورات اقل من هذا النوع."
 }

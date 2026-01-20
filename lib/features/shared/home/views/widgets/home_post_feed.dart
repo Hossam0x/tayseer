@@ -250,7 +250,7 @@ class _PostItem extends StatefulWidget {
 
 class _PostItemState extends State<_PostItem> {
   // ✅ Cache stream & callbacks - created once in initState
-  late final Stream<PostModel> _postStream;
+  late final Stream<PostModel?> _postStream;
   late final PostCallbacks _callbacks;
 
   @override
@@ -258,27 +258,28 @@ class _PostItemState extends State<_PostItem> {
     super.initState();
     _initializeStreamAndCallbacks();
   }
+// في _initializeStreamAndCallbacks
+void _initializeStreamAndCallbacks() {
+  // ✅ الـ Stream ممكن يرجع null لو البوست اتحذف
+  _postStream = widget.homeCubit.stream
+      .map((state) => state.posts
+          .where((p) => p.postId == widget.postId)
+          .firstOrNull) // ✅ يرجع null لو مش موجود
+      .distinct();
 
-  void _initializeStreamAndCallbacks() {
-    // ✅ Create stream once with distinct to prevent duplicate updates
-    _postStream = widget.homeCubit.stream
-        .map(
-          (state) => state.posts.firstWhere(
-            (p) => p.postId == widget.postId,
-            orElse: () => _getFallbackPost(state),
-          ),
-        )
-        .distinct();
-
-    // ✅ Create callbacks once
-    _callbacks = PostCallbacks(
-      postUpdatesStream: _postStream,
+  _callbacks = PostCallbacks(
+    postUpdatesStream: _postStream, // ✅ Stream<PostModel?> مش Stream<PostModel>
       onReactionChanged: _onReaction,
       onShareTap: _onShare,
       onHashtagTap: _onHashtagTap,
       onSave: _onSave,
       onDelete: _onDelete,
+      onHide: _hidePost,
     );
+  }
+
+  void _hidePost(String postId) {
+    widget.homeCubit.toggleHidePost(postId: postId);
   }
 
   void _onDelete(String postId) {
@@ -287,14 +288,6 @@ class _PostItemState extends State<_PostItem> {
 
   void _onSave(String postId) {
     widget.homeCubit.toggleSavePost(postId: postId);
-  }
-
-  PostModel _getFallbackPost(HomeState state) {
-    // Try to get existing post or return current one
-    final existingPost = state.posts
-        .where((p) => p.postId == widget.postId)
-        .firstOrNull;
-    return existingPost!;
   }
 
   void _onReaction(String id, ReactionType? type) {

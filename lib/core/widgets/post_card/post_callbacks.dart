@@ -41,8 +41,7 @@ class PostCallbacks {
   final ReactionCallback? onReactionChanged;
   final ShareCallback? onShareTap;
   final HashtagCallback? onHashtagTap;
-  final Stream<PostModel>? postUpdatesStream;
-
+  final Stream<PostModel?>? postUpdatesStream;
   // ✅ New callbacks for Options Bottom Sheet
   final EditPostCallback? onEdit;
   final PostActionCallback? onDelete;

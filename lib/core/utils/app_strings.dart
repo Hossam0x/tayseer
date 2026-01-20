@@ -29,4 +29,6 @@ class AppStrings {
   static const String deletePostConfirmation = "delete_post_confirmation";
   static const String yes = "yes";
   static const String no = "no";
+
+  static const String postHiddenMessage = "post_hidden_message";
 }

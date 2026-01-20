@@ -76,8 +76,8 @@ class PostModel {
   final bool isRepostedByMe;
   final String? repostedBy;
   final bool isSaved;
-
   final bool isMine;
+  
 
   PostModel({
     required this.postId,
@@ -136,7 +136,6 @@ class PostModel {
       repostedBy: json['repostedBy'],
       isSaved: json['isSaved'] ?? false,
       isMine: json['isMine'] ?? false,
-      // ✅ We don't read isHidden from JSON, it defaults to false via constructor
     );
   }
 

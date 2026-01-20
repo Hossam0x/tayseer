@@ -70,6 +70,14 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ 1. Check if Post is Hidden
+    if (widget.post.isHidden) {
+      return _HiddenPostUI(
+        onUndo: () => widget.callbacks.onHide?.call(widget.post.postId),
+      );
+    }
+
+    // ✅ 2. Normal Post UI
     final content = _CardContainer(
       isDetailsView: widget.isDetailsView,
       child: Column(
@@ -160,7 +168,91 @@ class _PostCardState extends State<PostCard> {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Static Sub-Widgets
+// 👁️ Hidden Post UI (The New Design)
+// ══════════════════════════════════════════════════════════════════════════════
+class _HiddenPostUI extends StatelessWidget {
+  final VoidCallback? onUndo;
+
+  const _HiddenPostUI({this.onUndo});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: context.responsiveWidth(22),
+        vertical: context.responsiveHeight(8),
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.responsiveWidth(12),
+        vertical: context.responsiveHeight(16),
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF5F6), // خلفية وردي فاتح جداً
+        borderRadius: BorderRadius.circular(20.r), // تدوير الحواف
+        border: Border.all(
+          color: const Color(0xFFFFCDD2), // حدود وردي فاتح
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // 1. أيقونة (إلغاء الإخفاء أو أيقونة توضيحية) - يمين حسب الصورة
+          Icon(
+            Icons.layers_clear_outlined, // أيقونة مشابهة للصورة
+            color: const Color(0xFFEF5350), // لون وردي/أحمر
+            size: 24.sp,
+          ),
+
+          Gap(context.responsiveWidth(12)),
+
+          // 2. النص
+          Expanded(
+            child: Text(
+              context.tr(
+                AppStrings.postHiddenMessage,
+              ), // "تم إخفاء هذا المنشور..."
+              style: Styles.textStyle14.copyWith(
+                color: const Color(0xFF424242), // رمادي غامق
+                height: 1.3,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+
+          Gap(context.responsiveWidth(12)),
+
+          // 3. زر الإلغاء
+          GestureDetector(
+            onTap: onUndo,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: context.responsiveWidth(20),
+                vertical: context.responsiveHeight(8),
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF48FB1), // لون الخلفية (وردي غامق)
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: const Color(0xFFEC407A), // حدود أغمق قليلاً
+                ),
+              ),
+              child: Text(
+                context.tr(AppStrings.cancel), // "إلغاء"
+                style: Styles.textStyle14SemiBold.copyWith(
+                  color: const Color(0xFF880E4F), // لون النص (نبيتي/وردي غامق)
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Static Sub-Widgets (Existing)
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _CardContainer extends StatelessWidget {

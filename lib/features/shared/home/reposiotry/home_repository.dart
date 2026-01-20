@@ -69,4 +69,5 @@ abstract class HomeRepository {
 
 Future<Either<Failure, String>> savedPost({required String postId , required bool isRemove,});
 Future<Either<Failure, String>> deletePost({required String postId  });
+void hidePost({required String postId , required bool isHide,});
 }

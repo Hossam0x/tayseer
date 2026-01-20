@@ -288,4 +288,13 @@ class HomeRepositoryImpl implements HomeRepository {
       return Left(ServerFailure.fromDioError(e));
     }
   }
+
+  @override
+  void hidePost({required String postId, required bool isHide}) {
+    final Map<String, dynamic> requestData = {"postId": postId};
+    apiService.post(
+      endPoint: '${ApiEndPoint.hidePost}?action=${isHide ? "add" : "remove"}',
+      data: requestData,
+    );
+  }
 }

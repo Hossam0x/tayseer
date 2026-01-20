@@ -540,7 +540,29 @@ class HomeCubit extends Cubit<HomeState> {
       );
     });
   }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 👁️ TOGGLE HIDE POST
+  // ═══════════════════════════════════════════════════════════════════════════
 
+  void toggleHidePost({required String postId}) {
+    // 1. جيب البوست الحالي
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    // 2. اعكس الحالة
+    final newHideState = !post.isHidden;
+
+    // 3. Update UI فوراً
+    emit(
+      state.updatePostInAllCategories(
+        postId,
+        (p) => p.copyWith(isHidden: newHideState),
+      ),
+    );
+
+    // 4. بعت للسيرفر في الـ Background
+    homeRepository.hidePost(postId: postId, isHide: newHideState);
+  }
   // ═══════════════════════════════════════════════════════════════════════════
   // 👥 FOLLOW ADVISOR
   // ═══════════════════════════════════════════════════════════════════════════
