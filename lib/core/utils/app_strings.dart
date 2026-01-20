@@ -31,4 +31,8 @@ class AppStrings {
   static const String no = "no";
 
   static const String postHiddenMessage = "post_hidden_message";
+  static const String userBlockedMessage = "user_blocked_message";
+
+  static const String blockUser = "block_user";
+  static const String blockUserConfirmation = "block_user_confirmation";
 }

@@ -70,14 +70,16 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ 1. Check if Post is Hidden
+    if (widget.post.isBlocked) {
+      // ✅ تم التعديل: تمرير البوست والـ callback
+      return _BlockedPostUI(post: widget.post);
+    }
     if (widget.post.isHidden) {
       return _HiddenPostUI(
         onUndo: () => widget.callbacks.onHide?.call(widget.post.postId),
       );
     }
 
-    // ✅ 2. Normal Post UI
     final content = _CardContainer(
       isDetailsView: widget.isDetailsView,
       child: Column(
@@ -96,8 +98,6 @@ class _PostCardState extends State<PostCard> {
             onMoreTap: () => PostOptionsBottomSheet.show(
               context,
               post: widget.post,
-
-              // ربط الـ Callbacks من كلاس PostCallbacks
               onEdit: () => widget.callbacks.onEdit?.call(widget.post),
               onDelete: () =>
                   widget.callbacks.onDelete?.call(widget.post.postId),
@@ -105,13 +105,14 @@ class _PostCardState extends State<PostCard> {
                   widget.callbacks.onArchive?.call(widget.post.postId),
               onShare: () =>
                   widget.callbacks.onShareTap?.call(widget.post.postId),
-
               onReport: () =>
                   widget.callbacks.onReport?.call(widget.post.postId),
               onHide: () => widget.callbacks.onHide?.call(widget.post.postId),
               onSave: () => widget.callbacks.onSave?.call(widget.post.postId),
-              onBlock: () =>
-                  widget.callbacks.onBlock?.call(widget.post.advisorId),
+              onBlock: () => widget.callbacks.onBlock?.call(
+                widget.post.advisorId,
+                widget.post.postId,
+              ),
             ),
           ),
           Gap(context.responsiveHeight(15)),
@@ -167,8 +168,130 @@ class _PostCardState extends State<PostCard> {
   }
 }
 
+class _BlockedPostUI extends StatefulWidget {
+  final PostModel post;
+
+  const _BlockedPostUI({required this.post});
+
+  @override
+  State<_BlockedPostUI> createState() => _BlockedPostUIState();
+}
+
+class _BlockedPostUIState extends State<_BlockedPostUI> {
+  bool _isClosed = false;
+
+  void _onClose() => setState(() => _isClosed = true);
+
+  @override
+  Widget build(BuildContext context) {
+    return _isClosed
+        ? const SizedBox.shrink()
+        : Container(
+            margin: EdgeInsets.symmetric(
+              horizontal: context.responsiveWidth(22),
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: context.responsiveWidth(12),
+              vertical: context.responsiveHeight(12),
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFCF7FA),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: AppColors.primary100, width: 1.sp),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: AppImage(
+                                widget.post.avatar,
+                                width: 28.w,
+                                height: 28.w,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+
+                          Gap(10.w),
+
+                          // 2. الاسم والتوثيق
+                          Flexible(
+                            child: Text(
+                              widget.post.name,
+                              style: Styles.textStyle16Bold.copyWith(
+                                color: const Color(0xFF0D1C52), // كحلي غامق
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+
+                          if (widget.post.isVerified) ...[
+                            Gap(4.w),
+                            Icon(
+                              Icons.verified,
+                              color: Colors.blue,
+                              size: 16.sp,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // الجزء الأيسر (زر الإغلاق)
+                    GestureDetector(
+                      onTap: _onClose,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: 8.w,
+                        ), // مسافة صغيرة عن المحتوى
+                        child: Icon(
+                          Icons.close_rounded,
+                          color: const Color(0xFF757575), // رمادي
+                          size: 24.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                Padding(
+                  padding: EdgeInsetsGeometry.fromSTEB(34.w, 0, 0, 0),
+                  child: Text(
+                    context.tr(AppStrings.userBlockedMessage),
+                    style: Styles.textStyle14.copyWith(
+                      color: AppColors.secondary800,
+                    ),
+                  ),
+                ),
+
+                Gap(8.h),
+              ],
+            ),
+          );
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
-// 👁️ Hidden Post UI (The New Design)
+// 👁️ Hidden Post UI
 // ══════════════════════════════════════════════════════════════════════════════
 class _HiddenPostUI extends StatelessWidget {
   final VoidCallback? onUndo;
@@ -236,10 +359,7 @@ class _HiddenPostUI extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Static Sub-Widgets (Existing)
-// ══════════════════════════════════════════════════════════════════════════════
-
+// ... بقية الـ Widgets (مثل _CardContainer, _RepostHeader, الخ) تبقى كما هي بدون تغيير
 class _CardContainer extends StatelessWidget {
   final bool isDetailsView;
   final Widget child;
@@ -353,10 +473,6 @@ class _PostContent extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Post Media
-// ══════════════════════════════════════════════════════════════════════════════
 
 class _PostMedia extends StatefulWidget {
   final PostModel post;

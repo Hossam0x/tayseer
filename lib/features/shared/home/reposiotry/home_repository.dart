@@ -9,7 +9,10 @@ import 'package:tayseer/features/shared/home/model/comments_response_model.dart'
 import 'package:tayseer/core/models/post_model.dart';
 
 abstract class HomeRepository {
-  Future<Either<Failure, List<PostModel>>> fetchPosts({required int page, String? categoryId});
+  Future<Either<Failure, List<PostModel>>> fetchPosts({
+    required int page,
+    String? categoryId,
+  });
 
   Future<void> reactToPost({
     required String postId,
@@ -63,11 +66,14 @@ abstract class HomeRepository {
 
   Future<Either<Failure, ImageAndNameModel>> fetchNameAndImage();
   Future<Either<Failure, CategoriesResponseModel>> fetchAllCategories(
-    final int page
+    final int page,
   );
 
-
-Future<Either<Failure, String>> savedPost({required String postId , required bool isRemove,});
-Future<Either<Failure, String>> deletePost({required String postId  });
-void hidePost({required String postId , required bool isHide,});
+  Future<Either<Failure, String>> savedPost({
+    required String postId,
+    required bool isRemove,
+  });
+  Future<Either<Failure, String>> deletePost({required String postId});
+  void hidePost({required String postId, required bool isHide});
+  Future<Either<Failure, String>> blockUser({required String userId});
 }

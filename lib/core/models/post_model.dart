@@ -75,8 +75,14 @@ class PostModel {
   final ReactionType? myReaction;
   final bool isRepostedByMe;
   final String? repostedBy;
+
+
+
+  // local 
   final bool isSaved;
   final bool isMine;
+    final bool isBlocked; 
+
   
 
   PostModel({
@@ -102,7 +108,8 @@ class PostModel {
     this.isRepostedByMe = false,
     this.isSaved = false,
     this.isMine = false,
-    this.isHidden = false, // ✅ Default value for new objects
+    this.isHidden = false, 
+    this.isBlocked = false
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -169,8 +176,9 @@ class PostModel {
     String? repostedBy,
     bool? isSaved,
     String? userName,
-    bool? isMine,   // ✅ Changed to nullable (Critical Fix)
-    bool? isHidden, // ✅ Changed to nullable (Critical Fix)
+    bool? isMine, 
+    bool? isHidden, 
+    bool? isBlocked, 
   }) {
     return PostModel(
       postId: postId ?? this.postId,
@@ -194,8 +202,9 @@ class PostModel {
       repostedBy: repostedBy ?? this.repostedBy,
       isSaved: isSaved ?? this.isSaved,
       userName: userName ?? this.userName,
-      isMine: isMine ?? this.isMine,      // ✅ Uses old value if null
-      isHidden: isHidden ?? this.isHidden, // ✅ Uses old value if null
+      isMine: isMine ?? this.isMine,     
+      isHidden: isHidden ?? this.isHidden, 
+      isBlocked: isBlocked ?? this.isBlocked
     );
   }
 }

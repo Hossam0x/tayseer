@@ -59,6 +59,12 @@ class HomeState extends Equatable {
   final CubitStates deletePostActionState;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 📦 block user
+  // ─────────────────────────────────────────────────────────────────────────
+  final String? blockUserMessage;
+  final CubitStates blockUserActionState;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 🏗️ Constructor
   // ─────────────────────────────────────────────────────────────────────────
   const HomeState({
@@ -88,6 +94,10 @@ class HomeState extends Equatable {
     // delete post
     this.deletePostMessage,
     this.deletePostActionState = CubitStates.initial,
+
+    // block user
+    this.blockUserMessage,
+    this.blockUserActionState = CubitStates.initial,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -121,6 +131,10 @@ class HomeState extends Equatable {
     // delete post
     String? deletePostMessage,
     CubitStates? deletePostActionState,
+
+    // block user
+    String? blockUserMessage,
+    CubitStates? blockUserActionState,
   }) {
     return HomeState(
       // Posts
@@ -156,6 +170,10 @@ class HomeState extends Equatable {
       deletePostMessage: deletePostMessage ?? this.deletePostMessage,
       deletePostActionState:
           deletePostActionState ?? this.deletePostActionState,
+
+      // block user
+      blockUserMessage: blockUserMessage ?? this.blockUserMessage,
+      blockUserActionState: blockUserActionState ?? this.blockUserActionState,
     );
   }
 
@@ -277,6 +295,9 @@ class HomeState extends Equatable {
     // delete post
     deletePostMessage,
     deletePostActionState,
+    // block user
+    blockUserMessage,
+    blockUserActionState,
   ];
 }
 

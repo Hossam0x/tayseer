@@ -65,25 +65,21 @@ class PostOptionsBottomSheet extends StatelessWidget {
         ? [
             OptionItem(
               text: context.tr(AppStrings.share),
-              // مربع طالع منه سهم (زي الآيفون) ومفرغ
               icon: Icons.ios_share_rounded,
               onTap: onShare,
             ),
             OptionItem(
               text: context.tr(AppStrings.edit),
-              // دي أقرب أيقونة ماتيريال (قلم جوه مربع) وتكون مفرغة
               icon: Icons.drive_file_rename_outline_rounded,
               onTap: onEdit,
             ),
             OptionItem(
               text: context.tr(AppStrings.archive),
-              // صندوق الأرشيف المفرغ
               icon: Icons.archive_outlined,
               onTap: onArchive,
             ),
             OptionItem(
               text: context.tr(AppStrings.delete),
-              // سلة المهملات المفرغة
               icon: Icons.delete_outline_rounded,
               onTap: onDelete,
               isDestructive: true,
@@ -98,26 +94,23 @@ class PostOptionsBottomSheet extends StatelessWidget {
             ),
             OptionItem(
               text: context.tr(AppStrings.report),
-              // دائرة جواها علامة تعجب مفرغة
               icon: Icons.error_outline_rounded,
               onTap: onReport,
             ),
             OptionItem(
               text: context.tr(AppStrings.block),
-              // دائرة الحظر المفرغة
               icon: Icons.block_outlined,
               onTap: onBlock,
+              isDestructive: true, // ✅ خليناه destructive عشان يبقى أحمر
+              isBlock: true, // ✅ أضفنا isBlock
             ),
             OptionItem(
               text: context.tr(AppStrings.hide),
-              // مربع جواه علامة X مفرغ (أقرب حاجة رسمية في ماتيريال)
               icon: Icons.cancel_presentation_outlined,
-              // أو ممكن تستخدم Icons.disabled_visible_outlined (شكل العين وعليها خط) وهو الدارج للإخفاء
               onTap: onHide,
             ),
             OptionItem(
               text: context.tr(AppStrings.save),
-              // التبديل بين الـ Bookmark المفرغة والممتلئة
               icon: isSaved
                   ? Icons.bookmark_rounded
                   : Icons.bookmark_border_rounded,
@@ -190,7 +183,6 @@ class PostOptionsBottomSheet extends StatelessWidget {
   }
 
   Widget _buildOptionTile(BuildContext context, OptionItem item) {
-    // تحديد اللون النهائي
     final Color finalColor = item.isDestructive
         ? Colors.red
         : (item.color ?? AppColors.secondary800);
@@ -198,7 +190,9 @@ class PostOptionsBottomSheet extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (item.isDelete) {
-          _showDeleteConfirmation(context); // ✅ نمرر context الـ BottomSheet
+          _showDeleteConfirmation(context);
+        } else if (item.isBlock) {
+          _showBlockConfirmation(context); // ✅ إضافة التحقق من البلوك
         } else {
           Navigator.pop(context);
           if (item.onTap != null) item.onTap!();
@@ -208,7 +202,6 @@ class PostOptionsBottomSheet extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: 20.h),
         child: Row(
           children: [
-            // أيقونات FontAwesome حجم 20 مناسب جداً للنصوص
             Icon(item.icon, size: 20.sp, color: finalColor),
             Gap(16.w),
             Text(
@@ -230,12 +223,33 @@ class PostOptionsBottomSheet extends StatelessWidget {
       bottonText: context.tr(AppStrings.yes),
       onPressed: () {
         Navigator.pop(context); // أغلق الديالوج
-        if (onDelete != null) onDelete!(); // ✅ نفذ الحذف
+        Navigator.pop(context); // أغلق الـ BottomSheet
+        if (onDelete != null) onDelete!();
       },
       showCancelButton: true,
       cancelText: context.tr(AppStrings.no),
       onCancel: () {
         Navigator.pop(context);
+      },
+    );
+  }
+
+  // ✅ دالة جديدة لعرض ديالوج تأكيد البلوك
+  void _showBlockConfirmation(BuildContext context) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr(AppStrings.blockUser), // عنوان البلوك
+      supTitle: context.tr(AppStrings.blockUserConfirmation), // رسالة التأكيد
+      icon: Icons.block,
+      bottonText: context.tr(AppStrings.no),
+      onPressed: () {
+        Navigator.pop(context);
+      },
+      showCancelButton: true,
+      cancelText: context.tr(AppStrings.yes),
+      onCancel: () {
+        Navigator.pop(context); // أغلق الـ BottomSheet
+        if (onBlock != null) onBlock!(); // ✅ نفذ البلوك
       },
     );
   }
@@ -247,12 +261,14 @@ class OptionItem {
   final VoidCallback? onTap;
   final bool isDestructive;
   final bool isDelete;
+  final bool isBlock; // ✅ إضافة خاصية isBlock
   final Color? color;
 
   OptionItem({
     required this.text,
     required this.icon,
     this.isDelete = false,
+    this.isBlock = false, // ✅ القيمة الافتراضية
     this.onTap,
     this.isDestructive = false,
     this.color,

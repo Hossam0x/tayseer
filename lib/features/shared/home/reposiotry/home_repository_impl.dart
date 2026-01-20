@@ -297,4 +297,22 @@ class HomeRepositoryImpl implements HomeRepository {
       data: requestData,
     );
   }
+
+  @override
+  Future<Either<Failure, String>> blockUser({required String userId}) async {
+    try {
+      var response = await apiService.post(
+        endPoint: ApiEndPoint.blockuser,
+        data: {"blockedId": userId},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
+      } else {
+        // ❌ السيرفر رجع error message
+        return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
 }

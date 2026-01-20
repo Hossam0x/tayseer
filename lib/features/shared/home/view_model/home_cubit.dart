@@ -563,6 +563,71 @@ class HomeCubit extends Cubit<HomeState> {
     // 4. بعت للسيرفر في الـ Background
     homeRepository.hidePost(postId: postId, isHide: newHideState);
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🚫 BLOCK USER
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> blockUser({
+    required String visiblePostId,
+    required String advisorId,
+  }) async {
+    // 1. Loading State
+    emit(state.copyWith(blockUserActionState: CubitStates.loading));
+
+    // 2. Server Request
+    final result = await homeRepository.blockUser(userId: advisorId);
+
+    result.fold(
+      (failure) {
+        log('>>>>>>>>>>>>>>>>> Block User Failed: ${failure.message}');
+
+        // ❌ فشل: اعرض رسالة خطأ بس
+        emit(
+          state.copyWith(
+            blockUserActionState: CubitStates.failure,
+            blockUserMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        log('>>>>>>>>>>>>>>>>> Block User Success: $message');
+
+        // ✅ نجاح: حدث الـ State
+        final newMap = <String?, CategoryPostsData>{};
+
+        for (final entry in state.categoryPostsMap.entries) {
+          final categoryId = entry.key;
+          final categoryData = entry.value;
+
+          final updatedPosts = <PostModel>[];
+
+          for (final post in categoryData.posts) {
+            if (post.postId == visiblePostId) {
+              // ✅ البوست الأصلي: isBlocked = true
+              updatedPosts.add(post.copyWith(isBlocked: true));
+            } else if (post.advisorId == advisorId) {
+              // ❌ باقي بوستاته: احذفها
+              continue;
+            } else {
+              // ✅ بوستات ناس تانية: خليها 
+              updatedPosts.add(post);
+            }
+          }
+
+          newMap[categoryId] = categoryData.copyWith(posts: updatedPosts);
+        }
+
+        emit(
+          state.copyWith(
+            categoryPostsMap: newMap,
+            blockUserActionState: CubitStates.success,
+            blockUserMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 👥 FOLLOW ADVISOR
   // ═══════════════════════════════════════════════════════════════════════════

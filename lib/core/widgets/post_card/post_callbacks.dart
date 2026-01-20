@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:tayseer/core/models/post_model.dart';
 // import 'package:tayseer/my_import.dart'; // تأكد من المسار الصحيح لو مش موجود
 // تأكد من استيراد VideoPlayerController لو مستخدم
-import 'package:video_player/video_player.dart'; 
+import 'package:video_player/video_player.dart';
 
 /// Callback when user reacts to a post
 typedef ReactionCallback = void Function(String postId, ReactionType? type);
@@ -16,11 +16,12 @@ typedef ShareCallback = void Function(String postId);
 typedef HashtagCallback = void Function(String hashtag);
 
 /// Callback for navigating to post details
-typedef NavigateToDetailsCallback = void Function(
-  BuildContext context,
-  PostModel post,
-  VideoPlayerController? controller,
-);
+typedef NavigateToDetailsCallback =
+    void Function(
+      BuildContext context,
+      PostModel post,
+      VideoPlayerController? controller,
+    );
 
 // ==========================================
 // ✅ New Typedefs for Bottom Sheet Options
@@ -33,7 +34,8 @@ typedef PostActionCallback = void Function(String postId);
 typedef EditPostCallback = void Function(PostModel post);
 
 /// Callback for blocking a user
-typedef BlockUserCallback = void Function(String userId);
+typedef BlockUserCallback =
+    void Function(String visiblePostId, String advisorId);
 
 /// Bundle of post-related callbacks for easy passing
 class PostCallbacks {

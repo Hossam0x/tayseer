@@ -40,6 +40,12 @@ class HomePostFeed extends StatelessWidget {
             listenWhen: _shouldListenToDelete, // دالة الشرط
             listener: _handleDeleteFeedback, // دالة التنفيذ
           ),
+
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: (prev, curr) =>
+                prev.blockUserActionState != curr.blockUserActionState,
+            listener: _handleBlockFeedback,
+          ),
         ],
         child: BlocSelector<HomeCubit, HomeState, _FeedState>(
           selector: _selectFeedState,
@@ -130,6 +136,36 @@ class HomePostFeed extends StatelessWidget {
     error: state.postsErrorMessage,
     isAllCategory: state.selectedCategoryId == null,
   );
+
+  void _handleBlockFeedback(BuildContext context, HomeState state) {
+    switch (state.blockUserActionState) {
+      case CubitStates.loading:
+        // ✅ اعرض الـ Loading
+        CustomloadingApp.show(context);
+        break;
+
+      case CubitStates.success:
+        // ✅ أغلق الـ Loading واعرض Toast
+        CustomloadingApp.hide(context);
+        AppToast.success(
+          context,
+          state.blockUserMessage ?? 'تم حظر المستخدم بنجاح',
+        );
+        break;
+
+      case CubitStates.failure:
+        // ❌ أغلق الـ Loading واعرض Error
+        CustomloadingApp.hide(context);
+        AppToast.error(
+          context,
+          state.blockUserMessage ?? 'حدث خطأ أثناء الحظر',
+        );
+        break;
+
+      default:
+        break;
+    }
+  }
 
   Widget _buildContent(BuildContext context, _FeedState state) {
     // حالة التحميل
@@ -258,26 +294,34 @@ class _PostItemState extends State<_PostItem> {
     super.initState();
     _initializeStreamAndCallbacks();
   }
-// في _initializeStreamAndCallbacks
-void _initializeStreamAndCallbacks() {
-  // ✅ الـ Stream ممكن يرجع null لو البوست اتحذف
-  _postStream = widget.homeCubit.stream
-      .map((state) => state.posts
-          .where((p) => p.postId == widget.postId)
-          .firstOrNull) // ✅ يرجع null لو مش موجود
-      .distinct();
 
-  _callbacks = PostCallbacks(
-    postUpdatesStream: _postStream, // ✅ Stream<PostModel?> مش Stream<PostModel>
+  // في _initializeStreamAndCallbacks
+  void _initializeStreamAndCallbacks() {
+    // ✅ الـ Stream ممكن يرجع null لو البوست اتحذف
+    _postStream = widget.homeCubit.stream
+        .map(
+          (state) =>
+              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+        ) // ✅ يرجع null لو مش موجود
+        .distinct();
+
+    _callbacks = PostCallbacks(
+      postUpdatesStream:
+          _postStream, // ✅ Stream<PostModel?> مش Stream<PostModel>
       onReactionChanged: _onReaction,
       onShareTap: _onShare,
       onHashtagTap: _onHashtagTap,
       onSave: _onSave,
       onDelete: _onDelete,
       onHide: _hidePost,
+      onBlock: _blockUser,
     );
   }
 
+
+  void _blockUser(String userId , String postId) {
+    widget.homeCubit.blockUser(visiblePostId: postId, advisorId: userId);
+  }
   void _hidePost(String postId) {
     widget.homeCubit.toggleHidePost(postId: postId);
   }
