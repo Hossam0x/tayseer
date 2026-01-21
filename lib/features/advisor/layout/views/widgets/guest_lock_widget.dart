@@ -5,6 +5,7 @@ class GuestLockWidget extends StatelessWidget {
     super.key,
     required this.message,
     required this.description,
+
   });
   final String message;
   final String description;
@@ -72,6 +73,8 @@ class GuestLockWidget extends StatelessWidget {
                       //     return Dialog(child: const LockPopUp());
                       //   },
                       // );
+
+                      // context.pushNamed(AppRouter.kChooseGenderView);
                     },
                   ),
                 ],
