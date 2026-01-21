@@ -1,10 +1,12 @@
 import 'package:dartz/dartz.dart';
-import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/features/user/advisor_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
 import 'package:tayseer/my_import.dart';
 
-abstract class UserProfileRepository {
-  Future<Either<Failure, UserProfileModel>> getUserProfile(String advisorId);
+abstract class UserAdvisorProfileRepository {
+  Future<Either<Failure, UserAdvisorProfileModel>> getUserProfile(
+    String advisorId,
+  );
   Future<Either<Failure, List<PostModel>>> fetchUserPosts({
     required String advisorId,
     required int page,
@@ -22,13 +24,13 @@ abstract class UserProfileRepository {
 }
 
 // features/advisor/user_profile/data/repositories/user_profile_repository_impl.dart
-class UserProfileRepositoryImpl implements UserProfileRepository {
+class UserProfileRepositoryImpl implements UserAdvisorProfileRepository {
   final ApiService _apiService;
 
   UserProfileRepositoryImpl(this._apiService);
 
   @override
-  Future<Either<Failure, UserProfileModel>> getUserProfile(
+  Future<Either<Failure, UserAdvisorProfileModel>> getUserProfile(
     String advisorId,
   ) async {
     try {
@@ -50,7 +52,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         final profileData = Map<String, dynamic>.from(data);
         profileData['yearsOfExperience'] = yearsExpString;
 
-        final profile = UserProfileModel.fromJson(profileData);
+        final profile = UserAdvisorProfileModel.fromJson(profileData);
         return Right(profile);
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل جلب البروفايل'));

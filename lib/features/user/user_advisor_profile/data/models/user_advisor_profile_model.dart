@@ -1,7 +1,7 @@
 // features/user/advisor_profile/data/models/user_profile_model.dart
 import 'package:equatable/equatable.dart';
 
-class UserProfileModel extends Equatable {
+class UserAdvisorProfileModel extends Equatable {
   final String name;
   final String image;
   final String username;
@@ -17,7 +17,7 @@ class UserProfileModel extends Equatable {
   final String? professionalSpecialization; // ⭐ إضافة
   final String? jobGrade; // ⭐ إضافة
 
-  const UserProfileModel({
+  const UserAdvisorProfileModel({
     required this.name,
     required this.image,
     required this.username,
@@ -34,8 +34,8 @@ class UserProfileModel extends Equatable {
     this.jobGrade, // ⭐
   });
 
-  factory UserProfileModel.fromJson(Map<String, dynamic> json) {
-    return UserProfileModel(
+  factory UserAdvisorProfileModel.fromJson(Map<String, dynamic> json) {
+    return UserAdvisorProfileModel(
       name: json['name'] ?? '',
       image: json['image'] ?? '',
       username: json['username'] ?? '',
@@ -72,7 +72,7 @@ class UserProfileModel extends Equatable {
     'jobGrade': jobGrade,
   };
 
-  UserProfileModel copyWith({
+  UserAdvisorProfileModel copyWith({
     String? name,
     String? image,
     String? username,
@@ -88,7 +88,7 @@ class UserProfileModel extends Equatable {
     String? professionalSpecialization,
     String? jobGrade,
   }) {
-    return UserProfileModel(
+    return UserAdvisorProfileModel(
       name: name ?? this.name,
       image: image ?? this.image,
       username: username ?? this.username,
@@ -127,7 +127,7 @@ class UserProfileModel extends Equatable {
 }
 
 // ⭐ إضافة Extension للتحويل
-extension UserProfileModelExtension on UserProfileModel {
+extension UserProfileModelExtension on UserAdvisorProfileModel {
   // خريطة تحويل التخصصات
   static const Map<String, String> _specializationMapping = {
     "doctor": "طبيب نفسي",
