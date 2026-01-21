@@ -222,7 +222,6 @@ class PostOptionsBottomSheet extends StatelessWidget {
       imageUrl: AssetsData.deleteIcon,
       bottonText: context.tr(AppStrings.yes),
       onPressed: () {
-        Navigator.pop(context); // أغلق الديالوج
         Navigator.pop(context); // أغلق الـ BottomSheet
         if (onDelete != null) onDelete!();
       },
