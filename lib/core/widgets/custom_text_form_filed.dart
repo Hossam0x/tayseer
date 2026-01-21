@@ -45,7 +45,9 @@ class CustomTextFormField extends StatefulWidget {
   final bool withCountryCode;
   final String? hintText;
 
-  final IconData? prefixIcon;
+  /// 👇 التعديل هنا
+  final dynamic prefixIcon; // IconData أو Widget
+
   final Widget? suffixIcon;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
@@ -121,7 +123,14 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           borderSide: const BorderSide(color: Colors.red),
         ),
         errorStyle: Styles.textStyle10.copyWith(color: Colors.red),
-        prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon) : null,
+
+        /// 👇 هنا التنفيذ
+        prefixIcon: widget.prefixIcon == null
+            ? null
+            : widget.prefixIcon is IconData
+            ? Icon(widget.prefixIcon)
+            : widget.prefixIcon as Widget,
+
         suffixIcon:
             widget.suffixIcon ??
             ((widget.isPasswordFiled || widget.isConfirmPasswordFiled)
@@ -134,7 +143,6 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                   )
                 : null),
 
-        /// 🔥 هنا الـ localization
         hintText:
             widget.hintText ??
             (widget.isMail
@@ -153,7 +161,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 ? context.tr('enter_city')
                 : context.tr('enter_text')),
 
-        hintStyle: Styles.textStyle12.copyWith(
+        hintStyle: Styles.textStyle14.copyWith(
           color: AppColors.kprimaryColor.withOpacity(0.5),
         ),
       ),

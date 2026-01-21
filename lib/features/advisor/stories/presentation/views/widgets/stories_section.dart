@@ -1,5 +1,4 @@
-import 'dart:ui';
-import 'package:tayseer/core/enum/add_post_enum.dart';
+import 'package:tayseer/core/utils/helper/picker_helper.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
@@ -92,8 +91,14 @@ class _StoriesListViewState extends State<_StoriesListView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _AddStoryItem(),
-          Gap(context.responsiveWidth(14)),
+          if (!isUser) ...[
+            Padding(
+              padding: EdgeInsetsDirectional.only(
+                end: context.responsiveWidth(14),
+              ),
+              child: const _AddStoryItem(),
+            ),
+          ],
           ...widget.stories.map(
             (userStory) => Padding(
               key: ValueKey(userStory.userId),
@@ -138,7 +143,6 @@ class _UserStoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // الانتقال إلى شاشة عرض القصة مع تمرير الداتا
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -280,8 +284,22 @@ class _AddStoryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        context.pushNamed(AppRouter.kAddPostView, arguments: AddPostEnum.story);
+      onTap: () async {
+        final picker = MediaPickerController(
+          config: PickerConfig(
+            allowMultiple: false,
+            maxCount: 1,
+            requestType: RequestType.image,
+          ),
+        );
+        final SelectedMedia? picked = await picker.pickFromCamera();
+        if (picked != null) {
+          if (picked.type == AssetType.image) {
+            // cubit.addCapturedImage(picked.file);
+          } else if (picked.type == AssetType.video) {
+            // cubit.addCapturedVideo(XFile(picked.file.path));
+          }
+        }
       },
       child: Column(
         children: [

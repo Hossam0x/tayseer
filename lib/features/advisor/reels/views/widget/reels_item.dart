@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/reels/views/widget/reels_overlay.dart';
 import 'package:tayseer/features/advisor/reels/views/widget/reels_video_background.dart';
@@ -119,6 +119,7 @@ class _ReelsItemState extends State<ReelsItem>
           // 1. Video Background
           ReelsVideoBackground(
             videoUrl: widget.post.videoUrl ?? '',
+            videoId: widget.post.postId, // إضافة videoId
             shouldPlay: _shouldPlay,
             onTap: _togglePlay,
             onDoubleTap: _handleDoubleTap,

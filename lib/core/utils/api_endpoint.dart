@@ -23,4 +23,10 @@ class ApiEndPoint {
       '/chat/$chatRoomId/archive';
   static const String blockuser = '/blocks/block';
   static const String unblockuser = '/blocks/unblock';
+  static const String profileData = '/advisor/getProfile';
+  static const String category = '/category';
+
+  static const String savePost = '/saved-posts';
+  static const String deletePost = '/posts/delete/';
+  static const String hidePost = '/hidden/post';
 }

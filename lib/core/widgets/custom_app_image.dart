@@ -5,6 +5,7 @@ class AppImage extends StatelessWidget {
   final double? height, width;
   final BoxFit fit;
   final Color? color;
+  final Gradient? gradientColorSvg;
   final String? placeholderImage;
 
   const AppImage(
@@ -15,6 +16,7 @@ class AppImage extends StatelessWidget {
     this.fit = BoxFit.contain,
     this.color,
     this.placeholderImage,
+    this.gradientColorSvg,
   });
 
   @override
@@ -32,13 +34,15 @@ class AppImage extends StatelessWidget {
 
     // SVG
     if (path!.endsWith("svg")) {
+      Widget svgWidget;
+
       if (path!.startsWith("http")) {
-        return SvgPicture.network(
+        svgWidget = SvgPicture.network(
           path!,
           fit: fit,
           height: height,
           width: width,
-          color: color,
+          color: gradientColorSvg == null ? color : null,
           placeholderBuilder: (context) => placeholderImage != null
               ? Image.asset(
                   placeholderImage!,
@@ -49,14 +53,27 @@ class AppImage extends StatelessWidget {
               : _buildLoadingPlaceholder(),
         );
       } else {
-        return SvgPicture.asset(
+        svgWidget = SvgPicture.asset(
           path!,
           fit: fit,
           height: height,
           width: width,
-          color: color,
+          color: gradientColorSvg == null ? color : null,
         );
       }
+
+      // لو فيه Gradient Wrap بـ ShaderMask
+      if (gradientColorSvg != null) {
+        return ShaderMask(
+          shaderCallback: (bounds) {
+            return gradientColorSvg!.createShader(bounds);
+          },
+          blendMode: BlendMode.srcIn,
+          child: svgWidget,
+        );
+      }
+
+      return svgWidget;
     }
 
     // Lottie
@@ -68,6 +85,7 @@ class AppImage extends StatelessWidget {
     if (path!.endsWith("gif")) {
       if (path!.startsWith("http")) {
         return CachedNetworkImage(
+          memCacheWidth: 600,
           imageUrl: path!,
           fit: fit,
           height: height,

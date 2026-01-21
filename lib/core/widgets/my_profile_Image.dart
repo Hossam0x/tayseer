@@ -15,7 +15,12 @@ class MyProfileImage extends StatelessWidget {
     return SizedBox(
       height: width ?? size.r,
       width: width ?? size.r,
-      child: ClipOval(child: AppImage(image, fit: BoxFit.cover)),
+      child: ClipOval(
+        child: AppImage(
+          isUserAnonymous ? AssetsData.anonymousProfile : image,
+          fit: BoxFit.cover,
+        ),
+      ),
     );
   }
 }

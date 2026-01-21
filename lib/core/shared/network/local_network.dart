@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/model/login_data.dart';
 import 'package:tayseer/my_import.dart';
@@ -10,16 +11,15 @@ class CachNetwork {
 
     // kShowOnBoarding = await CachNetwork.getBoolData(key: 'onBoarding') ?? true;
 
-    kIsUserGuest = await CachNetwork.getBoolData(key: 'userGuest') ?? true;
+    kIsUserGuest = CachNetwork.getBoolData(key: 'userGuest') ?? true;
 
-    final userDataString = await CachNetwork.getData(key: 'userData');
-
+    final userDataString = await CachNetwork.getData(key: kuserData);
     if (userDataString != null) {
       final userDataJson = jsonDecode(userDataString);
-      kCurrentUserData = LoginData.fromJson(userDataJson);
+      kCurrentUserData = UserModel.fromJson(userDataJson);
     }
-
-    final userTypeString = await CachNetwork.getData(key: 'user_type');
+    debugPrint("kCurrentUserData is  :::::::::::: $kCurrentUserData");
+    final userTypeString = await CachNetwork.getData(key: kUserType);
 
     if (userTypeString != null) {
       selectedUserType = UserTypeEnum.values.firstWhere(
@@ -55,12 +55,12 @@ class CachNetwork {
     return sharedPref.getInt(key) ?? 0;
   }
 
-  static Future<bool?> getBoolData({required String key}) async {
-    return await sharedPref.getBool(key) ?? false;
+  static bool? getBoolData({required String key}) {
+    return sharedPref.getBool(key) ?? false;
   }
 
   static Future<dynamic> getData({required String key}) async {
-    return await sharedPref.get(key);
+    return sharedPref.get(key);
   }
 
   static Future<bool> removeData({required String key}) async {

@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/add_post/model/category_model.dart';
+import 'package:tayseer/core/models/category_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class AddPostState {

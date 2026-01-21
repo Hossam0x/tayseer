@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/age_range_selector.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/billing_summary.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/selection_tile.dart';
@@ -14,17 +15,13 @@ class BoostPropertiesView extends StatelessWidget {
           child: Column(
             children: [
               Gap(16.h),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Icon(Icons.arrow_back, color: AppColors.blackColor),
-                  ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: SimpleAppBar(
+                  title: 'خصائص التعزيز الفعّالة',
+                  isLargeTitle: true,
                 ),
               ),
-              Text('خصائص التعزيز الفعّالة', style: Styles.textStyle20Bold),
               Expanded(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -40,7 +37,12 @@ class BoostPropertiesView extends StatelessWidget {
                       SelectionTile(
                         label: 'الموقع',
                         value: 'مصر',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRouter.kLocationSelectionView,
+                          );
+                        },
                       ),
 
                       Gap(16.h),
@@ -48,7 +50,12 @@ class BoostPropertiesView extends StatelessWidget {
                       SelectionTile(
                         label: 'مواضيع الاستشارات',
                         value: 'العلاج والتوجيه الزوجي',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRouter.kConsultationTopicsView,
+                          );
+                        },
                       ),
 
                       Gap(40.h),
@@ -60,15 +67,15 @@ class BoostPropertiesView extends StatelessWidget {
               ),
               const BillingSummary(),
               // 5. Bottom Action Button
-              CustomBotton(
-                title: 'اشتراك',
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    AppRouter.kLocationSelectionView,
-                  );
-                },
-                useGradient: true,
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 40.w),
+                child: CustomBotton(
+                  height: 54.h,
+                  width: double.infinity,
+                  title: 'اشتراك',
+                  onPressed: () {},
+                  useGradient: true,
+                ),
               ),
               Gap(20.h),
             ],

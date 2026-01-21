@@ -1,5 +1,5 @@
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
-import 'package:tayseer/features/advisor/add_post/model/category_model.dart';
+import 'package:tayseer/core/models/category_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class CustomProfileHeader extends StatefulWidget {
@@ -42,7 +42,7 @@ class _CustomProfileHeaderState extends State<CustomProfileHeader> {
           /// الصورة الشخصية
           ClipRRect(
             borderRadius: BorderRadius.circular(30),
-            child: MyProfileImage(size: 60),
+            child: MyProfileImage(size: 60, imageUrl: kCurrentUserData?.image),
           ),
           Gap(context.responsiveWidth(12)),
 

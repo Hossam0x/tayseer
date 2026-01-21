@@ -1,11 +1,12 @@
+import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/features/shared/auth/model/guest_response_model.dart';
 import 'package:tayseer/features/shared/auth/model/last_login_model.dart';
-import 'package:tayseer/features/shared/auth/model/register_auth_google_apple_model.dart';
 import 'package:tayseer/features/shared/auth/model/login_data.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dartz/dartz.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import '../../../../my_import.dart';
@@ -16,11 +17,11 @@ class AuthRepoImpl implements AuthRepo {
   final ApiService apiService;
   Future<String> getFcmToken() async {
     try {
-      // Firebase Messaging removed - return empty string
-      return '1';
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      return fcmToken ?? '';
     } catch (e) {
       debugPrint('Failed to get FCM token: $e');
-      return '1';
+      return '';
     }
   }
 
@@ -36,6 +37,19 @@ class AuthRepoImpl implements AuthRepo {
     return '';
   }
 
+  String getDeviceTimeZoneGMT() {
+    final now = DateTime.now();
+    final offset = now.timeZoneOffset;
+
+    final hours = offset.inHours;
+    final minutes = offset.inMinutes.remainder(60).abs();
+
+    final sign = hours >= 0 ? '+' : '-';
+
+    return 'GMT $sign${hours.abs()}:${minutes.toString().padLeft(2, '0')}';
+  }
+
+  String? token;
   @override
   Future<Either<Failure, RegisterResponse>> logInUser({
     required String email,
@@ -44,7 +58,9 @@ class AuthRepoImpl implements AuthRepo {
       final deviceId = await getDeviceId();
       final fcmToken = await getFcmToken();
       final platform = Platform.isAndroid ? 'android' : 'ios';
+
       debugPrint('deviceId::$deviceId');
+
       final response = await apiService.post(
         endPoint: selectedUserType == UserTypeEnum.asConsultant
             ? '/advisor/login'
@@ -54,6 +70,7 @@ class AuthRepoImpl implements AuthRepo {
           'fcmToken': fcmToken,
           'deviceId': deviceId,
           'deviceType': platform,
+          'timezone': getDeviceTimeZoneGMT(),
         },
       );
       log('register User response$response');
@@ -61,14 +78,7 @@ class AuthRepoImpl implements AuthRepo {
       final success = response['success'] ?? false;
       if (success) {
         final registerResponse = RegisterResponse.fromJson(response);
-        await CachNetwork.setData(
-          key: 'token',
-          value: registerResponse.data?.token ?? '',
-        );
-        // await CachNetwork.setData(
-        //   key: 'userData',
-        //   value: jsonEncode(registerResponse.data?.toJson()),
-        // );
+        token = registerResponse.data?.token;
         return right(registerResponse);
       } else {
         final message =
@@ -95,13 +105,28 @@ class AuthRepoImpl implements AuthRepo {
             ? "/advisor/verifyOtp"
             : '/auth/verify-account',
         data: {'otp': otp},
-        isAuth: true,
+        headers: {'Authorization': "Bearer $token"},
       );
       log('otp response $response');
       final success = response['success'] ?? false;
 
       if (success) {
         final registerResponse = RegisterResponse.fromJson(response);
+
+        await CachNetwork.setData(
+          key: ktoken,
+          value: registerResponse.data?.token ?? '',
+        );
+        await CachNetwork.setData(
+          key: kUserType,
+          value: selectedUserType == UserTypeEnum.asConsultant
+              ? UserTypeEnum.asConsultant.name
+              : UserTypeEnum.user.name,
+        );
+        await CachNetwork.setData(
+          key: kuserData,
+          value: jsonEncode(registerResponse.data?.user?.toJson()),
+        );
         return right(registerResponse);
       } else {
         final message = response['message'] ?? 'فشل التحقق من الكود.';
@@ -119,33 +144,48 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   @override
-  Future<Either<Failure, AccountResponse>> authGoogle({
+  Future<Either<Failure, RegisterResponse>> authGoogle({
     required String idToken,
-    String userType = 'user',
   }) async {
     try {
       final deviceId = await getDeviceId();
       final fcmToken = await getFcmToken();
+
       final platform = Platform.isAndroid ? 'android' : 'ios';
 
       final response = await apiService.post(
-        endPoint: '/auth/google',
+        endPoint: selectedUserType == UserTypeEnum.asConsultant
+            ? '/advisor/google'
+            : "/auth/google",
         data: {
           'idToken': idToken,
           'fcmToken': fcmToken,
           'deviceType': platform,
-          'userType': userType,
+          'userType': selectedUserType == UserTypeEnum.asConsultant
+              ? 'advisor'
+              : 'user',
           'deviceId': deviceId,
+          'timezone': getDeviceTimeZoneGMT(),
         },
       );
-
+      debugPrint('authGoogle idToken $idToken');
       final success = response['success'] ?? true;
 
-      if (success == false) {
-        final authGoogleResponse = AccountResponse.fromJson(response);
+      if (success == true) {
+        final authGoogleResponse = RegisterResponse.fromJson(response);
         await CachNetwork.setData(
-          key: 'token',
+          key: ktoken,
           value: authGoogleResponse.data?.token ?? '',
+        );
+        await CachNetwork.setData(
+          key: kUserType,
+          value: selectedUserType == UserTypeEnum.asConsultant
+              ? UserTypeEnum.asConsultant.name
+              : UserTypeEnum.user.name,
+        );
+        await CachNetwork.setData(
+          key: kuserData,
+          value: jsonEncode(authGoogleResponse.data?.user?.toJson()),
         );
         await CachNetwork.setBool(key: 'userGuest', value: false);
         kIsUserGuest = false;
@@ -165,13 +205,13 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   @override
-  Future<Either<Failure, AccountResponse>> authApple({
+  Future<Either<Failure, RegisterResponse>> authApple({
     required String idToken,
-    String userType = 'user',
   }) async {
     try {
       final deviceId = await getDeviceId();
       final fcmToken = await getFcmToken();
+
       final platform = Platform.isAndroid ? 'android' : 'ios';
 
       final response = await apiService.post(
@@ -180,20 +220,33 @@ class AuthRepoImpl implements AuthRepo {
           'idToken': idToken,
           'fcmToken': fcmToken,
           'deviceType': platform,
-          'userType': userType,
+          'userType': selectedUserType == UserTypeEnum.user
+              ? 'user'
+              : 'advisor',
           'deviceId': deviceId,
+          'timezone': getDeviceTimeZoneGMT(),
         },
       );
 
       final success = response['success'] ?? true;
 
       if (success == false) {
-        final authGoogleResponse = AccountResponse.fromJson(response);
+        final authGoogleResponse = RegisterResponse.fromJson(response);
         await CachNetwork.setData(
-          key: 'token',
+          key: ktoken,
           value: authGoogleResponse.data?.token ?? '',
         );
+        await CachNetwork.setData(
+          key: kUserType,
+          value: selectedUserType == UserTypeEnum.asConsultant
+              ? UserTypeEnum.asConsultant.name
+              : UserTypeEnum.user.name,
+        );
         await CachNetwork.setBool(key: 'userGuest', value: false);
+        await CachNetwork.setData(
+          key: kuserData,
+          value: jsonEncode(authGoogleResponse.data?.user?.toJson()),
+        );
         kIsUserGuest = false;
         return right(authGoogleResponse);
       } else {
@@ -217,7 +270,7 @@ class AuthRepoImpl implements AuthRepo {
         endPoint: selectedUserType == UserTypeEnum.asConsultant
             ? "/advisor/reSendOtp"
             : '/auth/re-send-otp',
-        isAuth: true,
+        headers: {'Authorization': "Bearer $token"},
       );
 
       final success = response['success'] ?? false;
@@ -474,7 +527,6 @@ class AuthRepoImpl implements AuthRepo {
     try {
       final response = await apiService.post(
         endPoint: '/advisor/addServiceProvider',
-        isAuth: true,
         data: body,
       );
 

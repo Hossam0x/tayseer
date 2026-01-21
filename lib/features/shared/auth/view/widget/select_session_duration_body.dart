@@ -212,45 +212,30 @@ class _SessionDurationItem extends StatelessWidget {
                 Expanded(
                   child: SizedBox(
                     height: 50,
-                    child: TextField(
-                      controller: priceController,
-                      keyboardType: TextInputType.number,
+                    child: CustomTextFormField(
                       onChanged: onPriceChanged,
-                      textAlign: TextAlign.start,
-                      decoration: InputDecoration(
-                        hintText: '0',
-                        hintStyle: Styles.textStyle14.copyWith(
-                          color: AppColors.kgreyColor,
-                        ),
-                        suffixText: context.tr('currency_rs'),
-                        suffixStyle: Styles.textStyle14.copyWith(
-                          color: AppColors.kgreyColor,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.grey.withOpacity(0.3),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: AppColors.kprimaryColor,
-                          ),
-                        ),
-
-                        prefixIcon: AppImage(
+                      isNumber: true,
+                      controller: priceController,
+                      hintText: '0',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: AppImage(
                           AssetsData.kWalletIcon,
-                          width: 24,
-                          height: 24,
+                          width: 30,
+                          height: 30,
+                          fit: BoxFit.contain,
                         ),
+                      ),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            context.tr('currency_rs'),
+                            style: Styles.textStyle14Bold.copyWith(
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -268,3 +253,45 @@ class _SessionDurationItem extends StatelessWidget {
     );
   }
 }
+//  TextField(
+//                       controller: priceController,
+//                       keyboardType: TextInputType.number,
+//                       onChanged: onPriceChanged,
+//                       textAlign: TextAlign.start,
+//                       decoration: InputDecoration(
+//                         fillColor: AppColors.kWhiteColor,
+//                         hintText: '0',
+//                         hintStyle: Styles.textStyle14.copyWith(
+//                           color: AppColors.kgreyColor,
+//                         ),
+//                         suffixText: context.tr('currency_rs'),
+//                         suffixStyle: Styles.textStyle14.copyWith(
+//                           color: AppColors.kgreyColor,
+//                         ),
+//                         contentPadding: const EdgeInsets.symmetric(
+//                           horizontal: 12,
+//                         ),
+//                         border: OutlineInputBorder(
+//                           borderRadius: BorderRadius.circular(12),
+//                           borderSide: const BorderSide(color: Colors.grey),
+//                         ),
+//                         enabledBorder: OutlineInputBorder(
+//                           borderRadius: BorderRadius.circular(12),
+//                           borderSide: BorderSide(
+//                             color: Colors.grey.withOpacity(0.3),
+//                           ),
+//                         ),
+//                         focusedBorder: OutlineInputBorder(
+//                           borderRadius: BorderRadius.circular(12),
+//                           borderSide: BorderSide(
+//                             color: AppColors.kprimaryColor,
+//                           ),
+//                         ),
+
+//                         prefixIcon: AppImage(
+//                           AssetsData.kWalletIcon,
+//                           width: 10,
+//                           height: 10,
+//                         ),
+//                       ),
+//                     ),
