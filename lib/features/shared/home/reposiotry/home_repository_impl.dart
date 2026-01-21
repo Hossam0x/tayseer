@@ -180,6 +180,24 @@ class HomeRepositoryImpl implements HomeRepository {
     }
   }
 
+
+@override
+Future<Either<Failure, String>> deleteComment({
+    required String commentId,
+  }) async {
+    try {
+      final response = await apiService.delete(
+        endPoint: "${ApiEndPoint.comments}/$commentId",
+      );
+
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم حذف التعليق بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
   // ================= Reels =================
 
   @override

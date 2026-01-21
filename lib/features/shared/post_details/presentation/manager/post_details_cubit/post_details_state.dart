@@ -28,6 +28,10 @@ class PostDetailsState extends Equatable {
   final String? scrollToCommentId;
   final int scrollTrigger;
 
+  // DELETE COMMENT
+  final String deleteCommentMessage;
+  final CubitStates deleteCommentActionState;
+
   const PostDetailsState({
     this.commentsState = CubitStates.initial,
     this.comments = const [],
@@ -44,6 +48,8 @@ class PostDetailsState extends Equatable {
     this.pendingCommentTempId,
     this.scrollToCommentId,
     this.scrollTrigger = 0,
+    this.deleteCommentMessage = '',
+    this.deleteCommentActionState = CubitStates.initial,
   });
 
   bool get hasMoreComments => currentPage < totalPages;
@@ -70,6 +76,10 @@ class PostDetailsState extends Equatable {
     String? scrollToCommentId,
     bool? clearScrollToCommentId,
     int? scrollTrigger,
+
+    // 
+    String? deleteCommentMessage,
+    CubitStates? deleteCommentActionState,
   }) {
     return PostDetailsState(
       commentsState: commentsState ?? this.commentsState,
@@ -97,6 +107,8 @@ class PostDetailsState extends Equatable {
           ? null
           : (scrollToCommentId ?? this.scrollToCommentId),
       scrollTrigger: scrollTrigger ?? this.scrollTrigger,
+      deleteCommentMessage: deleteCommentMessage ?? this.deleteCommentMessage,
+      deleteCommentActionState: deleteCommentActionState ?? this.deleteCommentActionState,
     );
   }
 
@@ -117,5 +129,9 @@ class PostDetailsState extends Equatable {
         pendingCommentTempId,
         scrollToCommentId,
         scrollTrigger,
+        deleteCommentMessage,
+        deleteCommentActionState,
       ];
+
+
 }

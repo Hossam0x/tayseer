@@ -46,6 +46,51 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   }
 
   // ═══════════════════════════════════════════════════════════
+  // DELTE COMMENT
+  // ═══════════════════════════════════════════════════════════
+  void deleteComment({required String commentId}) {
+    final comment = _findCommentById(state.comments, commentId);
+    if (comment == null) return;
+
+    final originalComments = List.of(state.comments);
+
+    // 1️⃣ Optimistic Update
+    final updatedComments = state.comments
+        .where((c) => c.id != commentId)
+        .toList();
+
+    emit(
+      state.copyWith(
+        comments: updatedComments,
+        deleteCommentActionState: CubitStates.initial,
+      ),
+    );
+
+    // 2️⃣ Server Request
+    homeRepository.deleteComment(commentId: commentId).then((result) {
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              comments: originalComments,
+              deleteCommentActionState: CubitStates.failure,
+              deleteCommentMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          emit(
+            state.copyWith(
+              deleteCommentActionState: CubitStates.success,
+              deleteCommentMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // 📌 LOAD MORE
   // ═══════════════════════════════════════════════════════════
   Future<void> loadMoreComments() async {
