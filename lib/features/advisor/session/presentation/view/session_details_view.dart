@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tayseer/core/widgets/custom_background.dart';
-import 'package:tayseer/features/advisor/session/view/widget/session_details_body.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/widget/session_details_body.dart';
 
 class SessionDetailsView extends StatelessWidget {
   const SessionDetailsView({super.key});

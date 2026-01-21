@@ -38,4 +38,5 @@ class ApiEndPoint {
   static const String paysession = "/session/pay";
   static const String rateadvisor = "/advisor-rating";
   static String updatesession(String sessionId) => "/session/update/$sessionId";
+  static const String advisorsession = "/session/advisor-sessions";
 }

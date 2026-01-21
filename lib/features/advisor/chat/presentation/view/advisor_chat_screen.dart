@@ -175,7 +175,6 @@ class _AdvisorChatContentState
       userimage: widget.userimage,
       phoneIcon: AssetsData.phoneIcon,
       receiverId: widget.receiverId,
-      isHaveSession: widget.isHaveSession,
       onProfileTap: () {
         Navigator.pushNamed(
           context,

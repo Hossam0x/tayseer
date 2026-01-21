@@ -31,7 +31,7 @@ import 'package:tayseer/features/advisor/event_detail/view/update_event_view.dar
 import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/map/map_view.dart';
 import 'package:tayseer/features/advisor/notification/presentation/view/notification_view.dart';
-import 'package:tayseer/features/advisor/session/view/session_details_view.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/session_details_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/bookings_log_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/transactions_log_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/wallet_view.dart';
@@ -847,11 +847,38 @@ abstract class AppRouter {
           builder: (_) => const BookingSuccessView(),
         );
       case AppRouter.voiceCallView:
-        final sessionId = settings.arguments as String;
+        final args = settings.arguments as Map<String, dynamic>?;
+
+        if (args == null) {
+          return MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              body: Center(child: Text('Error: No arguments provided')),
+            ),
+          );
+        }
+
+        final callID = args['callID'] as String? ?? '';
+        final currentUserID = args['currentUserID'] as String? ?? '';
+        final currentUserName = args['currentUserName'] as String? ?? 'User';
+        final currentUserAvatarUrl =
+            args['currentUserAvatarUrl'] as String? ?? '';
+
+        final rawParticipants = args['participants'] as List<dynamic>? ?? [];
+        final participants = rawParticipants
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => CallPage(callID: sessionId),
+          builder: (_) => CallPage(
+            callID: callID,
+            userID: currentUserID,
+            userName: currentUserName,
+            avatarUrl: currentUserAvatarUrl,
+            participants: participants,
+          ),
         );
+
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;
       //   return PageRouteBuilder(

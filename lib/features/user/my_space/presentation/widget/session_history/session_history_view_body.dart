@@ -5,7 +5,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/core/enum/session_card_style.dart';
-import 'package:tayseer/features/advisor/session/view/widget/session_card.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/widget/session_card.dart';
 import 'package:tayseer/features/user/my_space/data/model/advisorprofile/session_model.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/session_history/empty_session_widget.dart';
 import 'package:tayseer/my_import.dart';
@@ -50,11 +50,13 @@ class SessionHistoryViewBody extends StatelessWidget {
             ),
           ),
           body: hasNoSessions
-              ? const EmptySessionsState(
-                  title: "لا يوجد سجل جلسات",
-                  subtitle: "جلساتك السابقة والقادمة ستظهر هنا",
-                  showAnimation: true,
-                  isCompact: false,
+              ? Center(
+                  child: const EmptySessionsState(
+                    title: "لا يوجد سجل جلسات",
+                    subtitle: "جلساتك السابقة والقادمة ستظهر هنا",
+                    showAnimation: true,
+                    isCompact: false,
+                  ),
                 )
               : _buildSessionsList(context, darkText),
         ),

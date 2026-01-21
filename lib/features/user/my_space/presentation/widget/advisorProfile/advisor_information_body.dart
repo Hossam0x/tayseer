@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/enum/session_card_style.dart';
-import 'package:tayseer/features/advisor/session/view/widget/session_card.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/widget/session_card.dart';
 import 'package:tayseer/features/user/my_space/data/model/advisorprofile/session_model.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_state.dart';

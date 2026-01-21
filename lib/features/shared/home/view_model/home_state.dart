@@ -2,12 +2,14 @@ import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/category_model.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 
 import '../../../../my_import.dart';
 
 class HomeState extends Equatable {
   final Map<String?, CategoryPostsData> categoryPostsMap;
   final String? selectedCategoryId;
+  final SessionStartModel? sessionStartModel;
 
   // ─────────────────────────────────────────────────────────────────────────
   // 📦 Categories Data
@@ -68,6 +70,7 @@ class HomeState extends Equatable {
     // User Info
     this.homeInfo,
     this.fetchNameAndImageState = CubitStates.initial,
+    this.sessionStartModel,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -93,6 +96,7 @@ class HomeState extends Equatable {
     // User Info
     ImageAndNameModel? homeInfo,
     CubitStates? fetchNameAndImageState,
+    SessionStartModel? sessionStartModel,
   }) {
     return HomeState(
       // Posts
@@ -119,6 +123,7 @@ class HomeState extends Equatable {
       homeInfo: homeInfo ?? this.homeInfo,
       fetchNameAndImageState:
           fetchNameAndImageState ?? this.fetchNameAndImageState,
+      sessionStartModel: sessionStartModel ?? this.sessionStartModel,
     );
   }
 
@@ -213,6 +218,7 @@ class HomeState extends Equatable {
     // User Info
     homeInfo,
     fetchNameAndImageState,
+    sessionStartModel,
   ];
 }
 

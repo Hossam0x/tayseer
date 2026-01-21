@@ -2,13 +2,6 @@ import 'package:equatable/equatable.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart'; // ⭐ تأكد من المسار
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/features/advisor/home/model/Image_and_name_model.dart';
-import 'package:tayseer/features/advisor/home/model/post_model.dart';
-import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
-
-import '../../../../my_import.dart';
-
-/// حالة عملية الشير
 
 class ProfileState extends Equatable {
   final CubitStates profileState;
@@ -21,7 +14,6 @@ class ProfileState extends Equatable {
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
-  final SessionStartModel? sessionStartModel;
 
   // ⭐️ أضف Share State
   final CubitStates shareActionState;
@@ -44,10 +36,6 @@ class ProfileState extends Equatable {
     this.shareMessage,
     this.isShareAdded,
     this.sharePostId,
-    //
-    this.homeInfo,
-    this.fetchNameAndImageState = CubitStates.initial,
-    this.sessionStartModel,
   });
 
   ProfileState copyWith({
@@ -65,10 +53,6 @@ class ProfileState extends Equatable {
     String? shareMessage,
     bool? isShareAdded,
     String? sharePostId,
-    String? sharePostId,
-    SessionStartModel? sessionStartModel,
-    ImageAndNameModel? homeInfo,
-    CubitStates? fetchNameAndImageState,
   }) {
     return ProfileState(
       profileState: profileState ?? this.profileState,
@@ -85,10 +69,6 @@ class ProfileState extends Equatable {
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
       sharePostId: sharePostId ?? this.sharePostId,
-      homeInfo: homeInfo ?? this.homeInfo,
-      fetchNameAndImageState:
-          fetchNameAndImageState ?? this.fetchNameAndImageState,
-      sessionStartModel: sessionStartModel ?? this.sessionStartModel,
     );
   }
 
@@ -108,8 +88,5 @@ class ProfileState extends Equatable {
     shareMessage,
     isShareAdded,
     sharePostId,
-    homeInfo,
-    fetchNameAndImageState,
-    sessionStartModel,
   ];
 }

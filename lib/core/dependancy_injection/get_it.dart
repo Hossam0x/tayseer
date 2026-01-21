@@ -10,6 +10,7 @@ import 'package:tayseer/features/advisor/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository.dart';
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/advisor/session/data/repos/advisor_session_repo.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
@@ -328,4 +329,9 @@ Future<void> setupGetIt() async {
 
   /// MySpace Cubit
   getIt.registerFactory<MySpaceCubit>(() => MySpaceCubit(getIt<MySpaceRepo>()));
+
+  // advisor session repo
+  getIt.registerLazySingleton<AdvisorSessionRepo>(
+    () => AdvisorSessionRepo(getIt<ApiService>()),
+  );
 }

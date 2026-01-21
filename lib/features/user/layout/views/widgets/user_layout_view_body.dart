@@ -4,6 +4,7 @@ import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.
 
 import 'package:tayseer/features/user/layout/views/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserLayOutViewBody extends StatelessWidget {
@@ -44,11 +45,7 @@ class UserLayOutViewBody extends StatelessWidget {
         return [
           HomeView(onScroll: cubit.onScroll),
           MarriageView(),
-          GuestLockWidget(
-            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-            description:
-                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-          ),
+          MySpaceView(),
           GuestLockWidget(
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:

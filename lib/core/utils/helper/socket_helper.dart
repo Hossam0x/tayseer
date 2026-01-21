@@ -29,9 +29,7 @@ class tayseerSocketHelper {
     log('🔧 Initializing socket connection...');
 
     // final String? token = CachNetwork.getStringData(key: 'token');
-    final String? token =
-        'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NGJkN2EyOGI1N2QzMmQ2YjIwYjMyYSIsImVtYWlsIjoia2hhbGVkZWxraGFtaXN5NDc1QGdtYWlsLmNvbSIsInVzZXJUeXBlIjoiVXNlciIsImlhdCI6MTc2ODc0Mzg2MiwiZXhwIjo0OTI0NTAzODYyfQ.n2XdTGx2y0E9bfyzjqx9gar9tPFrSg584exyUHEKUCE';
-
+    final String? token = CachNetwork.getStringData(key: 'token');
     log('Token: $token');
 
     if (token == null) {
@@ -46,7 +44,7 @@ class tayseerSocketHelper {
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
-          .setExtraHeaders({'Authorization': token})
+          .setExtraHeaders({'Authorization': 'Bearer $token'})
           .build(),
     );
 

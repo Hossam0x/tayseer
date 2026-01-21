@@ -46,6 +46,7 @@ class EmptySessionsState extends StatelessWidget {
   // ✅ المحتوى الكامل (للصفحة الفارغة بالكامل)
   Widget _buildFullContent() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         AppImage(AssetsData.noSessionHistoryIcon, width: 268.w),

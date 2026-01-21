@@ -1,5 +1,5 @@
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/features/advisor/session/view/widget/custom_sliver_app_bar_session.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/widget/custom_sliver_app_bar_session.dart';
 
 class SessionDetailsBody extends StatelessWidget {
   const SessionDetailsBody({super.key});
