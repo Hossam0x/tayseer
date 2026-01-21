@@ -41,13 +41,13 @@ class HomePostFeed extends StatelessWidget {
             listener: _handleDeleteFeedback, // دالة التنفيذ
           ),
 
-          // 4. archive post Listener
+          // 4. block user Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: (prev, curr) =>
                 prev.blockUserActionState != curr.blockUserActionState,
             listener: _handleBlockFeedback,
           ),
-
+          // 5. archive post Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: _shouldListenToArchive, // دالة الشرط
             listener: _handleArchiveFeedback, // دالة التنفيذ
@@ -341,6 +341,14 @@ class _PostItemState extends State<_PostItem> {
       onHide: _hidePost,
       onBlock: _blockUser,
       onArchive: _archivePost,
+      onEdit: _editPost,
+    );
+  }
+
+  void _editPost(PostModel post) {
+    context.pushNamed(
+      AppRouter.kAddPostView,
+      arguments: {"post": post, "isEdit": true},
     );
   }
 
