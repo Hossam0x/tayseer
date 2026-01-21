@@ -41,11 +41,10 @@ class ApiService {
     dynamic data,
     bool? isAuth,
     Map<String, dynamic>? headers,
+    Map<String, dynamic>? query, // 👈 كويري
   }) async {
     try {
       final mergedHeaders = {
-        // 'Accept-Language': selectedLanguage ?? 'ar',
-        // 'Accept': 'application/json',
         'Authorization': "Bearer ${CachNetwork.getStringData(key: 'token')}",
         ...?headers,
       };
@@ -53,6 +52,7 @@ class ApiService {
       var response = await _dio.post(
         "$kbaseUrl$endPoint",
         data: isFromData ? FormData.fromMap(data) : data,
+        queryParameters: query, // 👈 هنا
         options: Options(
           headers: mergedHeaders,
           validateStatus: (status) => status! >= 200 && status < 300,

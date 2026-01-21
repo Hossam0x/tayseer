@@ -540,6 +540,65 @@ class HomeCubit extends Cubit<HomeState> {
       );
     });
   }
+ 
+   // ═══════════════════════════════════════════════════════════════════════════
+  // 🗑 Archive POST
+  // ═══════════════════════════════════════════════════════════════════════════
+  void archivePost({required String postId}) {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    // ✅ حفظ البيانات الأصلية للـ Rollback
+    final originalIndex = state.posts.indexWhere((p) => p.postId == postId);
+    final originalCategoryId = state.selectedCategoryId;
+
+    // 1. Optimistic Update
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+    emit(
+      state
+          .updateCategoryPosts(
+            state.selectedCategoryId,
+            (data) => data.copyWith(posts: updatedPosts),
+          )
+          .copyWith(archivePostActionState: CubitStates.initial),
+    );
+
+    // 2. Server Request
+    homeRepository.archivePost(postId: postId).then((result) {
+      result.fold(
+        (failure) {
+          log('>>>>>>>>>>>>>>>>> Archive Post Failed: ${failure.message}');
+
+          // ✅ Rollback باستخدام الـ Helper Method
+          emit(
+            state.insertPostInCategory(
+              categoryId: originalCategoryId,
+              post: post,
+              index: originalIndex,
+            ),
+          );
+
+          emit(
+            state.copyWith(
+              archivePostActionState: CubitStates.failure,
+              archivePostMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          log('>>>>>>>>>>>>>>>>> Archive Post Success: $message');
+
+          emit(
+            state.copyWith(
+              archivePostActionState: CubitStates.success,
+              archivePostMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+  
   // ═══════════════════════════════════════════════════════════════════════════
   // 👁️ TOGGLE HIDE POST
   // ═══════════════════════════════════════════════════════════════════════════

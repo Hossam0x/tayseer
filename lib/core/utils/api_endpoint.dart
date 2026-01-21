@@ -29,4 +29,5 @@ class ApiEndPoint {
   static const String savePost = '/saved-posts';
   static const String deletePost = '/posts/delete/';
   static const String hidePost = '/hidden/post';
+  static const String archivePost = '/posts/archive/';
 }
