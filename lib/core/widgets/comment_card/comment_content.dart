@@ -1,4 +1,5 @@
 import 'package:tayseer/core/models/comment_model.dart';
+import 'package:tayseer/core/widgets/comment_card/comment_actions_menu.dart';
 import 'package:tayseer/my_import.dart';
 
 /// CommentContent - Displays comment information
@@ -46,6 +47,7 @@ class CommentContent extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _CommentHeader(
+                  isOwner: comment.isOwner,
                   name: comment.commenter.name,
                   isVerified: comment.commenter.isVerified,
                 ),
@@ -103,8 +105,13 @@ class _CommentAvatar extends StatelessWidget {
 class _CommentHeader extends StatelessWidget {
   final String name;
   final bool isVerified;
+  final bool isOwner;
 
-  const _CommentHeader({required this.name, required this.isVerified});
+  const _CommentHeader({
+    required this.name,
+    required this.isVerified,
+    required this.isOwner,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +126,10 @@ class _CommentHeader extends StatelessWidget {
         Gap(4.w),
         if (isVerified) Icon(Icons.verified, color: Colors.blue, size: 14.sp),
         const Spacer(),
-        Icon(Icons.more_vert, color: Colors.grey.shade400, size: 20.sp),
+        CommentActionsMenu(
+          isOwner: isOwner,
+          onActionSelected: (CommentMenuAction action) {},
+        ),
       ],
     );
   }
