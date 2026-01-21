@@ -1,6 +1,5 @@
 import 'package:tayseer/features/shared/auth/model/guest_response_model.dart';
 import 'package:tayseer/features/shared/auth/model/last_login_model.dart';
-import 'package:tayseer/features/shared/auth/model/register_auth_google_apple_model.dart';
 import 'package:tayseer/features/shared/auth/model/login_data.dart';
 import 'package:dartz/dartz.dart';
 
@@ -11,13 +10,12 @@ abstract class AuthRepo {
 
   Future<Either<Failure, RegisterResponse>> logInUser({required String email});
   Future<Either<Failure, GuestResponseModel>> guestLogin();
-  Future<Either<Failure, AccountResponse>> authGoogle({
+  Future<Either<Failure, RegisterResponse>> authGoogle({
     required String idToken,
-    String userType = 'user',
+  
   });
-  Future<Either<Failure, AccountResponse>> authApple({
+  Future<Either<Failure, RegisterResponse>> authApple({
     required String idToken,
-    String userType = 'user',
   });
   Future<Either<Failure, void>> resendOtp();
   Future<Either<Failure, LastLoginResponse>> getLastLogIn();

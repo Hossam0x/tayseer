@@ -1,3 +1,4 @@
+import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:dartz/dartz.dart';
@@ -36,5 +37,31 @@ class StoriesRepositoryImpl implements StoriesRepository {
   @override
   void markStoryAsViewed({required String storyId}) {
     apiService.patch(endPoint: ApiEndPoint.storyViews + storyId);
+  }
+
+  @override
+  Future<Either<Failure, void>> createStories({required XFile image}) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/stories/create',
+        isFromData: true,
+
+        data: {'images': await uploadImageToApi(image)},
+      );
+
+      final success = response['success'] ?? false;
+
+      if (success) {
+        return right(null);
+      } else {
+        return left(ServerFailure(response['message'] ?? 'فشل إنشاء المنشور'));
+      }
+    } on DioException catch (error) {
+      final message =
+          error.response?.data['message'] ?? 'خطأ في الاتصال بالخادم';
+      return left(ServerFailure(message));
+    } catch (error) {
+      return left(ServerFailure('حدث خطأ غير متوقع: $error'));
+    }
   }
 }

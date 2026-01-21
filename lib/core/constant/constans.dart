@@ -12,8 +12,9 @@ bool get isArabic => selectedLanguage == 'ar';
 bool kIsUserGuest = false;
 const String kbaseUrl = 'https://tayser-app.net/api/v1';
 // bool kShowOnBoarding = false;
-LoginData? kCurrentUserData;
+UserModel? kCurrentUserData;
 Gender? selectedGender;
+
 UserTypeEnum? selectedUserType = UserTypeEnum.user;
 String phone = '201009119795';
 bool get isUserAnonymous =>

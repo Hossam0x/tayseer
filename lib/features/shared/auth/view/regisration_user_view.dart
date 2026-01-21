@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/view/listeners/guest_login_listeners.dart';
+import 'package:tayseer/features/shared/auth/view/widget/build_login_button.dart';
 import 'package:tayseer/features/shared/auth/view/widget/last_login_bubble.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -24,7 +25,7 @@ class _RegisrationViewState extends State<RegisrationView> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false, // يمنع الرجوع
+      canPop: false,
       onPopInvoked: (didPop) {
         if (didPop) return;
       },
@@ -90,10 +91,9 @@ class _RegisrationViewState extends State<RegisrationView> {
                         isSuccess: true,
                       ),
                     );
-
-                    Future.delayed(const Duration(seconds: 2), () {
+                    if (selectedUserType == UserTypeEnum.user) {
                       context.pushReplacementNamed(AppRouter.kUserLayoutView);
-                    });
+                    }
                   }
                 },
                 builder: (context, state) {
@@ -103,13 +103,14 @@ class _RegisrationViewState extends State<RegisrationView> {
                       Column(
                         children: [
                           GestureDetector(
-                            onTap: () async {
-                              await CachNetwork.setData(
-                                key: 'user_type',
-                                value: UserTypeEnum.asConsultant.name,
+                            onTap: () {
+                              setState(() {
+                                selectedUserType = UserTypeEnum.asConsultant;
+                              });
+                              debugPrint('selectedUserType$selectedUserType');
+                              context.pushNamed(
+                                AppRouter.kRegisrationAdvisorView,
                               );
-                              selectedUserType = UserTypeEnum.asConsultant;
-                              context.pushNamed(AppRouter.kRegisterView);
                             },
                             child: Align(
                               alignment: Alignment.topRight,
@@ -146,8 +147,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                           Hero(
                             tag: 'app_logo',
                             child: SizedBox(
-                              height: context.height * 0.35,
-                              width: context.width * 0.75,
+                              height: context.height * 0.25,
+                              width: context.width * 0.65,
                               child: AppImage(
                                 AssetsData.kAppLogotayseerImage,
                                 fit: BoxFit.cover,
@@ -198,18 +199,17 @@ class _RegisrationViewState extends State<RegisrationView> {
                                           ),
                                         ),
 
-                                      _buildLoginButton(
+                                      buildLoginButton(
                                         context,
-                                        color1: HexColor('e9bd7b'),
-                                        color2: HexColor('ce8f93'),
-                                        color3: HexColor('b362ac'),
+
+                                        colors: [
+                                          HexColor('e9bd7b'),
+                                          HexColor('ce8f93'),
+                                          HexColor('b362ac'),
+                                        ],
                                         text: context.tr('login_email'),
                                         icon: AssetsData.kEmailImage,
                                         onTap: () async {
-                                          await CachNetwork.setData(
-                                            key: 'user_type',
-                                            value: UserTypeEnum.user.name,
-                                          );
                                           selectedUserType = UserTypeEnum.user;
                                           context.pushNamed(
                                             AppRouter.kRegisterView,
@@ -247,14 +247,20 @@ class _RegisrationViewState extends State<RegisrationView> {
                                           ),
                                         ),
 
-                                      _buildLoginButton(
+                                      buildLoginButton(
                                         context,
-                                        color1: HexColor('b279ad'),
-                                        color2: HexColor('9499c7'),
-                                        color3: HexColor('80b0d8'),
+                                        colors: [
+                                          HexColor('b279ad'),
+                                          HexColor('9499c7'),
+                                          HexColor('80b0d8'),
+                                        ],
+
                                         text: context.tr('login_google'),
                                         icon: AssetsData.kGoogleImage,
-                                        onTap: authCubit.signInWithGoogle,
+                                        onTap: () {
+                                          selectedUserType = UserTypeEnum.user;
+                                          authCubit.signInWithGoogle();
+                                        },
                                       ),
                                     ],
                                   ),
@@ -288,11 +294,13 @@ class _RegisrationViewState extends State<RegisrationView> {
                                             ),
                                           ),
 
-                                        _buildLoginButton(
+                                        buildLoginButton(
                                           context,
-                                          color1: HexColor('b279ad'),
-                                          color2: HexColor('9499c7'),
-                                          color3: HexColor('80b0d8'),
+                                          colors: [
+                                            HexColor('b279ad'),
+                                            HexColor('9499c7'),
+                                            HexColor('80b0d8'),
+                                          ],
                                           text: context.tr('login_apple'),
                                           icon: AssetsData.kAppleIcon,
                                           onTap: authCubit.signInWithApple,
@@ -326,57 +334,6 @@ class _RegisrationViewState extends State<RegisrationView> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoginButton(
-    BuildContext ctx, {
-    required Color color1,
-    required Color color2,
-    required Color color3,
-    required String text,
-    required String icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color1, color2, color3],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomCenter,
-          ),
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-              ),
-              child: AppImage(
-                icon,
-                width: ctx.width * 0.055,
-                height: ctx.height * 0.025,
-              ),
-            ),
-            SizedBox(width: ctx.width * 0.02),
-            Flexible(
-              child: Text(
-                text,
-                overflow: TextOverflow.ellipsis,
-                style: Styles.textStyle14.copyWith(color: Colors.white),
-              ),
-            ),
-          ],
         ),
       ),
     );
