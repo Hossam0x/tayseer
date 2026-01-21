@@ -9,6 +9,7 @@ import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:crypto/crypto.dart';
+import 'package:tayseer/firebase_options.dart';
 
 import '../../../../my_import.dart';
 import '../model/certificate_model.dart';
@@ -22,6 +23,8 @@ class AuthCubit extends Cubit<AuthState> {
   final GlobalKey<FormState> registerFormKey = GlobalKey<FormState>();
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
+    clientId: DefaultFirebaseOptions.currentPlatform.iosClientId,
+
     // لو محتاج idToken لازم تضيف serverClientId
     // serverClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
   );

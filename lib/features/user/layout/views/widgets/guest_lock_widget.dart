@@ -5,9 +5,11 @@ class GuestLockWidget extends StatelessWidget {
     super.key,
     required this.message,
     required this.description,
+    this.onTap,
   });
   final String message;
   final String description;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -65,14 +67,7 @@ class GuestLockWidget extends StatelessWidget {
                     radius: 16,
                     useGradient: true,
                     title: 'إنشاء حساب',
-                    onPressed: () {
-                      // showDialog(
-                      //   context: context,
-                      //   builder: (context) {
-                      //     return Dialog(child: const LockPopUp());
-                      //   },
-                      // );
-                    },
+                    onPressed: onTap,
                   ),
                 ],
               ),

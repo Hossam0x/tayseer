@@ -15,7 +15,7 @@ class UserLayOutViewBody extends StatelessWidget {
 
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
-        final pages = _getPages(cubit);
+        final pages = _getPages(context,cubit);
 
         return Scaffold(
           body: Stack(
@@ -38,7 +38,7 @@ class UserLayOutViewBody extends StatelessWidget {
     );
   }
 
-  List<Widget> _getPages(LayoutCubit cubit) {
+  List<Widget> _getPages(BuildContext context, LayoutCubit cubit) {
     switch (selectedUserType) {
       case UserTypeEnum.user:
         return [
@@ -48,6 +48,9 @@ class UserLayOutViewBody extends StatelessWidget {
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
+            onTap: () {
+              context.pushNamed(AppRouter.kChooseGenderView);
+            },
           ),
           GuestLockWidget(
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
