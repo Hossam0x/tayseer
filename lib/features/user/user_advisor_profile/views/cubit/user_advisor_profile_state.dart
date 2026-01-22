@@ -1,11 +1,11 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/features/user/advisor_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
 import 'package:tayseer/my_import.dart';
 
-class UserProfileState extends Equatable {
+class UserAdvisorProfileState extends Equatable {
   final CubitStates profileState;
-  final UserProfileModel? profile;
+  final UserAdvisorProfileModel? profile;
   final String? profileErrorMessage;
 
   final CubitStates postsState;
@@ -23,7 +23,7 @@ class UserProfileState extends Equatable {
   final String? shareMessage;
   final bool? isShareAdded;
 
-  const UserProfileState({
+  const UserAdvisorProfileState({
     this.profileState = CubitStates.initial,
     this.profile,
     this.profileErrorMessage,
@@ -41,9 +41,9 @@ class UserProfileState extends Equatable {
     this.isShareAdded,
   });
 
-  UserProfileState copyWith({
+  UserAdvisorProfileState copyWith({
     CubitStates? profileState,
-    UserProfileModel? profile,
+    UserAdvisorProfileModel? profile,
     String? profileErrorMessage,
     CubitStates? postsState,
     List<PostModel>? posts,
@@ -58,7 +58,7 @@ class UserProfileState extends Equatable {
     String? shareMessage,
     bool? isShareAdded,
   }) {
-    return UserProfileState(
+    return UserAdvisorProfileState(
       profileState: profileState ?? this.profileState,
       profile: profile ?? this.profile,
       profileErrorMessage: profileErrorMessage ?? this.profileErrorMessage,

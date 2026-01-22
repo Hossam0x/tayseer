@@ -57,6 +57,8 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
         builder: (context, state) {
           final cubit = context.read<EventDetailCubit>();
           return CustomScrollView(
+            physics: ClampingScrollPhysics(),
+
             slivers: [
               CustomSliverAppBarEvent(
                 title: context.tr('edit_event'),

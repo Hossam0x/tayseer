@@ -17,6 +17,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   late TextEditingController _nameController;
   late TextEditingController _idController;
   late TextEditingController _bioController;
+  late TextEditingController _usernameController;
 
   // ⭐ خرائط تحويل للتخصصات
   final Map<String, String> _specializationMapping = {
@@ -145,6 +146,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _nameController = TextEditingController();
     _idController = TextEditingController();
     _bioController = TextEditingController();
+    _usernameController = TextEditingController();
   }
 
   @override
@@ -152,6 +154,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _nameController.dispose();
     _idController.dispose();
     _bioController.dispose();
+    _usernameController.dispose();
     _disposeVideoPlayer();
     super.dispose();
   }
@@ -312,6 +315,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _nameController.text = state.profile!.name;
     _idController.text = state.profile!.userName;
     _bioController.text = state.profile!.aboutYou ?? '';
+    _usernameController.text = state.profile!.userName;
 
     // ⭐ تحويل القيم من الباكند إلى قيم للعرض
     _selectedPosition = _mapFromBackend(
@@ -464,11 +468,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           hint: 'أدخل اسمك',
                                         ),
                                         Gap(11.h),
-                                        Gap(11.h),
                                         ProfileTextField(
-                                          controller: TextEditingController(
-                                            text: state.profile?.userName ?? '',
-                                          ),
+                                          controller: _usernameController,
                                           onChanged: (value) =>
                                               cubit.updateUsername(value),
                                           hint: 'اسم المستخدم',

@@ -26,7 +26,7 @@ class RegisrationAdvisorView extends StatelessWidget {
               },
               listener: (context, state) {
                 if (state.fromScreen != 'registration') return;
-
+                if(selectedUserType==UserTypeEnum.user) return;
                 if (state.signInWithGoogleState == CubitStates.loading ||
                     state.signInWithAppleState == CubitStates.loading ||
                     state.registerState == CubitStates.loading) {
@@ -58,6 +58,25 @@ class RegisrationAdvisorView extends StatelessWidget {
                     state.authGoogleState == CubitStates.success) {
                   if (Navigator.canPop(context)) {
                     context.pop();
+                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    CustomSnackBar(
+                      context,
+                      text: context.tr('success_login'),
+                      isSuccess: true,
+                    ),
+                  );
+                  if (selectedUserType == UserTypeEnum.asConsultant) {
+                    context.pushReplacementNamed(
+                      AppRouter.kPersonalInfoAsConsultantView,
+                    );
+                  }
+                }
+                if (state.signInWithAppleState == CubitStates.success &&
+                    state.authAppleState == CubitStates.success) {
+                  if (Navigator.canPop(context)) {
+                    context.pop(); // إغلاق أي dialog
                   }
 
                   ScaffoldMessenger.of(context).showSnackBar(

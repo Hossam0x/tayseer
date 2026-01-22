@@ -7,7 +7,7 @@ import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_images_grid.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
-import 'package:tayseer/features/user/advisor_profile/views/user_profile_view.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 
 /// ProfilePostCard - نسخة خاصة بالـ Profile
@@ -228,8 +228,10 @@ class _PostUserHeader extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            UserProfileView(advisorId: post.advisorId, advisorName: post.name),
+        builder: (context) => UserAdvisorProfileView(
+          advisorId: post.advisorId,
+          advisorName: post.name,
+        ),
       ),
     );
   }
