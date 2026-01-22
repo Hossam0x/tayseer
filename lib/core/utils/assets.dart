@@ -1,7 +1,7 @@
 abstract class AssetsData {
   //////////////////////images//////////////////////
   static const String kAppLogo = "assets/images/app_logo.png";
-  static const String kAppLogoGif = "assets/images/app_logo_gif.gif";
+  static const String kAppLogoGif = "assets/images/appl_logo_gif.gif";
   static const String kAppLogotayseerImage = "assets/images/app_logo_t.png";
   static const String ksplashImage =
       "assets/images/background_splash_Image.png";
