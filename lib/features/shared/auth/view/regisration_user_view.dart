@@ -62,7 +62,10 @@ class _RegisrationViewState extends State<RegisrationView> {
                   if (state.signInWithGoogleState == CubitStates.failure ||
                       state.signInWithAppleState == CubitStates.failure ||
                       state.registerState == CubitStates.failure ||
-                      state.authGoogleState == CubitStates.failure) {
+                      state.authGoogleState == CubitStates.failure||
+                  state.authAppleState== CubitStates.failure
+
+                  ) {
                     // إغلاق أي dialog مفتوح
                     if (Navigator.canPop(context)) {
                       context.pop();
