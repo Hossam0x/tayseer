@@ -48,7 +48,7 @@ import 'package:tayseer/features/shared/auth/view/select_session_duration_view.d
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
-import 'package:tayseer/features/user/advisor_profile/views/user_profile_view.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
 import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
@@ -317,7 +317,7 @@ abstract class AppRouter {
       case kUserProfileView:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
-          builder: (_) => UserProfileView(
+          builder: (_) => UserAdvisorProfileView(
             advisorId: args['advisorId'] as String,
             advisorName: args['advisorName'] as String?,
           ),

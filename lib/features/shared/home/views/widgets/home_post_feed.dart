@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -21,9 +21,32 @@ class HomePostFeed extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: homeCubit,
-      child: BlocListener<HomeCubit, HomeState>(
-        listenWhen: _shouldListenToShare,
-        listener: _handleShareState,
+      child: MultiBlocListener(
+        listeners: [
+          // 📢 1. Share Listener
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: _shouldListenToShare, // دالة الشرط
+            listener: _handleShareFeedback, // دالة التنفيذ
+          ),
+
+          // 💾 2. Save Listener
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: _shouldListenToSave, // دالة الشرط
+            listener: _handleSaveFeedback, // دالة التنفيذ
+          ),
+
+          // 3. delete post Listener
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: _shouldListenToDelete, // دالة الشرط
+            listener: _handleDeleteFeedback, // دالة التنفيذ
+          ),
+
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: (prev, curr) =>
+                prev.blockUserActionState != curr.blockUserActionState,
+            listener: _handleBlockFeedback,
+          ),
+        ],
         child: BlocSelector<HomeCubit, HomeState, _FeedState>(
           selector: _selectFeedState,
           builder: (context, state) => _buildContent(context, state),
@@ -32,11 +55,35 @@ class HomePostFeed extends StatelessWidget {
     );
   }
 
-  bool _shouldListenToShare(HomeState prev, HomeState curr) =>
-      prev.shareActionState != curr.shareActionState &&
-      curr.shareActionState != CubitStates.initial;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🎧 Listen Conditions (شروط الاستماع)
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  void _handleShareState(BuildContext context, HomeState state) {
+  /// هل تغيرت حالة الشير؟
+  bool _shouldListenToShare(HomeState prev, HomeState curr) {
+    return prev.shareActionState != curr.shareActionState &&
+        curr.shareActionState != CubitStates.initial;
+  }
+
+  /// هل تغيرت حالة الحفظ؟
+  bool _shouldListenToSave(HomeState prev, HomeState curr) {
+    return prev.saveActionState != curr.saveActionState &&
+        curr.saveActionState != CubitStates.initial;
+  }
+
+  /// هل تغيرت حالة الحذف؟
+
+  bool _shouldListenToDelete(HomeState prev, HomeState curr) {
+    return prev.deletePostActionState != curr.deletePostActionState &&
+        curr.deletePostActionState != CubitStates.initial;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🎮 Action Handlers (دوال تنفيذ التوست)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// التعامل مع توست المشاركة
+  void _handleShareFeedback(BuildContext context, HomeState state) {
     final message = state.shareMessage;
     switch (state.shareActionState) {
       case CubitStates.success:
@@ -52,6 +99,36 @@ class HomePostFeed extends StatelessWidget {
     }
   }
 
+  /// التعامل مع توست الحذف
+  void _handleDeleteFeedback(BuildContext context, HomeState state) {
+    final message = state.deletePostMessage;
+    switch (state.deletePostActionState) {
+      case CubitStates.success:
+        AppToast.success(context, message ?? 'تمت العملية بنجاح');
+        break;
+      case CubitStates.failure:
+        AppToast.error(context, message ?? 'حدث خطأ أثناء الحذف');
+        break;
+      default:
+        break;
+    }
+  }
+
+  /// التعامل مع توست الحفظ
+  void _handleSaveFeedback(BuildContext context, HomeState state) {
+    final message = state.saveMessage;
+    switch (state.saveActionState) {
+      case CubitStates.success:
+        AppToast.success(context, message ?? 'تمت العملية بنجاح');
+        break;
+      case CubitStates.failure:
+        AppToast.error(context, message ?? 'حدث خطأ أثناء الحفظ');
+        break;
+      default:
+        break;
+    }
+  }
+
   _FeedState _selectFeedState(HomeState state) => _FeedState(
     postIds: state.posts.map((p) => p.postId).toList(),
     status: state.postsState,
@@ -59,6 +136,36 @@ class HomePostFeed extends StatelessWidget {
     error: state.postsErrorMessage,
     isAllCategory: state.selectedCategoryId == null,
   );
+
+  void _handleBlockFeedback(BuildContext context, HomeState state) {
+    switch (state.blockUserActionState) {
+      case CubitStates.loading:
+        // ✅ اعرض الـ Loading
+        CustomloadingApp.show(context);
+        break;
+
+      case CubitStates.success:
+        // ✅ أغلق الـ Loading واعرض Toast
+        CustomloadingApp.hide(context);
+        AppToast.success(
+          context,
+          state.blockUserMessage ?? 'تم حظر المستخدم بنجاح',
+        );
+        break;
+
+      case CubitStates.failure:
+        // ❌ أغلق الـ Loading واعرض Error
+        CustomloadingApp.hide(context);
+        AppToast.error(
+          context,
+          state.blockUserMessage ?? 'حدث خطأ أثناء الحظر',
+        );
+        break;
+
+      default:
+        break;
+    }
+  }
 
   Widget _buildContent(BuildContext context, _FeedState state) {
     // حالة التحميل
@@ -179,7 +286,7 @@ class _PostItem extends StatefulWidget {
 
 class _PostItemState extends State<_PostItem> {
   // ✅ Cache stream & callbacks - created once in initState
-  late final Stream<PostModel> _postStream;
+  late final Stream<PostModel?> _postStream;
   late final PostCallbacks _callbacks;
 
   @override
@@ -188,32 +295,43 @@ class _PostItemState extends State<_PostItem> {
     _initializeStreamAndCallbacks();
   }
 
+  // في _initializeStreamAndCallbacks
   void _initializeStreamAndCallbacks() {
-    // ✅ Create stream once with distinct to prevent duplicate updates
+    // ✅ الـ Stream ممكن يرجع null لو البوست اتحذف
     _postStream = widget.homeCubit.stream
         .map(
-          (state) => state.posts.firstWhere(
-            (p) => p.postId == widget.postId,
-            orElse: () => _getFallbackPost(state),
-          ),
-        )
+          (state) =>
+              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+        ) // ✅ يرجع null لو مش موجود
         .distinct();
 
-    // ✅ Create callbacks once
     _callbacks = PostCallbacks(
-      postUpdatesStream: _postStream,
+      postUpdatesStream:
+          _postStream, // ✅ Stream<PostModel?> مش Stream<PostModel>
       onReactionChanged: _onReaction,
       onShareTap: _onShare,
       onHashtagTap: _onHashtagTap,
+      onSave: _onSave,
+      onDelete: _onDelete,
+      onHide: _hidePost,
+      onBlock: _blockUser,
     );
   }
 
-  PostModel _getFallbackPost(HomeState state) {
-    // Try to get existing post or return current one
-    final existingPost = state.posts
-        .where((p) => p.postId == widget.postId)
-        .firstOrNull;
-    return existingPost!;
+
+  void _blockUser(String userId , String postId) {
+    widget.homeCubit.blockUser(visiblePostId: postId, advisorId: userId);
+  }
+  void _hidePost(String postId) {
+    widget.homeCubit.toggleHidePost(postId: postId);
+  }
+
+  void _onDelete(String postId) {
+    widget.homeCubit.deletePost(postId: postId);
+  }
+
+  void _onSave(String postId) {
+    widget.homeCubit.toggleSavePost(postId: postId);
   }
 
   void _onReaction(String id, ReactionType? type) {

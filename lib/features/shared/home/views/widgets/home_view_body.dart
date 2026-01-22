@@ -109,6 +109,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
           ]);
         },
         child: CustomScrollView(
+
           physics: const ClampingScrollPhysics(),
           cacheExtent: 500.0,
           controller: _scrollController,

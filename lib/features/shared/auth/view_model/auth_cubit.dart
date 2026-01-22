@@ -448,7 +448,8 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signInWithApple() async {
-    emit(state.copyWith(signInWithAppleState: CubitStates.loading));
+    emit(state.copyWith(signInWithAppleState: CubitStates.loading,         fromScreen: 'registration',
+    ));
 
     try {
       // 🔐 1️⃣ Generate nonce
@@ -473,17 +474,27 @@ class AuthCubit extends Cubit<AuthState> {
           state.copyWith(
             signInWithAppleState: CubitStates.failure,
             errorMessage: "Apple ID Token is null",
+            fromScreen: 'registration',
+
           ),
         );
+        emit(state.copyWith(signInWithAppleState: CubitStates.initial));
+
       }
       emit(state.copyWith(signInWithAppleState: CubitStates.success));
+      emit(state.copyWith(signInWithAppleState: CubitStates.initial));
+
     } catch (e) {
       emit(
         state.copyWith(
           signInWithAppleState: CubitStates.failure,
-          errorMessage: 'فشل تسجيل الدخول باستخدام Apple',
+          errorMessage: "تم إلغاء العملية",
+          fromScreen: 'registration',
+
         ),
       );
+      emit(state.copyWith(signInWithAppleState: CubitStates.initial));
+
     }
   }
 
@@ -515,6 +526,7 @@ class AuthCubit extends Cubit<AuthState> {
           errorMessage: e.toString(),
         ),
       );
+
     }
   }
 

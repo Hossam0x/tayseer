@@ -19,12 +19,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   late TabController _tabController;
   late ProfileCubit _profileCubit;
 
-  final List<String> _tabs = [
-    // "الاستفسارات",
-    "المنشورات",
-    "المؤهلات",
-    "التقييمات",
-  ];
+  final List<String> _tabs = ["المنشورات", "المؤهلات", "التقييمات"];
 
   // 🔹 متغير لحفظ آخر تاب تم الضغط عليه
   int _previousTabIndex = 0;
@@ -112,43 +107,44 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                labelPadding: EdgeInsets.symmetric(horizontal: 8.w),
-                // tabAlignment: TabAlignment.start,
-                indicatorColor: AppColors.blackColor,
-                indicatorSize: TabBarIndicatorSize.label,
-                indicatorPadding: EdgeInsets.zero,
-                indicator: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: AppColors.blackColor,
-                      width: 1.5.h,
+              Transform.translate(
+                offset: Offset(110.w, 0),
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  labelPadding: EdgeInsets.symmetric(horizontal: 8.w),
+                  indicatorColor: AppColors.blackColor,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  indicatorPadding: EdgeInsets.zero,
+                  indicator: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.blackColor,
+                        width: 1.5.h,
+                      ),
                     ),
                   ),
+                  dividerHeight: 0,
+                  labelColor: AppColors.blackColor,
+                  unselectedLabelColor: AppColors.secondary400,
+                  labelStyle: Styles.textStyle16Bold,
+                  unselectedLabelStyle: Styles.textStyle14,
+                  tabs: _tabs.map((tab) {
+                    return Tab(
+                      height: 33.w,
+                      child: Column(
+                        children: [
+                          Text(tab),
+                          Gap(4.h),
+                          Container(width: 75.w, color: Colors.transparent),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onTap: _handleTabTap,
                 ),
-                dividerHeight: 0,
-                labelColor: AppColors.blackColor,
-                unselectedLabelColor: AppColors.secondary400,
-                labelStyle: Styles.textStyle16Bold,
-                unselectedLabelStyle: Styles.textStyle14,
-                tabs: _tabs.map((tab) {
-                  return Tab(
-                    height: 33.w,
-                    child: Column(
-                      children: [
-                        Text(tab),
-                        Gap(4.h),
-                        Container(width: 75.w, color: Colors.transparent),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                // 🔹 استخدام الدالة الجديدة بدلاً من animateTo مباشرة
-                onTap: _handleTabTap,
               ),
             ],
           ),
@@ -160,8 +156,6 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
 
   Widget _buildTabContent() {
     switch (_tabController.index) {
-      // case 0:
-      //   return InquiryTab();
       case 0:
         return PostsTab();
       case 1:

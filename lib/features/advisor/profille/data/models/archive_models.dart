@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 
 // ============================================
 // 📌 USER MODEL

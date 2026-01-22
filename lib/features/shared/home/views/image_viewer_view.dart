@@ -6,7 +6,7 @@ import 'package:tayseer/core/utils/animation/fly_animation.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -45,12 +45,16 @@ class _ImageViewerViewState extends State<ImageViewerView>
   // Drag variables
   double _dragY = 0.0;
   bool _isDragging = false;
+
+  // ✅ متغير جديد للتحكم في حالة الزوم
+  bool _isZoomed = false;
+
   late AnimationController _resetController;
   late Animation<double> _resetAnimation;
 
-  // ✅ Stream subscription (prevent memory leak)
+  // Stream subscription
   late PostModel? _currentPost;
-  StreamSubscription<PostModel>? _postSubscription;
+  StreamSubscription<PostModel?>? _postSubscription;
 
   @override
   void initState() {
@@ -59,7 +63,6 @@ class _ImageViewerViewState extends State<ImageViewerView>
     _pageController = PageController(initialPage: widget.initialIndex);
     _currentPost = widget.post;
 
-    // ✅ Store subscription for cleanup
     _postSubscription = widget.callbacks.postUpdatesStream?.listen(
       _onPostUpdated,
     );
@@ -71,8 +74,16 @@ class _ImageViewerViewState extends State<ImageViewerView>
     _resetController.addListener(_onResetAnimation);
   }
 
-  void _onPostUpdated(PostModel updatedPost) {
-    if (mounted && updatedPost.postId == widget.postId) {
+  void _onPostUpdated(PostModel? updatedPost) {
+    if (!mounted) return;
+
+    // ✅ لو البوست اتحذف (null) -> اخرج
+    if (updatedPost == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    if (updatedPost.postId == widget.postId) {
       setState(() => _currentPost = updatedPost);
     }
   }
@@ -83,7 +94,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
 
   @override
   void dispose() {
-    _postSubscription?.cancel(); // ✅ Prevent memory leak
+    _postSubscription?.cancel();
     _pageController.dispose();
     _showOverlaysNotifier.dispose();
     _resetController.removeListener(_onResetAnimation);
@@ -92,7 +103,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // Gesture Handlers
+  // Gesture Handlers (Vertical Drag for Dismiss)
   // ══════════════════════════════════════════════════════════════════════════
 
   void _onImageTap() {
@@ -101,15 +112,23 @@ class _ImageViewerViewState extends State<ImageViewerView>
   }
 
   void _onVerticalDragStart(DragStartDetails details) {
+    // ✅ إذا كانت الصورة مكبرة، لا تسمح بالسحب للإغلاق
+    if (_isZoomed) return;
+
     _isDragging = true;
     _showOverlaysNotifier.value = false;
   }
 
   void _onVerticalDragUpdate(DragUpdateDetails details) {
+    // ✅ حماية إضافية
+    if (_isZoomed && !_isDragging) return;
+
     setState(() => _dragY += details.delta.dy);
   }
 
   void _onVerticalDragEnd(DragEndDetails details) {
+    if (_isZoomed && !_isDragging) return;
+
     _isDragging = false;
     final screenHeight = MediaQuery.of(context).size.height;
     final threshold = screenHeight * 0.15;
@@ -126,22 +145,6 @@ class _ImageViewerViewState extends State<ImageViewerView>
     }
   }
 
-  void _handleDoubleTap(Offset tapPosition) {
-    if (!_showOverlaysNotifier.value) {
-      _showOverlaysNotifier.value = true;
-    }
-    
-    FlyAnimation.flyWidget(
-      context: context,
-      startOffset: tapPosition,
-      endKey: _reactionDestinationKey,
-      child: _buildFlyingHeart(),
-      onComplete: () {
-        widget.callbacks.onReactionChanged?.call(widget.postId, ReactionType.love);
-      },
-    );
-  }
-
   // ══════════════════════════════════════════════════════════════════════════
   // Navigation
   // ══════════════════════════════════════════════════════════════════════════
@@ -155,10 +158,8 @@ class _ImageViewerViewState extends State<ImageViewerView>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => PostDetailsView(
-          post: post,
-          callbacks: widget.callbacks,
-        ),
+        builder: (_) =>
+            PostDetailsView(post: post, callbacks: widget.callbacks),
       ),
     );
   }
@@ -169,8 +170,10 @@ class _ImageViewerViewState extends State<ImageViewerView>
 
   @override
   Widget build(BuildContext context) {
-    final dragRatio = (_dragY.abs() / MediaQuery.of(context).size.height)
-        .clamp(0.0, 1.0);
+    final dragRatio = (_dragY.abs() / MediaQuery.of(context).size.height).clamp(
+      0.0,
+      1.0,
+    );
     final backgroundOpacity = (1.0 - dragRatio * 2).clamp(0.0, 1.0);
     final scale = (1.0 - dragRatio * 0.3).clamp(0.5, 1.0);
 
@@ -182,17 +185,14 @@ class _ImageViewerViewState extends State<ImageViewerView>
           // Background
           Container(color: Colors.black.withOpacity(backgroundOpacity)),
 
-          // Draggable Content
+          // Draggable Content (Gesture Detector for DISMISS)
           GestureDetector(
             onVerticalDragStart: _onVerticalDragStart,
             onVerticalDragUpdate: _onVerticalDragUpdate,
             onVerticalDragEnd: _onVerticalDragEnd,
             child: Transform.translate(
               offset: Offset(0, _dragY),
-              child: Transform.scale(
-                scale: scale,
-                child: _buildImageSlider(),
-              ),
+              child: Transform.scale(scale: scale, child: _buildImageSlider()),
             ),
           ),
 
@@ -256,27 +256,47 @@ class _ImageViewerViewState extends State<ImageViewerView>
     return PageView.builder(
       controller: _pageController,
       itemCount: widget.images.length,
-      onPageChanged: (index) => setState(() => _currentIndex = index),
+      // ✅ نوقف السكرول الجانبي إذا كانت الصورة مكبرة
+      physics: _isZoomed
+          ? const NeverScrollableScrollPhysics()
+          : const BouncingScrollPhysics(),
+      onPageChanged: (index) {
+        setState(() {
+          _currentIndex = index;
+          _isZoomed = false; // إعادة تعيين الزوم عند تغيير الصورة
+        });
+      },
       itemBuilder: (context, index) {
         final imageUrl = widget.images[index];
-        return GestureDetector(
+
+        // ✅ استخدام الويدجت الجديد المخصص للزوم
+        return _ZoomableImage(
+          imageUrl: imageUrl,
+          postId: widget.postId,
           onTap: _onImageTap,
-          onDoubleTapDown: (details) => _handleDoubleTap(details.globalPosition),
-          child: InteractiveViewer(
-            minScale: 0.5,
-            maxScale: 4.0,
-            child: Center(
-              child: Hero(
-                tag: 'post_${widget.postId}_img_$imageUrl',
-                child: AppImage(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                  width: double.infinity,
-                  height: double.infinity,
-                ),
-              ),
-            ),
-          ),
+          onZoomStatusChanged: (isZoomed) {
+            if (_isZoomed != isZoomed) {
+              setState(() => _isZoomed = isZoomed);
+            }
+          },
+          onDoubleTapReaction: (tapPosition) {
+            // منطق التفاعل (القلب الطائر)
+            if (!_showOverlaysNotifier.value) {
+              _showOverlaysNotifier.value = true;
+            }
+            FlyAnimation.flyWidget(
+              context: context,
+              startOffset: tapPosition,
+              endKey: _reactionDestinationKey,
+              child: _buildFlyingHeart(),
+              onComplete: () {
+                widget.callbacks.onReactionChanged?.call(
+                  widget.postId,
+                  ReactionType.love,
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -296,10 +316,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
             color: Colors.black.withOpacity(0.2),
             borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
             border: Border(
-              top: BorderSide(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
+              top: BorderSide(color: Colors.white.withOpacity(0.3), width: 1.5),
             ),
           ),
           child: SafeArea(
@@ -321,7 +338,10 @@ class _ImageViewerViewState extends State<ImageViewerView>
                   myReaction: post.myReaction,
                   isRepostedByMe: post.isRepostedByMe,
                   onReactionChanged: (reaction) {
-                    widget.callbacks.onReactionChanged?.call(post.postId, reaction);
+                    widget.callbacks.onReactionChanged?.call(
+                      post.postId,
+                      reaction,
+                    );
                   },
                   onCommentTap: () => _navigateToPostDetails(post),
                   onShareTap: () {
@@ -343,6 +363,119 @@ class _ImageViewerViewState extends State<ImageViewerView>
       height: 40.w,
       decoration: const BoxDecoration(shape: BoxShape.circle),
       child: AppImage(getReactionAsset(ReactionType.love), fit: BoxFit.contain),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ✅ ويدجت جديد مخصص لمعالجة الزوم بشكل منفصل (Zoomable Image Widget)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _ZoomableImage extends StatefulWidget {
+  final String imageUrl;
+  final String postId;
+  final VoidCallback onTap;
+  final ValueChanged<bool> onZoomStatusChanged;
+  final Function(Offset) onDoubleTapReaction;
+
+  const _ZoomableImage({
+    required this.imageUrl,
+    required this.postId,
+    required this.onTap,
+    required this.onZoomStatusChanged,
+    required this.onDoubleTapReaction,
+  });
+
+  @override
+  State<_ZoomableImage> createState() => _ZoomableImageState();
+}
+
+class _ZoomableImageState extends State<_ZoomableImage>
+    with SingleTickerProviderStateMixin {
+  final TransformationController _transformationController =
+      TransformationController();
+  late AnimationController _animationController;
+  Animation<Matrix4>? _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+
+    // مراقبة التغييرات في حجم الصورة
+    _transformationController.addListener(() {
+      _checkZoomStatus();
+    });
+  }
+
+  void _checkZoomStatus() {
+    final scale = _transformationController.value.getMaxScaleOnAxis();
+    // إذا كان الاسكيل أكبر من 1 بقليل، نعتبرها مكبرة
+    final isZoomed = scale > 1.01;
+    widget.onZoomStatusChanged(isZoomed);
+  }
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleDoubleTap(TapDownDetails details) {
+    if (_transformationController.value != Matrix4.identity()) {
+      // إذا كانت مكبرة -> أرجعها للحجم الطبيعي
+      final animation =
+          Matrix4Tween(
+            begin: _transformationController.value,
+            end: Matrix4.identity(),
+          ).animate(
+            CurvedAnimation(
+              parent: _animationController,
+              curve: Curves.easeOut,
+            ),
+          );
+
+      _animation = animation;
+
+      _animationController.addListener(() {
+        _transformationController.value = _animation!.value;
+      });
+
+      _animationController.forward(from: 0);
+    } else {
+      // إذا كانت طبيعية -> شغل انيميشن القلب
+      widget.onDoubleTapReaction(details.globalPosition);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onDoubleTapDown: _handleDoubleTap,
+      child: InteractiveViewer(
+        transformationController: _transformationController,
+        minScale: 1.0, // يمنع التصغير أقل من حجم الشاشة
+        maxScale: 4.0, // أقصى حد للتكبير
+        panEnabled: true, // السماح بالتحريك
+        onInteractionUpdate: (_) => _checkZoomStatus(),
+        onInteractionEnd: (_) => _checkZoomStatus(),
+        child: Center(
+          child: Hero(
+            tag: 'post_${widget.postId}_img_${widget.imageUrl}',
+            child: AppImage(
+              widget.imageUrl,
+              fit: BoxFit.contain,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

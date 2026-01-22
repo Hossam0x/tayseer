@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 
 // ============================================
 // 📌 ARCHIVED CHATS STATE

@@ -1,7 +1,7 @@
 // lib/features/advisor/home/cubit/post_details_cubit.dart
 
 import 'package:equatable/equatable.dart';
-import 'package:tayseer/features/shared/home/model/comment_model.dart';
+import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -71,206 +71,224 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     );
   }
   // ═══════════════════════════════════════════════════════════
-// 📌 ADD COMMENT (Optimistic Update + Auto-Scroll)
-// ═══════════════════════════════════════════════════════════
+  // 📌 ADD COMMENT (Optimistic Update + Auto-Scroll)
+  // ═══════════════════════════════════════════════════════════
 
-Future<void> addComment(String content) async {
-  if (content.trim().isEmpty) return;
+  Future<void> addComment(String content) async {
+    if (content.trim().isEmpty) return;
 
-  final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
 
-  const currentUser = CommenterModel(
-    id: 'current_user_id',
-    name: 'أنت',
-    userName: 'current_user',
-    avatar: null,
-    isVerified: false,
-    userType: 'user',
-  );
+    final currentUser = CommenterModel(
+      id: 'current_user_id',
+      name: 'أنت',
+      userName: 'current_user',
+      avatar: myProfileImage,
+      isVerified: false,
+      userType: 'user',
+    );
 
-  final tempComment = CommentModel.temp(
-    tempId: tempId,
-    content: content.trim(),
-    commenter: currentUser,
-  );
+    final tempComment = CommentModel.temp(
+      tempId: tempId,
+      content: content.trim(),
+      commenter: currentUser,
+    );
 
-  emit(state.copyWith(
-    addingCommentState: CubitStates.loading,
-    comments: [tempComment, ...state.comments],
-    pendingCommentTempId: tempId,
-  ));
+    emit(
+      state.copyWith(
+        addingCommentState: CubitStates.loading,
+        comments: [tempComment, ...state.comments],
+        pendingCommentTempId: tempId,
+      ),
+    );
 
-  final result = await homeRepository.addComment(
-    postId: postId,
-    comment: content,
-  );
+    final result = await homeRepository.addComment(
+      postId: postId,
+      comment: content,
+    );
 
-  result.fold(
-    (failure) {
-      final updatedComments = state.comments
-          .where((c) => c.id != tempId)
-          .toList();
+    result.fold(
+      (failure) {
+        final updatedComments = state.comments
+            .where((c) => c.id != tempId)
+            .toList();
 
-      emit(state.copyWith(
-        addingCommentState: CubitStates.failure,
-        errorMessage: failure.message,
-        comments: updatedComments,
-        clearPendingCommentTempId: true,
-      ));
+        emit(
+          state.copyWith(
+            addingCommentState: CubitStates.failure,
+            errorMessage: failure.message,
+            comments: updatedComments,
+            clearPendingCommentTempId: true,
+          ),
+        );
 
-      emit(state.copyWith(addingCommentState: CubitStates.initial));
-    },
-    (newComment) {
-      final updatedComments = state.comments.map((c) {
-        if (c.id == tempId) return newComment;
-        return c;
-      }).toList();
+        emit(state.copyWith(addingCommentState: CubitStates.initial));
+      },
+      (newComment) {
+        final updatedComments = state.comments.map((c) {
+          if (c.id == tempId) return newComment;
+          return c;
+        }).toList();
 
-      emit(state.copyWith(
-        addingCommentState: CubitStates.success,
-        comments: updatedComments,
-        clearPendingCommentTempId: true,
-        // ✅ NEW: Scroll للكومنت الجديد
-        scrollToCommentId: newComment.id,
-        scrollTrigger: state.scrollTrigger + 1,
-      ));
+        emit(
+          state.copyWith(
+            addingCommentState: CubitStates.success,
+            comments: updatedComments,
+            clearPendingCommentTempId: true,
+            // ✅ NEW: Scroll للكومنت الجديد
+            scrollToCommentId: newComment.id,
+            scrollTrigger: state.scrollTrigger + 1,
+          ),
+        );
 
-      emit(state.copyWith(addingCommentState: CubitStates.initial));
-    },
-  );
-}
-
-// ═══════════════════════════════════════════════════════════
-// 📌 ADD REPLY (with Auto-Scroll)
-// ═══════════════════════════════════════════════════════════
-
-Future<void> addReply(String parentCommentId, String content) async {
-  if (content.trim().isEmpty) return;
-
-  emit(state.copyWith(addingReplyState: CubitStates.loading));
-
-  final result = await homeRepository.addReply(
-    commentId: parentCommentId,
-    reply: content,
-  );
-
-  result.fold(
-    (failure) {
-      emit(state.copyWith(
-        addingReplyState: CubitStates.failure,
-        errorMessage: failure.message,
-      ));
-      emit(state.copyWith(addingReplyState: CubitStates.initial));
-    },
-    (newReply) {
-      final updatedComments = _updateCommentById(
-        state.comments,
-        parentCommentId,
-        (parentComment) {
-          final updatedReplies = [newReply, ...parentComment.replies];
-
-          int newCurrentPage = parentComment.repliesCurrentPage;
-          int newTotalPages = parentComment.repliesTotalPages;
-
-          if (newCurrentPage == 0) newCurrentPage = 1;
-          if (newTotalPages == 0) newTotalPages = 1;
-
-          return parentComment.copyWith(
-            replies: updatedReplies,
-            repliesNumber: parentComment.repliesNumber + 1,
-            repliesCurrentPage: newCurrentPage,
-            repliesTotalPages: newTotalPages,
-          );
-        },
-      );
-
-      emit(state.copyWith(
-        addingReplyState: CubitStates.success,
-        comments: updatedComments,
-        clearActiveReplyId: true,
-        // ✅ NEW: Scroll للرد الجديد
-        scrollToCommentId: newReply.id,
-        scrollTrigger: state.scrollTrigger + 1,
-      ));
-
-      emit(state.copyWith(addingReplyState: CubitStates.initial));
-    },
-  );
-}
-
-// ═══════════════════════════════════════════════════════════
-// 📌 TOGGLE REPLY (with Auto-Scroll to comment)
-// ═══════════════════════════════════════════════════════════
-
-void toggleReply(String commentId) {
-  if (state.activeReplyId == commentId) {
-    emit(state.copyWith(clearActiveReplyId: true));
-  } else {
-    emit(state.copyWith(
-      activeReplyId: commentId,
-      clearEditingCommentId: true,
-      // ✅ NEW: Scroll للكومنت اللي هنرد عليه
-      scrollToCommentId: commentId,
-      scrollTrigger: state.scrollTrigger + 1,
-    ));
+        emit(state.copyWith(addingCommentState: CubitStates.initial));
+      },
+    );
   }
-}
 
-// ═══════════════════════════════════════════════════════════
-// 📌 SAVE EDITED COMMENT (with Auto-Scroll)
-// ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // 📌 ADD REPLY (with Auto-Scroll)
+  // ═══════════════════════════════════════════════════════════
 
-Future<void> saveEditedComment({
-  required String commentId,
-  required String newContent,
-  required bool isReply,
-}) async {
-  if (newContent.trim().isEmpty) return;
+  Future<void> addReply(String parentCommentId, String content) async {
+    if (content.trim().isEmpty) return;
 
-  emit(state.copyWith(editingState: CubitStates.loading));
+    emit(state.copyWith(addingReplyState: CubitStates.loading));
 
-  final result = isReply
-      ? await homeRepository.editReply(replyId: commentId, reply: newContent)
-      : await homeRepository.editComment(commentId: commentId, comment: newContent);
+    final result = await homeRepository.addReply(
+      commentId: parentCommentId,
+      reply: content,
+    );
 
-  result.fold(
-    (failure) {
-      emit(state.copyWith(
-        editingState: CubitStates.failure,
-        errorMessage: failure.message,
-      ));
-      emit(state.copyWith(editingState: CubitStates.initial));
-    },
-    (successMessage) {
-      final updatedComments = _updateCommentById(
-        state.comments,
-        commentId,
-        (comment) => comment.copyWith(comment: newContent),
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            addingReplyState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
+        emit(state.copyWith(addingReplyState: CubitStates.initial));
+      },
+      (newReply) {
+        final updatedComments = _updateCommentById(
+          state.comments,
+          parentCommentId,
+          (parentComment) {
+            final updatedReplies = [newReply, ...parentComment.replies];
+
+            int newCurrentPage = parentComment.repliesCurrentPage;
+            int newTotalPages = parentComment.repliesTotalPages;
+
+            if (newCurrentPage == 0) newCurrentPage = 1;
+            if (newTotalPages == 0) newTotalPages = 1;
+
+            return parentComment.copyWith(
+              replies: updatedReplies,
+              repliesNumber: parentComment.repliesNumber + 1,
+              repliesCurrentPage: newCurrentPage,
+              repliesTotalPages: newTotalPages,
+            );
+          },
+        );
+
+        emit(
+          state.copyWith(
+            addingReplyState: CubitStates.success,
+            comments: updatedComments,
+            clearActiveReplyId: true,
+            // ✅ NEW: Scroll للرد الجديد
+            scrollToCommentId: newReply.id,
+            scrollTrigger: state.scrollTrigger + 1,
+          ),
+        );
+
+        emit(state.copyWith(addingReplyState: CubitStates.initial));
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 TOGGLE REPLY (with Auto-Scroll to comment)
+  // ═══════════════════════════════════════════════════════════
+
+  void toggleReply(String commentId) {
+    if (state.activeReplyId == commentId) {
+      emit(state.copyWith(clearActiveReplyId: true));
+    } else {
+      emit(
+        state.copyWith(
+          activeReplyId: commentId,
+          clearEditingCommentId: true,
+          // ✅ NEW: Scroll للكومنت اللي هنرد عليه
+          scrollToCommentId: commentId,
+          scrollTrigger: state.scrollTrigger + 1,
+        ),
       );
+    }
+  }
 
-      emit(state.copyWith(
-        editingState: CubitStates.success,
-        comments: updatedComments,
-        clearEditingCommentId: true,
-        // ✅ NEW: Scroll للكومنت اللي اتعدل
-        scrollToCommentId: commentId,
-        scrollTrigger: state.scrollTrigger + 1,
-      ));
-      
-      emit(state.copyWith(editingState: CubitStates.initial));
-    },
-  );
-}
+  // ═══════════════════════════════════════════════════════════
+  // 📌 SAVE EDITED COMMENT (with Auto-Scroll)
+  // ═══════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════
-// 📌 CLEAR SCROLL (يُستدعى بعد ما الـ UI يعمل scroll)
-// ═══════════════════════════════════════════════════════════
+  Future<void> saveEditedComment({
+    required String commentId,
+    required String newContent,
+    required bool isReply,
+  }) async {
+    if (newContent.trim().isEmpty) return;
 
-void clearScrollTarget() {
-  emit(state.copyWith(clearScrollToCommentId: true));
-}
- 
- 
+    emit(state.copyWith(editingState: CubitStates.loading));
+
+    final result = isReply
+        ? await homeRepository.editReply(replyId: commentId, reply: newContent)
+        : await homeRepository.editComment(
+            commentId: commentId,
+            comment: newContent,
+          );
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            editingState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
+        emit(state.copyWith(editingState: CubitStates.initial));
+      },
+      (successMessage) {
+        final updatedComments = _updateCommentById(
+          state.comments,
+          commentId,
+          (comment) => comment.copyWith(comment: newContent),
+        );
+
+        emit(
+          state.copyWith(
+            editingState: CubitStates.success,
+            comments: updatedComments,
+            clearEditingCommentId: true,
+            // ✅ NEW: Scroll للكومنت اللي اتعدل
+            scrollToCommentId: commentId,
+            scrollTrigger: state.scrollTrigger + 1,
+          ),
+        );
+
+        emit(state.copyWith(editingState: CubitStates.initial));
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 CLEAR SCROLL (يُستدعى بعد ما الـ UI يعمل scroll)
+  // ═══════════════════════════════════════════════════════════
+
+  void clearScrollTarget() {
+    emit(state.copyWith(clearScrollToCommentId: true));
+  }
+
   // ═══════════════════════════════════════════════════════════
   // 📌 FETCH REPLIES & OTHER ACTIONS (كما هي)
   // ═══════════════════════════════════════════════════════════
@@ -334,7 +352,6 @@ void clearScrollTarget() {
     );
   }
 
-
   // ═══════════════════════════════════════════════════════════
   // 📌 LIKE
   // ═══════════════════════════════════════════════════════════
@@ -359,8 +376,6 @@ void clearScrollTarget() {
       replyId: isReply ? commentId : null,
     );
   }
-
-
 
   void cancelReply() {
     emit(state.copyWith(clearActiveReplyId: true));

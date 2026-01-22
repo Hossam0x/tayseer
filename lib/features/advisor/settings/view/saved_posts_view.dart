@@ -4,7 +4,7 @@ import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_car
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts_state.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';

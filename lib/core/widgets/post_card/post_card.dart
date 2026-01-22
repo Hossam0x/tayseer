@@ -2,11 +2,12 @@ import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
+import 'package:tayseer/core/widgets/post_card/post_options_bottom_sheet.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/core/widgets/post_card/real_video_player.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
 import 'package:tayseer/core/widgets/post_card/post_images_grid.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -69,6 +70,16 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.post.isBlocked) {
+      // ✅ تم التعديل: تمرير البوست والـ callback
+      return _BlockedPostUI(post: widget.post);
+    }
+    if (widget.post.isHidden) {
+      return _HiddenPostUI(
+        onUndo: () => widget.callbacks.onHide?.call(widget.post.postId),
+      );
+    }
+
     final content = _CardContainer(
       isDetailsView: widget.isDetailsView,
       child: Column(
@@ -84,7 +95,25 @@ class _PostCardState extends State<PostCard> {
           // User Info
           _PostUserHeader(
             post: widget.post,
-            onMoreTap: widget.callbacks.onMoreTap,
+            onMoreTap: () => PostOptionsBottomSheet.show(
+              context,
+              post: widget.post,
+              onEdit: () => widget.callbacks.onEdit?.call(widget.post),
+              onDelete: () =>
+                  widget.callbacks.onDelete?.call(widget.post.postId),
+              onArchive: () =>
+                  widget.callbacks.onArchive?.call(widget.post.postId),
+              onShare: () =>
+                  widget.callbacks.onShareTap?.call(widget.post.postId),
+              onReport: () =>
+                  widget.callbacks.onReport?.call(widget.post.postId),
+              onHide: () => widget.callbacks.onHide?.call(widget.post.postId),
+              onSave: () => widget.callbacks.onSave?.call(widget.post.postId),
+              onBlock: () => widget.callbacks.onBlock?.call(
+                widget.post.advisorId,
+                widget.post.postId,
+              ),
+            ),
           ),
           Gap(context.responsiveHeight(15)),
 
@@ -139,10 +168,198 @@ class _PostCardState extends State<PostCard> {
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Static Sub-Widgets
-// ══════════════════════════════════════════════════════════════════════════════
+class _BlockedPostUI extends StatefulWidget {
+  final PostModel post;
 
+  const _BlockedPostUI({required this.post});
+
+  @override
+  State<_BlockedPostUI> createState() => _BlockedPostUIState();
+}
+
+class _BlockedPostUIState extends State<_BlockedPostUI> {
+  bool _isClosed = false;
+
+  void _onClose() => setState(() => _isClosed = true);
+
+  @override
+  Widget build(BuildContext context) {
+    return _isClosed
+        ? const SizedBox.shrink()
+        : Container(
+            margin: EdgeInsets.symmetric(
+              horizontal: context.responsiveWidth(22),
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: context.responsiveWidth(12),
+              vertical: context.responsiveHeight(12),
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFCF7FA),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: AppColors.primary100, width: 1.sp),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: AppImage(
+                                widget.post.avatar,
+                                width: 28.w,
+                                height: 28.w,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+
+                          Gap(10.w),
+
+                          // 2. الاسم والتوثيق
+                          Flexible(
+                            child: Text(
+                              widget.post.name,
+                              style: Styles.textStyle16Bold.copyWith(
+                                color: const Color(0xFF0D1C52), // كحلي غامق
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+
+                          if (widget.post.isVerified) ...[
+                            Gap(4.w),
+                            Icon(
+                              Icons.verified,
+                              color: Colors.blue,
+                              size: 16.sp,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // الجزء الأيسر (زر الإغلاق)
+                    GestureDetector(
+                      onTap: _onClose,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: 8.w,
+                        ), // مسافة صغيرة عن المحتوى
+                        child: Icon(
+                          Icons.close_rounded,
+                          color: const Color(0xFF757575), // رمادي
+                          size: 24.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                Padding(
+                  padding: EdgeInsetsGeometry.fromSTEB(34.w, 0, 0, 0),
+                  child: Text(
+                    context.tr(AppStrings.userBlockedMessage),
+                    style: Styles.textStyle14.copyWith(
+                      color: AppColors.secondary800,
+                    ),
+                  ),
+                ),
+
+                Gap(8.h),
+              ],
+            ),
+          );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 👁️ Hidden Post UI
+// ══════════════════════════════════════════════════════════════════════════════
+class _HiddenPostUI extends StatelessWidget {
+  final VoidCallback? onUndo;
+
+  const _HiddenPostUI({this.onUndo});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: context.responsiveWidth(22),
+        vertical: context.responsiveHeight(8),
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.responsiveWidth(12),
+        vertical: context.responsiveHeight(16),
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCF7FA),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.primary100, width: 1.sp),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.layers_clear_outlined,
+            color: AppColors.primary300,
+            size: 24.sp,
+          ),
+
+          Gap(8.w),
+
+          Expanded(
+            child: Text(
+              context.tr(AppStrings.postHiddenMessage),
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
+            ),
+          ),
+
+          Gap(8.w),
+
+          GestureDetector(
+            onTap: onUndo,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: context.responsiveWidth(20),
+                vertical: context.responsiveHeight(8),
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primary200,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppColors.primary400),
+              ),
+              child: Text(
+                context.tr(AppStrings.cancel),
+                style: Styles.textStyle14SemiBold.copyWith(
+                  color: AppColors.primary400,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ... بقية الـ Widgets (مثل _CardContainer, _RepostHeader, الخ) تبقى كما هي بدون تغيير
 class _CardContainer extends StatelessWidget {
   final bool isDetailsView;
   final Widget child;
@@ -158,8 +375,9 @@ class _CardContainer extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            isDetailsView ? BorderRadius.zero : BorderRadius.circular(15.r),
+        borderRadius: isDetailsView
+            ? BorderRadius.zero
+            : BorderRadius.circular(15.r),
         border: isDetailsView ? null : Border.all(color: Colors.grey.shade200),
       ),
       clipBehavior: Clip.antiAlias,
@@ -256,10 +474,6 @@ class _PostContent extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Post Media
-// ══════════════════════════════════════════════════════════════════════════════
-
 class _PostMedia extends StatefulWidget {
   final PostModel post;
   final bool isDetailsView;
@@ -338,10 +552,8 @@ class _PostMediaState extends State<_PostMedia> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ReelsFeedView(
-          post: widget.post,
-          initialController: controller,
-        ),
+        builder: (_) =>
+            ReelsFeedView(post: widget.post, initialController: controller),
       ),
     ).then((_) {
       if (mounted && controller.value.isInitialized) {

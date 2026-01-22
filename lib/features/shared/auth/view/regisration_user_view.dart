@@ -41,7 +41,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                           current.signInWithAppleState ||
                       previous.signInWithGoogleState !=
                           current.signInWithGoogleState ||
-                      previous.authGoogleState != current.authGoogleState;
+                      previous.authGoogleState != current.authGoogleState ||
+                      previous.authAppleState != current .authAppleState ;
                 },
                 listener: (context, state) {
                   if (state.fromScreen != 'registration') return;
@@ -78,8 +79,27 @@ class _RegisrationViewState extends State<RegisrationView> {
                   }
 
                   // نجاح تسجيل الدخول بجوجل
+
                   if (state.signInWithGoogleState == CubitStates.success &&
                       state.authGoogleState == CubitStates.success) {
+                    if (Navigator.canPop(context)) {
+                      context.pop(); // إغلاق أي dialog
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      CustomSnackBar(
+                        context,
+                        text: context.tr('success_login'),
+                        isSuccess: true,
+                      ),
+                    );
+                    if (selectedUserType == UserTypeEnum.user) {
+                      context.pushReplacementNamed(AppRouter.kUserLayoutView);
+                    }
+                  }
+
+                  if (state.signInWithAppleState == CubitStates.success &&
+                      state.authAppleState == CubitStates.success) {
                     if (Navigator.canPop(context)) {
                       context.pop(); // إغلاق أي dialog
                     }
@@ -147,8 +167,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                           Hero(
                             tag: 'app_logo',
                             child: SizedBox(
-                              height: context.height * 0.35,
-                              width: context.width * 0.75,
+                              height: context.height * 0.25,
+                              width: context.width * 0.65,
                               child: AppImage(
                                 AssetsData.kAppLogotayseerImage,
                                 fit: BoxFit.cover,

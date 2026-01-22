@@ -1,4 +1,7 @@
+import 'dart:io';
+import 'dart:math';
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:tayseer/my_import.dart';
 import '../models/edit_personal_data_models.dart';
 
@@ -25,9 +28,9 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
 
-        // ⭐ تعديل هنا: إبقاء القيمة كما هي (String)
+        // ⭐ إبقاء القيمة كما هي (String)
         final yearsExp = data['yearsOfExperience'];
-        String? yearsExpString = yearsExp?.toString(); // ⭐ تحويل إلى String فقط
+        String? yearsExpString = yearsExp?.toString();
 
         final profileData = {
           '_id': data['_id'] ?? '',
@@ -36,9 +39,11 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
           'image': data['image'],
           'dateOfBirth': data['dateOfBirth'],
           'gender': data['gender'],
-          'professionalSpecialization': data['professionalSpecialization'],
-          'jobGrade': data['jobGrade'],
-          'yearsOfExperience': yearsExpString, // ⭐ String
+          'professionalSpecialization':
+              data['professionalSpecialization'] ??
+              data['ProfessionalSpecialization'], // ⭐ تحقق من الحقلين
+          'jobGrade': data['jobGrade'] ?? data['JobGrade'], // ⭐ تحقق من الحقلين
+          'yearsOfExperience': yearsExpString,
           'aboutYou': data['aboutYou'],
           'videoLink': data['videoLink'],
           'isVerified': data['isVerified'] ?? false,
@@ -68,106 +73,194 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
     bool? removeVideo,
   }) async {
     try {
+      // ⭐ إنشاء Dio instance منفصلة
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: kbaseUrl,
+          headers: {
+            'Accept-Language': selectedLanguage ?? 'ar',
+            'Accept': 'application/json',
+            'Authorization':
+                'Bearer ${CachNetwork.getStringData(key: 'token')}',
+          },
+          validateStatus: (status) => true, // ⭐ مهم: لا ترمي استثناءً
+        ),
+      );
+
       final formData = FormData();
 
-      // إضافة الحقول النصية مع مراعاة الـ mapping العكسي
+      print('🔍 ====== REQUEST VALIDATION ======');
+
+      // ⭐ 1. تحقق من username وتأكد أنه يبدأ بـ @
+      String? username = request.username;
+      if (username != null && username.isNotEmpty) {
+        if (!username.startsWith('@')) {
+          print('⚠️ Adding @ to username: $username → @$username');
+          username = '@$username';
+        }
+        formData.fields.add(MapEntry('username', username));
+        print('📤 username: $username');
+      }
+
+      // ⭐ 2. تحقق من name
       if (request.name != null && request.name!.isNotEmpty) {
         formData.fields.add(MapEntry('name', request.name!));
+        print('📤 name: ${request.name!}');
       }
 
-      if (request.username != null && request.username!.isNotEmpty) {
-        formData.fields.add(MapEntry('username', request.username!));
-      }
-
-      // ⭐ تحويل professionalSpecialization إلى القيمة المتوقعة من الباكند
+      // ⭐ 3. تحقق من professionalSpecialization
       if (request.professionalSpecialization != null &&
           request.professionalSpecialization!.isNotEmpty) {
-        // هنا قد تحتاج إلى mapping عكسي إذا كان الباكند يتوقع قيماً محددة
         formData.fields.add(
           MapEntry(
             'ProfessionalSpecialization',
             request.professionalSpecialization!,
           ),
         );
-      }
-
-      if (request.jobGrade != null && request.jobGrade!.isNotEmpty) {
-        formData.fields.add(MapEntry('JobGrade', request.jobGrade!));
-      }
-
-      if (request.yearsOfExperience != null &&
-          request.yearsOfExperience!.isNotEmpty) {
-        formData.fields.add(
-          MapEntry('yearsOfExperience', request.yearsOfExperience!),
+        print(
+          '📤 ProfessionalSpecialization: ${request.professionalSpecialization!}',
         );
       }
 
-      if (request.aboutYou != null && request.aboutYou!.isNotEmpty) {
-        formData.fields.add(MapEntry('aboutYou', request.aboutYou!));
+      // ⭐ 4. تحقق من jobGrade
+      if (request.jobGrade != null && request.jobGrade!.isNotEmpty) {
+        formData.fields.add(MapEntry('JobGrade', request.jobGrade!));
+        print('📤 JobGrade: ${request.jobGrade!}');
       }
 
-      // ⭐ معالجة الصورة
+      // ⭐ 5. تحقق من yearsOfExperience - تأكد أنه رقم
+      if (request.yearsOfExperience != null &&
+          request.yearsOfExperience!.isNotEmpty) {
+        String yearsExp = request.yearsOfExperience!;
+
+        // ⭐ حاول تحويل النص العربي إلى رقم
+        if (yearsExp.contains("سنتين")) {
+          yearsExp = "2";
+        } else if (yearsExp.contains("3 سنوات")) {
+          yearsExp = "3";
+        } else if (yearsExp.contains("5 سنوات")) {
+          yearsExp = "5";
+        } else if (yearsExp.contains("10 سنوات")) {
+          yearsExp = "10";
+        } else if (yearsExp.contains("أكثر من")) {
+          yearsExp = "11";
+        }
+
+        // ⭐ استخراج أي رقم من النص
+        final match = RegExp(r'(\d+)').firstMatch(yearsExp);
+        if (match != null) {
+          yearsExp = match.group(1)!;
+        }
+
+        formData.fields.add(MapEntry('yearsOfExperience', yearsExp));
+        print('📤 yearsOfExperience (converted): $yearsExp');
+      }
+
+      // ⭐ 6. تحقق من aboutYou
+      if (request.aboutYou != null && request.aboutYou!.isNotEmpty) {
+        formData.fields.add(MapEntry('aboutYou', request.aboutYou!));
+        print(
+          '📤 aboutYou: ${request.aboutYou!.substring(0, min(request.aboutYou!.length, 50))}...',
+        );
+      }
+
+      // ⭐ 7. معالجة الصورة
       if (imageFile != null) {
         formData.files.add(
           MapEntry(
             'image',
             await MultipartFile.fromFile(
               imageFile.path,
-              filename: 'profile_image.jpg',
+              filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
             ),
           ),
         );
+        print('📤 image: file added (${imageFile.path})');
       } else if (request.image == "") {
-        // ⭐ إذا كانت الصورة محذوفة، أرسل قيمة فارغة
         formData.fields.add(MapEntry('image', ''));
+        print('📤 image: (empty string for deletion)');
       }
 
-      // ⭐ معالجة الفيديو
+      // ⭐ 8. معالجة الفيديو
       if (videoFile != null) {
         formData.files.add(
           MapEntry(
             'video',
             await MultipartFile.fromFile(
               videoFile.path,
-              filename: 'intro_video.mp4',
+              filename: 'video_${DateTime.now().millisecondsSinceEpoch}.mp4',
             ),
           ),
         );
+        print('📤 video: file added (${videoFile.path})');
       } else if (request.video == "") {
-        // ⭐ إذا كان الفيديو محذوفاً، أرسل قيمة فارغة
         formData.fields.add(MapEntry('video', ''));
+        print('📤 video: (empty string for deletion)');
       }
+
+      print('🔍 ====== END VALIDATION ======');
 
       print('📤 Sending PATCH request to /advisor/editPersonalData');
-      print('📤 Has image to delete: ${request.image == ""}');
-      print('📤 Has video to delete: ${request.video == ""}');
-
-      final response = await _apiService.patch(
-        endPoint: '/advisor/editPersonalData',
-        data: formData,
-        isFromData: true,
-        headers: {'Content-Type': 'multipart/form-data'},
+      print(
+        '📤 FormData has ${formData.fields.length} fields and ${formData.files.length} files',
       );
 
-      final responseData = response;
-      print('📥 Response: $responseData');
+      final response = await dio.patch<Map<String, dynamic>>(
+        '/advisor/editPersonalData',
+        data: formData,
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      );
 
-      if (responseData['success'] == true) {
-        final updateResponse = UpdatePersonalDataResponse.fromJson(
-          responseData,
-        );
-        return Right(updateResponse);
+      print('📥 Response Status Code: ${response.statusCode}');
+      print('📥 Response Data: ${response.data}');
+
+      final responseData = response.data;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (responseData != null && responseData['success'] == true) {
+          final updateResponse = UpdatePersonalDataResponse.fromJson(
+            responseData,
+          );
+          return Right(updateResponse);
+        } else {
+          final errorMessage =
+              responseData?['message']?.toString() ?? 'فشل تحديث البيانات';
+          return Left(ServerFailure(errorMessage));
+        }
+      } else if (response.statusCode == 400) {
+        // ⭐ معالجة خطأ التحقق بشكل مفصل
+        String errorMessage = 'خطأ في التحقق من البيانات';
+
+        if (responseData != null) {
+          if (responseData['message'] != null) {
+            errorMessage = responseData['message'].toString();
+          } else if (responseData['errors'] != null) {
+            final errors = responseData['errors'];
+            if (errors is Map<String, dynamic>) {
+              final errorList = errors.entries
+                  .map((e) => '${e.key}: ${e.value}')
+                  .join(', ');
+              errorMessage = 'خطأ في الحقول: $errorList';
+            }
+          }
+        }
+
+        return Left(ServerFailure(errorMessage));
       } else {
-        return Left(
-          ServerFailure(
-            responseData['message']?.toString() ?? 'فشل تحديث البيانات',
-          ),
-        );
+        final errorMessage =
+            responseData?['message']?.toString() ??
+            'فشل تحديث البيانات (كود: ${response.statusCode})';
+        return Left(ServerFailure(errorMessage));
       }
     } on DioException catch (e) {
-      print('❌ Dio Error: ${e.message}');
-      print('❌ Dio Error Type: ${e.type}');
-      print('❌ Dio Error Response: ${e.response?.data}');
+      print('❌ DioException:');
+      print('❌ Type: ${e.type}');
+      print('❌ Message: ${e.message}');
+
+      if (e.response != null) {
+        print('❌ Status: ${e.response!.statusCode}');
+        print('❌ Data: ${e.response!.data}');
+      }
 
       String errorMessage = 'خطأ في الاتصال بالسيرفر';
       if (e.response?.data != null) {
@@ -175,13 +268,11 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
         if (responseData is Map && responseData['message'] != null) {
           errorMessage = responseData['message'].toString();
         }
-      } else if (e.message != null) {
-        errorMessage = e.message!;
       }
 
       return Left(ServerFailure(errorMessage));
     } catch (e, stack) {
-      print('❌ Error: $e');
+      print('❌ Unexpected Error: $e');
       print('❌ Stack: $stack');
       return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
     }
