@@ -215,7 +215,9 @@ class AuthRepoImpl implements AuthRepo {
       final platform = Platform.isAndroid ? 'android' : 'ios';
 
       final response = await apiService.post(
-        endPoint: '/auth/apple',
+        endPoint:selectedUserType == UserTypeEnum.asConsultant
+            ? '/advisor/apple'
+            : "/auth/apple",
         data: {
           'idToken': idToken,
           'fcmToken': fcmToken,
@@ -227,6 +229,7 @@ class AuthRepoImpl implements AuthRepo {
           'timezone': getDeviceTimeZoneGMT(),
         },
       );
+      log('idToken$idToken');
 
       final success = response['success'] ?? true;
 
