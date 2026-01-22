@@ -4,11 +4,13 @@ class GuestLockWidget extends StatelessWidget {
   const GuestLockWidget({
     super.key,
     required this.message,
-    required this.description,
+    required this.description, this.onTap,  this.titleBott='إنشاء حساب',
 
   });
   final String message;
   final String description;
+  final VoidCallback? onTap;
+  final String titleBott;
 
   @override
   Widget build(BuildContext context) {
@@ -65,17 +67,21 @@ class GuestLockWidget extends StatelessWidget {
                   CustomBotton(
                     radius: 16,
                     useGradient: true,
-                    title: 'إنشاء حساب',
-                    onPressed: () {
-                      // showDialog(
-                      //   context: context,
-                      //   builder: (context) {
-                      //     return Dialog(child: const LockPopUp());
-                      //   },
-                      // );
+                    title: titleBott,
+                    onPressed: onTap
 
-                      // context.pushNamed(AppRouter.kChooseGenderView);
-                    },
+                    //     () {
+                    //
+                    //
+                    //   // showDialog(
+                    //   //   context: context,
+                    //   //   builder: (context) {
+                    //   //     return Dialog(child: const LockPopUp());
+                    //   //   },
+                    //   // );
+                    //
+                    //   // context.pushNamed(AppRouter.kChooseGenderView);
+                    // },
                   ),
                 ],
               ),
