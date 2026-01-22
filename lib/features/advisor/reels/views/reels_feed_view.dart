@@ -1,4 +1,5 @@
 import 'package:preload_page_view/preload_page_view.dart';
+import 'package:tayseer/core/utils/global_mute_manager.dart'; // ✅ أضف هذا
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
@@ -32,28 +33,37 @@ class _ReelsFeedContent extends StatefulWidget {
 class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   PreloadPageController? _pageController;
   final _videoCacheManager = VideoCacheManager();
+  final _muteManager = GlobalMuteManager.instance; // ✅ Reference محلي
+  
   int _currentIndex = 0;
   int _lastKnownReelsCount = 0;
 
-  // Threshold to trigger loading more reels
   static const int _loadMoreThreshold = 3;
+  static const int _preloadCount = 2; // ✅ Constant للـ preload
 
   @override
   void initState() {
     super.initState();
     _pageController = PreloadPageController(initialPage: 0);
+    
+    // ✅ إلغاء الـ Mute عند دخول الريلز
+    _muteManager.setMute(false);
 
-    // Auto-play the shared controller when entering the page
+    _playInitialController();
+  }
+
+  // ✅ فصل اللوجيك في دالة منفصلة
+  void _playInitialController() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.initialController != null &&
-          widget.initialController!.value.isInitialized) {
-        widget.initialController!.play();
+      final controller = widget.initialController;
+      if (controller != null && controller.value.isInitialized) {
+        controller.play();
       }
     });
   }
 
   void _preloadNextVideos(List<PostModel> reels, int currentIndex) {
-    for (int i = 1; i <= 2; i++) {
+    for (int i = 1; i <= _preloadCount; i++) {
       final nextIndex = currentIndex + i;
       if (nextIndex < reels.length) {
         final videoUrl = reels[nextIndex].videoUrl;
@@ -65,13 +75,16 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   }
 
   void _onPageChanged(int index, List<PostModel> reels) {
-    if (_currentIndex != index) {
-      setState(() => _currentIndex = index);
-    }
+    if (_currentIndex == index) return; // ✅ Early return
+    
+    setState(() => _currentIndex = index);
     _preloadNextVideos(reels, index);
+    _checkLoadMore(index, reels.length);
+  }
 
-    // Check if we need to load more reels
-    final remainingItems = reels.length - index - 1;
+  // ✅ فصل اللوجيك
+  void _checkLoadMore(int currentIndex, int totalReels) {
+    final remainingItems = totalReels - currentIndex - 1;
     if (remainingItems <= _loadMoreThreshold) {
       context.read<ReelsCubit>().fetchMoreReels();
     }
@@ -88,108 +101,132 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: BlocConsumer<ReelsCubit, ReelsState>(
-        listenWhen: (previous, current) {
-          // Listen when reels count changes to handle PageView update
-          // OR when share action state changes
-          return previous.reels.length != current.reels.length ||
-              (previous.shareActionState != current.shareActionState &&
-                  current.shareActionState != CubitStates.initial);
-        },
-        buildWhen: (previous, current) {
-          // Rebuild when state changes, reels change, or loading state changes
-          return previous.reelsState != current.reelsState ||
-              previous.reels.length != current.reels.length ||
-              previous.isLoadingMore != current.isLoadingMore;
-        },
-        listener: (context, state) {
-          // Force update when new reels are loaded
-          if (state.reels.length != _lastKnownReelsCount) {
-            _lastKnownReelsCount = state.reels.length;
-            // Preload videos for next items
-            _preloadNextVideos(state.reels, _currentIndex);
-          }
+        listenWhen: _shouldListen,
+        buildWhen: _shouldBuild,
+        listener: _handleStateChanges,
+        builder: _buildContent,
+      ),
+    );
+  }
 
-          // ✅ Handle Share Action Toast
-          if (state.shareActionState == CubitStates.success) {
-            if (state.isShareAdded == true) {
-              AppToast.success(
-                context,
-                state.shareMessage ?? 'تمت المشاركة بنجاح',
-              );
-            } else {
-              AppToast.info(context, state.shareMessage ?? 'تم إلغاء المشاركة');
-            }
-          } else if (state.shareActionState == CubitStates.failure) {
-            AppToast.error(
-              context,
-              state.shareMessage ?? 'حدث خطأ أثناء المشاركة',
-            );
-          }
-        },
-        builder: (context, state) {
-          // Show loading only if no reels and still loading
-          if (state.reels.isEmpty && state.reelsState == CubitStates.loading) {
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            );
-          }
+  // ✅ فصل الشروط في دوال منفصلة
+  bool _shouldListen(ReelsState previous, ReelsState current) {
+    return previous.reels.length != current.reels.length ||
+        (previous.shareActionState != current.shareActionState &&
+            current.shareActionState != CubitStates.initial);
+  }
 
-          // Show error only if no reels to display
-          if (state.reels.isEmpty && state.reelsState == CubitStates.failure) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    state.errorMessage ?? 'حدث خطأ',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.read<ReelsCubit>().fetchReels(),
-                    child: const Text('إعادة المحاولة'),
-                  ),
-                ],
-              ),
-            );
-          }
+  bool _shouldBuild(ReelsState previous, ReelsState current) {
+    return previous.reelsState != current.reelsState ||
+        previous.reels.length != current.reels.length ||
+        previous.isLoadingMore != current.isLoadingMore;
+  }
 
-          return Stack(
-            children: [
-              PreloadPageView.builder(
-                // Remove ValueKey to prevent rebuild on list change
-                controller: _pageController,
-                scrollDirection: Axis.vertical,
-                itemCount: state.reels.length + (state.isLoadingMore ? 1 : 0),
-                preloadPagesCount: 2,
-                onPageChanged: (index) => _onPageChanged(index, state.reels),
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  if (index >= state.reels.length) {
-                    return Container(
-                      color: Colors.black,
-                      child: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
-                    );
-                  }
+  void _handleStateChanges(BuildContext context, ReelsState state) {
+    // Handle reels count change
+    if (state.reels.length != _lastKnownReelsCount) {
+      _lastKnownReelsCount = state.reels.length;
+      _preloadNextVideos(state.reels, _currentIndex);
+    }
 
-                  // Pass controller only for the first reel (initial post)
-                  final controllerToPass = index == 0
-                      ? widget.initialController
-                      : null;
+    // Handle Share Action Toast
+    _handleShareToast(context, state);
+  }
 
-                  return ReelsItem(
-                    key: ValueKey('reel_item_${state.reels[index].postId}'),
-                    post: state.reels[index],
-                    isCurrentPage: index == _currentIndex,
-                    sharedController: controllerToPass,
-                  );
-                },
-              ),
-            ],
-          );
-        },
+  // ✅ فصل الـ Toast handling
+  void _handleShareToast(BuildContext context, ReelsState state) {
+    switch (state.shareActionState) {
+      case CubitStates.success:
+        final message = state.shareMessage ?? 
+            (state.isShareAdded == true ? 'تمت المشاركة بنجاح' : 'تم إلغاء المشاركة');
+        state.isShareAdded == true
+            ? AppToast.success(context, message)
+            : AppToast.info(context, message);
+        break;
+      case CubitStates.failure:
+        AppToast.error(context, state.shareMessage ?? 'حدث خطأ أثناء المشاركة');
+        break;
+      default:
+        break;
+    }
+  }
+
+  Widget _buildContent(BuildContext context, ReelsState state) {
+    // Loading state
+    if (state.reels.isEmpty && state.reelsState == CubitStates.loading) {
+      return _buildLoading();
+    }
+
+    // Error state
+    if (state.reels.isEmpty && state.reelsState == CubitStates.failure) {
+      return _buildError(context, state.errorMessage);
+    }
+
+    // Content
+    return _buildReelsList(state);
+  }
+
+  Widget _buildLoading() {
+    return const Center(
+      child: CircularProgressIndicator(color: Colors.white),
+    );
+  }
+
+  Widget _buildError(BuildContext context, String? errorMessage) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            errorMessage ?? 'حدث خطأ',
+            style: const TextStyle(color: Colors.white),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => context.read<ReelsCubit>().fetchReels(),
+            child: const Text('إعادة المحاولة'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReelsList(ReelsState state) {
+    final itemCount = state.reels.length + (state.isLoadingMore ? 1 : 0);
+    
+    return PreloadPageView.builder(
+      controller: _pageController,
+      scrollDirection: Axis.vertical,
+      itemCount: itemCount,
+      preloadPagesCount: _preloadCount,
+      onPageChanged: (index) => _onPageChanged(index, state.reels),
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemBuilder: (context, index) => _buildReelItem(state, index),
+    );
+  }
+
+  Widget _buildReelItem(ReelsState state, int index) {
+    // Loading indicator at the end
+    if (index >= state.reels.length) {
+      return _buildLoadingMoreIndicator();
+    }
+
+    final reel = state.reels[index];
+    final controllerToPass = index == 0 ? widget.initialController : null;
+
+    return ReelsItem(
+      key: ValueKey('reel_item_${reel.postId}'),
+      post: reel,
+      isCurrentPage: index == _currentIndex,
+      sharedController: controllerToPass,
+    );
+  }
+
+  Widget _buildLoadingMoreIndicator() {
+    return Container(
+      color: Colors.black,
+      child: const Center(
+        child: CircularProgressIndicator(color: Colors.white),
       ),
     );
   }
