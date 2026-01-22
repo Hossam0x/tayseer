@@ -1,5 +1,6 @@
 // lib/features/advisor/home/cubit/post_details_cubit.dart
 
+
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -135,6 +136,56 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
         ),
       );
     });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // HIDE COMMENT
+  // ═══════════════════════════════════════════════════════════
+  void toggleHideComment({required String commentId}) {
+    final comment = _findCommentById(state.comments, commentId);
+    if (comment == null) return;
+
+    final newHideState = !comment.isHidden;
+
+    emit(
+      state.copyWith(
+        comments: state.comments
+            .map(
+              (c) => c.id == commentId ? c.copyWith(isHidden: newHideState) : c,
+            )
+            .toList(),
+      ),
+    );
+
+    homeRepository.hideComment(commentId: commentId, isHide: newHideState);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // HIDE REPLY
+  // ═══════════════════════════════════════════════════════════
+  void toggleHideReply({required String replyId}) {
+    final reply = _findReplyById(state.comments, replyId);
+    if (reply == null) return;
+
+    final newHideState = !reply.isHidden;
+
+    // 1️⃣ Local Update
+    emit(
+      state.copyWith(
+        comments: state.comments.map((comment) {
+          final updatedReplies = comment.replies
+              .map(
+                (r) => r.id == replyId ? r.copyWith(isHidden: newHideState) : r,
+              )
+              .toList();
+
+          return comment.copyWith(replies: updatedReplies);
+        }).toList(),
+      ),
+    );
+
+    // 2️⃣ Fire Request
+    homeRepository.hideReply(replyId: replyId, isHide: newHideState);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -503,6 +554,16 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       if (comment.replies.isNotEmpty) {
         final found = _findCommentById(comment.replies, targetId);
         if (found != null) return found;
+      }
+    }
+    return null;
+  }
+
+  CommentModel? _findReplyById(List<CommentModel> comments, String replyId) {
+    for (var comment in comments) {
+      // البحث في الـ replies الخاصة بكل كومنت
+      for (var reply in comment.replies) {
+        if (reply.id == replyId) return reply;
       }
     }
     return null;

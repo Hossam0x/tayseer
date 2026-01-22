@@ -30,7 +30,7 @@ class CommentActionsMenu extends StatelessWidget {
         if (isReply) {
           callbacks.onDeleteReply?.call(commentId);
         } else {
-          callbacks.onDelete?.call(commentId);
+          callbacks.onDeleteComment?.call(commentId);
         }
         break;
       case CommentMenuAction.reply:
@@ -40,7 +40,11 @@ class CommentActionsMenu extends StatelessWidget {
         callbacks.onReport?.call(commentId);
         break;
       case CommentMenuAction.hide:
-        callbacks.onHide?.call(commentId);
+        if (isReply) {
+          callbacks.onHideReply?.call(commentId);
+        } else {
+          callbacks.onHideComment?.call(commentId);
+        }
         break;
     }
   }

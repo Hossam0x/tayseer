@@ -439,5 +439,9 @@
     "log_In": "الدخول",
     "archive_post": "أرشفة المنشور",
     "archive_post_confirmation": "هل أنت متأكد من أرشفة هذا المنشور؟",
-    "archive_post_confirmation_message":"في حالة ارشفة المنشور لن يظهر لك اشعارات منه وسيختفي المنشور من صفحتك ."
+    "archive_post_confirmation_message":"في حالة ارشفة المنشور لن يظهر لك اشعارات منه وسيختفي المنشور من صفحتك .",
+    "unhide": "إظهار",
+    "comment_hidden_message": "لقد قمت بإخفاء هذا التعليق",
+    "show_more_replies": "عرض المزيد من الردود",
+    "show_n_replies": "عرض {} ردود" 
 }

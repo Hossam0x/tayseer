@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/comment_card/comment_avatar.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_content.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_input_editor.dart';
@@ -28,6 +29,16 @@ class CommentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (comment.isHidden) {
+      return _HiddenCommentWidget(
+        isReply: isReply,
+        comment: comment,
+        onUnhide: () => isReply
+            ? callbacks.onHideReply?.call(comment.id)
+            : callbacks.onHideComment?.call(comment.id),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -53,7 +64,7 @@ class CommentCard extends StatelessWidget {
       comment: comment,
       isReply: isReply,
       isReplying: isReplying,
-      callbacks: callbacks, // ✅ تمرير للأسفل
+      callbacks: callbacks,
     );
   }
 
@@ -75,13 +86,11 @@ class CommentCard extends StatelessWidget {
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildRepliesList(BuildContext context) {
-    // Case 1: Replies loaded
     if (comment.replies.isNotEmpty) {
       return Padding(
         padding: EdgeInsetsDirectional.only(start: 40.w, top: 15.h),
         child: Column(
           children: [
-            // Replies List
             ListView.separated(
               physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
@@ -93,8 +102,6 @@ class CommentCard extends StatelessWidget {
                 callbacks: callbacks,
               ),
             ),
-
-            // Load More Button
             if (comment.hasMoreReplies)
               _LoadMoreButton(
                 isLoading: isLoadingReplies,
@@ -105,7 +112,6 @@ class CommentCard extends StatelessWidget {
       );
     }
 
-    // Case 2: Has replies but not loaded yet
     if (comment.repliesNumber > 0 && comment.replies.isEmpty) {
       return Padding(
         padding: EdgeInsetsDirectional.only(start: 40.w),
@@ -122,7 +128,114 @@ class CommentCard extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Reply Item (Simplified for replies - no nested replies)
+// 🎨 Hidden Comment Widget (UI مطابق للصورة)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _HiddenCommentWidget extends StatelessWidget {
+  final CommentModel comment;
+  final VoidCallback? onUnhide;
+  final bool isReply;
+
+  const _HiddenCommentWidget({
+    required this.comment,
+    this.onUnhide,
+    required this.isReply,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Avatar
+              CommentAvatar(
+                avatarUrl: comment.commenter.avatar,
+                isReply: isReply,
+              ),
+              Gap(10.w),
+
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        comment.commenter.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Styles.textStyle16SemiBold.copyWith(
+                          color: const Color(0xFF19295C),
+                        ),
+                      ),
+                    ),
+                    Gap(4.w),
+                    if (comment.commenter.isVerified)
+                      Icon(Icons.verified, color: Colors.blue, size: 14.sp),
+
+                    Gap(4.w),
+                    Text(
+                      comment.timeAgo,
+                      style: Styles.textStyle12.copyWith(
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                    Gap(4.w),
+                  ],
+                ),
+              ),
+
+              InkWell(
+                onTap: onUnhide,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 8.w,
+                    vertical: 4.h,
+                  ).r,
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.red),
+                  ),
+                  child: Text(
+                    context.tr(AppStrings.unhide),
+                    style: Styles.textStyle12.copyWith(color: Colors.red),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Row 2: Red Icon & Message
+          Row(
+            children: [
+              Gap(40.w),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.red, // لون أحمر غامق (Crimson)
+                ),
+                padding: EdgeInsets.all(4.r),
+                child: Icon(Icons.close, color: Colors.white, size: 14.sp),
+              ),
+              Gap(8.w),
+              Text(
+                context.tr(AppStrings.commentHiddenMessage),
+                style: Styles.textStyle14.copyWith(color: Colors.grey.shade700),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Reply Item
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _ReplyItem extends StatelessWidget {
@@ -136,6 +249,15 @@ class _ReplyItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ 2. التحقق من حالة الإخفاء للرد (Reply)
+    if (reply.isHidden) {
+      return _HiddenCommentWidget(
+        isReply: true,
+        comment: reply,
+        onUnhide: () => callbacks.onHideReply?.call(reply.id),
+      );
+    }
+
     return CommentContent(
       comment: reply,
       isReply: true,
@@ -184,8 +306,14 @@ class _ShowRepliesButton extends StatelessWidget {
           color: Colors.grey.shade600,
         ),
         label: Text(
-          'عرض $repliesCount ردود',
-          style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+          // ✅ التعديل هنا: نترجم النص أولاً ثم نستبدل العلامة {} بالرقم
+          context
+              .tr(AppStrings.showNReplies)
+              .replaceFirst('{}', '$repliesCount'),
+
+          style: Styles.textStyle12SemiBold.copyWith(
+            color: Colors.grey.shade600,
+          ),
         ),
       ),
     );
@@ -219,8 +347,10 @@ class _LoadMoreButton extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: Text(
-                'عرض المزيد من الردود',
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+                context.tr(AppStrings.showMoreReplies),
+                style: Styles.textStyle12SemiBold.copyWith(
+                  color: Colors.grey.shade600,
+                ),
               ),
             ),
     );

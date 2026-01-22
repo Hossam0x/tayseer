@@ -197,11 +197,9 @@ class HomeRepositoryImpl implements HomeRepository {
       return Left(ServerFailure.fromDioError(e));
     }
   }
-  
+
   @override
-  Future<Either<Failure, String>> deleteReply({
-    required String replyId,
-  }) async {
+  Future<Either<Failure, String>> deleteReply({required String replyId}) async {
     try {
       final response = await apiService.delete(
         endPoint: "${ApiEndPoint.deleteReply}$replyId",
@@ -211,7 +209,25 @@ class HomeRepositoryImpl implements HomeRepository {
       return Left(ServerFailure.fromDioError(e));
     }
   }
-  
+
+  @override
+  void hideComment({required String commentId, required bool isHide}) {
+    apiService.post(
+      endPoint: ApiEndPoint.hideComment,
+      query: {'action': isHide ? 'add' : 'remove'},
+      data: {"commentId": commentId},
+    );
+  }
+
+  @override
+  void hideReply({required String replyId, required bool isHide}) {
+    apiService.post(
+      endPoint: ApiEndPoint.hideReply,
+      query: {'action': isHide ? 'add' : 'remove'},
+      data: {"replyId": replyId},
+    );
+  }
+
   // ================= Reels =================
 
   @override

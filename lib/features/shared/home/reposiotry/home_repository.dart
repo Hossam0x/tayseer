@@ -40,13 +40,13 @@ abstract class HomeRepository {
     required String comment,
   });
 
-  Future<Either<Failure, String>> deleteComment({
-    required String commentId,
-  });
+  Future<Either<Failure, String>> deleteComment({required String commentId});
 
-  Future<Either<Failure, String>> deleteReply({
-    required String replyId,
-  });
+  Future<Either<Failure, String>> deleteReply({required String replyId});
+
+  void hideComment({required String commentId, required bool isHide});
+  void hideReply({required String replyId, required bool isHide});
+
   Future<Either<Failure, CommentModel>> addReply({
     required String commentId,
     required String reply,

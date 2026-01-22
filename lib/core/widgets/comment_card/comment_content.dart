@@ -1,5 +1,6 @@
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_actions_menu.dart';
+import 'package:tayseer/core/widgets/comment_card/comment_avatar.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -23,7 +24,7 @@ class CommentContent extends StatelessWidget {
     this.callbacks = CommentCallbacks.empty,
   });
 
-  double get _avatarSize => isReply ? 32 : 40;
+ 
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +33,9 @@ class CommentContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Avatar
-          _CommentAvatar(
+          CommentAvatar(
             avatarUrl: comment.commenter.avatar,
-            size: _avatarSize,
+            isReply: isReply,
           ),
           Gap(10.w),
 
@@ -73,21 +74,6 @@ class CommentContent extends StatelessWidget {
 // Avatar
 // ══════════════════════════════════════════════════════════════════════════════
 
-class _CommentAvatar extends StatelessWidget {
-  final String? avatarUrl;
-  final double size;
-
-  const _CommentAvatar({this.avatarUrl, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: size.r,
-      width: size.r,
-      child: ClipOval(child: AppImage(avatarUrl ?? '', fit: BoxFit.cover)),
-    );
-  }
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Header (Name + Verified Badge)

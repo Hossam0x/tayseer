@@ -89,7 +89,7 @@ class CommentCallbacks {
   // ════════════════════════════════════════
   
   /// Delete comment/reply
-  final CommentActionCallback? onDelete;
+  final CommentActionCallback? onDeleteComment;
   final CommentActionCallback? onDeleteReply;
 
   // ════════════════════════════════════════
@@ -100,10 +100,9 @@ class CommentCallbacks {
   final CommentActionCallback? onReport;
   
   /// Hide comment/reply
-  final CommentActionCallback? onHide;
+  final CommentActionCallback? onHideComment;
+  final CommentActionCallback? onHideReply;
   
-  /// Block comment author
-  final CommentBlockUserCallback? onBlock;
 
   // ════════════════════════════════════════
   // Utility
@@ -123,12 +122,12 @@ class CommentCallbacks {
     this.onSendReply,
     this.onLoadReplies,
     // Menu actions - Owner
-    this.onDelete,
+    this.onDeleteComment,
     this.onDeleteReply,
     // Menu actions - Guest
     this.onReport,
-    this.onHide,
-    this.onBlock,
+    this.onHideComment,
+    this.onHideReply,
     // General
     this.onMenuAction,
   });
@@ -146,11 +145,11 @@ class CommentCallbacks {
       onSaveEdit != null ||
       onSendReply != null ||
       onLoadReplies != null ||
-      onDelete != null ||
+      onDeleteComment != null ||
       onDeleteReply != null ||
       onReport != null ||
-      onHide != null ||
-      onBlock != null ||
+      onHideComment != null ||
+      onHideReply != null ||
       onMenuAction != null;
 
   /// Copy with method for flexibility
@@ -163,11 +162,11 @@ class CommentCallbacks {
     CommentSaveEditCallback? onSaveEdit,
     CommentReplyCallback? onSendReply,
     CommentLoadRepliesCallback? onLoadReplies,
-    CommentActionCallback? onDelete,
+    CommentActionCallback? onDeleteComment,
     CommentActionCallback? onDeleteReply,
     CommentActionCallback? onReport,
-    CommentActionCallback? onHide,
-    CommentBlockUserCallback? onBlock,
+    CommentActionCallback? onHideComment,
+    CommentActionCallback? onHideReply,
     CommentMenuCallback? onMenuAction,
   }) {
     return CommentCallbacks(
@@ -179,11 +178,10 @@ class CommentCallbacks {
       onSaveEdit: onSaveEdit ?? this.onSaveEdit,
       onSendReply: onSendReply ?? this.onSendReply,
       onLoadReplies: onLoadReplies ?? this.onLoadReplies,
-      onDelete: onDelete ?? this.onDelete,
       onDeleteReply: onDeleteReply ?? this.onDeleteReply,
       onReport: onReport ?? this.onReport,
-      onHide: onHide ?? this.onHide,
-      onBlock: onBlock ?? this.onBlock,
+      onHideComment: onHideComment ?? this.onHideComment,
+      onHideReply: onHideReply ?? this.onHideReply,
       onMenuAction: onMenuAction ?? this.onMenuAction,
     );
   }
