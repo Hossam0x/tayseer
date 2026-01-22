@@ -40,13 +40,13 @@ class HomeRepositoryImpl implements HomeRepository {
     required ReactionType? reactionType,
     required bool isRemove,
   }) async {
-    final data = {"postId": postId, if (!isRemove) "type": reactionType!.name};
+    final data = {
+      "postId": postId,
+      if (!isRemove) "type": reactionType!.name,
+      'action': isRemove ? 'remove' : 'add',
+    };
 
-    await apiService.post(
-      endPoint: ApiEndPoint.like,
-      query: {'action': isRemove ? 'remove' : 'add'},
-      data: data,
-    );
+    await apiService.post(endPoint: ApiEndPoint.like, data: data);
   }
 
   @override
@@ -180,9 +180,8 @@ class HomeRepositoryImpl implements HomeRepository {
     }
   }
 
-
-@override
-Future<Either<Failure, String>> deleteComment({
+  @override
+  Future<Either<Failure, String>> deleteComment({
     required String commentId,
   }) async {
     try {
