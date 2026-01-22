@@ -27,7 +27,11 @@ class CommentActionsMenu extends StatelessWidget {
         callbacks.onEditToggle?.call(commentId);
         break;
       case CommentMenuAction.delete:
-        callbacks.onDelete?.call(commentId);
+        if (isReply) {
+          callbacks.onDeleteReply?.call(commentId);
+        } else {
+          callbacks.onDelete?.call(commentId);
+        }
         break;
       case CommentMenuAction.reply:
         callbacks.onReplyToggle?.call(commentId);

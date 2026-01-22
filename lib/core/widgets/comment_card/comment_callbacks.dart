@@ -90,6 +90,7 @@ class CommentCallbacks {
   
   /// Delete comment/reply
   final CommentActionCallback? onDelete;
+  final CommentActionCallback? onDeleteReply;
 
   // ════════════════════════════════════════
   // Menu Actions (Guest)
@@ -123,6 +124,7 @@ class CommentCallbacks {
     this.onLoadReplies,
     // Menu actions - Owner
     this.onDelete,
+    this.onDeleteReply,
     // Menu actions - Guest
     this.onReport,
     this.onHide,
@@ -145,6 +147,7 @@ class CommentCallbacks {
       onSendReply != null ||
       onLoadReplies != null ||
       onDelete != null ||
+      onDeleteReply != null ||
       onReport != null ||
       onHide != null ||
       onBlock != null ||
@@ -161,6 +164,7 @@ class CommentCallbacks {
     CommentReplyCallback? onSendReply,
     CommentLoadRepliesCallback? onLoadReplies,
     CommentActionCallback? onDelete,
+    CommentActionCallback? onDeleteReply,
     CommentActionCallback? onReport,
     CommentActionCallback? onHide,
     CommentBlockUserCallback? onBlock,
@@ -176,6 +180,7 @@ class CommentCallbacks {
       onSendReply: onSendReply ?? this.onSendReply,
       onLoadReplies: onLoadReplies ?? this.onLoadReplies,
       onDelete: onDelete ?? this.onDelete,
+      onDeleteReply: onDeleteReply ?? this.onDeleteReply,
       onReport: onReport ?? this.onReport,
       onHide: onHide ?? this.onHide,
       onBlock: onBlock ?? this.onBlock,

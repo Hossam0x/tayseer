@@ -197,6 +197,21 @@ class HomeRepositoryImpl implements HomeRepository {
       return Left(ServerFailure.fromDioError(e));
     }
   }
+  
+  @override
+  Future<Either<Failure, String>> deleteReply({
+    required String replyId,
+  }) async {
+    try {
+      final response = await apiService.delete(
+        endPoint: "${ApiEndPoint.deleteReply}$replyId",
+      );
+      return Right(response['message'] ?? 'تم حذف الرد بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+  
   // ================= Reels =================
 
   @override

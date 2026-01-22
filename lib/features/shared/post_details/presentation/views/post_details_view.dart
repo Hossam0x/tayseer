@@ -207,6 +207,9 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
                   ),
                   onSendReply: cubit.addReply,
                   onLoadReplies: cubit.loadReplies,
+                  onDeleteReply: (id) => cubit.deleteReply(
+                    replyId: id,
+                  ), // مثال لإضافة وظائف جديدة بسهولة
                   onDelete: (id) => cubit.deleteComment(
                     commentId: id,
                   ), // مثال لإضافة وظائف جديدة بسهولة

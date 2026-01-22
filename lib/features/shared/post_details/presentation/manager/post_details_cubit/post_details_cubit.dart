@@ -91,6 +91,53 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   }
 
   // ═══════════════════════════════════════════════════════════
+  // DELTE REPLY
+  // ═══════════════════════════════════════════════════════════
+  void deleteReply({required String replyId}) {
+    final originalComments = state.comments
+        .map((c) => c.copyWith(replies: List.from(c.replies)))
+        .toList();
+
+    // 1️⃣ Optimistic Update
+    final updatedComments = state.comments.map((comment) {
+      final hasReply = comment.replies.any((r) => r.id == replyId);
+      if (hasReply) {
+        return comment.copyWith(
+          replies: comment.replies.where((r) => r.id != replyId).toList(),
+          repliesNumber: comment.repliesNumber - 1,
+        );
+      }
+      return comment;
+    }).toList();
+
+    emit(
+      state.copyWith(
+        comments: updatedComments,
+        deleteReplyActionState: CubitStates.loading,
+      ),
+    );
+
+    // 2️⃣ Server Request
+    homeRepository.deleteReply(replyId: replyId).then((result) {
+      result.fold(
+        (failure) => emit(
+          state.copyWith(
+            comments: originalComments,
+            deleteReplyActionState: CubitStates.failure,
+            deleteReplyMessage: failure.message,
+          ),
+        ),
+        (message) => emit(
+          state.copyWith(
+            deleteReplyActionState: CubitStates.success,
+            deleteReplyMessage: message,
+          ),
+        ),
+      );
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // 📌 LOAD MORE
   // ═══════════════════════════════════════════════════════════
   Future<void> loadMoreComments() async {
@@ -125,12 +172,12 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
 
     final currentUser = CommenterModel(
-      id: 'current_user_id',
-      name: 'أنت',
-      userName: 'current_user',
+      id: kCurrentUserData?.id ?? "..",
+      name: kCurrentUserData?.name ?? 'أنت',
+      userName: kCurrentUserData?.username ?? '@you',
       avatar: myProfileImage,
-      isVerified: false,
-      userType: 'user',
+      isVerified: kCurrentUserData?.isVerified ?? false,
+      userType: selectedUserType?.name ?? 'user',
     );
 
     final tempComment = CommentModel.temp(

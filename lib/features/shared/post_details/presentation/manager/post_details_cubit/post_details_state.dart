@@ -32,6 +32,10 @@ class PostDetailsState extends Equatable {
   final String deleteCommentMessage;
   final CubitStates deleteCommentActionState;
 
+  // DELETE REPLY
+  final String deleteReplyMessage;
+  final CubitStates deleteReplyActionState;
+
   const PostDetailsState({
     this.commentsState = CubitStates.initial,
     this.comments = const [],
@@ -50,6 +54,8 @@ class PostDetailsState extends Equatable {
     this.scrollTrigger = 0,
     this.deleteCommentMessage = '',
     this.deleteCommentActionState = CubitStates.initial,
+    this.deleteReplyMessage = '',
+    this.deleteReplyActionState = CubitStates.initial,
   });
 
   bool get hasMoreComments => currentPage < totalPages;
@@ -77,9 +83,13 @@ class PostDetailsState extends Equatable {
     bool? clearScrollToCommentId,
     int? scrollTrigger,
 
-    // 
+    //
     String? deleteCommentMessage,
     CubitStates? deleteCommentActionState,
+
+    // DELETE REPLY
+    String? deleteReplyMessage,
+    CubitStates? deleteReplyActionState,
   }) {
     return PostDetailsState(
       commentsState: commentsState ?? this.commentsState,
@@ -108,30 +118,34 @@ class PostDetailsState extends Equatable {
           : (scrollToCommentId ?? this.scrollToCommentId),
       scrollTrigger: scrollTrigger ?? this.scrollTrigger,
       deleteCommentMessage: deleteCommentMessage ?? this.deleteCommentMessage,
-      deleteCommentActionState: deleteCommentActionState ?? this.deleteCommentActionState,
+      deleteCommentActionState:
+          deleteCommentActionState ?? this.deleteCommentActionState,
+      deleteReplyMessage: deleteReplyMessage ?? this.deleteReplyMessage,
+      deleteReplyActionState:
+          deleteReplyActionState ?? this.deleteReplyActionState,
     );
   }
 
   @override
   List<Object?> get props => [
-        commentsState,
-        comments,
-        errorMessage,
-        currentPage,
-        totalPages,
-        isLoadingMore,
-        activeReplyId,
-        editingCommentId,
-        focusInputTrigger,
-        addingCommentState,
-        addingReplyState,
-        editingState,
-        pendingCommentTempId,
-        scrollToCommentId,
-        scrollTrigger,
-        deleteCommentMessage,
-        deleteCommentActionState,
-      ];
-
-
+    commentsState,
+    comments,
+    errorMessage,
+    currentPage,
+    totalPages,
+    isLoadingMore,
+    activeReplyId,
+    editingCommentId,
+    focusInputTrigger,
+    addingCommentState,
+    addingReplyState,
+    editingState,
+    pendingCommentTempId,
+    scrollToCommentId,
+    scrollTrigger,
+    deleteCommentMessage,
+    deleteCommentActionState,
+    deleteReplyMessage,
+    deleteReplyActionState,
+  ];
 }

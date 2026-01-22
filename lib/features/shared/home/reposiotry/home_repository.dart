@@ -43,6 +43,10 @@ abstract class HomeRepository {
   Future<Either<Failure, String>> deleteComment({
     required String commentId,
   });
+
+  Future<Either<Failure, String>> deleteReply({
+    required String replyId,
+  });
   Future<Either<Failure, CommentModel>> addReply({
     required String commentId,
     required String reply,

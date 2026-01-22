@@ -30,4 +30,5 @@ class ApiEndPoint {
   static const String deletePost = '/posts/delete/';
   static const String hidePost = '/hidden/post';
   static const String archivePost = '/posts/archive/';
+  static const String deleteReply = '/comment-replies/delete/';
 }
