@@ -15,7 +15,7 @@ class UserLayOutViewBody extends StatelessWidget {
 
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
-        final pages = _getPages(context,cubit);
+        final pages = _getPages(context, cubit);
 
         return Scaffold(
           body: Stack(
