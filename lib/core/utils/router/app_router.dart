@@ -1,5 +1,6 @@
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
@@ -685,12 +686,16 @@ abstract class AppRouter {
           ),
         );
       case kAddPostView:
-        final args = settings.arguments as AddPostEnum;
+        final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => BlocProvider(
             create: (context) => AddPostCubit()..getALLCategory(),
-            child: AddPostView(addPostEnum: args),
+            child: AddPostView(
+              addPostEnum: args!['addPostEnum'] as AddPostEnum?,
+              post: args['post'] as PostModel?,
+              isEdit: args['isEdit'] as bool? ?? false,
+            ),
           ),
         );
 

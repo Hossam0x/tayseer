@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
+import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/firebase_options.dart';
 import 'package:tayseer/tayser_app.dart';
 import 'package:tayseer/core/database/cache_cleanup_manager.dart';
@@ -20,6 +21,7 @@ void main() async {
 
   await _initializeChatSystem();
   await _initializeVideoSystem();
+  await GlobalMuteManager.instance.init();
 
   Bloc.observer = SimpleBlocObserver();
   runApp(const TayseerApp());
