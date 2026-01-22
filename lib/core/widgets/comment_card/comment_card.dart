@@ -1,122 +1,71 @@
-import 'dart:developer';
-
+import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_content.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_input_editor.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/my_import.dart';
 
-/// CommentCard - Reusable component for displaying comments
-///
-/// Completely decoupled from any specific Cubit.
-/// All interactions are handled via callback functions.
-///
-/// Performance Features:
-/// - Separated static and dynamic parts
-/// - Uses callbacks instead of direct Cubit access
 class CommentCard extends StatelessWidget {
   final CommentModel comment;
-  final bool isReply;
-
-  // State flags (passed from parent)
-  final bool isEditing;
-  final bool isReplying;
-  final bool isEditLoading;
-  final bool isReplyLoading;
-  final bool isLoadingReplies;
-
-  // Callbacks
-  final VoidCallback? onLikeTap;
-  final VoidCallback? onReplyTap;
-  final VoidCallback? onEditTap;
-  final VoidCallback? onCancelEdit;
-  final VoidCallback? onCancelReply;
-  final void Function(String newContent)? onSaveEdit;
-  final void Function(String replyText)? onSendReply;
-  final VoidCallback? onLoadReplies;
-  final void Function(CommentModel reply)? onLikeReply;
+  final CommentCallbacks callbacks;
+  final bool isReply,
+      isEditing,
+      isReplying,
+      isEditLoading,
+      isReplyLoading,
+      isLoadingReplies;
 
   const CommentCard({
     super.key,
     required this.comment,
+    required this.callbacks,
     this.isReply = false,
     this.isEditing = false,
     this.isReplying = false,
     this.isEditLoading = false,
     this.isReplyLoading = false,
     this.isLoadingReplies = false,
-    this.onLikeTap,
-    this.onReplyTap,
-    this.onEditTap,
-    this.onCancelEdit,
-    this.onCancelReply,
-    this.onSaveEdit,
-    this.onSendReply,
-    this.onLoadReplies,
-    this.onLikeReply,
   });
 
   @override
   Widget build(BuildContext context) {
-    log(">>>>>>>>>>>>>>${comment.comment}");
     return Column(
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Comment Body or Edit Mode
         _buildCommentBody(context),
-
-        // Reply Input (if replying to this comment)
         if (isReplying && !isEditing) _buildReplyInput(context),
-
-        // Replies List
         _buildRepliesList(context),
       ],
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // Comment Body (View or Edit Mode)
-  // ══════════════════════════════════════════════════════════════════════════
-
   Widget _buildCommentBody(BuildContext context) {
     if (isEditing) {
-      return Padding(
-        padding: EdgeInsets.symmetric(vertical: 8.h),
-        child: CommentInputEditor(
-          key: const ValueKey('edit_mode'),
-          initialText: comment.comment,
-          buttonText: context.tr(AppStrings.saveEdit),
-          isLoading: isEditLoading,
-          onCancel: onCancelEdit ?? () {},
-          onSubmit: (text) => onSaveEdit?.call(text),
-        ),
+      return CommentInputEditor(
+        initialText: comment.comment,
+        buttonText: context.tr(AppStrings.saveEdit),
+        isLoading: isEditLoading,
+        onCancel: () => callbacks.onCancelEdit?.call(),
+        onSubmit: (text) =>
+            callbacks.onSaveEdit?.call(comment.id, text, isReply),
       );
     }
-
     return CommentContent(
       comment: comment,
       isReply: isReply,
       isReplying: isReplying,
-      onLikeTap: onLikeTap,
-      onReplyTap: onReplyTap,
-      onEditTap: onEditTap,
+      callbacks: callbacks, // ✅ تمرير للأسفل
     );
   }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // Reply Input
-  // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildReplyInput(BuildContext context) {
     return Padding(
       padding: EdgeInsetsDirectional.only(start: 40.w, top: 10.h),
       child: CommentInputEditor(
-        key: const ValueKey('reply_mode'),
         initialText: '',
         buttonText: context.tr(AppStrings.sendReply),
         isLoading: isReplyLoading,
-        onCancel: onCancelReply ?? () {},
-        onSubmit: (text) => onSendReply?.call(text),
+        onCancel: () => callbacks.onCancelReply?.call(),
+        onSubmit: (text) => callbacks.onSendReply?.call(comment.id, text),
       ),
     );
   }
@@ -141,7 +90,7 @@ class CommentCard extends StatelessWidget {
               separatorBuilder: (_, __) => Gap(15.h),
               itemBuilder: (_, index) => _ReplyItem(
                 reply: comment.replies[index],
-                onLikeTap: () => onLikeReply?.call(comment.replies[index]),
+                callbacks: callbacks,
               ),
             ),
 
@@ -149,7 +98,7 @@ class CommentCard extends StatelessWidget {
             if (comment.hasMoreReplies)
               _LoadMoreButton(
                 isLoading: isLoadingReplies,
-                onTap: onLoadReplies,
+                onTap: () => callbacks.onLoadReplies?.call(comment.id),
               ),
           ],
         ),
@@ -159,11 +108,11 @@ class CommentCard extends StatelessWidget {
     // Case 2: Has replies but not loaded yet
     if (comment.repliesNumber > 0 && comment.replies.isEmpty) {
       return Padding(
-        padding: EdgeInsetsDirectional.only(start: 40.w, top: 10.h),
+        padding: EdgeInsetsDirectional.only(start: 40.w),
         child: _ShowRepliesButton(
           repliesCount: comment.repliesNumber,
           isLoading: isLoadingReplies,
-          onTap: onLoadReplies,
+          onTap: () => callbacks.onLoadReplies?.call(comment.id),
         ),
       );
     }
@@ -178,9 +127,12 @@ class CommentCard extends StatelessWidget {
 
 class _ReplyItem extends StatelessWidget {
   final CommentModel reply;
-  final VoidCallback? onLikeTap;
+  final CommentCallbacks callbacks;
 
-  const _ReplyItem({required this.reply, this.onLikeTap});
+  const _ReplyItem({
+    required this.reply,
+    this.callbacks = CommentCallbacks.empty,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +140,7 @@ class _ReplyItem extends StatelessWidget {
       comment: reply,
       isReply: true,
       isReplying: false,
-      onLikeTap: onLikeTap,
+      callbacks: callbacks,
     );
   }
 }

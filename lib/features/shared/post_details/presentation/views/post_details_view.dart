@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_details_card/post_details_card.dart';
 import 'package:tayseer/core/models/comment_model.dart';
@@ -128,12 +129,12 @@ class _PostDetailsViewState extends State<PostDetailsView> {
     );
   }
 }
+
 // ══════════════════════════════════════════════════════════════════════════════
 // Body Widget
 // ══════════════════════════════════════════════════════════════════════════════
-
 class _PostDetailsBody extends StatefulWidget {
-  final PostModel currentPost; // ✅ بيستقبل البوست المحدث
+  final PostModel currentPost;
   final VideoPlayerController? cachedController;
   final ScrollController scrollController;
   final PostCallbacks callbacks;
@@ -150,61 +151,40 @@ class _PostDetailsBody extends StatefulWidget {
 }
 
 class _PostDetailsBodyState extends State<_PostDetailsBody> {
-  // ✅ شيلنا إدارة الـ Post Subscription من هنا لأن الأب بيعملها
-
   final Map<String, GlobalKey> _commentKeys = {};
 
   void _scrollToComment(String commentId, {bool isForReply = false}) {
     final key = _commentKeys[commentId];
     if (key?.currentContext == null) return;
-
     Scrollable.ensureVisible(
       key!.currentContext!,
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeOutCubic,
       alignment: isForReply ? 0.2 : 0.3,
     );
-
-    if (isForReply) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (key.currentContext != null && mounted) {
-          Scrollable.ensureVisible(
-            key.currentContext!,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            alignment: 0.1,
-          );
-        }
-      });
-    }
   }
 
-  GlobalKey _getKeyForComment(String commentId) {
-    return _commentKeys.putIfAbsent(commentId, () => GlobalKey());
-  }
+  GlobalKey _getKeyForComment(String commentId) =>
+      _commentKeys.putIfAbsent(commentId, () => GlobalKey());
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
       color: AppColors.kprimaryColor,
-      onRefresh: () async {
-        await context.read<PostDetailsCubit>().loadComments(isRefresh: true);
-      },
+      onRefresh: () async =>
+          context.read<PostDetailsCubit>().loadComments(isRefresh: true),
       child: BlocListener<PostDetailsCubit, PostDetailsState>(
         listenWhen: (prev, curr) =>
             prev.scrollTrigger != curr.scrollTrigger &&
             curr.scrollToCommentId != null,
         listener: (context, state) {
-          if (state.scrollToCommentId != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              final isForReply = state.activeReplyId == state.scrollToCommentId;
-              _scrollToComment(
-                state.scrollToCommentId!,
-                isForReply: isForReply,
-              );
-              context.read<PostDetailsCubit>().clearScrollTarget();
-            });
-          }
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollToComment(
+              state.scrollToCommentId!,
+              isForReply: state.activeReplyId == state.scrollToCommentId,
+            );
+            context.read<PostDetailsCubit>().clearScrollTarget();
+          });
         },
         child:
             BlocSelector<PostDetailsCubit, PostDetailsState, _CommentsUIState>(
@@ -212,43 +192,45 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
               builder: (context, uiState) {
                 final cubit = context.read<PostDetailsCubit>();
 
+                // ✅ تجميع كل الـ Callbacks في الـ Bundle
+                final commentCallbacks = CommentCallbacks(
+                  onLike: (comment, isReply) =>
+                      cubit.toggleLike(isReply, comment.id),
+                  onReplyToggle: cubit.toggleReply,
+                  onEditToggle: cubit.toggleEdit,
+                  onCancelEdit: cubit.cancelEdit,
+                  onCancelReply: cubit.cancelReply,
+                  onSaveEdit: (id, content, isReply) => cubit.saveEditedComment(
+                    commentId: id,
+                    newContent: content,
+                    isReply: isReply,
+                  ),
+                  onSendReply: cubit.addReply,
+                  onLoadReplies: cubit.loadReplies,
+                  onDelete: (id) => cubit.deleteComment(
+                    commentId: id,
+                  ), // مثال لإضافة وظائف جديدة بسهولة
+                );
+
                 return PostDetailsCard(
-                  // ✅ بنستخدم البوست اللي جاي من الـ Widget مباشرة
                   post: widget.currentPost,
                   cachedController: widget.cachedController,
                   scrollController: widget.scrollController,
                   callbacks: widget.callbacks,
+                  commentCallbacks: commentCallbacks, // ✅ تمرير الـ Bundle
                   onCommentTap: () => cubit.requestInputFocus(),
-                  // Comments Data
                   comments: uiState.comments,
                   isLoadingComments: uiState.isLoading,
                   hasMoreComments: uiState.hasMore,
                   isLoadingMore: uiState.isLoadingMore,
                   commentsError: uiState.error,
-                  // State
                   editingCommentId: uiState.editingCommentId,
                   activeReplyId: uiState.activeReplyId,
                   isEditLoading: uiState.isEditLoading,
                   isReplyLoading: uiState.isReplyLoading,
-                  // Keys
                   getCommentKey: _getKeyForComment,
-                  // Callbacks
                   onLoadMore: cubit.loadMoreComments,
                   onRetry: cubit.loadComments,
-                  onLikeComment: (comment, isReply) =>
-                      cubit.toggleLike(isReply, comment.id),
-                  onReplyTap: cubit.toggleReply,
-                  onEditTap: cubit.toggleEdit,
-                  onCancelEdit: cubit.cancelEdit,
-                  onCancelReply: cubit.cancelReply,
-                  onSaveEdit: (commentId, content, isReply) =>
-                      cubit.saveEditedComment(
-                        commentId: commentId,
-                        newContent: content,
-                        isReply: isReply,
-                      ),
-                  onSendReply: cubit.addReply,
-                  onLoadReplies: cubit.loadReplies,
                 );
               },
             ),
@@ -256,23 +238,21 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
     );
   }
 
-  _CommentsUIState _selectCommentsState(PostDetailsState state) {
-    return _CommentsUIState(
-      comments: state.comments,
-      isLoading: state.commentsState == CubitStates.loading,
-      hasMore: state.hasMoreComments,
-      isLoadingMore: state.isLoadingMore,
-      error: state.commentsState == CubitStates.failure
-          ? state.errorMessage
-          : null,
-      editingCommentId: state.editingCommentId,
-      activeReplyId: state.activeReplyId,
-      isEditLoading: state.editingState == CubitStates.loading,
-      isReplyLoading: state.addingReplyState == CubitStates.loading,
-    );
-  }
+  _CommentsUIState _selectCommentsState(PostDetailsState state) =>
+      _CommentsUIState(
+        comments: state.comments,
+        isLoading: state.commentsState == CubitStates.loading,
+        hasMore: state.hasMoreComments,
+        isLoadingMore: state.isLoadingMore,
+        error: state.commentsState == CubitStates.failure
+            ? state.errorMessage
+            : null,
+        editingCommentId: state.editingCommentId,
+        activeReplyId: state.activeReplyId,
+        isEditLoading: state.editingState == CubitStates.loading,
+        isReplyLoading: state.addingReplyState == CubitStates.loading,
+      );
 }
-
 // ══════════════════════════════════════════════════════════════════════════════
 // State Model
 // ══════════════════════════════════════════════════════════════════════════════

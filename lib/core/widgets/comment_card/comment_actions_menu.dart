@@ -1,5 +1,6 @@
 // lib/core/widgets/comment_card/comment_actions_menu.dart
 
+import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
 import 'package:tayseer/my_import.dart';
 
 typedef CommentMenuCallback = void Function(CommentMenuAction action);
@@ -8,13 +9,37 @@ enum CommentMenuAction { edit, delete, reply, report, hide }
 
 class CommentActionsMenu extends StatelessWidget {
   final bool isOwner;
-  final CommentMenuCallback onActionSelected;
+  final bool isReply;
+  final String commentId;
+  final CommentCallbacks callbacks;
 
   const CommentActionsMenu({
     super.key,
     required this.isOwner,
-    required this.onActionSelected,
+    required this.isReply,
+    required this.commentId,
+    required this.callbacks,
   });
+
+  void _handleAction(CommentMenuAction action) {
+    switch (action) {
+      case CommentMenuAction.edit:
+        callbacks.onEditToggle?.call(commentId);
+        break;
+      case CommentMenuAction.delete:
+        callbacks.onDelete?.call(commentId);
+        break;
+      case CommentMenuAction.reply:
+        callbacks.onReplyToggle?.call(commentId);
+        break;
+      case CommentMenuAction.report:
+        callbacks.onReport?.call(commentId);
+        break;
+      case CommentMenuAction.hide:
+        callbacks.onHide?.call(commentId);
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +47,18 @@ class CommentActionsMenu extends StatelessWidget {
       elevation: 0,
       padding: EdgeInsets.zero,
       color: AppColors.secondary50,
-      icon: Icon(Icons.more_vert, color: Colors.grey.shade400, size: 20.sp),
+      // icon: Icon(Icons.more_vert, color: Colors.grey.shade400, size: 20.sp),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26.r)),
-      onSelected: onActionSelected,
+      onSelected: _handleAction,
+      child: Container(
+        // ممكن تشيل الـ color: Colors.transparent لو مش محتاجه، بس مفيد للضغط
+        color: Colors.transparent,
+        padding: EdgeInsets.symmetric(
+          horizontal: 8.w,
+          vertical: 4.h,
+        ), // 👈 صغر القيم دي براحتك
+        child: Icon(Icons.more_vert, color: Colors.grey.shade400, size: 20.sp),
+      ),
       itemBuilder: (_) =>
           isOwner ? _buildOwnerItems(context) : _buildGuestItems(context),
     );
