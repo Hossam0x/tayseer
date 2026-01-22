@@ -6,7 +6,9 @@ import '../models/profile_model.dart';
 abstract class ProfileRepository {
   Future<Either<Failure, ProfileModel>> getAdvisorProfile();
 
-  Future<Either<Failure, List<PostModel>>> fetchSavedPosts({required int page});
+  Future<Either<Failure, List<PostModel>>> fetchSavedPosts({
+    required int page,
+  });
 
   // ⭐️ أضف هذه الوظائف
   Future<void> reactToPost({

@@ -59,7 +59,9 @@ class ProfileCubit extends Cubit<ProfileState> {
       final nextPage = state.currentPage + 1;
 
       // ⭐️ استخدم ProfileRepository بدل HomeRepository
-      final result = await _profileRepository.fetchSavedPosts(page: nextPage);
+      final result = await _profileRepository.fetchSavedPosts(
+        page: nextPage,
+      );
 
       if (isClosed) return;
       result.fold(
