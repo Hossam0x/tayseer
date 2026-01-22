@@ -1,7 +1,5 @@
 // lib/models/advisor_sessions_model.dart
 
-import 'dart:convert';
-
 class AdvisorSessionsModel {
   final bool advisorSuccess;
   final String advisorMessage;
@@ -48,7 +46,7 @@ class AdvisorData {
           (json['sessionNotExpired'] as List<dynamic>? ?? [])
               .map((e) => AdvisorSession.fromJson(e))
               .toList(),
-      advisorTimezone: json['advisorTimezone'] ?? '',
+      advisorTimezone: json['advisorTimezone'] ?? 'UTC',
     );
   }
 
@@ -63,47 +61,80 @@ class AdvisorData {
 
 class AdvisorSession {
   final String advisorSessionId;
+  final String advisorMessage;
   final String advisorStatus;
   final bool advisorIsNow;
   final bool advisorIsUpcoming;
   final bool advisorIsDone;
   final String advisorDate;
+  final String advisorDisplayTimeRange;
+  final int advisorDuration;
   final AdvisorAdvisor advisorAdvisor;
   final AdvisorTimeRange advisorTimeRange;
+  final OtherUser? otherUser;
 
   AdvisorSession({
     required this.advisorSessionId,
+    required this.advisorMessage,
     required this.advisorStatus,
     required this.advisorIsNow,
     required this.advisorIsUpcoming,
     required this.advisorIsDone,
     required this.advisorDate,
+    required this.advisorDisplayTimeRange,
+    required this.advisorDuration,
     required this.advisorAdvisor,
     required this.advisorTimeRange,
+    this.otherUser,
   });
 
   factory AdvisorSession.fromJson(Map<String, dynamic> json) {
     return AdvisorSession(
       advisorSessionId: json['sessionId'] ?? '',
+      advisorMessage: json['message'] ?? '',
       advisorStatus: json['status'] ?? '',
       advisorIsNow: json['isNow'] ?? false,
       advisorIsUpcoming: json['isUpcoming'] ?? false,
       advisorIsDone: json['isDone'] ?? false,
-      advisorDate: json['date'] ?? '',
-      advisorAdvisor: AdvisorAdvisor.fromJson(json['advisor'] ?? {}),
-      advisorTimeRange: AdvisorTimeRange.fromJson(json['timeRange'] ?? {}),
+      // ✅ تصحيح: استخدام displayDate
+      advisorDate: json['displayDate'] ?? '',
+      // ✅ إضافة displayTimeRange
+      advisorDisplayTimeRange: json['displayTimeRange'] ?? '',
+      advisorDuration: json['duration'] ?? 0,
+      // ✅ تصحيح: بناء AdvisorAdvisor من الحقول المباشرة
+      advisorAdvisor: AdvisorAdvisor.fromJson({
+        'id': json['id'] ?? '',
+        'name': json['name'] ?? '',
+        'userName': json['name'] ?? '', // غير موجود في API، نستخدم name
+        'image': json['image'] ?? '',
+      }),
+      // ✅ تصحيح: بناء TimeRange من الحقول المباشرة
+      advisorTimeRange: AdvisorTimeRange.fromJson({
+        'fromTimeUTC': json['fromTimeUTC'],
+        'toTimeUTC': json['toTimeUTC'],
+        'from': json['displayFromTime'] ?? '',
+        'to': json['displayToTime'] ?? '',
+      }),
+      // ✅ إضافة otherUser
+      otherUser: json['otherUser'] != null
+          ? OtherUser.fromJson(json['otherUser'])
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'sessionId': advisorSessionId,
+    'message': advisorMessage,
     'status': advisorStatus,
     'isNow': advisorIsNow,
     'isUpcoming': advisorIsUpcoming,
     'isDone': advisorIsDone,
-    'date': advisorDate,
+    'displayDate': advisorDate,
+    'displayTimeRange': advisorDisplayTimeRange,
+    'duration': advisorDuration,
     'advisor': advisorAdvisor.toJson(),
     'timeRange': advisorTimeRange.toJson(),
+    'otherUser': otherUser?.toJson(),
   };
 }
 
@@ -124,7 +155,7 @@ class AdvisorAdvisor {
     return AdvisorAdvisor(
       advisorId: json['id'] ?? '',
       advisorName: json['name'] ?? '',
-      advisorUserName: json['userName'] ?? '',
+      advisorUserName: json['userName'] ?? json['name'] ?? '',
       advisorImage: json['image'] ?? '',
     );
   }
@@ -164,5 +195,36 @@ class AdvisorTimeRange {
     if (advisorToTimeUTC != null) 'toTimeUTC': advisorToTimeUTC,
     'from': advisorFrom,
     'to': advisorTo,
+  };
+}
+
+// ✅ إضافة class جديد لـ otherUser
+class OtherUser {
+  final String id;
+  final String name;
+  final String image;
+  final bool isAnonymous;
+
+  OtherUser({
+    required this.id,
+    required this.name,
+    required this.image,
+    required this.isAnonymous,
+  });
+
+  factory OtherUser.fromJson(Map<String, dynamic> json) {
+    return OtherUser(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      image: json['image'] ?? '',
+      isAnonymous: json['Anonymous'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'image': image,
+    'Anonymous': isAnonymous,
   };
 }

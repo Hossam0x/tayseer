@@ -4,7 +4,7 @@ class SessionStartModel {
   final DateTime fromTimeUTC;
   final DateTime toTimeUTC;
   final String id;
-  final String? name; // ✅ ممكن يكون null
+  final String? name;
   final String imageUrl;
   final OtherUserModel otherUser;
 
@@ -30,7 +30,7 @@ class SessionStartModel {
           DateTime.tryParse(json['toTimeUTC']?.toString() ?? '') ??
           DateTime.now(),
       id: json['id'] as String? ?? '',
-      name: json['name'] as String?, // ✅ nullable
+      name: json['name'] as String?,
       imageUrl: json['image'] as String? ?? '',
       otherUser: OtherUserModel.fromJson(
         json['otherUser'] as Map<String, dynamic>? ?? {},
@@ -54,7 +54,7 @@ class SessionStartModel {
 
 class OtherUserModel {
   final String id;
-  final String? name; // ✅ ممكن يكون null
+  final String? name;
   final String imageUrl;
 
   OtherUserModel({required this.id, this.name, required this.imageUrl});
@@ -62,7 +62,7 @@ class OtherUserModel {
   factory OtherUserModel.fromJson(Map<String, dynamic> json) {
     return OtherUserModel(
       id: json['id'] as String? ?? '',
-      name: json['name'] as String?, // ✅ nullable - ده اللي كان بيعمل الـ error
+      name: json['name'] as String?,
       imageUrl: json['image'] as String? ?? '',
     );
   }

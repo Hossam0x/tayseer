@@ -2,36 +2,35 @@ import 'package:tayseer/features/advisor/session/data/models/advisor_session_res
 import 'package:tayseer/features/user/my_space/data/model/pending_session.dart';
 import 'package:tayseer/my_import.dart';
 
-class AdvisorSessionState {
-  CubitStates getadvisorsessionState;
+class PendingSessionState {
   CubitStates getpendingsessionState;
-  AdvisorData? advisorData;
   PendingSessionData? pendingSessionData;
+  CubitStates acceptsessionState;
+  AdvisorSession? acceptSessionData;
   String? errormessage;
 
-  AdvisorSessionState({
-    this.getadvisorsessionState = CubitStates.initial,
+  PendingSessionState({
     this.getpendingsessionState = CubitStates.initial,
-    this.advisorData,
     this.pendingSessionData,
     this.errormessage = '',
+    this.acceptsessionState = CubitStates.initial,
+    this.acceptSessionData,
   });
 
-  AdvisorSessionState copyWith({
-    CubitStates? getadvisorsessionState,
+  PendingSessionState copyWith({
     CubitStates? getpendingsessionState,
-    AdvisorData? advisorData,
     PendingSessionData? pendingSessionData,
     String? errormessage,
+    CubitStates? acceptsessionState,
+    AdvisorSession? acceptSessionData,
   }) {
-    return AdvisorSessionState(
-      getadvisorsessionState:
-          getadvisorsessionState ?? this.getadvisorsessionState,
+    return PendingSessionState(
       getpendingsessionState:
           getpendingsessionState ?? this.getpendingsessionState,
-      advisorData: advisorData ?? this.advisorData,
       pendingSessionData: pendingSessionData ?? this.pendingSessionData,
       errormessage: errormessage ?? this.errormessage,
+      acceptsessionState: acceptsessionState ?? this.acceptsessionState,
+      acceptSessionData: acceptSessionData ?? this.acceptSessionData,
     );
   }
 }

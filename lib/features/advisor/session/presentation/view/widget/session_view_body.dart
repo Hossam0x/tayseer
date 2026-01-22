@@ -22,8 +22,34 @@ class _SessionViewBodyState extends State<SessionViewBody> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // تحميل البيانات عند بداية الشاشة
     context.read<AdvisorSessionCubit>().getAdvisorSessions();
+  }
+
+  void _joinCall({
+    required String sessionId,
+    required String visitorId,
+    required String visitorName,
+    required String visitorImage,
+    required String advisorId,
+    required String advisorName,
+    required String advisorImage,
+  }) {
+    context.pushNamed(
+      AppRouter.voiceCallView,
+      arguments: {
+        'callID': sessionId,
+        'currentUserID': advisorId,
+        'currentUserName': advisorName,
+        'currentUserAvatarUrl': advisorImage,
+        'participants': [
+          {
+            'userID': visitorId,
+            'userName': visitorName,
+            'avatarUrl': visitorImage,
+          },
+        ],
+      },
+    );
   }
 
   @override
@@ -35,13 +61,12 @@ class _SessionViewBodyState extends State<SessionViewBody> {
             state.advisorData?.advisorSessionNotExpired ?? [];
         final sessionsExpired = state.advisorData?.advisorSessionExpired ?? [];
 
-        // لو الاتنين فاضيين نعرض EmptySessionsState واحد
         if (!isLoading &&
             sessionsNotExpired.isEmpty &&
             sessionsExpired.isEmpty) {
           return Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
+              padding: const EdgeInsets.symmetric(vertical: 40),
               child: EmptySessionsState(
                 title: "لا يوجد جلسات حتى الان",
                 subtitle: "احجز جلسة لتتمكن من حل مشاكلك النفسية",
@@ -53,10 +78,9 @@ class _SessionViewBodyState extends State<SessionViewBody> {
 
         return CustomScrollView(
           slivers: [
-            // --- عنوان الجلسات القادمة ---
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.only(right: 20),
+                padding: const EdgeInsets.only(right: 20),
                 child: Text(
                   context.tr("coming"),
                   style: Styles.textStyle16SemiBold,
@@ -76,11 +100,11 @@ class _SessionViewBodyState extends State<SessionViewBody> {
               SliverToBoxAdapter(
                 child: Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
+                    padding: const EdgeInsets.symmetric(vertical: 40),
                     child: EmptySessionsState(
-                      title: "لا يوجد جلسات حتى الان",
-                      subtitle: "احجز جلسة لتتمكن من حل مشاكلك النفسية",
-                      showAnimation: true,
+                      title: "لا يوجد جلسات قادمة",
+                      subtitle: "",
+                      showAnimation: false,
                     ),
                   ),
                 ),
@@ -92,21 +116,54 @@ class _SessionViewBodyState extends State<SessionViewBody> {
                     final session = sessionsNotExpired[index];
                     final isFirst = index == 0;
 
+                    final otherUser = session.otherUser;
+                    final otherUserName = otherUser?.name ?? 'Unknown';
+                    final otherUserImage = otherUser?.image ?? '';
+                    final otherUserId = otherUser?.id ?? '';
+                    final isAnonymous = otherUser?.isAnonymous ?? false;
+
                     return SessionCard(
+                      onTapJoin: () {
+                        if (session.advisorIsNow) {
+                          _joinCall(
+                            sessionId: session.advisorSessionId,
+                            visitorId: otherUserId,
+                            visitorName: otherUserName,
+                            visitorImage: otherUserImage,
+                            advisorId: session.advisorAdvisor.advisorId,
+                            advisorName: session.advisorAdvisor.advisorName,
+                            advisorImage: session.advisorAdvisor.advisorImage,
+                          );
+                        } else {
+                          AppToast.warning(
+                            context,
+                            "الجلسة لم تبدأ بعد او انتهت",
+                          );
+                        }
+                      },
                       isNow: session.advisorIsNow,
-                      isBlur: isFirst,
+                      isBlur: isAnonymous,
                       sessiondate: session.advisorDate,
-                      timeRange:
-                          "${session.advisorTimeRange.advisorFrom} - ${session.advisorTimeRange.advisorTo}",
-                      imageUrl: session.advisorAdvisor.advisorImage,
-                      style: isFirst
+                      timeRange: session.advisorDisplayTimeRange.isNotEmpty
+                          ? session.advisorDisplayTimeRange
+                          : "${session.advisorTimeRange.advisorFrom} - ${session.advisorTimeRange.advisorTo}",
+                      imageUrl: otherUserImage.isNotEmpty
+                          ? otherUserImage
+                          : session.advisorAdvisor.advisorImage,
+                      style: session.advisorIsNow
                           ? SessionCardStyle.active
                           : SessionCardStyle.outlined,
-                      name: session.advisorAdvisor.advisorName,
-                      handle: session.advisorAdvisor.advisorUserName,
-                      buttonText: isFirst ? "انضمام" : "التفاصيل",
+                      name: otherUserName,
+                      handle: '@$otherUserName',
+                      buttonText: session.advisorIsNow ? "انضمام" : "التفاصيل",
                       onTapDetails: () {
-                        context.pushNamed(AppRouter.kSessionDetailsView);
+                        context.pushNamed(
+                          AppRouter.kSessionDetailsView,
+                          arguments: {
+                            'sessionId': session.advisorSessionId,
+                            'session': session,
+                          },
+                        );
                       },
                     );
                   },
@@ -133,7 +190,7 @@ class _SessionViewBodyState extends State<SessionViewBody> {
             // --- عنوان الجلسات السابقة ---
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.only(right: 20, top: 16),
+                padding: const EdgeInsets.only(right: 20, top: 16),
                 child: Text(
                   context.tr("previous_sessions"),
                   style: Styles.textStyle16SemiBold,
@@ -153,11 +210,11 @@ class _SessionViewBodyState extends State<SessionViewBody> {
               SliverToBoxAdapter(
                 child: Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
+                    padding: const EdgeInsets.symmetric(vertical: 40),
                     child: EmptySessionsState(
-                      title: "لا يوجد جلسات حتى الان",
-                      subtitle: "احجز جلسة لتتمكن من حل مشاكلك النفسية",
-                      showAnimation: true,
+                      title: "لا يوجد جلسات سابقة",
+                      subtitle: "",
+                      showAnimation: false,
                     ),
                   ),
                 ),
@@ -166,23 +223,35 @@ class _SessionViewBodyState extends State<SessionViewBody> {
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    if (!showAllPrevious && index >= 2) return null;
-
                     final session = sessionsExpired[index];
+
+                    final otherUser = session.otherUser;
+                    final otherUserName = otherUser?.name ?? 'Unknown';
+                    final otherUserImage = otherUser?.image ?? '';
+                    final isAnonymous = otherUser?.isAnonymous ?? false;
 
                     return SessionCard(
                       isNow: session.advisorIsNow,
-                      isBlur: true,
+                      isBlur: isAnonymous,
                       sessiondate: session.advisorDate,
-                      timeRange:
-                          "${session.advisorTimeRange.advisorFrom} - ${session.advisorTimeRange.advisorTo}",
-                      imageUrl: session.advisorAdvisor.advisorImage,
+                      timeRange: session.advisorDisplayTimeRange.isNotEmpty
+                          ? session.advisorDisplayTimeRange
+                          : "${session.advisorTimeRange.advisorFrom} - ${session.advisorTimeRange.advisorTo}",
+                      imageUrl: otherUserImage.isNotEmpty
+                          ? otherUserImage
+                          : session.advisorAdvisor.advisorImage,
                       style: SessionCardStyle.white,
-                      name: session.advisorAdvisor.advisorName,
-                      handle: session.advisorAdvisor.advisorUserName,
+                      name: otherUserName,
+                      handle: '@$otherUserName',
                       buttonText: "التفاصيل",
                       onTapDetails: () {
-                        context.pushNamed(AppRouter.kSessionDetailsView);
+                        context.pushNamed(
+                          AppRouter.kSessionDetailsView,
+                          arguments: {
+                            'sessionId': session.advisorSessionId,
+                            'session': session,
+                          },
+                        );
                       },
                     );
                   },
@@ -194,7 +263,6 @@ class _SessionViewBodyState extends State<SessionViewBody> {
                 ),
               ),
 
-            // زر عرض المزيد للجلسات السابقة
             if (!showAllPrevious && sessionsExpired.length > 2)
               SliverToBoxAdapter(
                 child: TextButton.icon(

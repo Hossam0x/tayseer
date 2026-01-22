@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/input/chat_input_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_cubit.dart';

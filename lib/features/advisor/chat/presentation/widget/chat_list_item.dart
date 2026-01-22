@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chatView/chat_item_model.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_list_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -44,7 +44,7 @@ class ChatListItem extends StatelessWidget {
           children: [
             CustomSlidableAction(
               onPressed: (context) {
-                context.read<ChatCubit>().archiveChatRoom(chatRoom.id);
+                context.read<ChatListCubit>().archiveChatRoom(chatRoom.id);
                 AppToast.success(context, 'تم أرشفة المحادثة بنجاح');
               },
               backgroundColor: Colors.transparent,
@@ -131,7 +131,7 @@ class ChatListItem extends StatelessWidget {
                               subtitle:
                                   'لن تتمكن من استعادة المحادثة بعد حذفها.',
                               onConfirm: () {
-                                context.read<ChatCubit>().deleteChatRoom(
+                                context.read<ChatListCubit>().deleteChatRoom(
                                   chatRoom.id,
                                 );
                                 // deleteConversation();
@@ -182,7 +182,7 @@ class ChatListItem extends StatelessWidget {
                                 subtitle:
                                     'سيتمكن المستخدم من إرسال رسائل إليك مرة أخرى.',
                                 onConfirm: () {
-                                  context.read<ChatCubit>().unblockUser(
+                                  context.read<ChatListCubit>().unblockUser(
                                     blockedId: chatRoom.sender.id,
                                     chatRoomId: chatRoom.id,
                                   );
@@ -197,7 +197,7 @@ class ChatListItem extends StatelessWidget {
                                 subtitle:
                                     'لن يتمكن المستخدم من إرسال رسائل إليك.',
                                 onConfirm: () {
-                                  context.read<ChatCubit>().blockUser(
+                                  context.read<ChatListCubit>().blockUser(
                                     blockedId: chatRoom.sender.id,
                                     chatRoomId: chatRoom.id,
                                   );
@@ -218,9 +218,9 @@ class ChatListItem extends StatelessWidget {
 
         child: GestureDetector(
           onTap: () {
-            context.read<ChatCubit>().setActiveChatRoom(chatRoom.id);
-            context.read<ChatCubit>().markMessageRed(chatRoom.id);
-            context.read<ChatCubit>().markChatAsRead(chatRoom.id);
+            context.read<ChatListCubit>().setActiveChatRoom(chatRoom.id);
+            context.read<ChatListCubit>().markMessageRed(chatRoom.id);
+            context.read<ChatListCubit>().markChatAsRead(chatRoom.id);
             context
                 .pushNamed(
                   AppRouter.kConversitionView,
@@ -232,7 +232,7 @@ class ChatListItem extends StatelessWidget {
                     'isBlocked': chatRoom.isBlocked,
                     'onBlockStatusChanged': (bool isBlocked) {
                       if (context.mounted) {
-                        context.read<ChatCubit>().updateBlockStatus(
+                        context.read<ChatListCubit>().updateBlockStatus(
                           chatRoom.id,
                           isBlocked,
                         );
@@ -242,7 +242,7 @@ class ChatListItem extends StatelessWidget {
                 )
                 .then((_) {
                   if (context.mounted) {
-                    context.read<ChatCubit>().setActiveChatRoom(null);
+                    context.read<ChatListCubit>().setActiveChatRoom(null);
                   }
                 });
           },

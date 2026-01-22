@@ -5,7 +5,7 @@ import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/message_actions_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/overlay_manager.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/scroll_behavior_handler.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/input/chat_input_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_state.dart';
@@ -192,10 +192,12 @@ abstract class BaseChatScreenState<T extends BaseChatScreen> extends State<T> {
                       );
                     },
                     onReplyTap: (messageId, messages) {
-                      _overlayManager?.scrollToMessage(
-                        messageId: messageId,
-                        allMessages: messages,
-                      );
+                      if (messageId != null) {
+                        _overlayManager?.scrollToMessage(
+                          messageId: messageId,
+                          allMessages: messages,
+                        );
+                      }
                     },
                   ),
                 ),

@@ -1,8 +1,10 @@
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_cubit.dart';
-import 'package:tayseer/features/advisor/chat/presentation/manager/chat_state.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_list_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_list_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/chat_list_item.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/chat_list_shimmer.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/my_import.dart';
 
 class ChatListBuilder extends StatelessWidget {
   const ChatListBuilder({super.key});
@@ -13,25 +15,18 @@ class ChatListBuilder extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
 
-    return BlocBuilder<ChatCubit, ChatState>(
+    return BlocBuilder<ChatListCubit, ChatListState>(
       builder: (context, state) {
-        // حالة التحميل
-        if (state.getallchatrooms == CubitStates.loading) {
-          return const Center(
-            child: CircularProgressIndicator(color: Color(0xFFE96E88)),
-          );
-        }
-
-        // حالة الخطأ
-        if (state.getallchatrooms == CubitStates.failure) {
-          return Center(
+        return state.maybeMap(
+          loading: (_) => const ChatListShimmer(),
+          failure: (s) => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(Icons.error_outline, size: 60, color: Colors.red),
                 const SizedBox(height: 16),
                 Text(
-                  state.errorMessage ?? 'حدث خطأ ما',
+                  s.message,
                   style: const TextStyle(
                     fontFamily: 'Cairo',
                     fontSize: 16,
@@ -42,7 +37,7 @@ class ChatListBuilder extends StatelessWidget {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    context.read<ChatCubit>().fetchChatRooms();
+                    context.read<ChatListCubit>().loadChatRooms();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFE96E88),
@@ -54,49 +49,44 @@ class ChatListBuilder extends StatelessWidget {
                 ),
               ],
             ),
-          );
-        }
-
-        // حالة النجاح
-        if (state.getallchatrooms == CubitStates.success) {
-          // إذا كانت القائمة فارغة
-          if (state.chatRoom?.rooms == null || state.chatRoom!.rooms.isEmpty) {
-            return SharedEmptyState(
-              title: "لا توجد محادثات حتى الآن",
-              subTitleWidget: Text(
-                "ابدأ محادثة جديدة الآن",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontFamily: 'Cairo',
-                  fontSize: isMobile ? 12 : 14,
+          ),
+          loaded: (s) {
+            if (s.chatRooms.isEmpty) {
+              return SharedEmptyState(
+                title: "لا توجد محادثات حتى الآن",
+                subTitleWidget: Text(
+                  "ابدأ محادثة جديدة الآن",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontFamily: 'Cairo',
+                    fontSize: isMobile ? 12 : 14,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<ChatListCubit>().loadChatRooms();
+              },
+              color: const Color(0xFFE96E88),
+              child: ListView.separated(
+                padding: EdgeInsets.only(bottom: screenHeight * 0.01),
+                itemCount: s.chatRooms.length,
+                separatorBuilder: (context, index) => Divider(
+                  color: Colors.grey.shade200,
+                  height: isMobile ? 0.5 : 1,
+                ),
+                itemBuilder: (context, index) {
+                  final chatRoom = s.chatRooms[index];
+                  return ChatListItem(index: index, chatRoom: chatRoom);
+                },
               ),
             );
-          }
-
-          // عرض القائمة
-          return RefreshIndicator(
-            onRefresh: () async {
-              context.read<ChatCubit>().fetchChatRooms();
-            },
-            color: const Color(0xFFE96E88),
-            child: ListView.separated(
-              padding: EdgeInsets.only(bottom: screenHeight * 0.01),
-              itemCount: state.chatRoom!.rooms.length,
-              separatorBuilder: (context, index) => Divider(
-                color: Colors.grey.shade200,
-                height: isMobile ? 0.5 : 1,
-              ),
-              itemBuilder: (context, index) {
-                final chatRoom = state.chatRoom!.rooms[index];
-                return ChatListItem(index: index, chatRoom: chatRoom);
-              },
-            ),
-          );
-        }
-
-        return const SizedBox.shrink();
+          },
+          orElse: () => const SizedBox.shrink(),
+        );
       },
     );
   }

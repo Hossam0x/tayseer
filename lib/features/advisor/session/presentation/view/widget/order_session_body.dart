@@ -1,3 +1,10 @@
+import 'package:tayseer/features/advisor/chat/presentation/widget/request/custome_request_appbar.dart';
+import 'package:tayseer/features/advisor/session/presentation/manager/pending_session_cubit/pending_session_cubit.dart';
+import 'package:tayseer/features/advisor/session/presentation/manager/pending_session_cubit/pending_session_state.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/widget/accept_or_decline_session_listener.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/widget/animated_list.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/widget/order_request_card_shimmer.dart';
+import 'package:tayseer/features/user/my_space/data/model/pending_session.dart';
 import 'package:tayseer/my_import.dart';
 
 class OrderSessionBody extends StatelessWidget {
@@ -5,251 +12,119 @@ class OrderSessionBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl, // ضبط الاتجاه لليمين
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF3F5F9), // لون خلفية الصفحة
-        body: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+    return Stack(
+      children: [
+        Column(
+          children: [
+            const CustomAppBar(title: "الطلبات"),
+            Expanded(
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child:
+                    BlocSelector<
+                      PendingSessionCubit,
+                      PendingSessionState,
+                      ({
+                        CubitStates state,
+                        PendingSessionData? data,
+                        String? error,
+                      })
+                    >(
+                      selector: (state) => (
+                        state: state.getpendingsessionState,
+                        data: state.pendingSessionData,
+                        error: state.errormessage,
+                      ),
+                      builder: (context, record) {
+                        if (record.state == CubitStates.loading) {
+                          return _buildShimmerLoading();
+                        }
 
-              SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  return const OrderRequestCard(
-                    name: "أحمد منصور",
-                    handle: "@fdtgsyhujkl",
-                    date: "الثلاثاء، 7 فبراير",
-                    time: "01:00 م - 02:00 م",
-                    imgUrl: "https://i.pravatar.cc/150?img=12",
-                  );
-                }, childCount: 5),
+                        if (record.state == CubitStates.failure) {
+                          return _buildErrorWidget(context, record.error);
+                        }
+
+                        final sessions = record.data?.pendingSessions;
+
+                        if (sessions == null || sessions.isEmpty) {
+                          return _buildEmptyWidget();
+                        }
+
+                        return AnimatedSessionList(sessions: sessions);
+                      },
+                    ),
               ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
+        const AcceptOrDeclineSessionListener(),
+      ],
     );
   }
-}
 
-class OrderRequestCard extends StatelessWidget {
-  final String name;
-  final String handle;
-  final String date;
-  final String time;
-  final String imgUrl;
+  Widget _buildShimmerLoading() {
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 20),
+      itemCount: 3,
+      itemBuilder: (context, index) {
+        return const OrderRequestShimmerCard();
+      },
+    );
+  }
 
-  const OrderRequestCard({
-    super.key,
-    required this.name,
-    required this.handle,
-    required this.date,
-    required this.time,
-    required this.imgUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final scale = width / 390; // لتكبير/تصغير العناصر حسب الشاشه
-
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
-      padding: EdgeInsets.all(16 * scale),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20 * scale),
-        border: Border.all(color: const Color(0xFFFFE5E8)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
-            blurRadius: 10 * scale,
-            offset: Offset(0, 4 * scale),
+  Widget _buildEmptyWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AppImage(AssetsData.kisEmptySesessionImage, width: 120.w),
+          const SizedBox(height: 16),
+          Text(
+            "لا توجد جلسات اليوم",
+            style: Styles.textStyle18Meduim,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "ستظهر هنا الجلسات بمجرد أن يقوم المرضى بحجز مواعيد\n في جدولك المتاح لهذا اليوم.",
+            style: Styles.textStyle16.copyWith(color: AppColors.kGrey666),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildErrorWidget(BuildContext context, String? error) {
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          /// User row
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: Image.network(
-                  imgUrl,
-                  width: 50 * scale,
-                  height: 50 * scale,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              SizedBox(width: 12 * scale),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    FittedBox(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16 * scale,
-                          color: Colors.black87,
-                          fontFamily: 'Cairo',
-                        ),
-                      ),
-                    ),
-                    FittedBox(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        handle,
-                        style: TextStyle(
-                          fontSize: 12 * scale,
-                          color: Colors.grey,
-                          fontFamily: 'Cairo',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          Icon(Icons.error_outline, size: 80, color: Colors.red.shade400),
+          const SizedBox(height: 16),
+          Text(
+            error ?? "حدث خطأ ما",
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade600,
+              fontFamily: 'Cairo',
+            ),
+            textAlign: TextAlign.center,
           ),
-
-          SizedBox(height: 16 * scale),
-
-          /// Date & Time row
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return Container(
-                padding: EdgeInsets.symmetric(
-                  vertical: 12 * scale,
-                  horizontal: 16 * scale,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFAFAFA),
-                  borderRadius: BorderRadius.circular(12 * scale),
-                  border: Border.all(color: Colors.grey.shade100),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 18 * scale,
-                            color: Colors.grey.shade600,
-                          ),
-                          SizedBox(width: 6 * scale),
-                          Flexible(
-                            child: Text(
-                              date,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12 * scale,
-                                color: Colors.grey.shade700,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Cairo',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      height: 20 * scale,
-                      width: 1,
-                      color: Colors.grey.shade300,
-                    ),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 18 * scale,
-                            color: Colors.grey.shade600,
-                          ),
-                          SizedBox(width: 6 * scale),
-                          Flexible(
-                            child: Text(
-                              time,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12 * scale,
-                                color: Colors.grey.shade700,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Cairo',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<PendingSessionCubit>().getPendingSession();
             },
-          ),
-
-          SizedBox(height: 16 * scale),
-
-          /// Buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD64D65),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12 * scale),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 12 * scale),
-                  ),
-                  child: Text(
-                    "قبول",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16 * scale,
-                      fontFamily: 'Cairo',
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12 * scale),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF2CBD0).withOpacity(0.5),
-                    side: const BorderSide(color: Color(0xFFD64D65)),
-                    foregroundColor: const Color(0xFFD64D65),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12 * scale),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 12 * scale),
-                  ),
-                  child: Text(
-                    "رفض",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16 * scale,
-                      fontFamily: 'Cairo',
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            icon: const Icon(Icons.refresh),
+            label: const Text(
+              "إعادة المحاولة",
+              style: TextStyle(fontFamily: 'Cairo'),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD64D65),
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),

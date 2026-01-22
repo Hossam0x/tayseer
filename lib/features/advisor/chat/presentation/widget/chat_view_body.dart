@@ -5,7 +5,6 @@ import 'package:tayseer/features/advisor/chat/presentation/widget/chat_view_head
 import 'package:tayseer/features/advisor/chat/presentation/widget/new_chat_floating_button.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/session_view.dart';
 // import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/advisor/session/presentation/view/widget/session_view_body.dart';
 
 class ChatViewBody extends StatefulWidget {
   const ChatViewBody({super.key});

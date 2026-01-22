@@ -1,9 +1,11 @@
-import 'dart:developer';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/call_cubit/call_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
-class CallPage extends StatefulWidget {
+class CallPage extends StatelessWidget {
   const CallPage({
     super.key,
     required this.callID,
@@ -20,70 +22,99 @@ class CallPage extends StatefulWidget {
   final List<Map<String, dynamic>> participants;
 
   @override
-  State<CallPage> createState() => _CallPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => CallCubit()
+        ..init(
+          myUserId: userID,
+          myAvatar: avatarUrl,
+          participants: participants,
+        )
+        ..joinSession(callID)
+        ..listenToSessionCancelled()
+        ..listenToSessionEnd(),
+      child: MultiBlocListener(
+        listeners: [
+          // ✅ Listener للـ Session Cancelled
+          BlocListener<CallCubit, CallState>(
+            listenWhen: (previous, current) =>
+                previous.sessionCancelledModel !=
+                    current.sessionCancelledModel &&
+                current.sessionCancelledModel != null,
+            listener: (context, state) {
+              _handleSessionEnd(
+                context,
+                state.sessionCancelledModel?.reason ?? "تم إلغاء الجلسة",
+              );
+            },
+          ),
+          // ✅ Listener للـ Session End
+          BlocListener<CallCubit, CallState>(
+            listenWhen: (previous, current) =>
+                previous.isSessionEnd != current.isSessionEnd &&
+                current.isSessionEnd == true,
+            listener: (context, state) {
+              _handleSessionEnd(context, state.sessionEndMessage);
+            },
+          ),
+        ],
+        child: _CallView(
+          callID: callID,
+          userID: userID,
+          userName: userName,
+          avatarUrl: avatarUrl,
+          participants: participants,
+        ),
+      ),
+    );
+  }
+
+  void _handleSessionEnd(BuildContext context, String message) async {
+    // 1. اقفل المكالمة
+    try {
+      await ZegoUIKitPrebuiltCallController().hangUp(context);
+    } catch (e) {
+      debugPrint('Error hanging up: $e');
+    }
+    if (context.mounted) {
+      AppToast.warning(context, message);
+    }
+    if (context.mounted) {
+      context.read<CallCubit>().resetState();
+    }
+  }
 }
 
-class _CallPageState extends State<CallPage> {
-  /// ✅ Map يربط كل userID بالصورة بتاعته
-  final Map<String, String> _avatarsCache = {};
+class _CallView extends StatelessWidget {
+  const _CallView({
+    required this.callID,
+    required this.userID,
+    required this.userName,
+    required this.avatarUrl,
+    required this.participants,
+  });
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeAvatarsCache();
-  }
-
-  void _initializeAvatarsCache() {
-    _avatarsCache[widget.userID] = widget.avatarUrl;
-    log(
-      '✅ Cached MY avatar: userID=${widget.userID}, avatar=${widget.avatarUrl}',
-    );
-
-    // 2️⃣ نخزن صور كل المشاركين (اليوزر التاني)
-    for (var participant in widget.participants) {
-      final String id = participant['id']?.toString() ?? '';
-      final String avatarUrl = participant['avatarUrl']?.toString() ?? '';
-      if (id.isNotEmpty) {
-        _avatarsCache[id] = avatarUrl;
-        log('✅ Cached PARTICIPANT avatar: id=$id, avatar=$avatarUrl');
-      }
-    }
-
-    // 3️⃣ نطبع الكاش كامل للتأكد
-    log('📦 Total avatars in cache: ${_avatarsCache.length}');
-    _avatarsCache.forEach((id, avatar) {
-      log('   👤 $id -> $avatar');
-    });
-  }
-
-  @override
-  void dispose() {
-    log('📞 CallPage Dispose');
-    ZegoUIKit().leaveRoom();
-
-    super.dispose();
-  }
+  final String callID;
+  final String userID;
+  final String userName;
+  final String avatarUrl;
+  final List<Map<String, dynamic>> participants;
 
   @override
   Widget build(BuildContext context) {
-    log('📞 CallPage Build');
-    log('   callID: ${widget.callID}');
-    log('   My userID: ${widget.userID}');
-    log('   My userName: ${widget.userName}');
-    log('   Participants: ${widget.participants.length}');
-
     return ZegoUIKitPrebuiltCall(
       appID: 735715950,
       appSign:
           'c8c12ef18db02cdc1d880efdc0cbdde63f7362ff7068473ba7cb21240829ea6d',
-      userID: widget.userID,
-      userName: widget.userName,
-      callID: widget.callID,
-      config: _buildCallConfig(),
+      userID: userID,
+      userName: userName,
+      callID: callID,
+      config: _buildCallConfig(context),
     );
   }
 
-  ZegoUIKitPrebuiltCallConfig _buildCallConfig() {
+  ZegoUIKitPrebuiltCallConfig _buildCallConfig(BuildContext context) {
+    final cubit = context.read<CallCubit>();
     final config = ZegoUIKitPrebuiltCallConfig.groupVoiceCall();
 
     config.background = Container(
@@ -95,16 +126,10 @@ class _CallPageState extends State<CallPage> {
       ),
     );
 
-    /// ✅ هنا نعرض صورة كل مستخدم داخل المكالمة
     config.audioVideoView.backgroundBuilder =
         (BuildContext context, Size size, ZegoUIKitUser? user, Map extraInfo) {
           if (user == null) return const SizedBox.shrink();
-
-          final String? avatar = _avatarsCache[user.id];
-          log(
-            '🎨 Building avatar view for: ${user.id} (${user.name}) -> avatar: $avatar',
-          );
-
+          final avatar = cubit.getAvatar(user.id);
           return Container(
             width: size.width,
             height: size.height,
@@ -129,7 +154,7 @@ class _CallPageState extends State<CallPage> {
                         width: 3,
                       ),
                     ),
-                    child: ClipOval(child: _buildUserAvatar(avatar)),
+                    child: ClipOval(child: _UserAvatar(avatar: avatar)),
                   ),
                   const SizedBox(height: 12),
                   Container(
@@ -156,32 +181,32 @@ class _CallPageState extends State<CallPage> {
           );
         };
 
-    // ✅ إخفاء الأفاتار الافتراضي عند الصوت
     config.audioVideoView.showAvatarInAudioMode = false;
-
-    // ✅ موجات الصوت
     config.audioVideoView.showSoundWavesInAudioMode = true;
 
-    // ❌ إخفاء الشريط العلوي (زرار الأشخاص)
     config.topMenuBar.isVisible = false;
     config.topMenuBar.buttons = [];
 
-    // ✅ إظهار كل الأزرار السفلية
-    // ✅ إظهار كل الأزرار السفلية
     config.bottomMenuBar.buttons = [
-      ZegoCallMenuBarButtonName.toggleMicrophoneButton, // 🎤 الميكروفون
-      ZegoCallMenuBarButtonName.hangUpButton, // 📞 إنهاء المكالمة
-      ZegoCallMenuBarButtonName.switchAudioOutputButton, // 🔊 الصوت
+      ZegoCallMenuBarButtonName.toggleMicrophoneButton,
+      ZegoCallMenuBarButtonName.hangUpButton,
+      ZegoCallMenuBarButtonName.switchAudioOutputButton,
     ];
 
     return config;
   }
+}
 
-  /// ✅ بناء صورة المستخدم
-  Widget _buildUserAvatar(String? avatar) {
-    if (avatar != null && avatar.isNotEmpty) {
+class _UserAvatar extends StatelessWidget {
+  const _UserAvatar({this.avatar});
+
+  final String? avatar;
+
+  @override
+  Widget build(BuildContext context) {
+    if (avatar != null && avatar!.isNotEmpty) {
       return Image.network(
-        avatar,
+        avatar!,
         fit: BoxFit.cover,
         width: 90,
         height: 90,
@@ -194,13 +219,11 @@ class _CallPageState extends State<CallPage> {
             ),
           );
         },
-        errorBuilder: (context, error, stackTrace) {
-          log('❌ Error loading avatar: $error');
+        errorBuilder: (_, __, ___) {
           return const Icon(Icons.person, size: 40, color: Colors.white);
         },
       );
     }
-
     return const Icon(Icons.person, size: 40, color: Colors.white);
   }
 }

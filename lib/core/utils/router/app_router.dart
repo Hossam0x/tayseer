@@ -13,6 +13,7 @@ import 'package:tayseer/features/advisor/profille/views/boost_properties_view.da
 import 'package:tayseer/features/advisor/profille/views/consultation_topics_view.dart';
 import 'package:tayseer/features/advisor/profille/views/location_selection_view.dart';
 import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/order_session_view.dart';
 import 'package:tayseer/features/advisor/settings/view/account_management_view.dart';
 import 'package:tayseer/features/advisor/settings/view/appointments_view.dart';
 import 'package:tayseer/features/advisor/settings/view/archive_view.dart';
@@ -149,6 +150,7 @@ abstract class AppRouter {
   static const userRatingAdvisor = '/UserRatingAdvisor';
   static const userticketSessionView = '/UserTicketSessionView';
   static const sessionticketsuccessview = '/SessionTicketSuccessView';
+  static const pendingsession = '/kOrderSessionView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -877,6 +879,13 @@ abstract class AppRouter {
             avatarUrl: currentUserAvatarUrl,
             participants: participants,
           ),
+        );
+
+      case pendingsession:
+        return MaterialPageRoute(
+          builder: (_) {
+            return OrderSessionView();
+          },
         );
 
       // case kEditCertificateView:

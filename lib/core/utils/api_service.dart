@@ -42,6 +42,7 @@ class ApiService {
     dynamic data,
     bool? isAuth,
     Map<String, dynamic>? headers,
+    void Function(int, int)? onSendProgress,
   }) async {
     try {
       final mergedHeaders = {
@@ -58,6 +59,7 @@ class ApiService {
           headers: mergedHeaders,
           validateStatus: (status) => status! >= 200 && status < 300,
         ),
+        onSendProgress: onSendProgress,
       );
       return response.data;
     } on DioException {
