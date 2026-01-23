@@ -483,12 +483,12 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       // 5️⃣ Sign in to Firebase
-      final userCredential =
-      await _firebaseAuth.signInWithCredential(oauthCredential);
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        oauthCredential,
+      );
 
       // 6️⃣ Get Firebase ID Token
-      final firebaseIdToken =
-      await userCredential.user?.getIdToken();
+      final firebaseIdToken = await userCredential.user?.getIdToken();
 
       if (firebaseIdToken == null) {
         throw Exception('Firebase ID Token is null');
@@ -505,7 +505,6 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     }
-
     // 👤 المستخدم لغى العملية
     on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) {
@@ -530,7 +529,6 @@ class AuthCubit extends Cubit<AuthState> {
         );
       }
     }
-
     // 🔥 أخطاء Firebase
     on FirebaseAuthException catch (e) {
       debugPrint('❌ Firebase Auth error: ${e.code} - ${e.message}');
@@ -543,7 +541,6 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     }
-
     // ❌ أي خطأ غير متوقع
     catch (e) {
       debugPrint('❌ Unexpected error: $e');
@@ -555,8 +552,7 @@ class AuthCubit extends Cubit<AuthState> {
           errorMessage: 'حدث خطأ غير متوقع',
         ),
       );
-    }
-    finally {
+    } finally {
       // 🔄 Reset state
       emit(state.copyWith(signInWithAppleState: CubitStates.initial));
     }
@@ -579,7 +575,6 @@ class AuthCubit extends Cubit<AuthState> {
               fromScreen: 'registration',
             ),
           );
-
         },
         (_) {
           emit(
@@ -606,7 +601,6 @@ class AuthCubit extends Cubit<AuthState> {
           errorMessage: e.toString(),
         ),
       );
-
     }
   }
 
@@ -1012,15 +1006,7 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-        (guestResponse) async {
-          await CachNetwork.setData(
-            key: 'token',
-            value: guestResponse.data?.token ?? '',
-          );
-          await CachNetwork.setData(
-            key: 'user_type',
-            value: UserTypeEnum.guest.name,
-          );
+        (guestResponse) {
           emit(
             state.copyWith(
               guestLoginState: CubitStates.success,

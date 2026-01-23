@@ -9,8 +9,6 @@ import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stor
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/shared/home/views/widgets/session_started_listener.dart';
 import 'package:tayseer/my_import.dart';
-// تأكد من عمل import لملف SessionStartedListener إذا كان في ملف منفصل
-// import 'path/to/session_started_listener.dart';
 
 class HomeViewBody extends StatefulWidget {
   final Function(bool isScrollingDown)? onScroll;
@@ -31,6 +29,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
   final StoriesCubit storiesCubit = getIt<StoriesCubit>();
   final HomeCubit homeCubit = getIt<HomeCubit>();
 
+  // Key للـ Filter Section عشان نعمل scroll ليها
   final GlobalKey _filterSectionKey = GlobalKey();
 
   @override
@@ -38,11 +37,8 @@ class HomeViewBodyState extends State<HomeViewBody> {
     super.initState();
     _scrollController = ScrollController()..addListener(_scrollListener);
     _filterScrollController = ScrollController();
-
     storiesCubit.fetchStories();
     homeCubit.initHome();
-
-    // ✅ 1. تفعيل الاستماع للسوكيت عند فتح الصفحة
     homeCubit.sessionStart();
   }
 
@@ -56,7 +52,9 @@ class HomeViewBodyState extends State<HomeViewBody> {
     }
   }
 
+  /// Scroll للـ Filter Section + الليست الأفقية
   void scrollToFilterSection() {
+    // 1. Scroll الصفحة للـ Filter Section
     final context = _filterSectionKey.currentContext;
     if (context != null) {
       Scrollable.ensureVisible(
@@ -67,6 +65,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
       );
     }
 
+    // 2. Scroll الليست الأفقية لأول عنصر (الكل)
     if (_filterScrollController.hasClients) {
       _filterScrollController.animateTo(
         0,
@@ -111,34 +110,17 @@ class HomeViewBodyState extends State<HomeViewBody> {
             homeCubit.refreshHome(),
           ]);
         },
-        child: CustomScrollView(
-
-          physics: const ClampingScrollPhysics(),
-          cacheExtent: 500.0,
-          controller: _scrollController,
-          slivers: [
-            const HomeAppBar(notificationCount: 3),
-            const HomeSearchBar(),
-      // ✅ 2. استخدام Stack لدمج الليسنر مع الشاشة
-      child: Stack(
-        children: [
-          RefreshIndicator(
-            color: AppColors.kprimaryColor,
-            onRefresh: () async {
-              VideoManager.instance.stopAll();
-              await Future.wait([
-                storiesCubit.fetchStories(),
-                homeCubit.refreshHome(),
-              ]);
-            },
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
+        child: Stack(
+          children: [
+            CustomScrollView(
+              physics: const ClampingScrollPhysics(),
               cacheExtent: 500.0,
               controller: _scrollController,
               slivers: [
                 const HomeAppBar(notificationCount: 3),
                 const HomeSearchBar(),
 
+                // ✅ كل اللوجيك بقى جوه، هنا بننده عليها بس
                 if (isUser)
                   const SliverToBoxAdapter(child: AnonymousModeBanner()),
 
@@ -153,11 +135,9 @@ class HomeViewBodyState extends State<HomeViewBody> {
                 ),
               ],
             ),
-          ),
-
-          // ✅ إضافة الليسنر هنا
-          const SessionStartedListener(),
-        ],
+            SessionStartedListener(),
+          ],
+        ),
       ),
     );
   }
