@@ -8,6 +8,7 @@ class ImageMessageWidget extends StatelessWidget {
   final List<String>? localFilePaths; // ✅ New parameter
   final double maxWidth;
   final void Function(int index)? onImageTap;
+  final double? uploadProgress; // ✅ Upload progress (0.0 to 1.0)
 
   const ImageMessageWidget({
     super.key,
@@ -15,6 +16,7 @@ class ImageMessageWidget extends StatelessWidget {
     this.localFilePaths,
     required this.maxWidth,
     this.onImageTap,
+    this.uploadProgress,
   });
 
   @override
@@ -39,29 +41,66 @@ class ImageMessageWidget extends StatelessWidget {
   }
 
   Widget _buildSingleImage(String imagePath, {required bool isLocal}) {
+    const double fixedHeight = 250.0; // Fixed height for consistency
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(ChatDimensions.bubbleRadiusSmall),
-      child: isLocal
-          ? Image.file(
-              File(imagePath),
-              width: maxWidth - 8,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
-            )
-          : CachedNetworkImage(
-              imageUrl: imagePath,
-              width: maxWidth - 8,
-              fit: BoxFit.contain,
-              placeholder: (context, url) => _buildPlaceholder(),
-              errorWidget: (context, url, error) => _buildErrorWidget(),
-            ),
+      child: SizedBox(
+        width: maxWidth - 8,
+        height: fixedHeight,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            isLocal
+                ? Image.file(
+                    File(imagePath),
+                    width: maxWidth - 8,
+                    height: fixedHeight,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        _buildErrorWidget(),
+                  )
+                : CachedNetworkImage(
+                    imageUrl: imagePath,
+                    width: maxWidth - 8,
+                    height: fixedHeight,
+                    fit: BoxFit.cover,
+                    memCacheHeight: (fixedHeight * 2).toInt(), // Optimization
+                    useOldImageOnUrlChange: true,
+                    placeholder: (context, url) => _buildPlaceholder(),
+                    errorWidget: (context, url, error) => _buildErrorWidget(),
+                  ),
+            // Upload progress overlay
+            if (uploadProgress != null && uploadProgress! < 1.0)
+              _buildUploadProgressOverlay(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUploadProgressOverlay() {
+    return Container(
+      color: Colors.black.withOpacity(0.5),
+      child: Center(
+        child: SizedBox(
+          width: 60,
+          height: 60,
+          child: CircularProgressIndicator(
+            value: uploadProgress,
+            strokeWidth: 4,
+            backgroundColor: Colors.white.withOpacity(0.3),
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildPlaceholder() {
     return Container(
       width: maxWidth - 8,
-      height: 200,
+      height: 250,
       color: Colors.grey[300],
       child: const Center(child: CircularProgressIndicator()),
     );
@@ -70,7 +109,7 @@ class ImageMessageWidget extends StatelessWidget {
   Widget _buildErrorWidget() {
     return Container(
       width: maxWidth - 8,
-      height: 200,
+      height: 250,
       color: Colors.grey[300],
       child: const Icon(Icons.error, color: Colors.red),
     );
@@ -111,21 +150,29 @@ class ImageMessageWidget extends StatelessWidget {
       child: SizedBox(
         width: gridWidth,
         height: 150,
-        child: Row(
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => onImageTap?.call(0),
-                child: _gridImage(list[0], isLocal: isLocal, height: 150),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => onImageTap?.call(0),
+                    child: _gridImage(list[0], isLocal: isLocal, height: 150),
+                  ),
+                ),
+                SizedBox(width: spacing),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => onImageTap?.call(1),
+                    child: _gridImage(list[1], isLocal: isLocal, height: 150),
+                  ),
+                ),
+              ],
             ),
-            SizedBox(width: spacing),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => onImageTap?.call(1),
-                child: _gridImage(list[1], isLocal: isLocal, height: 150),
-              ),
-            ),
+            // Upload progress overlay on entire grid
+            if (uploadProgress != null && uploadProgress! < 1.0)
+              _buildUploadProgressOverlay(),
           ],
         ),
       ),
@@ -143,35 +190,43 @@ class ImageMessageWidget extends StatelessWidget {
       child: SizedBox(
         width: gridWidth,
         height: 200,
-        child: Row(
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Expanded(
-              flex: 2,
-              child: GestureDetector(
-                onTap: () => onImageTap?.call(0),
-                child: _gridImage(list[0], isLocal: isLocal, height: 200),
-              ),
-            ),
-            SizedBox(width: spacing),
-            Expanded(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => onImageTap?.call(1),
-                      child: _gridImage(list[1], isLocal: isLocal),
-                    ),
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: () => onImageTap?.call(0),
+                    child: _gridImage(list[0], isLocal: isLocal, height: 200),
                   ),
-                  SizedBox(height: spacing),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => onImageTap?.call(2),
-                      child: _gridImage(list[2], isLocal: isLocal),
-                    ),
+                ),
+                SizedBox(width: spacing),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => onImageTap?.call(1),
+                          child: _gridImage(list[1], isLocal: isLocal),
+                        ),
+                      ),
+                      SizedBox(height: spacing),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => onImageTap?.call(2),
+                          child: _gridImage(list[2], isLocal: isLocal),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+            // Upload progress overlay on entire grid
+            if (uploadProgress != null && uploadProgress! < 1.0)
+              _buildUploadProgressOverlay(),
           ],
         ),
       ),
@@ -190,53 +245,61 @@ class ImageMessageWidget extends StatelessWidget {
       child: SizedBox(
         width: gridWidth,
         height: 200,
-        child: Row(
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Expanded(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => onImageTap?.call(0),
-                      child: _gridImage(list[0], isLocal: isLocal),
-                    ),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => onImageTap?.call(0),
+                          child: _gridImage(list[0], isLocal: isLocal),
+                        ),
+                      ),
+                      SizedBox(height: spacing),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => onImageTap?.call(2),
+                          child: _gridImage(list[2], isLocal: isLocal),
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: spacing),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => onImageTap?.call(2),
-                      child: _gridImage(list[2], isLocal: isLocal),
-                    ),
+                ),
+                SizedBox(width: spacing),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => onImageTap?.call(1),
+                          child: _gridImage(list[1], isLocal: isLocal),
+                        ),
+                      ),
+                      SizedBox(height: spacing),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => onImageTap?.call(3),
+                          child: imageCount > 4
+                              ? _gridImageWithOverlay(
+                                  list[3],
+                                  imageCount - 4,
+                                  isLocal: isLocal,
+                                )
+                              : _gridImage(list[3], isLocal: isLocal),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            SizedBox(width: spacing),
-            Expanded(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => onImageTap?.call(1),
-                      child: _gridImage(list[1], isLocal: isLocal),
-                    ),
-                  ),
-                  SizedBox(height: spacing),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => onImageTap?.call(3),
-                      child: imageCount > 4
-                          ? _gridImageWithOverlay(
-                              list[3],
-                              imageCount - 4,
-                              isLocal: isLocal,
-                            )
-                          : _gridImage(list[3], isLocal: isLocal),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Upload progress overlay on entire grid
+            if (uploadProgress != null && uploadProgress! < 1.0)
+              _buildUploadProgressOverlay(),
           ],
         ),
       ),
@@ -261,6 +324,8 @@ class ImageMessageWidget extends StatelessWidget {
       fit: BoxFit.cover,
       height: height,
       width: double.infinity,
+      memCacheHeight: height != null ? (height * 2).toInt() : 400,
+      useOldImageOnUrlChange: true,
       placeholder: (context, url) => Container(
         color: Colors.grey[300],
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
@@ -302,11 +367,13 @@ class ImageMessageWidget extends StatelessWidget {
 class FullScreenImageViewer extends StatefulWidget {
   final List<String> images;
   final int initialIndex;
+  final bool isLocal; // ✅ Add isLocal parameter
 
   const FullScreenImageViewer({
     super.key,
     required this.images,
     required this.initialIndex,
+    this.isLocal = false, // ✅ Default to false
   });
 
   @override
@@ -358,16 +425,29 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
             minScale: 0.5,
             maxScale: 4.0,
             child: Center(
-              child: CachedNetworkImage(
-                imageUrl: widget.images[index],
-                fit: BoxFit.contain,
-                placeholder: (context, url) => const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-                errorWidget: (context, url, error) => const Center(
-                  child: Icon(Icons.error, color: Colors.red, size: 50),
-                ),
-              ),
+              child: widget.isLocal
+                  ? Image.file(
+                      File(widget.images[index]),
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(
+                            child: Icon(
+                              Icons.error,
+                              color: Colors.red,
+                              size: 50,
+                            ),
+                          ),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: widget.images[index],
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                      errorWidget: (context, url, error) => const Center(
+                        child: Icon(Icons.error, color: Colors.red, size: 50),
+                      ),
+                    ),
             ),
           );
         },
@@ -410,16 +490,25 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: CachedNetworkImage(
-                  imageUrl: widget.images[index],
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) =>
-                      Container(color: Colors.grey[800]),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[800],
-                    child: const Icon(Icons.error, color: Colors.red),
-                  ),
-                ),
+                child: widget.isLocal
+                    ? Image.file(
+                        File(widget.images[index]),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Colors.grey[800],
+                          child: const Icon(Icons.error, color: Colors.red),
+                        ),
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: widget.images[index],
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            Container(color: Colors.grey[800]),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[800],
+                          child: const Icon(Icons.error, color: Colors.red),
+                        ),
+                      ),
               ),
             ),
           );

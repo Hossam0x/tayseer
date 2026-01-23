@@ -1,28 +1,60 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
+import 'package:tayseer/core/utils/router/app_router.dart';
+import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
+import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 
-class ConversationAppBar extends StatelessWidget {
-  final String videoIcon;
+class ConversationAppBar extends StatefulWidget {
   final String phoneIcon;
   final String? username;
   final String? userimage;
   final String? receiverId;
+  final VoidCallback? onProfileTap;
   final Function(String blockedId)? onBlockUser;
 
   const ConversationAppBar({
     super.key,
-    required this.videoIcon,
     required this.phoneIcon,
     this.username,
     this.userimage,
     this.receiverId,
+    this.onProfileTap,
     this.onBlockUser,
   });
+
+  @override
+  State<ConversationAppBar> createState() => _ConversationAppBarState();
+}
+
+class _ConversationAppBarState extends State<ConversationAppBar> {
+  SessionStartModel? sessiondata;
+  late StreamSubscription _subscription;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // الاستماع للـ EventBus
+    _subscription = HomeEventBus.instance.onsessionstart.listen((data) {
+      setState(() {
+        sessiondata = data;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isMobile = screenSize.width < 600;
+    final isHaveSession = sessiondata?.id != null;
 
     return Container(
       padding: EdgeInsets.only(
@@ -34,7 +66,6 @@ class ConversationAppBar extends StatelessWidget {
       color: const Color(0xFFF9EEFA),
       child: Row(
         children: [
-          // ✅ الجزء الأيسر (كما هو)
           Expanded(
             child: Row(
               children: [
@@ -47,10 +78,13 @@ class ConversationAppBar extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: isMobile ? 8 : 12),
-                CircleAvatar(
-                  radius: isMobile ? 20 : 24,
-                  backgroundImage: NetworkImage(
-                    userimage ?? 'https://i.pravatar.cc/150?img=5',
+                GestureDetector(
+                  onTap: widget.onProfileTap,
+                  child: CircleAvatar(
+                    radius: isMobile ? 20 : 24,
+                    backgroundImage: NetworkImage(
+                      widget.userimage ?? 'https://i.pravatar.cc/150?img=5',
+                    ),
                   ),
                 ),
                 SizedBox(width: isMobile ? 8 : 12),
@@ -60,13 +94,13 @@ class ConversationAppBar extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          username ?? "Anna Mary",
+                          widget.username ?? "Anna Mary",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: isMobile ? 16 : 18,
-                            color: Colors.blue, // أو اللون المخصص
+                            color: Colors.blue,
                           ),
                         ),
                       ),
@@ -83,17 +117,37 @@ class ConversationAppBar extends StatelessWidget {
             ),
           ),
 
-          // ✅ الجزء الأيمن (تم التعديل لإضافة القائمة)
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                onPressed: () {},
-                icon: SvgPicture.asset(videoIcon, width: isMobile ? 20 : 24),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: SvgPicture.asset(phoneIcon, width: isMobile ? 20 : 24),
+                onPressed: isHaveSession
+                    ? () {
+                        context.pushNamed(
+                          AppRouter.voiceCallView,
+                          arguments: {
+                            'callID': sessiondata?.sessionId,
+                            'currentUserID': sessiondata?.id,
+                            'currentUserName': widget.username ?? 'User',
+                            'currentUserAvatarUrl': sessiondata?.imageUrl,
+                            'participants': [
+                              {
+                                'id': sessiondata?.otherUser.id,
+                                'name': sessiondata?.otherUser.name ?? 'User',
+                                'avatarUrl': sessiondata?.otherUser.imageUrl,
+                              },
+                            ],
+                          },
+                        );
+                      }
+                    : null,
+                icon: SvgPicture.asset(
+                  widget.phoneIcon,
+                  width: isMobile ? 20 : 24,
+                  colorFilter: isHaveSession
+                      ? null
+                      : const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+                ),
               ),
 
               Theme(
@@ -103,7 +157,6 @@ class ConversationAppBar extends StatelessWidget {
                 ),
                 child: PopupMenuButton<String>(
                   offset: const Offset(20, 50),
-
                   icon: const Icon(
                     Icons.more_vert,
                     color: Colors.black87,
@@ -118,9 +171,9 @@ class ConversationAppBar extends StatelessWidget {
                     if (value == 'report') {
                       print("تم اختيار ابلاغ");
                     } else if (value == 'block') {
-                      // استدعاء دالة الحظر
-                      if (receiverId != null && onBlockUser != null) {
-                        onBlockUser!(receiverId!);
+                      if (widget.receiverId != null &&
+                          widget.onBlockUser != null) {
+                        widget.onBlockUser!(widget.receiverId!);
                       } else {
                         print("❌ receiverId is null or onBlockUser is null");
                       }

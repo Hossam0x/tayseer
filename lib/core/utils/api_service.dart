@@ -41,11 +41,14 @@ class ApiService {
     dynamic data,
     bool? isAuth,
     Map<String, dynamic>? headers,
+    void Function(int, int)? onSendProgress,
     Map<String, dynamic>? query, // 👈 كويري
   }) async {
     try {
       final mergedHeaders = {
-        'Authorization': "Bearer ${CachNetwork.getStringData(key: 'token')}",
+        // 'Accept-Language': selectedLanguage ?? 'ar',
+        // 'Accept': 'application/json',
+        'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
         ...?headers,
       };
 
@@ -57,6 +60,7 @@ class ApiService {
           headers: mergedHeaders,
           validateStatus: (status) => status! >= 200 && status < 300,
         ),
+        onSendProgress: onSendProgress,
       );
       return response.data;
     } on DioException {

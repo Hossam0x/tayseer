@@ -4,6 +4,7 @@ import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.
 
 import 'package:tayseer/features/user/layout/views/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -16,7 +17,7 @@ class UserLayOutViewBody extends StatelessWidget {
 
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
-        final pages = _getPages(context,cubit);
+        final pages = _getPages(context, cubit);
 
         return Scaffold(
           body: Stack(
@@ -39,34 +40,30 @@ class UserLayOutViewBody extends StatelessWidget {
     );
   }
 
-  List<Widget> _getPages( BuildContext context,LayoutCubit cubit) {
+  List<Widget> _getPages(BuildContext context, LayoutCubit cubit) {
     switch (selectedUserType) {
       case UserTypeEnum.user:
         return [
           HomeView(onScroll: cubit.onScroll),
           MarriageView(),
+          MySpaceView(),
           GuestLockWidget(
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-             titleBott: "اكمل بياناتك",
-            onTap: (){
-
-            context.pushNamed(AppRouter.kChooseGenderView)  ;
-
-         }, ),
-
-
+            titleBott: "اكمل بياناتك",
+            onTap: () {
+              context.pushNamed(AppRouter.kChooseGenderView);
+            },
+          ),
 
           GuestLockWidget(
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
             titleBott: "اكمل بياناتك",
-            onTap: (){
-
-              context.pushNamed(AppRouter.kChooseGenderView)  ;
-
+            onTap: () {
+              context.pushNamed(AppRouter.kChooseGenderView);
             },
           ),
 
@@ -77,8 +74,11 @@ class UserLayOutViewBody extends StatelessWidget {
         return [
           HomeView(onScroll: cubit.onScroll),
           GuestLockWidget(
-            onTap: (){
-              context.pushNamedAndRemoveUntil(AppRouter.kRegisrationView, predicate: (_)=>false);
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
             },
             message: 'فرص التوافق تبدأ بعد التسجيل',
             description:
@@ -88,16 +88,24 @@ class UserLayOutViewBody extends StatelessWidget {
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-            onTap: (){
-              context.pushNamedAndRemoveUntil(AppRouter.kRegisrationView, predicate: (_)=>false);
-            },),
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+            },
+          ),
           GuestLockWidget(
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-            onTap: (){
-              context.pushNamedAndRemoveUntil(AppRouter.kRegisrationView, predicate: (_)=>false);
-            }, ),
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+            },
+          ),
           const UserProfileView(),
         ];
 

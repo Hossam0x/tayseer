@@ -677,7 +677,7 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
   @JsonKey()
   final CubitStates paginationState;
 
-  /// Media sending state
+  /// Media sending statew
   @override
   @JsonKey()
   final CubitStates sendMediaState;
@@ -949,7 +949,7 @@ abstract class ChatMessagesLoaded extends ChatMessagesState {
   /// Pagination state for loading older messages
   CubitStates get paginationState;
 
-  /// Media sending state
+  /// Media sending statew
   CubitStates get sendMediaState;
   @JsonKey(ignore: true)
   _$$ChatMessagesLoadedImplCopyWith<_$ChatMessagesLoadedImpl> get copyWith =>
