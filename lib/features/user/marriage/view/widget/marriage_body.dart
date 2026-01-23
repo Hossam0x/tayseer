@@ -98,7 +98,12 @@ class MarriageBody extends StatelessWidget {
               slivers: [
                 // ===== 1. Header =====
                 SliverProfileHeader(
-                  imageUrl: profileData['header']['image'],
+                  images: [
+                    profileData['header']['image'],
+                    profileData['header']['image'],
+                    profileData['header']['image'],
+                    profileData['header']['image'],
+                  ],
                   name: profileData['header']['name'],
                   age: profileData['header']['age'],
                   location: profileData['header']['location'],
@@ -268,7 +273,7 @@ class MarriageBody extends StatelessWidget {
               ],
             ),
             Positioned(
-              bottom: 100.h,
+              bottom: 130.h,
               left: 0,
               right: 0,
               child: Row(

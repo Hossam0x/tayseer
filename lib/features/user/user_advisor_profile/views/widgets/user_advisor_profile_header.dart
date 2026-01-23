@@ -1,16 +1,16 @@
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
-import 'package:tayseer/features/user/advisor_profile/data/models/user_profile_model.dart';
-import 'package:tayseer/features/user/advisor_profile/views/cubit/user_profile_cubit.dart';
-import 'package:tayseer/features/user/advisor_profile/views/cubit/user_profile_state.dart';
+import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class UserProfileHeader extends StatelessWidget {
-  const UserProfileHeader({super.key});
+class UserAdvisorProfileHeader extends StatelessWidget {
+  const UserAdvisorProfileHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<UserProfileCubit, UserProfileState>(
+    return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
       buildWhen: (previous, current) =>
           previous.profileState != current.profileState ||
           previous.profile != current.profile,
@@ -49,7 +49,10 @@ class UserProfileHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, UserProfileModel profile) {
+  Widget _buildProfileHeader(
+    BuildContext context,
+    UserAdvisorProfileModel profile,
+  ) {
     return _buildHeaderContent(
       imageUrl: profile.image,
       following: profile.following.toString(),
@@ -88,7 +91,8 @@ class UserProfileHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10.r),
               ),
             ),
-            onPressed: () => context.read<UserProfileCubit>().fetchProfile(),
+            onPressed: () =>
+                context.read<UserAdvisorProfileCubit>().fetchProfile(),
             child: Text(
               'إعادة المحاولة',
               style: Styles.textStyle14Meduim.copyWith(

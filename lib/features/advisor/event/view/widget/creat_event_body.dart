@@ -57,6 +57,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
         }
       },
       child: CustomScrollView(
+        physics: ClampingScrollPhysics(),
         slivers: [
           CustomSliverAppBarEvent(
             title: context.tr('create_event'),
@@ -473,7 +474,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                     /// زر إنشاء
                     CustomBotton(
                       useGradient: true,
-                      title: context.tr('create_event_btn'),
+                      title: context.tr('create_event'),
                       onPressed: () {
                         eventsCubit.createEvent();
                       },

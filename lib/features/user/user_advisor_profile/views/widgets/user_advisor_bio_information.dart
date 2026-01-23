@@ -1,20 +1,20 @@
-import 'package:tayseer/features/user/advisor_profile/data/models/user_profile_model.dart';
-import 'package:tayseer/features/user/advisor_profile/views/cubit/user_profile_cubit.dart';
-import 'package:tayseer/features/user/advisor_profile/views/cubit/user_profile_state.dart';
+import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class UserBioInformation extends StatelessWidget {
-  const UserBioInformation({super.key});
+class UserAdvisorBioInformation extends StatelessWidget {
+  const UserAdvisorBioInformation({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<UserProfileCubit, UserProfileState>(
+    return BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
       listenWhen: (previous, current) =>
           previous.followActionState != current.followActionState &&
           current.followActionState != CubitStates.initial,
       listener: _handleFollowState,
-      child: BlocBuilder<UserProfileCubit, UserProfileState>(
+      child: BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
         buildWhen: (previous, current) =>
             previous.profileState != current.profileState ||
             previous.profile != current.profile,
@@ -41,7 +41,7 @@ class UserBioInformation extends StatelessWidget {
     );
   }
 
-  void _handleFollowState(BuildContext context, UserProfileState state) {
+  void _handleFollowState(BuildContext context, UserAdvisorProfileState state) {
     final message = state.followMessage;
     switch (state.followActionState) {
       case CubitStates.success:
@@ -62,7 +62,7 @@ class UserBioInformation extends StatelessWidget {
       enabled: true,
       child: _buildBioContent(
         context,
-        const UserProfileModel(
+        const UserAdvisorProfileModel(
           name: 'اسم المستخدم',
           image: '',
           username: '@username',
@@ -103,7 +103,10 @@ class UserBioInformation extends StatelessWidget {
     );
   }
 
-  Widget _buildBioContent(BuildContext context, UserProfileModel profile) {
+  Widget _buildBioContent(
+    BuildContext context,
+    UserAdvisorProfileModel profile,
+  ) {
     // ⭐ استخدام extension methods
     final displaySpecialization = profile.displaySpecialization;
     final displayYearsExperience = profile.displayYearsExperience;
@@ -141,7 +144,7 @@ class UserBioInformation extends StatelessWidget {
     );
   }
 
-  Widget _buildNameSection(UserProfileModel profile) {
+  Widget _buildNameSection(UserAdvisorProfileModel profile) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -203,7 +206,7 @@ class UserBioInformation extends StatelessWidget {
     );
   }
 
-  Widget _buildLocation(UserProfileModel profile) {
+  Widget _buildLocation(UserAdvisorProfileModel profile) {
     final hasLocation =
         profile.location != null && profile.location!.isNotEmpty;
 
@@ -227,7 +230,7 @@ class UserBioInformation extends StatelessWidget {
     );
   }
 
-  Widget _buildAboutYou(UserProfileModel profile) {
+  Widget _buildAboutYou(UserAdvisorProfileModel profile) {
     final hasAboutYou = profile.aboutYou.isNotEmpty;
 
     if (!hasAboutYou) return SizedBox.shrink();
@@ -251,8 +254,11 @@ class UserBioInformation extends StatelessWidget {
   }
 
   // ⭐ تحديث قسم المتابعة والرسائل
-  Widget _buildFollowSection(BuildContext context, UserProfileModel profile) {
-    return BlocBuilder<UserProfileCubit, UserProfileState>(
+  Widget _buildFollowSection(
+    BuildContext context,
+    UserAdvisorProfileModel profile,
+  ) {
+    return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
       buildWhen: (previous, current) =>
           previous.profile?.isFollowing != current.profile?.isFollowing ||
           previous.followActionState != current.followActionState,
@@ -272,7 +278,9 @@ class UserBioInformation extends StatelessWidget {
                   title: isFollowing ? 'متابَع' : 'متابعة',
                   onPressed: isLoading
                       ? null
-                      : () => context.read<UserProfileCubit>().toggleFollow(),
+                      : () => context
+                            .read<UserAdvisorProfileCubit>()
+                            .toggleFollow(),
                   backGroundcolor: isFollowing
                       ? AppColors.kWhiteColor
                       : AppColors.kprimaryColor,

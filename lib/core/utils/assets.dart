@@ -1,7 +1,7 @@
 abstract class AssetsData {
   //////////////////////images//////////////////////
   static const String kAppLogo = "assets/images/app_logo.png";
-  static const String kAppLogoGif = "assets/images/app_logo_gif.gif";
+  static const String kAppLogoGif = "assets/images/appl_logo_gif.gif";
   static const String kAppLogotayseerImage = "assets/images/app_logo_t.png";
   static const String ksplashImage =
       "assets/images/background_splash_Image.png";
@@ -37,6 +37,7 @@ abstract class AssetsData {
   static const String kWoriningImage = "assets/images/worining_image.png";
   static const String kisEmptySesessionImage =
       "assets/images/is_empty_sesession.png";
+  static const String kLangImage = "assets/images/lang_imge.png";
 
   //////////////////////icons//////////////////////
   static const String kArroBackIcon = "assets/icons/arro_back.svg";
@@ -194,6 +195,10 @@ abstract class AssetsData {
   static const String expertAdvisor = "assets/images/expertAdvisor.png";
   static const String chatIconSVG = "assets/icons/chatIcon.svg";
   static const String filterIcon = "assets/icons/filterIcon.svg";
+
+  // User Profile Icons
+  static const String navigateIcon = "assets/icons/navigateIcon.svg";
+  static const String icRateSettings = "assets/icons/icRateSettings.svg";
   static const String noSessionHistoryIcon =
       "assets/icons/NoSessionHistory.png";
   static const String experienceIcon = "assets/icons/Experience.svg";

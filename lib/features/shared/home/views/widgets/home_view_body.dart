@@ -102,6 +102,23 @@ class HomeViewBodyState extends State<HomeViewBody> {
         BlocProvider.value(value: storiesCubit),
         BlocProvider.value(value: homeCubit),
       ],
+      child: RefreshIndicator(
+        color: AppColors.kprimaryColor,
+        onRefresh: () async {
+          VideoManager.instance.stopAll();
+          await Future.wait([
+            storiesCubit.fetchStories(),
+            homeCubit.refreshHome(),
+          ]);
+        },
+        child: CustomScrollView(
+
+          physics: const ClampingScrollPhysics(),
+          cacheExtent: 500.0,
+          controller: _scrollController,
+          slivers: [
+            const HomeAppBar(notificationCount: 3),
+            const HomeSearchBar(),
       // ✅ 2. استخدام Stack لدمج الليسنر مع الشاشة
       child: Stack(
         children: [

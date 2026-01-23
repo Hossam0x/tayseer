@@ -44,13 +44,14 @@ import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
 import 'package:tayseer/features/advisor/search/view/a_search_view.dart';
 import 'package:tayseer/features/shared/auth/view/consultant_upload_certificate_view.dart';
 import 'package:tayseer/features/shared/auth/view/professional_information_consultant_view.dart';
+import 'package:tayseer/features/shared/auth/view/regisration_advisor_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_days_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_languages_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_session_duration_view.dart';
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
-import 'package:tayseer/features/user/advisor_profile/views/user_profile_view.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
 import 'package:tayseer/features/user/my_space/data/model/advisorprofile/session_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/booking_data.dart';
@@ -92,7 +93,7 @@ import 'package:tayseer/features/user/questions/smoking_view.dart';
 import 'package:tayseer/features/user/questions/social_status_view.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/advisor/layout/views/a_layout_view.dart';
-import 'package:tayseer/features/shared/auth/view/regisration_view.dart';
+import 'package:tayseer/features/shared/auth/view/regisration_user_view.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
 // import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/on_boarding_screen.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
@@ -190,6 +191,7 @@ abstract class AppRouter {
   static const kFollowersView = '/followers_view';
   static const kFollowingView = '/following_view';
   static const voiceCallView = '/VoiceCallView';
+  static const kRegisrationAdvisorView = '/RegisrationAdvisorView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -341,7 +343,7 @@ abstract class AppRouter {
       case kUserProfileView:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
-          builder: (_) => UserProfileView(
+          builder: (_) => UserAdvisorProfileView(
             advisorId: args['advisorId'] as String,
             advisorName: args['advisorName'] as String?,
           ),
@@ -754,6 +756,14 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const ChatSearchView(),
+        );
+      case kRegisrationAdvisorView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const RegisrationAdvisorView(),
+          ),
         );
       case kConversitionView:
         return MaterialPageRoute(

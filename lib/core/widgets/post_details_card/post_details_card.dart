@@ -1,8 +1,8 @@
 import 'package:tayseer/core/widgets/comment_card/comment_card.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
-import 'package:tayseer/features/shared/home/model/comment_model.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/comment_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostDetailsCard extends StatelessWidget {

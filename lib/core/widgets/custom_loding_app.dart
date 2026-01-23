@@ -11,4 +11,23 @@ class CustomloadingApp extends StatelessWidget {
       AssetsData.kloadingAnimationsLottie,
     );
   }
+
+  static void show(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // مينفعش يقفله بالضغط برا
+      barrierColor: Colors.black.withOpacity(0.3), // خلفية شفافة
+      builder: (_) => PopScope(
+        canPop: false, // مينفعش يقفله بزرار الرجوع
+        child: const Center(
+          child: CustomloadingApp(),
+        ),
+      ),
+    );
+  }
+
+  /// إغلاق الـ Loading Dialog
+  static void hide(BuildContext context) {
+    Navigator.of(context, rootNavigator: true).pop();
+  }
 }

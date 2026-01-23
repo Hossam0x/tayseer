@@ -1,5 +1,5 @@
 // features/advisor/profile/views/widgets/profile_post_images_grid.dart
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfilePostImagesGrid extends StatelessWidget {

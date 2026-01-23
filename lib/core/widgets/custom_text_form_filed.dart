@@ -161,7 +161,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 ? context.tr('enter_city')
                 : context.tr('enter_text')),
 
-        hintStyle: Styles.textStyle12.copyWith(
+        hintStyle: Styles.textStyle14.copyWith(
           color: AppColors.kprimaryColor.withOpacity(0.5),
         ),
       ),

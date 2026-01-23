@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/category_model.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 
@@ -49,6 +50,24 @@ class HomeState extends Equatable {
   bool get isLoadingMore => currentCategoryPosts.isLoadingMore;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 📦 Save Action State
+  // ─────────────────────────────────────────────────────────────────────────
+  final CubitStates saveActionState;
+  final String? saveMessage;
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 📦 delete post
+  // ─────────────────────────────────────────────────────────────────────────
+  final String? deletePostMessage;
+  final CubitStates deletePostActionState;
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 📦 block user
+  // ─────────────────────────────────────────────────────────────────────────
+  final String? blockUserMessage;
+  final CubitStates blockUserActionState;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 🏗️ Constructor
   // ─────────────────────────────────────────────────────────────────────────
   const HomeState({
@@ -70,6 +89,18 @@ class HomeState extends Equatable {
     // User Info
     this.homeInfo,
     this.fetchNameAndImageState = CubitStates.initial,
+
+    // Save
+    this.saveActionState = CubitStates.initial,
+    this.saveMessage,
+
+    // delete post
+    this.deletePostMessage,
+    this.deletePostActionState = CubitStates.initial,
+
+    // block user
+    this.blockUserMessage,
+    this.blockUserActionState = CubitStates.initial,
     this.sessionStartModel,
   });
 
@@ -96,6 +127,18 @@ class HomeState extends Equatable {
     // User Info
     ImageAndNameModel? homeInfo,
     CubitStates? fetchNameAndImageState,
+
+    // Save
+    CubitStates? saveActionState,
+    String? saveMessage,
+
+    // delete post
+    String? deletePostMessage,
+    CubitStates? deletePostActionState,
+
+    // block user
+    String? blockUserMessage,
+    CubitStates? blockUserActionState,
     SessionStartModel? sessionStartModel,
   }) {
     return HomeState(
@@ -123,6 +166,19 @@ class HomeState extends Equatable {
       homeInfo: homeInfo ?? this.homeInfo,
       fetchNameAndImageState:
           fetchNameAndImageState ?? this.fetchNameAndImageState,
+
+      // Save
+      saveActionState: saveActionState ?? this.saveActionState,
+      saveMessage: saveMessage ?? this.saveMessage,
+
+      // delete post
+      deletePostMessage: deletePostMessage ?? this.deletePostMessage,
+      deletePostActionState:
+          deletePostActionState ?? this.deletePostActionState,
+
+      // block user
+      blockUserMessage: blockUserMessage ?? this.blockUserMessage,
+      blockUserActionState: blockUserActionState ?? this.blockUserActionState,
       sessionStartModel: sessionStartModel ?? this.sessionStartModel,
     );
   }
@@ -130,6 +186,26 @@ class HomeState extends Equatable {
   // ─────────────────────────────────────────────────────────────────────────
   // 🔧 Helper Methods
   // ─────────────────────────────────────────────────────────────────────────
+
+  /// إدراج بوست في مكان معين في كاتيجوري معينة (للـ Rollback)
+  HomeState insertPostInCategory({
+    required String? categoryId,
+    required PostModel post,
+    required int index,
+  }) {
+    return updateCategoryPosts(categoryId, (data) {
+      final posts = List<PostModel>.from(data.posts);
+
+      // إدراج البوست في مكانه الأصلي
+      if (index >= 0 && index <= posts.length) {
+        posts.insert(index, post);
+      } else {
+        posts.insert(0, post);
+      }
+
+      return data.copyWith(posts: posts);
+    });
+  }
 
   /// تحديث بيانات كاتيجوري معينة
   HomeState updateCategoryPosts(
@@ -218,6 +294,16 @@ class HomeState extends Equatable {
     // User Info
     homeInfo,
     fetchNameAndImageState,
+    // Save
+    saveActionState,
+    saveMessage,
+
+    // delete post
+    deletePostMessage,
+    deletePostActionState,
+    // block user
+    blockUserMessage,
+    blockUserActionState,
     sessionStartModel,
   ];
 }

@@ -1,6 +1,6 @@
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
 import 'archive_states.dart';
 
