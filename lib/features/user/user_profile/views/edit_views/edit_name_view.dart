@@ -34,6 +34,7 @@ class _EditNameViewState extends State<EditNameView> {
   }
 
   // مثال في EditNameView
+  // في EditNameView.dart
   Future<void> _updateName() async {
     final newName = _nameController.text.trim();
     if (newName.isEmpty || newName == widget.initialProfile.name) {
@@ -52,10 +53,14 @@ class _EditNameViewState extends State<EditNameView> {
       );
 
       if (response['success'] == true) {
-        final updatedProfile = widget.initialProfile.copyWith(name: newName);
+        final imageUrl = response['data']['image'] as String?;
+        final updatedProfile = widget.initialProfile.copyWith(
+          name: newName,
+          image: imageUrl,
+        );
 
-        // إرجاع البيانات المحدثة إلى الصفحة السابقة
-        Navigator.pop(context, updatedProfile);
+        widget.onProfileUpdated(updatedProfile);
+        AppToast.success(context, 'تم تحديث الاسم بنجاح');
       } else {
         AppToast.error(context, response['message'] ?? 'فشل تحديث الاسم');
       }
@@ -69,97 +74,100 @@ class _EditNameViewState extends State<EditNameView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            SimpleAppBar(title: 'تعديل الاسم', isLargeTitle: true),
+      body: AdvisorBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Gap(16.h),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: SimpleAppBar(title: 'الاسم', isLargeTitle: true),
+              ),
+              Text(
+                'يمكنك تحديث اسمك لمره واحدة كل 6 اشهر',
+                style: Styles.textStyle14.copyWith(color: AppColors.primary800),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 40.w,
+                    vertical: 24.h,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Gap(80.h),
 
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // العنوان والوصف
-                    Text(
-                      'الاسم',
-                      style: Styles.textStyle16Meduim.copyWith(
-                        color: AppColors.secondary800,
-                      ),
-                    ),
-                    Gap(8.h),
-                    Text(
-                      'يمكنك تحديث اسمك لمره واحدة كل 6 اشهر',
-                      style: Styles.textStyle12.copyWith(
-                        color: AppColors.secondary400,
-                      ),
-                    ),
-                    Gap(32.h),
-
-                    // حقل إدخال الاسم
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary50,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: AppColors.secondary200),
-                      ),
-                      child: TextField(
-                        controller: _nameController,
-                        style: Styles.textStyle16.copyWith(
-                          color: AppColors.secondary800,
+                      // حقل إدخال الاسم
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.whiteCard2Back,
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(color: AppColors.secondary200),
                         ),
-                        decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 16.h,
+                        child: TextField(
+                          controller: _nameController,
+                          style: Styles.textStyle14.copyWith(
+                            color: AppColors.secondary800,
                           ),
-                          border: InputBorder.none,
-                          hintText: 'أدخل اسمك',
-                          hintStyle: Styles.textStyle16.copyWith(
-                            color: AppColors.secondary400,
+                          decoration: InputDecoration(
+                            hintText: 'أدخل اسمك',
+                            hintStyle: Styles.textStyle14.copyWith(
+                              color: AppColors.primary200,
+                            ),
+                            filled: true,
+                            fillColor: AppColors.whiteCard2Back,
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                              borderSide: BorderSide(
+                                color: AppColors.primary100,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                              borderSide: BorderSide(
+                                color: AppColors.primary100,
+                              ),
+                            ),
+                            disabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                              borderSide: BorderSide(
+                                color: AppColors.primary100,
+                              ),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 14.h,
+                            ),
                           ),
+                          autofocus: true,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _updateName(),
                         ),
-                        autofocus: true,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _updateName(),
                       ),
-                    ),
-                    Gap(8.h),
+                      Gap(8.h),
+                      Spacer(),
 
-                    // عداد الأحرف
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${_nameController.text.length}/50',
-                          style: Styles.textStyle12.copyWith(
-                            color: AppColors.secondary400,
-                          ),
+                      // زر التأكيد
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        child: CustomBotton(
+                          height: 52.h,
+                          width: double.infinity,
+                          title: 'تأكيد',
+                          onPressed: _isLoading ? null : _updateName,
+                          isLoading: _isLoading,
+                          backGroundcolor: AppColors.kprimaryColor,
+                          titleColor: AppColors.kWhiteColor,
+                          useGradient: true,
                         ),
-                      ],
-                    ),
-
-                    Spacer(),
-
-                    // زر التأكيد
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: CustomBotton(
-                        width: double.infinity,
-                        title: 'تأكيد',
-                        onPressed: _isLoading ? null : _updateName,
-                        isLoading: _isLoading,
-                        backGroundcolor: AppColors.kprimaryColor,
-                        titleColor: AppColors.kWhiteColor,
-                        radius: 10.r,
-                        useGradient: true,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

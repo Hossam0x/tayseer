@@ -1,19 +1,22 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/boost/selection_tile.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit_state.dart';
 import 'package:tayseer/features/user/user_profile/views/edit_views/edit_description_view.dart';
 import 'package:tayseer/features/user/user_profile/views/edit_views/edit_name_view.dart';
-import 'package:tayseer/features/user/user_profile/views/edit_views/edit_profile_image_view.dart';
 import 'package:tayseer/features/user/user_profile/views/edit_views/edit_username_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserProfileEditView extends StatelessWidget {
   final UserProfileModel? initialProfile;
+  final Function(UserProfileModel)? onProfileUpdated;
 
-  const UserProfileEditView({super.key, this.initialProfile});
+  const UserProfileEditView({
+    super.key,
+    this.initialProfile,
+    this.onProfileUpdated,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +38,7 @@ class UserProfileEditView extends StatelessWidget {
                       title: 'تعديل البيانات الشخصية',
                       isLargeTitle: true,
                     ),
-                    const _UserProfileEditContent(),
+                    _UserProfileEditContent(onProfileUpdated: onProfileUpdated),
                   ],
                 ),
               ),
@@ -48,46 +51,59 @@ class UserProfileEditView extends StatelessWidget {
 }
 
 class _UserProfileEditContent extends StatelessWidget {
-  const _UserProfileEditContent();
+  final Function(UserProfileModel)? onProfileUpdated;
+
+  const _UserProfileEditContent({this.onProfileUpdated});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<UserProfileEditCubit, UserProfileEditState>(
+    return BlocConsumer<UserProfileEditCubit, UserProfileEditState>(
+      listener: (context, state) {
+        // الاستماع لأي تحديثات في البيانات
+        if (state.profile != null && onProfileUpdated != null) {
+          onProfileUpdated!(state.profile!);
+        }
+      },
       builder: (context, state) {
         final cubit = context.read<UserProfileEditCubit>();
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-          child: Column(
-            children: [
-              Gap(32.h),
+        return Column(
+          children: [
+            Gap(32.h),
 
-              if (state.state == CubitStates.loading)
-                _buildSkeletonLoading()
-              else if (state.state == CubitStates.failure)
-                _buildErrorState(context, cubit, state)
-              else
-                Column(
-                  children: [
-                    // قسم الصورة الشخصية
-                    _buildAvatarImageSection(cubit, state, context),
-                    Gap(30.h),
+            if (state.state == CubitStates.loading)
+              _buildSkeletonLoading()
+            else if (state.state == CubitStates.failure)
+              _buildErrorState(context, cubit, state)
+            else
+              Column(
+                children: [
+                  // قسم الصورة الشخصية
+                  _buildAvatarImageSection(cubit, state, context),
+                  Gap(30.h),
 
-                    // حقل الاسم
-                    _buildNameField(cubit, state, context),
-                    Gap(16.h),
+                  // حقل الاسم
+                  _buildNameField(cubit, state, context),
+                  Divider(
+                    color: AppColors.secondary,
+                    height: 20.h,
+                    thickness: 0.2.h,
+                  ),
 
-                    // حقل اسم المستخدم
-                    _buildUsernameField(cubit, state, context),
-                    Gap(16.h),
+                  // حقل اسم المستخدم
+                  _buildUsernameField(cubit, state, context),
+                  Divider(
+                    color: AppColors.secondary,
+                    height: 20.h,
+                    thickness: 0.2.h,
+                  ),
 
-                    // حقل النبذة التعريفية
-                    _buildDescriptionField(cubit, state, context),
-                    Gap(40.h),
-                  ],
-                ),
-            ],
-          ),
+                  // حقل النبذة التعريفية
+                  _buildDescriptionField(cubit, state, context),
+                  Gap(40.h),
+                ],
+              ),
+          ],
         );
       },
     );
@@ -167,8 +183,6 @@ class _UserProfileEditContent extends StatelessWidget {
   ) {
     final imageUrl = state.imagePreviewUrl;
     final imageFile = state.imageFile;
-    final hasImage =
-        imageFile != null || (imageUrl != null && imageUrl.isNotEmpty);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -176,9 +190,7 @@ class _UserProfileEditContent extends StatelessWidget {
         Stack(
           children: [
             GestureDetector(
-              onTap: () {
-                _navigateToEditProfileImage(context, cubit, state);
-              },
+              onTap: () => cubit.pickImage(context),
               child: Container(
                 height: 150.h,
                 width: 155.w,
@@ -211,13 +223,11 @@ class _UserProfileEditContent extends StatelessWidget {
               bottom: 8,
               right: 8,
               child: GestureDetector(
-                onTap: () {
-                  _navigateToEditProfileImage(context, cubit, state);
-                },
+                onTap: () => cubit.pickImage(context),
                 child: AppImage(AssetsData.addCertificateImage, width: 30.w),
               ),
             ),
-            if (hasImage)
+            if (imageUrl != null && imageUrl.isNotEmpty)
               Positioned(
                 top: 10,
                 right: 10,
@@ -246,16 +256,7 @@ class _UserProfileEditContent extends StatelessWidget {
               ),
           ],
         ),
-        Gap(12.h),
-        Text(
-          'الصورة الشخصية',
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
-        ),
-        Gap(4.h),
-        Text(
-          'انقر على أيقونة الكاميرا لتغيير الصورة',
-          style: Styles.textStyle12.copyWith(color: AppColors.secondary400),
-        ),
+        Gap(20.h),
       ],
     );
   }
@@ -277,9 +278,9 @@ class _UserProfileEditContent extends StatelessWidget {
     UserProfileEditState state,
     BuildContext context,
   ) {
-    return SelectionTile(
+    return SelectionCard(
       label: 'الاسم',
-      value: state.name.isNotEmpty ? state.name : 'أدخل اسمك',
+      value: state.name.isNotEmpty ? state.name : '',
       onTap: () {
         _navigateToEditName(context, cubit, state);
       },
@@ -291,9 +292,9 @@ class _UserProfileEditContent extends StatelessWidget {
     UserProfileEditState state,
     BuildContext context,
   ) {
-    return SelectionTile(
+    return SelectionCard(
       label: 'اسم المستخدم',
-      value: state.username.isNotEmpty ? state.username : 'أدخل اسم المستخدم',
+      value: state.username.isNotEmpty ? state.username : '',
       onTap: () {
         _navigateToEditUsername(context, cubit, state);
       },
@@ -305,20 +306,19 @@ class _UserProfileEditContent extends StatelessWidget {
     UserProfileEditState state,
     BuildContext context,
   ) {
-    return SelectionTile(
-      label: 'نبذة تعريفية',
+    return SelectionCard(
+      label: 'النبذة التعريفية',
       value: state.description.isNotEmpty
           ? (state.description.length > 20
                 ? '${state.description.substring(0, 20)}...'
                 : state.description)
-          : 'أضف نبذة تعريفية عن نفسك',
+          : '',
       onTap: () {
         _navigateToEditDescription(context, cubit, state);
       },
     );
   }
 
-  // دالة للانتقال إلى صفحة تعديل الاسم
   void _navigateToEditName(
     BuildContext context,
     UserProfileEditCubit cubit,
@@ -341,23 +341,17 @@ class _UserProfileEditContent extends StatelessWidget {
         builder: (context) => EditNameView(
           initialProfile: profile,
           onProfileUpdated: (updatedProfile) {
-            // تحديث الحالة المحلية في الكيوبت
             cubit.updateName(updatedProfile.name);
-
-            // إرجاع البيانات المحدثة إلى الصفحة السابقة
-            Navigator.pop(context, updatedProfile);
+            if (onProfileUpdated != null) {
+              onProfileUpdated!(updatedProfile);
+            }
+            Navigator.pop(context);
           },
         ),
       ),
-    ).then((updatedProfile) {
-      if (updatedProfile != null && updatedProfile is UserProfileModel) {
-        // تحديث البيانات إذا تم الحفظ
-        cubit.updateName(updatedProfile.name);
-      }
-    });
+    );
   }
 
-  // دالة للانتقال إلى صفحة تعديل اسم المستخدم
   void _navigateToEditUsername(
     BuildContext context,
     UserProfileEditCubit cubit,
@@ -381,18 +375,16 @@ class _UserProfileEditContent extends StatelessWidget {
           initialProfile: profile,
           onProfileUpdated: (updatedProfile) {
             cubit.updateUsername(updatedProfile.username);
-            Navigator.pop(context, updatedProfile);
+            if (onProfileUpdated != null) {
+              onProfileUpdated!(updatedProfile);
+            }
+            Navigator.pop(context);
           },
         ),
       ),
-    ).then((updatedProfile) {
-      if (updatedProfile != null && updatedProfile is UserProfileModel) {
-        cubit.updateUsername(updatedProfile.username);
-      }
-    });
+    );
   }
 
-  // دالة للانتقال إلى صفحة تعديل النبذة التعريفية
   void _navigateToEditDescription(
     BuildContext context,
     UserProfileEditCubit cubit,
@@ -416,50 +408,54 @@ class _UserProfileEditContent extends StatelessWidget {
           initialProfile: profile,
           onProfileUpdated: (updatedProfile) {
             cubit.updateDescription(updatedProfile.description ?? '');
-            Navigator.pop(context, updatedProfile);
+            if (onProfileUpdated != null) {
+              onProfileUpdated!(updatedProfile);
+            }
+            Navigator.pop(context);
           },
         ),
       ),
-    ).then((updatedProfile) {
-      if (updatedProfile != null && updatedProfile is UserProfileModel) {
-        cubit.updateDescription(updatedProfile.description ?? '');
-      }
-    });
-  }
-
-  // دالة للانتقال إلى صفحة تعديل الصورة الشخصية
-  void _navigateToEditProfileImage(
-    BuildContext context,
-    UserProfileEditCubit cubit,
-    UserProfileEditState state,
-  ) {
-    final profile = UserProfileModel(
-      id: state.profile?.id ?? '',
-      name: state.name,
-      username: state.username,
-      description: state.description,
-      image: state.imagePreviewUrl,
-      following: state.profile?.following ?? 0,
-      isMe: true,
-      avaliableForMarry: state.profile?.avaliableForMarry ?? false,
     );
+  }
+}
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditProfileImageView(
-          initialProfile: profile,
-          onProfileUpdated: (updatedProfile) {
-            // تحديث الصورة في الكيوبت
-            cubit.updateImage(updatedProfile.image ?? '');
-            Navigator.pop(context, updatedProfile);
-          },
+class SelectionCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  const SelectionCard({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+
+        child: Row(
+          children: [
+            Text(label, style: Styles.textStyle16Meduim),
+            const Spacer(),
+            Text(
+              value,
+              style: Styles.textStyle16.copyWith(color: AppColors.secondary),
+            ),
+            Gap(10.w),
+
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 14.w,
+              color: AppColors.dropDownArrow,
+            ),
+          ],
         ),
       ),
-    ).then((updatedProfile) {
-      if (updatedProfile != null && updatedProfile is UserProfileModel) {
-        cubit.updateImage(updatedProfile.image ?? '');
-      }
-    });
+    );
   }
 }

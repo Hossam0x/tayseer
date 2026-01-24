@@ -76,97 +76,104 @@ class _EditUsernameViewState extends State<EditUsernameView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            SimpleAppBar(title: 'تعديل اسم المستخدم', isLargeTitle: true),
-
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // العنوان والوصف
-                    Text(
-                      'اسم المستخدم',
-                      style: Styles.textStyle16Meduim.copyWith(
-                        color: AppColors.secondary800,
-                      ),
-                    ),
-                    Gap(8.h),
-                    Text(
-                      'يمكنك تحديث اسم المستخدم لمره واحده كل 6 اشهر',
-                      style: Styles.textStyle12.copyWith(
-                        color: AppColors.secondary400,
-                      ),
-                    ),
-                    Gap(32.h),
-
-                    // حقل إدخال اسم المستخدم
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary50,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: AppColors.secondary200),
-                      ),
-                      child: TextField(
-                        controller: _usernameController,
-                        style: Styles.textStyle16.copyWith(
-                          color: AppColors.secondary800,
-                        ),
-                        decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 16.h,
-                          ),
-                          border: InputBorder.none,
-                          hintText: 'أدخل اسم المستخدم',
-                          hintStyle: Styles.textStyle16.copyWith(
-                            color: AppColors.secondary400,
-                          ),
-                        ),
-                        autofocus: true,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _updateUsername(),
-                      ),
-                    ),
-                    Gap(8.h),
-
-                    // عداد الأحرف
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${_usernameController.text.length}/30',
-                          style: Styles.textStyle12.copyWith(
-                            color: AppColors.secondary400,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    Spacer(),
-
-                    // زر التأكيد
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: CustomBotton(
-                        width: double.infinity,
-                        title: 'تأكيد',
-                        onPressed: _isLoading ? null : _updateUsername,
-                        isLoading: _isLoading,
-                        backGroundcolor: AppColors.kprimaryColor,
-                        titleColor: AppColors.kWhiteColor,
-                        radius: 10.r,
-                        useGradient: true,
-                      ),
-                    ),
-                  ],
+      body: AdvisorBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Gap(16.h),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: SimpleAppBar(
+                  title: 'تعديل اسم المستخدم',
+                  isLargeTitle: true,
                 ),
               ),
-            ),
-          ],
+              Text(
+                'يمكنك تحديث اسم المستخدم لمره واحده كل 6 اشهر',
+                style: Styles.textStyle14.copyWith(color: AppColors.primary800),
+              ),
+
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 40.w,
+                    vertical: 24.h,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Gap(80.h),
+                      // حقل إدخال اسم المستخدم
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.whiteCard2Back,
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(color: AppColors.secondary200),
+                        ),
+                        child: TextField(
+                          controller: _usernameController,
+                          style: Styles.textStyle16.copyWith(
+                            color: AppColors.secondary800,
+                          ),
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: 'أدخل اسم المستخدم',
+                            hintStyle: Styles.textStyle14.copyWith(
+                              color: AppColors.primary200,
+                            ),
+                            filled: true,
+                            fillColor: AppColors.whiteCard2Back,
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                              borderSide: BorderSide(
+                                color: AppColors.primary100,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                              borderSide: BorderSide(
+                                color: AppColors.primary100,
+                              ),
+                            ),
+                            disabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                              borderSide: BorderSide(
+                                color: AppColors.primary100,
+                              ),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 14.h,
+                            ),
+                          ),
+                          autofocus: true,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _updateUsername(),
+                        ),
+                      ),
+
+                      Spacer(),
+
+                      // زر التأكيد
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        child: CustomBotton(
+                          height: 52.h,
+                          width: double.infinity,
+                          title: 'تأكيد',
+                          onPressed: _isLoading ? null : _updateUsername,
+                          isLoading: _isLoading,
+                          backGroundcolor: AppColors.kprimaryColor,
+                          titleColor: AppColors.kWhiteColor,
+                          useGradient: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

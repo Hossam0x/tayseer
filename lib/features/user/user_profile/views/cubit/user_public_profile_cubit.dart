@@ -18,23 +18,29 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
     this._postsRepository, {
     this.userId,
     this.initialProfile,
-  }) : super(const UserPublicProfileState()) {
-    _initialize();
-  }
-
-  Future<void> _initialize() async {
+  }) : super(
+         UserPublicProfileState(
+           state: CubitStates.success,
+           profile: initialProfile,
+           profileState: initialProfile != null
+               ? CubitStates.success
+               : CubitStates.initial,
+         ),
+       ) {
+    // إذا كان لدينا بيانات أولية، لا نحتاج لتحميلها
     if (initialProfile != null) {
-      emit(state.copyWith(state: CubitStates.success, profile: initialProfile));
-      await fetchPosts();
+      fetchPosts();
     } else if (userId != null) {
-      await Future.wait([fetchProfile(), fetchPosts()]);
+      _initialize();
     }
   }
 
-  // ⭐ Profile Methods
+  Future<void> _initialize() async {
+    await Future.wait([fetchProfile(), fetchPosts()]);
+  }
+
   Future<void> fetchProfile() async {
     if (userId == null) return;
-    if (state.profileState == CubitStates.loading) return;
 
     emit(
       state.copyWith(
@@ -44,6 +50,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
     );
 
     final result = await _profileRepository.getUserPublicProfile(userId!);
+
     if (isClosed) return;
 
     result.fold(

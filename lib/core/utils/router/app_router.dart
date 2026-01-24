@@ -80,7 +80,7 @@ import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_s
 // import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/on_boarding_screen.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
-import 'package:tayseer/features/user/user_profile/views/user_profile_edit.dart';
+import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import '../../../my_import.dart';
 

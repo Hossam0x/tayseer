@@ -8,11 +8,7 @@ import 'package:tayseer/features/user/user_profile/data/models/user_profile_mode
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
-import 'package:tayseer/features/user/user_profile/views/edit_views/edit_description_view.dart';
-import 'package:tayseer/features/user/user_profile/views/edit_views/edit_name_view.dart';
-import 'package:tayseer/features/user/user_profile/views/edit_views/edit_profile_image_view.dart';
-import 'package:tayseer/features/user/user_profile/views/edit_views/edit_username_view.dart';
-import 'package:tayseer/features/user/user_profile/views/user_profile_edit.dart';
+import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -30,7 +26,6 @@ class _UserProfileViewState extends State<UserProfileView> {
   @override
   void initState() {
     super.initState();
-    // ⭐ إضافة Listener لـ scroll إذا كنت بحاجة
   }
 
   @override
@@ -90,21 +85,12 @@ class _UserProfileViewState extends State<UserProfileView> {
       child: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Gap(20.h),
-            CircularProgressIndicator(color: AppColors.primary100),
-            Gap(20.h),
-            Text(
-              'جاري تحميل البيانات...',
-              style: Styles.textStyle16.copyWith(color: AppColors.kWhiteColor),
-            ),
-          ],
+          children: [Gap(20.h), CircularProgressIndicator(), Gap(20.h)],
         ),
       ),
     );
   }
 
-  // features/user/user_profile/views/user_profile_view.dart
   Widget _buildErrorState(BuildContext context, SettingsError state) {
     return Center(
       child: SafeArea(
@@ -122,16 +108,11 @@ class _UserProfileViewState extends State<UserProfileView> {
             Gap(20.h),
             ElevatedButton(
               onPressed: () async {
-                // ⭐ التحديث: استدعاء refresh بالطريقة الصحيحة
                 final cubit = context.read<UserProfileCubit>();
                 try {
-                  // محاولة إعادة التحميل
                   await cubit.refresh();
                 } catch (e) {
-                  // إذا فشل، حاول إعادة تحميل البيانات فقط
-                  if (cubit.state is SettingsLoaded) {
-                    await (cubit).reloadUserProfile();
-                  }
+                  // معالجة الخطأ
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -157,58 +138,74 @@ class _UserProfileViewState extends State<UserProfileView> {
   Widget _buildLoadedState(BuildContext context, SettingsLoaded state) {
     final userProfile = state.userProfile;
 
-    return Column(
-      children: [
-        // التبويب الثابت في الأعلى
-        Container(
-          color: Colors.transparent,
-          padding: EdgeInsets.only(
-            top: MediaQuery.of(context).padding.top + 16.h,
-            left: 20.w,
-            right: 20.w,
-          ),
-          child: Column(
-            children: [
-              CustomToggleTabBar(
-                firstTabText: "عام",
-                secondTabText: "زواج",
-                initialIndex: _selectedTabIndex,
-                onTabChanged: (index) {
-                  setState(() {
-                    _selectedTabIndex = index;
-                  });
-                },
+    return RefreshIndicator.adaptive(
+      onRefresh: () async {
+        final cubit = context.read<UserProfileCubit>();
+        await cubit.refresh();
+      },
+      color: AppColors.kprimaryColor,
+      backgroundColor: AppColors.kWhiteColor,
+      displacement: 40.h,
+      edgeOffset: 0,
+      child: CustomScrollView(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        slivers: [
+          // التبويب الثابت في الأعلى
+          SliverToBoxAdapter(
+            child: Container(
+              color: Colors.transparent,
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 16.h,
+                left: 20.w,
+                right: 20.w,
               ),
+              child: Column(
+                children: [
+                  CustomToggleTabBar(
+                    firstTabText: "عام",
+                    secondTabText: "زواج",
+                    initialIndex: _selectedTabIndex,
+                    onTabChanged: (index) {
+                      setState(() {
+                        _selectedTabIndex = index;
+                      });
+                    },
+                  ),
+                  Gap(18.h),
 
-              Gap(18.h),
-
-              // ⭐ تحديث: عرض بيانات المستخدم الحقيقية
-              if (_selectedTabIndex == 0) ...[
-                _buildProfileImage(userProfile),
-                Gap(9.h),
-                _buildUserInfo(context, userProfile),
-                Gap(20.h),
-              ],
-            ],
+                  // ⭐ تحديث: عرض بيانات المستخدم الحقيقية
+                  if (_selectedTabIndex == 0) ...[
+                    _buildProfileImage(userProfile),
+                    Gap(9.h),
+                    _buildUserInfo(context, userProfile),
+                    Gap(20.h),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
 
-        // القائمة القابلة للتمرير
-        Expanded(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            child: _selectedTabIndex == 0
-                ? _buildGeneralContent(context, state.settings)
-                : _buildMarriageContent(userProfile),
-          ),
-        ),
-      ],
+          // المحتوى حسب التبويب
+          if (_selectedTabIndex == 0)
+            SliverToBoxAdapter(
+              child: _buildGeneralContent(context, state.settings),
+            )
+          else
+            SliverToBoxAdapter(child: _buildMarriageContent(userProfile)),
+
+          // مساحة في الأسفل
+          SliverToBoxAdapter(child: Gap(100.h)),
+        ],
+      ),
     );
   }
 
-  // ⭐ تحديث: بناء صورة الملف الشخصي من البيانات الحقيقية
   Widget _buildProfileImage(UserProfileModel? userProfile) {
+    final imageUrl = userProfile?.image;
+
     return SizedBox(
       width: 120.w,
       height: 120.w,
@@ -220,24 +217,28 @@ class _UserProfileViewState extends State<UserProfileView> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.secondary100,
-              image:
-                  userProfile?.image != null && userProfile!.image!.isNotEmpty
+              image: (imageUrl != null && imageUrl.isNotEmpty)
                   ? DecorationImage(
-                      image: NetworkImage(userProfile.image!),
+                      image: NetworkImage(imageUrl),
                       fit: BoxFit.cover,
                     )
-                  : DecorationImage(
-                      image: AssetImage(AssetsData.avatarImage),
-                      fit: BoxFit.cover,
-                    ),
+                  : null,
             ),
+            child: (imageUrl == null || imageUrl.isEmpty)
+                ? Center(
+                    child: Icon(
+                      Icons.person,
+                      size: 48.w,
+                      color: AppColors.secondary400,
+                    ),
+                  )
+                : null,
           ),
         ],
       ),
     );
   }
 
-  // ⭐ تحديث: بناء معلومات المستخدم من البيانات الحقيقية
   Widget _buildUserInfo(BuildContext context, UserProfileModel? userProfile) {
     if (userProfile == null) {
       return _buildUserInfoSkeleton();
@@ -264,13 +265,11 @@ class _UserProfileViewState extends State<UserProfileView> {
         Gap(8.h),
         GestureDetector(
           onTap: () {
-            // ⭐ تحديث: تمرير بيانات المستخدم الكاملة للصفحة الجديدة
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => UserPublicProfileView(
-                  userProfile: userProfile, // ⭐ تمرير الـ Model كامل
-                ),
+                builder: (context) =>
+                    UserPublicProfileView(userProfile: userProfile),
               ),
             );
           },
@@ -337,17 +336,20 @@ class _UserProfileViewState extends State<UserProfileView> {
     BuildContext context,
     List<SettingItemModel> settings,
   ) {
-    return Column(
-      children: [
-        // قائمة الإعدادات
-        _buildSettingsList(context, settings),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Column(
+        children: [
+          // قائمة الإعدادات
+          _buildSettingsList(context, settings),
 
-        // زر تسجيل الخروج
-        _buildLogoutButton(context),
+          // زر تسجيل الخروج
+          _buildLogoutButton(context),
 
-        // مساحة إضافية في الأسفل
-        Gap(50.h),
-      ],
+          // مساحة إضافية في الأسفل
+          Gap(50.h),
+        ],
+      ),
     );
   }
 
@@ -360,14 +362,6 @@ class _UserProfileViewState extends State<UserProfileView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isAvailableForMarry ? Icons.favorite : Icons.construction_rounded,
-              size: 80.w,
-              color: isAvailableForMarry
-                  ? AppColors.primary500
-                  : AppColors.secondary400,
-            ),
-            Gap(16.h),
             Text(
               isAvailableForMarry ? "جاهز/ة للزواج" : "غير مفعل حاليا",
               style: Styles.textStyle20Bold.copyWith(
@@ -396,56 +390,26 @@ class _UserProfileViewState extends State<UserProfileView> {
     BuildContext context,
     List<SettingItemModel> settings,
   ) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Column(
-        children: [
-          for (var i = 0; i < settings.length; i++) ...[
-            _buildSettingItem(context, settings[i]),
-            if (i < settings.length - 1)
-              Divider(color: AppColors.secondary100, height: 1),
-          ],
+    return Column(
+      children: [
+        for (var i = 0; i < settings.length; i++) ...[
+          _buildSettingItem(context, settings[i]),
+          if (i < settings.length - 1)
+            Divider(color: AppColors.secondary100, height: 1),
         ],
-      ),
+      ],
     );
   }
 
   Widget _buildSettingItem(BuildContext context, SettingItemModel setting) {
     final isNotificationsItem = setting.id == 'notifications';
-    final isEditProfile = setting.id == 'edit_profile'; // ⭐ إضافة
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: isNotificationsItem
-              ? null
-              : () {
-                  if (isEditProfile) {
-                    // ⭐ فتح صفحة التعديل
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const UserProfileEditView(),
-                      ),
-                    ).then((updatedProfile) {
-                      // ⭐ تحديث البيانات إذا تم الحفظ
-                      if (updatedProfile != null &&
-                          updatedProfile is UserProfileModel) {
-                        // final cubit = context.read<UserProfileCubit>();
-                        // final currentState = cubit.state;
-                        // if (currentState is SettingsLoaded) {
-                        //   cubit.emit(
-                        //     currentState.copyWith(userProfile: updatedProfile),
-                        //   );
-                        // }
-                      }
-                    });
-                  } else {
-                    _handleSettingTap(context, setting);
-                  }
-                },
+          onTap: isNotificationsItem ? null : () => _openEditProfile(context),
           borderRadius: BorderRadius.circular(16.r),
           highlightColor: isNotificationsItem ? Colors.transparent : null,
           child: Container(
@@ -492,23 +456,13 @@ class _UserProfileViewState extends State<UserProfileView> {
                     child: Transform.scale(
                       scaleX: -0.9,
                       scaleY: 0.9,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final screenWidth = MediaQuery.of(context).size.width;
-                          final scaleFactor = screenWidth > 600 ? 1.5 : 1.0;
-
-                          return Transform.scale(
-                            scale: scaleFactor,
-                            child: CupertinoSwitch(
-                              value: setting.switchValue,
-                              activeColor: const Color(0xFFF06C88),
-                              trackColor: AppColors.dropDownArrow,
-                              onChanged: (value) {
-                                final cubit = context.read<UserProfileCubit>();
-                                cubit.updateSwitch(setting.id, value, context);
-                              },
-                            ),
-                          );
+                      child: CupertinoSwitch(
+                        value: setting.switchValue,
+                        activeColor: const Color(0xFFF06C88),
+                        trackColor: AppColors.dropDownArrow,
+                        onChanged: (value) {
+                          final cubit = context.read<UserProfileCubit>();
+                          cubit.updateSwitch(setting.id, value, context);
                         },
                       ),
                     ),
@@ -518,6 +472,26 @@ class _UserProfileViewState extends State<UserProfileView> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _openEditProfile(BuildContext context) {
+    final cubit = context.read<UserProfileCubit>();
+    final currentState = cubit.state;
+    if (currentState is! SettingsLoaded || currentState.userProfile == null) {
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfileEditView(
+          initialProfile: currentState.userProfile!,
+          onProfileUpdated: (updatedProfile) {
+            cubit.updateUserProfile(updatedProfile);
+          },
         ),
       ),
     );
@@ -641,85 +615,5 @@ class _UserProfileViewState extends State<UserProfileView> {
         isError: true,
       );
     }
-  }
-
-  void _handleSettingTap(BuildContext context, SettingItemModel setting) async {
-    if (setting.onTap != null) {
-      await setting.onTap!();
-      return;
-    }
-
-    if (setting.routeName.isNotEmpty) {
-      if (setting.id == 'edit_profile') {
-        _navigateToEditScreen(context, 'name');
-        return;
-      }
-      if (setting.id == 'language') {
-        final result = await Navigator.pushNamed(context, setting.routeName);
-        if (result != null && result is String) {
-          context.read<UserProfileCubit>().updateLanguage(result, context);
-        }
-      } else {
-        Navigator.pushNamed(context, setting.routeName);
-      }
-    }
-  }
-
-  void _navigateToEditScreen(BuildContext context, String fieldType) {
-    final currentState = context.read<UserProfileCubit>().state;
-    if (currentState is! SettingsLoaded) return;
-
-    Widget editScreen;
-
-    switch (fieldType) {
-      case 'name':
-        editScreen = EditNameView(
-          initialProfile: currentState.userProfile!,
-          onProfileUpdated: (updatedProfile) {
-            // تحديث الحالة بعد التعديل
-            context.read<UserProfileCubit>().emit(
-              currentState.copyWith(userProfile: updatedProfile),
-            );
-          },
-        );
-        break;
-      case 'username':
-        editScreen = EditUsernameView(
-          initialProfile: currentState.userProfile!,
-          onProfileUpdated: (updatedProfile) {
-            context.read<UserProfileCubit>().emit(
-              currentState.copyWith(userProfile: updatedProfile),
-            );
-          },
-        );
-        break;
-      case 'description':
-        editScreen = EditDescriptionView(
-          initialProfile: currentState.userProfile!,
-          onProfileUpdated: (updatedProfile) {
-            context.read<UserProfileCubit>().emit(
-              currentState.copyWith(userProfile: updatedProfile),
-            );
-          },
-        );
-        break;
-      case 'image':
-        editScreen = EditProfileImageView(
-          initialProfile: currentState.userProfile!,
-          onProfileUpdated: (updatedProfile) {
-            context.read<UserProfileCubit>().emit(
-              currentState.copyWith(userProfile: updatedProfile),
-            );
-          },
-        );
-        break;
-      default:
-        return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => editScreen),
-    );
   }
 }

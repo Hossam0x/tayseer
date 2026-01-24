@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit_state.dart';
@@ -10,8 +11,11 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
 
   UserProfileEditCubit(this._repository, {this.initialProfile})
     : super(const UserProfileEditState()) {
+    _initialize();
+  }
+
+  void _initialize() {
     if (initialProfile != null) {
-      // استخدام البيانات الأولية إذا مررت من الصفحة السابقة
       emit(
         state.copyWith(
           state: CubitStates.success,
@@ -27,6 +31,7 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
       _loadUserProfile();
     }
   }
+
   Future<void> _loadUserProfile() async {
     emit(state.copyWith(state: CubitStates.loading));
 
@@ -78,7 +83,7 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
     emit(state.copyWith(description: description));
   }
 
-  Future<void> pickImage() async {
+  Future<void> pickImage(BuildContext context) async {
     try {
       final pickedFile = await _imagePicker.pickImage(
         source: ImageSource.gallery,
@@ -87,38 +92,82 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
 
       if (pickedFile != null) {
         final file = File(pickedFile.path);
+
+        // تحديث الحالة المحلية أولاً
         emit(
           state.copyWith(
             imageFile: file,
-            imagePreviewUrl: null, // إخفاء الصورة القديمة عند اختيار صورة جديدة
+            imagePreviewUrl: null,
+            isLoading: true,
           ),
         );
+
+        // رفع الصورة إلى الخادم
+        await _uploadImage(file, context);
       }
     } catch (e) {
+      emit(state.copyWith(isLoading: false));
       debugPrint('❌ خطأ في اختيار الصورة: $e');
     }
   }
 
-  void updateImage(String imageUrl) {
-    emit(state.copyWith(imagePreviewUrl: imageUrl));
-  }
-
-  void removeImage() {
-    emit(state.copyWith(imageFile: null, imagePreviewUrl: ''));
-  }
-
-  // في UserProfileEditCubit
-  Future<void> saveProfile(BuildContext context) async {
-    if (state.isLoading) return;
-
-    // تحقق من صحة البيانات
-    if (state.name.isEmpty) {
-      AppToast.error(context, 'الاسم مطلوب');
-      return;
+  Future<void> _uploadImage(File imageFile, BuildContext context) async {
+    try {
+      final result = await _repository.updateUserProfile(
+        name: state.name,
+        username: state.username,
+        description: state.description,
+        imageFile: imageFile,
+      );
+      showSafeSnackBar(
+        context: context,
+        text: 'تم تحديث الصوره بنجاح',
+        isSuccess: true,
+      );
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              isLoading: false,
+              errorMessage: failure.message,
+              imageFile: null,
+            ),
+          );
+          showSafeSnackBar(
+            context: context,
+            text: state.errorMessage!,
+            isError: true,
+          );
+        },
+        (updatedProfile) {
+          emit(
+            state.copyWith(
+              isLoading: false,
+              profile: updatedProfile,
+              imagePreviewUrl: updatedProfile.image,
+              imageFile: null,
+            ),
+          );
+          showSafeSnackBar(
+            context: context,
+            text: 'تم تحديث الصوره بنجاح',
+            isSuccess: true,
+          );
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: 'حدث خطأ أثناء رفع الصورة: $e',
+          imageFile: null,
+        ),
+      );
     }
+  }
 
-    if (state.username.isEmpty) {
-      AppToast.error(context, 'اسم المستخدم مطلوب');
+  Future<void> removeImage() async {
+    if (state.profile?.image == null || state.profile!.image!.isEmpty) {
       return;
     }
 
@@ -129,32 +178,31 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
         name: state.name,
         username: state.username,
         description: state.description,
-        imageFile: state.imageFile,
+        imageFile: null, // إرسال null لحذف الصورة
       );
 
       result.fold(
         (failure) {
-          emit(state.copyWith(isLoading: false));
-          AppToast.error(context, failure.message);
+          emit(state.copyWith(isLoading: false, errorMessage: failure.message));
         },
         (updatedProfile) {
           emit(
             state.copyWith(
               isLoading: false,
               profile: updatedProfile,
-              imagePreviewUrl: updatedProfile.image,
+              imagePreviewUrl: '',
+              imageFile: null,
             ),
           );
-
-          AppToast.success(context, 'تم حفظ التغييرات بنجاح');
-
-          // الرجوع للصفحة السابقة بعد الحفظ
-          Navigator.pop(context, updatedProfile);
         },
       );
     } catch (e) {
-      emit(state.copyWith(isLoading: false));
-      AppToast.error(context, 'حدث خطأ أثناء الحفظ: $e');
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: 'حدث خطأ أثناء حذف الصورة: $e',
+        ),
+      );
     }
   }
 

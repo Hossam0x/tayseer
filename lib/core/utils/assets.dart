@@ -198,4 +198,5 @@ abstract class AssetsData {
   // User Profile Icons
   static const String navigateIcon = "assets/icons/navigateIcon.svg";
   static const String icRateSettings = "assets/icons/icRateSettings.svg";
+  static const String icSettingsProf = "assets/icons/icSettingsProf.svg";
 }

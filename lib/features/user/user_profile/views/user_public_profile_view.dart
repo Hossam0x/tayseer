@@ -34,7 +34,7 @@ class UserPublicProfileView extends StatelessWidget {
 
             // زر الرجوع
             Positioned(
-              top: 55.h,
+              top: 40.h,
               right: 8.w,
               child: IconButton(
                 onPressed: () => Navigator.pop(context),

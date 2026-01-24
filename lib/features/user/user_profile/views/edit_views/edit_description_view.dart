@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/my_import.dart';
@@ -86,119 +85,108 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            SimpleAppBar(title: 'تعديل النبذة التعريفية', isLargeTitle: true),
-
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // العنوان والوصف
-                    Text(
-                      'النبذة التعريفية',
-                      style: Styles.textStyle16Meduim.copyWith(
-                        color: AppColors.secondary800,
-                      ),
-                    ),
-                    Gap(8.h),
-                    Text(
-                      'اخبرنا عن نفسك اكثر',
-                      style: Styles.textStyle12.copyWith(
-                        color: AppColors.secondary400,
-                      ),
-                    ),
-                    Gap(32.h),
-
-                    // حقل النص
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary50,
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(color: AppColors.secondary200),
-                        ),
-                        child: TextField(
-                          controller: _descriptionController,
-                          style: Styles.textStyle16.copyWith(
-                            color: AppColors.secondary800,
-                          ),
-                          maxLines: null,
-                          maxLength: 200,
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.all(16.w),
-                            border: InputBorder.none,
-                            hintText: 'أخبرنا عن نفسك...',
-                            hintStyle: Styles.textStyle16.copyWith(
-                              color: AppColors.secondary400,
-                            ),
-                            counterText: '',
-                          ),
-                        ),
-                      ),
-                    ),
-                    Gap(8.h),
-
-                    // صف الأزرار
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // زر التوليد بالذكاء الاصطناعي
-                        if (!_isAiGenerated)
-                          InkWell(
-                            onTap: _generateWithAI,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.auto_awesome,
-                                  size: 16.w,
-                                  color: AppColors.primary500,
-                                ),
-                                Gap(4.w),
-                                Text(
-                                  'كتابة بواسطة الذكاء الاصطناعي',
-                                  style: Styles.textStyle12.copyWith(
-                                    color: AppColors.primary500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        // عداد الأحرف
-                        Text(
-                          '${_descriptionController.text.length}/200',
-                          style: Styles.textStyle12.copyWith(
-                            color: AppColors.secondary400,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    Gap(32.h),
-
-                    // زر التأكيد
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: CustomBotton(
-                        width: double.infinity,
-                        title: 'تأكيد',
-                        onPressed: _isLoading ? null : _updateDescription,
-                        isLoading: _isLoading,
-                        backGroundcolor: AppColors.kprimaryColor,
-                        titleColor: AppColors.kWhiteColor,
-                        radius: 10.r,
-                        useGradient: true,
-                      ),
-                    ),
-                  ],
+      body: AdvisorBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Gap(16.h),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: SimpleAppBar(
+                  title: 'تعديل النبذة التعريفية',
+                  isLargeTitle: true,
                 ),
               ),
-            ),
-          ],
+
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 40.w,
+                    vertical: 24.h,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Gap(32.h),
+
+                      // حقل النص
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.whiteCard2Back,
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: TextField(
+                            controller: _descriptionController,
+                            style: Styles.textStyle16.copyWith(
+                              color: AppColors.secondary800,
+                            ),
+                            maxLines: null,
+                            maxLength: 200,
+                            decoration: InputDecoration(
+                              contentPadding: EdgeInsets.all(16.w),
+                              border: InputBorder.none,
+                              hintText: 'أخبرنا عن نفسك...',
+                              hintStyle: Styles.textStyle14.copyWith(
+                                color: AppColors.primary200,
+                              ),
+                              counterText: '',
+                            ),
+                          ),
+                        ),
+                      ),
+                      Gap(8.h),
+                      Text(
+                        '${_descriptionController.text.length}/200',
+                        style: Styles.textStyle12.copyWith(
+                          color: AppColors.secondary400,
+                        ),
+                      ),
+                      Gap(32.h),
+
+                      if (!_isAiGenerated)
+                        InkWell(
+                          onTap: _generateWithAI,
+                          child: Container(
+                            padding: EdgeInsets.all(12.w),
+                            margin: EdgeInsets.symmetric(horizontal: 16.w),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16.r),
+                              border: Border.all(color: AppColors.kWhiteColor),
+                            ),
+                            width: double.infinity,
+                            child: Text(
+                              textAlign: TextAlign.center,
+                              'كتابة بواسطة الذكاء الاصطناعي',
+                              style: Styles.textStyle16.copyWith(
+                                color: AppColors.primary600,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      Spacer(),
+
+                      // زر التأكيد
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        child: CustomBotton(
+                          height: 52.h,
+                          width: double.infinity,
+                          title: 'تأكيد',
+                          onPressed: _isLoading ? null : _updateDescription,
+                          isLoading: _isLoading,
+                          backGroundcolor: AppColors.kprimaryColor,
+                          titleColor: AppColors.kWhiteColor,
+                          useGradient: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

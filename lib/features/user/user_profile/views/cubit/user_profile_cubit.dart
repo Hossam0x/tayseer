@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
@@ -28,6 +30,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<void> updateUserProfile(UserProfileModel updatedProfile) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
+
+    emit(currentState.copyWith(userProfile: updatedProfile));
   }
 
   // ⭐ دالة لجلب بيانات المستخدم منفردة (لـ refresh)
@@ -61,7 +70,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       SettingItemModel(
         id: 'settings',
         title: 'الاعدادات العامة',
-        iconAsset: AssetsData.icWalletSettings,
+        iconAsset: AssetsData.icSettingsProf,
         routeName: '',
       ),
       SettingItemModel(
@@ -199,21 +208,25 @@ class UserProfileCubit extends Cubit<UserProfileState> {
   }
 
   /// التحكم في الاشعارات (فتح/قفل)
+  // تحديث دالة _toggleNotificationSetting
   Future<void> _toggleNotificationSetting(String id, bool newValue) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
-    // تحديث محلي أولاً
-    final updatedSettings = currentState.settings.map((item) {
-      if (item.id == id) {
-        return item.copyWith(switchValue: newValue);
-      }
-      return item;
-    }).toList();
-
-    emit(SettingsLoaded(settings: updatedSettings));
-
     try {
+      // حفظ القيمة القديمة للتراجع عند الخطأ
+      currentState.settings.firstWhere((item) => item.id == id).switchValue;
+
+      // تحديث محلي أولاً لسرعة الاستجابة
+      final updatedSettings = currentState.settings.map((item) {
+        if (item.id == id) {
+          return item.copyWith(switchValue: newValue);
+        }
+        return item;
+      }).toList();
+
+      emit(currentState.copyWith(settings: updatedSettings));
+
       final prefs = await SharedPreferences.getInstance();
 
       if (newValue) {
@@ -226,16 +239,70 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         await prefs.setBool('notifications_enabled', false);
       }
     } catch (e) {
-      // التراجع عند الخطأ
-      final revertedSettings = currentState.settings.map((item) {
+      // عند الخطأ، إرجاع القيمة السابقة
+      final currentState = state;
+      if (currentState is SettingsLoaded) {
+        final revertedSettings = currentState.settings.map((item) {
+          if (item.id == id) {
+            return item.copyWith(switchValue: !newValue);
+          }
+          return item;
+        }).toList();
+
+        emit(currentState.copyWith(settings: revertedSettings));
+      }
+
+      // إعادة رمي الخطأ للتعامل معه في updateSwitch
+      rethrow;
+    }
+  }
+
+  // تحديث دالة updateSwitch لتكون أسرع
+  Future<void> updateSwitch(String id, bool value, BuildContext context) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
+
+    try {
+      SnackBarService().clearAll(context);
+
+      // تحديث فوري بدون انتظار
+      final updatedSettings = currentState.settings.map((item) {
         if (item.id == id) {
-          return item.copyWith(switchValue: !newValue);
+          return item.copyWith(switchValue: value);
         }
         return item;
       }).toList();
 
-      emit(SettingsLoaded(settings: revertedSettings));
-      rethrow;
+      emit(currentState.copyWith(settings: updatedSettings));
+
+      // تنفيذ العملية في الخلفية
+      unawaited(_toggleNotificationSetting(id, value));
+
+      showSafeSnackBar(
+        context: context,
+        text: value ? 'تم تفعيل الاشعارات ✅' : 'تم تعطيل الاشعارات 🔕',
+        isSuccess: true,
+        duration: const Duration(milliseconds: 1500),
+      );
+    } catch (e) {
+      // إرجاع القيمة الأصلية عند الخطأ
+      final currentState = state;
+      if (currentState is SettingsLoaded) {
+        final revertedSettings = currentState.settings.map((item) {
+          if (item.id == id) {
+            return item.copyWith(switchValue: !value);
+          }
+          return item;
+        }).toList();
+
+        emit(currentState.copyWith(settings: revertedSettings));
+      }
+
+      showSafeSnackBar(
+        context: context,
+        text: 'حدث خطأ في تحديث الإعدادات ⚠️',
+        isError: true,
+      );
     }
   }
 
@@ -302,28 +369,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     } catch (e) {
       debugPrint('❌ خطأ في تعطيل الاشعارات: $e');
       rethrow;
-    }
-  }
-
-  /// تحديث قيمة switch (للاستخدام العام)
-  Future<void> updateSwitch(String id, bool value, BuildContext context) async {
-    try {
-      SnackBarService().clearAll(context);
-
-      await _toggleNotificationSetting(id, value);
-
-      showSafeSnackBar(
-        context: context,
-        text: value ? 'تم تفعيل الاشعارات ✅' : 'تم تعطيل الاشعارات 🔕',
-        isSuccess: value,
-        duration: const Duration(milliseconds: 1500),
-      );
-    } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: 'حدث خطأ في تحديث الإعدادات ⚠️',
-        isError: true,
-      );
     }
   }
 
