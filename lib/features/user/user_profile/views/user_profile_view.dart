@@ -8,6 +8,11 @@ import 'package:tayseer/features/user/user_profile/data/models/user_profile_mode
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/edit_views/edit_description_view.dart';
+import 'package:tayseer/features/user/user_profile/views/edit_views/edit_name_view.dart';
+import 'package:tayseer/features/user/user_profile/views/edit_views/edit_profile_image_view.dart';
+import 'package:tayseer/features/user/user_profile/views/edit_views/edit_username_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_profile_edit.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -407,6 +412,7 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   Widget _buildSettingItem(BuildContext context, SettingItemModel setting) {
     final isNotificationsItem = setting.id == 'notifications';
+    final isEditProfile = setting.id == 'edit_profile'; // ⭐ إضافة
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -415,7 +421,31 @@ class _UserProfileViewState extends State<UserProfileView> {
         child: InkWell(
           onTap: isNotificationsItem
               ? null
-              : () => _handleSettingTap(context, setting),
+              : () {
+                  if (isEditProfile) {
+                    // ⭐ فتح صفحة التعديل
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserProfileEditView(),
+                      ),
+                    ).then((updatedProfile) {
+                      // ⭐ تحديث البيانات إذا تم الحفظ
+                      if (updatedProfile != null &&
+                          updatedProfile is UserProfileModel) {
+                        // final cubit = context.read<UserProfileCubit>();
+                        // final currentState = cubit.state;
+                        // if (currentState is SettingsLoaded) {
+                        //   cubit.emit(
+                        //     currentState.copyWith(userProfile: updatedProfile),
+                        //   );
+                        // }
+                      }
+                    });
+                  } else {
+                    _handleSettingTap(context, setting);
+                  }
+                },
           borderRadius: BorderRadius.circular(16.r),
           highlightColor: isNotificationsItem ? Colors.transparent : null,
           child: Container(
@@ -620,6 +650,10 @@ class _UserProfileViewState extends State<UserProfileView> {
     }
 
     if (setting.routeName.isNotEmpty) {
+      if (setting.id == 'edit_profile') {
+        _navigateToEditScreen(context, 'name');
+        return;
+      }
       if (setting.id == 'language') {
         final result = await Navigator.pushNamed(context, setting.routeName);
         if (result != null && result is String) {
@@ -629,5 +663,63 @@ class _UserProfileViewState extends State<UserProfileView> {
         Navigator.pushNamed(context, setting.routeName);
       }
     }
+  }
+
+  void _navigateToEditScreen(BuildContext context, String fieldType) {
+    final currentState = context.read<UserProfileCubit>().state;
+    if (currentState is! SettingsLoaded) return;
+
+    Widget editScreen;
+
+    switch (fieldType) {
+      case 'name':
+        editScreen = EditNameView(
+          initialProfile: currentState.userProfile!,
+          onProfileUpdated: (updatedProfile) {
+            // تحديث الحالة بعد التعديل
+            context.read<UserProfileCubit>().emit(
+              currentState.copyWith(userProfile: updatedProfile),
+            );
+          },
+        );
+        break;
+      case 'username':
+        editScreen = EditUsernameView(
+          initialProfile: currentState.userProfile!,
+          onProfileUpdated: (updatedProfile) {
+            context.read<UserProfileCubit>().emit(
+              currentState.copyWith(userProfile: updatedProfile),
+            );
+          },
+        );
+        break;
+      case 'description':
+        editScreen = EditDescriptionView(
+          initialProfile: currentState.userProfile!,
+          onProfileUpdated: (updatedProfile) {
+            context.read<UserProfileCubit>().emit(
+              currentState.copyWith(userProfile: updatedProfile),
+            );
+          },
+        );
+        break;
+      case 'image':
+        editScreen = EditProfileImageView(
+          initialProfile: currentState.userProfile!,
+          onProfileUpdated: (updatedProfile) {
+            context.read<UserProfileCubit>().emit(
+              currentState.copyWith(userProfile: updatedProfile),
+            );
+          },
+        );
+        break;
+      default:
+        return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => editScreen),
+    );
   }
 }

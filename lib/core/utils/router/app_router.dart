@@ -80,6 +80,7 @@ import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_s
 // import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/on_boarding_screen.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/views/user_profile_edit.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import '../../../my_import.dart';
 
@@ -167,6 +168,7 @@ abstract class AppRouter {
   static const kFollowersView = '/followers_view';
   static const kFollowingView = '/following_view';
   static const kUserPublicProfileView = '/user-public-profile';
+  static const kUserProfileEditView = '/user-profile-edit';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -342,6 +344,12 @@ abstract class AppRouter {
           builder: (_) => UserPublicProfileView(
             userProfile: settings.arguments as UserProfileModel,
           ),
+        );
+
+      case AppRouter.kUserProfileEditView:
+        return FadeScaleRoute(
+          page: const UserProfileEditView(),
+          routeSettings: settings,
         );
 
       case kHomeScreen:
