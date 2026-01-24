@@ -3,109 +3,141 @@ import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 
 class UserProfileCubit extends Cubit<UserProfileState> {
   final LocalNotification _notificationService = LocalNotification();
+  final UserProfileRepository _userProfileRepository;
 
-  UserProfileCubit() : super(SettingsInitial()) {
-    _loadSettings();
+  UserProfileCubit(this._userProfileRepository) : super(SettingsInitial()) {
+    _loadInitialData();
   }
 
-  Future<void> _loadSettings() async {
+  // ⭐ دالة جديدة: جلب بيانات المستخدم
+  Future<UserProfileModel> _fetchUserProfile() async {
+    try {
+      final result = await _userProfileRepository.getUserProfile();
+
+      return result.fold((failure) {
+        throw Exception(failure.message);
+      }, (profile) => profile);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // ⭐ دالة لجلب بيانات المستخدم منفردة (لـ refresh)
+  Future<void> fetchUserProfile() async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
+
+    try {
+      final profile = await _fetchUserProfile();
+      emit(currentState.copyWith(userProfile: profile));
+    } catch (e) {
+      // يمكنك التعامل مع الخطأ هنا
+      debugPrint('❌ خطأ في جلب بيانات المستخدم: $e');
+    }
+  }
+
+  // features/user/user_profile/views/cubit/user_profile_cubit.dart
+  // ⭐ تصحيح: تغيير _loadSettings لترجع List<SettingItemModel>
+  Future<List<SettingItemModel>> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedLanguage = prefs.getString('app_language') ?? 'العربية';
+    final notificationStatus = await _getNotificationStatus();
+
+    return [
+      SettingItemModel(
+        id: 'edit_profile',
+        title: 'تعديل الملف الشخصى',
+        iconAsset: AssetsData.icEditSettings,
+        routeName: '',
+      ),
+      SettingItemModel(
+        id: 'settings',
+        title: 'الاعدادات العامة',
+        iconAsset: AssetsData.icWalletSettings,
+        routeName: '',
+      ),
+      SettingItemModel(
+        id: 'notifications',
+        title: 'الاشعارات',
+        iconAsset: AssetsData.icNotificationSettings,
+        hasSwitch: true,
+        routeName: '',
+        switchValue: notificationStatus,
+        onTap: () async {
+          await _toggleNotificationSetting(
+            'notifications',
+            !notificationStatus,
+          );
+        },
+      ),
+      SettingItemModel(
+        id: 'language',
+        title: 'اللغة',
+        subtitle: getLanguageName(savedLanguage),
+        iconAsset: AssetsData.icLanguageSettings,
+        routeName: AppRouter.kLanguageSelectionView,
+      ),
+      SettingItemModel(
+        id: 'archive',
+        title: 'المحادثات المؤرشفة',
+        iconAsset: AssetsData.icArchiveSettings,
+        routeName: AppRouter.kArchiveView,
+      ),
+      SettingItemModel(
+        id: 'blocks',
+        title: 'المحظورات',
+        iconAsset: AssetsData.icBlockedSettings,
+        routeName: AppRouter.kBlockedUsersView,
+      ),
+      SettingItemModel(
+        id: 'help_support',
+        title: 'المساعدة والدعم',
+        iconAsset: AssetsData.icHelpSettings,
+        routeName: AppRouter.kHelpSupportView,
+      ),
+      SettingItemModel(
+        id: 'invite',
+        title: 'دعوة',
+        iconAsset: AssetsData.icInviteSettings,
+        routeName: '',
+        onTap: () async {
+          await _shareAppLink();
+        },
+      ),
+      SettingItemModel(
+        id: 'rate_app',
+        title: 'تقييم التطبيق',
+        iconAsset: AssetsData.icRateSettings,
+        routeName: '',
+      ),
+      SettingItemModel(
+        id: 'account_management',
+        title: 'إدارة الحساب',
+        iconAsset: AssetsData.icManagementSettings,
+        routeName: AppRouter.kAccountManagementView,
+      ),
+    ];
+  }
+
+  // ⭐ تصحيح: _loadInitialData
+  Future<void> _loadInitialData() async {
     emit(SettingsLoading());
 
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final settings = await _loadSettings();
+      final profile = await _fetchUserProfile();
 
-      // Load saved language (fallback to Arabic)
-      final savedLanguage = prefs.getString('app_language') ?? 'العربية';
-
-      // Get initial notification status
-      final notificationStatus = await _getNotificationStatus();
-
-      final settings = [
-        SettingItemModel(
-          id: 'edit_profile',
-          title: 'تعديل الملف الشخصى',
-          iconAsset: AssetsData.icEditSettings,
-          routeName: '',
-        ),
-        SettingItemModel(
-          id: 'settings',
-          title: 'الاعدادات العامة',
-          iconAsset: AssetsData.icWalletSettings,
-          routeName: '',
-        ),
-        SettingItemModel(
-          id: 'notifications',
-          title: 'الاشعارات',
-          iconAsset: AssetsData.icNotificationSettings,
-          hasSwitch: true,
-          routeName: '',
-          switchValue: notificationStatus,
-          onTap: () async {
-            // Handle switch toggle
-            await _toggleNotificationSetting(
-              'notifications',
-              !notificationStatus,
-            );
-          },
-        ),
-        SettingItemModel(
-          id: 'language',
-          title: 'اللغة',
-          subtitle: getLanguageName(savedLanguage),
-          iconAsset: AssetsData.icLanguageSettings,
-          routeName: AppRouter.kLanguageSelectionView,
-        ),
-        SettingItemModel(
-          id: 'archive',
-          title: 'المحادثات المؤرشفة',
-          iconAsset: AssetsData.icArchiveSettings,
-          routeName: AppRouter.kArchiveView,
-        ),
-        SettingItemModel(
-          id: 'blocks',
-          title: 'المحظورات',
-          iconAsset: AssetsData.icBlockedSettings,
-          routeName: AppRouter.kBlockedUsersView,
-        ),
-
-        SettingItemModel(
-          id: 'help_support',
-          title: 'المساعدة والدعم',
-          iconAsset: AssetsData.icHelpSettings,
-          routeName: AppRouter.kHelpSupportView,
-        ),
-        SettingItemModel(
-          id: 'invite',
-          title: 'دعوة',
-          iconAsset: AssetsData.icInviteSettings,
-          routeName: '',
-          onTap: () async {
-            await _shareAppLink();
-          },
-        ),
-        SettingItemModel(
-          id: 'rate_app',
-          title: 'تقييم التطبيق',
-          iconAsset: AssetsData.icRateSettings,
-          routeName: '',
-        ),
-        SettingItemModel(
-          id: 'account_management',
-          title: 'إدارة الحساب',
-          iconAsset: AssetsData.icManagementSettings,
-          routeName: AppRouter.kAccountManagementView,
-        ),
-      ];
-
-      emit(SettingsLoaded(settings: settings));
+      emit(SettingsLoaded(settings: settings, userProfile: profile));
     } catch (e) {
-      emit(SettingsError(message: 'حدث خطأ في تحميل الإعدادات'));
+      emit(SettingsError(message: 'حدث خطأ في تحميل البيانات: $e'));
     }
   }
 
@@ -295,8 +327,21 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     }
   }
 
-  /// إعادة تحميل الإعدادات كاملة (refresh)
-  void refresh() {
-    _loadSettings();
+  Future<void> refresh() async {
+    await _loadInitialData();
+  }
+
+  Future<void> reloadUserProfile() async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
+
+    emit(SettingsLoading());
+
+    try {
+      final profile = await _fetchUserProfile();
+      emit(currentState.copyWith(userProfile: profile));
+    } catch (e) {
+      emit(SettingsError(message: 'حدث خطأ في تحديث البيانات: $e'));
+    }
   }
 }

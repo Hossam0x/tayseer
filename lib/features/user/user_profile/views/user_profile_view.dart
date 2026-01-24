@@ -4,8 +4,11 @@ import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserProfileView extends StatefulWidget {
@@ -20,6 +23,12 @@ class _UserProfileViewState extends State<UserProfileView> {
   final ScrollController _scrollController = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    // ⭐ إضافة Listener لـ scroll إذا كنت بحاجة
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
@@ -28,7 +37,7 @@ class _UserProfileViewState extends State<UserProfileView> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => UserProfileCubit(),
+      create: (context) => UserProfileCubit(getIt<UserProfileRepository>()),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
@@ -56,101 +65,145 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   Widget _buildBodyContent(BuildContext context, UserProfileState state) {
+    if (state is SettingsLoading) {
+      return _buildLoadingState();
+    }
+
     if (state is SettingsError) {
-      return Center(
-        child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Gap(20.h),
-              Text(
-                state.message,
-                style: Styles.textStyle16.copyWith(
-                  color: AppColors.kWhiteColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              Gap(20.h),
-              ElevatedButton(
-                onPressed: () => context.read<UserProfileCubit>().refresh(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary100,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 24.w,
-                    vertical: 12.h,
-                  ),
-                ),
-                child: Text(
-                  'إعادة المحاولة',
-                  style: Styles.textStyle16Meduim.copyWith(
-                    color: AppColors.kWhiteColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _buildErrorState(context, state);
     }
 
     if (state is SettingsLoaded) {
-      return Column(
-        children: [
-          // التبويب الثابت في الأعلى
-          Container(
-            color: Colors.transparent,
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 16.h,
-              left: 20.w,
-              right: 20.w,
-            ),
-            child: Column(
-              children: [
-                CustomToggleTabBar(
-                  firstTabText: "عام",
-                  secondTabText: "زواج",
-                  initialIndex: _selectedTabIndex,
-                  onTabChanged: (index) {
-                    setState(() {
-                      _selectedTabIndex = index;
-                    });
-                  },
-                ),
-
-                Gap(18.h),
-
-                // صورة وبيانات المستخدم (تظهر فقط في التبويب "عام")
-                if (_selectedTabIndex == 0) ...[
-                  _buildProfileImage(),
-                  Gap(9.h),
-                  _buildUserInfo(),
-                  Gap(20.h),
-                ],
-              ],
-            ),
-          ),
-
-          // القائمة القابلة للتمرير
-          Expanded(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              physics: const BouncingScrollPhysics(),
-              child: _selectedTabIndex == 0
-                  ? _buildGeneralContent(context, state.settings)
-                  : _buildMarriageContent(),
-            ),
-          ),
-        ],
-      );
+      return _buildLoadedState(context, state);
     }
 
     return const SizedBox();
   }
 
-  Widget _buildProfileImage() {
+  Widget _buildLoadingState() {
+    return Center(
+      child: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Gap(20.h),
+            CircularProgressIndicator(color: AppColors.primary100),
+            Gap(20.h),
+            Text(
+              'جاري تحميل البيانات...',
+              style: Styles.textStyle16.copyWith(color: AppColors.kWhiteColor),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // features/user/user_profile/views/user_profile_view.dart
+  Widget _buildErrorState(BuildContext context, SettingsError state) {
+    return Center(
+      child: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Gap(20.h),
+            Icon(Icons.error_outline, color: AppColors.kWhiteColor, size: 48.w),
+            Gap(20.h),
+            Text(
+              state.message,
+              style: Styles.textStyle16.copyWith(color: AppColors.kWhiteColor),
+              textAlign: TextAlign.center,
+            ),
+            Gap(20.h),
+            ElevatedButton(
+              onPressed: () async {
+                // ⭐ التحديث: استدعاء refresh بالطريقة الصحيحة
+                final cubit = context.read<UserProfileCubit>();
+                try {
+                  // محاولة إعادة التحميل
+                  await cubit.refresh();
+                } catch (e) {
+                  // إذا فشل، حاول إعادة تحميل البيانات فقط
+                  if (cubit.state is SettingsLoaded) {
+                    await (cubit).reloadUserProfile();
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary100,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              ),
+              child: Text(
+                'إعادة المحاولة',
+                style: Styles.textStyle16Meduim.copyWith(
+                  color: AppColors.kWhiteColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadedState(BuildContext context, SettingsLoaded state) {
+    final userProfile = state.userProfile;
+
+    return Column(
+      children: [
+        // التبويب الثابت في الأعلى
+        Container(
+          color: Colors.transparent,
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + 16.h,
+            left: 20.w,
+            right: 20.w,
+          ),
+          child: Column(
+            children: [
+              CustomToggleTabBar(
+                firstTabText: "عام",
+                secondTabText: "زواج",
+                initialIndex: _selectedTabIndex,
+                onTabChanged: (index) {
+                  setState(() {
+                    _selectedTabIndex = index;
+                  });
+                },
+              ),
+
+              Gap(18.h),
+
+              // ⭐ تحديث: عرض بيانات المستخدم الحقيقية
+              if (_selectedTabIndex == 0) ...[
+                _buildProfileImage(userProfile),
+                Gap(9.h),
+                _buildUserInfo(context, userProfile),
+                Gap(20.h),
+              ],
+            ],
+          ),
+        ),
+
+        // القائمة القابلة للتمرير
+        Expanded(
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            child: _selectedTabIndex == 0
+                ? _buildGeneralContent(context, state.settings)
+                : _buildMarriageContent(userProfile),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ⭐ تحديث: بناء صورة الملف الشخصي من البيانات الحقيقية
+  Widget _buildProfileImage(UserProfileModel? userProfile) {
     return SizedBox(
       width: 120.w,
       height: 120.w,
@@ -162,10 +215,16 @@ class _UserProfileViewState extends State<UserProfileView> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.secondary100,
-              image: DecorationImage(
-                image: AssetImage(AssetsData.avatarImage),
-                fit: BoxFit.cover,
-              ),
+              image:
+                  userProfile?.image != null && userProfile!.image!.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(userProfile.image!),
+                      fit: BoxFit.cover,
+                    )
+                  : DecorationImage(
+                      image: AssetImage(AssetsData.avatarImage),
+                      fit: BoxFit.cover,
+                    ),
             ),
           ),
         ],
@@ -173,29 +232,94 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  Widget _buildUserInfo() {
+  // ⭐ تحديث: بناء معلومات المستخدم من البيانات الحقيقية
+  Widget _buildUserInfo(BuildContext context, UserProfileModel? userProfile) {
+    if (userProfile == null) {
+      return _buildUserInfoSkeleton();
+    }
+
     return Column(
       children: [
         Text(
-          "Dr / Anna Mary",
+          userProfile.name,
           style: Styles.textStyle24Bold.copyWith(color: AppColors.blueText),
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+        ),
+
+        if (userProfile.username.isNotEmpty) ...[
+          Gap(4.h),
+          Text(
+            userProfile.username,
+            style: Styles.textStyle16.copyWith(color: AppColors.secondary600),
+          ),
+        ],
+
+        Gap(8.h),
+        GestureDetector(
+          onTap: () {
+            // ⭐ تحديث: تمرير بيانات المستخدم الكاملة للصفحة الجديدة
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserPublicProfileView(
+                  userProfile: userProfile, // ⭐ تمرير الـ Model كامل
+                ),
+              ),
+            );
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AppImage(AssetsData.navigateIcon, width: 12.w),
+              Gap(10.w),
+              Text(
+                "عرض الملف الشخصي",
+                style: Styles.textStyle14.copyWith(
+                  color: AppColors.secondary600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserInfoSkeleton() {
+    return Column(
+      children: [
+        Container(
+          width: 150.w,
+          height: 24.h,
+          decoration: BoxDecoration(
+            color: AppColors.secondary200,
+            borderRadius: BorderRadius.circular(8.r),
+          ),
         ),
         Gap(4.h),
-        Text(
-          "@annanoo",
-          style: Styles.textStyle16.copyWith(color: AppColors.secondary600),
+        Container(
+          width: 100.w,
+          height: 16.h,
+          decoration: BoxDecoration(
+            color: AppColors.secondary200,
+            borderRadius: BorderRadius.circular(8.r),
+          ),
         ),
         Gap(8.h),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AppImage(AssetsData.navigateIcon, width: 12.w),
+            Container(width: 12.w, height: 12.w, color: AppColors.secondary200),
             Gap(10.w),
-            Text(
-              "عرض الملف الشخصي",
-              style: Styles.textStyle14.copyWith(
-                color: AppColors.secondary600,
-                fontWeight: FontWeight.w500,
+            Container(
+              width: 120.w,
+              height: 14.h,
+              decoration: BoxDecoration(
+                color: AppColors.secondary200,
+                borderRadius: BorderRadius.circular(8.r),
               ),
             ),
           ],
@@ -222,7 +346,9 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  Widget _buildMarriageContent() {
+  Widget _buildMarriageContent(UserProfileModel? userProfile) {
+    final isAvailableForMarry = userProfile?.avaliableForMarry ?? false;
+
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.6,
       child: Center(
@@ -230,17 +356,31 @@ class _UserProfileViewState extends State<UserProfileView> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.construction_rounded,
+              isAvailableForMarry ? Icons.favorite : Icons.construction_rounded,
               size: 80.w,
-              color: AppColors.secondary400,
+              color: isAvailableForMarry
+                  ? AppColors.primary500
+                  : AppColors.secondary400,
             ),
             Gap(16.h),
             Text(
-              "غير مفعل حاليا",
+              isAvailableForMarry ? "جاهز/ة للزواج" : "غير مفعل حاليا",
               style: Styles.textStyle20Bold.copyWith(
-                color: AppColors.secondary600,
+                color: isAvailableForMarry
+                    ? AppColors.primary500
+                    : AppColors.secondary600,
               ),
             ),
+            if (isAvailableForMarry) ...[
+              Gap(8.h),
+              Text(
+                "يمكن للآخرين التواصل معك",
+                style: Styles.textStyle14.copyWith(
+                  color: AppColors.secondary600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
         ),
       ),

@@ -24,10 +24,10 @@ abstract class UserAdvisorProfileRepository {
 }
 
 // features/advisor/user_profile/data/repositories/user_profile_repository_impl.dart
-class UserProfileRepositoryImpl implements UserAdvisorProfileRepository {
+class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
   final ApiService _apiService;
 
-  UserProfileRepositoryImpl(this._apiService);
+  UserAdvisorProfileRepositoryImpl(this._apiService);
 
   @override
   Future<Either<Failure, UserAdvisorProfileModel>> getUserProfile(
