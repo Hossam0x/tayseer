@@ -1,3 +1,4 @@
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_posts_tab.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -23,6 +24,22 @@ class _UserPublicProfileTabsState extends State<UserPublicProfileTabs>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _handleTabTap(int index) {
+    if (index == _tabController.index) {
+      _refreshCurrentTab(index);
+    } else {
+      _tabController.animateTo(index);
+    }
+  }
+
+  void _refreshCurrentTab(int index) {
+    switch (index) {
+      case 0:
+        context.read<UserPublicProfileCubit>().fetchPosts();
+        break;
+    }
   }
 
   @override
@@ -74,6 +91,7 @@ class _UserPublicProfileTabsState extends State<UserPublicProfileTabs>
                       ),
                     );
                   }).toList(),
+                  onTap: _handleTabTap,
                 ),
               ),
             ],
@@ -88,7 +106,6 @@ class _UserPublicProfileTabsState extends State<UserPublicProfileTabs>
     switch (_tabController.index) {
       case 0:
         return const UserPublicPostsTab();
-
       default:
         return Container();
     }

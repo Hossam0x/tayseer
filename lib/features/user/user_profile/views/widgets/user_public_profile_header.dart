@@ -15,12 +15,14 @@ class UserPublicProfileHeader extends StatelessWidget {
           previous.state != current.state ||
           previous.profile != current.profile,
       builder: (context, state) {
+        // ⭐ التحديث: التحقق من state.state
         switch (state.state) {
           case CubitStates.loading:
             return SliverToBoxAdapter(child: _buildSkeletonHeader(context));
           case CubitStates.failure:
+            // ⭐ التحديث: استخدام getter errorMessage
             return SliverToBoxAdapter(
-              child: _buildErrorHeader(context, state.errorMessage),
+              child: _buildErrorHeader(context, state.profileErrorMessage),
             );
           case CubitStates.success:
             if (state.profile != null) {

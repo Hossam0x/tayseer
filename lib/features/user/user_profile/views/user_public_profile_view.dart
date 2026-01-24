@@ -1,4 +1,6 @@
+// features/user/user_profile/views/user_public_profile_view.dart
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_bio.dart';
@@ -22,6 +24,7 @@ class UserPublicProfileView extends StatelessWidget {
               child: BlocProvider<UserPublicProfileCubit>(
                 create: (_) => UserPublicProfileCubit(
                   getIt<UserPublicProfileRepository>(),
+                  getIt<UserPostsRepository>(),
                   userId: userProfile.id,
                   initialProfile: userProfile,
                 ),
@@ -55,7 +58,7 @@ class _UserPublicProfileContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator.adaptive(
-      onRefresh: () => context.read<UserPublicProfileCubit>().fetchProfile(),
+      onRefresh: () => context.read<UserPublicProfileCubit>().refresh(),
       color: AppColors.kprimaryColor,
       backgroundColor: AppColors.kWhiteColor,
       displacement: 40.h,

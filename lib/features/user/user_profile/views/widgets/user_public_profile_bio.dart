@@ -10,14 +10,15 @@ class UserPublicProfileBio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
+      buildWhen: (previous, current) =>
+          previous.profileState != current.profileState ||
+          previous.profile != current.profile,
       builder: (context, state) {
-        switch (state.state) {
+        switch (state.profileState) {
           case CubitStates.loading:
             return SliverToBoxAdapter(child: _buildSkeletonBio(context));
           case CubitStates.failure:
-            return SliverToBoxAdapter(
-              child: _buildErrorBio(context, state.errorMessage),
-            );
+            return _buildErrorBio(context, state.profileErrorMessage);
           case CubitStates.success:
             if (state.profile != null) {
               return SliverToBoxAdapter(
@@ -52,24 +53,26 @@ class UserPublicProfileBio extends StatelessWidget {
   }
 
   Widget _buildErrorBio(BuildContext context, String? errorMessage) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.kRedColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.kRedColor.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.info_outline, color: AppColors.kRedColor, size: 32.w),
-          Gap(10.h),
-          Text(
-            errorMessage ?? 'حدث خطأ في تحميل البيانات',
-            style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
-            textAlign: TextAlign.center,
-          ),
-        ],
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.kRedColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: AppColors.kRedColor.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.info_outline, color: AppColors.kRedColor, size: 32.w),
+            Gap(10.h),
+            Text(
+              errorMessage ?? 'حدث خطأ في تحميل البيانات',
+              style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

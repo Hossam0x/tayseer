@@ -341,7 +341,7 @@ class _UserProfileViewState extends State<UserProfileView> {
         _buildLogoutButton(context),
 
         // مساحة إضافية في الأسفل
-        Gap(40.h),
+        Gap(50.h),
       ],
     );
   }
