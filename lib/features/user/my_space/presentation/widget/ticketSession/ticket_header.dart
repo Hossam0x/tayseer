@@ -1,9 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../../../my_import.dart';
 
 class TicketHeader extends StatelessWidget {
   final String title;
-  const TicketHeader({super.key, required this.title});
+  final bool showicon;
+
+  const TicketHeader({
+    super.key,
+    required this.title,
+    this.showicon = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -11,6 +16,7 @@ class TicketHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         SizedBox(width: 24.w),
+
         Text(
           title,
           style: TextStyle(
@@ -19,10 +25,17 @@ class TicketHeader extends StatelessWidget {
             color: Colors.black87,
           ),
         ),
-        IconButton(
+
+        showicon
+            ? IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.arrow_forward, color: Colors.black87, size: 24.sp),
-        ),
+          icon: Icon(
+            Icons.arrow_forward,
+            color: Colors.black87,
+            size: 24.sp,
+          ),
+        )
+            : SizedBox(width: 48.w), // يحافظ على المسافة
       ],
     );
   }

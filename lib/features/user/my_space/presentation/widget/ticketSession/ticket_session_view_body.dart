@@ -49,7 +49,7 @@ class TicketSessionViewBody extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: 10.h),
-                        const TicketHeader(title: "تفاصيل الحجز"),
+                        const TicketHeader(title: "تفاصيل الحجز" , showicon: false,),
                         SizedBox(height: 25.h),
                         Text(
                           "تفاصيل الاستشارة",

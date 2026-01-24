@@ -74,9 +74,9 @@ class AdvisorChatRoomModel {
       users: (json['users'] as List? ?? [])
           .map((e) => ChatUserModel.fromJson(e))
           .toList(),
-      lastMessage: json['lastMessage'] != null
-          ? LastMessageModel.fromJson(json['lastMessage'])
-          : null,
+        lastMessage: json['lastMessage'] is Map<String, dynamic>
+            ? LastMessageModel.fromJson(json['lastMessage'])
+            : null,
       lastMessageAt: json['lastMessageAt'] != null
           ? DateTime.parse(json['lastMessageAt'])
           : null,

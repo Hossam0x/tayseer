@@ -128,20 +128,19 @@ class _MySpaceConsultationContentState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64.sp, color: Colors.grey.shade400),
+            AppImage(AssetsData.errorIcon , width: 150.w,) ,
             SizedBox(height: 16.h),
             Text(
-              errorMessage ?? 'حدث خطأ ما',
-              style: TextStyle(fontSize: 16.sp, color: Colors.grey.shade600),
+               'حدث خطأ ما',
+              style: Styles.textStyle18,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16.h),
-            ElevatedButton(
-              onPressed: () {
-                context.read<MySpaceCubit>().getAdvisorChat();
-              },
-              child: const Text('إعادة المحاولة'),
-            ),
+            CustomBotton(
+              width: 200.w,
+                title: "إعاده المحاوله", onPressed:(){
+              context.read<MySpaceCubit>().getAdvisorChat() ;
+            } )
           ],
         ),
       ),

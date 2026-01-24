@@ -105,11 +105,11 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                         ),
                       ),
                       SizedBox(width: isMobile ? 4 : 6),
-                      Icon(
-                        Icons.verified,
-                        color: Colors.blue,
-                        size: isMobile ? 14 : 16,
-                      ),
+                      // Icon(
+                      //   Icons.verified,
+                      //   color: Colors.blue,
+                      //   size: isMobile ? 14 : 16,
+                      // ),
                     ],
                   ),
                 ),
