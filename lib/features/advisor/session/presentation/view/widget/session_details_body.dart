@@ -1,3 +1,7 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_details_cubit.dart';
+import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_details_state.dart';
+import 'package:tayseer/features/advisor/session/presentation/widget/session_details_shimmer.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/widget/custom_sliver_app_bar_session.dart';
 
@@ -6,51 +10,93 @@ class SessionDetailsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        CustomSliverAppBarSession(
-          title: context.tr("session_details"),
-          showBackButton: true,
-        ),
-
-        // ---------- بيانات الشخص ----------
-        const SliverToBoxAdapter(child: SectionTitle(title: 'بيانات الشخص')),
-        SliverToBoxAdapter(
-          child: PersonalInfoCard(
-            name: 'أحمد منصور',
-            handle: '@fdtgsyhujkl',
-            avatarUrl: 'https://i.pravatar.cc/150?img=5',
-          ),
-        ),
-
-        // ---------- بيانات الجلسة ----------
-        const SliverToBoxAdapter(child: SectionTitle(title: 'بيانات الجلسة')),
-        SliverToBoxAdapter(
-          child: SessionInfoCard(
-            dateText: 'اليوم ، 2 يناير',
-            timeText: '03:00 م - 04:00 م',
-          ),
-        ),
-
-        // ---------- بيانات السعر ----------
-        const SliverToBoxAdapter(child: SectionTitle(title: 'بيانات السعر')),
-        SliverToBoxAdapter(
-          child: PriceInfoCard(
-            rows: [
-              PriceRow(label: 'سعر الجلسة', value: '180 ر.س'),
-              PriceRow(label: 'الرسوم', value: '10 ر.س'),
-              PriceRow(label: 'ضريبة القيمة المضافة', value: '20 ر.س'),
-              PriceRow(label: 'رسوم التطبيق', value: '-30 ر.س'),
-              PriceRow(label: 'الخصم', value: '-50 ر.س'),
+    return BlocBuilder<AdvisorSessionDetailsCubit, AdvisorSessionDetailsState>(
+      builder: (context, state) {
+        if (state.isLoading) {
+          return const CustomScrollView(
+            slivers: [
+              CustomSliverAppBarSession(
+                title: "تفاصيل الجلسة",
+                showBackButton: true,
+              ),
+              SliverToBoxAdapter(child: SessionDetailsShimmer()),
             ],
-            totalLabel: 'الإجمالي',
-            totalValue: '150 ر.س',
-          ),
-        ),
+          );
+        }
 
-        // ---------- مسافة إضافية أسفل ----------
-        const SliverToBoxAdapter(child: Gap(20)),
-      ],
+        if (state.isFailure) {
+          return Center(child: Text(state.errorMessage ?? "حدث خطأ ما"));
+        }
+
+        final data = state.sessionDetails;
+        if (data == null) return const SizedBox();
+
+        return CustomScrollView(
+          slivers: [
+            CustomSliverAppBarSession(
+              title: context.tr("session_details"),
+              showBackButton: true,
+            ),
+
+            // ---------- بيانات الشخص ----------
+            const SliverToBoxAdapter(
+              child: SectionTitle(title: 'بيانات الشخص'),
+            ),
+            SliverToBoxAdapter(
+              child: PersonalInfoCard(
+                name: data.user.name,
+                handle: data.user.userName,
+                avatarUrl: data.user.image,
+              ),
+            ),
+
+            // ---------- بيانات الجلسة ----------
+            const SliverToBoxAdapter(
+              child: SectionTitle(title: 'بيانات الجلسة'),
+            ),
+            SliverToBoxAdapter(
+              child: SessionInfoCard(
+                dateText: data.sessionDetails.getFormattedDate(),
+                timeText:
+                    '${data.sessionDetails.fromTime} - ${data.sessionDetails.toTime}',
+              ),
+            ),
+
+            // ---------- بيانات السعر ----------
+            const SliverToBoxAdapter(
+              child: SectionTitle(title: 'بيانات السعر'),
+            ),
+            SliverToBoxAdapter(
+              child: PriceInfoCard(
+                rows: [
+                  PriceRow(
+                    label: 'سعر الجلسة',
+                    value: '${data.pricing.sessionPrice} ر.س',
+                  ),
+                  PriceRow(label: 'الرسوم', value: '${data.pricing.fees} ر.س'),
+                  PriceRow(
+                    label: 'ضريبة القيمة المضافة',
+                    value: '${data.pricing.vat} ر.س',
+                  ),
+                  PriceRow(
+                    label: 'رسوم التطبيق',
+                    value: '${data.pricing.appFees} ر.س',
+                  ),
+                  PriceRow(
+                    label: 'الخصم',
+                    value: '${data.pricing.discount} ر.س',
+                  ),
+                ],
+                totalLabel: 'الإجمالي',
+                totalValue: '${data.pricing.total} ر.س',
+              ),
+            ),
+
+            // ---------- مسافة إضافية أسفل ----------
+            const SliverToBoxAdapter(child: Gap(20)),
+          ],
+        );
+      },
     );
   }
 }

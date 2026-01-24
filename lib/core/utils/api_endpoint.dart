@@ -46,6 +46,8 @@ class ApiEndPoint {
   static const String getpendingsession = "/session/advisor-pending-sessions";
   static String acceptordeclinesession(String sessionId) =>
       "/session/advisor-session-status/$sessionId";
+  static String advisorSessionDetails(String sessionId) =>
+      "/session/advisor-session-details/$sessionId";
   static const String archivePost = '/posts/archive/';
   static const String deleteReply = '/comment-replies/delete/';
 
