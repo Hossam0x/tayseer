@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/views/age_selection_view.dart';
+import 'package:tayseer/features/user/user_profile/views/email_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/gender_selection_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -71,6 +72,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
 
   String currentAge = "35";
   String currentGender = "ذكر";
+  String initialEmail = "ahmedlshennawy10@gmail.com";
 
   Widget _buildPersonalSection() {
     return _buildSectionContainer(
@@ -114,7 +116,27 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           },
           child: _buildSettingRow(label: "النوع", value: currentGender),
         ),
-        _buildSettingRow(label: "البريد الالكتروني", value: ""),
+
+        InkWell(
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EmailEditView(initialEmail: initialEmail),
+              ),
+            );
+
+            if (result != null) {
+              setState(() {
+                initialEmail = result;
+              });
+            }
+          },
+          child: _buildSettingRow(
+            label: "البريد الالكتروني",
+            value: initialEmail,
+          ),
+        ),
         _buildSettingRow(label: "رقم الهاتف", value: "", isLast: true),
       ],
     );
@@ -150,10 +172,15 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
               ),
               const Spacer(),
               if (value != null && value.isNotEmpty) ...[
-                Text(
-                  value,
-                  style: Styles.textStyle16.copyWith(
-                    color: AppColors.secondary,
+                Container(
+                  constraints: BoxConstraints(maxWidth: 100.w),
+                  child: Text(
+                    value,
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ],
