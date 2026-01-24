@@ -281,7 +281,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       showSafeSnackBar(
         context: context,
         text: value ? 'تم تفعيل الاشعارات ✅' : 'تم تعطيل الاشعارات 🔕',
-        isSuccess: true,
+        isSuccess: value ? true : false,
         duration: const Duration(milliseconds: 1500),
       );
     } catch (e) {

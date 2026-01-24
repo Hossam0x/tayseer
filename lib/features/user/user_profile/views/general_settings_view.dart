@@ -4,6 +4,7 @@ import 'package:tayseer/features/user/user_profile/views/age_selection_view.dart
 import 'package:tayseer/features/user/user_profile/views/email_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/gender_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/phone_edit_view.dart';
+import 'package:tayseer/features/user/user_profile/views/privacy_selection_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class GeneralSettingsView extends StatefulWidget {
@@ -165,14 +166,136 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
     );
   }
 
+  String currentPrivacyStatus = "الجميع";
+  String currentProfilePicStatus = "الجميع";
+  String currentContactsStatus = "إخفاء";
+
   Widget _buildPrivacySection() {
     return _buildSectionContainer(
       title: "الخصوصية",
       children: [
         _buildSwitchRow(label: "إيقاف الزواج", value: false),
-        _buildSettingRow(label: "من يمكنه رؤية ملفك الشخصي"),
-        _buildSettingRow(label: "رؤية صورة للملف الشخصي"),
-        _buildSettingRow(label: "جهات الاتصال"),
+
+        // 1. خيار رؤية الملف الشخصي
+        InkWell(
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PrivacySelectionView(
+                  title: "من يمكنه رؤية ملفك الشخصي",
+                  initialValue: currentPrivacyStatus,
+                  options: [
+                    {
+                      "title": "إظهار ملفى للجميع",
+                      "subtitle": "سيظهر ملفك الشخصي وصورك لجميع المستخدمين",
+                      "value": "الجميع",
+                    },
+                    {
+                      "title": "إظهار ملفى للذين نالو إعجابى فقط",
+                      "subtitle":
+                          "ستبقي مخفيًا عن مستخدمين التطبيق الا الذين نالو اعجابك فقط",
+                      "value": "المعجبين",
+                    },
+                    {
+                      "title": "إخفاء ملفى عن الجميع",
+                      "subtitle":
+                          "لن يتمكن احد من مستخدمي التطبيق من رؤية ملفك",
+                      "value": "مخفي",
+                    },
+                  ],
+                ),
+              ),
+            );
+            if (result != null) setState(() => currentPrivacyStatus = result);
+          },
+          child: _buildSettingRow(
+            label: "من يمكنه رؤية ملفك الشخصي",
+            value: currentPrivacyStatus,
+          ),
+        ),
+
+        // 2. خيار رؤية صورة الملف الشخصي (طلبك الأخير)
+        InkWell(
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PrivacySelectionView(
+                  title: "رؤية صورة الملف الشخصي",
+                  initialValue: currentProfilePicStatus,
+                  options: [
+                    {
+                      "title": "عرض الصورة الشخصية",
+                      "subtitle": "سيظهر ملفك الشخصي وصورك لجميع المستخدمين",
+                      "value": "الجميع",
+                    },
+                    {
+                      "title": "إظهار الصور للذين نالو إعجابى فقط",
+                      "subtitle":
+                          "ستبقي صورتك غير واضحة عن باقي مستخدمين التطبيق الا الذين نالو اعجابك فقط",
+                      "value": "المعجبين",
+                    },
+                    {
+                      "title": "تمويه صورتي عن الجميع",
+                      "subtitle":
+                          "لن يتمكن احد من مستخدمي التطبيق من رؤية صورتك ولن تتمكن من رؤية صورة",
+                      "value": "تمويه",
+                    },
+                  ],
+                ),
+              ),
+            );
+            if (result != null) {
+              setState(() => currentProfilePicStatus = result);
+            }
+          },
+          child: _buildSettingRow(
+            label: "رؤية صورة للملف الشخصي",
+            value: currentProfilePicStatus,
+          ),
+        ),
+
+        // داخل قائمة children في _buildPrivacySection
+        InkWell(
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PrivacySelectionView(
+                  title: "اخفاء ملفك الشخصي عن جهات اتصالك",
+                  initialValue: currentContactsStatus,
+                  options: [
+                    {
+                      "title": "اخفاء الملف الشخصي",
+                      "subtitle":
+                          "لن يري احد من جهات اتصالك ملفك الشخصي ولا معلومات عنك",
+                      "value": "إخفاء",
+                    },
+                    {
+                      "title": "اظهار الملف الشخصي",
+                      "subtitle":
+                          "سيظهر ملفك الشخصي لجهات اتصالك ويمكنك رؤية ملفاتهم",
+                      "value": "إظهار",
+                    },
+                  ],
+                ),
+              ),
+            );
+
+            // تحديث الحالة عند الرجوع
+            if (result != null) {
+              setState(() {
+                currentContactsStatus = result;
+              });
+            }
+          },
+          child: _buildSettingRow(
+            label: "جهات الاتصال",
+            value: currentContactsStatus == "إخفاء" ? "إخفاء" : "إظهار",
+            isLast: false, // اجعلها true إذا كانت آخر عنصر في القائمة
+          ),
+        ),
         _buildSwitchRow(label: "مجهول الهوية", value: false, isLast: true),
       ],
     );

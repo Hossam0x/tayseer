@@ -66,79 +66,6 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   Widget _buildBodyContent(BuildContext context, UserProfileState state) {
-    if (state is SettingsLoading) {
-      return _buildLoadingState();
-    }
-
-    if (state is SettingsError) {
-      return _buildErrorState(context, state);
-    }
-
-    if (state is SettingsLoaded) {
-      return _buildLoadedState(context, state);
-    }
-
-    return const SizedBox();
-  }
-
-  Widget _buildLoadingState() {
-    return Center(
-      child: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [Gap(20.h), CircularProgressIndicator(), Gap(20.h)],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorState(BuildContext context, SettingsError state) {
-    return Center(
-      child: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Gap(20.h),
-            Icon(Icons.error_outline, color: AppColors.kWhiteColor, size: 48.w),
-            Gap(20.h),
-            Text(
-              state.message,
-              style: Styles.textStyle16.copyWith(color: AppColors.kWhiteColor),
-              textAlign: TextAlign.center,
-            ),
-            Gap(20.h),
-            ElevatedButton(
-              onPressed: () async {
-                final cubit = context.read<UserProfileCubit>();
-                try {
-                  await cubit.refresh();
-                } catch (e) {
-                  // معالجة الخطأ
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary100,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-              ),
-              child: Text(
-                'إعادة المحاولة',
-                style: Styles.textStyle16Meduim.copyWith(
-                  color: AppColors.kWhiteColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadedState(BuildContext context, SettingsLoaded state) {
-    final userProfile = state.userProfile;
-
     return RefreshIndicator.adaptive(
       onRefresh: () async {
         final cubit = context.read<UserProfileCubit>();
@@ -154,7 +81,7 @@ class _UserProfileViewState extends State<UserProfileView> {
           parent: AlwaysScrollableScrollPhysics(),
         ),
         slivers: [
-          // التبويب الثابت في الأعلى
+          // التبويب الثابت في الأعلى (موجود دائماً)
           SliverToBoxAdapter(
             child: Container(
               color: Colors.transparent,
@@ -177,25 +104,22 @@ class _UserProfileViewState extends State<UserProfileView> {
                   ),
                   Gap(18.h),
 
-                  // ⭐ تحديث: عرض بيانات المستخدم الحقيقية
-                  if (_selectedTabIndex == 0) ...[
-                    _buildProfileImage(userProfile),
-                    Gap(9.h),
-                    _buildUserInfo(context, userProfile),
-                    Gap(20.h),
-                  ],
+                  // ⭐ جزء البروفايل فقط يتغير حسب الحالة
+                  if (_selectedTabIndex == 0)
+                    _buildProfileSection(context, state),
                 ],
               ),
             ),
           ),
 
-          // المحتوى حسب التبويب
+          // ⭐ المحتوى حسب التبويب (موجود دائماً)
           if (_selectedTabIndex == 0)
-            SliverToBoxAdapter(
-              child: _buildGeneralContent(context, state.settings),
-            )
+            _buildGeneralContentSliver(context, state)
           else
-            SliverToBoxAdapter(child: _buildMarriageContent(userProfile)),
+            _buildMarriageContentSliver(context, state),
+
+          // ⭐ زر تسجيل الخروج (موجود دائماً)
+          _buildLogoutButtonSliver(context),
 
           // مساحة في الأسفل
           SliverToBoxAdapter(child: Gap(100.h)),
@@ -204,6 +128,165 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
+  // ⭐ دالة جديدة لعرض قسم البروفايل فقط حسب الحالة
+  Widget _buildProfileSection(BuildContext context, UserProfileState state) {
+    if (state is SettingsInitial || state is SettingsLoading) {
+      return _buildProfileSkeleton();
+    }
+
+    if (state is SettingsError) {
+      return _buildProfileErrorSection(context, state);
+    }
+
+    if (state is SettingsLoaded) {
+      return _buildProfileLoadedSection(context, state.userProfile);
+    }
+
+    return const SizedBox();
+  }
+
+  Widget _buildProfileSkeleton() {
+    return Column(
+      children: [
+        // Skeleton للصورة الشخصية
+        Container(
+          width: 120.w,
+          height: 120.w,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.secondary200,
+          ),
+        ),
+        Gap(9.h),
+
+        // Skeleton للمعلومات
+        Column(
+          children: [
+            Container(
+              width: 150.w,
+              height: 24.h,
+              decoration: BoxDecoration(
+                color: AppColors.secondary200,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+            Gap(4.h),
+            Container(
+              width: 100.w,
+              height: 16.h,
+              decoration: BoxDecoration(
+                color: AppColors.secondary200,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+            Gap(8.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 12.w,
+                  height: 12.w,
+                  color: AppColors.secondary200,
+                ),
+                Gap(10.w),
+                Container(
+                  width: 120.w,
+                  height: 14.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary200,
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        Gap(20.h),
+      ],
+    );
+  }
+
+  Widget _buildProfileErrorSection(BuildContext context, SettingsError state) {
+    return Column(
+      children: [
+        // صورة الخطأ
+        Container(
+          width: 120.w,
+          height: 120.w,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.secondary100,
+            border: Border.all(color: AppColors.kRedColor, width: 2),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.error_outline,
+              color: AppColors.kRedColor,
+              size: 48.w,
+            ),
+          ),
+        ),
+        Gap(12.h),
+
+        // رسالة الخطأ
+        Text(
+          'فشل تحميل بيانات البروفايل',
+          style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
+          textAlign: TextAlign.center,
+        ),
+        Gap(4.h),
+        Text(
+          state.message,
+          style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+        ),
+        Gap(16.h),
+
+        // زر إعادة المحاولة
+        ElevatedButton(
+          onPressed: () async {
+            final cubit = context.read<UserProfileCubit>();
+            try {
+              await cubit.refresh();
+            } catch (e) {
+              // معالجة الخطأ
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary100,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+          ),
+          child: Text(
+            'إعادة المحاولة',
+            style: Styles.textStyle16Meduim.copyWith(
+              color: AppColors.kWhiteColor,
+            ),
+          ),
+        ),
+        Gap(20.h),
+      ],
+    );
+  }
+
+  Widget _buildProfileLoadedSection(
+    BuildContext context,
+    UserProfileModel? userProfile,
+  ) {
+    return Column(
+      children: [
+        _buildProfileImage(userProfile),
+        Gap(9.h),
+        _buildUserInfo(context, userProfile),
+        Gap(20.h),
+      ],
+    );
+  }
+
+  // ⭐ تحديث الدوال المساعدة للبروفايل
   Widget _buildProfileImage(UserProfileModel? userProfile) {
     final imageUrl = userProfile?.image;
 
@@ -333,25 +416,43 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  Widget _buildGeneralContent(
+  // ⭐ تحديث بناء المحتوى العام
+  SliverList _buildGeneralContentSliver(
     BuildContext context,
-    List<SettingItemModel> settings,
+    UserProfileState state,
   ) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Column(
-        children: [
-          // قائمة الإعدادات
-          _buildSettingsList(context, settings),
+    List<SettingItemModel> settings = [];
 
-          // زر تسجيل الخروج
-          _buildLogoutButton(context),
+    if (state is SettingsLoaded) {
+      settings = state.settings;
+    } else if (state is SettingsError) {
+      // إذا كان هناك خطأ، نستخدم الإعدادات الافتراضية أو ننتظر البيانات
+      // يمكنك إنشاء قائمة إعدادات افتراضية هنا إذا أردت
+      settings = [];
+    }
 
-          // مساحة إضافية في الأسفل
-          Gap(50.h),
-        ],
-      ),
+    return SliverList(
+      delegate: SliverChildListDelegate([
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: _buildSettingsList(context, settings),
+        ),
+      ]),
     );
+  }
+
+  // ⭐ تحديث بناء محتوى الزواج
+  SliverToBoxAdapter _buildMarriageContentSliver(
+    BuildContext context,
+    UserProfileState state,
+  ) {
+    UserProfileModel? userProfile;
+
+    if (state is SettingsLoaded) {
+      userProfile = state.userProfile;
+    }
+
+    return SliverToBoxAdapter(child: _buildMarriageContent(userProfile));
   }
 
   Widget _buildMarriageContent(UserProfileModel? userProfile) {
@@ -387,10 +488,27 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
+  // ⭐ تحديث زر تسجيل الخروج ليكون دائماً
+  SliverToBoxAdapter _buildLogoutButtonSliver(BuildContext context) {
+    return SliverToBoxAdapter(child: _buildLogoutButton(context));
+  }
+
   Widget _buildSettingsList(
     BuildContext context,
     List<SettingItemModel> settings,
   ) {
+    // إذا كانت القائمة فارغة، نعرض سكلتون أو ننتظر
+    if (settings.isEmpty) {
+      return Column(
+        children: [
+          for (var i = 0; i < 9; i++) ...[
+            _buildSettingItemSkeleton(),
+            if (i < 8) Divider(color: AppColors.secondary100, height: 1),
+          ],
+        ],
+      );
+    }
+
     return Column(
       children: [
         for (var i = 0; i < settings.length; i++) ...[
@@ -402,6 +520,52 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
+  Widget _buildSettingItemSkeleton() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16.r),
+        color: Colors.transparent,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48.w,
+            height: 48.w,
+            decoration: BoxDecoration(
+              color: AppColors.secondary200,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          Gap(12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 120.w,
+                  height: 16.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary200,
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 16.w,
+            height: 16.w,
+            decoration: BoxDecoration(
+              color: AppColors.secondary200,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSettingItem(BuildContext context, SettingItemModel setting) {
     final isNotificationsItem = setting.id == 'notifications';
 
@@ -409,10 +573,8 @@ class _UserProfileViewState extends State<UserProfileView> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          // 1. لو العنصر إشعارات، متعملش حاجة (السويتش هو اللي شغال)
           if (isNotificationsItem) return;
 
-          // 2. لو العنصر هو الإعدادات العامة، افتح الصفحة اللي لسه عاملينها
           if (setting.id == 'settings') {
             Navigator.push(
               context,
@@ -420,13 +582,9 @@ class _UserProfileViewState extends State<UserProfileView> {
                 builder: (context) => const GeneralSettingsView(),
               ),
             );
-          }
-          // 3. لو الـ routeName موجود في الـ Cubit، روح للـ Route ده
-          else if (setting.routeName.isNotEmpty) {
+          } else if (setting.routeName.isNotEmpty) {
             Navigator.pushNamed(context, setting.routeName);
-          }
-          // 4. أي حاجة تانية (زي تعديل الملف الشخصي) افتح دالة الـ Edit
-          else {
+          } else {
             _openEditProfile(context);
           }
         },
