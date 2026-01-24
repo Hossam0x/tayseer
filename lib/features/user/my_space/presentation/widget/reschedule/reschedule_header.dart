@@ -16,7 +16,6 @@ class RescheduleHeader extends StatelessWidget {
           onTap: () => Navigator.pop(context),
           child: Container(
             padding: EdgeInsets.all(8.r),
-
             child: Icon(
               Icons.arrow_back_ios,
               size: 20.sp,
@@ -24,13 +23,24 @@ class RescheduleHeader extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(width: 15.w),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D2D2D),
+        Expanded(
+          child: Center(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF2D2D2D),
+              ),
+            ),
+          ),
+        ),
+        // Balance the back button to ensure perfect centering
+        Opacity(
+          opacity: 0.0,
+          child: Container(
+            padding: EdgeInsets.all(8.r),
+            child: Icon(Icons.arrow_back_ios, size: 20.sp),
           ),
         ),
       ],

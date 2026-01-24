@@ -31,11 +31,10 @@ class CallPage extends StatelessWidget {
           participants: participants,
         )
         ..joinSession(callID)
-        ..listenToSessionCancelled()
+        ..listenToSessionCallCancelled()
         ..listenToSessionEnd(),
       child: MultiBlocListener(
         listeners: [
-          // ✅ Listener للـ Session Cancelled
           BlocListener<CallCubit, CallState>(
             listenWhen: (previous, current) =>
                 previous.sessionCancelledModel !=

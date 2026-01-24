@@ -54,7 +54,7 @@ import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
-import 'package:tayseer/features/user/my_space/data/model/advisorprofile/session_model.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/my_space/data/model/booking_data.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
@@ -817,19 +817,16 @@ abstract class AppRouter {
       case AppRouter.sessionhistory:
         final args = settings.arguments as Map<String, dynamic>?;
 
-        final upcoming = args?['upcoming'];
-        final expired = args?['expired'];
+        final cubit = args?['cubit'] as AdvisorProfileCubit?;
 
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => SessionHistoryViewBody(
-            upcomingSessions: upcoming is List<SessionModel>
-                ? upcoming
-                : (upcoming as List?)?.cast<SessionModel>() ?? [],
-            expiredSessions: expired is List<SessionModel>
-                ? expired
-                : (expired as List?)?.cast<SessionModel>() ?? [],
-          ),
+          builder: (_) => cubit != null
+              ? BlocProvider<AdvisorProfileCubit>.value(
+                  value: cubit,
+                  child: const SessionHistoryViewBody(),
+                )
+              : const SessionHistoryViewBody(),
         );
       case incommingsessiondetails:
         return MaterialPageRoute(

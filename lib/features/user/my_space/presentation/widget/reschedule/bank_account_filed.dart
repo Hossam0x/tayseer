@@ -5,12 +5,20 @@ import 'package:tayseer/core/widgets/custom_app_image.dart';
 
 class BankAccountField extends StatelessWidget {
   final String accountNumber;
-  const BankAccountField({super.key, required this.accountNumber});
+  final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
+
+  const BankAccountField({
+    super.key,
+    required this.accountNumber,
+    this.controller,
+    this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 15.w),
+      padding: EdgeInsets.symmetric(horizontal: 10.w),
       height: 50.h,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -21,10 +29,19 @@ class BankAccountField extends StatelessWidget {
         children: [
           AppImage(AssetsData.bankAccountIcon, width: 24.w),
           SizedBox(width: 10.w),
-          Text(
-            accountNumber,
-            style: TextStyle(color: Colors.grey[400], fontSize: 14.sp),
-            textAlign: TextAlign.left,
+          Expanded(
+            child: TextFormField(
+              controller: controller,
+              onChanged: onChanged,
+              decoration: InputDecoration(
+                hintText: accountNumber,
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.sp),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: TextStyle(color: Colors.black, fontSize: 14.sp),
+            ),
           ),
         ],
       ),

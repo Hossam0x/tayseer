@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_cancel_model.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/call_cubit/session_call_cancel_event_bus.dart';
 import 'package:tayseer/my_import.dart';
 
 part 'call_state.dart';
@@ -38,20 +39,28 @@ class CallCubit extends Cubit<CallState> {
     socketHelper.send('joinSession', {'sessionId': sessionId}, (ack) {});
   }
 
-  void listenToSessionCancelled() {
+  // ✅ دالة جديدة للاستماع لإلغاء الـ Call
+  void listenToSessionCallCancelled() {
     socketHelper.listen('sessionCancelled', (data) {
       final response = SessionCancelledModel.fromJson(data);
+
       emit(state.copyWith(sessionCancelledModel: response));
+
+      // ✅ إرسال الـ event الجديد
+      SessionCallCancelEventBus.instance.notifySessionCallCancelled(
+        sessionId: response.sessionId,
+        reason: response.reason,
+        advisorName: response.advisorName,
+      );
     });
   }
 
   void listenToSessionEnd() {
-    // ✅ أزلت المسافة الزيادة من 'sessionEnd '
     socketHelper.listen('sessionEnd', (data) {
       final sessionId = data['sessionId'] ?? '';
       emit(
         state.copyWith(
-          isSessionEnd: true, // ✅ غيرتها لـ true
+          isSessionEnd: true,
           sessionId: sessionId,
           sessionEndMessage: "تم انتهاء مدة الجلسة",
         ),
@@ -59,12 +68,10 @@ class CallCubit extends Cubit<CallState> {
     });
   }
 
-  // ✅ إضافة method لعمل reset للـ state
   void resetState() {
     emit(state.reset());
   }
 
-  // ✅ تنظيف الـ socket listeners لما الـ cubit يتقفل
   void removeListeners() {
     socketHelper.off('sessionCancelled');
     socketHelper.off('sessionEnd');

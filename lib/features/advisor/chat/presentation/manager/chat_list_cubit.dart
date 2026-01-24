@@ -102,9 +102,25 @@ class ChatListCubit extends Cubit<ChatListState> {
     emit(ChatListState.loaded(chatRooms: updatedRooms));
   }
 
-  // Placeholder methods to satisfy UI calls if needed, or remove them from UI
   void setActiveChatRoom(String? chatRoomId) {}
-  void markMessageRed(String chatRoomId) {}
+  void markMessageRed(String chatRoomId) {
+    final currentRooms = state.maybeMap(
+      loaded: (state) => state.chatRooms,
+      orElse: () => null,
+    );
+
+    if (currentRooms == null) return;
+
+    final updatedRooms = currentRooms.map((room) {
+      if (room.id == chatRoomId) {
+        return room.copyWith(unreadCount: 0);
+      }
+      return room;
+    }).toList();
+
+    emit(ChatListState.loaded(chatRooms: updatedRooms));
+  }
+
   void markChatAsRead(String chatRoomId) {}
   void updateBlockStatus(String chatRoomId, bool isBlocked) =>
       _updateBlockStatus(chatRoomId, isBlocked);

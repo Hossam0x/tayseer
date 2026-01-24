@@ -1,9 +1,5 @@
 // lib/features/user/my_space/presentation/view/user_reschedule.dart
 
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/core/widgets/advisor_background.dart';
-import 'package:tayseer/features/user/my_space/data/model/booking_data.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/create_session/create_session_cubit.dart';

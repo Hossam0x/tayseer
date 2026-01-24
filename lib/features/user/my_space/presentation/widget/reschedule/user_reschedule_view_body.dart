@@ -46,6 +46,14 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
 
   String? get _oldSessionId => widget.oldBookingData?.sessionId;
 
+  final TextEditingController _bankAccountController = TextEditingController();
+
+  @override
+  void dispose() {
+    _bankAccountController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -300,8 +308,9 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
 
                 if (_selectedPaymentMethod == 0) ...[
                   const SectionLabel(title: "رقم الحساب البنكي"),
-                  const BankAccountField(
+                  BankAccountField(
                     accountNumber: "SAXXXXXXXXXXXXXXXXXXXX",
+                    controller: _bankAccountController,
                   ),
                   SizedBox(height: 30.h),
                 ],

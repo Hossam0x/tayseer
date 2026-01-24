@@ -61,6 +61,8 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         ),
       );
 
+      markMessagesAsRead(); // ✅ Mark as read immediately when entering
+
       setupSocketListeners();
     } catch (e) {
       log('❌ Error loading messages: $e');
@@ -333,7 +335,13 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
   void setupSocketListeners() {
     _socketHelper.listen('new_message', (data) {
-      final message = ChatMessage.fromJson(data as Map<String, dynamic>);
+      dynamic messageData = data;
+      // Handle nested message object if present (common in socket events)
+      if (data is Map && data['message'] != null && data['message'] is Map) {
+        messageData = data['message'];
+      }
+
+      final message = ChatMessage.fromJson(messageData as Map<String, dynamic>);
       _handleNewMessage(message);
     });
 
@@ -360,7 +368,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
     // Check if this is a confirmation of our optimistic message
     if (message.isMe) {
-      // Find and replace temp message
+      // Find and replace temp message (Text/Media)
       final tempIndex = currentMessages.indexWhere(
         (m) => m.id.startsWith('temp_') && m.content == message.content,
       );
@@ -389,6 +397,29 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       } else if (message.action.isUnblock) {
         _isBlocked = false;
       }
+
+      final localSystemMsgIndex = currentMessages.indexWhere(
+        (m) =>
+            m.id.startsWith('temp_') &&
+            m.messageType == 'system' &&
+            (m.action == message.action || m.content == message.content),
+      );
+
+      if (localSystemMsgIndex != -1) {
+        final updatedMessages = List<ChatMessage>.from(currentMessages);
+        updatedMessages[localSystemMsgIndex] =
+            message; // Replace with proper ID
+        emit(
+          ChatMessagesState.loaded(
+            messages: updatedMessages,
+            hasMoreMessages: false,
+            isBlocked: _isBlocked,
+            isUserTyping: _isUserTyping,
+            typingInfo: _typingInfo,
+          ),
+        );
+        return;
+      }
     }
 
     // Add new message
@@ -401,6 +432,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         typingInfo: _typingInfo,
       ),
     );
+
+    if (!message.isMe) {
+      markMessagesAsRead(); // ✅ Mark new received messages as read immediately
+    }
   }
 
   void _handleMessageDeleted(String messageId) {
@@ -453,7 +488,46 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     });
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // MARK AS READ
+  // ══════════════════════════════════════════════════════════════════════════
+
+  void markMessagesAsRead() {
+    if (_currentChatRoomId == null) return;
+
+    // 1. Emit socket event
+    _socketHelper.send('mark_messages_read', {
+      'chatRoomId': _currentChatRoomId,
+    }, null);
+
+    // 2. Optimistic Update (Local)
+    final currentMessages = state.messagesOrEmpty;
+    bool needsUpdate = false;
+
+    final updatedMessages = currentMessages.map((m) {
+      // Mark messages received from others as read
+      if (!m.isMe && !m.isRead) {
+        needsUpdate = true;
+        return m.copyWith(isRead: true, status: MessageStatusEnum.read);
+      }
+      return m;
+    }).toList();
+
+    if (needsUpdate) {
+      emit(
+        ChatMessagesState.loaded(
+          messages: updatedMessages,
+          hasMoreMessages: false,
+          isBlocked: _isBlocked,
+          isUserTyping: _isUserTyping,
+          typingInfo: _typingInfo,
+        ),
+      );
+    }
+  }
+
   void _handleMessagesRead() {
+    // This handler handles when the *other* user reads *my* messages
     final currentMessages = state.messagesOrEmpty;
     final updatedMessages = currentMessages.map((m) {
       if (m.isMe && !m.isRead) {
@@ -572,39 +646,140 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   // BLOCK/UNBLOCK
   // ══════════════════════════════════════════════════════════════════════════
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // BLOCK/UNBLOCK
+  // ══════════════════════════════════════════════════════════════════════════
+
   Future<Either<String, String>> blockUser({required String blockedId}) async {
+    const uuid = Uuid();
+    final tempId = uuid.v4();
+    final localId = 'temp_$tempId';
+    final now = DateTime.now().toIso8601String();
+
+    // 1. Optimistic Update
+    _isBlocked = true;
+
+    // Create optimistic system message
+    final optimisticMessage = ChatMessage(
+      id: localId,
+      chatRoomId: _currentChatRoomId ?? '',
+      senderId: _currentReceiverId ?? '', // Or 'system'
+      senderName: 'System',
+      senderImage: '',
+      senderType: 'system',
+      isMe: true, // As per logs
+      contentList: ['المستخدم محظور من إرسال الرسائل في هذه الدردشة'],
+      messageType: 'system',
+      action: SystemMessageAction.block,
+      createdAt: now,
+      updatedAt: now,
+      isRead: true,
+      status: MessageStatusEnum.sent,
+    );
+
+    final currentMessages = state.messagesOrEmpty;
+    emit(
+      ChatMessagesState.loaded(
+        messages: [...currentMessages, optimisticMessage],
+        hasMoreMessages: false,
+        isBlocked: true,
+        isUserTyping: _isUserTyping,
+        typingInfo: _typingInfo,
+      ),
+    );
+
+    // 2. Call API
     final result = await _repo.blockUser(blockedId: blockedId);
-    result.fold((error) => null, (_) {
-      _isBlocked = true;
-      emit(
-        ChatMessagesState.loaded(
-          messages: state.messagesOrEmpty,
-          hasMoreMessages: false,
-          isBlocked: true,
-          isUserTyping: _isUserTyping,
-          typingInfo: _typingInfo,
-        ),
-      );
-    });
+
+    result.fold(
+      (error) {
+        // Revert on failure
+        _isBlocked = false;
+        final revertedMessages = currentMessages
+            .where((m) => m.id != localId)
+            .toList();
+        emit(
+          ChatMessagesState.loaded(
+            messages: revertedMessages,
+            hasMoreMessages: false,
+            isBlocked: false,
+            isUserTyping: _isUserTyping,
+            typingInfo: _typingInfo,
+          ),
+        );
+      },
+      (_) {
+        // Success: Keep the optimistic state.
+        // Socket event will eventually come and replace/confirm this logic via _handleNewMessage
+      },
+    );
     return result;
   }
 
   Future<Either<String, String>> unblockUser({
     required String blockedId,
   }) async {
+    const uuid = Uuid();
+    final tempId = uuid.v4();
+    final localId = 'temp_$tempId';
+    final now = DateTime.now().toIso8601String();
+
+    // 1. Optimistic Update
+    _isBlocked = false;
+
+    // Create optimistic system message
+    final optimisticMessage = ChatMessage(
+      id: localId,
+      chatRoomId: _currentChatRoomId ?? '',
+      senderId: _currentReceiverId ?? '',
+      senderName: 'System',
+      senderImage: '',
+      senderType: 'system',
+      isMe: true,
+      contentList: ['المستخدم غير محظور من إرسال الرسائل في هذه الدردشة'],
+      messageType: 'system',
+      action: SystemMessageAction.unblock,
+      createdAt: now,
+      updatedAt: now,
+      isRead: true,
+      status: MessageStatusEnum.sent,
+    );
+
+    final currentMessages = state.messagesOrEmpty;
+    emit(
+      ChatMessagesState.loaded(
+        messages: [...currentMessages, optimisticMessage],
+        hasMoreMessages: false,
+        isBlocked: false,
+        isUserTyping: _isUserTyping,
+        typingInfo: _typingInfo,
+      ),
+    );
+
+    // 2. Call API
     final result = await _repo.unblockUser(blockedId: blockedId);
-    result.fold((error) => null, (_) {
-      _isBlocked = false;
-      emit(
-        ChatMessagesState.loaded(
-          messages: state.messagesOrEmpty,
-          hasMoreMessages: false,
-          isBlocked: false,
-          isUserTyping: _isUserTyping,
-          typingInfo: _typingInfo,
-        ),
-      );
-    });
+
+    result.fold(
+      (error) {
+        // Revert on failure
+        _isBlocked = true;
+        final revertedMessages = currentMessages
+            .where((m) => m.id != localId)
+            .toList();
+        emit(
+          ChatMessagesState.loaded(
+            messages: revertedMessages,
+            hasMoreMessages: false,
+            isBlocked: true,
+            isUserTyping: _isUserTyping,
+            typingInfo: _typingInfo,
+          ),
+        );
+      },
+      (_) {
+        // Success
+      },
+    );
     return result;
   }
 

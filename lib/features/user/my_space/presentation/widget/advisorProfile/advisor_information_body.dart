@@ -1,7 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/enum/session_card_style.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/widget/session_card.dart';
 import 'package:tayseer/features/user/my_space/data/model/advisorprofile/session_model.dart';
@@ -107,6 +103,9 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
               }
 
               if (state.getadvisorchatprofileState == CubitStates.success) {
+                if (_animationController.status == AnimationStatus.dismissed) {
+                  _animationController.forward();
+                }
                 return SafeArea(
                   bottom: false,
                   child: FadeTransition(
@@ -184,7 +183,6 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
         children: [
           SizedBox(height: 10.h),
 
-          // صورة المستشار مع Animation
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.8, end: 1.0),
             duration: const Duration(milliseconds: 500),
@@ -214,7 +212,6 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
           ),
           SizedBox(height: 10.h),
 
-          // اسم المستشار
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -233,12 +230,10 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
 
           SizedBox(height: 25.h),
 
-          // إحصائيات المستشار
           _buildAnimatedStats(advisor, primaryPink, lightPinkBg),
 
           SizedBox(height: 30.h),
 
-          // سجل الجلسات Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -254,10 +249,7 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
                 onTap: () {
                   context.pushNamed(
                     AppRouter.sessionhistory,
-                    arguments: {
-                      "upcoming": state.upcomingSessions,
-                      "expired": state.expiredSessions,
-                    },
+                    arguments: {"cubit": context.read<AdvisorProfileCubit>()},
                   );
                 },
                 child: Text(
@@ -336,31 +328,27 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
     );
   }
 
-  // ✅ الدالة المعدّلة لعرض قائمة الجلسات
   Widget _buildAnimatedSessionsList(List<SessionModel> sessions) {
+    final displaySessions = sessions.take(2).toList();
+
     return ListView.builder(
-      itemCount: sessions.length,
+      itemCount: displaySessions.length,
       itemBuilder: (context, index) {
-        final session = sessions[index];
+        final session = displaySessions[index];
 
         SessionCardStyle style;
         String buttonText;
 
-        // ✅ تحديد الـ style والنص بناءً على حالة الجلسة
         if (session.isNow) {
-          // الجلسة الآن - عرض زر انضم
           style = SessionCardStyle.active;
           buttonText = "انضم";
         } else if (session.isUpcoming) {
-          // جلسة قادمة
           style = SessionCardStyle.outlined;
           buttonText = "قادمة";
         } else if (session.isDone) {
-          // جلسة منتهية
           style = SessionCardStyle.white;
           buttonText = "التفاصيل";
         } else {
-          // حالة افتراضية
           style = SessionCardStyle.outlined;
           buttonText = "التفاصيل";
         }
@@ -378,10 +366,8 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
           child: Padding(
             padding: EdgeInsets.only(bottom: 10.h),
             child: SessionCard(
-              isBlur:
-                  !session.isNow &&
-                  !session.isDone, // ✅ لا تطمس إذا كانت الجلسة الآن أو منتهية
-              isNow: session.isNow, // ✅ تمرير isNow
+              isBlur: !session.isNow && !session.isDone,
+              isNow: session.isNow,
               sessiondate: _formatDate(session.date),
               timeRange: "${session.timeRange.from} - ${session.timeRange.to}",
               imageUrl: session.advisor.image,
@@ -396,10 +382,24 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
                 );
               },
               onTapJoin: () {
-                context.pushNamed(
-                  AppRouter.voiceCallView,
-                  arguments: session.sessionId,
-                );
+                if (session.isNow) {
+                  context.pushNamed(
+                    AppRouter.voiceCallView,
+                    arguments: {
+                      'callID': session.sessionId,
+                      'currentUserID': session.otherUser!.id,
+                      'currentUserName': session.otherUser!.name,
+                      'currentUserAvatarUrl': session.otherUser!.imageUrl,
+                      'participants': [
+                        {
+                          'id': session.advisor.id,
+                          'name': session.advisor.name,
+                          'avatarUrl': session.advisor.image,
+                        },
+                      ],
+                    },
+                  );
+                }
               },
             ),
           ),

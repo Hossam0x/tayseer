@@ -3,29 +3,37 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/core/enum/session_card_style.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/widget/session_card.dart';
 import 'package:tayseer/features/user/my_space/data/model/advisorprofile/session_model.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_cubit.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_state.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/session_history/empty_session_widget.dart';
 import 'package:tayseer/my_import.dart';
 
-class SessionHistoryViewBody extends StatelessWidget {
+class SessionHistoryViewBody extends StatefulWidget {
   const SessionHistoryViewBody({
     super.key,
-    required this.upcomingSessions,
-    required this.expiredSessions,
+    this.upcomingSessions = const [],
+    this.expiredSessions = const [],
   });
 
   final List<SessionModel> upcomingSessions;
   final List<SessionModel> expiredSessions;
 
   @override
+  State<SessionHistoryViewBody> createState() => _SessionHistoryViewBodyState();
+}
+
+class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
+  bool isUpcomingExpanded = false;
+  bool isExpiredExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final Color darkText = const Color(0xFF2D2D2D);
-
-    final bool hasNoSessions =
-        upcomingSessions.isEmpty && expiredSessions.isEmpty;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -49,28 +57,64 @@ class SessionHistoryViewBody extends StatelessWidget {
               ),
             ),
           ),
-          body: hasNoSessions
-              ? Center(
-                  child: const EmptySessionsState(
+          body: BlocBuilder<AdvisorProfileCubit, AdvisorProfileState>(
+            builder: (context, state) {
+              // استخدام البيانات من الـ state إذا كانت موجودة، وإلا استخدام widget parameters
+              final upcomingSessions = state.upcomingSessions.isNotEmpty
+                  ? state.upcomingSessions
+                  : widget.upcomingSessions;
+              final expiredSessions = state.expiredSessions.isNotEmpty
+                  ? state.expiredSessions
+                  : widget.expiredSessions;
+
+              final bool hasNoSessions =
+                  upcomingSessions.isEmpty && expiredSessions.isEmpty;
+
+              if (hasNoSessions) {
+                return const Center(
+                  child: EmptySessionsState(
                     title: "لا يوجد سجل جلسات",
                     subtitle: "جلساتك السابقة والقادمة ستظهر هنا",
                     showAnimation: true,
                     isCompact: false,
                   ),
-                )
-              : _buildSessionsList(context, darkText),
+                );
+              }
+
+              return _buildSessionsList(
+                context,
+                darkText,
+                upcomingSessions,
+                expiredSessions,
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildSessionsList(BuildContext context, Color darkText) {
+  Widget _buildSessionsList(
+    BuildContext context,
+    Color darkText,
+    List<SessionModel> upcomingSessions,
+    List<SessionModel> expiredSessions,
+  ) {
+    // Determine displayed upcoming sessions
+    final displayedUpcoming = isUpcomingExpanded
+        ? upcomingSessions
+        : upcomingSessions.take(2).toList();
+
+    // Determine displayed expired sessions
+    final displayedExpired = isExpiredExpanded
+        ? expiredSessions
+        : expiredSessions.take(2).toList();
+
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(child: SizedBox(height: 10.h)),
 
-        // ========== قسم الجلسات القادمة ==========
         SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
@@ -85,16 +129,36 @@ class SessionHistoryViewBody extends StatelessWidget {
           ),
         ),
 
-        if (upcomingSessions.isNotEmpty)
+        if (upcomingSessions.isNotEmpty) ...[
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
-              final session = upcomingSessions[index];
+              final session = displayedUpcoming[index];
               return _buildUpcomingSessionCard(context, session);
-            }, childCount: upcomingSessions.length),
-          )
-        else
-          SliverToBoxAdapter(
-            child: const EmptySessionsState(
+            }, childCount: displayedUpcoming.length),
+          ),
+          if (upcomingSessions.length > 2)
+            SliverToBoxAdapter(
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    isUpcomingExpanded = !isUpcomingExpanded;
+                  });
+                },
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: Icon(
+                    isUpcomingExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: Colors.grey,
+                    size: 30.sp,
+                  ),
+                ),
+              ),
+            ),
+        ] else
+          const SliverToBoxAdapter(
+            child: EmptySessionsState(
               title: "لا توجد جلسات قادمة",
               subtitle: "جلساتك القادمة ستظهر هنا",
               showAnimation: true,
@@ -104,7 +168,6 @@ class SessionHistoryViewBody extends StatelessWidget {
 
         SliverToBoxAdapter(child: SizedBox(height: 20.h)),
 
-        // ========== قسم الجلسات السابقة ==========
         SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
@@ -119,16 +182,36 @@ class SessionHistoryViewBody extends StatelessWidget {
           ),
         ),
 
-        if (expiredSessions.isNotEmpty)
+        if (expiredSessions.isNotEmpty) ...[
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
-              final session = expiredSessions[index];
+              final session = displayedExpired[index];
               return _buildExpiredSessionCard(context, session);
-            }, childCount: expiredSessions.length),
-          )
-        else
-          SliverToBoxAdapter(
-            child: const EmptySessionsState(
+            }, childCount: displayedExpired.length),
+          ),
+          if (expiredSessions.length > 2)
+            SliverToBoxAdapter(
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    isExpiredExpanded = !isExpiredExpanded;
+                  });
+                },
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: Icon(
+                    isExpiredExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: Colors.grey,
+                    size: 30.sp,
+                  ),
+                ),
+              ),
+            ),
+        ] else
+          const SliverToBoxAdapter(
+            child: EmptySessionsState(
               title: "لا توجد جلسات سابقة",
               subtitle: "جلساتك السابقة ستظهر هنا",
               showAnimation: true,
@@ -141,35 +224,58 @@ class SessionHistoryViewBody extends StatelessWidget {
     );
   }
 
-  // ✅ كارت الجلسة القادمة
   Widget _buildUpcomingSessionCard(BuildContext context, SessionModel session) {
+    final isCancelled = session.status == 'cancelled';
+
     return Padding(
       padding: EdgeInsets.only(bottom: 15.h, left: 20.w, right: 20.w),
       child: SessionCard(
-        isBlur: false,
+        isBlur: isCancelled,
         sessiondate: _formatDate(session.date),
         timeRange: "${session.timeRange.from} - ${session.timeRange.to}",
         imageUrl: session.advisor.image,
-        style: SessionCardStyle.active,
+        style: isCancelled
+            ? SessionCardStyle.white
+            : (session.isNow
+                  ? SessionCardStyle.active
+                  : SessionCardStyle.outlined),
         name: session.advisor.name,
         handle: session.advisor.userName,
-        buttonText: "التفاصيل",
+        buttonText: isCancelled
+            ? "التفاصيل"
+            : (session.isNow ? "الانضمام" : "التفاصيل"),
         onTapDetails: () {
-          // ✅ التنقل بالـ sessionId فقط
           context.pushNamed(
             AppRouter.incommingsessiondetails,
             arguments: session.sessionId,
           );
         },
-        onTapJoin: () {
-          log("Joining session: ${session.sessionId}");
-          // TODO: Navigate to video call
-        },
+        onTapJoin: isCancelled
+            ? null
+            : () {
+                if (session.isNow) {
+                  context.pushNamed(
+                    AppRouter.voiceCallView,
+                    arguments: {
+                      'callID': session.sessionId,
+                      'currentUserID': session.otherUser!.id,
+                      'currentUserName': session.otherUser!.name,
+                      'currentUserAvatarUrl': session.otherUser!.imageUrl,
+                      'participants': [
+                        {
+                          'id': session.advisor.id,
+                          'name': session.advisor.name,
+                          'avatarUrl': session.advisor.image,
+                        },
+                      ],
+                    },
+                  );
+                }
+              },
       ),
     );
   }
 
-  // ✅ كارت الجلسة السابقة
   Widget _buildExpiredSessionCard(BuildContext context, SessionModel session) {
     return Padding(
       padding: EdgeInsets.only(bottom: 15.h, left: 20.w, right: 20.w),
@@ -183,7 +289,6 @@ class SessionHistoryViewBody extends StatelessWidget {
         handle: session.advisor.userName,
         buttonText: "التفاصيل",
         onTapDetails: () {
-          // ✅ التنقل بالـ sessionId فقط
           context.pushNamed(
             AppRouter.incommingsessiondetails,
             arguments: session.sessionId,

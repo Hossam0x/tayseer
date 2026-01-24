@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
@@ -175,13 +176,15 @@ class _AdvisorChatContentState
       userimage: widget.userimage,
       phoneIcon: AssetsData.phoneIcon,
       receiverId: widget.receiverId,
-      onProfileTap: () {
-        Navigator.pushNamed(
-          context,
-          AppRouter.advisorchatprofile,
-          arguments: {'advisorid': widget.receiverId},
-        );
-      },
+      onProfileTap: isUser
+          ? () {
+              Navigator.pushNamed(
+                context,
+                AppRouter.advisorchatprofile,
+                arguments: {'advisorid': widget.receiverId},
+              );
+            }
+          : null,
       onBlockUser: (blockedId) async {
         await context.read<ChatMessagesCubit>().blockUser(blockedId: blockedId);
         widget.onBlockStatusChanged?.call(true);
