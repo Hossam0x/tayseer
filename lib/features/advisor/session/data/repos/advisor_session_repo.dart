@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/errors/failure.dart';
 import 'package:tayseer/core/utils/api_endpoint.dart';
 import 'package:tayseer/core/utils/api_service.dart';
-import 'package:tayseer/features/advisor/session/data/models/advisor_details_session_response_model.dart';
+import 'package:tayseer/features/advisor/session/data/models/advisor_detailes_session_response_model.dart';
 import 'package:tayseer/features/advisor/session/data/models/advisor_session_response.dart';
 import 'package:tayseer/features/user/my_space/data/model/pending_session.dart';
 
@@ -49,13 +49,13 @@ class AdvisorSessionRepo {
     }
   }
 
-  Future<Either<Failure, AdvisorDetailsSessionResponseModel>>
+  Future<Either<Failure, AdvisorDetailesSessionResponseModel>>
   getAdvisorSessionDetails(String sessionId) async {
     try {
       final response = await apiService.get(
         endPoint: ApiEndPoint.advisorSessionDetails(sessionId),
       );
-      return Right(AdvisorDetailsSessionResponseModel.fromJson(response));
+      return Right(AdvisorDetailesSessionResponseModel.fromJson(response));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

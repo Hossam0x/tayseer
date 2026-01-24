@@ -1,23 +1,23 @@
-import 'package:tayseer/features/advisor/session/data/models/advisor_details_session_response_model.dart';
+import 'package:tayseer/features/advisor/session/data/models/advisor_detailes_session_response_model.dart';
 import 'package:tayseer/my_import.dart';
 
-class AdvisorSessionDetailsState {
+class AdvisorSessionDetailesState {
   final CubitStates loadingState;
-  final AdvisorSessionDetailsData? sessionDetails;
+  final AdvisorSessionDetailesData? sessionDetails;
   final String? errorMessage;
 
-  const AdvisorSessionDetailsState({
+  const AdvisorSessionDetailesState({
     this.loadingState = CubitStates.initial,
     this.sessionDetails,
     this.errorMessage,
   });
 
-  AdvisorSessionDetailsState copyWith({
+  AdvisorSessionDetailesState copyWith({
     CubitStates? loadingState,
-    AdvisorSessionDetailsData? sessionDetails,
+    AdvisorSessionDetailesData? sessionDetails,
     String? errorMessage,
   }) {
-    return AdvisorSessionDetailsState(
+    return AdvisorSessionDetailesState(
       loadingState: loadingState ?? this.loadingState,
       sessionDetails: sessionDetails ?? this.sessionDetails,
       errorMessage: errorMessage ?? this.errorMessage,

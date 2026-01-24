@@ -1,12 +1,12 @@
 import 'package:tayseer/features/advisor/session/data/repos/advisor_session_repo.dart';
-import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_details_state.dart';
+import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class AdvisorSessionDetailsCubit extends Cubit<AdvisorSessionDetailsState> {
+class AdvisorSessionDetailesCubit extends Cubit<AdvisorSessionDetailesState> {
   final AdvisorSessionRepo advisorSessionRepository;
 
-  AdvisorSessionDetailsCubit({required this.advisorSessionRepository})
-    : super(const AdvisorSessionDetailsState());
+  AdvisorSessionDetailesCubit({required this.advisorSessionRepository})
+    : super(const AdvisorSessionDetailesState());
 
   Future<void> getSessionDetails(String sessionId) async {
     emit(state.copyWith(loadingState: CubitStates.loading));

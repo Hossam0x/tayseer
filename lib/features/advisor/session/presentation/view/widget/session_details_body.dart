@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_details_cubit.dart';
-import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_details_state.dart';
+import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_cubit.dart';
+import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_state.dart';
 import 'package:tayseer/features/advisor/session/presentation/widget/session_details_shimmer.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/widget/custom_sliver_app_bar_session.dart';
@@ -10,7 +10,10 @@ class SessionDetailsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AdvisorSessionDetailsCubit, AdvisorSessionDetailsState>(
+    return BlocBuilder<
+      AdvisorSessionDetailesCubit,
+      AdvisorSessionDetailesState
+    >(
       builder: (context, state) {
         if (state.isLoading) {
           return const CustomScrollView(

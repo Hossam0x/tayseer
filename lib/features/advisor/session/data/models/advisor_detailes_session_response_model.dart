@@ -1,23 +1,23 @@
 /// Response model for advisor session details API
 /// Endpoint: /session/advisor-session-details/{sessionId}
-class AdvisorDetailsSessionResponseModel {
+class AdvisorDetailesSessionResponseModel {
   final bool success;
   final String message;
-  final AdvisorSessionDetailsData data;
+  final AdvisorSessionDetailesData data;
 
-  const AdvisorDetailsSessionResponseModel({
+  const AdvisorDetailesSessionResponseModel({
     required this.success,
     required this.message,
     required this.data,
   });
 
-  factory AdvisorDetailsSessionResponseModel.fromJson(
+  factory AdvisorDetailesSessionResponseModel.fromJson(
     Map<String, dynamic> json,
   ) {
-    return AdvisorDetailsSessionResponseModel(
+    return AdvisorDetailesSessionResponseModel(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      data: AdvisorSessionDetailsData.fromJson(json['data'] ?? {}),
+      data: AdvisorSessionDetailesData.fromJson(json['data'] ?? {}),
     );
   }
 
@@ -29,24 +29,26 @@ class AdvisorDetailsSessionResponseModel {
 }
 
 /// Data container for session details
-class AdvisorSessionDetailsData {
+class AdvisorSessionDetailesData {
   final String sessionId;
   final SessionUserInfo user;
-  final SessionDetailsInfo sessionDetails;
+  final SessionDetailesInfo sessionDetails;
   final SessionPricingInfo pricing;
 
-  const AdvisorSessionDetailsData({
+  const AdvisorSessionDetailesData({
     required this.sessionId,
     required this.user,
     required this.sessionDetails,
     required this.pricing,
   });
 
-  factory AdvisorSessionDetailsData.fromJson(Map<String, dynamic> json) {
-    return AdvisorSessionDetailsData(
+  factory AdvisorSessionDetailesData.fromJson(Map<String, dynamic> json) {
+    return AdvisorSessionDetailesData(
       sessionId: json['sessionId'] ?? '',
       user: SessionUserInfo.fromJson(json['user'] ?? {}),
-      sessionDetails: SessionDetailsInfo.fromJson(json['sessionDetails'] ?? {}),
+      sessionDetails: SessionDetailesInfo.fromJson(
+        json['sessionDetails'] ?? {},
+      ),
       pricing: SessionPricingInfo.fromJson(json['pricing'] ?? {}),
     );
   }
@@ -91,14 +93,14 @@ class SessionUserInfo {
 }
 
 /// Session details information
-class SessionDetailsInfo {
+class SessionDetailesInfo {
   final String date;
   final String fromTime;
   final String toTime;
   final int duration;
   final String status;
 
-  const SessionDetailsInfo({
+  const SessionDetailesInfo({
     required this.date,
     required this.fromTime,
     required this.toTime,
@@ -106,8 +108,8 @@ class SessionDetailsInfo {
     required this.status,
   });
 
-  factory SessionDetailsInfo.fromJson(Map<String, dynamic> json) {
-    return SessionDetailsInfo(
+  factory SessionDetailesInfo.fromJson(Map<String, dynamic> json) {
+    return SessionDetailesInfo(
       date: json['date'] ?? '',
       fromTime: json['fromTime'] ?? '',
       toTime: json['toTime'] ?? '',

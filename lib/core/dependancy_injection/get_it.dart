@@ -7,7 +7,7 @@ import 'package:tayseer/features/advisor/event_detail/repo/event_detail_reposito
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/session/data/repos/advisor_session_repo.dart';
-import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_details_cubit.dart';
+import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_cubit.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
@@ -249,8 +249,10 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<AdvisorSessionRepo>(
     () => AdvisorSessionRepo(getIt<ApiService>()),
   );
-  getIt.registerFactory<AdvisorSessionDetailsCubit>(
-    () => AdvisorSessionDetailsCubit(
+
+  // Advisor Session Detailes Cubit
+  getIt.registerFactory<AdvisorSessionDetailesCubit>(
+    () => AdvisorSessionDetailesCubit(
       advisorSessionRepository: getIt<AdvisorSessionRepo>(),
     ),
   );
