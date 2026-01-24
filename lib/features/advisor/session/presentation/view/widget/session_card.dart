@@ -27,14 +27,13 @@ class SessionCard extends StatelessWidget {
     required this.timeRange,
     required this.imageUrl,
     required this.isBlur,
-    this.isNow = false, // ✅ قيمة افتراضية
+    this.isNow = false,
     this.onTapDetails,
     this.onTapJoin,
   });
 
   @override
   Widget build(BuildContext context) {
-    // ✅ تحديد إذا كان يجب عرض زر الانضمام
     final bool showJoinButton = isNow;
 
     final isActive = style == SessionCardStyle.active;
@@ -44,7 +43,6 @@ class SessionCard extends StatelessWidget {
     Border? border;
 
     if (isActive || isNow) {
-      // ✅ إضافة isNow للشرط
       backgroundColor = const Color(0xFFF49FA5);
       border = null;
     } else if (isWhite) {
@@ -86,7 +84,6 @@ class SessionCard extends StatelessWidget {
                 ),
               ),
               SizedBox(width: context.width * 0.03),
-              // الاسم واليوزر
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -102,7 +99,6 @@ class SessionCard extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              // ✅ الزر بناءً على isNow
               _buildActionButton(context, showJoinButton, isActive),
             ],
           ),
@@ -121,7 +117,6 @@ class SessionCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // التاريخ
                 Flexible(
                   flex: 1,
                   child: Row(
@@ -193,13 +188,11 @@ class SessionCard extends StatelessWidget {
     );
   }
 
-  // ✅ دالة منفصلة لبناء الزر
   Widget _buildActionButton(
     BuildContext context,
     bool showJoinButton,
     bool isActive,
   ) {
-    // إذا كانت الجلسة الآن - عرض زر انضم
     if (showJoinButton) {
       return CustomBotton(
         useGradient: true,
@@ -210,7 +203,6 @@ class SessionCard extends StatelessWidget {
       );
     }
 
-    // إذا كانت الحالة active
     if (isActive) {
       return CustomBotton(
         useGradient: true,
@@ -221,7 +213,6 @@ class SessionCard extends StatelessWidget {
       );
     }
 
-    // الحالة الافتراضية - زر outline
     return CustomOutlineButton(
       onTap: onTapDetails,
       height: context.height * 0.075,

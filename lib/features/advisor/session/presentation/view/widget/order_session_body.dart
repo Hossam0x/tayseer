@@ -4,6 +4,7 @@ import 'package:tayseer/features/advisor/session/presentation/manager/pending_se
 import 'package:tayseer/features/advisor/session/presentation/view/widget/accept_or_decline_session_listener.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/widget/animated_list.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/widget/order_request_card_shimmer.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/widget/floating_warning_icon.dart';
 import 'package:tayseer/features/user/my_space/data/model/pending_session.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -20,44 +21,50 @@ class OrderSessionBody extends StatelessWidget {
             Expanded(
               child: Directionality(
                 textDirection: TextDirection.rtl,
-                child:
-                    BlocSelector<
-                      PendingSessionCubit,
-                      PendingSessionState,
-                      ({
-                        CubitStates state,
-                        PendingSessionData? data,
-                        String? error,
-                      })
-                    >(
-                      selector: (state) => (
-                        state: state.getpendingsessionState,
-                        data: state.pendingSessionData,
-                        error: state.errormessage,
-                      ),
-                      builder: (context, record) {
-                        if (record.state == CubitStates.loading) {
-                          return _buildShimmerLoading();
-                        }
+                child: BlocSelector<
+                    PendingSessionCubit,
+                    PendingSessionState,
+                    ({
+                    CubitStates state,
+                    PendingSessionData? data,
+                    String? error,
+                    })>(
+                  selector: (state) => (
+                  state: state.getpendingsessionState,
+                  data: state.pendingSessionData,
+                  error: state.errormessage,
+                  ),
+                  builder: (context, record) {
+                    if (record.state == CubitStates.loading) {
+                      return _buildShimmerLoading();
+                    }
 
-                        if (record.state == CubitStates.failure) {
-                          return _buildErrorWidget(context, record.error);
-                        }
+                    if (record.state == CubitStates.failure) {
+                      return _buildErrorWidget(context, record.error);
+                    }
 
-                        final sessions = record.data?.pendingSessions;
+                    final sessions = record.data?.pendingSessions;
 
-                        if (sessions == null || sessions.isEmpty) {
-                          return _buildEmptyWidget();
-                        }
+                    if (sessions == null || sessions.isEmpty) {
+                      return _buildEmptyWidget();
+                    }
 
-                        return AnimatedSessionList(sessions: sessions);
-                      },
-                    ),
+                    return AnimatedSessionList(sessions: sessions);
+                  },
+                ),
               ),
             ),
           ],
         ),
+
         const AcceptOrDeclineSessionListener(),
+
+        /// 🔴 Floating Warning Button Bottom
+        const Positioned(
+          bottom: 24,
+          left: 20,
+          child: FloatingWarningIcon(),
+        ),
       ],
     );
   }
