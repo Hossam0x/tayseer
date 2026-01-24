@@ -8,6 +8,7 @@ import 'package:tayseer/features/user/user_profile/data/models/user_profile_mode
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -404,73 +405,86 @@ class _UserProfileViewState extends State<UserProfileView> {
   Widget _buildSettingItem(BuildContext context, SettingItemModel setting) {
     final isNotificationsItem = setting.id == 'notifications';
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isNotificationsItem ? null : () => _openEditProfile(context),
-          borderRadius: BorderRadius.circular(16.r),
-          highlightColor: isNotificationsItem ? Colors.transparent : null,
-          child: Container(
-            padding: isNotificationsItem
-                ? EdgeInsets.only(
-                    top: 12.h,
-                    bottom: 12.h,
-                    right: 12.w,
-                    left: 8.w,
-                  )
-                : EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16.r),
-              color: Colors.transparent,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48.w,
-                  height: 48.w,
-                  padding: EdgeInsets.all(13.w),
-                  child: AppImage(setting.iconAsset),
-                ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          // 1. لو العنصر إشعارات، متعملش حاجة (السويتش هو اللي شغال)
+          if (isNotificationsItem) return;
 
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        setting.title,
-                        style: Styles.textStyle16Meduim.copyWith(
-                          color: isNotificationsItem
-                              ? AppColors.secondary800.withOpacity(0.9)
-                              : AppColors.secondary800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+          // 2. لو العنصر هو الإعدادات العامة، افتح الصفحة اللي لسه عاملينها
+          if (setting.id == 'settings') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const GeneralSettingsView(),
+              ),
+            );
+          }
+          // 3. لو الـ routeName موجود في الـ Cubit، روح للـ Route ده
+          else if (setting.routeName.isNotEmpty) {
+            Navigator.pushNamed(context, setting.routeName);
+          }
+          // 4. أي حاجة تانية (زي تعديل الملف الشخصي) افتح دالة الـ Edit
+          else {
+            _openEditProfile(context);
+          }
+        },
+        borderRadius: BorderRadius.circular(16.r),
+        highlightColor: isNotificationsItem ? Colors.transparent : null,
+        child: Container(
+          padding: isNotificationsItem
+              ? EdgeInsets.only(top: 12.h, bottom: 12.h, right: 12.w, left: 8.w)
+              : EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16.r),
+            color: Colors.transparent,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48.w,
+                height: 48.w,
+                padding: EdgeInsets.all(13.w),
+                child: AppImage(setting.iconAsset),
+              ),
 
-                if (setting.hasSwitch)
-                  IgnorePointer(
-                    ignoring: false,
-                    child: Transform.scale(
-                      scaleX: -0.9,
-                      scaleY: 0.9,
-                      child: CupertinoSwitch(
-                        value: setting.switchValue,
-                        activeColor: const Color(0xFFF06C88),
-                        trackColor: AppColors.dropDownArrow,
-                        onChanged: (value) {
-                          final cubit = context.read<UserProfileCubit>();
-                          cubit.updateSwitch(setting.id, value, context);
-                        },
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      setting.title,
+                      style: Styles.textStyle16Meduim.copyWith(
+                        color: isNotificationsItem
+                            ? AppColors.secondary800.withOpacity(0.9)
+                            : AppColors.secondary800,
                       ),
                     ),
-                  )
-                else
-                  _buildTrailingWidget(setting),
-              ],
-            ),
+                  ],
+                ),
+              ),
+
+              if (setting.hasSwitch)
+                IgnorePointer(
+                  ignoring: false,
+                  child: Transform.scale(
+                    scaleX: -0.9,
+                    scaleY: 0.9,
+                    child: CupertinoSwitch(
+                      value: setting.switchValue,
+                      activeColor: const Color(0xFFF06C88),
+                      trackColor: AppColors.dropDownArrow,
+                      onChanged: (value) {
+                        final cubit = context.read<UserProfileCubit>();
+                        cubit.updateSwitch(setting.id, value, context);
+                      },
+                    ),
+                  ),
+                )
+              else
+                _buildTrailingWidget(setting),
+            ],
           ),
         ),
       ),
