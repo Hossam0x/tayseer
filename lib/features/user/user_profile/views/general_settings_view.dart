@@ -1,10 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/features/user/user_profile/views/age_selection_view.dart';
 import 'package:tayseer/my_import.dart';
 
-class GeneralSettingsView extends StatelessWidget {
+class GeneralSettingsView extends StatefulWidget {
   const GeneralSettingsView({super.key});
 
+  @override
+  State<GeneralSettingsView> createState() => _GeneralSettingsViewState();
+}
+
+class _GeneralSettingsViewState extends State<GeneralSettingsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,11 +68,32 @@ class GeneralSettingsView extends StatelessWidget {
     );
   }
 
+  String currentAge = "35";
+
   Widget _buildPersonalSection() {
     return _buildSectionContainer(
       title: "المعلومات الشخصية",
       children: [
-        _buildSettingRow(label: "السن", value: "35"),
+        InkWell(
+          onTap: () async {
+            // الانتقال لصفحة السن وانتظار النتيجة
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    AgeSelectionView(initialAge: int.parse(currentAge)),
+              ),
+            );
+
+            // تحديث السن إذا تم اختيار قيمة
+            if (result != null) {
+              setState(() {
+                currentAge = result;
+              });
+            }
+          },
+          child: _buildSettingRow(label: "السن", value: currentAge),
+        ),
         _buildSettingRow(label: "النوع", value: "ذكر"),
         _buildSettingRow(label: "البريد الالكتروني", value: ""),
         _buildSettingRow(label: "رقم الهاتف", value: "", isLast: true),
