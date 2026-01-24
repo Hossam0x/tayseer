@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/views/age_selection_view.dart';
+import 'package:tayseer/features/user/user_profile/views/gender_selection_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class GeneralSettingsView extends StatefulWidget {
@@ -69,6 +70,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
   }
 
   String currentAge = "35";
+  String currentGender = "ذكر";
 
   Widget _buildPersonalSection() {
     return _buildSectionContainer(
@@ -94,7 +96,24 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           },
           child: _buildSettingRow(label: "السن", value: currentAge),
         ),
-        _buildSettingRow(label: "النوع", value: "ذكر"),
+        InkWell(
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    GenderSelectionView(initialGender: currentGender),
+              ),
+            );
+
+            if (result != null) {
+              setState(() {
+                currentGender = result;
+              });
+            }
+          },
+          child: _buildSettingRow(label: "النوع", value: currentGender),
+        ),
         _buildSettingRow(label: "البريد الالكتروني", value: ""),
         _buildSettingRow(label: "رقم الهاتف", value: "", isLast: true),
       ],
