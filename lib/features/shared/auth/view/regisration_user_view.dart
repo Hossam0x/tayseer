@@ -78,6 +78,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                       state.registerState == CubitStates.failure ||
                       state.authGoogleState == CubitStates.failure ||
                       state.authAppleState == CubitStates.failure) {
+                    context.read<AuthCubit>().resetAuthStates();
+
                     // إغلاق أي dialog مفتوح
                     if (Navigator.canPop(context)) {
                       context.pop();
@@ -111,12 +113,10 @@ class _RegisrationViewState extends State<RegisrationView> {
                       context.pushReplacementNamed(AppRouter.kUserLayoutView);
                     }
                     context.read<AuthCubit>().resetAuthStates();
-
                   }
 
                   if (state.signInWithAppleState == CubitStates.success &&
                       state.authAppleState == CubitStates.success) {
-
                     if (Navigator.canPop(context)) {
                       context.pop(); // قفل اللودنج
                     }
@@ -131,10 +131,8 @@ class _RegisrationViewState extends State<RegisrationView> {
 
                     if (selectedUserType == UserTypeEnum.user) {
                       context.pushReplacementNamed(AppRouter.kUserLayoutView);
-
                     }
                     context.read<AuthCubit>().resetAuthStates();
-
                   }
                 },
                 builder: (context, state) {

@@ -4,11 +4,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/core/enum/user_type.dart';
-import 'package:tayseer/core/functions/sign_in_%20google_error.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -347,8 +345,9 @@ class AuthCubit extends Cubit<AuthState> {
         idToken: googleAuth.idToken,
       );
 
-      final userCredential =
-      await _firebaseAuth.signInWithCredential(credential);
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        credential,
+      );
 
       final firebaseIdToken = await userCredential.user?.getIdToken();
 
@@ -364,10 +363,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       // ⬅️ نكمل على backend
-      await sendAuthGoogle(
-        idToken: firebaseIdToken,
-        userType: userType,
-      );
+      await sendAuthGoogle(idToken: firebaseIdToken, userType: userType);
     } catch (e) {
       emit(
         state.copyWith(
@@ -378,7 +374,6 @@ class AuthCubit extends Cubit<AuthState> {
       );
     }
   }
-
 
   // ✅ تم التعديل - إضافة userType parameter
   Future<void> sendAuthGoogle({
@@ -397,7 +392,7 @@ class AuthCubit extends Cubit<AuthState> {
       final response = await _repo.authGoogle(idToken: idToken);
 
       response.fold(
-            (failure) {
+        (failure) {
           emit(
             state.copyWith(
               authGoogleState: CubitStates.failure,
@@ -408,7 +403,7 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-            (_) {
+        (_) {
           emit(
             state.copyWith(
               authGoogleState: CubitStates.success,
@@ -430,7 +425,6 @@ class AuthCubit extends Cubit<AuthState> {
       );
     }
   }
-
 
   // ✅ تم التعديل - إضافة userType parameter
   Future<void> signInWithApple({required UserTypeEnum userType}) async {
@@ -461,8 +455,9 @@ class AuthCubit extends Cubit<AuthState> {
         accessToken: appleCredential.authorizationCode,
       );
 
-      final userCredential =
-      await _firebaseAuth.signInWithCredential(oauthCredential);
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        oauthCredential,
+      );
 
       final firebaseIdToken = await userCredential.user?.getIdToken();
 
@@ -477,10 +472,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       // ⬅️ سيبها تكمل عادي
-      await sendAuthApple(
-        idToken: firebaseIdToken,
-        userType: userType,
-      );
+      await sendAuthApple(idToken: firebaseIdToken, userType: userType);
     } catch (e) {
       emit(
         state.copyWith(
@@ -500,7 +492,7 @@ class AuthCubit extends Cubit<AuthState> {
       final response = await _repo.authApple(idToken: idToken);
 
       response.fold(
-            (failure) {
+        (failure) {
           emit(
             state.copyWith(
               authAppleState: CubitStates.failure,
@@ -510,7 +502,7 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-            (_) {
+        (_) {
           emit(
             state.copyWith(
               authAppleState: CubitStates.success,
@@ -530,6 +522,7 @@ class AuthCubit extends Cubit<AuthState> {
       );
     }
   }
+
   void resetAuthStates() {
     emit(
       state.copyWith(
