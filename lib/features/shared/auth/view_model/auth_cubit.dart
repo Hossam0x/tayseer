@@ -448,12 +448,12 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signInWithApple() async {
-
-
-    emit(state.copyWith(
-      signInWithAppleState: CubitStates.loading,
-      fromScreen: 'registration',
-    ));
+    emit(
+      state.copyWith(
+        signInWithAppleState: CubitStates.loading,
+        fromScreen: 'registration',
+      ),
+    );
 
     try {
       final rawNonce = _generateNonce();
@@ -467,38 +467,37 @@ class AuthCubit extends Cubit<AuthState> {
         nonce: nonce,
       );
 
-      final oauthCredential = OAuthProvider("apple.com").credential(
-        idToken: appleCredential.identityToken,
-        rawNonce: rawNonce,
-      );
+      final oauthCredential = OAuthProvider(
+        "apple.com",
+      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce);
 
       // 🔥 تسجيل الدخول في Firebase
-      final userCredential =
-      await _firebaseAuth.signInWithCredential(oauthCredential);
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        oauthCredential,
+      );
 
       // ✅ Firebase ID Token (ده المطلوب)
-      final firebaseIdToken =
-      await userCredential.user?.getIdToken();
+      final firebaseIdToken = await userCredential.user?.getIdToken();
       debugPrint('firebaseIdToken:::::::::::::::::$firebaseIdToken');
 
-
-
       if (firebaseIdToken != null) {
-
         await sendAuthApple(idToken: firebaseIdToken);
 
-        emit(state.copyWith(signInWithAppleState: CubitStates.success ,
-          fromScreen: 'registration',
-
-
-        ));
+        emit(
+          state.copyWith(
+            signInWithAppleState: CubitStates.success,
+            fromScreen: 'registration',
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        fromScreen: 'registration',
-        signInWithAppleState: CubitStates.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(
+          fromScreen: 'registration',
+          signInWithAppleState: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
 
       debugPrint('sign in apple error $e');
     }
@@ -521,19 +520,23 @@ class AuthCubit extends Cubit<AuthState> {
               authAppleState: CubitStates.failure,
               errorMessage: failure.message,
               fromScreen: 'registration',
-
             ),
           );
         },
         (_) {
-          emit(state.copyWith(authAppleState: CubitStates.success,              fromScreen: 'registration',
-          ));
+          emit(
+            state.copyWith(
+              authAppleState: CubitStates.success,
+              fromScreen: 'registration',
+            ),
+          );
 
-          emit(state.copyWith(authAppleState: CubitStates.initial,
-              signInWithAppleState:CubitStates.initial
-
-          ));
-
+          emit(
+            state.copyWith(
+              authAppleState: CubitStates.initial,
+              signInWithAppleState: CubitStates.initial,
+            ),
+          );
         },
       );
     } catch (e) {
@@ -543,7 +546,6 @@ class AuthCubit extends Cubit<AuthState> {
           errorMessage: e.toString(),
         ),
       );
-
     }
   }
 
