@@ -491,7 +491,10 @@ class AuthCubit extends Cubit<AuthState> {
 
       final oauthCredential = OAuthProvider(
         "apple.com",
-      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce);
+      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce ,
+
+      accessToken: appleCredential.authorizationCode
+      );
 
       // 🔥 تسجيل الدخول في Firebase
       final userCredential = await _firebaseAuth.signInWithCredential(
