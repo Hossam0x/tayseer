@@ -45,7 +45,13 @@ class SimpleAppBar extends StatelessWidget {
         Expanded(
           child: Padding(
             padding: EdgeInsets.only(top: 16.h),
-            child: Center(child: Text(title, style: titleStyle)),
+            child: Center(
+              child: Text(
+                title,
+                style: titleStyle,
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         ),
 

@@ -47,12 +47,12 @@ class CustomBotton extends StatelessWidget {
         ),
         child: isLoading
             ? SizedBox(
-                width: 24,
-                height: 24,
-                child: const CircularProgressIndicator(
-                  padding: EdgeInsets.all(2),
+                width: 24.w,
+                height: 24.h,
+                child:  CircularProgressIndicator(
+                  padding: EdgeInsets.all(2.w),
                   color: Colors.white,
-                  strokeWidth: 2,
+                  strokeWidth: 2.w,
                 ),
               )
             : Ink(
@@ -72,7 +72,7 @@ class CustomBotton extends StatelessWidget {
                           : MainAxisAlignment.spaceEvenly,
                       children: [
                         if (icon != null) icon!,
-                        if (icon != null) const SizedBox(width: 2),
+                        if (icon != null)  SizedBox(width: 2.w),
                         Text(
                           title,
                           style: Styles.textStyle16Bold.copyWith(

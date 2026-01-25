@@ -100,8 +100,9 @@ class _VideoSectionState extends State<VideoSection> {
                       icon: Icons.replay_10_rounded,
                       onTap: () async {
                         if (_controller == null ||
-                            !_controller!.value.isInitialized)
+                            !_controller!.value.isInitialized) {
                           return;
+                        }
                         final currentPos = _controller!.value.position;
                         final newPos = currentPos - const Duration(seconds: 10);
 
@@ -116,8 +117,9 @@ class _VideoSectionState extends State<VideoSection> {
                     GestureDetector(
                       onTap: () {
                         if (_controller == null ||
-                            !_controller!.value.isInitialized)
+                            !_controller!.value.isInitialized) {
                           return;
+                        }
 
                         if (_controller!.value.isPlaying) {
                           _controller!.pause();
@@ -157,8 +159,9 @@ class _VideoSectionState extends State<VideoSection> {
                       icon: Icons.forward_10_rounded,
                       onTap: () async {
                         if (_controller == null ||
-                            !_controller!.value.isInitialized)
+                            !_controller!.value.isInitialized) {
                           return;
+                        }
 
                         final currentPos = _controller!.value.position;
                         final totalDuration = _controller!.value.duration;

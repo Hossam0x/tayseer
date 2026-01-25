@@ -16,6 +16,7 @@ class ImageViewerView extends StatefulWidget {
   final String postId;
   final PostModel? post;
   final bool isFromPostDetails;
+  final bool isFromProfile;
 
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
@@ -28,6 +29,7 @@ class ImageViewerView extends StatefulWidget {
     this.post,
     required this.isFromPostDetails,
     this.callbacks = const PostCallbacks(),
+    required this.isFromProfile,
   });
 
   @override
@@ -158,8 +160,11 @@ class _ImageViewerViewState extends State<ImageViewerView>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            PostDetailsView(post: post, callbacks: widget.callbacks),
+        builder: (_) => PostDetailsView(
+          post: post,
+          callbacks: widget.callbacks,
+          isFromProfile: widget.isFromProfile,
+        ),
       ),
     );
   }

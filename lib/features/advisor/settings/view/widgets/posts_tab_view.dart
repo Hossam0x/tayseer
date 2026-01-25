@@ -1,5 +1,5 @@
+import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/archive_post_widget.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
@@ -192,22 +192,23 @@ class PostsTabView extends StatelessWidget {
                   }
 
                   final post = state.posts[index];
-                  return ArchivePostWidget(
+                  return PostCard(
+                    isFromProfile: true,
                     post: post,
-                    onUnarchive: () =>
-                        _unarchivePost(context, post.postId, cubit),
-                    onReactionChanged: (postId, reactionType) {
-                      cubit.reactToPost(
-                        postId: postId,
-                        reactionType: reactionType,
-                      );
-                    },
-                    onShareTap: (postId) {
-                      cubit.toggleSharePost(postId: postId);
-                    },
-                    onHashtagTap: (hashtag) {
-                      context.pushNamed(AppRouter.kAdvisorSearchView);
-                    },
+                    // onUnarchive: () =>
+                    //     _unarchivePost(context, post.postId, cubit),
+                    // onReactionChanged: (postId, reactionType) {
+                    //   cubit.reactToPost(
+                    //     postId: postId,
+                    //     reactionType: reactionType,
+                    //   );
+                    // },
+                    // onShareTap: (postId) {
+                    //   cubit.toggleSharePost(postId: postId);
+                    // },
+                    // onHashtagTap: (hashtag) {
+                    //   context.pushNamed(AppRouter.kAdvisorSearchView);
+                    // },
                   );
                 },
               ),
@@ -241,20 +242,20 @@ class PostsTabView extends StatelessWidget {
     );
   }
 
-  Future<void> _unarchivePost(
-    BuildContext context,
-    String postId,
-    ArchivedPostsCubit cubit,
-  ) async {
-    try {
-      await cubit.unarchivePost(postId);
-      if (context.mounted) {
-        AppToast.success(context, 'تم إلغاء أرشفة المنشور');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        AppToast.error(context, 'حدث خطأ أثناء إلغاء الأرشفة');
-      }
-    }
-  }
+  // Future<void> _unarchivePost(
+  //   BuildContext context,
+  //   String postId,
+  //   ArchivedPostsCubit cubit,
+  // ) async {
+  //   try {
+  //     await cubit.unarchivePost(postId);
+  //     if (context.mounted) {
+  //       AppToast.success(context, 'تم إلغاء أرشفة المنشور');
+  //     }
+  //   } catch (e) {
+  //     if (context.mounted) {
+  //       AppToast.error(context, 'حدث خطأ أثناء إلغاء الأرشفة');
+  //     }
+  //   }
+  // }
 }

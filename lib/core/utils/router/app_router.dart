@@ -52,18 +52,16 @@ import 'package:tayseer/features/shared/auth/view/select_session_duration_view.d
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
+import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
-import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_cubit.dart';
-import 'package:tayseer/features/user/my_space/data/model/booking_data.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
-import 'package:tayseer/features/user/my_space/data/model/sessoin_model.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/AdvisorProfile/Advisor_information.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/rating/user_rating_advisor.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/reschedule/user_reschedule.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/sessionDetails/session_details_view.dart';
-import 'package:tayseer/features/user/my_space/presentation/view/sessionHistory/session_history_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/ticketSession/ticket_session_success.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/ticketSession/ticket_session_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/voic_call/voice_call_view.dart';
@@ -98,6 +96,9 @@ import 'package:tayseer/features/shared/auth/view/regisration_user_view.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
 // import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/on_boarding_screen.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
+import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import '../../../my_import.dart';
 
 abstract class AppRouter {
@@ -193,6 +194,10 @@ abstract class AppRouter {
   static const kFollowingView = '/following_view';
   static const voiceCallView = '/VoiceCallView';
   static const kRegisrationAdvisorView = '/RegisrationAdvisorView';
+  static const kUserPublicProfileView = '/user-public-profile';
+  static const kUserProfileEditView = '/user-profile-edit';
+  static const kInteractionFilterView = '/InteractionFilterView';
+
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -212,10 +217,14 @@ abstract class AppRouter {
         );
       case kUserLayoutView:
         return SlideLeftRoute(
-          page: const UserLayoutView(),
+          page:  UserLayoutView(),
           routeSettings: settings,
         );
-
+  case kInteractionFilterView:
+        return SlideLeftRoute(
+          page: const InteractionFilterPage(),
+          routeSettings: settings,
+        );
       case kEditPersonalDataView:
         return SlideLeftRoute(
           page: const EditPersonalDataView(),
@@ -360,6 +369,19 @@ abstract class AppRouter {
       case AppRouter.kFollowingView:
         return FadeScaleRoute(
           page: const FollowingView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kUserPublicProfileView:
+        return MaterialPageRoute(
+          builder: (_) => UserPublicProfileView(
+            userProfile: settings.arguments as UserProfileModel,
+          ),
+        );
+
+      case AppRouter.kUserProfileEditView:
+        return FadeScaleRoute(
+          page: const UserProfileEditView(),
           routeSettings: settings,
         );
 
