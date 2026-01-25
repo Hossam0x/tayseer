@@ -198,6 +198,7 @@ class SavedPostsView extends StatelessWidget {
         children: [
           // Post Card
           PostCard(
+            isFromProfile: false,
             post: post,
             // onReactionChanged: (postId, reactionType) {
             //   // ⭐️ استدعاء Like

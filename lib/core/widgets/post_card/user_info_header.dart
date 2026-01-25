@@ -10,6 +10,7 @@ class UserInfoHeader extends StatelessWidget {
   final Widget? subtitle; // خليناه ويدجت عشان المرونة (نص، تاريخ، ايقونات)
   final VoidCallback? onMoreTap;
   final String advisorId;
+  final bool isFromProfile;
 
   const UserInfoHeader({
     super.key,
@@ -19,6 +20,7 @@ class UserInfoHeader extends StatelessWidget {
     this.isVerified = false,
     this.subtitle,
     this.onMoreTap,
+    required this.isFromProfile,
   });
 
   void _navigateToUserProfile(BuildContext context) {
@@ -42,7 +44,7 @@ class UserInfoHeader extends StatelessWidget {
         // تجميع الصورة والاسم في GestureDetector واحد
         Expanded(
           child: GestureDetector(
-            onTap: () => _navigateToUserProfile(context),
+            onTap: () => isFromProfile ? null : _navigateToUserProfile(context),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

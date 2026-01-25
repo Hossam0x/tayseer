@@ -141,6 +141,7 @@ class PostsTab extends StatelessWidget {
           return Column(
             children: [
               PostCard(
+                isFromProfile: true,
                 post: post,
                 // onReactionChanged: (postId, reactionType) {
                 //   // ⭐️ استدعاء ProfileCubit الجديد
@@ -158,6 +159,7 @@ class PostsTab extends StatelessWidget {
                     ctx,
                     MaterialPageRoute(
                       builder: (context) => PostDetailsView(
+                        isFromProfile: true,
                         post: post,
                         cachedController: controller,
                         callbacks: PostCallbacks(

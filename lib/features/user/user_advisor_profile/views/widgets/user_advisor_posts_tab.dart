@@ -140,6 +140,7 @@ class UserAdvisorPostsTab extends StatelessWidget {
           return Column(
             children: [
               PostCard(
+                isFromProfile: true,
                 post: post,
                 // onReactionChanged: (postId, reactionType) {
                 //   cubit.reactToPost(postId: postId, reactionType: reactionType);
@@ -152,6 +153,7 @@ class UserAdvisorPostsTab extends StatelessWidget {
                     ctx,
                     MaterialPageRoute(
                       builder: (context) => PostDetailsView(
+                        isFromProfile: true,
                         post: post,
                         cachedController: controller,
                         callbacks: PostCallbacks(

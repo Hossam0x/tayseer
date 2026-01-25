@@ -14,12 +14,14 @@ class PostDetailsView extends StatefulWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
   final PostCallbacks callbacks;
+  final bool isFromProfile;
 
   const PostDetailsView({
     super.key,
     required this.post,
     this.cachedController,
     this.callbacks = const PostCallbacks(),
+    required this.isFromProfile,
   });
 
   @override
@@ -96,6 +98,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
             children: [
               Expanded(
                 child: _PostDetailsBody(
+                  isFromProfile: widget.isFromProfile,
                   currentPost: _currentPost,
                   cachedController: widget.cachedController,
                   scrollController: _scrollController,
@@ -138,12 +141,14 @@ class _PostDetailsBody extends StatefulWidget {
   final VideoPlayerController? cachedController;
   final ScrollController scrollController;
   final PostCallbacks callbacks;
+  final bool isFromProfile;
 
   const _PostDetailsBody({
     required this.currentPost,
     this.cachedController,
     required this.scrollController,
     required this.callbacks,
+    required this.isFromProfile,
   });
 
   @override
@@ -220,6 +225,7 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
                 );
 
                 return PostDetailsCard(
+                  isFromProfile: widget.isFromProfile,
                   post: widget.currentPost,
                   cachedController: widget.cachedController,
                   scrollController: widget.scrollController,

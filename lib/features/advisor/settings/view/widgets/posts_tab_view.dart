@@ -193,6 +193,7 @@ class PostsTabView extends StatelessWidget {
 
                   final post = state.posts[index];
                   return PostCard(
+                    isFromProfile: true,
                     post: post,
                     // onUnarchive: () =>
                     //     _unarchivePost(context, post.postId, cubit),
