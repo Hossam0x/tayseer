@@ -332,74 +332,53 @@ class AuthCubit extends Cubit<AuthState> {
       if (googleUser == null) {
         emit(
           state.copyWith(
-            fromScreen: 'registration',
             signInWithGoogleState: CubitStates.failure,
-            currentAuthUserType: userType,
             errorMessage: "تم إلغاء العملية",
+            currentAuthUserType: userType,
           ),
         );
-        emit(state.copyWith(signInWithGoogleState: CubitStates.initial));
         return;
       }
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      final googleAuth = await googleUser.authentication;
 
-      final OAuthCredential credential = GoogleAuthProvider.credential(
+      final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential = await _firebaseAuth
-          .signInWithCredential(credential);
+      final userCredential =
+      await _firebaseAuth.signInWithCredential(credential);
 
-      final String? firebaseIdToken = await userCredential.user?.getIdToken();
+      final firebaseIdToken = await userCredential.user?.getIdToken();
 
-      if (firebaseIdToken != null) {
-        emit(
-          state.copyWith(
-            signInWithGoogleState: CubitStates.success,
-            fromScreen: 'registration',
-            currentAuthUserType: userType,
-          ),
-        );
-
-        sendAuthGoogle(idToken: firebaseIdToken, userType: userType);
-      } else {
+      if (firebaseIdToken == null) {
         emit(
           state.copyWith(
             signInWithGoogleState: CubitStates.failure,
-            currentAuthUserType: userType,
             errorMessage: "فشل في الحصول على Firebase Token",
+            currentAuthUserType: userType,
           ),
         );
+        return;
       }
-    } on FirebaseAuthException catch (e) {
-      emit(
-        state.copyWith(
-          signInWithGoogleState: CubitStates.failure,
-          currentAuthUserType: userType,
-          errorMessage: e.message ?? "خطأ في Firebase",
-        ),
-      );
-    } on PlatformException catch (e) {
-      emit(
-        state.copyWith(
-          signInWithGoogleState: CubitStates.failure,
-          currentAuthUserType: userType,
-          errorMessage: getGoogleSignInErrorMessage(e.code),
-        ),
+
+      // ⬅️ نكمل على backend
+      await sendAuthGoogle(
+        idToken: firebaseIdToken,
+        userType: userType,
       );
     } catch (e) {
       emit(
         state.copyWith(
           signInWithGoogleState: CubitStates.failure,
+          errorMessage: e.toString(),
           currentAuthUserType: userType,
-          errorMessage: "حدث خطأ غير متوقع: $e",
         ),
       );
     }
   }
+
 
   // ✅ تم التعديل - إضافة userType parameter
   Future<void> sendAuthGoogle({
@@ -409,6 +388,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(
       state.copyWith(
         authGoogleState: CubitStates.loading,
+        fromScreen: 'registration',
         currentAuthUserType: userType,
       ),
     );
@@ -417,7 +397,7 @@ class AuthCubit extends Cubit<AuthState> {
       final response = await _repo.authGoogle(idToken: idToken);
 
       response.fold(
-        (failure) {
+            (failure) {
           emit(
             state.copyWith(
               authGoogleState: CubitStates.failure,
@@ -427,17 +407,8 @@ class AuthCubit extends Cubit<AuthState> {
               currentAuthUserType: userType,
             ),
           );
-
-          Future.delayed(const Duration(milliseconds: 100), () {
-            emit(
-              state.copyWith(
-                authGoogleState: CubitStates.initial,
-                signInWithGoogleState: CubitStates.initial,
-              ),
-            );
-          });
         },
-        (_) {
+            (_) {
           emit(
             state.copyWith(
               authGoogleState: CubitStates.success,
@@ -446,14 +417,6 @@ class AuthCubit extends Cubit<AuthState> {
               currentAuthUserType: userType,
             ),
           );
-          Future.delayed(const Duration(milliseconds: 100), () {
-            emit(
-              state.copyWith(
-                authGoogleState: CubitStates.initial,
-                signInWithGoogleState: CubitStates.initial,
-              ),
-            );
-          });
         },
       );
     } catch (e) {
@@ -461,12 +424,13 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           authGoogleState: CubitStates.failure,
           signInWithGoogleState: CubitStates.failure,
-          currentAuthUserType: userType,
           errorMessage: e.toString(),
+          currentAuthUserType: userType,
         ),
       );
     }
   }
+
 
   // ✅ تم التعديل - إضافة userType parameter
   Future<void> signInWithApple({required UserTypeEnum userType}) async {
@@ -496,70 +460,34 @@ class AuthCubit extends Cubit<AuthState> {
         accessToken: appleCredential.authorizationCode,
       );
 
-      // 🔥 تسجيل الدخول في Firebase
-      final userCredential = await _firebaseAuth.signInWithCredential(
-        oauthCredential,
-      );
+      final userCredential =
+      await _firebaseAuth.signInWithCredential(oauthCredential);
 
-      // ✅ Firebase ID Token (ده المطلوب)
       final firebaseIdToken = await userCredential.user?.getIdToken();
-      debugPrint('firebaseIdToken:::::::::::::::::$firebaseIdToken');
 
       if (firebaseIdToken == null) {
-        debugPrint('signInWithApple: firebaseIdToken is null');
         emit(
           state.copyWith(
             signInWithAppleState: CubitStates.failure,
-            fromScreen: 'registration',
-            currentAuthUserType: userType,
             errorMessage: 'Failed to obtain Firebase ID token',
           ),
         );
-        // keep error visible to UI for a short time then reset
-        await Future.delayed(const Duration(milliseconds: 300));
-        emit(state.copyWith(signInWithAppleState: CubitStates.initial));
         return;
       }
 
-      try {
-        // Protect against long-running network calls
-        await sendAuthApple(idToken: firebaseIdToken, userType: userType)
-            .timeout(const Duration(seconds: 10));
-
-        emit(
-          state.copyWith(
-            signInWithAppleState: CubitStates.success,
-            fromScreen: 'registration',
-            currentAuthUserType: userType,
-          ),
-        );
-        // keep success briefly for UI
-        await Future.delayed(const Duration(milliseconds: 300));
-        emit(state.copyWith(signInWithAppleState: CubitStates.initial));
-      } on TimeoutException catch (e) {
-        debugPrint('sendAuthApple timed out: $e');
-        emit(
-          state.copyWith(
-            signInWithAppleState: CubitStates.failure,
-            errorMessage: 'Request timed out',
-          ),
-        );
-        await Future.delayed(const Duration(milliseconds: 300));
-        emit(state.copyWith(signInWithAppleState: CubitStates.initial));
-      }
+      // ⬅️ سيبها تكمل عادي
+      await sendAuthApple(
+        idToken: firebaseIdToken,
+        userType: userType,
+      );
     } catch (e) {
       emit(
         state.copyWith(
-          fromScreen: 'registration',
           signInWithAppleState: CubitStates.failure,
-          currentAuthUserType: userType,
           errorMessage: e.toString(),
         ),
       );
-
-      debugPrint('sign in apple error $e');
     }
-    // Note: we reset to initial inside the success/failure flows above.
   }
 
   // ✅ تم التعديل - إضافة userType parameter
@@ -571,7 +499,7 @@ class AuthCubit extends Cubit<AuthState> {
       final response = await _repo.authApple(idToken: idToken);
 
       response.fold(
-        (failure) {
+            (failure) {
           emit(
             state.copyWith(
               authAppleState: CubitStates.failure,
@@ -581,19 +509,13 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-        (_) {
+            (_) {
           emit(
             state.copyWith(
               authAppleState: CubitStates.success,
+              signInWithAppleState: CubitStates.success,
               fromScreen: 'registration',
               currentAuthUserType: userType,
-            ),
-          );
-
-          emit(
-            state.copyWith(
-              authAppleState: CubitStates.initial,
-              signInWithAppleState: CubitStates.initial,
             ),
           );
         },
@@ -602,11 +524,22 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         state.copyWith(
           authAppleState: CubitStates.failure,
-          currentAuthUserType: userType,
           errorMessage: e.toString(),
         ),
       );
     }
+  }
+  void resetAuthStates() {
+    emit(
+      state.copyWith(
+        signInWithAppleState: CubitStates.initial,
+        authAppleState: CubitStates.initial,
+        signInWithGoogleState: CubitStates.initial,
+        authGoogleState: CubitStates.initial,
+        registerState: CubitStates.initial,
+        errorMessage: null,
+      ),
+    );
   }
 
   Future<void> verifyOtp({required String otp}) async {
