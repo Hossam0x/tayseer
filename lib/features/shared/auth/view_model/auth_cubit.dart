@@ -1,5 +1,6 @@
 // auth_cubit.dart
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -489,11 +490,10 @@ class AuthCubit extends Cubit<AuthState> {
         nonce: nonce,
       );
 
-      final oauthCredential = OAuthProvider(
-        "apple.com",
-      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce ,
-
-      accessToken: appleCredential.authorizationCode
+      final oauthCredential = OAuthProvider("apple.com").credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
       );
 
       // 🔥 تسجيل الدخول في Firebase
@@ -505,8 +505,26 @@ class AuthCubit extends Cubit<AuthState> {
       final firebaseIdToken = await userCredential.user?.getIdToken();
       debugPrint('firebaseIdToken:::::::::::::::::$firebaseIdToken');
 
-      if (firebaseIdToken != null) {
-        await sendAuthApple(idToken: firebaseIdToken, userType: userType);
+      if (firebaseIdToken == null) {
+        debugPrint('signInWithApple: firebaseIdToken is null');
+        emit(
+          state.copyWith(
+            signInWithAppleState: CubitStates.failure,
+            fromScreen: 'registration',
+            currentAuthUserType: userType,
+            errorMessage: 'Failed to obtain Firebase ID token',
+          ),
+        );
+        // keep error visible to UI for a short time then reset
+        await Future.delayed(const Duration(milliseconds: 300));
+        emit(state.copyWith(signInWithAppleState: CubitStates.initial));
+        return;
+      }
+
+      try {
+        // Protect against long-running network calls
+        await sendAuthApple(idToken: firebaseIdToken, userType: userType)
+            .timeout(const Duration(seconds: 10));
 
         emit(
           state.copyWith(
@@ -515,6 +533,19 @@ class AuthCubit extends Cubit<AuthState> {
             currentAuthUserType: userType,
           ),
         );
+        // keep success briefly for UI
+        await Future.delayed(const Duration(milliseconds: 300));
+        emit(state.copyWith(signInWithAppleState: CubitStates.initial));
+      } on TimeoutException catch (e) {
+        debugPrint('sendAuthApple timed out: $e');
+        emit(
+          state.copyWith(
+            signInWithAppleState: CubitStates.failure,
+            errorMessage: 'Request timed out',
+          ),
+        );
+        await Future.delayed(const Duration(milliseconds: 300));
+        emit(state.copyWith(signInWithAppleState: CubitStates.initial));
       }
     } catch (e) {
       emit(
@@ -528,8 +559,7 @@ class AuthCubit extends Cubit<AuthState> {
 
       debugPrint('sign in apple error $e');
     }
-
-    emit(state.copyWith(signInWithAppleState: CubitStates.initial));
+    // Note: we reset to initial inside the success/failure flows above.
   }
 
   // ✅ تم التعديل - إضافة userType parameter
