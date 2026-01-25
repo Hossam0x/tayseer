@@ -277,18 +277,16 @@ Future<void> setupGetIt() async {
   );
 
   // User Public Profile Cubit Factory
-  getIt
-      .registerFactoryParam<UserPublicProfileCubit, String?, UserProfileModel?>(
-        (userId, initialProfile) => UserPublicProfileCubit(
-          getIt<UserPublicProfileRepository>(),
-          getIt<UserPostsRepository>(),
-          userId: userId,
-          initialProfile: initialProfile,
-        ),
-      );
+  getIt.registerFactoryParam<UserPublicProfileCubit, String, UserProfileModel?>(
+    (userId, initialProfile) => UserPublicProfileCubit(
+      getIt<UserPublicProfileRepository>(),
+      getIt<UserPostsRepository>(),
+      userId: userId,
+      initialProfile: initialProfile,
+    ),
+  );
 
   getIt.registerFactory<UserProfileEditCubit>(
     () => UserProfileEditCubit(getIt<UserProfileRepository>()),
   );
-
 }

@@ -349,11 +349,13 @@ class _UserProfileViewState extends State<UserProfileView> {
         Gap(8.h),
         GestureDetector(
           onTap: () {
+            // ⭐ التحديث: تمرير userId فقط
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    UserPublicProfileView(userProfile: userProfile),
+                builder: (context) => UserPublicProfileView(
+                  userId: userProfile.id, // ⭐ تمرير الـ ID فقط
+                ),
               ),
             );
           },
