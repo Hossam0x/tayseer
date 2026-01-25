@@ -15,13 +15,15 @@ class HomeRepositoryImpl implements HomeRepository {
 
   HomeRepositoryImpl(this.apiService);
 
+  // ================= Posts =================
+
   @override
   Future<Either<Failure, List<PostModel>>> fetchPosts({
     required int page,
     String? categoryId,
   }) async {
     try {
-      var response = await apiService.get(
+      final response = await apiService.get(
         endPoint: ApiEndPoint.posts,
         query: {'page': page, if (categoryId != null) 'categoryId': categoryId},
       );
@@ -38,14 +40,13 @@ class HomeRepositoryImpl implements HomeRepository {
     required ReactionType? reactionType,
     required bool isRemove,
   }) async {
-    final Map<String, dynamic> requestData = {
+    final data = {
       "postId": postId,
-      "action": isRemove ? "remove" : "add",
+      if (!isRemove) "type": reactionType!.name,
+      'action': isRemove ? 'remove' : 'add',
     };
-    if (!isRemove) {
-      requestData["type"] = reactionType!.name;
-    }
-    apiService.post(endPoint: ApiEndPoint.like, data: requestData);
+
+    await apiService.post(endPoint: ApiEndPoint.like, data: data);
   }
 
   @override
@@ -54,10 +55,10 @@ class HomeRepositoryImpl implements HomeRepository {
     required String action,
   }) async {
     try {
-      final Map<String, dynamic> requestData = {"postId": postId};
-      var response = await apiService.post(
-        endPoint: "${ApiEndPoint.share}?action=$action",
-        data: requestData,
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.share,
+        query: {'action': action},
+        data: {"postId": postId},
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
     } on DioException catch (e) {
@@ -65,18 +66,19 @@ class HomeRepositoryImpl implements HomeRepository {
     }
   }
 
+  // ================= Comments =================
+
   @override
   Future<Either<Failure, CommentsResponseModel>> fetchComments({
     required String postId,
     required int page,
   }) async {
     try {
-      var response = await apiService.get(
+      final response = await apiService.get(
         endPoint: '${ApiEndPoint.comments}/$postId/comments',
         query: {'page': page},
       );
-      final commentsResponse = CommentsResponseModel.fromJson(response);
-      return Right(commentsResponse);
+      return Right(CommentsResponseModel.fromJson(response));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
@@ -88,12 +90,11 @@ class HomeRepositoryImpl implements HomeRepository {
     required int page,
   }) async {
     try {
-      var response = await apiService.get(
+      final response = await apiService.get(
         endPoint: '${ApiEndPoint.replies}$commentId',
-        query: {'page': page, "limit": 5},
+        query: {'page': page, 'limit': 5},
       );
-      final repliesResponse = CommentsResponseModel.fromJson(response);
-      return Right(repliesResponse);
+      return Right(CommentsResponseModel.fromJson(response));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
@@ -105,16 +106,11 @@ class HomeRepositoryImpl implements HomeRepository {
     required String comment,
   }) async {
     try {
-      final Map<String, dynamic> requestData = {
-        "postId": postId,
-        "comment": comment,
-      };
-      var response = await apiService.post(
+      final response = await apiService.post(
         endPoint: ApiEndPoint.comments,
-        data: requestData,
+        data: {"postId": postId, "comment": comment},
       );
-      final commentModel = CommentModel.fromJson(response['data']);
-      return Right(commentModel);
+      return Right(CommentModel.fromJson(response['data']));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
@@ -126,16 +122,11 @@ class HomeRepositoryImpl implements HomeRepository {
     required String reply,
   }) async {
     try {
-      final Map<String, dynamic> requestData = {
-        "commentId": commentId,
-        "reply": reply,
-      };
-      var response = await apiService.post(
+      final response = await apiService.post(
         endPoint: ApiEndPoint.createReply,
-        data: requestData,
+        data: {"commentId": commentId, "reply": reply},
       );
-      final replyModel = CommentModel.fromJson(response['data']);
-      return Right(replyModel);
+      return Right(CommentModel.fromJson(response['data']));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
@@ -147,17 +138,13 @@ class HomeRepositoryImpl implements HomeRepository {
     String? replyId,
     required bool isRemove,
   }) async {
-    final Map<String, dynamic> requestData = {};
-    if (commentId != null) {
-      requestData["commentId"] = commentId;
-    }
-    if (replyId != null) {
-      requestData["replyId"] = replyId;
-    }
     await apiService.post(
-      endPoint:
-          '${ApiEndPoint.commentLike}?action=${isRemove ? "remove" : "add"}',
-      data: requestData,
+      endPoint: ApiEndPoint.commentLike,
+      query: {'action': isRemove ? 'remove' : 'add'},
+      data: {
+        if (commentId != null) "commentId": commentId,
+        if (replyId != null) "replyId": replyId,
+      },
     );
   }
 
@@ -167,13 +154,9 @@ class HomeRepositoryImpl implements HomeRepository {
     required String comment,
   }) async {
     try {
-      final Map<String, dynamic> requestData = {
-        "comment": comment,
-        "commentId": commentId,
-      };
-      var response = await apiService.patch(
+      final response = await apiService.patch(
         endPoint: ApiEndPoint.comments,
-        data: requestData,
+        data: {"commentId": commentId, "comment": comment},
       );
       return Right(response['message'] ?? 'تم تعديل التعليق بنجاح');
     } on DioException catch (e) {
@@ -187,10 +170,9 @@ class HomeRepositoryImpl implements HomeRepository {
     required String reply,
   }) async {
     try {
-      final Map<String, dynamic> requestData = {"reply": reply};
-      var response = await apiService.patch(
+      final response = await apiService.patch(
         endPoint: '${ApiEndPoint.updateReply}$replyId',
-        data: requestData,
+        data: {"reply": reply},
       );
       return Right(response['message'] ?? 'تم تعديل الرد بنجاح');
     } on DioException catch (e) {
@@ -199,58 +181,108 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
+  Future<Either<Failure, String>> deleteComment({
+    required String commentId,
+  }) async {
+    try {
+      final response = await apiService.delete(
+        endPoint: "${ApiEndPoint.comments}/$commentId",
+      );
+
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم حذف التعليق بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> deleteReply({required String replyId}) async {
+    try {
+      final response = await apiService.delete(
+        endPoint: "${ApiEndPoint.deleteReply}$replyId",
+      );
+      return Right(response['message'] ?? 'تم حذف الرد بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  void hideComment({required String commentId, required bool isHide}) {
+    apiService.post(
+      endPoint: ApiEndPoint.hideComment,
+      query: {'action': isHide ? 'add' : 'remove'},
+      data: {"commentId": commentId},
+    );
+  }
+
+  @override
+  void hideReply({required String replyId, required bool isHide}) {
+    apiService.post(
+      endPoint: ApiEndPoint.hideReply,
+      query: {'action': isHide ? 'add' : 'remove'},
+      data: {"replyId": replyId},
+    );
+  }
+
+  // ================= Reels =================
+
+  @override
   Future<Either<Failure, List<PostModel>>> getReels({
     required int page,
     int limit = 5,
   }) async {
     try {
-      var response = await apiService.get(
+      final response = await apiService.get(
         endPoint: ApiEndPoint.reels,
         query: {'page': page, 'limit': limit},
       );
-      // Parse reelsDto instead of postsDto for reels endpoint
-      final reelsList =
+
+      final reels =
           (response['data']?['reelsDto'] as List<dynamic>?)
               ?.map((e) => PostModel.fromJson(e))
               .toList() ??
           [];
-      return Right(reelsList);
+
+      return Right(reels);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
   }
+
+  // ================= Profile =================
 
   @override
   Future<Either<Failure, ImageAndNameModel>> fetchNameAndImage() async {
     try {
       final response = await apiService.get(endPoint: ApiEndPoint.nameAndImage);
-      final imageAndNameModel = ImageAndNameModel.fromJson(response['data']);
-      return Right(imageAndNameModel);
+      return Right(ImageAndNameModel.fromJson(response['data']));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
   }
 
+  // ================= Categories =================
+
   @override
   Future<Either<Failure, CategoriesResponseModel>> fetchAllCategories(
-    final int page,
+    int page,
   ) async {
     try {
       final response = await apiService.get(
         endPoint: ApiEndPoint.category,
         query: {'page': page},
       );
-      final categoriesResponseModel = CategoriesResponseModel.fromJson(
-        response,
-      );
-      return Right(categoriesResponseModel);
-    } catch (e) {
-      if (e is DioException) {
-        return Left(ServerFailure.fromDioError(e));
-      }
-      return Left(ServerFailure(e.toString()));
+      return Right(CategoriesResponseModel.fromJson(response));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     }
   }
+
+  // ================= Post Actions =================
 
   @override
   Future<Either<Failure, String>> savedPost({
@@ -258,11 +290,10 @@ class HomeRepositoryImpl implements HomeRepository {
     required bool isRemove,
   }) async {
     try {
-      final Map<String, dynamic> requestData = {"postId": postId};
-      var response = await apiService.post(
-        endPoint:
-            "${ApiEndPoint.savePost}?action=${isRemove ? "remove" : "add"}",
-        data: requestData,
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.savePost,
+        query: {'action': isRemove ? 'remove' : 'add'},
+        data: {"postId": postId},
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
     } on DioException catch (e) {
@@ -273,17 +304,14 @@ class HomeRepositoryImpl implements HomeRepository {
   @override
   Future<Either<Failure, String>> deletePost({required String postId}) async {
     try {
-      var response = await apiService.delete(
+      final response = await apiService.delete(
         endPoint: "${ApiEndPoint.deletePost}$postId",
       );
 
-      // ✅ تحقق من success flag أو status
       if (response['success'] == true || response['status'] == 'success') {
         return Right(response['message'] ?? 'تم حذف المنشور بنجاح');
-      } else {
-        // ❌ السيرفر رجع error message
-        return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
       }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
@@ -291,26 +319,42 @@ class HomeRepositoryImpl implements HomeRepository {
 
   @override
   void hidePost({required String postId, required bool isHide}) {
-    final Map<String, dynamic> requestData = {"postId": postId};
     apiService.post(
-      endPoint: '${ApiEndPoint.hidePost}?action=${isHide ? "add" : "remove"}',
-      data: requestData,
+      endPoint: ApiEndPoint.hidePost,
+      query: {'action': isHide ? 'add' : 'remove'},
+      data: {"postId": postId},
     );
   }
 
   @override
   Future<Either<Failure, String>> blockUser({required String userId}) async {
     try {
-      var response = await apiService.post(
+      final response = await apiService.post(
         endPoint: ApiEndPoint.blockuser,
         data: {"blockedId": userId},
       );
+
       if (response['success'] == true || response['status'] == 'success') {
         return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
-      } else {
-        // ❌ السيرفر رجع error message
-        return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
       }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> archivePost({required String postId}) async {
+    try {
+      final response = await apiService.post(
+        endPoint: "${ApiEndPoint.archivePost}$postId",
+        query: {'action': 'add'},
+      );
+
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم أرشفة المنشور بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }

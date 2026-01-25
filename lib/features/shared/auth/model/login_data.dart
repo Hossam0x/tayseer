@@ -61,6 +61,8 @@ class LoginData {
 class UserModel {
   final String? id;
   final String? name;
+  final String? username;
+  final bool? isVerified;
   final String? email;
   final String? gender;
   final String? image;
@@ -76,6 +78,8 @@ class UserModel {
   UserModel({
     this.id,
     this.name,
+    this.username,
+    this.isVerified,
     this.email,
     this.gender,
     this.image,
@@ -94,6 +98,8 @@ class UserModel {
       id: json['id'],
       name: json['name'],
       email: json['email'],
+      username: json['username'] ?? "",
+      isVerified: json['isVerified'] ?? false,
       gender: json['gender'],
       image: json['image'],
       phone: json['phone'],
@@ -113,6 +119,7 @@ class UserModel {
       'name': name,
       'email': email,
       'gender': gender,
+      'username': username,
       'image': image,
       'phone': phone,
       'inreview': inreview,

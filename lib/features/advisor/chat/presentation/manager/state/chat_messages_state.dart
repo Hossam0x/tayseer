@@ -46,7 +46,7 @@ class ChatMessagesState with _$ChatMessagesState {
     /// Pagination state for loading older messages
     @Default(CubitStates.initial) CubitStates paginationState,
 
-    /// Media sending state
+    /// Media sending statew
     @Default(CubitStates.initial) CubitStates sendMediaState,
   }) = ChatMessagesLoaded;
 

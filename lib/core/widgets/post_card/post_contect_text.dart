@@ -6,6 +6,7 @@ class PostContentText extends StatefulWidget {
   final TextStyle? style;
   final TextStyle? hashtagStyle;
   final Function(String)? onHashtagTap;
+  final int? maxLines;
 
   const PostContentText({
     super.key,
@@ -13,6 +14,7 @@ class PostContentText extends StatefulWidget {
     this.style,
     this.hashtagStyle,
     this.onHashtagTap,
+    this.maxLines,
   });
 
   @override
@@ -21,7 +23,9 @@ class PostContentText extends StatefulWidget {
 
 class _PostContentTextState extends State<PostContentText> {
   bool _isExpanded = false;
-  static const int _maxLines = 3; // عدد السطور قبل "عرض المزيد"
+
+  late final int _maxLines =
+      widget.maxLines ?? 3; // عدد السطور قبل "عرض المزيد"
 
   @override
   Widget build(BuildContext context) {

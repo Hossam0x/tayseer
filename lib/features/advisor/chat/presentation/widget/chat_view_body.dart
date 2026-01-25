@@ -3,8 +3,8 @@ import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/chat_list_builder.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/chat_view_header.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/new_chat_floating_button.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/session_view.dart';
 // import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/advisor/session/view/widget/session_view_body.dart';
 
 class ChatViewBody extends StatefulWidget {
   const ChatViewBody({super.key});
@@ -55,7 +55,7 @@ class _ChatViewBodyState extends State<ChatViewBody> {
               ),
 
               Expanded(
-                child: hasChats ? const ChatListBuilder() : SessionViewBody(),
+                child: hasChats ? const ChatListBuilder() : const SessionView(),
               ),
             ],
           ),

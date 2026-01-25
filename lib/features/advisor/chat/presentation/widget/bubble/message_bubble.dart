@@ -186,6 +186,8 @@ class MessageBubble extends StatelessWidget {
                           contentList: contentList,
                           localFilePaths:
                               chatMessage?.localFilePaths, // ✅ Pass local paths
+                          uploadProgress: chatMessage
+                              ?.uploadProgress, // ✅ Pass upload progress
                           textColor: textColor,
                           fontSize: fontSize,
                           maxWidth: maxWidth - paddingH * 2,
@@ -198,6 +200,8 @@ class MessageBubble extends StatelessWidget {
                       contentList: contentList,
                       localFilePaths:
                           chatMessage?.localFilePaths, // ✅ Pass local paths
+                      uploadProgress:
+                          chatMessage?.uploadProgress, // ✅ Pass upload progress
                       textColor: textColor,
                       fontSize: fontSize,
                       maxWidth: maxWidth,

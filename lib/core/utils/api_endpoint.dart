@@ -29,4 +29,28 @@ class ApiEndPoint {
   static const String savePost = '/saved-posts';
   static const String deletePost = '/posts/delete/';
   static const String hidePost = '/hidden/post';
+  static const String advisorUserChat = '/chat/advisor-user';
+  static String advisorChatProfile(String userId) =>
+      '/session/user-sessions/$userId';
+  static String sessionDetails(String sessionId) =>
+      '/session/session-details/$sessionId';
+  static String cancelSession(String sessionId) => "/session/cancel/$sessionId";
+  static String getValidDaysAndHours(String sessionId, int month) =>
+      "/session/valid-days-and-hours/$sessionId?month=$month";
+  static const String createSession = "/session/create";
+  static const String discountcodeValidate = "/discount-code/isValidCode";
+  static const String paysession = "/session/pay";
+  static const String rateadvisor = "/advisor-rating";
+  static String updatesession(String sessionId) => "/session/update/$sessionId";
+  static const String advisorsession = "/session/advisor-sessions";
+  static const String getpendingsession = "/session/advisor-pending-sessions";
+  static String acceptordeclinesession(String sessionId) =>
+      "/session/advisor-session-status/$sessionId";
+  static String advisorSessionDetails(String sessionId) =>
+      "/session/advisor-session-details/$sessionId";
+  static const String archivePost = '/posts/archive/';
+  static const String deleteReply = '/comment-replies/delete/';
+
+  static const String hideComment = '/hidden/comment';
+  static const String hideReply = '/hidden/reply';
 }

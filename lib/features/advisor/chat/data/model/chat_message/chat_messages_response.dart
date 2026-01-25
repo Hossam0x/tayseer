@@ -136,12 +136,17 @@ class ChatMessage {
   final SystemMessageAction action; // ✅ Action field for system messages
   final List<String>?
   localFilePaths; // ✅ Local file paths for optimistic media display
+  final double? uploadProgress; // ✅ Upload progress (0.0 to 1.0)
 
   String get content => contentList.isNotEmpty ? contentList.first : '';
 
   /// Check if this message has local files (optimistic media)
   bool get hasLocalFiles =>
       localFilePaths != null && localFilePaths!.isNotEmpty;
+
+  /// Check if upload is in progress
+  bool get isUploading =>
+      uploadProgress != null && uploadProgress! < 1.0 && uploadProgress! >= 0.0;
 
   ChatMessage({
     required this.id,
@@ -162,6 +167,7 @@ class ChatMessage {
     this.reply,
     this.action = SystemMessageAction.none,
     this.localFilePaths,
+    this.uploadProgress,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -216,6 +222,8 @@ class ChatMessage {
     SystemMessageAction? action,
     List<String>? localFilePaths,
     bool clearLocalFilePaths = false,
+    double? uploadProgress,
+    bool clearUploadProgress = false,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -238,6 +246,9 @@ class ChatMessage {
       localFilePaths: clearLocalFilePaths
           ? null
           : (localFilePaths ?? this.localFilePaths),
+      uploadProgress: clearUploadProgress
+          ? null
+          : (uploadProgress ?? this.uploadProgress),
     );
   }
 }

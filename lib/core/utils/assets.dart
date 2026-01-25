@@ -1,7 +1,7 @@
 abstract class AssetsData {
   //////////////////////images//////////////////////
   static const String kAppLogo = "assets/images/app_logo.png";
-  static const String kAppLogoGif = "assets/images/app_logo_gif.gif";
+  static const String kAppLogoGif = "assets/images/appl_logo_gif.gif";
   static const String kAppLogotayseerImage = "assets/images/app_logo_t.png";
   static const String ksplashImage =
       "assets/images/background_splash_Image.png";
@@ -199,4 +199,21 @@ abstract class AssetsData {
   // User Profile Icons
   static const String navigateIcon = "assets/icons/navigateIcon.svg";
   static const String icRateSettings = "assets/icons/icRateSettings.svg";
+  static const String noSessionHistoryIcon =
+      "assets/icons/NoSessionHistory.png";
+  static const String experienceIcon = "assets/icons/Experience.svg";
+  static const String lname = "assets/icons/Lname.svg";
+
+  static const String conversitionIcon = "assets/icons/conversition.svg";
+  static const String rateIcon = "assets/icons/rate.svg";
+  static const String ratingSuccessIcon = "assets/icons/rating_success.png";
+  static const String anonIcon = "assets/icons/anon.svg";
+  static const String bankAccountIcon = "assets/icons/bankaccount.svg";
+  static const String cuponCodeIcon = "assets/icons/CuponCode.svg";
+  static const String doctorIcon = "assets/icons/doctor.svg";
+  static const String sessionChatTimeIcon = "assets/icons/SessionChatTime.svg";
+  static const String vodacasheIcon = "assets/icons/voda.png";
+  static const String durationIcon = "assets/icons/duration_icon.svg";
+  static const String cancelDialogIcon = "assets/icons/cancel_dialog_icon.png";
+  static const String errorIcon = "assets/icons/error.png" ;
 }

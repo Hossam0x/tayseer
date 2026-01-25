@@ -2,12 +2,14 @@ import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/category_model.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 
 import '../../../../my_import.dart';
 
 class HomeState extends Equatable {
   final Map<String?, CategoryPostsData> categoryPostsMap;
   final String? selectedCategoryId;
+  final SessionStartModel? sessionStartModel;
 
   // ─────────────────────────────────────────────────────────────────────────
   // 📦 Categories Data
@@ -59,6 +61,12 @@ class HomeState extends Equatable {
   final CubitStates deletePostActionState;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 📦 archive post
+  // ─────────────────────────────────────────────────────────────────────────
+  final String? archivePostMessage;
+  final CubitStates archivePostActionState;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 📦 block user
   // ─────────────────────────────────────────────────────────────────────────
   final String? blockUserMessage;
@@ -98,6 +106,11 @@ class HomeState extends Equatable {
     // block user
     this.blockUserMessage,
     this.blockUserActionState = CubitStates.initial,
+
+    // archive post
+    this.archivePostMessage,
+    this.archivePostActionState = CubitStates.initial,
+    this.sessionStartModel,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -135,6 +148,11 @@ class HomeState extends Equatable {
     // block user
     String? blockUserMessage,
     CubitStates? blockUserActionState,
+
+    // archive post
+    String? archivePostMessage,
+    CubitStates? archivePostActionState,
+    SessionStartModel? sessionStartModel,
   }) {
     return HomeState(
       // Posts
@@ -174,6 +192,12 @@ class HomeState extends Equatable {
       // block user
       blockUserMessage: blockUserMessage ?? this.blockUserMessage,
       blockUserActionState: blockUserActionState ?? this.blockUserActionState,
+
+      // archive post
+      archivePostMessage: archivePostMessage ?? this.archivePostMessage,
+      archivePostActionState:
+          archivePostActionState ?? this.archivePostActionState,
+      sessionStartModel: sessionStartModel ?? this.sessionStartModel,
     );
   }
 
@@ -298,6 +322,11 @@ class HomeState extends Equatable {
     // block user
     blockUserMessage,
     blockUserActionState,
+
+    // archive post
+    archivePostMessage,
+    archivePostActionState,
+    sessionStartModel,
   ];
 }
 

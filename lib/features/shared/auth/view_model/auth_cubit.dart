@@ -454,11 +454,19 @@ class AuthCubit extends Cubit<AuthState> {
         fromScreen: 'registration',
       ),
     );
+    emit(
+      state.copyWith(
+        signInWithAppleState: CubitStates.loading,
+        fromScreen: 'registration',
+      ),
+    );
 
     try {
+      // 1️⃣ Generate nonce
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
 
+      // 2️⃣ Apple Sign-In
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
@@ -524,6 +532,12 @@ class AuthCubit extends Cubit<AuthState> {
           );
         },
         (_) {
+          emit(
+            state.copyWith(
+              authAppleState: CubitStates.success,
+              fromScreen: 'registration',
+            ),
+          );
           emit(
             state.copyWith(
               authAppleState: CubitStates.success,

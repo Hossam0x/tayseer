@@ -77,6 +77,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
               text: context.tr(AppStrings.archive),
               icon: Icons.archive_outlined,
               onTap: onArchive,
+              isArchive: true,
             ),
             OptionItem(
               text: context.tr(AppStrings.delete),
@@ -193,6 +194,8 @@ class PostOptionsBottomSheet extends StatelessWidget {
           _showDeleteConfirmation(context);
         } else if (item.isBlock) {
           _showBlockConfirmation(context); // ✅ إضافة التحقق من البلوك
+        } else if (item.isArchive) {
+          _showArchiveConfirmation(context); // ✅ إضافة التحقق من الأرشفة
         } else {
           Navigator.pop(context);
           if (item.onTap != null) item.onTap!();
@@ -222,7 +225,6 @@ class PostOptionsBottomSheet extends StatelessWidget {
       imageUrl: AssetsData.deleteIcon,
       bottonText: context.tr(AppStrings.yes),
       onPressed: () {
-        Navigator.pop(context); // أغلق الديالوج
         Navigator.pop(context); // أغلق الـ BottomSheet
         if (onDelete != null) onDelete!();
       },
@@ -253,6 +255,27 @@ class PostOptionsBottomSheet extends StatelessWidget {
       },
     );
   }
+
+  void _showArchiveConfirmation(BuildContext context) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr(AppStrings.archivePostConfirmation), 
+      supTitle: context.tr(
+        AppStrings.archivePostConfirmationMessage,
+      ), // رسالة التأكيد
+      icon: Icons.archive,
+      bottonText: context.tr(AppStrings.yes),
+      onPressed: () {
+        Navigator.pop(context);
+        if (onArchive != null) onArchive!();
+      },
+      showCancelButton: true,
+      cancelText: context.tr(AppStrings.no),
+      onCancel: () {
+        Navigator.pop(context);
+      },
+    );
+  }
 }
 
 class OptionItem {
@@ -262,6 +285,7 @@ class OptionItem {
   final bool isDestructive;
   final bool isDelete;
   final bool isBlock; // ✅ إضافة خاصية isBlock
+  final bool isArchive;
   final Color? color;
 
   OptionItem({
@@ -269,6 +293,7 @@ class OptionItem {
     required this.icon,
     this.isDelete = false,
     this.isBlock = false, // ✅ القيمة الافتراضية
+    this.isArchive = false,
     this.onTap,
     this.isDestructive = false,
     this.color,

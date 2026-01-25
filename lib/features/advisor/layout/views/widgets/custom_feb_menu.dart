@@ -122,7 +122,9 @@ class _CustomFabMenuState extends State<CustomFabMenu>
         onTap: () {
           context.pushNamed(
             AppRouter.kAddPostView,
-            arguments: AddPostEnum.post,
+            arguments:{
+              "addPostEnum" : AddPostEnum.post,
+            },
           );
         },
       ),
@@ -132,7 +134,9 @@ class _CustomFabMenuState extends State<CustomFabMenu>
         onTap: () {
           context.pushNamed(
             AppRouter.kAddPostView,
-            arguments: AddPostEnum.video,
+            arguments:{
+              "addPostEnum" : AddPostEnum.video,
+            },
           );
         },
       ),
@@ -142,7 +146,9 @@ class _CustomFabMenuState extends State<CustomFabMenu>
         onTap: () {
           context.pushNamed(
             AppRouter.kAddPostView,
-            arguments: AddPostEnum.reel,
+            arguments:{
+              "addPostEnum" : AddPostEnum.reel,
+            },
           );
         },
       ),
@@ -150,10 +156,10 @@ class _CustomFabMenuState extends State<CustomFabMenu>
         icon: Icons.add_circle_outline,
         label: "ستوري",
         onTap: () {
-          context.pushNamed(
-            AppRouter.kAddPostView,
-            arguments: AddPostEnum.story,
-          );
+          // context.pushNamed(
+          //   AppRouter.kAddPostView,
+          //   arguments: AddPostEnum.story,
+          // );
         },
       ),
     ];

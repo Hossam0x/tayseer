@@ -127,6 +127,8 @@ class AuthRepoImpl implements AuthRepo {
           key: kuserData,
           value: jsonEncode(registerResponse.data?.user?.toJson()),
         );
+        kCurrentUserData = registerResponse.data?.user;
+
         return right(registerResponse);
       } else {
         final message = response['message'] ?? 'فشل التحقق من الكود.';
@@ -187,6 +189,7 @@ class AuthRepoImpl implements AuthRepo {
           key: kuserData,
           value: jsonEncode(authGoogleResponse.data?.user?.toJson()),
         );
+        kCurrentUserData = authGoogleResponse.data?.user;
         await CachNetwork.setBool(key: 'userGuest', value: false);
         kIsUserGuest = false;
         return right(authGoogleResponse);
@@ -233,11 +236,11 @@ class AuthRepoImpl implements AuthRepo {
 
       final success = response['success'] ?? true;
 
-      if (success == false) {
-        final authGoogleResponse = RegisterResponse.fromJson(response);
+      if (success == true) {
+        final authAppleResponse = RegisterResponse.fromJson(response);
         await CachNetwork.setData(
           key: ktoken,
-          value: authGoogleResponse.data?.token ?? '',
+          value: authAppleResponse.data?.token ?? '',
         );
         await CachNetwork.setData(
           key: kUserType,
@@ -248,10 +251,12 @@ class AuthRepoImpl implements AuthRepo {
         await CachNetwork.setBool(key: 'userGuest', value: false);
         await CachNetwork.setData(
           key: kuserData,
-          value: jsonEncode(authGoogleResponse.data?.user?.toJson()),
+          value: jsonEncode(authAppleResponse.data?.user?.toJson()),
         );
+        kCurrentUserData = authAppleResponse.data?.user;
+
         kIsUserGuest = false;
-        return right(authGoogleResponse);
+        return right(authAppleResponse);
       } else {
         final message =
             response['message'] ?? 'حدث خطأ غير معروف أثناء إنشاء الحساب';

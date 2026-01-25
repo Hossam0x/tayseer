@@ -8,7 +8,7 @@ class CustomAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
-    final fontSize = isMobile ? 16.0 : 20.0;
+    final fontSize = isMobile ? 18.0 : 22.0;
     final iconSize = isMobile ? 24.0 : 28.0;
     final spacing = isMobile ? 24.0 : 28.0;
     final paddingTop = isMobile ? 8.0 : 10.0;
@@ -37,7 +37,6 @@ class CustomAppBar extends StatelessWidget {
               children: [
                 GestureDetector(
                   onTap: () {
-                    // كود الرجوع للخلف
                     Navigator.pop(context);
                   },
                   child: Icon(
@@ -50,12 +49,11 @@ class CustomAppBar extends StatelessWidget {
                   title,
                   style: TextStyle(
                     fontSize: fontSize,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w900,
                     color: Colors.black54,
-                    fontFamily: 'Cairo',
                   ),
                 ),
-                SizedBox(width: spacing), // لموازنة العنوان في المنتصف
+                SizedBox(width: spacing),
               ],
             ),
           ),

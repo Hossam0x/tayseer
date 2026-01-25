@@ -2,9 +2,12 @@ import 'dart:developer';
 
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
+import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 import '../../../../my_import.dart';
 import '../reposiotry/home_repository.dart';
 
@@ -540,6 +543,65 @@ class HomeCubit extends Cubit<HomeState> {
       );
     });
   }
+ 
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  Archive POST
+  // ═══════════════════════════════════════════════════════════════════════════
+  void archivePost({required String postId}) {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    // ✅ حفظ البيانات الأصلية للـ Rollback
+    final originalIndex = state.posts.indexWhere((p) => p.postId == postId);
+    final originalCategoryId = state.selectedCategoryId;
+
+    // 1. Optimistic Update
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+    emit(
+      state
+          .updateCategoryPosts(
+            state.selectedCategoryId,
+            (data) => data.copyWith(posts: updatedPosts),
+          )
+          .copyWith(archivePostActionState: CubitStates.initial),
+    );
+
+    // 2. Server Request
+    homeRepository.archivePost(postId: postId).then((result) {
+      result.fold(
+        (failure) {
+          log('>>>>>>>>>>>>>>>>> Archive Post Failed: ${failure.message}');
+
+          // ✅ Rollback باستخدام الـ Helper Method
+          emit(
+            state.insertPostInCategory(
+              categoryId: originalCategoryId,
+              post: post,
+              index: originalIndex,
+            ),
+          );
+
+          emit(
+            state.copyWith(
+              archivePostActionState: CubitStates.failure,
+              archivePostMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          log('>>>>>>>>>>>>>>>>> Archive Post Success: $message');
+
+          emit(
+            state.copyWith(
+              archivePostActionState: CubitStates.success,
+              archivePostMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+  
   // ═══════════════════════════════════════════════════════════════════════════
   // 👁️ TOGGLE HIDE POST
   // ═══════════════════════════════════════════════════════════════════════════
@@ -609,7 +671,7 @@ class HomeCubit extends Cubit<HomeState> {
               // ❌ باقي بوستاته: احذفها
               continue;
             } else {
-              // ✅ بوستات ناس تانية: خليها 
+              // ✅ بوستات ناس تانية: خليها
               updatedPosts.add(post);
             }
           }
@@ -660,5 +722,23 @@ class HomeCubit extends Cubit<HomeState> {
     final posts = state.posts;
     final index = posts.indexWhere((p) => p.postId == postId);
     return index != -1 ? posts[index] : null;
+  }
+
+  final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
+
+  void sessionStart() {
+    log('📡 Setting up Session Start Listener');
+    socketHelper.listen('sessionStarted', (data) {
+      log('📡 Session Started Event Received: $data');
+
+      final response = SessionStartModel.fromJson(data);
+
+      emit(state.copyWith(sessionStartModel: response));
+      HomeEventBus.instance.notifysessionstart(response);
+
+      Future.delayed(Duration(milliseconds: 100), () {
+        emit(state.copyWith(sessionStartModel: null));
+      });
+    });
   }
 }
