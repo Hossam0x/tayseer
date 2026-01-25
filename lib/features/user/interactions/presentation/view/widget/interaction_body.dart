@@ -1,8 +1,8 @@
 import 'package:tayseer/core/widgets/custom_content_switcher.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/DefaultAppBar.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/Exploration.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/default_appbar.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/exploration_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/history_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_FilterChips.dart';
 import 'package:tayseer/my_import.dart';
@@ -119,12 +119,20 @@ class _InteractionBodyState extends State<InteractionBody> {
           padding: EdgeInsets.only(right: 10.w),
           child: DefaultAppBar(
             title: "التفاعلات",
-            leadingWidget: SvgPicture.asset(
-              AssetsData.kfilterIcon,
-              width: 22.w,
-              height: 22.h,
-              color: AppColors.secondary600,
-            ),
+              leadingWidget: GestureDetector(
+                onTap: () {
+                    context
+                .pushNamed(
+                  AppRouter.kInteractionFilterView,
+                );
+                },
+                child: SvgPicture.asset(
+                  AssetsData.kfilterIcon,
+                  width: 22.w,
+                  height: 22.h,
+                  color: AppColors.secondary600,
+                ),
+              ),
           ),
         ),
         SizedBox(height: 10.h),

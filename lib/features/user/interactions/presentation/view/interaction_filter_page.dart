@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/defaultappbar.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/default_appbar.dart';
 import 'package:tayseer/my_import.dart';
 
 class InteractionFilterPage extends StatelessWidget {

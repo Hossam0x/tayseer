@@ -1,7 +1,7 @@
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
-import '../../../data/Model/InteractionUserModel .dart';
+import '../../../data/Model/Iinteraction_usermodel .dart';
 import '../../Interactions_cubit/interactions_cubit.dart';
 
 class GreetingProfileCard extends StatelessWidget {

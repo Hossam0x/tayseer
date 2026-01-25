@@ -6,7 +6,8 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/Inte
 import 'package:tayseer/features/user/interactions/presentation/view/widget/greeting_interaction_card.dart';
 import 'package:tayseer/my_import.dart';
 
-import '../../../data/Model/InteractionUserModel .dart';
+import '../../../data/Model/Iinteraction_usermodel .dart';
+
 
 class Exploration extends StatefulWidget {
   const Exploration({super.key});

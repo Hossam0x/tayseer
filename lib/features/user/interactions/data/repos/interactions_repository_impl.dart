@@ -3,11 +3,12 @@ import 'package:dio/dio.dart';
 import 'package:tayseer/core/errors/failure.dart';
 import 'package:tayseer/core/utils/api_service.dart';
 import 'package:tayseer/core/utils/assets.dart';
-import 'package:tayseer/features/user/interactions/data/Model/HistoryResponseModel.dart';
+import 'package:tayseer/features/user/interactions/data/Model/history_response_model.dart';
 import 'package:tayseer/features/user/interactions/data/Model/exploration_response_model.dart';
-import 'package:tayseer/features/user/interactions/data/repos/InteractionsRepository.dart';
+import 'package:tayseer/features/user/interactions/data/repos/Iinteractions_repository.dart';
 
-import '../Model/InteractionUserModel .dart';
+import '../Model/Iinteraction_usermodel .dart';
+
 
 class InteractionsRepositoryImpl implements InteractionsRepository {
   final ApiService apiService;

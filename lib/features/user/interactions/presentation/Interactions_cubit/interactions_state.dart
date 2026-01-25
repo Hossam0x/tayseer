@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
-import '../../data/Model/InteractionUserModel .dart';
+import '../../data/Model/Iinteraction_usermodel .dart';
 
 class InteractionsState extends Equatable {
   // Exploration

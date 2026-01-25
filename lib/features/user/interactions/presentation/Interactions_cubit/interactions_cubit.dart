@@ -1,8 +1,8 @@
 import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
-import 'package:tayseer/features/user/interactions/data/repos/InteractionsRepository.dart';
-import '../../data/Model/InteractionUserModel .dart';
+import 'package:tayseer/features/user/interactions/data/repos/Iinteractions_repository.dart';
+import '../../data/Model/Iinteraction_usermodel .dart';
 import 'interactions_state.dart';
 
 class InteractionsCubit extends Cubit<InteractionsState> {

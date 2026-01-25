@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/StatusRibbonwidget.dart';
 import 'package:tayseer/my_import.dart';
+import '../../../data/Model/Iinteraction_usermodel .dart';
+import 'status_ribbon_widget.dart';
 
-import '../../../data/Model/InteractionUserModel .dart';
 
 class InteractionProfileCard extends StatelessWidget {
   final InteractionUserModel item;
