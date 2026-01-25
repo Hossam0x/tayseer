@@ -43,7 +43,6 @@ import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
-import 'package:tayseer/features/user/advisor_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/interactions/data/repos/InteractionsRepository.dart';
 import 'package:tayseer/features/user/interactions/data/repos/reposiotryImpl.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
@@ -241,16 +240,6 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<UserAdvisorProfileRepository>(
     () => UserProfileRepositoryImpl(getIt<ApiService>()),
   );
-  // Interactions Repository
-getIt.registerLazySingleton<InteractionsRepository>(
-  () => InteractionsRepositoryImpl(getIt<ApiService>()),
-);
-
-// Interactions Cubit
-getIt.registerFactory<InteractionsCubit>(
-  () => InteractionsCubit(getIt<InteractionsRepository>()),
-);
-  
 
   getIt.registerLazySingleton<MySpaceRepo>(
     () => MySpaceRepo(getIt<ApiService>()),
@@ -270,4 +259,16 @@ getIt.registerFactory<InteractionsCubit>(
       advisorSessionRepository: getIt<AdvisorSessionRepo>(),
     ),
   );
+
+
+  // Interactions Repository
+getIt.registerLazySingleton<InteractionsRepository>(
+  () => InteractionsRepositoryImpl(getIt<ApiService>()),
+);
+
+// Interactions Cubit
+getIt.registerFactory<InteractionsCubit>(
+  () => InteractionsCubit(getIt<InteractionsRepository>()),
+);
+  
 }
