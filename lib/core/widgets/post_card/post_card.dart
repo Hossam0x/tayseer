@@ -418,6 +418,7 @@ class _PostUserHeader extends StatelessWidget {
     return UserInfoHeader(
       name: post.name,
       avatar: post.avatar,
+      advisorId: post.advisorId,
       isVerified: post.isVerified,
       onMoreTap: onMoreTap ?? () {},
       subtitle: Row(

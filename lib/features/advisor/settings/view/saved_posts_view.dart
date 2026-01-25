@@ -1,12 +1,10 @@
-import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
+import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_card.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts_state.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
-import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class SavedPostsView extends StatelessWidget {
@@ -199,23 +197,23 @@ class SavedPostsView extends StatelessWidget {
       child: Column(
         children: [
           // Post Card
-          ProfilePostCard(
+          PostCard(
             post: post,
-            onReactionChanged: (postId, reactionType) {
-              // ⭐️ استدعاء Like
-              cubit.reactToPost(postId: postId, reactionType: reactionType);
-            },
-            onShareTap: (postId) {
-              // ⭐️ استدعاء Share
-              cubit.toggleSharePost(postId: postId);
-            },
-            onNavigateToDetails: (ctx, post, controller) {
-              _navigateToDetails(ctx, post, controller, cubit);
-            },
-            onHashtagTap: (hashtag) {
-              context.pushNamed(AppRouter.kAdvisorSearchView);
-            },
-            onMoreTap: () => _showOptionsBottomSheet(context, post, cubit),
+            // onReactionChanged: (postId, reactionType) {
+            //   // ⭐️ استدعاء Like
+            //   cubit.reactToPost(postId: postId, reactionType: reactionType);
+            // },
+            // onShareTap: (postId) {
+            //   // ⭐️ استدعاء Share
+            //   cubit.toggleSharePost(postId: postId);
+            // },
+            // onNavigateToDetails: (ctx, post, controller) {
+            //   _navigateToDetails(ctx, post, controller, cubit);
+            // },
+            // onHashtagTap: (hashtag) {
+            //   context.pushNamed(AppRouter.kAdvisorSearchView);
+            // },
+            // onMoreTap: () => _showOptionsBottomSheet(context, post, cubit),
           ),
 
           // Remove button
@@ -280,185 +278,183 @@ class SavedPostsView extends StatelessWidget {
     );
   }
 
-  void _navigateToDetails(
-    BuildContext context,
-    PostModel post,
-    VideoPlayerController? controller,
-    SavedPostsCubit cubit,
-  ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PostDetailsView(
-          post: post,
-          cachedController: controller,
-         callbacks: PostCallbacks(
-             postUpdatesStream: cubit.stream.map((state) {
-                          return state.posts.firstWhere(
-                            (p) => p.postId == post.postId,
-                            orElse: () => post,
-                          );
-                        }),
-                        onReactionChanged: (postId, reactionType) {
-                          cubit.reactToPost(
-                            postId: postId,
-                            reactionType: reactionType,
-                          );
-                        },
-                        onShareTap: (postId) {
-                          cubit.toggleSharePost(postId: postId);
-                        },
-                        onHashtagTap: (hashtag) {
-                          context.pushNamed(AppRouter.kAdvisorSearchView);
-                        },),
-        ),
-      ),
-    );
-  }
+  // void _navigateToDetails(
+  //   BuildContext context,
+  //   PostModel post,
+  //   VideoPlayerController? controller,
+  //   SavedPostsCubit cubit,
+  // ) {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (_) => PostDetailsView(
+  //         post: post,
+  //         cachedController: controller,
+  //         callbacks: PostCallbacks(
+  //           postUpdatesStream: cubit.stream.map((state) {
+  //             return state.posts.firstWhere(
+  //               (p) => p.postId == post.postId,
+  //               orElse: () => post,
+  //             );
+  //           }),
+  //           onReactionChanged: (postId, reactionType) {
+  //             cubit.reactToPost(postId: postId, reactionType: reactionType);
+  //           },
+  //           onShareTap: (postId) {
+  //             cubit.toggleSharePost(postId: postId);
+  //           },
+  //           onHashtagTap: (hashtag) {
+  //             context.pushNamed(AppRouter.kAdvisorSearchView);
+  //           },
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  void _showOptionsBottomSheet(
-    BuildContext context,
-    PostModel post,
-    SavedPostsCubit cubit,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Gap(12.h),
-              Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2.r),
-                ),
-              ),
-              Gap(16.h),
-              // ⭐️ أضف خيار الإزالة من المحفوظات
-              _buildOptionItem(
-                context,
-                icon: Icons.bookmark_remove_rounded,
-                title: 'إزالة من المحفوظات',
-                color: AppColors.kRedColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  _confirmRemove(context, post, cubit);
-                },
-              ),
-              // ⭐️ أضف خيار المشاركة
-              _buildOptionItem(
-                context,
-                icon: Icons.share_rounded,
-                title: 'مشاركة',
-                color: AppColors.kprimaryColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  cubit.toggleSharePost(postId: post.postId);
-                },
-              ),
-              // ⭐️ أضف خيار حفظ/إلغاء حفظ
-              // _buildOptionItem(
-              //   context,
-              //   icon: post.isSaved
-              //       ? Icons.bookmark_remove_rounded
-              //       : Icons.bookmark_add_rounded,
-              //   title: post.isSaved ? 'إلغاء الحفظ' : 'حفظ',
-              //   color: AppColors.kprimaryColor,
-              //   onTap: () {
-              //     Navigator.pop(context);
-              //     cubit.toggleSavePost(postId: post.postId);
-              //     AppToast.success(
-              //       context,
-              //       post.isSaved ? 'تم إلغاء الحفظ' : 'تم الحفظ بنجاح',
-              //     );
-              //   },
-              // ),
-              Gap(16.h),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // void _showOptionsBottomSheet(
+  //   BuildContext context,
+  //   PostModel post,
+  //   SavedPostsCubit cubit,
+  // ) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     backgroundColor: Colors.white,
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+  //     ),
+  //     builder: (context) {
+  //       return SafeArea(
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             Gap(12.h),
+  //             Container(
+  //               width: 40.w,
+  //               height: 4.h,
+  //               decoration: BoxDecoration(
+  //                 color: Colors.grey.shade300,
+  //                 borderRadius: BorderRadius.circular(2.r),
+  //               ),
+  //             ),
+  //             Gap(16.h),
+  //             // ⭐️ أضف خيار الإزالة من المحفوظات
+  //             _buildOptionItem(
+  //               context,
+  //               icon: Icons.bookmark_remove_rounded,
+  //               title: 'إزالة من المحفوظات',
+  //               color: AppColors.kRedColor,
+  //               onTap: () {
+  //                 Navigator.pop(context);
+  //                 _confirmRemove(context, post, cubit);
+  //               },
+  //             ),
+  //             // ⭐️ أضف خيار المشاركة
+  //             _buildOptionItem(
+  //               context,
+  //               icon: Icons.share_rounded,
+  //               title: 'مشاركة',
+  //               color: AppColors.kprimaryColor,
+  //               onTap: () {
+  //                 Navigator.pop(context);
+  //                 cubit.toggleSharePost(postId: post.postId);
+  //               },
+  //             ),
+  //             // ⭐️ أضف خيار حفظ/إلغاء حفظ
+  //             // _buildOptionItem(
+  //             //   context,
+  //             //   icon: post.isSaved
+  //             //       ? Icons.bookmark_remove_rounded
+  //             //       : Icons.bookmark_add_rounded,
+  //             //   title: post.isSaved ? 'إلغاء الحفظ' : 'حفظ',
+  //             //   color: AppColors.kprimaryColor,
+  //             //   onTap: () {
+  //             //     Navigator.pop(context);
+  //             //     cubit.toggleSavePost(postId: post.postId);
+  //             //     AppToast.success(
+  //             //       context,
+  //             //       post.isSaved ? 'تم إلغاء الحفظ' : 'تم الحفظ بنجاح',
+  //             //     );
+  //             //   },
+  //             // ),
+  //             Gap(16.h),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
-  Widget _buildOptionItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title, style: Styles.textStyle16.copyWith(color: color)),
-      onTap: onTap,
-    );
-  }
+  // Widget _buildOptionItem(
+  //   BuildContext context, {
+  //   required IconData icon,
+  //   required String title,
+  //   required Color color,
+  //   required VoidCallback onTap,
+  // }) {
+  //   return ListTile(
+  //     leading: Icon(icon, color: color),
+  //     title: Text(title, style: Styles.textStyle16.copyWith(color: color)),
+  //     onTap: onTap,
+  //   );
+  // }
 
-  // في _confirmRemove:
-  void _confirmRemove(
-    BuildContext context,
-    PostModel post,
-    SavedPostsCubit cubit,
-  ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(
-            'إزالة من المحفوظات',
-            style: Styles.textStyle18Bold,
-            textAlign: TextAlign.center,
-          ),
-          content: Text(
-            'هل أنت متأكد من إزالة هذا المنشور من المحفوظات؟',
-            style: Styles.textStyle14,
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                'إلغاء',
-                style: Styles.textStyle14.copyWith(
-                  color: AppColors.secondary400,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
+  // // في _confirmRemove:
+  // void _confirmRemove(
+  //   BuildContext context,
+  //   PostModel post,
+  //   SavedPostsCubit cubit,
+  // ) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (dialogContext) {
+  //       return AlertDialog(
+  //         title: Text(
+  //           'إزالة من المحفوظات',
+  //           style: Styles.textStyle18Bold,
+  //           textAlign: TextAlign.center,
+  //         ),
+  //         content: Text(
+  //           'هل أنت متأكد من إزالة هذا المنشور من المحفوظات؟',
+  //           style: Styles.textStyle14,
+  //           textAlign: TextAlign.center,
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.pop(dialogContext),
+  //             child: Text(
+  //               'إلغاء',
+  //               style: Styles.textStyle14.copyWith(
+  //                 color: AppColors.secondary400,
+  //               ),
+  //             ),
+  //           ),
+  //           TextButton(
+  //             onPressed: () async {
+  //               Navigator.pop(dialogContext);
 
-                // ⭐️ استخدام try-catch مع mounted check
-                try {
-                  await cubit.removeFromSaved(post.postId);
+  //               // ⭐️ استخدام try-catch مع mounted check
+  //               try {
+  //                 await cubit.removeFromSaved(post.postId);
 
-                  // ⭐️ التحقق من mounted قبل show toast
-                  if (context.mounted) {
-                    AppToast.success(context, 'تمت الإزالة من المحفوظات');
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    AppToast.error(context, 'حدث خطأ أثناء الإزالة');
-                  }
-                }
-              },
-              child: Text(
-                'إزالة',
-                style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  //                 // ⭐️ التحقق من mounted قبل show toast
+  //                 if (context.mounted) {
+  //                   AppToast.success(context, 'تمت الإزالة من المحفوظات');
+  //                 }
+  //               } catch (e) {
+  //                 if (context.mounted) {
+  //                   AppToast.error(context, 'حدث خطأ أثناء الإزالة');
+  //                 }
+  //               }
+  //             },
+  //             child: Text(
+  //               'إزالة',
+  //               style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
+  //             ),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 }

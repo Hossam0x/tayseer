@@ -1,7 +1,7 @@
 // features/advisor/user_profile/views/widgets/user_posts_tab.dart
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
+import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_card.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -139,14 +139,14 @@ class UserAdvisorPostsTab extends StatelessWidget {
           final post = posts[index];
           return Column(
             children: [
-              ProfilePostCard(
+              PostCard(
                 post: post,
-                onReactionChanged: (postId, reactionType) {
-                  cubit.reactToPost(postId: postId, reactionType: reactionType);
-                },
-                onShareTap: (postId) {
-                  cubit.toggleSharePost(postId: postId);
-                },
+                // onReactionChanged: (postId, reactionType) {
+                //   cubit.reactToPost(postId: postId, reactionType: reactionType);
+                // },
+                // onShareTap: (postId) {
+                //   cubit.toggleSharePost(postId: postId);
+                // },
                 onNavigateToDetails: (ctx, post, controller) {
                   Navigator.push(
                     ctx,
@@ -178,9 +178,9 @@ class UserAdvisorPostsTab extends StatelessWidget {
                     ),
                   );
                 },
-                onHashtagTap: (hashtag) {
-                  context.pushNamed(AppRouter.kAdvisorSearchView);
-                },
+                // onHashtagTap: (hashtag) {
+                //   context.pushNamed(AppRouter.kAdvisorSearchView);
+                // },
               ),
               if (index < posts.length - 1) Gap(16.h),
             ],
