@@ -1,9 +1,12 @@
+// auth_cubit.dart
+
 import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/sign_in_%20google_error.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
@@ -24,9 +27,6 @@ class AuthCubit extends Cubit<AuthState> {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
     clientId: DefaultFirebaseOptions.currentPlatform.iosClientId,
-
-    // لو محتاج idToken لازم تضيف serverClientId
-    // serverClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
   );
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
@@ -315,11 +315,13 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> signInWithGoogle() async {
+  // ✅ تم التعديل - إضافة userType parameter
+  Future<void> signInWithGoogle({required UserTypeEnum userType}) async {
     emit(
       state.copyWith(
         signInWithGoogleState: CubitStates.loading,
         fromScreen: 'registration',
+        currentAuthUserType: userType,
       ),
     );
 
@@ -331,6 +333,7 @@ class AuthCubit extends Cubit<AuthState> {
           state.copyWith(
             fromScreen: 'registration',
             signInWithGoogleState: CubitStates.failure,
+            currentAuthUserType: userType,
             errorMessage: "تم إلغاء العملية",
           ),
         );
@@ -356,14 +359,16 @@ class AuthCubit extends Cubit<AuthState> {
           state.copyWith(
             signInWithGoogleState: CubitStates.success,
             fromScreen: 'registration',
+            currentAuthUserType: userType,
           ),
         );
 
-        sendAuthGoogle(idToken: firebaseIdToken);
+        sendAuthGoogle(idToken: firebaseIdToken, userType: userType);
       } else {
         emit(
           state.copyWith(
             signInWithGoogleState: CubitStates.failure,
+            currentAuthUserType: userType,
             errorMessage: "فشل في الحصول على Firebase Token",
           ),
         );
@@ -372,6 +377,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         state.copyWith(
           signInWithGoogleState: CubitStates.failure,
+          currentAuthUserType: userType,
           errorMessage: e.message ?? "خطأ في Firebase",
         ),
       );
@@ -379,6 +385,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         state.copyWith(
           signInWithGoogleState: CubitStates.failure,
+          currentAuthUserType: userType,
           errorMessage: getGoogleSignInErrorMessage(e.code),
         ),
       );
@@ -386,14 +393,24 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         state.copyWith(
           signInWithGoogleState: CubitStates.failure,
+          currentAuthUserType: userType,
           errorMessage: "حدث خطأ غير متوقع: $e",
         ),
       );
     }
   }
 
-  Future<void> sendAuthGoogle({required String idToken}) async {
-    emit(state.copyWith(authGoogleState: CubitStates.loading));
+  // ✅ تم التعديل - إضافة userType parameter
+  Future<void> sendAuthGoogle({
+    required String idToken,
+    required UserTypeEnum userType,
+  }) async {
+    emit(
+      state.copyWith(
+        authGoogleState: CubitStates.loading,
+        currentAuthUserType: userType,
+      ),
+    );
 
     try {
       final response = await _repo.authGoogle(idToken: idToken);
@@ -406,6 +423,7 @@ class AuthCubit extends Cubit<AuthState> {
               signInWithGoogleState: CubitStates.failure,
               errorMessage: failure.message,
               fromScreen: 'registration',
+              currentAuthUserType: userType,
             ),
           );
 
@@ -424,6 +442,7 @@ class AuthCubit extends Cubit<AuthState> {
               authGoogleState: CubitStates.success,
               signInWithGoogleState: CubitStates.success,
               fromScreen: 'registration',
+              currentAuthUserType: userType,
             ),
           );
           Future.delayed(const Duration(milliseconds: 100), () {
@@ -441,32 +460,27 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           authGoogleState: CubitStates.failure,
           signInWithGoogleState: CubitStates.failure,
+          currentAuthUserType: userType,
           errorMessage: e.toString(),
         ),
       );
     }
   }
 
-  Future<void> signInWithApple() async {
+  // ✅ تم التعديل - إضافة userType parameter
+  Future<void> signInWithApple({required UserTypeEnum userType}) async {
     emit(
       state.copyWith(
         signInWithAppleState: CubitStates.loading,
         fromScreen: 'registration',
-      ),
-    );
-    emit(
-      state.copyWith(
-        signInWithAppleState: CubitStates.loading,
-        fromScreen: 'registration',
+        currentAuthUserType: userType,
       ),
     );
 
     try {
-      // 1️⃣ Generate nonce
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
 
-      // 2️⃣ Apple Sign-In
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
@@ -489,12 +503,13 @@ class AuthCubit extends Cubit<AuthState> {
       debugPrint('firebaseIdToken:::::::::::::::::$firebaseIdToken');
 
       if (firebaseIdToken != null) {
-        await sendAuthApple(idToken: firebaseIdToken);
+        await sendAuthApple(idToken: firebaseIdToken, userType: userType);
 
         emit(
           state.copyWith(
             signInWithAppleState: CubitStates.success,
             fromScreen: 'registration',
+            currentAuthUserType: userType,
           ),
         );
       }
@@ -503,6 +518,7 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           fromScreen: 'registration',
           signInWithAppleState: CubitStates.failure,
+          currentAuthUserType: userType,
           errorMessage: e.toString(),
         ),
       );
@@ -513,11 +529,11 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(signInWithAppleState: CubitStates.initial));
   }
 
-  Future<void> sendAuthApple({required String idToken}) async {
-    // emit(state.copyWith(authAppleState: CubitStates.loading
-
-    // ));
-
+  // ✅ تم التعديل - إضافة userType parameter
+  Future<void> sendAuthApple({
+    required String idToken,
+    required UserTypeEnum userType,
+  }) async {
     try {
       final response = await _repo.authApple(idToken: idToken);
 
@@ -528,6 +544,7 @@ class AuthCubit extends Cubit<AuthState> {
               authAppleState: CubitStates.failure,
               errorMessage: failure.message,
               fromScreen: 'registration',
+              currentAuthUserType: userType,
             ),
           );
         },
@@ -536,12 +553,7 @@ class AuthCubit extends Cubit<AuthState> {
             state.copyWith(
               authAppleState: CubitStates.success,
               fromScreen: 'registration',
-            ),
-          );
-          emit(
-            state.copyWith(
-              authAppleState: CubitStates.success,
-              fromScreen: 'registration',
+              currentAuthUserType: userType,
             ),
           );
 
@@ -556,7 +568,8 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       emit(
         state.copyWith(
-          guestLoginState: CubitStates.failure,
+          authAppleState: CubitStates.failure,
+          currentAuthUserType: userType,
           errorMessage: e.toString(),
         ),
       );
@@ -860,9 +873,6 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void set60MinPrice(String price) {
-    // Update the price and ensure the 60-minutes switch stays enabled
-    // while the user has entered a non-empty price. Avoid toggling the
-    // switch on every input change which caused the field to collapse.
     final shouldEnable = price.isNotEmpty;
     emit(
       state.copyWith(price60Min: price, isSixtyMinutesSelected: shouldEnable),

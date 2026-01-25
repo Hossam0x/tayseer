@@ -17,16 +17,29 @@ class RegisrationAdvisorView extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             child: BlocConsumer<AuthCubit, AuthState>(
               listenWhen: (previous, current) {
+                // ✅ تحقق من نوع المستخدم - يجب أن يكون asConsultant فقط
+                if (current.currentAuthUserType != null &&
+                    current.currentAuthUserType != UserTypeEnum.asConsultant) {
+                  return false;
+                }
+
                 return previous.registerState != current.registerState ||
                     previous.signInWithAppleState !=
                         current.signInWithAppleState ||
                     previous.signInWithGoogleState !=
                         current.signInWithGoogleState ||
-                    previous.authGoogleState != current.authGoogleState;
+                    previous.authGoogleState != current.authGoogleState ||
+                    previous.authAppleState != current.authAppleState;
               },
               listener: (context, state) {
                 if (state.fromScreen != 'registration') return;
-                if (selectedUserType == UserTypeEnum.user) return;
+
+                // ✅ تحقق إضافي من نوع المستخدم
+                if (state.currentAuthUserType != null &&
+                    state.currentAuthUserType != UserTypeEnum.asConsultant) {
+                  return;
+                }
+
                 if (state.signInWithGoogleState == CubitStates.loading ||
                     state.signInWithAppleState == CubitStates.loading ||
                     state.registerState == CubitStates.loading) {
@@ -74,6 +87,7 @@ class RegisrationAdvisorView extends StatelessWidget {
                     );
                   }
                 }
+
                 if (state.signInWithAppleState == CubitStates.success &&
                     state.authAppleState == CubitStates.success) {
                   if (Navigator.canPop(context)) {
@@ -247,7 +261,11 @@ class RegisrationAdvisorView extends StatelessWidget {
                                       ],
                                       text: context.tr('login_google'),
                                       icon: AssetsData.kGoogleImage,
-                                      onTap: authCubit.signInWithGoogle,
+                                      onTap: () {
+                                        authCubit.signInWithGoogle(
+                                          userType: UserTypeEnum.asConsultant,
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -290,7 +308,11 @@ class RegisrationAdvisorView extends StatelessWidget {
                                         ],
                                         text: context.tr('login_apple'),
                                         icon: AssetsData.kAppleIcon,
-                                        onTap: authCubit.signInWithApple,
+                                        onTap: () {
+                                          authCubit.signInWithApple(
+                                            userType: UserTypeEnum.asConsultant,
+                                          );
+                                        },
                                       ),
                                     ],
                                   ),

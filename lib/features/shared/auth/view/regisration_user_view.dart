@@ -1,3 +1,5 @@
+// registration_view.dart
+
 import 'dart:ui';
 
 import 'package:tayseer/core/enum/user_type.dart';
@@ -36,16 +38,28 @@ class _RegisrationViewState extends State<RegisrationView> {
               physics: const BouncingScrollPhysics(),
               child: BlocConsumer<AuthCubit, AuthState>(
                 listenWhen: (previous, current) {
+                  // ✅ تحقق من نوع المستخدم - يجب أن يكون user فقط
+                  if (current.currentAuthUserType != null &&
+                      current.currentAuthUserType != UserTypeEnum.user) {
+                    return false;
+                  }
+
                   return previous.registerState != current.registerState ||
                       previous.signInWithAppleState !=
                           current.signInWithAppleState ||
                       previous.signInWithGoogleState !=
                           current.signInWithGoogleState ||
                       previous.authGoogleState != current.authGoogleState ||
-                      previous.authAppleState != current .authAppleState ;
+                      previous.authAppleState != current.authAppleState;
                 },
                 listener: (context, state) {
                   if (state.fromScreen != 'registration') return;
+
+                  // ✅ تحقق إضافي من نوع المستخدم
+                  if (state.currentAuthUserType != null &&
+                      state.currentAuthUserType != UserTypeEnum.user) {
+                    return;
+                  }
 
                   // عرض الـ loading
                   if (state.signInWithGoogleState == CubitStates.loading ||
@@ -62,10 +76,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                   if (state.signInWithGoogleState == CubitStates.failure ||
                       state.signInWithAppleState == CubitStates.failure ||
                       state.registerState == CubitStates.failure ||
-                      state.authGoogleState == CubitStates.failure||
-                  state.authAppleState== CubitStates.failure
-
-                  ) {
+                      state.authGoogleState == CubitStates.failure ||
+                      state.authAppleState == CubitStates.failure) {
                     // إغلاق أي dialog مفتوح
                     if (Navigator.canPop(context)) {
                       context.pop();
@@ -82,7 +94,6 @@ class _RegisrationViewState extends State<RegisrationView> {
                   }
 
                   // نجاح تسجيل الدخول بجوجل
-
                   if (state.signInWithGoogleState == CubitStates.success &&
                       state.authGoogleState == CubitStates.success) {
                     if (Navigator.canPop(context)) {
@@ -101,6 +112,7 @@ class _RegisrationViewState extends State<RegisrationView> {
                     }
                   }
 
+                  // نجاح تسجيل الدخول بأبل
                   if (state.signInWithAppleState == CubitStates.success &&
                       state.authAppleState == CubitStates.success) {
                     if (Navigator.canPop(context)) {
@@ -224,7 +236,6 @@ class _RegisrationViewState extends State<RegisrationView> {
 
                                       buildLoginButton(
                                         context,
-
                                         colors: [
                                           HexColor('e9bd7b'),
                                           HexColor('ce8f93'),
@@ -270,6 +281,7 @@ class _RegisrationViewState extends State<RegisrationView> {
                                           ),
                                         ),
 
+                                      // ✅ تم التعديل - تمرير userType
                                       buildLoginButton(
                                         context,
                                         colors: [
@@ -277,12 +289,13 @@ class _RegisrationViewState extends State<RegisrationView> {
                                           HexColor('9499c7'),
                                           HexColor('80b0d8'),
                                         ],
-
                                         text: context.tr('login_google'),
                                         icon: AssetsData.kGoogleImage,
                                         onTap: () {
                                           selectedUserType = UserTypeEnum.user;
-                                          authCubit.signInWithGoogle();
+                                          authCubit.signInWithGoogle(
+                                            userType: UserTypeEnum.user,
+                                          );
                                         },
                                       ),
                                     ],
@@ -317,6 +330,7 @@ class _RegisrationViewState extends State<RegisrationView> {
                                             ),
                                           ),
 
+                                        // ✅ تم التعديل - تمرير userType
                                         buildLoginButton(
                                           context,
                                           colors: [
@@ -326,7 +340,13 @@ class _RegisrationViewState extends State<RegisrationView> {
                                           ],
                                           text: context.tr('login_apple'),
                                           icon: AssetsData.kAppleIcon,
-                                          onTap: authCubit.signInWithApple,
+                                          onTap: () {
+                                            selectedUserType =
+                                                UserTypeEnum.user;
+                                            authCubit.signInWithApple(
+                                              userType: UserTypeEnum.user,
+                                            );
+                                          },
                                         ),
                                       ],
                                     ),
