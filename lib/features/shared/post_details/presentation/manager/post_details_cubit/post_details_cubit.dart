@@ -226,7 +226,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       id: kCurrentUserData?.id ?? "..",
       name: kCurrentUserData?.name ?? 'أنت',
       userName: kCurrentUserData?.username ?? '@you',
-      avatar: myProfileImage,
+      avatar: kCurrentUserData?.image,
       isVerified: kCurrentUserData?.isVerified ?? false,
       userType: selectedUserType?.name ?? 'user',
     );

@@ -1,7 +1,12 @@
 import 'package:tayseer/my_import.dart';
 
 class HeaderTopRow extends StatelessWidget {
-  const HeaderTopRow({super.key});
+  final bool isChatsSelected; // ✅ أضف هذا
+
+  const HeaderTopRow({
+    super.key,
+    required this.isChatsSelected, // ✅ أضف هذا
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +24,12 @@ class HeaderTopRow extends StatelessWidget {
         children: [
           InkWell(
             onTap: () {
-              context.pushNamed(AppRouter.kChatRequest);
+              // ✅ التنقل حسب السيكشن المختار
+              if (isChatsSelected) {
+                context.pushNamed(AppRouter.kChatRequest);
+              } else {
+                context.pushNamed(AppRouter.pendingsession);
+              }
             },
             child: Container(
               padding: EdgeInsets.all(padding),
@@ -39,7 +49,8 @@ class HeaderTopRow extends StatelessWidget {
             ),
           ),
           Text(
-            "محادثاتك",
+            // ✅ تغيير العنوان حسب السيكشن (اختياري)
+            isChatsSelected ? "محادثاتك" : "جلساتك",
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: FontWeight.bold,

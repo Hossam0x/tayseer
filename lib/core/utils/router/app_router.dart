@@ -1,10 +1,12 @@
+import 'dart:developer';
+
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
-import 'package:tayseer/features/advisor/chat/presentation/view/conversation.dart';
+import 'package:tayseer/features/advisor/chat/presentation/view/advisor_chat_screen.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
 import 'package:tayseer/features/advisor/profille/views/boost_account_view.dart';
@@ -12,6 +14,7 @@ import 'package:tayseer/features/advisor/profille/views/boost_properties_view.da
 import 'package:tayseer/features/advisor/profille/views/consultation_topics_view.dart';
 import 'package:tayseer/features/advisor/profille/views/location_selection_view.dart';
 import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/order_session_view.dart';
 import 'package:tayseer/features/advisor/settings/view/account_management_view.dart';
 import 'package:tayseer/features/advisor/settings/view/appointments_view.dart';
 import 'package:tayseer/features/advisor/settings/view/archive_view.dart';
@@ -30,7 +33,7 @@ import 'package:tayseer/features/advisor/event_detail/view/update_event_view.dar
 import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/map/map_view.dart';
 import 'package:tayseer/features/advisor/notification/presentation/view/notification_view.dart';
-import 'package:tayseer/features/advisor/session/view/session_details_view.dart';
+import 'package:tayseer/features/advisor/session/presentation/view/session_details_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/bookings_log_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/transactions_log_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/wallet_view.dart';
@@ -51,6 +54,20 @@ import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_cubit.dart';
+import 'package:tayseer/features/user/my_space/data/model/booking_data.dart';
+import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
+import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
+import 'package:tayseer/features/user/my_space/data/model/sessoin_model.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/AdvisorProfile/Advisor_information.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/rating/user_rating_advisor.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/reschedule/user_reschedule.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/sessionDetails/session_details_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/sessionHistory/session_history_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/ticketSession/ticket_session_success.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/ticketSession/ticket_session_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/voic_call/voice_call_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/session_history/session_history_view_body.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
 import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
 import 'package:tayseer/features/user/questions/children_living_status_view.dart';
@@ -128,6 +145,14 @@ abstract class AppRouter {
   static const kChatRequest = '/chatrequest';
   static const kChatSearchView = '/ChatSearchView';
   static const kConversitionView = '/ConversitionView';
+  static const advisorchatprofile = '/advisorchatprofile';
+  static const sessionhistory = '/sessionhistory';
+  static const incommingsessiondetails = '/incommingsessiondetails';
+  static const kUserRescheduleView = '/UserRescheduleView';
+  static const userRatingAdvisor = '/UserRatingAdvisor';
+  static const userticketSessionView = '/UserTicketSessionView';
+  static const sessionticketsuccessview = '/SessionTicketSuccessView';
+  static const pendingsession = '/kOrderSessionView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -166,6 +191,7 @@ abstract class AppRouter {
   static const kUserProfileView = '/userProfileView';
   static const kFollowersView = '/followers_view';
   static const kFollowingView = '/following_view';
+  static const voiceCallView = '/VoiceCallView';
   static const kRegisrationAdvisorView = '/RegisrationAdvisorView';
 
   // static String getInitialRoute() {
@@ -648,9 +674,17 @@ abstract class AppRouter {
             child: ActivationSuccessView(),
           ),
         );
+      case AppRouter.userRatingAdvisor:
+        final args = settings.arguments as Map<String, dynamic>;
+        final data = args['sessiondata'] as SessionDetailsDataResponse;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => RatingView(data: data),
+        );
 
       // advisor routes
       case kAdvisorLayoutView:
+        log(settings.arguments.toString());
         final args = settings.arguments as Map<String, dynamic>?;
         final userType = args != null && args['currentUserType'] != null
             ? args['currentUserType'] as UserTypeEnum
@@ -739,7 +773,7 @@ abstract class AppRouter {
       case kConversitionView:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => ChatScreenWithOverlay(
+          builder: (_) => AdvisorChatScreen(
             receiverId: settings.arguments != null
                 ? (settings.arguments as Map<String, dynamic>)['receiverid']
                       as String
@@ -757,6 +791,10 @@ abstract class AppRouter {
                 (settings.arguments as Map<String, dynamic>?)?['isBlocked']
                     as bool? ??
                 false,
+            isHaveSession:
+                (settings.arguments as Map<String, dynamic>?)?['isHaveSession']
+                    as bool? ??
+                true,
             onBlockStatusChanged:
                 (settings.arguments
                         as Map<String, dynamic>?)?['onBlockStatusChanged']
@@ -768,6 +806,100 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => const NotificationView(),
         );
+      case advisorchatprofile:
+        final args = settings.arguments as Map<String, dynamic>;
+
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) =>
+              AdvisorInformation(userid: args['advisorid'] as String),
+        );
+      case AppRouter.sessionhistory:
+        final args = settings.arguments as Map<String, dynamic>?;
+
+        final cubit = args?['cubit'] as AdvisorProfileCubit?;
+
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => cubit != null
+              ? BlocProvider<AdvisorProfileCubit>.value(
+                  value: cubit,
+                  child: const SessionHistoryViewBody(),
+                )
+              : const SessionHistoryViewBody(),
+        );
+      case incommingsessiondetails:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) =>
+              UsersessionDetailsView(sessionId: settings.arguments as String),
+        );
+      case kUserRescheduleView:
+        final args = settings.arguments as Map<String, dynamic>?;
+
+        final SessionDetailsDataResponse? data = args?['oldBookingData'];
+
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => UserReschedule(
+            advisorId: args?['advisorId'] ?? '',
+            title: args?['title'] ?? 'اعاده جدوله',
+            oldBookingData: data,
+          ),
+        );
+      // في app_router.dart
+
+      case AppRouter.userticketSessionView:
+        final sessionData = settings.arguments as SessionData;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => TicketSessionView(sessionData: sessionData),
+        );
+      case sessionticketsuccessview:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const BookingSuccessView(),
+        );
+      case AppRouter.voiceCallView:
+        final args = settings.arguments as Map<String, dynamic>?;
+
+        if (args == null) {
+          return MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              body: Center(child: Text('Error: No arguments provided')),
+            ),
+          );
+        }
+
+        final callID = args['callID'] as String? ?? '';
+        final currentUserID = args['currentUserID'] as String? ?? '';
+        final currentUserName = args['currentUserName'] as String? ?? 'User';
+        final currentUserAvatarUrl =
+            args['currentUserAvatarUrl'] as String? ?? '';
+
+        final rawParticipants = args['participants'] as List<dynamic>? ?? [];
+        final participants = rawParticipants
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => CallPage(
+            callID: callID,
+            userID: currentUserID,
+            userName: currentUserName,
+            avatarUrl: currentUserAvatarUrl,
+            participants: participants,
+          ),
+        );
+
+      case pendingsession:
+        return MaterialPageRoute(
+          builder: (_) {
+            return OrderSessionView();
+          },
+        );
+
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;
       //   return PageRouteBuilder(

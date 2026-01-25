@@ -2,9 +2,12 @@ import 'dart:developer';
 
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
+import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 import '../../../../my_import.dart';
 import '../reposiotry/home_repository.dart';
 
@@ -668,7 +671,7 @@ class HomeCubit extends Cubit<HomeState> {
               // ❌ باقي بوستاته: احذفها
               continue;
             } else {
-              // ✅ بوستات ناس تانية: خليها 
+              // ✅ بوستات ناس تانية: خليها
               updatedPosts.add(post);
             }
           }
@@ -719,5 +722,23 @@ class HomeCubit extends Cubit<HomeState> {
     final posts = state.posts;
     final index = posts.indexWhere((p) => p.postId == postId);
     return index != -1 ? posts[index] : null;
+  }
+
+  final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
+
+  void sessionStart() {
+    log('📡 Setting up Session Start Listener');
+    socketHelper.listen('sessionStarted', (data) {
+      log('📡 Session Started Event Received: $data');
+
+      final response = SessionStartModel.fromJson(data);
+
+      emit(state.copyWith(sessionStartModel: response));
+      HomeEventBus.instance.notifysessionstart(response);
+
+      Future.delayed(Duration(milliseconds: 100), () {
+        emit(state.copyWith(sessionStartModel: null));
+      });
+    });
   }
 }
