@@ -52,6 +52,9 @@ import 'package:tayseer/features/shared/auth/view/select_session_duration_view.d
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
+import 'package:tayseer/features/user/advisor_profile/views/user_profile_view.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
+import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_cubit.dart';
@@ -193,6 +196,8 @@ abstract class AppRouter {
   static const kFollowingView = '/following_view';
   static const voiceCallView = '/VoiceCallView';
   static const kRegisrationAdvisorView = '/RegisrationAdvisorView';
+  static const kInteractionFilterView = '/InteractionFilterView';
+
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -215,7 +220,11 @@ abstract class AppRouter {
           page: const UserLayoutView(),
           routeSettings: settings,
         );
-
+  case kInteractionFilterView:
+        return SlideLeftRoute(
+          page: const InteractionFilterPage(),
+          routeSettings: settings,
+        );
       case kEditPersonalDataView:
         return SlideLeftRoute(
           page: const EditPersonalDataView(),

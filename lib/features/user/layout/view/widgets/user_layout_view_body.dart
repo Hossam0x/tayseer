@@ -1,8 +1,9 @@
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/interactions_View.dart';
 
-import 'package:tayseer/features/user/layout/views/widgets/user_nav_bar.dart';
+import 'package:tayseer/features/user/layout/view/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_view.dart';
@@ -56,18 +57,16 @@ class UserLayOutViewBody extends StatelessWidget {
               context.pushNamed(AppRouter.kChooseGenderView);
             },
           ),
-
           GuestLockWidget(
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-            titleBott: "اكمل بياناتك",
-            onTap: () {
-              context.pushNamed(AppRouter.kChooseGenderView);
-            },
           ),
-
-          const UserProfileView(),
+          GuestLockWidget(
+            message: 'إنشاء ملفك الشخصي أولًا',
+            description:
+                'التسجيل بيسمح لك بإنشاء ملفك وعرض الملفات المناسبة لك.',
+          ),
         ];
 
       case UserTypeEnum.guest:

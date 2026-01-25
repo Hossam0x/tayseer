@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:tayseer/core/enum/auth_enum.dart';
-import 'package:tayseer/core/widgets/custom_background.dart';
 import 'package:tayseer/features/shared/auth/view/widget/custom_step_header.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
