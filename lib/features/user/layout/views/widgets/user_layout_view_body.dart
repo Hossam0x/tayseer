@@ -57,16 +57,6 @@ class UserLayOutViewBody extends StatelessWidget {
             },
           ),
 
-          GuestLockWidget(
-            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-            description:
-                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-            titleBott: "اكمل بياناتك",
-            onTap: () {
-              context.pushNamed(AppRouter.kChooseGenderView);
-            },
-          ),
-
           const UserProfileView(),
         ];
 
