@@ -5,7 +5,7 @@ import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/core/widgets/post_card/real_video_player.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_images_grid.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/my_import.dart';

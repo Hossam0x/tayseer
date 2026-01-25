@@ -22,44 +22,48 @@ class LocalNotification {
     await Firebase.initializeApp();
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // 1️⃣ طلب إذن الإشعارات أولًا
+    await _requestNotificationPermission();
+
+    // 2️⃣ الآن نحصل على FCM token
     String? fcmToken = await FirebaseMessaging.instance.getToken();
     if (fcmToken != null && fcmToken.isNotEmpty) {
       await prefs.setString('fcm_token', fcmToken);
-      debugPrint(':::::::::::::::::::fcm_token: $fcmToken');
+      debugPrint('::::::::::::::::::: FCM Token: $fcmToken');
     } else {
-      debugPrint('FCM token is null or empty');
+      debugPrint('FCM token is null or empty, retrying in 2 seconds...');
+      // Retry بعد ثانيتين (مفيد على iOS)
+      await Future.delayed(const Duration(seconds: 2));
+      fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        await prefs.setString('fcm_token', fcmToken);
+        debugPrint('::::::::::::::::::: FCM Token (retry): $fcmToken');
+      } else {
+        debugPrint('Failed to get FCM token after retry');
+      }
     }
-    //test notification display
-    // _displayNotification(
-    //   "اهلا بك😉",
-    //   "نتاكد ان الاشعارات شغاله مع تحياتي المهندس خالد❤",
-    //   {"key": "value"},
-    // );
-    // Create Android notification channel
 
+    // 3️⃣ إنشاء قناة الإشعارات للأندرويد
     await _createNotificationChannel();
 
-    // Request user permission for notifications
-    await _requestNotificationPermission();
-
-    // Initialize notification settings for Android and iOS
+    // 4️⃣ إعدادات flutter_local_notifications
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@drawable/app_logo_icon');
+    AndroidInitializationSettings('@drawable/app_logo_icon');
 
     final DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-          requestSoundPermission: true,
-          requestBadgePermission: true,
-          requestAlertPermission: true,
-        );
+    DarwinInitializationSettings(
+      requestSoundPermission: true,
+      requestBadgePermission: true,
+      requestAlertPermission: true,
+    );
 
     final InitializationSettings initializationSettings =
-        InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsIOS,
-        );
+    InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
 
-    // Initialize flutterLocalNotificationsPlugin
     await _flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
@@ -70,14 +74,11 @@ class LocalNotification {
       },
     );
 
+    // 5️⃣ Handlers للإشعارات
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       print("Foreground notification received!");
-      print("Title: ${message.notification?.title}");
-      print("Body: ${message.notification?.body}");
-      print("Data: ${message.data}");
-
       if (message.notification?.title != null &&
           message.notification?.body != null) {
         await _displayNotification(
@@ -92,10 +93,8 @@ class LocalNotification {
       print('App opened from notification: ${message.notification?.title}');
       _handleNotificationClick(null, message.data);
     });
-
-    String? token = await FirebaseMessaging.instance.getToken();
-    print("FCM Token: $token");
   }
+
 
   // Create notification channel for Android
   Future<void> _createNotificationChannel() async {

@@ -2,9 +2,12 @@ import 'dart:developer';
 
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
+import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 import '../../../../my_import.dart';
 import '../reposiotry/home_repository.dart';
 
@@ -424,19 +427,267 @@ class HomeCubit extends Cubit<HomeState> {
   // 💾 SAVE POST
   // ═══════════════════════════════════════════════════════════════════════════
 
-  void toggleSavePost({required String postId}) {
+  Future<void> toggleSavePost({required String postId}) async {
+    // 1. العثور على البوست
     final post = _findPost(postId);
     if (post == null) return;
 
+    // تحديد الحالة الحالية والإجراء المطلوب
+    final isCurrentlySaved = post.isSaved;
+    final isRemove = isCurrentlySaved;
+
+    // 2. Optimistic Update (تحديث الواجهة فوراً)
+    // ⚠️ بنصفر الـ saveActionState هنا عشان نجهز لاستقبال النتيجة
     emit(
-      state.updatePostInCurrentCategory(
+      state
+          .updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(isSaved: !isCurrentlySaved),
+          )
+          .copyWith(saveActionState: CubitStates.initial),
+    );
+
+    // 3. استدعاء السيرفر
+    final result = await homeRepository.savedPost(
+      postId: postId,
+      isRemove: isRemove,
+    );
+
+    // 4. التعامل مع النتيجة
+    result.fold(
+      (failure) {
+        log('>>>>>>>>>>>>>>>>> Save Post Failed: ${failure.message}');
+
+        // Rollback: في حالة الفشل نرجع الحالة زي ما كانت
+        // ⚠️ ونبعت حالة Failure عشان التوست الأحمر يظهر
+        emit(
+          state
+              .updatePostInAllCategories(
+                postId,
+                (p) => p.copyWith(isSaved: isCurrentlySaved),
+              )
+              .copyWith(
+                saveActionState: CubitStates.failure,
+                saveMessage: failure.message,
+              ),
+        );
+      },
+      (message) {
+        log('>>>>>>>>>>>>>>>>> Save Post Success: $message');
+
+        // النجاح: الـ UI متحدث بالفعل (Optimistic)، بس محتاجين نبعت Success عشان التوست الأخضر
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.success,
+            saveMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🗑 DELETE POST
+  // ═══════════════════════════════════════════════════════════════════════════
+  void deletePost({required String postId}) {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    // ✅ حفظ البيانات الأصلية للـ Rollback
+    final originalIndex = state.posts.indexWhere((p) => p.postId == postId);
+    final originalCategoryId = state.selectedCategoryId;
+
+    // 1. Optimistic Update
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+    emit(
+      state
+          .updateCategoryPosts(
+            state.selectedCategoryId,
+            (data) => data.copyWith(posts: updatedPosts),
+          )
+          .copyWith(deletePostActionState: CubitStates.initial),
+    );
+
+    // 2. Server Request
+    homeRepository.deletePost(postId: postId).then((result) {
+      result.fold(
+        (failure) {
+          log('>>>>>>>>>>>>>>>>> Delete Post Failed: ${failure.message}');
+
+          // ✅ Rollback باستخدام الـ Helper Method
+          emit(
+            state.insertPostInCategory(
+              categoryId: originalCategoryId,
+              post: post,
+              index: originalIndex,
+            ),
+          );
+
+          emit(
+            state.copyWith(
+              deletePostActionState: CubitStates.failure,
+              deletePostMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          log('>>>>>>>>>>>>>>>>> Delete Post Success: $message');
+
+          emit(
+            state.copyWith(
+              deletePostActionState: CubitStates.success,
+              deletePostMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+ 
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  Archive POST
+  // ═══════════════════════════════════════════════════════════════════════════
+  void archivePost({required String postId}) {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    // ✅ حفظ البيانات الأصلية للـ Rollback
+    final originalIndex = state.posts.indexWhere((p) => p.postId == postId);
+    final originalCategoryId = state.selectedCategoryId;
+
+    // 1. Optimistic Update
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+    emit(
+      state
+          .updateCategoryPosts(
+            state.selectedCategoryId,
+            (data) => data.copyWith(posts: updatedPosts),
+          )
+          .copyWith(archivePostActionState: CubitStates.initial),
+    );
+
+    // 2. Server Request
+    homeRepository.archivePost(postId: postId).then((result) {
+      result.fold(
+        (failure) {
+          log('>>>>>>>>>>>>>>>>> Archive Post Failed: ${failure.message}');
+
+          // ✅ Rollback باستخدام الـ Helper Method
+          emit(
+            state.insertPostInCategory(
+              categoryId: originalCategoryId,
+              post: post,
+              index: originalIndex,
+            ),
+          );
+
+          emit(
+            state.copyWith(
+              archivePostActionState: CubitStates.failure,
+              archivePostMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          log('>>>>>>>>>>>>>>>>> Archive Post Success: $message');
+
+          emit(
+            state.copyWith(
+              archivePostActionState: CubitStates.success,
+              archivePostMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 👁️ TOGGLE HIDE POST
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  void toggleHidePost({required String postId}) {
+    // 1. جيب البوست الحالي
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    // 2. اعكس الحالة
+    final newHideState = !post.isHidden;
+
+    // 3. Update UI فوراً
+    emit(
+      state.updatePostInAllCategories(
         postId,
-        (p) => p.copyWith(isSaved: !p.isSaved),
+        (p) => p.copyWith(isHidden: newHideState),
       ),
     );
 
-    // TODO: API Call
-    // homeRepository.toggleSavePost(postId: postId, isSaved: !post.isSaved);
+    // 4. بعت للسيرفر في الـ Background
+    homeRepository.hidePost(postId: postId, isHide: newHideState);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🚫 BLOCK USER
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> blockUser({
+    required String visiblePostId,
+    required String advisorId,
+  }) async {
+    // 1. Loading State
+    emit(state.copyWith(blockUserActionState: CubitStates.loading));
+
+    // 2. Server Request
+    final result = await homeRepository.blockUser(userId: advisorId);
+
+    result.fold(
+      (failure) {
+        log('>>>>>>>>>>>>>>>>> Block User Failed: ${failure.message}');
+
+        // ❌ فشل: اعرض رسالة خطأ بس
+        emit(
+          state.copyWith(
+            blockUserActionState: CubitStates.failure,
+            blockUserMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        log('>>>>>>>>>>>>>>>>> Block User Success: $message');
+
+        // ✅ نجاح: حدث الـ State
+        final newMap = <String?, CategoryPostsData>{};
+
+        for (final entry in state.categoryPostsMap.entries) {
+          final categoryId = entry.key;
+          final categoryData = entry.value;
+
+          final updatedPosts = <PostModel>[];
+
+          for (final post in categoryData.posts) {
+            if (post.postId == visiblePostId) {
+              // ✅ البوست الأصلي: isBlocked = true
+              updatedPosts.add(post.copyWith(isBlocked: true));
+            } else if (post.advisorId == advisorId) {
+              // ❌ باقي بوستاته: احذفها
+              continue;
+            } else {
+              // ✅ بوستات ناس تانية: خليها
+              updatedPosts.add(post);
+            }
+          }
+
+          newMap[categoryId] = categoryData.copyWith(posts: updatedPosts);
+        }
+
+        emit(
+          state.copyWith(
+            categoryPostsMap: newMap,
+            blockUserActionState: CubitStates.success,
+            blockUserMessage: message,
+          ),
+        );
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -471,5 +722,23 @@ class HomeCubit extends Cubit<HomeState> {
     final posts = state.posts;
     final index = posts.indexWhere((p) => p.postId == postId);
     return index != -1 ? posts[index] : null;
+  }
+
+  final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
+
+  void sessionStart() {
+    log('📡 Setting up Session Start Listener');
+    socketHelper.listen('sessionStarted', (data) {
+      log('📡 Session Started Event Received: $data');
+
+      final response = SessionStartModel.fromJson(data);
+
+      emit(state.copyWith(sessionStartModel: response));
+      HomeEventBus.instance.notifysessionstart(response);
+
+      Future.delayed(Duration(milliseconds: 100), () {
+        emit(state.copyWith(sessionStartModel: null));
+      });
+    });
   }
 }

@@ -28,8 +28,8 @@ class tayseerSocketHelper {
     _connectionCompleter = Completer<bool>();
     log('🔧 Initializing socket connection...');
 
+    // final String? token = CachNetwork.getStringData(key: 'token');
     final String? token = CachNetwork.getStringData(key: 'token');
-
     log('Token: $token');
 
     if (token == null) {
@@ -44,7 +44,7 @@ class tayseerSocketHelper {
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
-          .setExtraHeaders({'Authorization': token})
+          .setExtraHeaders({'Authorization': 'Bearer $token'})
           .build(),
     );
 

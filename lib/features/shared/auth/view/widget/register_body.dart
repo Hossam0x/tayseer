@@ -1,5 +1,4 @@
 import 'package:tayseer/core/enum/user_type.dart';
-import 'package:tayseer/core/functions/route_by_last_question.dart';
 import 'package:tayseer/core/widgets/custom_text_f_field_title.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -34,14 +33,14 @@ class RegisterBody extends StatelessWidget {
             ),
           );
           Future.delayed(const Duration(seconds: 2), () {
-            if (state.verify == true) {
-              final route = routeByLastQuestion(state.lastQuestionNumber);
-              selectedUserType == UserTypeEnum.asConsultant
-                  ? context.pushNamed(AppRouter.kPersonalInfoAsConsultantView)
-                  : context.pushNamed(route);
-            } else {
-              context.pushNamed(AppRouter.kOtpView);
-            }
+            // if (state.verify == true) {
+            //   final route = routeByLastQuestion(state.lastQuestionNumber);
+            //   selectedUserType == UserTypeEnum.asConsultant
+            //       ? context.pushNamed(AppRouter.kPersonalInfoAsConsultantView)
+            //       : context.pushNamed(route);
+            // } else {
+            // }
+            context.pushNamed(AppRouter.kOtpView);
           });
         }
         if (state.registerState == CubitStates.failure) {
@@ -114,7 +113,7 @@ class RegisterBody extends StatelessWidget {
                   CustomBotton(
                     useGradient: true,
                     width: context.width,
-                    title: 'إنشاء حساب',
+                    title: context.tr('log_In'),
                     onPressed: () {
                       authCubit.logInUser(fromRegistrationScreen: true);
                     },

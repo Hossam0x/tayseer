@@ -1,117 +1,123 @@
-// 1. انسخ هذه الدالة وضعها خارج الـ build أو في ملف منفصل
 import 'package:tayseer/my_import.dart';
 
 void showConfirmationDialog({
   required BuildContext context,
-  required String imagePath, // الصورة المتغيرة
-  required String title, // العنوان المتغير
-  required String subtitle, // النص الفرعي المتغير
-  required VoidCallback onConfirm, // الأكشن عند الضغط على نعم
+  required String imagePath,
+  required String title,
+  required String subtitle,
+  required VoidCallback onConfirm,
 }) {
-  showDialog(
+  showGeneralDialog(
     context: context,
-    builder: (dialogContext) {
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          width: 396,
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: Colors.white,
-            image: DecorationImage(
-              image: AssetImage(
-                AssetsData.homeBackgroundImage,
-              ), // خلفية الديالوج ثابتة
-              fit: BoxFit.cover,
+    barrierDismissible: true,
+    barrierLabel: 'confirmation',
+    barrierColor: Colors.black.withOpacity(0.4),
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (_, __, ___) {
+      return const SizedBox.shrink();
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final curvedAnimation = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutBack,
+      );
+
+      return ScaleTransition(
+        scale: curvedAnimation,
+        child: FadeTransition(
+          opacity: animation,
+          child: Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 16),
-
-              // --- الصورة المتغيرة ---
-              AppImage(imagePath, width: 76, fit: BoxFit.cover),
-
-              SizedBox(height: 16),
-
-              // --- العنوان المتغير ---
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            child: Container(
+              width: 396,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                image: DecorationImage(
+                  image: AssetImage(AssetsData.homeBackgroundImage),
+                  fit: BoxFit.cover,
+                ),
               ),
-
-              SizedBox(height: 12),
-
-              // --- النص الفرعي المتغير ---
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-              ),
-
-              SizedBox(height: 32),
-
-              Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // --- زر نعم (الأخضر) ---
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(dialogContext); // يغلق الديالوج أولاً
-                        onConfirm(); // ثم ينفذ الكود الخاص بك
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF2ECC71),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'نعم',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                  const SizedBox(height: 16),
+                  AppImage(imagePath, width: 76, fit: BoxFit.cover),
+                  const SizedBox(height: 16),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  SizedBox(width: 16),
-
-                  // --- زر لا (الأحمر) ---
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(dialogContext); // إغلاق فقط
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFE74C3C),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'لا',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                  const SizedBox(height: 12),
+                  Text(
+                    subtitle,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
+                  const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            onConfirm();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2ECC71),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'نعم',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE74C3C),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'لا',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
-              SizedBox(height: 16),
-            ],
+            ),
           ),
         ),
       );

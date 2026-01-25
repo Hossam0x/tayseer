@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/utils/colors.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
@@ -89,6 +90,10 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
                   isSelectionMode: selectionState.isSelectionMode,
                   isSystemMessage: msg.messageType == 'system',
                   onLongPress: () {
+                    FocusScope.of(context).unfocus();
+
+                    HapticFeedback.mediumImpact(); // اهتزاز متوسط
+
                     if (!selectionState.isSelectionMode) {
                       widget.onMessageLongPress?.call(msg, messageKey);
                     }

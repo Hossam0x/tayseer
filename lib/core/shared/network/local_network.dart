@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/model/login_data.dart';
 import 'package:tayseer/my_import.dart';
@@ -8,26 +9,40 @@ class CachNetwork {
   static cacheInitializaion() async {
     sharedPref = await SharedPreferences.getInstance();
 
-    // kShowOnBoarding = await CachNetwork.getBoolData(key: 'onBoarding') ?? true;
+    kIsUserGuest = CachNetwork.getBoolData(key: 'userGuest') ?? true;
 
-    kIsUserGuest = await CachNetwork.getBoolData(key: 'userGuest') ?? true;
+    final userDataString = await CachNetwork.getData(key: kuserData);
 
-    final userDataString = await CachNetwork.getData(key: 'userData');
-
-    if (userDataString != null) {
-      final userDataJson = jsonDecode(userDataString);
-      kCurrentUserData = LoginData.fromJson(userDataJson);
+    if (userDataString != null && userDataString.isNotEmpty) {
+      try {
+        final userDataJson = jsonDecode(userDataString) as Map<String, dynamic>;
+        kCurrentUserData = UserModel.fromJson(userDataJson);
+      } catch (e) {
+        debugPrint('Error parsing user data from cache: $e');
+        kCurrentUserData = null;
+      }
+    } else {
+      kCurrentUserData = null;
     }
 
-    final userTypeString = await CachNetwork.getData(key: 'user_type');
+    debugPrint("kCurrentUserData is  :::::::::::: $kCurrentUserData");
 
-    if (userTypeString != null) {
-      selectedUserType = UserTypeEnum.values.firstWhere(
-        (e) => e.name == userTypeString,
-      );
-      debugPrint('selectedUserType===$selectedUserType');
+    final userTypeString = await CachNetwork.getData(key: kUserType);
+    if (userTypeString != null && userTypeString.isNotEmpty) {
+      try {
+        selectedUserType = UserTypeEnum.values.firstWhere(
+              (e) => e.name == userTypeString,
+        );
+        debugPrint('selectedUserType === $selectedUserType');
+      } catch (e) {
+        debugPrint('Error parsing user type from cache: $e');
+        selectedUserType = UserTypeEnum.user;
+      }
+    } else {
+      selectedUserType = UserTypeEnum.user;
     }
   }
+
 
   static Future<bool> setData({
     required String key,

@@ -66,12 +66,7 @@ class GuestLockWidget extends StatelessWidget {
                     useGradient: true,
                     title: 'إنشاء حساب',
                     onPressed: () {
-                      // showDialog(
-                      //   context: context,
-                      //   builder: (context) {
-                      //     return Dialog(child: const LockPopUp());
-                      //   },
-                      // );
+                      context.pushNamed(AppRouter.kChooseGenderView);
                     },
                   ),
                 ],

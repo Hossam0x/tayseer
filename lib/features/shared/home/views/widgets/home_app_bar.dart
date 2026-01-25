@@ -38,7 +38,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 ),
                 child: Row(
                   children: [
-                    MyProfileImage(imageUrl: userImage),
+                    MyProfileImage(imageUrl: kCurrentUserData?.image ),
                     Gap(context.responsiveWidth(14)),
                     Expanded(
                       child: Column(

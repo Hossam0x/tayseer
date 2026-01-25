@@ -13,6 +13,7 @@ class EventDetailBody extends StatelessWidget {
     final double cardHalfHeight = 60.0;
     return Scaffold(
       body: SingleChildScrollView(
+        physics: ClampingScrollPhysics(),
         child: BlocBuilder<EventDetailCubit, EventDetailState>(
           builder: (context, state) {
             if (state.eventDetailStatus == CubitStates.loading) {

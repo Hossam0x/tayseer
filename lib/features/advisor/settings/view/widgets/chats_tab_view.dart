@@ -15,12 +15,7 @@ class ChatsTabView extends StatelessWidget {
     return BlocConsumer<ArchivedChatsCubit, ArchivedChatsState>(
       listener: (context, state) {
         if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: AppColors.kRedColor,
-            ),
-          );
+          AppToast.error(context, state.errorMessage.toString());
           context.read<ArchivedChatsCubit>().clearError();
         }
       },

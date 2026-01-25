@@ -4,6 +4,7 @@
 
 import 'dart:developer';
 
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 
@@ -55,9 +56,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateBasedOnToken() async {
-    await Future.delayed(const Duration(seconds: 4));
+    await Future.delayed(const Duration(seconds: 12));
     if (!mounted) return;
-    String? token = CachNetwork.getStringData(key: 'token');
+    String? token = CachNetwork.getStringData(key: ktoken);
     if (mounted) {
       if (token.isNotEmpty) {
         selectedUserType == UserTypeEnum.asConsultant
@@ -68,7 +69,6 @@ class _SplashScreenState extends State<SplashScreen>
       }
     }
   }
-
   // @override
   // void dispose() {
   //   _controller.dispose();

@@ -6,7 +6,7 @@ import 'package:tayseer/core/utils/animation/fly_animation.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -45,7 +45,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
   // Drag variables
   double _dragY = 0.0;
   bool _isDragging = false;
-  
+
   // ✅ متغير جديد للتحكم في حالة الزوم
   bool _isZoomed = false;
 
@@ -54,7 +54,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
 
   // Stream subscription
   late PostModel? _currentPost;
-  StreamSubscription<PostModel>? _postSubscription;
+  StreamSubscription<PostModel?>? _postSubscription;
 
   @override
   void initState() {
@@ -74,8 +74,16 @@ class _ImageViewerViewState extends State<ImageViewerView>
     _resetController.addListener(_onResetAnimation);
   }
 
-  void _onPostUpdated(PostModel updatedPost) {
-    if (mounted && updatedPost.postId == widget.postId) {
+  void _onPostUpdated(PostModel? updatedPost) {
+    if (!mounted) return;
+
+    // ✅ لو البوست اتحذف (null) -> اخرج
+    if (updatedPost == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    if (updatedPost.postId == widget.postId) {
       setState(() => _currentPost = updatedPost);
     }
   }
@@ -150,10 +158,8 @@ class _ImageViewerViewState extends State<ImageViewerView>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => PostDetailsView(
-          post: post,
-          callbacks: widget.callbacks,
-        ),
+        builder: (_) =>
+            PostDetailsView(post: post, callbacks: widget.callbacks),
       ),
     );
   }
@@ -164,8 +170,10 @@ class _ImageViewerViewState extends State<ImageViewerView>
 
   @override
   Widget build(BuildContext context) {
-    final dragRatio = (_dragY.abs() / MediaQuery.of(context).size.height)
-        .clamp(0.0, 1.0);
+    final dragRatio = (_dragY.abs() / MediaQuery.of(context).size.height).clamp(
+      0.0,
+      1.0,
+    );
     final backgroundOpacity = (1.0 - dragRatio * 2).clamp(0.0, 1.0);
     final scale = (1.0 - dragRatio * 0.3).clamp(0.5, 1.0);
 
@@ -184,10 +192,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
             onVerticalDragEnd: _onVerticalDragEnd,
             child: Transform.translate(
               offset: Offset(0, _dragY),
-              child: Transform.scale(
-                scale: scale,
-                child: _buildImageSlider(),
-              ),
+              child: Transform.scale(scale: scale, child: _buildImageSlider()),
             ),
           ),
 
@@ -263,16 +268,16 @@ class _ImageViewerViewState extends State<ImageViewerView>
       },
       itemBuilder: (context, index) {
         final imageUrl = widget.images[index];
-        
+
         // ✅ استخدام الويدجت الجديد المخصص للزوم
         return _ZoomableImage(
           imageUrl: imageUrl,
           postId: widget.postId,
           onTap: _onImageTap,
           onZoomStatusChanged: (isZoomed) {
-             if (_isZoomed != isZoomed) {
-               setState(() => _isZoomed = isZoomed);
-             }
+            if (_isZoomed != isZoomed) {
+              setState(() => _isZoomed = isZoomed);
+            }
           },
           onDoubleTapReaction: (tapPosition) {
             // منطق التفاعل (القلب الطائر)
@@ -285,7 +290,10 @@ class _ImageViewerViewState extends State<ImageViewerView>
               endKey: _reactionDestinationKey,
               child: _buildFlyingHeart(),
               onComplete: () {
-                widget.callbacks.onReactionChanged?.call(widget.postId, ReactionType.love);
+                widget.callbacks.onReactionChanged?.call(
+                  widget.postId,
+                  ReactionType.love,
+                );
               },
             );
           },
@@ -308,10 +316,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
             color: Colors.black.withOpacity(0.2),
             borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
             border: Border(
-              top: BorderSide(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
+              top: BorderSide(color: Colors.white.withOpacity(0.3), width: 1.5),
             ),
           ),
           child: SafeArea(
@@ -333,7 +338,10 @@ class _ImageViewerViewState extends State<ImageViewerView>
                   myReaction: post.myReaction,
                   isRepostedByMe: post.isRepostedByMe,
                   onReactionChanged: (reaction) {
-                    widget.callbacks.onReactionChanged?.call(post.postId, reaction);
+                    widget.callbacks.onReactionChanged?.call(
+                      post.postId,
+                      reaction,
+                    );
                   },
                   onCommentTap: () => _navigateToPostDetails(post),
                   onShareTap: () {
@@ -382,8 +390,10 @@ class _ZoomableImage extends StatefulWidget {
   State<_ZoomableImage> createState() => _ZoomableImageState();
 }
 
-class _ZoomableImageState extends State<_ZoomableImage> with SingleTickerProviderStateMixin {
-  final TransformationController _transformationController = TransformationController();
+class _ZoomableImageState extends State<_ZoomableImage>
+    with SingleTickerProviderStateMixin {
+  final TransformationController _transformationController =
+      TransformationController();
   late AnimationController _animationController;
   Animation<Matrix4>? _animation;
 
@@ -394,18 +404,18 @@ class _ZoomableImageState extends State<_ZoomableImage> with SingleTickerProvide
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    
+
     // مراقبة التغييرات في حجم الصورة
     _transformationController.addListener(() {
-       _checkZoomStatus();
+      _checkZoomStatus();
     });
   }
 
   void _checkZoomStatus() {
-     final scale = _transformationController.value.getMaxScaleOnAxis();
-     // إذا كان الاسكيل أكبر من 1 بقليل، نعتبرها مكبرة
-     final isZoomed = scale > 1.01;
-     widget.onZoomStatusChanged(isZoomed);
+    final scale = _transformationController.value.getMaxScaleOnAxis();
+    // إذا كان الاسكيل أكبر من 1 بقليل، نعتبرها مكبرة
+    final isZoomed = scale > 1.01;
+    widget.onZoomStatusChanged(isZoomed);
   }
 
   @override
@@ -418,19 +428,23 @@ class _ZoomableImageState extends State<_ZoomableImage> with SingleTickerProvide
   void _handleDoubleTap(TapDownDetails details) {
     if (_transformationController.value != Matrix4.identity()) {
       // إذا كانت مكبرة -> أرجعها للحجم الطبيعي
-      final animation = Matrix4Tween(
-        begin: _transformationController.value,
-        end: Matrix4.identity(),
-      ).animate(
-        CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-      );
+      final animation =
+          Matrix4Tween(
+            begin: _transformationController.value,
+            end: Matrix4.identity(),
+          ).animate(
+            CurvedAnimation(
+              parent: _animationController,
+              curve: Curves.easeOut,
+            ),
+          );
 
       _animation = animation;
-      
+
       _animationController.addListener(() {
         _transformationController.value = _animation!.value;
       });
-      
+
       _animationController.forward(from: 0);
     } else {
       // إذا كانت طبيعية -> شغل انيميشن القلب

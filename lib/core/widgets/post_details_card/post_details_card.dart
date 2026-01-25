@@ -1,8 +1,9 @@
+import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_card.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
-import 'package:tayseer/features/shared/home/model/comment_model.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/comment_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostDetailsCard extends StatelessWidget {
@@ -12,6 +13,7 @@ class PostDetailsCard extends StatelessWidget {
 
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
+  final CommentCallbacks commentCallbacks;
 
   /// Callback when comment input should be focused
   final VoidCallback? onCommentTap;
@@ -48,6 +50,7 @@ class PostDetailsCard extends StatelessWidget {
   const PostDetailsCard({
     super.key,
     required this.post,
+    this.commentCallbacks = CommentCallbacks.empty,
     this.cachedController,
     this.scrollController,
     this.callbacks = const PostCallbacks(),
@@ -140,7 +143,8 @@ class PostDetailsCard extends StatelessWidget {
       onSaveEdit: onSaveEdit,
       onSendReply: onSendReply,
       onLoadReplies: onLoadReplies,
-      getCommentKey: getCommentKey, // ✅ هنا الـ FIX
+      getCommentKey: getCommentKey, 
+      commentCallbacks: commentCallbacks, 
     );
   }
 }
@@ -199,7 +203,7 @@ class _CommentsList extends StatelessWidget {
   final void Function(String commentId, String text)? onSendReply;
   final void Function(String commentId)? onLoadReplies;
   final GlobalKey Function(String commentId)? getCommentKey;
-
+final CommentCallbacks commentCallbacks;
   const _CommentsList({
     required this.comments,
     required this.hasMore,
@@ -218,6 +222,7 @@ class _CommentsList extends StatelessWidget {
     this.onSendReply,
     this.onLoadReplies,
     this.getCommentKey,
+    required this.commentCallbacks,
   });
 
   @override
@@ -238,6 +243,7 @@ class _CommentsList extends StatelessWidget {
             Container(
               key: getCommentKey?.call(comment.id),
               child: _CommentItem(
+                callbacks: commentCallbacks, // ✅ تمرير الـ Bundle
                 comment: comment,
                 isEditing: editingCommentId == comment.id,
                 isReplying: activeReplyId == comment.id,
@@ -309,9 +315,10 @@ class _CommentItem extends StatefulWidget {
   final void Function(CommentModel reply)? onLikeReply;
   final void Function(String replyId, String content)? onSaveReplyEdit;
   final GlobalKey Function(String commentId)? getReplyKey;
-
+final CommentCallbacks callbacks;
   const _CommentItem({
     required this.comment,
+    required this.callbacks,
     this.isEditing = false,
     this.isReplying = false,
     this.isEditLoading = false,
@@ -342,15 +349,12 @@ class _CommentItemState extends State<_CommentItem> {
   bool? _lastIsReplyLoading;
   bool? _lastIsLoadingReplies;
 
-  @override
+@override
   Widget build(BuildContext context) {
-    // ✅ لو الكومنت مؤقت، اعرضه بشكل Disabled
-    if (widget.comment.isTemp) {
-      return _buildTempComment(context);
-    }
+    if (widget.comment.isTemp) return _buildTempComment(context);
 
-    final shouldRebuild =
-        _cachedWidget == null ||
+    // ✅ تحديث الـ Logic ليعتمد على الـ Bundle
+    final shouldRebuild = _cachedWidget == null ||
         widget.comment != _lastComment ||
         widget.isEditing != _lastIsEditing ||
         widget.isReplying != _lastIsReplying ||
@@ -368,27 +372,16 @@ class _CommentItemState extends State<_CommentItem> {
 
       _cachedWidget = CommentCard(
         comment: widget.comment,
-        isReply: false,
+        callbacks: widget.callbacks, // ✅ تمرير الـ Bundle
         isEditing: widget.isEditing,
         isReplying: widget.isReplying,
         isEditLoading: widget.isEditLoading,
         isReplyLoading: widget.isReplyLoading,
         isLoadingReplies: widget.comment.isLoadingReplies,
-        onLikeTap: widget.onLikeTap,
-        onReplyTap: widget.onReplyTap,
-        onEditTap: widget.onEditTap,
-        onCancelEdit: widget.onCancelEdit,
-        onCancelReply: widget.onCancelReply,
-        onSaveEdit: widget.onSaveEdit,
-        onSendReply: widget.onSendReply,
-        onLoadReplies: widget.onLoadReplies,
-        onLikeReply: widget.onLikeReply,
       );
     }
-
     return _cachedWidget!;
   }
-
   // ✅ Widget للكومنت المؤقت
   Widget _buildTempComment(BuildContext context) {
     return IgnorePointer(
@@ -403,15 +396,7 @@ class _CommentItemState extends State<_CommentItem> {
           isEditLoading: false,
           isReplyLoading: false,
           isLoadingReplies: false,
-          onLikeTap: null,
-          onReplyTap: null,
-          onEditTap: null,
-          onCancelEdit: null,
-          onCancelReply: null,
-          onSaveEdit: null,
-          onSendReply: null,
-          onLoadReplies: null,
-          onLikeReply: null,
+          callbacks: CommentCallbacks.empty,
         ),
       ),
     );

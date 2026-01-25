@@ -4,9 +4,10 @@ import 'package:tayseer/core/functions/count_formate.dart';
 import 'package:tayseer/core/widgets/follow_button.dart';
 import 'package:tayseer/core/widgets/post_card/circular_icon_button.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
+import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
 import 'package:tayseer/core/widgets/post_card/reaction_like_button.dart';
 import 'package:tayseer/core/widgets/post_card/share_button.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -40,18 +41,30 @@ class ReelsOverlay extends StatelessWidget {
           const Spacer(),
 
           // 2. Bottom Content (UserInfo + Actions)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // أ. الأزرار الجانبية (نضعها أولاً لتظهر على اليمين في العربي)
-                _buildSideActions(context),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withOpacity(0.0),
+                  Colors.black.withOpacity(0.3),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // أ. الأزرار الجانبية (نضعها أولاً لتظهر على اليمين في العربي)
+                  _buildSideActions(context),
 
-                Gap(10.w), // مسافة بين الأزرار والنص
-                // ب. معلومات المستخدم (تأخذ باقي المساحة وتظهر على اليسار)
-                Expanded(child: _buildUserInfo(context)),
-              ],
+                  Gap(10.w), // مسافة بين الأزرار والنص
+                  // ب. معلومات المستخدم (تأخذ باقي المساحة وتظهر على اليسار)
+                  Expanded(child: _buildUserInfo(context)),
+                ],
+              ),
             ),
           ),
           Gap(24.h),
@@ -113,94 +126,110 @@ class ReelsOverlay extends StatelessWidget {
   }
 
   Widget _buildUserInfo(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
       children: [
-        Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  FollowButton(
-                    isFollowing: post.isFollowing,
-                    onTap: () {
-                      // Call follow/unfollow API
-                    },
-                  ),
-                  Gap(8.w),
-                  if (post.isVerified)
-                    Icon(Icons.verified, color: Colors.blue, size: 16.sp),
-                  Gap(4.w),
-                  Flexible(
-                    child: Text(
-                      post.name,
-                      style: Styles.textStyle16.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      FollowButton(
+                        isFollowing: post.isFollowing,
+                        onTap: () {
+                          // Call follow/unfollow API
+                        },
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.end,
-                    ),
+                      Gap(8.w),
+                      if (post.isVerified)
+                        Icon(Icons.verified, color: Colors.blue, size: 16.sp),
+                      Gap(4.w),
+                      Flexible(
+                        child: Text(
+                          post.name,
+                          style: Styles.textStyle16.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
 
-              Gap(4.h),
+                  Gap(4.h),
 
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    post.timeAgo,
-                    style: Styles.textStyle12.copyWith(color: Colors.white70),
-                  ),
-                  Gap(context.responsiveWidth(5)),
-                  Icon(Icons.public, color: Colors.white70, size: 12.sp),
-                  Gap(context.responsiveWidth(5)),
-                  Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: Flexible(
-                      child: Text(
-                        post.userName,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        post.timeAgo,
                         style: Styles.textStyle12.copyWith(
                           color: Colors.white70,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
                       ),
-                    ),
+                      Gap(context.responsiveWidth(5)),
+                      Icon(Icons.public, color: Colors.white70, size: 12.sp),
+                      Gap(context.responsiveWidth(5)),
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Flexible(
+                          child: Text(
+                            post.userName,
+                            style: Styles.textStyle12.copyWith(
+                              color: Colors.white70,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
+            ),
 
-        Gap(10.w),
+            Gap(10.w),
 
-        Container(
-          width: 45.w,
-          height: 45.w,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 1.5),
-          ),
-          child: ClipOval(
-            child: AppImage(
-              post.avatar,
+            Container(
               width: 45.w,
               height: 45.w,
-              fit: BoxFit.cover,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: ClipOval(
+                child: AppImage(
+                  post.avatar,
+                  width: 45.w,
+                  height: 45.w,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
-          ),
+          ],
+        ),
+
+        PostContentText(
+          maxLines: 1,
+          text: post.content,
+          style: Styles.textStyle14.copyWith(color: Colors.white, height: 1.5),
+          hashtagStyle: Styles.textStyle14Bold.copyWith(color: Colors.blue),
+          onHashtagTap: (hashtag) {
+            context.pushNamed(AppRouter.kAdvisorSearchView);
+          },
         ),
       ],
     );
@@ -240,24 +269,24 @@ class ReelsOverlay extends StatelessWidget {
                     post: post,
                     cachedController: cachedController,
                     callbacks: PostCallbacks(
-                       postUpdatesStream: homeCubit.stream.map((state) {
-                      return state.posts.firstWhere(
-                        (p) => p.postId == post.postId,
-                        orElse: () => post,
-                      );
-                    }),
-                    onReactionChanged: (postId, reactionType) {
-                      homeCubit.reactToPost(
-                        postId: postId,
-                        reactionType: reactionType,
-                      );
-                    },
-                    onShareTap: (postId) {
-                      homeCubit.toggleSharePost(postId: postId);
-                    },
-                    onHashtagTap: (hashtag) {
-                      context.pushNamed(AppRouter.kAdvisorSearchView);
-                    },
+                      postUpdatesStream: homeCubit.stream.map((state) {
+                        return state.posts.firstWhere(
+                          (p) => p.postId == post.postId,
+                          orElse: () => post,
+                        );
+                      }),
+                      onReactionChanged: (postId, reactionType) {
+                        homeCubit.reactToPost(
+                          postId: postId,
+                          reactionType: reactionType,
+                        );
+                      },
+                      onShareTap: (postId) {
+                        homeCubit.toggleSharePost(postId: postId);
+                      },
+                      onHashtagTap: (hashtag) {
+                        context.pushNamed(AppRouter.kAdvisorSearchView);
+                      },
                     ),
                   ),
                 ),
