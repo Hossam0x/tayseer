@@ -225,15 +225,7 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
                         child: Row(
                           children: [
                             SizedBox(width: spacing2),
-                            GestureDetector(
-                              onTap: () {},
-                              child: Icon(
-                                Icons.attach_file,
-                                color: Colors.grey,
-                                size: attachIconSize,
-                              ),
-                            ),
-                            SizedBox(width: spacing3),
+
                             GestureDetector(
                               onTap: _toggleEmojiPicker,
                               child: Icon(

@@ -1,5 +1,6 @@
 // lib/features/advisor/home/cubit/post_details_cubit.dart
 
+
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -46,6 +47,148 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   }
 
   // ═══════════════════════════════════════════════════════════
+  // DELTE COMMENT
+  // ═══════════════════════════════════════════════════════════
+  void deleteComment({required String commentId}) {
+    final comment = _findCommentById(state.comments, commentId);
+    if (comment == null) return;
+
+    final originalComments = List.of(state.comments);
+
+    // 1️⃣ Optimistic Update
+    final updatedComments = state.comments
+        .where((c) => c.id != commentId)
+        .toList();
+
+    emit(
+      state.copyWith(
+        comments: updatedComments,
+        deleteCommentActionState: CubitStates.initial,
+      ),
+    );
+
+    // 2️⃣ Server Request
+    homeRepository.deleteComment(commentId: commentId).then((result) {
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              comments: originalComments,
+              deleteCommentActionState: CubitStates.failure,
+              deleteCommentMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          emit(
+            state.copyWith(
+              deleteCommentActionState: CubitStates.success,
+              deleteCommentMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // DELTE REPLY
+  // ═══════════════════════════════════════════════════════════
+  void deleteReply({required String replyId}) {
+    final originalComments = state.comments
+        .map((c) => c.copyWith(replies: List.from(c.replies)))
+        .toList();
+
+    // 1️⃣ Optimistic Update
+    final updatedComments = state.comments.map((comment) {
+      final hasReply = comment.replies.any((r) => r.id == replyId);
+      if (hasReply) {
+        return comment.copyWith(
+          replies: comment.replies.where((r) => r.id != replyId).toList(),
+          repliesNumber: comment.repliesNumber - 1,
+        );
+      }
+      return comment;
+    }).toList();
+
+    emit(
+      state.copyWith(
+        comments: updatedComments,
+        deleteReplyActionState: CubitStates.loading,
+      ),
+    );
+
+    // 2️⃣ Server Request
+    homeRepository.deleteReply(replyId: replyId).then((result) {
+      result.fold(
+        (failure) => emit(
+          state.copyWith(
+            comments: originalComments,
+            deleteReplyActionState: CubitStates.failure,
+            deleteReplyMessage: failure.message,
+          ),
+        ),
+        (message) => emit(
+          state.copyWith(
+            deleteReplyActionState: CubitStates.success,
+            deleteReplyMessage: message,
+          ),
+        ),
+      );
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // HIDE COMMENT
+  // ═══════════════════════════════════════════════════════════
+  void toggleHideComment({required String commentId}) {
+    final comment = _findCommentById(state.comments, commentId);
+    if (comment == null) return;
+
+    final newHideState = !comment.isHidden;
+
+    emit(
+      state.copyWith(
+        comments: state.comments
+            .map(
+              (c) => c.id == commentId ? c.copyWith(isHidden: newHideState) : c,
+            )
+            .toList(),
+      ),
+    );
+
+    homeRepository.hideComment(commentId: commentId, isHide: newHideState);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // HIDE REPLY
+  // ═══════════════════════════════════════════════════════════
+  void toggleHideReply({required String replyId}) {
+    final reply = _findReplyById(state.comments, replyId);
+    if (reply == null) return;
+
+    final newHideState = !reply.isHidden;
+
+    // 1️⃣ Local Update
+    emit(
+      state.copyWith(
+        comments: state.comments.map((comment) {
+          final updatedReplies = comment.replies
+              .map(
+                (r) => r.id == replyId ? r.copyWith(isHidden: newHideState) : r,
+              )
+              .toList();
+
+          return comment.copyWith(replies: updatedReplies);
+        }).toList(),
+      ),
+    );
+
+    // 2️⃣ Fire Request
+    homeRepository.hideReply(replyId: replyId, isHide: newHideState);
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // 📌 LOAD MORE
   // ═══════════════════════════════════════════════════════════
   Future<void> loadMoreComments() async {
@@ -80,12 +223,12 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
 
     final currentUser = CommenterModel(
-      id: 'current_user_id',
-      name: 'أنت',
-      userName: 'current_user',
-      avatar: myProfileImage,
-      isVerified: false,
-      userType: 'user',
+      id: kCurrentUserData?.id ?? "..",
+      name: kCurrentUserData?.name ?? 'أنت',
+      userName: kCurrentUserData?.username ?? '@you',
+      avatar: kCurrentUserData?.image,
+      isVerified: kCurrentUserData?.isVerified ?? false,
+      userType: selectedUserType?.name ?? 'user',
     );
 
     final tempComment = CommentModel.temp(
@@ -411,6 +554,16 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       if (comment.replies.isNotEmpty) {
         final found = _findCommentById(comment.replies, targetId);
         if (found != null) return found;
+      }
+    }
+    return null;
+  }
+
+  CommentModel? _findReplyById(List<CommentModel> comments, String replyId) {
+    for (var comment in comments) {
+      // البحث في الـ replies الخاصة بكل كومنت
+      for (var reply in comment.replies) {
+        if (reply.id == replyId) return reply;
       }
     }
     return null;

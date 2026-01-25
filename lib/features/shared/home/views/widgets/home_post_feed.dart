@@ -41,10 +41,16 @@ class HomePostFeed extends StatelessWidget {
             listener: _handleDeleteFeedback, // دالة التنفيذ
           ),
 
+          // 4. block user Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: (prev, curr) =>
                 prev.blockUserActionState != curr.blockUserActionState,
             listener: _handleBlockFeedback,
+          ),
+          // 5. archive post Listener
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: _shouldListenToArchive, // دالة الشرط
+            listener: _handleArchiveFeedback, // دالة التنفيذ
           ),
         ],
         child: BlocSelector<HomeCubit, HomeState, _FeedState>(
@@ -78,6 +84,11 @@ class HomePostFeed extends StatelessWidget {
         curr.deletePostActionState != CubitStates.initial;
   }
 
+  /// هل تغيرت حالة الأرشفة؟
+  bool _shouldListenToArchive(HomeState prev, HomeState curr) {
+    return prev.archivePostActionState != curr.archivePostActionState &&
+        curr.archivePostActionState != CubitStates.initial;
+  }
   // ═══════════════════════════════════════════════════════════════════════════
   // 🎮 Action Handlers (دوال تنفيذ التوست)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -162,6 +173,20 @@ class HomePostFeed extends StatelessWidget {
         );
         break;
 
+      default:
+        break;
+    }
+  }
+
+  void _handleArchiveFeedback(BuildContext context, HomeState state) {
+    final message = state.archivePostMessage;
+    switch (state.archivePostActionState) {
+      case CubitStates.success:
+        AppToast.success(context, message ?? 'تمت العملية بنجاح');
+        break;
+      case CubitStates.failure:
+        AppToast.error(context, message ?? 'حدث خطأ أثناء الأرشفة');
+        break;
       default:
         break;
     }
@@ -315,13 +340,26 @@ class _PostItemState extends State<_PostItem> {
       onDelete: _onDelete,
       onHide: _hidePost,
       onBlock: _blockUser,
+      onArchive: _archivePost,
+      onEdit: _editPost,
     );
   }
 
+  void _editPost(PostModel post) {
+    context.pushNamed(
+      AppRouter.kAddPostView,
+      arguments: {"post": post, "isEdit": true},
+    );
+  }
 
-  void _blockUser(String userId , String postId) {
+  void _archivePost(String postId) {
+    widget.homeCubit.archivePost(postId: postId);
+  }
+
+  void _blockUser(String userId, String postId) {
     widget.homeCubit.blockUser(visiblePostId: postId, advisorId: userId);
   }
+
   void _hidePost(String postId) {
     widget.homeCubit.toggleHidePost(postId: postId);
   }

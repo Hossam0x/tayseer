@@ -9,6 +9,7 @@ import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:crypto/crypto.dart';
+import 'package:tayseer/firebase_options.dart';
 
 import '../../../../my_import.dart';
 import '../model/certificate_model.dart';
@@ -22,6 +23,8 @@ class AuthCubit extends Cubit<AuthState> {
   final GlobalKey<FormState> registerFormKey = GlobalKey<FormState>();
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
+    clientId: DefaultFirebaseOptions.currentPlatform.iosClientId,
+
     // لو محتاج idToken لازم تضيف serverClientId
     // serverClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
   );
@@ -445,14 +448,19 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signInWithApple() async {
-    emit(state.copyWith(signInWithAppleState: CubitStates.loading));
+    emit(
+      state.copyWith(
+        signInWithAppleState: CubitStates.loading,
+        fromScreen: 'registration',
+      ),
+    );
 
     try {
-      // 🔐 1️⃣ Generate nonce
+      // 1️⃣ Generate nonce
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
 
-      // 🍎 2️⃣ Apple Sign In
+      // 2️⃣ Apple Sign-In
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
@@ -461,31 +469,99 @@ class AuthCubit extends Cubit<AuthState> {
         nonce: nonce,
       );
 
-      final String? idToken = appleCredential.identityToken;
+      // 3️⃣ Validate Apple token
+      final identityToken = appleCredential.identityToken;
+      if (identityToken == null) {
+        throw Exception('Identity Token is null');
+      }
 
-      if (idToken != null) {
-        sendAuthApple(idToken: idToken);
-      } else {
+      // 4️⃣ Create Firebase OAuth credential
+      final oauthCredential = OAuthProvider("apple.com").credential(
+        idToken: identityToken,
+        rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      // 5️⃣ Sign in to Firebase
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        oauthCredential,
+      );
+
+      // 6️⃣ Get Firebase ID Token
+      final firebaseIdToken = await userCredential.user?.getIdToken();
+
+      if (firebaseIdToken == null) {
+        throw Exception('Firebase ID Token is null');
+      }
+
+      // 7️⃣ Send token to backend
+      await sendAuthApple(idToken: firebaseIdToken);
+
+      // 8️⃣ Success
+      emit(
+        state.copyWith(
+          signInWithAppleState: CubitStates.success,
+          fromScreen: 'registration',
+        ),
+      );
+    }
+    // 👤 المستخدم لغى العملية
+    on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        debugPrint('ℹ️ Apple Sign-In canceled by user');
+
         emit(
           state.copyWith(
             signInWithAppleState: CubitStates.failure,
-            errorMessage: "Apple ID Token is null",
+            fromScreen: 'registration',
+            errorMessage: 'تم إلغاء العملية',
+          ),
+        );
+      } else {
+        debugPrint('❌ Apple Sign-In error: ${e.code} - ${e.message}');
+
+        emit(
+          state.copyWith(
+            signInWithAppleState: CubitStates.failure,
+            fromScreen: 'registration',
+            errorMessage: 'فشل تسجيل الدخول باستخدام Apple',
           ),
         );
       }
-      emit(state.copyWith(signInWithAppleState: CubitStates.success));
-    } catch (e) {
+    }
+    // 🔥 أخطاء Firebase
+    on FirebaseAuthException catch (e) {
+      debugPrint('❌ Firebase Auth error: ${e.code} - ${e.message}');
+
       emit(
         state.copyWith(
           signInWithAppleState: CubitStates.failure,
-          errorMessage: 'فشل تسجيل الدخول باستخدام Apple',
+          fromScreen: 'registration',
+          errorMessage: e.message ?? 'خطأ في المصادقة',
         ),
       );
+    }
+    // ❌ أي خطأ غير متوقع
+    catch (e) {
+      debugPrint('❌ Unexpected error: $e');
+
+      emit(
+        state.copyWith(
+          signInWithAppleState: CubitStates.failure,
+          fromScreen: 'registration',
+          errorMessage: 'حدث خطأ غير متوقع',
+        ),
+      );
+    } finally {
+      // 🔄 Reset state
+      emit(state.copyWith(signInWithAppleState: CubitStates.initial));
     }
   }
 
   Future<void> sendAuthApple({required String idToken}) async {
-    emit(state.copyWith(authAppleState: CubitStates.loading));
+    // emit(state.copyWith(authAppleState: CubitStates.loading
+
+    // ));
 
     try {
       final response = await _repo.authApple(idToken: idToken);
@@ -496,13 +572,26 @@ class AuthCubit extends Cubit<AuthState> {
             state.copyWith(
               authAppleState: CubitStates.failure,
               errorMessage: failure.message,
+              fromScreen: 'registration',
             ),
           );
         },
         (_) {
-          emit(state.copyWith(authAppleState: CubitStates.success));
-          emit(state.copyWith(authAppleState: CubitStates.initial));
-          emit(state.copyWith(signInWithAppleState: CubitStates.initial));
+          emit(
+            state.copyWith(
+              authAppleState: CubitStates.success,
+              fromScreen: 'registration',
+            ),
+          );
+
+          Future.delayed(const Duration(milliseconds: 100), () {
+            emit(
+              state.copyWith(
+                authAppleState: CubitStates.initial,
+                signInWithAppleState: CubitStates.initial,
+              ),
+            );
+          });
         },
       );
     } catch (e) {

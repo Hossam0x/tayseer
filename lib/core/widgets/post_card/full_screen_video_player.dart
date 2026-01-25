@@ -1,10 +1,13 @@
+// lib/core/widgets/post_card/full_screen_video_player.dart
+
 import 'package:flutter/services.dart';
+import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/my_import.dart';
 
 class FullscreenResult {
   final Duration position;
-  final bool isMuted;
+  final bool isMuted; // ✅ أبقيناه للـ backward compatibility
   final bool wasPlaying;
 
   FullscreenResult({
@@ -17,13 +20,13 @@ class FullscreenResult {
 class FullscreenVideoPlayer extends StatefulWidget {
   final String videoUrl;
   final Duration startPosition;
-  final bool isMuted;
+  final bool? isMuted; // ✅ Optional - لو null يستخدم GlobalMuteManager
 
   const FullscreenVideoPlayer({
     Key? key,
     required this.videoUrl,
     required this.startPosition,
-    required this.isMuted,
+    this.isMuted, // ✅ Optional parameter
   }) : super(key: key);
 
   @override
@@ -36,32 +39,50 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
   bool _showControls = true;
   bool _isDragging = false;
   double? _dragValue;
-  late bool _isMuted;
   bool _isEnded = false;
   bool _isBuffering = false;
-  bool _isLandscape = false; // متغير لمتابعة حالة دوران الشاشة
+  bool _isLandscape = false;
 
   final _videoCacheManager = VideoCacheManager();
+  final _muteManager = GlobalMuteManager.instance;
+
+  // ✅ Local mute state للـ legacy mode
+  late bool _localIsMuted;
+  
+  // ✅ هل نستخدم الـ Global Mute ولا الـ Local؟
+  bool get _useGlobalMute => widget.isMuted == null;
+
+  // ✅ الـ Mute State الفعلي
+  bool get _isMuted => _useGlobalMute ? _muteManager.isMuted.value : _localIsMuted;
 
   @override
   void initState() {
     super.initState();
-    _isMuted = widget.isMuted;
 
-    // إخفاء شريط الحالة وأزرار النظام لاستغلال الشاشة بالكامل
+    // ✅ Initialize local mute state
+    _localIsMuted = widget.isMuted ?? false;
+
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-
-    // البدء بالوضع الطولي (Portrait)
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+    // ✅ استمع لتغييرات الـ Global Mute فقط لو مش في legacy mode
+    if (_useGlobalMute) {
+      _muteManager.isMuted.addListener(_onGlobalMuteChanged);
+    }
 
     _initializeVideo();
   }
 
+  void _onGlobalMuteChanged() {
+    if (_controller != null && _controller!.value.isInitialized) {
+      _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+      if (mounted) setState(() {});
+    }
+  }
+
   Future<void> _initializeVideo() async {
     try {
-      final cachedFile = await _videoCacheManager.getCachedFile(
-        widget.videoUrl,
-      );
+      final cachedFile = await _videoCacheManager.getCachedFile(widget.videoUrl);
 
       if (!mounted) return;
 
@@ -78,6 +99,8 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
       }
 
       await _controller!.initialize();
+
+      // ✅ استخدم الـ Mute State المناسب
       _controller!.setVolume(_isMuted ? 0.0 : 1.0);
       _controller!.addListener(_videoListener);
 
@@ -150,14 +173,20 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
     setState(() {});
   }
 
+  // ✅ Toggle Mute - يشتغل بالنظامين
   void _toggleMute() {
-    setState(() {
-      _isMuted = !_isMuted;
-      _controller?.setVolume(_isMuted ? 0.0 : 1.0);
-    });
+    if (_useGlobalMute) {
+      // ✅ Global Mode: يأثر على كل الفيديوهات
+      _muteManager.toggleMute();
+    } else {
+      // ✅ Legacy Mode: يأثر على هذا الفيديو فقط
+      setState(() {
+        _localIsMuted = !_localIsMuted;
+        _controller?.setVolume(_localIsMuted ? 0.0 : 1.0);
+      });
+    }
   }
 
-  // دالة جديدة للتبديل بين الطول والعرض
   void _toggleOrientation() {
     setState(() {
       _isLandscape = !_isLandscape;
@@ -197,11 +226,10 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
     _controller!.seekTo(newPos > Duration.zero ? newPos : Duration.zero);
   }
 
-  // تم تغيير اسم الدالة لتعكس أنها تغلق الصفحة
   void _onClosePage() {
     final result = FullscreenResult(
       position: _controller?.value.position ?? Duration.zero,
-      isMuted: _isMuted,
+      isMuted: _isMuted, // ✅ يرجع الـ Mute State الحالي
       wasPlaying: _controller?.value.isPlaying ?? false,
     );
     Navigator.pop(context, result);
@@ -209,13 +237,17 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
 
   @override
   void dispose() {
-    // إعادة إعدادات النظام للوضع الطبيعي عند الخروج
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
 
+    // ✅ Remove listener فقط لو كنا في Global Mode
+    if (_useGlobalMute) {
+      _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
+    }
+    
     _controller?.removeListener(_videoListener);
     _controller?.dispose();
     super.dispose();
@@ -235,7 +267,6 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    // WillPopScope (أو PopScope) للتأكد من إرجاع النتيجة عند الضغط على زر الرجوع في الهاتف
     return WillPopScope(
       onWillPop: () async {
         _onClosePage();
@@ -291,13 +322,11 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
     final double sliderValue = _isDragging
         ? _dragValue!
         : (duration.inMilliseconds > 0
-              ? position.inMilliseconds / duration.inMilliseconds
-              : 0.0);
+            ? position.inMilliseconds / duration.inMilliseconds
+            : 0.0);
 
     final displayPosition = _isDragging
-        ? Duration(
-            milliseconds: (_dragValue! * duration.inMilliseconds).toInt(),
-          )
+        ? Duration(milliseconds: (_dragValue! * duration.inMilliseconds).toInt())
         : position;
 
     return GestureDetector(
@@ -326,16 +355,13 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // --- الشريط العلوي (زر الرجوع + الأزرار الجانبية) ---
+                  // Top Bar
                   Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 8.h,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // زر الرجوع (إغلاق الصفحة)
+                        // Back button
                         GestureDetector(
                           onTap: _onClosePage,
                           child: Container(
@@ -351,26 +377,13 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                             ),
                           ),
                         ),
-                        // أزرار التحكم (صامت + تدوير الشاشة)
+                        // Mute + Orientation buttons
                         Row(
                           children: [
-                            GestureDetector(
-                              onTap: _toggleMute,
-                              child: Container(
-                                padding: EdgeInsets.all(6.r),
-                                decoration: BoxDecoration(
-                                  color: Colors.black45,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Icon(
-                                  _isMuted ? Icons.volume_off : Icons.volume_up,
-                                  color: Colors.white,
-                                  size: 20.sp,
-                                ),
-                              ),
-                            ),
+                            // ✅ زرار الـ Mute - يشتغل بالنظامين
+                            _buildMuteButton(),
                             SizedBox(width: 12.w),
-                            // زر تدوير الشاشة (Fullscreen Toggle)
+                            // Orientation button
                             GestureDetector(
                               onTap: _toggleOrientation,
                               child: Container(
@@ -394,7 +407,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                     ),
                   ),
 
-                  // --- أزرار التشغيل في المنتصف ---
+                  // Center Controls
                   _isEnded
                       ? GestureDetector(
                           onTap: _replayVideo,
@@ -452,12 +465,9 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                           ],
                         ),
 
-                  // --- شريط التقدم السفلي ---
+                  // Seek Bar
                   Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                     child: Row(
                       children: [
                         Text(
@@ -476,15 +486,11 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                               thumbShape: RoundSliderThumbShape(
                                 enabledThumbRadius: _isDragging ? 7.r : 5.r,
                               ),
-                              overlayShape: RoundSliderOverlayShape(
-                                overlayRadius: 14.r,
-                              ),
+                              overlayShape: RoundSliderOverlayShape(overlayRadius: 14.r),
                               activeTrackColor: AppColors.kprimaryColor,
                               inactiveTrackColor: Colors.white.withOpacity(0.3),
                               thumbColor: AppColors.kprimaryColor,
-                              overlayColor: AppColors.kprimaryColor.withOpacity(
-                                0.2,
-                              ),
+                              overlayColor: AppColors.kprimaryColor.withOpacity(0.2),
                             ),
                             child: Slider(
                               value: sliderValue.clamp(0.0, 1.0),
@@ -499,8 +505,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                               },
                               onChangeEnd: (value) {
                                 final newPosition = Duration(
-                                  milliseconds:
-                                      (value * duration.inMilliseconds).toInt(),
+                                  milliseconds: (value * duration.inMilliseconds).toInt(),
                                 );
                                 _controller!.seekTo(newPosition);
                                 setState(() {
@@ -526,6 +531,40 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ زرار الـ Mute - يشتغل بالنظامين
+  Widget _buildMuteButton() {
+    if (_useGlobalMute) {
+      // ✅ Global Mode: يستخدم ValueListenableBuilder
+      return ValueListenableBuilder<bool>(
+        valueListenable: _muteManager.isMuted,
+        builder: (context, isMuted, child) {
+          return _muteButtonUI(isMuted);
+        },
+      );
+    } else {
+      // ✅ Legacy Mode: يستخدم الـ local state
+      return _muteButtonUI(_localIsMuted);
+    }
+  }
+
+  Widget _muteButtonUI(bool isMuted) {
+    return GestureDetector(
+      onTap: _toggleMute,
+      child: Container(
+        padding: EdgeInsets.all(6.r),
+        decoration: BoxDecoration(
+          color: Colors.black45,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          isMuted ? Icons.volume_off : Icons.volume_up,
+          color: Colors.white,
+          size: 20.sp,
         ),
       ),
     );

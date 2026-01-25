@@ -19,5 +19,4 @@ UserTypeEnum? selectedUserType = UserTypeEnum.user;
 String phone = '201009119795';
 bool get isUserAnonymous =>
     CachNetwork.getBoolData(key: kIsUserAnonymous) ?? false;
-String get myProfileImage => CachNetwork.getStringData(key: kMyProfileImage);
 bool get isUser => selectedUserType == UserTypeEnum.user;

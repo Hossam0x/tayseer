@@ -10,6 +10,7 @@ class MessageContentBuilder extends StatelessWidget {
   final Color textColor;
   final double fontSize;
   final double maxWidth;
+  final double? uploadProgress; // ✅ Upload progress
 
   const MessageContentBuilder({
     super.key,
@@ -19,6 +20,7 @@ class MessageContentBuilder extends StatelessWidget {
     required this.textColor,
     required this.fontSize,
     required this.maxWidth,
+    this.uploadProgress,
   });
 
   @override
@@ -29,11 +31,14 @@ class MessageContentBuilder extends StatelessWidget {
           images: contentList,
           localFilePaths: localFilePaths,
           maxWidth: maxWidth,
-          onImageTap: (index) => _openImageViewer(
-            context,
-            index,
-            isLocal: localFilePaths != null && localFilePaths!.isNotEmpty,
-          ),
+          uploadProgress: uploadProgress,
+          onImageTap: (index) {
+            _openImageViewer(
+              context,
+              index,
+              isLocal: localFilePaths != null && localFilePaths!.isNotEmpty,
+            );
+          },
         );
 
       case 'video':
@@ -81,11 +86,15 @@ class MessageContentBuilder extends StatelessWidget {
     int index, {
     bool isLocal = false,
   }) {
+    // Close keyboard before opening image viewer
+    FocusScope.of(context).unfocus();
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => FullScreenImageViewer(
           images: localFilePaths ?? contentList,
           initialIndex: index,
+          isLocal: isLocal,
         ),
       ),
     );

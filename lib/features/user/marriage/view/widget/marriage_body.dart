@@ -273,7 +273,7 @@ class MarriageBody extends StatelessWidget {
               ],
             ),
             Positioned(
-              bottom: 100.h,
+              bottom: 130.h,
               left: 0,
               right: 0,
               child: Row(

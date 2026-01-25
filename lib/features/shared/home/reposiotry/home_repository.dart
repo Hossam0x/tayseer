@@ -40,6 +40,13 @@ abstract class HomeRepository {
     required String comment,
   });
 
+  Future<Either<Failure, String>> deleteComment({required String commentId});
+
+  Future<Either<Failure, String>> deleteReply({required String replyId});
+
+  void hideComment({required String commentId, required bool isHide});
+  void hideReply({required String replyId, required bool isHide});
+
   Future<Either<Failure, CommentModel>> addReply({
     required String commentId,
     required String reply,
@@ -76,4 +83,5 @@ abstract class HomeRepository {
   Future<Either<Failure, String>> deletePost({required String postId});
   void hidePost({required String postId, required bool isHide});
   Future<Either<Failure, String>> blockUser({required String userId});
+  Future<Either<Failure, String>> archivePost({required String postId});
 }

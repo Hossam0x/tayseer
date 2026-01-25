@@ -47,6 +47,8 @@ class CommentModel {
 
   // ✅ NEW: للتفريق بين الكومنت المؤقت والحقيقي
   final bool isTemp;
+  // for local use (e.g., hidden comments)
+  final bool isHidden;
 
   const CommentModel({
     required this.id,
@@ -64,6 +66,7 @@ class CommentModel {
     this.repliesCurrentPage = 0,
     this.repliesTotalPages = 1,
     this.isTemp = false, // ✅ Default = false
+    this.isHidden = false,
   });
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {
@@ -119,6 +122,7 @@ class CommentModel {
     int? repliesCurrentPage,
     int? repliesTotalPages,
     bool? isTemp, // ✅ NEW
+    bool? isHidden, // ✅ NEW
   }) {
     return CommentModel(
       id: id ?? this.id,
@@ -136,6 +140,7 @@ class CommentModel {
       repliesCurrentPage: repliesCurrentPage ?? this.repliesCurrentPage,
       repliesTotalPages: repliesTotalPages ?? this.repliesTotalPages,
       isTemp: isTemp ?? this.isTemp, // ✅ NEW
+      isHidden: isHidden ?? this.isHidden, // ✅ NEW
     );
   }
 

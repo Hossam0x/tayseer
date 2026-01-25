@@ -41,7 +41,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                           current.signInWithAppleState ||
                       previous.signInWithGoogleState !=
                           current.signInWithGoogleState ||
-                      previous.authGoogleState != current.authGoogleState;
+                      previous.authGoogleState != current.authGoogleState ||
+                      previous.authAppleState != current .authAppleState ;
                 },
                 listener: (context, state) {
                   if (state.fromScreen != 'registration') return;
@@ -61,7 +62,10 @@ class _RegisrationViewState extends State<RegisrationView> {
                   if (state.signInWithGoogleState == CubitStates.failure ||
                       state.signInWithAppleState == CubitStates.failure ||
                       state.registerState == CubitStates.failure ||
-                      state.authGoogleState == CubitStates.failure) {
+                      state.authGoogleState == CubitStates.failure||
+                  state.authAppleState== CubitStates.failure
+
+                  ) {
                     // إغلاق أي dialog مفتوح
                     if (Navigator.canPop(context)) {
                       context.pop();
@@ -78,8 +82,27 @@ class _RegisrationViewState extends State<RegisrationView> {
                   }
 
                   // نجاح تسجيل الدخول بجوجل
+
                   if (state.signInWithGoogleState == CubitStates.success &&
                       state.authGoogleState == CubitStates.success) {
+                    if (Navigator.canPop(context)) {
+                      context.pop(); // إغلاق أي dialog
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      CustomSnackBar(
+                        context,
+                        text: context.tr('success_login'),
+                        isSuccess: true,
+                      ),
+                    );
+                    if (selectedUserType == UserTypeEnum.user) {
+                      context.pushReplacementNamed(AppRouter.kUserLayoutView);
+                    }
+                  }
+
+                  if (state.signInWithAppleState == CubitStates.success &&
+                      state.authAppleState == CubitStates.success) {
                     if (Navigator.canPop(context)) {
                       context.pop(); // إغلاق أي dialog
                     }

@@ -52,7 +52,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }) async {
     try {
       final response = await _apiService.get(
-        endPoint: '/posts/all',
+        endPoint: '/posts/all-for-advisor',
         query: {'page': page},
       );
 

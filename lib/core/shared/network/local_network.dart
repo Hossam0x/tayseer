@@ -9,25 +9,40 @@ class CachNetwork {
   static cacheInitializaion() async {
     sharedPref = await SharedPreferences.getInstance();
 
-    // kShowOnBoarding = await CachNetwork.getBoolData(key: 'onBoarding') ?? true;
-
     kIsUserGuest = CachNetwork.getBoolData(key: 'userGuest') ?? true;
 
     final userDataString = await CachNetwork.getData(key: kuserData);
-    if (userDataString != null) {
-      final userDataJson = jsonDecode(userDataString);
-      kCurrentUserData = UserModel.fromJson(userDataJson);
-    }
-    debugPrint("kCurrentUserData is  :::::::::::: $kCurrentUserData");
-    final userTypeString = await CachNetwork.getData(key: kUserType);
 
-    if (userTypeString != null) {
-      selectedUserType = UserTypeEnum.values.firstWhere(
-        (e) => e.name == userTypeString,
-      );
-      debugPrint('selectedUserType===$selectedUserType');
+    if (userDataString != null && userDataString.isNotEmpty) {
+      try {
+        final userDataJson = jsonDecode(userDataString) as Map<String, dynamic>;
+        kCurrentUserData = UserModel.fromJson(userDataJson);
+      } catch (e) {
+        debugPrint('Error parsing user data from cache: $e');
+        kCurrentUserData = null;
+      }
+    } else {
+      kCurrentUserData = null;
+    }
+
+    debugPrint("kCurrentUserData is  :::::::::::: $kCurrentUserData");
+
+    final userTypeString = await CachNetwork.getData(key: kUserType);
+    if (userTypeString != null && userTypeString.isNotEmpty) {
+      try {
+        selectedUserType = UserTypeEnum.values.firstWhere(
+              (e) => e.name == userTypeString,
+        );
+        debugPrint('selectedUserType === $selectedUserType');
+      } catch (e) {
+        debugPrint('Error parsing user type from cache: $e');
+        selectedUserType = UserTypeEnum.user;
+      }
+    } else {
+      selectedUserType = UserTypeEnum.user;
     }
   }
+
 
   static Future<bool> setData({
     required String key,

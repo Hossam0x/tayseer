@@ -63,14 +63,16 @@ class ChatViewHeader extends StatelessWidget {
             bottom: false,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-
               child: SingleChildScrollView(
                 physics: const NeverScrollableScrollPhysics(),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(height: spacing1),
-                    const HeaderTopRow(),
+
+                    // ✅ عدّي الـ isChatsSelected هنا
+                    HeaderTopRow(isChatsSelected: isChatsSelected),
+
                     SizedBox(height: spacing2),
 
                     ToggleTabs(
@@ -87,7 +89,6 @@ class ChatViewHeader extends StatelessWidget {
                           context.pushNamed(AppRouter.kChatSearchView),
                         },
                       ),
-                      // SizedBox(height: spacing1),
                     ],
                   ],
                 ),

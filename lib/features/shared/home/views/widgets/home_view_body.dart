@@ -7,6 +7,7 @@ import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_search_bar.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stories_section.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/shared/home/views/widgets/session_started_listener.dart';
 import 'package:tayseer/my_import.dart';
 
 class HomeViewBody extends StatefulWidget {
@@ -38,6 +39,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
     _filterScrollController = ScrollController();
     storiesCubit.fetchStories();
     homeCubit.initHome();
+    homeCubit.sessionStart();
   }
 
   void scrollToTop() {
@@ -108,26 +110,32 @@ class HomeViewBodyState extends State<HomeViewBody> {
             homeCubit.refreshHome(),
           ]);
         },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          cacheExtent: 500.0,
-          controller: _scrollController,
-          slivers: [
-            const HomeAppBar(notificationCount: 3),
-            const HomeSearchBar(),
+        child: Stack(
+          children: [
+            CustomScrollView(
+              physics: const ClampingScrollPhysics(),
+              cacheExtent: 500.0,
+              controller: _scrollController,
+              slivers: [
+                const HomeAppBar(notificationCount: 3),
+                const HomeSearchBar(),
 
-            // ✅ كل اللوجيك بقى جوه، هنا بننده عليها بس
-            if (isUser) const SliverToBoxAdapter(child: AnonymousModeBanner()),
+                // ✅ كل اللوجيك بقى جوه، هنا بننده عليها بس
+                if (isUser)
+                  const SliverToBoxAdapter(child: AnonymousModeBanner()),
 
-            const StoriesSection(),
-            HomeFilterSection(
-              key: _filterSectionKey,
-              scrollController: _filterScrollController,
+                const StoriesSection(),
+                HomeFilterSection(
+                  key: _filterSectionKey,
+                  scrollController: _filterScrollController,
+                ),
+                HomePostFeed(
+                  homeCubit: homeCubit,
+                  scrollToTopCallback: scrollToFilterSection,
+                ),
+              ],
             ),
-            HomePostFeed(
-              homeCubit: homeCubit,
-              scrollToTopCallback: scrollToFilterSection,
-            ),
+            SessionStartedListener(),
           ],
         ),
       ),

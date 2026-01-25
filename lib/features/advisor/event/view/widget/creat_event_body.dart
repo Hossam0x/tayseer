@@ -57,6 +57,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
         }
       },
       child: CustomScrollView(
+        physics: ClampingScrollPhysics(),
         slivers: [
           CustomSliverAppBarEvent(
             title: context.tr('create_event'),

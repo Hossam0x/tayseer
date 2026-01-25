@@ -35,4 +35,15 @@ class AppStrings {
 
   static const String blockUser = "block_user";
   static const String blockUserConfirmation = "block_user_confirmation";
+
+  static const String archivePost = "archive_post";
+  static const String archivePostConfirmation = "archive_post_confirmation";
+
+  static const String archivePostConfirmationMessage = "archive_post_confirmation_message";
+
+  static const String unhide = "unhide";
+  static const String commentHiddenMessage = "comment_hidden_message";
+  static const String showMoreReplies = "show_more_replies";
+    static const String showNReplies = "show_n_replies"; 
+
 }

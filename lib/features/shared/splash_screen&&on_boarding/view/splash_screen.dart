@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateBasedOnToken() async {
-    await Future.delayed(const Duration(seconds: 4));
+    await Future.delayed(const Duration(seconds: 12));
     if (!mounted) return;
     String? token = CachNetwork.getStringData(key: ktoken);
     if (mounted) {
@@ -69,7 +69,6 @@ class _SplashScreenState extends State<SplashScreen>
       }
     }
   }
-
   // @override
   // void dispose() {
   //   _controller.dispose();
