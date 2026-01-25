@@ -5,10 +5,12 @@ class ContentSwitcher extends StatefulWidget {
     super.key,
     required this.options,
     required this.onOptionSelected,
+    this.selectedOption, // 🔑 أضف الـ parameter ده
   });
 
   final List<String> options;
   final Function(String selectedOption) onOptionSelected;
+  final String? selectedOption; // 🔑 هنا
 
   @override
   State<ContentSwitcher> createState() => _ContentSwitcherState();
@@ -16,6 +18,35 @@ class ContentSwitcher extends StatefulWidget {
 
 class _ContentSwitcherState extends State<ContentSwitcher> {
   int selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateSelectedIndex();
+  }
+
+  @override
+  void didUpdateWidget(ContentSwitcher oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 🔑 لو الـ selectedOption اتغير من برة، حدّث الـ index
+    if (oldWidget.selectedOption != widget.selectedOption) {
+      _updateSelectedIndex();
+    }
+  }
+
+  // 🔑 Function جديدة عشان تحدث الـ index بناءً على الـ selectedOption
+  void _updateSelectedIndex() {
+    if (widget.selectedOption != null) {
+      final index = widget.options.indexWhere(
+        (option) => option.trim() == widget.selectedOption!.trim(),
+      );
+      if (index != -1) {
+        setState(() {
+          selectedIndex = index;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

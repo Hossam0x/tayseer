@@ -50,6 +50,9 @@ import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:tayseer/features/user/advisor_profile/data/repositories/user_profile_repository.dart';
+import 'package:tayseer/features/user/interactions/data/repos/InteractionsRepository.dart';
+import 'package:tayseer/features/user/interactions/data/repos/reposiotryImpl.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 
 import '../../my_import.dart';
 
@@ -319,4 +322,13 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<UserProfileRepository>(
     () => UserProfileRepositoryImpl(getIt<ApiService>()),
   );
+  // Interactions Repository
+getIt.registerLazySingleton<InteractionsRepository>(
+  () => InteractionsRepositoryImpl(getIt<ApiService>()),
+);
+
+// Interactions Cubit
+getIt.registerFactory<InteractionsCubit>(
+  () => InteractionsCubit(getIt<InteractionsRepository>()),
+);
 }

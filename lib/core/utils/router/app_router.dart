@@ -49,7 +49,8 @@ import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/user/advisor_profile/views/user_profile_view.dart';
-import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
+import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/questions/accept_married_view.dart';
 import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
 import 'package:tayseer/features/user/questions/children_living_status_view.dart';
@@ -166,6 +167,8 @@ abstract class AppRouter {
   static const kFollowersView = '/followers_view';
   static const kFollowingView = '/following_view';
   static const kRegisrationAdvisorView = '/RegisrationAdvisorView';
+  static const kInteractionFilterView = '/InteractionFilterView';
+
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -188,7 +191,11 @@ abstract class AppRouter {
           page: const UserLayoutView(),
           routeSettings: settings,
         );
-
+  case kInteractionFilterView:
+        return SlideLeftRoute(
+          page: const InteractionFilterPage(),
+          routeSettings: settings,
+        );
       case kEditPersonalDataView:
         return SlideLeftRoute(
           page: const EditPersonalDataView(),

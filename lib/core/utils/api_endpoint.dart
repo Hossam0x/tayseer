@@ -29,4 +29,11 @@ class ApiEndPoint {
   static const String savePost = '/saved-posts';
   static const String deletePost = '/posts/delete/';
   static const String hidePost = '/hidden/post';
+
+  //  // ✅ Interactions (NEW)
+  // static const String explorationUsers = '/interactions/exploration';
+  // static const String historyUsers = '/interactions/history';
+  // static const String toggleFavorite = '/interactions/favorite';
+  // static const String sendCompliment = '/interactions/compliment';
+  // static const String likeUser = '/interactions/like';
 }

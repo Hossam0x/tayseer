@@ -1,5 +1,5 @@
 // features/advisor/layout/views/a_layout_view.dart
-import 'package:tayseer/features/user/layout/views/widgets/user_layout_view_body.dart';
+import 'package:tayseer/features/user/layout/view/widgets/user_layout_view_body.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserLayoutView extends StatelessWidget {

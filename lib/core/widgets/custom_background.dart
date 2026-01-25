@@ -1,8 +1,9 @@
 import '../../my_import.dart';
 
 class CustomBackground extends StatelessWidget {
-  const CustomBackground({super.key, required this.child});
+  const CustomBackground({super.key, required this.child, this.assetsData = AssetsData.kBackgroundtayseerImage});
   final Widget child;
+  final String assetsData;
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +12,7 @@ class CustomBackground extends StatelessWidget {
       height: context.height,
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: AssetImage(AssetsData.kBackgroundtayseerImage),
+          image: AssetImage(assetsData),
           fit: BoxFit.fill,
         ),
       ),
