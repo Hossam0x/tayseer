@@ -1,9 +1,9 @@
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
-import 'package:tayseer/features/shared/home/model/post_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 
 class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
