@@ -17,12 +17,7 @@ class _UserAdvisorProfileTabsSectionState
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final List<String> _tabs = [
-    // "الاستفسارات",
-    "المنشورات",
-    "الشهادات",
-    "التقييمات",
-  ];
+  final List<String> _tabs = ["المنشورات", "الشهادات", "التقييمات"];
 
   @override
   void initState() {
@@ -46,9 +41,6 @@ class _UserAdvisorProfileTabsSectionState
 
   void _refreshCurrentTab(int index) {
     switch (index) {
-      // case 0:
-      //   print("Refresh الاستفسارات");
-      //   break;
       case 0:
         context.read<UserAdvisorProfileCubit>().fetchPosts();
         break;
@@ -125,19 +117,15 @@ class _UserAdvisorProfileTabsSectionState
 
   Widget _buildTabContent() {
     switch (_tabController.index) {
-      // case 0:
-      //   return InquiryTab();
       case 0:
         return const UserAdvisorPostsTab();
       case 1:
-        // 🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
         return ProfileCertificatesSection(
           key: ValueKey(
             'certificates_${DateTime.now().millisecondsSinceEpoch}',
           ),
         );
       case 2:
-        // 🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
         return RatingsTab(
           key: ValueKey('ratings_${DateTime.now().millisecondsSinceEpoch}'),
         );

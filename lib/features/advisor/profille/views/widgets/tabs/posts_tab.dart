@@ -1,6 +1,6 @@
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
+import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_card.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -140,24 +140,26 @@ class PostsTab extends StatelessWidget {
           final post = posts[index];
           return Column(
             children: [
-              ProfilePostCard(
+              PostCard(
+                isFromProfile: true,
                 post: post,
-                onReactionChanged: (postId, reactionType) {
-                  // ⭐️ استدعاء ProfileCubit الجديد
-                  profileCubit.reactToPost(
-                    postId: postId,
-                    reactionType: reactionType,
-                  );
-                },
-                onShareTap: (postId) {
-                  // ⭐️ استدعاء ProfileCubit الجديد
-                  profileCubit.toggleSharePost(postId: postId);
-                },
+                // onReactionChanged: (postId, reactionType) {
+                //   // ⭐️ استدعاء ProfileCubit الجديد
+                //   profileCubit.reactToPost(
+                //     postId: postId,
+                //     reactionType: reactionType,
+                //   );
+                // },
+                // onShareTap: (postId) {
+                //   // ⭐️ استدعاء ProfileCubit الجديد
+                //   profileCubit.toggleSharePost(postId: postId);
+                // },
                 onNavigateToDetails: (ctx, post, controller) {
                   Navigator.push(
                     ctx,
                     MaterialPageRoute(
                       builder: (context) => PostDetailsView(
+                        isFromProfile: true,
                         post: post,
                         cachedController: controller,
                         callbacks: PostCallbacks(
@@ -186,9 +188,9 @@ class PostsTab extends StatelessWidget {
                     ),
                   );
                 },
-                onHashtagTap: (hashtag) {
-                  context.pushNamed(AppRouter.kAdvisorSearchView);
-                },
+                // onHashtagTap: (hashtag) {
+                //   context.pushNamed(AppRouter.kAdvisorSearchView);
+                // },
               ),
               if (index < posts.length - 1) Gap(16.h),
             ],

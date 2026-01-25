@@ -86,12 +86,15 @@ class RegisrationAdvisorView extends StatelessWidget {
                       AppRouter.kPersonalInfoAsConsultantView,
                     );
                   }
+                  context.read<AuthCubit>().resetAuthStates();
+
                 }
 
                 if (state.signInWithAppleState == CubitStates.success &&
                     state.authAppleState == CubitStates.success) {
+
                   if (Navigator.canPop(context)) {
-                    context.pop(); // إغلاق أي dialog
+                    context.pop(); // قفل اللودنج
                   }
 
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -101,11 +104,13 @@ class RegisrationAdvisorView extends StatelessWidget {
                       isSuccess: true,
                     ),
                   );
+
                   if (selectedUserType == UserTypeEnum.asConsultant) {
-                    context.pushReplacementNamed(
-                      AppRouter.kPersonalInfoAsConsultantView,
-                    );
+                    context.pushReplacementNamed(AppRouter.kPersonalInfoAsConsultantView);
+
                   }
+                  context.read<AuthCubit>().resetAuthStates();
+
                 }
               },
               builder: (context, state) {

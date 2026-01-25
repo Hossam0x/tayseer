@@ -110,13 +110,15 @@ class _RegisrationViewState extends State<RegisrationView> {
                     if (selectedUserType == UserTypeEnum.user) {
                       context.pushReplacementNamed(AppRouter.kUserLayoutView);
                     }
+                    context.read<AuthCubit>().resetAuthStates();
+
                   }
 
-                  // نجاح تسجيل الدخول بأبل
                   if (state.signInWithAppleState == CubitStates.success &&
                       state.authAppleState == CubitStates.success) {
+
                     if (Navigator.canPop(context)) {
-                      context.pop(); // إغلاق أي dialog
+                      context.pop(); // قفل اللودنج
                     }
 
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -126,9 +128,13 @@ class _RegisrationViewState extends State<RegisrationView> {
                         isSuccess: true,
                       ),
                     );
+
                     if (selectedUserType == UserTypeEnum.user) {
                       context.pushReplacementNamed(AppRouter.kUserLayoutView);
+
                     }
+                    context.read<AuthCubit>().resetAuthStates();
+
                   }
                 },
                 builder: (context, state) {

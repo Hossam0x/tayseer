@@ -24,8 +24,6 @@ class CommentContent extends StatelessWidget {
     this.callbacks = CommentCallbacks.empty,
   });
 
- 
-
   @override
   Widget build(BuildContext context) {
     return IntrinsicHeight(
@@ -33,10 +31,7 @@ class CommentContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Avatar
-          CommentAvatar(
-            avatarUrl: comment.commenter.avatar,
-            isReply: isReply,
-          ),
+          CommentAvatar(avatarUrl: comment.commenter.avatar, isReply: isReply),
           Gap(10.w),
 
           // Content
@@ -73,7 +68,6 @@ class CommentContent extends StatelessWidget {
 // ══════════════════════════════════════════════════════════════════════════════
 // Avatar
 // ══════════════════════════════════════════════════════════════════════════════
-
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Header (Name + Verified Badge)
@@ -175,11 +169,48 @@ class _CommentText extends StatelessWidget {
 
   const _CommentText({required this.text});
 
+  bool _isEmojiOnly(String text) {
+    final emojiRegex = RegExp(
+      r'^(?:[\u{1F300}-\u{1FAFF}|\u{2600}-\u{26FF}|\u{2700}-\u{27BF}|\u{FE0F}|\u{1F1E6}-\u{1F1FF}]+)$',
+      unicode: true,
+    );
+    return emojiRegex.hasMatch(text.replaceAll(' ', ''));
+  }
+
+  int _emojiCount(String text) {
+    final emojiRegex = RegExp(
+      r'[\u{1F300}-\u{1FAFF}|\u{2600}-\u{26FF}|\u{2700}-\u{27BF}|\u{FE0F}|\u{1F1E6}-\u{1F1FF}]',
+      unicode: true,
+    );
+    return emojiRegex.allMatches(text).length;
+  }
+
+  double _fontSize() {
+    if (!_isEmojiOnly(text)) {
+      return 14; // الحجم العادي
+    }
+
+    final count = _emojiCount(text);
+
+    if (count == 1) {
+      return 40; // إيموجي واحد
+    } else if (count <= 7) {
+      return 28; // من 2 لـ 7
+    } else {
+      return 14; // كتير
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: Styles.textStyle14.copyWith(color: Colors.black, height: 1.5),
+      textAlign: TextAlign.start,
+      style: Styles.textStyle14.copyWith(
+        fontSize: _fontSize(),
+        color: Colors.black,
+        height: 1.5,
+      ),
     );
   }
 }

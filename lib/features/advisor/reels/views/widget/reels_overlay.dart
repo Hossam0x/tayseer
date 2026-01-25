@@ -266,6 +266,7 @@ class ReelsOverlay extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => PostDetailsView(
+                    isFromProfile: false,
                     post: post,
                     cachedController: cachedController,
                     callbacks: PostCallbacks(

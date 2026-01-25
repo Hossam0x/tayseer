@@ -51,7 +51,7 @@ class HomeCubit extends Cubit<HomeState> {
     await Future.wait([
       fetchNameAndImage(),
       fetchCategories(),
-      _fetchPostsForCategory(null), // null = "الكل"
+      _fetchPostsForCategory(null),
     ]);
   }
 

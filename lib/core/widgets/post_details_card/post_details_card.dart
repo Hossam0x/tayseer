@@ -10,6 +10,7 @@ class PostDetailsCard extends StatelessWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
   final ScrollController? scrollController;
+  final bool isFromProfile;
 
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
@@ -78,6 +79,7 @@ class PostDetailsCard extends StatelessWidget {
     this.isEditLoading = false,
     this.isReplyLoading = false,
     this.getCommentKey,
+    required this.isFromProfile,
   });
 
   @override
@@ -88,6 +90,7 @@ class PostDetailsCard extends StatelessWidget {
       slivers: [
         // Post Section
         _PostSection(
+          isFromProfile: isFromProfile,
           post: post,
           cachedController: cachedController,
           callbacks: callbacks,
@@ -143,8 +146,8 @@ class PostDetailsCard extends StatelessWidget {
       onSaveEdit: onSaveEdit,
       onSendReply: onSendReply,
       onLoadReplies: onLoadReplies,
-      getCommentKey: getCommentKey, 
-      commentCallbacks: commentCallbacks, 
+      getCommentKey: getCommentKey,
+      commentCallbacks: commentCallbacks,
     );
   }
 }
@@ -158,12 +161,14 @@ class _PostSection extends StatelessWidget {
   final VideoPlayerController? cachedController;
   final PostCallbacks callbacks;
   final VoidCallback? onCommentTap;
+  final bool isFromProfile;
 
   const _PostSection({
     required this.post,
     this.cachedController,
     required this.callbacks,
     this.onCommentTap,
+    required this.isFromProfile,
   });
 
   @override
@@ -174,6 +179,7 @@ class _PostSection extends StatelessWidget {
         isDetailsView: true,
         sharedController: cachedController,
         callbacks: callbacks,
+        isFromProfile: isFromProfile,
         onNavigateToDetails: (_, __, ___) => onCommentTap?.call(),
       ),
     );
@@ -203,7 +209,7 @@ class _CommentsList extends StatelessWidget {
   final void Function(String commentId, String text)? onSendReply;
   final void Function(String commentId)? onLoadReplies;
   final GlobalKey Function(String commentId)? getCommentKey;
-final CommentCallbacks commentCallbacks;
+  final CommentCallbacks commentCallbacks;
   const _CommentsList({
     required this.comments,
     required this.hasMore,
@@ -315,7 +321,7 @@ class _CommentItem extends StatefulWidget {
   final void Function(CommentModel reply)? onLikeReply;
   final void Function(String replyId, String content)? onSaveReplyEdit;
   final GlobalKey Function(String commentId)? getReplyKey;
-final CommentCallbacks callbacks;
+  final CommentCallbacks callbacks;
   const _CommentItem({
     required this.comment,
     required this.callbacks,
@@ -349,12 +355,13 @@ class _CommentItemState extends State<_CommentItem> {
   bool? _lastIsReplyLoading;
   bool? _lastIsLoadingReplies;
 
-@override
+  @override
   Widget build(BuildContext context) {
     if (widget.comment.isTemp) return _buildTempComment(context);
 
     // ✅ تحديث الـ Logic ليعتمد على الـ Bundle
-    final shouldRebuild = _cachedWidget == null ||
+    final shouldRebuild =
+        _cachedWidget == null ||
         widget.comment != _lastComment ||
         widget.isEditing != _lastIsEditing ||
         widget.isReplying != _lastIsReplying ||
@@ -382,6 +389,7 @@ class _CommentItemState extends State<_CommentItem> {
     }
     return _cachedWidget!;
   }
+
   // ✅ Widget للكومنت المؤقت
   Widget _buildTempComment(BuildContext context) {
     return IgnorePointer(
