@@ -9,6 +9,7 @@ class PostImagesGrid extends StatelessWidget {
   final PostModel? post;
   final bool isFromPostDetails;
   final PostCallbacks callbacks;
+  final bool isFromProfile;
 
   const PostImagesGrid({
     super.key,
@@ -17,6 +18,7 @@ class PostImagesGrid extends StatelessWidget {
     this.post,
     required this.isFromPostDetails,
     this.callbacks = const PostCallbacks(),
+    required this.isFromProfile,
   });
 
   @override
@@ -34,7 +36,7 @@ class PostImagesGrid extends StatelessWidget {
 
     return SizedBox(
       height: height,
-      child: Row(children: _buildMultiLayout(context, gap)),
+      child: Row(children: _buildMultiLayout(context, gap, isFromProfile)),
     );
   }
 
@@ -94,7 +96,11 @@ class PostImagesGrid extends StatelessWidget {
   // ══════════════════════════════════════════════════════════════════════════
   // 🔢 Multi Images Logic (Grid) - زي ما هو بدون تغيير
   // ══════════════════════════════════════════════════════════════════════════
-  List<Widget> _buildMultiLayout(BuildContext context, double gap) {
+  List<Widget> _buildMultiLayout(
+    BuildContext context,
+    double gap,
+    bool isFromProfile,
+  ) {
     final count = images.length;
 
     if (count == 2) {
@@ -174,6 +180,7 @@ class PostImagesGrid extends StatelessWidget {
       PageRouteBuilder(
         opaque: false,
         pageBuilder: (_, __, ___) => ImageViewerView(
+          isFromProfile: isFromProfile,
           images: images,
           initialIndex: index,
           postId: postId,

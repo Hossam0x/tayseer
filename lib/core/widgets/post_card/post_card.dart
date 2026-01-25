@@ -15,6 +15,7 @@ class PostCard extends StatefulWidget {
   final PostModel post;
   final bool isDetailsView;
   final VideoPlayerController? sharedController;
+  final bool isFromProfile;
 
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
@@ -29,6 +30,7 @@ class PostCard extends StatefulWidget {
     this.sharedController,
     this.callbacks = const PostCallbacks(),
     this.onNavigateToDetails,
+    required this.isFromProfile,
   });
 
   @override
@@ -94,6 +96,7 @@ class _PostCardState extends State<PostCard> {
 
           // User Info
           _PostUserHeader(
+            isFromProfile: widget.isFromProfile,
             post: widget.post,
             onMoreTap: () => PostOptionsBottomSheet.show(
               context,
@@ -127,6 +130,7 @@ class _PostCardState extends State<PostCard> {
 
           // Media
           _PostMedia(
+            isFromProfile: widget.isFromProfile,
             post: widget.post,
             isDetailsView: widget.isDetailsView,
             sharedController: widget.sharedController,
@@ -410,14 +414,20 @@ class _RepostHeader extends StatelessWidget {
 class _PostUserHeader extends StatelessWidget {
   final PostModel post;
   final VoidCallback? onMoreTap;
+  final bool isFromProfile;
 
-  const _PostUserHeader({required this.post, this.onMoreTap});
+  const _PostUserHeader({
+    required this.post,
+    this.onMoreTap,
+    required this.isFromProfile,
+  });
 
   @override
   Widget build(BuildContext context) {
     return UserInfoHeader(
       name: post.name,
       avatar: post.avatar,
+      advisorId: post.advisorId,
       isVerified: post.isVerified,
       onMoreTap: onMoreTap ?? () {},
       subtitle: Row(
@@ -441,6 +451,7 @@ class _PostUserHeader extends StatelessWidget {
           Icon(Icons.public, color: AppColors.kGreyB3, size: 12.sp),
         ],
       ),
+      isFromProfile: isFromProfile,
     );
   }
 }
@@ -480,6 +491,7 @@ class _PostMedia extends StatefulWidget {
   final VideoPlayerController? sharedController;
   final void Function(VideoPlayerController) onControllerCreated;
   final PostCallbacks callbacks;
+  final bool isFromProfile;
 
   const _PostMedia({
     required this.post,
@@ -487,6 +499,7 @@ class _PostMedia extends StatefulWidget {
     this.sharedController,
     required this.onControllerCreated,
     required this.callbacks,
+    required this.isFromProfile,
   });
 
   @override
@@ -508,6 +521,7 @@ class _PostMediaState extends State<_PostMedia> {
       case PostContentType.post:
         return widget.post.images.isNotEmpty
             ? PostImagesGrid(
+                isFromProfile: widget.isFromProfile,
                 isFromPostDetails: widget.isDetailsView,
                 images: widget.post.images,
                 postId: widget.post.postId,

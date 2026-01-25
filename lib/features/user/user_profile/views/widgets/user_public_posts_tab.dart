@@ -1,32 +1,31 @@
-// features/advisor/user_profile/views/widgets/user_posts_tab.dart
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
-import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
-import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class UserAdvisorPostsTab extends StatelessWidget {
-  const UserAdvisorPostsTab({super.key});
+class UserPublicPostsTab extends StatelessWidget {
+  const UserPublicPostsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final userProfileCubit = context.read<UserAdvisorProfileCubit>();
+    final cubit = context.read<UserPublicProfileCubit>();
 
-    return BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+    return BlocListener<UserPublicProfileCubit, UserPublicProfileState>(
       listenWhen: _shouldListenToShare,
       listener: _handleShareState,
-      child: BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+      child: BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
         builder: (context, state) {
           if (state.postsState == CubitStates.loading && state.posts.isEmpty) {
             return _buildShimmerList();
           }
 
           if (state.postsState == CubitStates.failure && state.posts.isEmpty) {
-            return _buildErrorState(userProfileCubit);
+            return _buildErrorState(cubit);
           }
 
           final userPosts = state.posts;
@@ -37,8 +36,8 @@ class UserAdvisorPostsTab extends StatelessWidget {
 
           return RefreshIndicator(
             color: AppColors.kprimaryColor,
-            onRefresh: () => userProfileCubit.fetchPosts(),
-            child: _buildPostList(userPosts, state, context, userProfileCubit),
+            onRefresh: () => cubit.fetchPosts(),
+            child: _buildPostList(userPosts, state, context, cubit),
           );
         },
       ),
@@ -46,13 +45,13 @@ class UserAdvisorPostsTab extends StatelessWidget {
   }
 
   bool _shouldListenToShare(
-    UserAdvisorProfileState prev,
-    UserAdvisorProfileState curr,
+    UserPublicProfileState prev,
+    UserPublicProfileState curr,
   ) =>
       prev.shareActionState != curr.shareActionState &&
       curr.shareActionState != CubitStates.initial;
 
-  void _handleShareState(BuildContext context, UserAdvisorProfileState state) {
+  void _handleShareState(BuildContext context, UserPublicProfileState state) {
     final message = state.shareMessage;
     switch (state.shareActionState) {
       case CubitStates.success:
@@ -82,7 +81,7 @@ class UserAdvisorPostsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorState(UserAdvisorProfileCubit cubit) {
+  Widget _buildErrorState(UserPublicProfileCubit cubit) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
       child: Column(
@@ -90,7 +89,7 @@ class UserAdvisorPostsTab extends StatelessWidget {
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(16.h),
           Text(
-            'حدث خطأ',
+            'حدث خطأ في تحميل المنشورات',
             style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
           ),
@@ -125,9 +124,9 @@ class UserAdvisorPostsTab extends StatelessWidget {
 
   Widget _buildPostList(
     List<PostModel> posts,
-    UserAdvisorProfileState state,
+    UserPublicProfileState state,
     BuildContext context,
-    UserAdvisorProfileCubit cubit,
+    UserPublicProfileCubit cubit,
   ) {
     return ListView.builder(
       shrinkWrap: true,

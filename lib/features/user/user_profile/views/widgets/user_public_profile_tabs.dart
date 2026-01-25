@@ -1,23 +1,18 @@
-import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
-import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
-import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_posts_tab.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/user_public_posts_tab.dart';
 import 'package:tayseer/my_import.dart';
 
-class UserAdvisorProfileTabsSection extends StatefulWidget {
-  const UserAdvisorProfileTabsSection({super.key});
+class UserPublicProfileTabs extends StatefulWidget {
+  const UserPublicProfileTabs({super.key});
 
   @override
-  State<UserAdvisorProfileTabsSection> createState() =>
-      _UserAdvisorProfileTabsSectionState();
+  State<UserPublicProfileTabs> createState() => _UserPublicProfileTabsState();
 }
 
-class _UserAdvisorProfileTabsSectionState
-    extends State<UserAdvisorProfileTabsSection>
+class _UserPublicProfileTabsState extends State<UserPublicProfileTabs>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  final List<String> _tabs = ["المنشورات", "الشهادات", "التقييمات"];
+  final List<String> _tabs = ["المنشورات"];
 
   @override
   void initState() {
@@ -42,15 +37,7 @@ class _UserAdvisorProfileTabsSectionState
   void _refreshCurrentTab(int index) {
     switch (index) {
       case 0:
-        context.read<UserAdvisorProfileCubit>().fetchPosts();
-        break;
-      case 1:
-        // Refresh للشهادات
-        setState(() {});
-        break;
-      case 2:
-        // Refresh للتقييمات
-        setState(() {});
+        context.read<UserPublicProfileCubit>().fetchPosts();
         break;
     }
   }
@@ -71,7 +58,7 @@ class _UserAdvisorProfileTabsSectionState
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Transform.translate(
-                offset: Offset(110.w, 0),
+                offset: Offset(290.w, 0),
                 child: TabBar(
                   controller: _tabController,
                   isScrollable: true,
@@ -118,17 +105,7 @@ class _UserAdvisorProfileTabsSectionState
   Widget _buildTabContent() {
     switch (_tabController.index) {
       case 0:
-        return const UserAdvisorPostsTab();
-      case 1:
-        return ProfileCertificatesSection(
-          key: ValueKey(
-            'certificates_${DateTime.now().millisecondsSinceEpoch}',
-          ),
-        );
-      case 2:
-        return RatingsTab(
-          key: ValueKey('ratings_${DateTime.now().millisecondsSinceEpoch}'),
-        );
+        return const UserPublicPostsTab();
       default:
         return Container();
     }

@@ -50,6 +50,12 @@ import 'package:tayseer/features/user/user_advisor_profile/data/repositories/use
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 
 import '../../my_import.dart';
 
@@ -238,7 +244,7 @@ Future<void> setupGetIt() async {
   );
 
   getIt.registerLazySingleton<UserAdvisorProfileRepository>(
-    () => UserProfileRepositoryImpl(getIt<ApiService>()),
+    () => UserAdvisorProfileRepositoryImpl(getIt<ApiService>()),
   );
 
   getIt.registerLazySingleton<MySpaceRepo>(
@@ -259,6 +265,35 @@ Future<void> setupGetIt() async {
       advisorSessionRepository: getIt<AdvisorSessionRepo>(),
     ),
   );
+
+  getIt.registerFactory<UserProfileRepository>(
+    () => UserProfileRepositoryImpl(getIt()),
+  );
+
+  getIt.registerFactory<UserPublicProfileRepository>(
+    () => UserPublicProfileRepositoryImpl(getIt()),
+  );
+
+  // User Posts Repository
+  getIt.registerFactory<UserPostsRepository>(
+    () => UserPostsRepositoryImpl(getIt()),
+  );
+
+  // User Public Profile Cubit Factory
+  getIt
+      .registerFactoryParam<UserPublicProfileCubit, String?, UserProfileModel?>(
+        (userId, initialProfile) => UserPublicProfileCubit(
+          getIt<UserPublicProfileRepository>(),
+          getIt<UserPostsRepository>(),
+          userId: userId,
+          initialProfile: initialProfile,
+        ),
+      );
+
+  getIt.registerFactory<UserProfileEditCubit>(
+    () => UserProfileEditCubit(getIt<UserProfileRepository>()),
+  );
+
 
 
   // Interactions Repository

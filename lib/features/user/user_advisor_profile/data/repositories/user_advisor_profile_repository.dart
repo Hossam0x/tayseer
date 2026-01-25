@@ -24,10 +24,10 @@ abstract class UserAdvisorProfileRepository {
 }
 
 // features/advisor/user_profile/data/repositories/user_profile_repository_impl.dart
-class UserProfileRepositoryImpl implements UserAdvisorProfileRepository {
+class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
   final ApiService _apiService;
 
-  UserProfileRepositoryImpl(this._apiService);
+  UserAdvisorProfileRepositoryImpl(this._apiService);
 
   @override
   Future<Either<Failure, UserAdvisorProfileModel>> getUserProfile(
@@ -35,8 +35,7 @@ class UserProfileRepositoryImpl implements UserAdvisorProfileRepository {
   ) async {
     try {
       final response = await _apiService.get(
-        endPoint: '/advisor/getProfile',
-        query: {'advisorId': advisorId},
+        endPoint: '/advisor/getProfile/$advisorId',
       );
 
       if (response['success'] == true) {
@@ -71,8 +70,8 @@ class UserProfileRepositoryImpl implements UserAdvisorProfileRepository {
   }) async {
     try {
       final response = await _apiService.get(
-        endPoint: '/posts/all-for-advisor',
-        query: {'page': page, 'advisorId': advisorId},
+        endPoint: '/posts/all-for-advisor/$advisorId',
+        query: {'page': page},
       );
 
       if (response['success'] == true) {

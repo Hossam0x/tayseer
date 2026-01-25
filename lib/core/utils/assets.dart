@@ -226,4 +226,5 @@ abstract class AssetsData {
   static const String durationIcon = "assets/icons/duration_icon.svg";
   static const String cancelDialogIcon = "assets/icons/cancel_dialog_icon.png";
   static const String errorIcon = "assets/icons/error.png" ;
+  static const String icSettingsProf = "assets/icons/icSettingsProf.svg";
 }

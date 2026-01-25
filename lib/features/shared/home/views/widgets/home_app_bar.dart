@@ -18,7 +18,6 @@ class _HomeAppBarState extends State<HomeAppBar> {
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
           final userName = state.homeInfo?.name ?? '';
-          final userImage = state.homeInfo?.image ?? '';
 
           return Container(
             width: context.width,
