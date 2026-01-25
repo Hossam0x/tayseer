@@ -482,13 +482,14 @@ class AuthCubit extends Cubit<AuthState> {
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
 
+      // Get Apple credential with timeout to avoid hanging
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
         nonce: nonce,
-      );
+      ).timeout(const Duration(seconds: 12));
 
       final oauthCredential = OAuthProvider("apple.com").credential(
         idToken: appleCredential.identityToken,
@@ -496,10 +497,10 @@ class AuthCubit extends Cubit<AuthState> {
         accessToken: appleCredential.authorizationCode,
       );
 
-      // 🔥 تسجيل الدخول في Firebase
-      final userCredential = await _firebaseAuth.signInWithCredential(
-        oauthCredential,
-      );
+      // 🔥 تسجيل الدخول في Firebase (with timeout)
+      final userCredential = await _firebaseAuth
+          .signInWithCredential(oauthCredential)
+          .timeout(const Duration(seconds: 10));
 
       // ✅ Firebase ID Token (ده المطلوب)
       final firebaseIdToken = await userCredential.user?.getIdToken();
@@ -547,6 +548,16 @@ class AuthCubit extends Cubit<AuthState> {
         await Future.delayed(const Duration(milliseconds: 300));
         emit(state.copyWith(signInWithAppleState: CubitStates.initial));
       }
+    } on TimeoutException catch (e) {
+      debugPrint('signInWithApple timed out: $e');
+      emit(state.copyWith(
+        fromScreen: 'registration',
+        signInWithAppleState: CubitStates.failure,
+        currentAuthUserType: userType,
+        errorMessage: 'Request timed out',
+      ));
+      await Future.delayed(const Duration(milliseconds: 300));
+      emit(state.copyWith(signInWithAppleState: CubitStates.initial));
     } catch (e) {
       emit(
         state.copyWith(
@@ -558,6 +569,8 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       debugPrint('sign in apple error $e');
+      await Future.delayed(const Duration(milliseconds: 300));
+      emit(state.copyWith(signInWithAppleState: CubitStates.initial));
     }
     // Note: we reset to initial inside the success/failure flows above.
   }
