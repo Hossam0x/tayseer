@@ -12,6 +12,7 @@ import 'package:tayseer/features/advisor/settings/data/repositories/account_mana
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
+import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
@@ -294,5 +295,9 @@ Future<void> setupGetIt() async {
   // User
   getIt.registerFactory<UserAccountManagementRepository>(
     () => UserAccountManagementRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerLazySingleton<FollowersRepository>(
+    () => FollowersRepositoryImpl(getIt<ApiService>()),
   );
 }

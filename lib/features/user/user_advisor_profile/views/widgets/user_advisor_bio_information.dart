@@ -63,6 +63,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
       child: _buildBioContent(
         context,
         const UserAdvisorProfileModel(
+          id: '1',
           name: 'اسم المستخدم',
           image: '',
           username: '@username',

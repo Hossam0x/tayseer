@@ -1,16 +1,16 @@
+import 'package:tayseer/features/shared/followers/data/models/follower_model.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class FollowerItem extends StatelessWidget {
-  final String name;
-  final String username;
-  final bool isFollowing;
+  final FollowerModel follower;
+  final bool isSkeleton;
   final VoidCallback onToggleFollow;
 
   const FollowerItem({
     super.key,
-    required this.name,
-    required this.username,
-    required this.isFollowing,
+    required this.follower,
+    this.isSkeleton = false,
     required this.onToggleFollow,
   });
 
@@ -22,84 +22,180 @@ class FollowerItem extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: 15.h),
           child: Row(
             children: [
-              // الصورة الرمزية (الجهة اليمنى)
-              Container(
-                width: 55.r,
-                height: 55.r,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey.shade200,
-                ),
-                child: ClipOval(
-                  child: Image.asset(AssetsData.avatarImage, fit: BoxFit.cover),
-                  // ملحوظة: يمكنك إضافة BackdropFilter هنا إذا أردت استمرار تأثير التغبيش
-                ),
-              ),
+              // Profile Image
+              _buildProfileImage(),
               SizedBox(width: 12.w),
 
-              // بيانات المستخدم (الوسط)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    name,
-                    style: Styles.textStyle16.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  Text(
-                    username,
-                    style: Styles.textStyle14.copyWith(color: Colors.grey),
-                  ),
-                ],
-              ),
-
-              const Spacer(),
-
-              // زر المتابعة / إلغاء المتابعة (الجهة اليسرى)
-              isFollowing
-                  ? Container(
-                      width: 115.w,
-                      height: 44.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary100,
-                        borderRadius: BorderRadius.circular(10.r),
-                        border: Border.all(color: AppColors.primary500),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(6.r),
-                          onTap: onToggleFollow,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10.w),
-                            child: Center(
-                              child: Text(
-                                'إلغاء المتابعة',
-                                style: Styles.textStyle16SemiBold.copyWith(
-                                  color: AppColors.primary400,
+              // User Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        if (follower.isAdvisor && !isSkeleton)
+                          SizedBox(width: 4.w),
+                        isSkeleton
+                            ? Skeleton.shade(
+                                child: Container(
+                                  width: 100.w,
+                                  height: 16.h,
+                                  color: Colors.grey.shade200,
                                 ),
-                                textAlign: TextAlign.center,
+                              )
+                            : Text(
+                                follower.name,
+                                style: Styles.textStyle16.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
                               ),
+                      ],
+                    ),
+                    SizedBox(height: 4.h),
+                    isSkeleton
+                        ? Skeleton.shade(
+                            child: Container(
+                              width: 80.w,
+                              height: 14.h,
+                              color: Colors.grey.shade200,
+                            ),
+                          )
+                        : Text(
+                            follower.username,
+                            style: Styles.textStyle14.copyWith(
+                              color: Colors.grey,
                             ),
                           ),
-                        ),
-                      ),
-                    )
-                  : CustomBotton(
-                      // الزر الممتلئ للمتابعة
-                      title: 'متابعة',
-                      onPressed: onToggleFollow,
-                      width: 110.w,
-                      height: 40.h,
-                      useGradient: true,
-                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(width: 12.w),
+
+              // Follow Button
+              if (!isSkeleton && follower.isAdvisor) _buildFollowButton(),
             ],
           ),
         ),
         Divider(color: Colors.grey.shade400, height: 0.5.h, thickness: 0.5.h),
       ],
+    );
+  }
+
+  Widget _buildProfileImage() {
+    return isSkeleton
+        ? Skeleton.shade(
+            child: Container(
+              width: 55.r,
+              height: 55.r,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey.shade200,
+              ),
+            ),
+          )
+        : Container(
+            width: 55.r,
+            height: 55.r,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey.shade200,
+            ),
+            child: ClipOval(
+              child: follower.imageUrl != null && follower.imageUrl!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: follower.imageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey.shade200,
+                        child: Icon(
+                          Icons.person,
+                          size: 24.w,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey.shade200,
+                        child: Icon(
+                          Icons.person,
+                          size: 24.w,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      color: Colors.grey.shade200,
+                      child: Icon(
+                        Icons.person,
+                        size: 24.w,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+            ),
+          );
+  }
+
+  Widget _buildFollowButton() {
+    if (follower.isFollowing) {
+      return Container(
+        width: 115.w,
+        height: 45.h,
+        decoration: BoxDecoration(
+          color: AppColors.primary100,
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: AppColors.primary500),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(6.r),
+            onTap: onToggleFollow,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10.w),
+              child: Center(
+                child: Text(
+                  'إلغاء المتابعة',
+                  style: Styles.textStyle16SemiBold.copyWith(
+                    color: AppColors.primary400,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      return CustomBotton(
+        title: 'متابعة',
+        onPressed: onToggleFollow,
+        width: 110.w,
+        height: 45.h,
+        radius: 10.r,
+        useGradient: true,
+      );
+    }
+  }
+}
+
+// Skeleton item for loading state
+class FollowerItemSkeleton extends StatelessWidget {
+  const FollowerItemSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FollowerItem(
+      follower: FollowerModel(
+        id: '',
+        name: 'اسم المستخدم',
+        username: '@username',
+        isFollowing: false,
+        userType: 'User',
+      ),
+      isSkeleton: true,
+      onToggleFollow: () {},
     );
   }
 }

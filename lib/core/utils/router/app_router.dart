@@ -360,14 +360,16 @@ abstract class AppRouter {
         );
 
       case AppRouter.kFollowersView:
+        final userId = settings.arguments as String? ?? '';
         return FadeScaleRoute(
-          page: const FollowersView(),
+          page: FollowersView(userId: userId),
           routeSettings: settings,
         );
 
       case AppRouter.kFollowingView:
+        final userId = settings.arguments as String? ?? '';
         return FadeScaleRoute(
-          page: const FollowingView(),
+          page: FollowingView(userId: userId),
           routeSettings: settings,
         );
 
