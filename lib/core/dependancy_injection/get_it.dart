@@ -157,7 +157,7 @@ Future<void> setupGetIt() async {
   );
 
   /// Ratings Cubit
-  getIt.registerFactory<RatingsCubit>(
+  getIt.registerLazySingleton<RatingsCubit>(
     () => RatingsCubit(getIt<RatingsRepository>()),
   );
 
@@ -167,7 +167,7 @@ Future<void> setupGetIt() async {
   );
 
   /// Certificates Cubit
-  getIt.registerFactory<CertificatesCubit>(
+  getIt.registerLazySingleton<CertificatesCubit>(
     () => CertificatesCubit(getIt<CertificatesRepository>()),
   );
 

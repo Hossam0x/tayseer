@@ -1,6 +1,5 @@
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
-import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_posts_tab.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -14,15 +13,24 @@ class UserAdvisorProfileTabsSection extends StatefulWidget {
 
 class _UserAdvisorProfileTabsSectionState
     extends State<UserAdvisorProfileTabsSection>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late TabController _tabController;
 
   final List<String> _tabs = ["المنشورات", "الشهادات", "التقييمات"];
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
+    // إضافة listener عشان نعمل setState لما الـ tab يتغير
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -31,32 +39,9 @@ class _UserAdvisorProfileTabsSectionState
     super.dispose();
   }
 
-  void _handleTabTap(int index) {
-    if (index == _tabController.index) {
-      _refreshCurrentTab(index);
-    } else {
-      _tabController.animateTo(index);
-    }
-  }
-
-  void _refreshCurrentTab(int index) {
-    switch (index) {
-      case 0:
-        context.read<UserAdvisorProfileCubit>().fetchPosts();
-        break;
-      case 1:
-        // Refresh للشهادات
-        setState(() {});
-        break;
-      case 2:
-        // Refresh للتقييمات
-        setState(() {});
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return SliverToBoxAdapter(
       child: Column(children: [_buildTabsHeader(), _buildTabContent()]),
     );
@@ -104,7 +89,6 @@ class _UserAdvisorProfileTabsSectionState
                       ),
                     );
                   }).toList(),
-                  onTap: _handleTabTap,
                 ),
               ),
             ],
@@ -116,21 +100,35 @@ class _UserAdvisorProfileTabsSectionState
   }
 
   Widget _buildTabContent() {
-    switch (_tabController.index) {
-      case 0:
-        return const UserAdvisorPostsTab();
-      case 1:
-        return ProfileCertificatesSection(
-          key: ValueKey(
-            'certificates_${DateTime.now().millisecondsSinceEpoch}',
-          ),
-        );
-      case 2:
-        return RatingsTab(
-          key: ValueKey('ratings_${DateTime.now().millisecondsSinceEpoch}'),
-        );
-      default:
-        return Container();
-    }
+    return IndexedStack(
+      index: _tabController.index,
+      children: [
+        KeepAlive(child: UserAdvisorPostsTab()),
+        KeepAlive(child: ProfileCertificatesSection()),
+        KeepAlive(child: RatingsTab()),
+      ],
+    );
+  }
+}
+
+// ويدجت KeepAlive مساعد
+class KeepAlive extends StatefulWidget {
+  final Widget child;
+
+  const KeepAlive({super.key, required this.child});
+
+  @override
+  State<KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<KeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

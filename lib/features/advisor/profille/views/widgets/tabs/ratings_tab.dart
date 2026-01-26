@@ -1,5 +1,5 @@
 import 'package:intl/intl.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
+// import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -17,26 +17,60 @@ class RatingsTab extends StatelessWidget {
   }
 }
 
-class _RatingsTabContent extends StatelessWidget {
+class _RatingsTabContent extends StatefulWidget {
   const _RatingsTabContent();
 
   @override
+  State<_RatingsTabContent> createState() => __RatingsTabContentState();
+}
+
+class __RatingsTabContentState extends State<_RatingsTabContent> {
+  late RatingsCubit _cubit;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCubit();
+  }
+
+  Future<void> _initializeCubit() async {
+    _cubit = getIt<RatingsCubit>();
+    await _loadData();
+  }
+
+  Future<void> _loadData() async {
+    if (!_isInitialized) {
+      await _cubit.refresh();
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    }
+  }
+
+  // دالة لاستدعاء الرفريش من الخارج
+  Future<void> refreshFromParent() async {
+    await _cubit.refresh();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return _buildSkeletonRatings();
+    }
+
     return BlocBuilder<RatingsCubit, RatingsState>(
+      bloc: _cubit,
       builder: (context, state) {
-        switch (state.state) {
-          case CubitStates.loading:
-            return _buildSkeletonRatings();
-          case CubitStates.failure:
-            return _buildErrorRatings(context, state.errorMessage);
-          case CubitStates.success:
-            if (state.ratings.isEmpty) {
-              return const SharedEmptyState(title: "لا توجد تقييمات");
-            }
-            return _buildRatingsContent(context, state);
-          default:
-            return const SizedBox.shrink();
-        }
+        return RefreshIndicator(
+          onRefresh: () async => await _cubit.refresh(),
+          child: _buildRatingsContent(context, state),
+        );
       },
     );
   }
@@ -205,40 +239,40 @@ class _RatingsTabContent extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorRatings(BuildContext context, String? errorMessage) {
-    return Padding(
-      padding: EdgeInsets.all(24.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-          Gap(16.h),
-          Text(
-            errorMessage ?? 'حدث خطأ في تحميل التقييمات',
-            style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-            textAlign: TextAlign.center,
-          ),
-          Gap(24.h),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.kprimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            ),
-            onPressed: () => context.read<RatingsCubit>().refresh(),
-            child: Text(
-              'إعادة المحاولة',
-              style: Styles.textStyle14Meduim.copyWith(
-                color: AppColors.kWhiteColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildErrorRatings(BuildContext context, String? errorMessage) {
+  //   return Padding(
+  //     padding: EdgeInsets.all(24.w),
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
+  //         Gap(16.h),
+  //         Text(
+  //           errorMessage ?? 'حدث خطأ في تحميل التقييمات',
+  //           style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
+  //           textAlign: TextAlign.center,
+  //         ),
+  //         Gap(24.h),
+  //         ElevatedButton(
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: AppColors.kprimaryColor,
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(10.r),
+  //             ),
+  //             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+  //           ),
+  //           onPressed: () => context.read<RatingsCubit>().refresh(),
+  //           child: Text(
+  //             'إعادة المحاولة',
+  //             style: Styles.textStyle14Meduim.copyWith(
+  //               color: AppColors.kWhiteColor,
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildRatingsContent(BuildContext context, RatingsState state) {
     return Padding(
