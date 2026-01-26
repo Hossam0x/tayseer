@@ -1,16 +1,27 @@
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interactions_view.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart'; // ✅ إضافة هذا
 import 'package:tayseer/features/user/layout/view/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 
-class UserLayOutViewBody extends StatelessWidget {
+class UserLayOutViewBody extends StatefulWidget {
   const UserLayOutViewBody({super.key});
 
+  @override
+  State<UserLayOutViewBody> createState() => _UserLayOutViewBodyState();
+}
+
+class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
+ // ✅ Now using the public InteractionBodyState class
+  final GlobalKey<InteractionBodyState> _interactionsKey = 
+      GlobalKey<InteractionBodyState>();
+      
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<LayoutCubit>();
@@ -30,7 +41,14 @@ class UserLayOutViewBody extends StatelessWidget {
                 child: AnimatedSlide(
                   duration: const Duration(milliseconds: 300),
                   offset: state.isNavVisible ? Offset.zero : const Offset(0, 1),
-                  child: const UserNavBar(),
+                  child: UserNavBar(
+                    onTabReselect: (index) {
+                      // ✅ التحقق من التاب المختار (Interactions في index 3)
+                      if (index == 3 && state.currentIndex == 3) {
+                        _interactionsKey.currentState?.handleTabReselect();
+                      }
+                    },
+                  ),
                 ),
               ),
             ],
@@ -47,7 +65,11 @@ class UserLayOutViewBody extends StatelessWidget {
           HomeView(onScroll: cubit.onScroll),
           MarriageView(),
           MySpaceView(),
-          InteractionsView(),
+          // ✅ بدلاً من تمرير key لـ InteractionsView، نستخدم BlocProvider مباشرة
+          BlocProvider(
+            create: (context) => getIt<InteractionsCubit>(),
+            child: InteractionBody(key: _interactionsKey), // ✅ تمرير الـ Key مباشرة
+          ),
           const UserProfileView(),
         ];
 

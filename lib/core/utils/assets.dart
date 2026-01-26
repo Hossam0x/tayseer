@@ -40,7 +40,7 @@ abstract class AssetsData {
       "assets/images/is_empty_sesession.png";
   static const String kLangImage = "assets/images/lang_imge.png";
   static const String emptyBoxImage = "assets/images/EmptyBox.png";
-  static const String sentGreetingRibbon = "assets/images/sentGreetingRibbon.png";
+  static const String sentGreetingRibbon = "assets/images/sentGreetingRibbon.svg";
   static const String ribbonImage = "assets/images/ribbonImage.png";
   static const String vector4 = "assets/images/vector4.png";
   static const String userBGImage = "assets/images/user_BG.png";
@@ -72,7 +72,7 @@ abstract class AssetsData {
   static const String kWalletIcon = "assets/icons/wallet_icon.svg";
   static const String EgyFlagIcon = "assets/icons/Egyflag.svg";
   static const String workIcon = "assets/icons/workIcon.svg";
-
+  static const String diamondIcon = "assets/icons/diamond.svg";
   static const String chatIcon = "assets/icons/chat.svg";
   static const String selectedChatIcon = "assets/icons/selected_chat.svg";
   static const String homeIcon = "assets/icons/home.svg";

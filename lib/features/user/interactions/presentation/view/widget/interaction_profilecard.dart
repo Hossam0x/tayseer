@@ -3,25 +3,60 @@ import 'package:tayseer/features/user/interactions/presentation/Interactions_cub
 import 'package:tayseer/my_import.dart';
 import '../../../data/Model/Iinteraction_usermodel .dart';
 import 'status_ribbon_widget.dart';
+// في ملف interaction_profilecard.dart
 
-
-class InteractionProfileCard extends StatelessWidget {
+class InteractionProfileCard extends StatefulWidget {
   final InteractionUserModel item;
+  final bool forceBlur;
+  final bool showFavoriteIcon;
+  const InteractionProfileCard({
+    super.key,
+    required this.item,
+    this.forceBlur = false,
+    this.showFavoriteIcon = false,
+  });
 
-  const InteractionProfileCard({super.key, required this.item});
+  @override
+  State<InteractionProfileCard> createState() => _InteractionProfileCardState();
+}
+
+class _InteractionProfileCardState extends State<InteractionProfileCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final shouldBlur = widget.forceBlur || widget.item.isImageBlurred;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // 1. جسم الكارت الأساسي
         Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
             color: const Color.fromRGBO(0, 0, 0, 0.08),
             borderRadius: BorderRadius.circular(20.r),
-          
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -32,45 +67,61 @@ class InteractionProfileCard extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // الصورة الأصلية
-                      AppImage(
-                        item.image,
-                        fit: BoxFit.cover,
-                      ),
-                      
-                      // تأثير الـ Blur
-                      if (item.isImageBlurred)
+                      AppImage(widget.item.image, fit: BoxFit.cover),
+
+                      if (shouldBlur)
                         BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                           child: Container(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withOpacity(0.2),
                           ),
                         ),
-                      
-                      // ✅ Favorite Icon (مع وظيفة الإعجاب)
-                      if (item.isFavorite)
+
+                      // داخل ملف interaction_profilecard.dart في الجزء الخاص بالـ Stack
+
+                      // ✅ تعديل الشرط ليظهر القلب إذا كان مفعل خارجيًا أو إذا كان العنصر مفضلاً بالفعل
+                      if (widget.showFavoriteIcon || widget.item.isFavorite)
                         Positioned(
                           top: 12.h,
                           left: 12.w,
                           child: GestureDetector(
-                            onTap: () {
-                              // إزالة من المفضلة
-                              context.read<InteractionsCubit>().toggleFavorite(
-                                userId: item.userId,
-                                isAdd: false,
+                            onTap: () async {
+                              final cubit = context.read<InteractionsCubit>();
+                              final currentStatus = widget.item.isFavorite;
+
+                              // ✅ إذا كان في المفضلة (سيتم حذفه)، اطلب التأكيد
+                              if (currentStatus) {
+                                final shouldRemove =
+                                    await showRemoveFavoriteDialog(context);
+                                if (shouldRemove != true || !mounted) return;
+                              }
+
+                              // ✅ Animation
+                              _animationController.forward().then(
+                                (_) => _animationController.reverse(),
+                              );
+
+                              // ✅ Toggle
+                              cubit.toggleFavorite(
+                                userId: widget.item.userId,
+                                isAdd: !currentStatus,
                               );
                             },
-                            child: Container(
-                              padding: EdgeInsets.all(6.w),
-                              decoration: BoxDecoration(
+                            child: ScaleTransition(
+                              scale: _scaleAnimation,
+                              child: Container(
+                                padding: EdgeInsets.all(6.w),
+                                // خلفية خفيفة لتمييز الأيقونة إذا كانت الصورة فاتحة
                               
-                                shape: BoxShape.circle,
-                              
-                              ),
-                              child: Icon(
-                                Icons.favorite,
-                                color: AppColors.primary400,
-                                size: 26.sp,
+                                child: Icon(
+                                  widget.item.isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: widget.item.isFavorite
+                                      ? AppColors.primary400
+                                      : Colors.white,
+                                  size: 27.sp,
+                                ),
                               ),
                             ),
                           ),
@@ -79,7 +130,8 @@ class InteractionProfileCard extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
+              // ... باقي الكود (الـ Padding والبيانات)
               Padding(
                 padding: EdgeInsets.only(top: 10.h, right: 4.w, left: 4.w),
                 child: Column(
@@ -92,48 +144,50 @@ class InteractionProfileCard extends StatelessWidget {
                             children: [
                               Flexible(
                                 child: Text(
-                                  '${item.name},',
+                                  '${widget.item.name},',
                                   style: Styles.textStyle16SemiBold,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               Text(
-                                ' ${item.age} سنة',
+                                ' ${widget.item.age} سنة',
                                 style: Styles.textStyle16.copyWith(
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
                               SizedBox(width: 5.w),
-                              Icon(
-                                Icons.verified,
-                                color: Colors.blue,
-                                size: 16.sp,
-                              ),
+                              if (widget.item.isverified)
+                                Icon(
+                                  Icons.verified,
+                                  color: Colors.blue,
+                                  size: 16.sp,
+                                ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    
+
                     SizedBox(height: 8.h),
-                    
+
                     Row(
                       children: [
-                        _buildBadge(text: item.day),
+                        _buildBadge(text: widget.item.day),
                         SizedBox(width: 8.w),
-                        _buildBadge(
-                          text: item.country,
-                          icon: AssetsData.EgyFlagIcon,
-                        ),
+                        if (widget.item.country.isNotEmpty)
+                          _buildBadge(
+                            text: widget.item.country,
+                            icon: AssetsData.EgyFlagIcon,
+                          ),
                       ],
                     ),
-                    
+
                     SizedBox(height: 8.h),
-                    
-                    _buildBadge(
-                      text: item.job,
-                      icon: AssetsData.workIcon,
-                    ),
+                    if (widget.item.country.isNotEmpty)
+                      _buildBadge(
+                        text: widget.item.job,
+                        icon: AssetsData.workIcon,
+                      ),
                   ],
                 ),
               ),
@@ -141,20 +195,20 @@ class InteractionProfileCard extends StatelessWidget {
           ),
         ),
 
-        // 2. الشعار (Ribbon)
-        if (item.likedHim)
+        // الشعار (Ribbon)
+        if (widget.item.likedHim)
           StatusRibbonwidget(
             statusText: "نال أعجابك",
             topTextPosition: 28.h,
             rightTextPosition: 1.w,
           )
-        else if (item.sentCompliment)
+        else if (widget.item.sentCompliment)
           StatusRibbonwidget(
             statusText: "أرسلت مجاملة",
             topTextPosition: 26.h,
             rightTextPosition: -2.w,
           )
-        else if (item.likedMe)
+        else if (widget.item.likedMe)
           StatusRibbonwidget(
             statusText: "اُعجب بك",
             topTextPosition: 30.h,
@@ -189,4 +243,112 @@ class InteractionProfileCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class RemoveFavoriteDialog extends StatelessWidget {
+  final VoidCallback onConfirm;
+  final VoidCallback onCancel;
+
+  const RemoveFavoriteDialog({
+    super.key,
+    required this.onConfirm,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+      child: Padding(
+        padding: EdgeInsets.all(24.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // أيقونة
+            Icon(
+              Icons.favorite_border,
+              color: AppColors.primary400,
+              size: 48.sp,
+            ),
+
+            SizedBox(height: 16.h),
+
+            // العنوان
+            Text(
+              'إزالة من المفضلة',
+              style: Styles.textStyle18SemiBold,
+              textAlign: TextAlign.center,
+            ),
+
+            SizedBox(height: 12.h),
+
+            // الرسالة
+            Text(
+              'هل تريد إزالة هذا المستخدم من المفضلة؟',
+              style: Styles.textStyle16.copyWith(color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+
+            SizedBox(height: 24.h),
+
+            // الأزرار
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onCancel,
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      side: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    child: Text(
+                      'إلغاء',
+                      style: Styles.textStyle16SemiBold.copyWith(
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(width: 12.w),
+
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onConfirm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary400,
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    child: Text(
+                      'تأكيد',
+                      style: Styles.textStyle16SemiBold.copyWith(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// دالة مساعدة لعرض الـ Dialog
+Future<bool?> showRemoveFavoriteDialog(BuildContext context) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) => RemoveFavoriteDialog(
+      onConfirm: () => Navigator.of(context).pop(true),
+      onCancel: () => Navigator.of(context).pop(false),
+    ),
+  );
 }

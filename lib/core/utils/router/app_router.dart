@@ -53,6 +53,7 @@ import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_cubit.dart';
@@ -192,7 +193,7 @@ abstract class AppRouter {
   static const voiceCallView = '/VoiceCallView';
   static const kRegisrationAdvisorView = '/RegisrationAdvisorView';
   static const kInteractionFilterView = '/InteractionFilterView';
-
+  static const kinteractionSubscriptionView = '/interactionSubscriptionView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -211,11 +212,8 @@ abstract class AppRouter {
           routeSettings: settings,
         );
       case kUserLayoutView:
-        return SlideLeftRoute(
-          page:  UserLayoutView(),
-          routeSettings: settings,
-        );
-  case kInteractionFilterView:
+        return SlideLeftRoute(page: UserLayoutView(), routeSettings: settings);
+      case kInteractionFilterView:
         return SlideLeftRoute(
           page: const InteractionFilterPage(),
           routeSettings: settings,
@@ -903,7 +901,11 @@ abstract class AppRouter {
             return OrderSessionView();
           },
         );
-
+      case AppRouter.kinteractionSubscriptionView:
+        return FadeScaleRoute(
+          page: const interactionSubscriptionView(),
+          routeSettings: settings,
+        );
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;
       //   return PageRouteBuilder(

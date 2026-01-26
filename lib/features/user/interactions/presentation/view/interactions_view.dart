@@ -7,9 +7,9 @@ class InteractionsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  BlocProvider(
+    return BlocProvider(
       create: (context) => getIt<InteractionsCubit>(),
-      child: InteractionBody(),
+      child: const InteractionBody(),
     );
   }
 }
