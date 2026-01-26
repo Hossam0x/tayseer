@@ -21,6 +21,9 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
   late bool _isLoading;
   bool _isAiGenerated = false;
 
+  // متغير لعرض عدد الأحرف الحالي
+  int get _currentCharacterCount => _descriptionController.text.length;
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +31,14 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
       text: widget.initialProfile.description ?? '',
     );
     _isLoading = false;
+
+    // إضافة مستمع للتغيرات في النص
+    _descriptionController.addListener(() {
+      // تحديث الواجهة عند كل تغيير في النص
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -136,11 +147,18 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
                         ),
                       ),
                       Gap(8.h),
-                      Text(
-                        '${_descriptionController.text.length}/200',
-                        style: Styles.textStyle12.copyWith(
-                          color: AppColors.secondary400,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$_currentCharacterCount/200',
+                            style: Styles.textStyle12.copyWith(
+                              color: _currentCharacterCount > 200
+                                  ? AppColors.errorColor
+                                  : AppColors.secondary400,
+                            ),
+                          ),
+                        ],
                       ),
                       Gap(32.h),
 
