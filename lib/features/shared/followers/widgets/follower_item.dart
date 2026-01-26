@@ -1,4 +1,6 @@
 import 'package:tayseer/features/shared/followers/data/models/follower_model.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -14,69 +16,96 @@ class FollowerItem extends StatelessWidget {
     required this.onToggleFollow,
   });
 
+  void _navigateToUserAdvisorProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserAdvisorProfileView(advisorId: follower.id),
+      ),
+    );
+  }
+
+  void _navigateToUserProfile(BuildContext context) {
+    if (follower.id.isEmpty) {
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserPublicProfileView(userId: follower.id),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 15.h),
-          child: Row(
-            children: [
-              // Profile Image
-              _buildProfileImage(),
-              SizedBox(width: 12.w),
+        GestureDetector(
+          onTap: () => follower.isAdvisor
+              ? _navigateToUserAdvisorProfile(context)
+              : _navigateToUserProfile(context),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 15.h),
+            child: Row(
+              children: [
+                // Profile Image
+                _buildProfileImage(),
+                SizedBox(width: 12.w),
 
-              // User Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        if (follower.isAdvisor && !isSkeleton)
-                          SizedBox(width: 4.w),
-                        isSkeleton
-                            ? Skeleton.shade(
-                                child: Container(
-                                  width: 100.w,
-                                  height: 16.h,
-                                  color: Colors.grey.shade200,
+                // User Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          if (follower.isAdvisor && !isSkeleton)
+                            SizedBox(width: 4.w),
+                          isSkeleton
+                              ? Skeleton.shade(
+                                  child: Container(
+                                    width: 100.w,
+                                    height: 16.h,
+                                    color: Colors.grey.shade200,
+                                  ),
+                                )
+                              : Text(
+                                  follower.name,
+                                  style: Styles.textStyle16.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
                                 ),
-                              )
-                            : Text(
-                                follower.name,
-                                style: Styles.textStyle16.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
+                        ],
+                      ),
+                      SizedBox(height: 4.h),
+                      isSkeleton
+                          ? Skeleton.shade(
+                              child: Container(
+                                width: 80.w,
+                                height: 14.h,
+                                color: Colors.grey.shade200,
                               ),
-                      ],
-                    ),
-                    SizedBox(height: 4.h),
-                    isSkeleton
-                        ? Skeleton.shade(
-                            child: Container(
-                              width: 80.w,
-                              height: 14.h,
-                              color: Colors.grey.shade200,
+                            )
+                          : Text(
+                              follower.username,
+                              style: Styles.textStyle14.copyWith(
+                                color: Colors.grey,
+                              ),
                             ),
-                          )
-                        : Text(
-                            follower.username,
-                            style: Styles.textStyle14.copyWith(
-                              color: Colors.grey,
-                            ),
-                          ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              SizedBox(width: 12.w),
+                SizedBox(width: 12.w),
 
-              // Follow Button
-              if (!isSkeleton && follower.isAdvisor) _buildFollowButton(),
-            ],
+                // Follow Button
+                if (!isSkeleton && follower.isAdvisor) _buildFollowButton(),
+              ],
+            ),
           ),
         ),
         Divider(color: Colors.grey.shade400, height: 0.5.h, thickness: 0.5.h),
