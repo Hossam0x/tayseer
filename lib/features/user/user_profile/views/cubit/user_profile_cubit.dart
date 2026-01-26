@@ -131,7 +131,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         id: 'account_management',
         title: 'إدارة الحساب',
         iconAsset: AssetsData.icManagementSettings,
-        routeName: AppRouter.kAccountManagementView,
+        routeName: AppRouter.kUserAccountManagementView,
       ),
     ];
   }

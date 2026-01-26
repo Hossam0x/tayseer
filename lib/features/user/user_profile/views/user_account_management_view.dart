@@ -1,25 +1,27 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_state.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_account_management_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
-class AccountManagementView extends StatefulWidget {
-  const AccountManagementView({super.key});
+class UserAccountManagementView extends StatefulWidget {
+  const UserAccountManagementView({super.key});
 
   @override
-  State<AccountManagementView> createState() => _AccountManagementViewState();
+  State<UserAccountManagementView> createState() =>
+      _UserAccountManagementViewState();
 }
 
-class _AccountManagementViewState extends State<AccountManagementView> {
-  // نوع enum لتحديد الاختيار
+class _UserAccountManagementViewState extends State<UserAccountManagementView> {
   AccountAction? selectedAction;
-  late AccountManagementCubit _cubit;
+  late UserAccountManagementCubit _cubit;
 
   @override
   void initState() {
     super.initState();
-    _cubit = AccountManagementCubit(getIt<AccountManagementRepository>());
+    _cubit = UserAccountManagementCubit(
+      getIt<UserAccountManagementRepository>(),
+    );
   }
 
   @override
@@ -32,7 +34,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _cubit,
-      child: BlocConsumer<AccountManagementCubit, AccountManagementState>(
+      child: BlocConsumer<UserAccountManagementCubit, AccountManagementState>(
         listener: (context, state) {
           _handleStateChanges(context, state);
         },
@@ -167,7 +169,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
         cancelText: 'لا',
         onConfirm: () {
           Navigator.pop(context);
-          // تنفيذ عملية الإيقاف المؤقت
+          // تنفيذ عملية الإيقاف المؤقت لليوزر
           _cubit.suspendAccount();
         },
       ),
@@ -185,7 +187,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
         cancelText: 'لا',
         onConfirm: () {
           Navigator.pop(context);
-          // تنفيذ عملية الحذف النهائي
+          // تنفيذ عملية الحذف النهائي لليوزر
           _cubit.deleteAccount();
         },
       ),
@@ -235,7 +237,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
               children: [
                 Expanded(
                   child: CustomBotton(
-                    title: confirmText, // زر "نعم" - التأكيد
+                    title: confirmText,
                     onPressed: onConfirm,
                     backGroundcolor: Colors.red, // أحمر للموافقة
                     titleColor: Colors.white,
@@ -244,7 +246,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                 Gap(12.w),
                 Expanded(
                   child: CustomBotton(
-                    title: cancelText, // زر "لا" - الإلغاء
+                    title: cancelText,
                     onPressed: () => Navigator.pop(context),
                     backGroundcolor: Colors.green, // أخضر للإلغاء
                     titleColor: Colors.white,

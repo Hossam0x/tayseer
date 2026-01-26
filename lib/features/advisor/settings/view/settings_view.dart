@@ -311,14 +311,14 @@ class SettingsView extends StatelessWidget {
       context,
       title: 'تسجيل الخروج',
       supTitle: 'هل أنت متأكد من تسجيل الخروج من حسابك؟',
-      imageUrl: AssetsData.icBlockedSettings,
-      bottonText: 'نعم، سجل خروج',
-      cancelText: 'إلغاء',
+      imageUrl: AssetsData.pauseIcon,
+      bottonText: 'إلغاء',
+      cancelText: 'نعم',
       showCancelButton: true,
-      onPressed: () {
+      onPressed: () {},
+      onCancel: () {
         _performLogout(context);
       },
-      onCancel: () {},
     );
   }
 

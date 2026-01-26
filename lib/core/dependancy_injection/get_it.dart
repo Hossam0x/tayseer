@@ -48,6 +48,7 @@ import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
@@ -288,5 +289,10 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<UserProfileEditCubit>(
     () => UserProfileEditCubit(getIt<UserProfileRepository>()),
+  );
+
+  // User
+  getIt.registerFactory<UserAccountManagementRepository>(
+    () => UserAccountManagementRepositoryImpl(getIt<ApiService>()),
   );
 }
