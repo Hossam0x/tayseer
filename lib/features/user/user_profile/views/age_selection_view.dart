@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/my_import.dart'; // تأكد من وجود تعريفات الـ AppColors والـ Styles هنا
 
@@ -13,15 +15,63 @@ class AgeSelectionView extends StatefulWidget {
 class _AgeSelectionViewState extends State<AgeSelectionView> {
   late int selectedAge;
   late FixedExtentScrollController _scrollController;
+  int _lastIndex = 0;
+  // final bool _isScrolling = false;
 
   @override
   void initState() {
     super.initState();
     selectedAge = widget.initialAge;
     // السن يبدأ من 18، لذا الـ Index هو (السن - 18)
-    _scrollController = FixedExtentScrollController(
-      initialItem: selectedAge - 18,
-    );
+    _lastIndex = selectedAge - 18;
+    _scrollController = FixedExtentScrollController(initialItem: _lastIndex);
+
+    // إضافة مستمع للتحكم في التمرير
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    final currentIndex = _scrollController.selectedItem;
+
+    // التحقق إذا تغير الفهرس (اختار رقم جديد)
+    if (currentIndex != _lastIndex) {
+      _lastIndex = currentIndex;
+      _triggerHapticFeedback();
+    }
+  }
+
+  Future<void> _triggerHapticFeedback() async {
+    // 1. اهتزاز هابتي (خفيف)
+    if (await Vibration.hasVibrator()) {
+      Vibration.vibrate(duration: 10); // اهتزاز خفيف جداً
+    }
+
+    // 2. تأثير هابتي للنقر (feedbackType.lightImpact)
+    HapticFeedback.heavyImpact();
+
+    // 3. صوت نقر (اختياري - يمكن إزالته إذا لم تكن تريده)
+    SystemSound.play(SystemSoundType.alert);
+  }
+
+  Future<void> _onSelectedItemChanged(int index) async {
+    setState(() {
+      selectedAge = 18 + index;
+    });
+
+    // تأثير عند التغيير النهائي (أقوى)
+    if (await Vibration.hasVibrator()) {
+      Vibration.vibrate(duration: 20);
+    }
+    HapticFeedback.heavyImpact();
   }
 
   @override
@@ -74,11 +124,7 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
                           selectionOverlay: null,
                           scrollController: _scrollController,
                           itemExtent: 80.h,
-                          onSelectedItemChanged: (index) {
-                            setState(() {
-                              selectedAge = 18 + index;
-                            });
-                          },
+                          onSelectedItemChanged: _onSelectedItemChanged,
                           children: List.generate(83, (index) {
                             int age = 18 + index;
                             bool isSelected = age == selectedAge;
@@ -112,6 +158,9 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
                   title: 'تأكيد',
                   useGradient: true,
                   onPressed: () {
+                    // تأثير عند الضغط على الزر
+                    HapticFeedback.selectionClick();
+
                     // نرجع بالقيمة المختارة
                     Navigator.pop(context, selectedAge.toString());
                   },
