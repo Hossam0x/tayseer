@@ -19,7 +19,16 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   late TextEditingController _bioController;
   late TextEditingController _usernameController;
 
-  // ⭐ خرائط تحويل للتخصصات
+  // ⭐ خرائط تحويل للمناصب
+  final Map<String, String> _positionMapping = {
+    "advisor": "استشاري",
+    "senior": "كبير",
+    "junior": "أخصائي",
+    "trainer": "مدرب",
+    "lecturer": "محاضر",
+  };
+
+  // ⭐ خرائط تحويل للتخصصات (تأكد من اكتمالها)
   final Map<String, String> _specializationMapping = {
     "doctor": "طبيب نفسي",
     "psychology": "استشاري نفسي وعلاقات زوجية",
@@ -27,16 +36,18 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     "psychologist": "أخصائي نفسي",
     "life_coach": "مدرب حياة",
     "family_counselor": "مستشار أسري",
+    "specialist": "أخصائي",
+    "consultant": "استشاري",
   };
 
-  // ⭐ خرائط تحويل للمناصب
-  final Map<String, String> _positionMapping = {
-    "advisor": "استشاري",
-    "junior": "أخصائي",
-    "trainer": "مدرب",
-    "lecturer": "محاضر",
-  };
-
+  // ⭐ تحديث القوائم
+  final List<String> _positions = [
+    "استشاري",
+    "كبير",
+    "أخصائي",
+    "مدرب",
+    "محاضر",
+  ];
   // ⭐ خرائط تحويل لسنوات الخبرة
   final Map<String, String> _experienceMapping = {
     "2": "سنتين",
@@ -46,7 +57,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     "11": "أكثر من 10 سنوات",
   };
 
-  final List<String> _positions = ["استشاري", "أخصائي", "مدرب", "محاضر"];
   final List<String> _specializations = [
     "استشاري نفسي وعلاقات زوجية",
     "طبيب نفسي",
@@ -69,6 +79,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   String? _selectedExperienceValue;
 
   // ⭐ دالة لتحويل القيمة من الباكند إلى قيمة للعرض
+  // ⭐ دالة لتحويل القيمة من الباكند إلى قيمة للعرض
   String? _mapFromBackend(String? backendValue, Map<String, String> mapping) {
     if (backendValue == null) return null;
 
@@ -78,14 +89,17 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     }
 
     // ثانياً: تحقق إذا كانت القيمة موجودة في القيم (العكس)
-    final matchingKey = mapping.entries
-        .firstWhere(
-          (entry) => entry.value == backendValue,
-          orElse: () => MapEntry("", ""),
-        )
-        .key;
+    final matchingEntry = mapping.entries.firstWhere(
+      (entry) => entry.value == backendValue,
+      orElse: () => MapEntry("", ""),
+    );
 
-    return matchingKey.isNotEmpty ? mapping[matchingKey] : backendValue;
+    if (matchingEntry.key.isNotEmpty) {
+      return matchingEntry.value;
+    }
+
+    // ⭐ ثالثاً: إذا لم توجد في الخريطة، ارجع القيمة كما هي
+    return backendValue;
   }
 
   // ⭐ دالة لتحويل القيمة من الواجهة إلى قيمة للباكند
@@ -98,7 +112,18 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
       orElse: () => MapEntry("", ""),
     );
 
-    return matchingEntry.key.isEmpty ? displayValue : matchingEntry.key;
+    // إذا وجدنا تطابق، أرسل المفتاح
+    if (matchingEntry.key.isNotEmpty) {
+      return matchingEntry.key;
+    }
+
+    // ⭐ إذا لم نجد تطابق، تحقق إذا كان العرض يساوي أي مفتاح
+    final directMatch = mapping.entries.firstWhere(
+      (entry) => entry.key == displayValue,
+      orElse: () => MapEntry("", ""),
+    );
+
+    return directMatch.key.isNotEmpty ? directMatch.key : displayValue;
   }
 
   // ⭐ دالة خاصة لسنوات الخبرة (بسبب الـ " من الخبرة")
@@ -317,16 +342,30 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _bioController.text = state.profile!.aboutYou ?? '';
     _usernameController.text = state.profile!.userName;
 
-    // ⭐ تحويل القيم من الباكند إلى قيم للعرض
-    _selectedPosition = _mapFromBackend(
-      state.currentData.jobGrade,
-      _positionMapping,
-    );
+    // ⭐ معالجة jobGrade بعناية
+    final jobGrade = state.currentData.jobGrade;
+    if (jobGrade != null && jobGrade.isNotEmpty) {
+      // حاول التحويل أولاً
+      _selectedPosition = _mapFromBackend(jobGrade, _positionMapping);
 
-    _selectedSpecialization = _mapFromBackend(
-      state.currentData.professionalSpecialization,
-      _specializationMapping,
-    );
+      // إذا فشل التحويل، استخدم القيمة كما هي
+      if (_selectedPosition == null || _selectedPosition!.isEmpty) {
+        _selectedPosition = jobGrade;
+      }
+    }
+
+    // ⭐ نفس الشيء للتخصص
+    final specialization = state.currentData.professionalSpecialization;
+    if (specialization != null && specialization.isNotEmpty) {
+      _selectedSpecialization = _mapFromBackend(
+        specialization,
+        _specializationMapping,
+      );
+
+      if (_selectedSpecialization == null || _selectedSpecialization!.isEmpty) {
+        _selectedSpecialization = specialization;
+      }
+    }
 
     // ⭐ معالجة سنوات الخبرة بشكل خاص
     final yearsExp = state.currentData.yearsOfExperience;
@@ -726,13 +765,14 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
     required String hint,
-    bool isExperience = false, // ⭐ إضافة باراميتر للتمييز
+    // bool isExperience = false,
+    bool isPosition = false, // ⭐ باراميتر جديد
   }) {
     final bool isTablet = MediaQuery.of(context).size.width > 600;
 
-    // ⭐ إذا كان dropdown الخبرة وكانت القيمة غير موجودة، نضيفها مؤقتاً
+    // ⭐ تأكد من وجود القيمة في القائمة
     List<String> effectiveItems = List.from(items);
-    if (isExperience && value != null && !effectiveItems.contains(value)) {
+    if (value != null && !effectiveItems.contains(value)) {
       effectiveItems = [value, ...effectiveItems];
     }
 
@@ -767,7 +807,19 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           items: effectiveItems.map<DropdownMenuItem<String>>((String item) {
             return DropdownMenuItem<String>(
               value: item,
-              child: Text(item, textAlign: TextAlign.right),
+              child: Text(
+                item,
+                textAlign: TextAlign.right,
+                // ⭐ إضافة نمط للقيم غير المعروفة
+                style: Styles.textStyle14.copyWith(
+                  color: !items.contains(item)
+                      ? AppColors.secondary400
+                      : AppColors.secondary800,
+                  fontStyle: !items.contains(item)
+                      ? FontStyle.italic
+                      : FontStyle.normal,
+                ),
+              ),
             );
           }).toList(),
           dropdownColor: AppColors.kWhiteColor,
@@ -956,9 +1008,16 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   }
 
   Widget _buildPositionDropdown(EditPersonalDataCubit cubit) {
+    // ⭐ تأكد من وجود القيمة في القائمة
+    List<String> effectiveItems = List.from(_positions);
+    if (_selectedPosition != null &&
+        !effectiveItems.contains(_selectedPosition)) {
+      effectiveItems = [_selectedPosition!, ...effectiveItems];
+    }
+
     return _buildDropdown(
       value: _selectedPosition,
-      items: _positions,
+      items: effectiveItems,
       onChanged: (displayValue) {
         setState(() {
           _selectedPosition = displayValue;
@@ -970,6 +1029,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         }
       },
       hint: 'اختر المنصب',
+      isPosition: true, // ⭐ إضافة باراميتر جديد
     );
   }
 
