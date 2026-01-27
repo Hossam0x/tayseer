@@ -1,5 +1,4 @@
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
@@ -294,13 +293,17 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
         : 'لا توجد رسائل';
 
     // الحصول على الوقت بتوقيت مصر
-    final messageTime = chatRoom.formattedLastMessageTime;
+    // final messageTime = chatRoom.formattedLastMessageTime;
 
     return Dismissible(
       key: Key('archived_chat_${chatRoom.id}'),
       direction: DismissDirection.endToStart,
       background: Container(
-        color: AppColors.kprimaryColor,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16.r),
+          color: AppColors.kWhiteColor,
+          border: Border.all(color: AppColors.kprimaryColor),
+        ),
         alignment: Alignment.centerRight,
         padding: EdgeInsets.symmetric(horizontal: 20.w),
         child: Row(
@@ -386,10 +389,13 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      messageTime,
-                      style: Styles.textStyle12.copyWith(
-                        color: AppColors.secondary400,
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w),
+                      child: Text(
+                        chatRoom.lastMessage!.timeAgo,
+                        style: Styles.textStyle12.copyWith(
+                          color: AppColors.secondary400,
+                        ),
                       ),
                     ),
                     SizedBox(height: 4.h),
@@ -539,30 +545,172 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
     String chatId,
     String userName,
   ) async {
-    bool? result;
+    bool result = false;
 
-    CustomshowDialogWithImage(
-      context,
-      title: 'إلغاء الأرشفة',
-      supTitle: 'هل تريد إلغاء أرشفة محادثة $userName؟',
-      icon: Icons.unarchive_rounded,
-      iconColor: AppColors.kprimaryColor,
-      iconBackgroundColor: AppColors.primary100.withOpacity(0.2),
-      bottonText: 'لا',
-      onPressed: () {
-        result = false;
-      },
-      showCancelButton: true,
-      cancelText: 'نعم',
-      onCancel: () {
-        result = true;
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28.r),
+          ),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: BoxConstraints(maxWidth: 380.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 30.r,
+                  offset: Offset(0.w, 15.h),
+                  spreadRadius: 5.r,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28.r),
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFE8B4B8),
+                        Color(0xFFF5E6E8),
+                        Color(0xFFFAF5F5),
+                        Colors.white,
+                      ],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(24.w, 32.h, 24.w, 24.h),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // الأيقونة
+                        Container(
+                          width: 90.w,
+                          height: 90.h,
+                          decoration: BoxDecoration(
+                            color: AppColors.kprimaryColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.unarchive_rounded,
+                            size: 50.w,
+                            color: AppColors.kprimaryColor,
+                          ),
+                        ),
+                        Gap(24.h),
+
+                        // العنوان
+                        Text(
+                          'إلغاء الأرشفة',
+                          style: Styles.textStyle16.copyWith(
+                            color: const Color(0xFF2D2D2D),
+                            fontWeight: FontWeight.bold,
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Gap(12.h),
+
+                        // النص
+                        Text(
+                          'هل تريد إلغاء أرشفة محادثة $userName؟',
+                          style: Styles.textStyle12.copyWith(
+                            color: const Color(0xFF6B6B6B),
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Gap(28.h),
+
+                        // الأزرار
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildDialogButton(
+                                text: 'نعم',
+                                backgroundColor: Colors.green,
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  result = true;
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),
+                            Gap(12.w),
+                            Expanded(
+                              child: _buildDialogButton(
+                                text: 'لا',
+                                backgroundColor: AppColors.kprimaryColor,
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  result = false;
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
       },
     );
 
-    // انتظار إغلاق الـ Dialog
-    await Future.delayed(const Duration(milliseconds: 300));
+    return result;
+  }
 
-    return result ?? false;
+  // دالة مساعدة لبناء زر الـ Dialog
+  Widget _buildDialogButton({
+    required String text,
+    required Color backgroundColor,
+    required Color textColor,
+    required VoidCallback onPressed,
+    bool fullWidth = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          width: fullWidth ? double.infinity : null,
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: backgroundColor.withOpacity(0.35),
+                blurRadius: 10.r,
+                offset: Offset(0.w, 5.h),
+              ),
+            ],
+          ),
+          child: Text(
+            text,
+            style: Styles.textStyle14Meduim.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
   }
 
   void _openArchivedChat(

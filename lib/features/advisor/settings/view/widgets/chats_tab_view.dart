@@ -1,14 +1,36 @@
-import 'dart:ui';
-import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_service.dart';
 
-class ChatsTabView extends StatelessWidget {
+class ChatsTabView extends StatefulWidget {
   const ChatsTabView({super.key});
+
+  @override
+  State<ChatsTabView> createState() => _ChatsTabViewState();
+}
+
+class _ChatsTabViewState extends State<ChatsTabView> {
+  String? _currentUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUserId();
+  }
+
+  Future<void> _loadCurrentUserId() async {
+    try {
+      final userId = await UserService.getCurrentUserId();
+      setState(() {
+        _currentUserId = userId;
+      });
+    } catch (e) {
+      print('❌ Error loading current user ID: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +42,10 @@ class ChatsTabView extends StatelessWidget {
         }
       },
       builder: (context, state) {
+        if (_currentUserId == null) {
+          return _buildSkeletonChats();
+        }
+
         switch (state.state) {
           case CubitStates.loading:
             return _buildSkeletonChats();
@@ -27,9 +53,9 @@ class ChatsTabView extends StatelessWidget {
             return _buildErrorChats(context, state.errorMessage);
           case CubitStates.success:
             if (state.chatRooms.isEmpty) {
-              return const SharedEmptyState(title: "لا توجد محادثات مؤرشفة");
+              return _buildEmptyState();
             }
-            return _buildChatsContent(context, state);
+            return _buildChatsList(context, state);
           default:
             return const SizedBox.shrink();
         }
@@ -40,59 +66,62 @@ class ChatsTabView extends StatelessWidget {
   Widget _buildSkeletonChats() {
     return Skeletonizer(
       enabled: true,
-      child: Builder(
-        builder: (context) {
-          final bool isTablet = MediaQuery.of(context).size.width > 600;
-
-          return ListView.separated(
-            padding: EdgeInsets.symmetric(vertical: isTablet ? 15.h : 10.h),
-            itemCount: 5,
-            separatorBuilder: (context, index) =>
-                Divider(color: AppColors.hintText),
-            itemBuilder: (context, index) {
-              return ListTile(
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 20.w : 16.w,
-                  vertical: isTablet ? 12.h : 8.h,
-                ),
-                trailing: Container(
-                  width: isTablet ? 70.w : 50.w,
-                  height: isTablet ? 16.h : 12.h,
+      child: ListView.separated(
+        padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 20.w),
+        itemCount: 8,
+        separatorBuilder: (context, index) =>
+            Divider(color: Colors.grey.shade200, height: 1),
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            child: Row(
+              children: [
+                // Avatar skeleton
+                Container(
+                  width: 56.r,
+                  height: 56.r,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
-                    borderRadius: BorderRadius.circular(isTablet ? 6.r : 4.r),
+                    shape: BoxShape.circle,
+                    color: Colors.grey.shade200,
                   ),
                 ),
-                title: Container(
-                  width: isTablet ? 140.w : 100.w,
-                  height: isTablet ? 20.h : 16.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
-                    borderRadius: BorderRadius.circular(isTablet ? 6.r : 4.r),
-                  ),
-                ),
-                subtitle: Container(
-                  width: isTablet ? 100.w : 80.w,
-                  height: isTablet ? 16.h : 14.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
-                    borderRadius: BorderRadius.circular(isTablet ? 6.r : 4.r),
-                  ),
-                ),
-                leading: ClipOval(
-                  child: Container(
-                    width: isTablet ? 80.r : 60.r,
-                    height: isTablet ? 80.r : 60.r,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(
-                        isTablet ? 40.r : 30.r,
+                SizedBox(width: 12.w),
+                // Info skeleton
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 120.w,
+                        height: 16.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
                       ),
-                    ),
+                      SizedBox(height: 6.h),
+                      Container(
+                        width: 180.w,
+                        height: 14.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
+                // Time skeleton
+                Container(
+                  width: 60.w,
+                  height: 14.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -100,41 +129,64 @@ class ChatsTabView extends StatelessWidget {
   }
 
   Widget _buildErrorChats(BuildContext context, String? errorMessage) {
-    return Padding(
-      padding: EdgeInsets.all(24.w),
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, color: AppColors.kRedColor, size: 64.w),
+            Gap(16.h),
+            Text(
+              errorMessage ?? 'حدث خطأ في تحميل المحادثات المؤرشفة',
+              style: Styles.textStyle16.copyWith(color: AppColors.secondary700),
+              textAlign: TextAlign.center,
+            ),
+            Gap(24.h),
+            ElevatedButton(
+              onPressed: () => context.read<ArchivedChatsCubit>().refresh(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.kprimaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 14.h),
+              ),
+              child: Text(
+                'إعادة المحاولة',
+                style: Styles.textStyle16Meduim.copyWith(
+                  color: AppColors.kWhiteColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-          Gap(16.h),
+          Image.asset(AssetsData.emptyChatImage, width: 150.w, height: 150.w),
+          Gap(20.h),
           Text(
-            errorMessage ?? 'حدث خطأ في تحميل المحادثات المؤرشفة',
-            style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-            textAlign: TextAlign.center,
+            'لا توجد محادثات مؤرشفة',
+            style: Styles.textStyle18.copyWith(color: AppColors.secondary600),
           ),
-          Gap(24.h),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.kprimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            ),
-            onPressed: () => context.read<ArchivedChatsCubit>().refresh(),
-            child: Text(
-              'إعادة المحاولة',
-              style: Styles.textStyle14Meduim.copyWith(
-                color: AppColors.kWhiteColor,
-              ),
-            ),
+          Gap(8.h),
+          Text(
+            'سيتم عرض المحادثات المؤرشفة هنا',
+            style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildChatsContent(BuildContext context, ArchivedChatsState state) {
+  Widget _buildChatsList(BuildContext context, ArchivedChatsState state) {
     return NotificationListener<ScrollNotification>(
       onNotification: (scrollInfo) {
         if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
@@ -149,13 +201,15 @@ class ChatsTabView extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: RefreshIndicator(
+            child: RefreshIndicator.adaptive(
               onRefresh: () => context.read<ArchivedChatsCubit>().refresh(),
+              color: AppColors.kprimaryColor,
+              backgroundColor: AppColors.kWhiteColor,
               child: ListView.separated(
-                padding: EdgeInsets.symmetric(vertical: 10.h),
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
                 itemCount: state.chatRooms.length + (state.hasMore ? 1 : 0),
                 separatorBuilder: (context, index) =>
-                    Divider(color: AppColors.hintText),
+                    Divider(color: AppColors.secondary100, height: 1),
                 itemBuilder: (context, index) {
                   if (index == state.chatRooms.length) {
                     return _buildLoadMoreIndicator(state);
@@ -174,73 +228,235 @@ class ChatsTabView extends StatelessWidget {
   }
 
   Widget _buildChatItem(BuildContext context, ArchiveChatRoomModel chatRoom) {
-    // TODO: استبدل 'currentUserId' بـ ID المستخدم الحقيقي
-    final currentUserId = '6947e98df9f8bce3bf355fc0'; // ID مؤقت للاختبار
-    final otherUser = chatRoom.getOtherUser(currentUserId);
+    // الحصول على المستخدم الآخر
+    final otherUser = _getOtherUser(chatRoom);
+    final displayName = otherUser?.name ?? 'مستخدم غير معروف';
+    final displayImage = otherUser?.image;
+
+    // الحصول على محتوى آخر رسالة
+    final lastMessageContent = _getLastMessageContent(chatRoom);
+    final lastMessageText = lastMessageContent.isNotEmpty
+        ? lastMessageContent
+        : 'لا توجد رسائل';
+
+    // الحصول على الوقت
+    // final messageTime = _formatTime(chatRoom.lastMessageAt ?? '');
 
     return Dismissible(
-      key: Key(chatRoom.id),
+      key: Key('archived_chat_${chatRoom.id}'),
       direction: DismissDirection.endToStart,
       background: Container(
-        color: Colors.green,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16.r),
+          color: AppColors.kWhiteColor,
+          border: Border.all(color: AppColors.kprimaryColor),
+        ),
         alignment: Alignment.centerRight,
         padding: EdgeInsets.symmetric(horizontal: 20.w),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Icon(Icons.archive_outlined, color: Colors.white, size: 24.sp),
+            Icon(
+              Icons.unarchive_rounded,
+              color: AppColors.kprimaryColor,
+              size: 24.w,
+            ),
             Gap(8.w),
             Text(
               'إلغاء الأرشفة',
-              style: Styles.textStyle14.copyWith(color: Colors.white),
+              style: Styles.textStyle14.copyWith(
+                color: AppColors.kprimaryColor,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
       ),
-      onDismissed: (direction) {
-        context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('تم إلغاء أرشفة المحادثة'),
-            backgroundColor: Colors.green,
-          ),
+      confirmDismiss: (direction) async {
+        return await _showUnarchiveConfirmation(
+          context,
+          chatRoom.id,
+          displayName,
         );
       },
-      child: ListTile(
-        trailing: Text(
-          _formatTime('${chatRoom.lastMessageAt}'),
-          style: Styles.textStyle12.copyWith(color: AppColors.gray2),
+      onDismissed: (direction) {
+        context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
+
+        AppToast.success(context, 'تم إلغاء أرشفة محادثة $displayName');
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            _openArchivedChat(context, chatRoom, otherUser);
+          },
+          borderRadius: BorderRadius.circular(12.r),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            child: Row(
+              children: [
+                // User Avatar
+                _buildUserAvatar(displayImage, chatRoom.isBlocked),
+                SizedBox(width: 12.w),
+
+                // Chat Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: Styles.textStyle16.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.secondary800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        lastMessageText,
+                        style: Styles.textStyle14.copyWith(
+                          color: AppColors.secondary600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(width: 12.w),
+
+                // Time and Status
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w),
+                      child: Text(
+                        chatRoom.lastMessage!.timeAgo,
+                        style: Styles.textStyle12.copyWith(
+                          color: AppColors.secondary400,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    if ((chatRoom.unreadCount) > 0)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 2.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.kprimaryColor,
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        child: Text(
+                          '${chatRoom.unreadCount}',
+                          style: Styles.textStyle10.copyWith(
+                            color: AppColors.kWhiteColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
-        title: Text(
-          otherUser?.name ?? 'مستخدم غير معروف',
-          textAlign: TextAlign.right,
-          style: Styles.textStyle16Meduim,
-        ),
-        subtitle: Text(
-          '${chatRoom.lastMessage}',
-          textAlign: TextAlign.right,
-          style: Styles.textStyle14.copyWith(color: AppColors.gray2),
-        ),
-        leading: _buildUserAvatar(otherUser?.image, chatRoom.isBlocked),
-        onTap: () {
-          // TODO: فتح المحادثة
-        },
       ),
     );
   }
 
+  ArchiveUserModel? _getOtherUser(ArchiveChatRoomModel chatRoom) {
+    try {
+      // إذا كان لدينا ID المستخدم الحالي
+      if (_currentUserId != null) {
+        // البحث عن مستخدم ليس هو الحالي
+        for (final user in chatRoom.users) {
+          if (user.id != _currentUserId) {
+            return user;
+          }
+        }
+
+        // إذا كان جميع users هم نفس المستخدم الحالي
+        // نستخدم sender إذا كان مختلفاً
+        if (chatRoom.sender != null && chatRoom.sender!.id != _currentUserId) {
+          return chatRoom.sender;
+        }
+      }
+
+      // الحالة الثانية: إذا لم نعرف المستخدم الحالي
+      // نستخدم نفس منطق MySpaceConsultationContent
+      if (chatRoom.sender != null) {
+        // البحث عن user يطابق sender
+        for (final user in chatRoom.users) {
+          if (user.id == chatRoom.sender!.id) {
+            return user;
+          }
+        }
+        // إذا لم نجد، نستخدم sender مباشرة
+        return chatRoom.sender;
+      }
+
+      // الحالة الأخيرة: نستخدم أول user في القائمة
+      return chatRoom.users.isNotEmpty ? chatRoom.users.first : null;
+    } catch (e) {
+      print('❌ Error getting other user: $e');
+      return null;
+    }
+  }
+
+  String _getLastMessageContent(ArchiveChatRoomModel chatRoom) {
+    final lastMessage = chatRoom.lastMessage;
+    if (lastMessage == null) {
+      return 'بدء محادثة جديدة';
+    }
+
+    switch (lastMessage.messageType.toLowerCase()) {
+      case 'text':
+        return lastMessage.content;
+      case 'image':
+        return '📷 صورة';
+      case 'video':
+        return '🎥 فيديو';
+      case 'audio':
+        return '🎵 رسالة صوتية';
+      case 'file':
+        return '📄 ملف';
+      default:
+        return 'رسالة';
+    }
+  }
+
   Widget _buildUserAvatar(String? imageUrl, bool isBlocked) {
-    return ClipOval(
-      child: SizedBox(
-        width: 60.r,
-        height: 60.r,
-        child: isBlocked
-            ? ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                child: _buildAvatarImage(imageUrl),
-              )
-            : _buildAvatarImage(imageUrl),
-      ),
+    return Stack(
+      children: [
+        Container(
+          width: 56.r,
+          height: 56.r,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.secondary100,
+            border: Border.all(color: AppColors.secondary200, width: 1),
+          ),
+          child: ClipOval(child: _buildAvatarImage(imageUrl)),
+        ),
+        if (isBlocked)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withOpacity(0.3),
+              ),
+              child: Center(
+                child: Icon(Icons.block, color: Colors.white, size: 20.w),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -248,44 +464,27 @@ class ChatsTabView extends StatelessWidget {
     if (imageUrl != null && imageUrl.isNotEmpty) {
       return Image.network(
         imageUrl,
-        width: 60.r,
-        height: 60.r,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          return Image.asset(
-            AssetsData.avatarImage,
-            width: 60.r,
-            height: 60.r,
-            fit: BoxFit.cover,
-          );
+          return Image.asset(AssetsData.avatarImage, fit: BoxFit.cover);
         },
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Center(
-            child: Shimmer.fromColors(
-              baseColor: Colors.grey.shade300,
-              highlightColor: Colors.grey.shade100,
-              child: Container(
-                width: double.infinity,
-                height: double.infinity,
-                color: Colors.white,
-              ),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.kprimaryColor,
             ),
           );
         },
       );
     }
 
-    return Image.asset(
-      AssetsData.avatarImage,
-      width: 60.r,
-      height: 60.r,
-      fit: BoxFit.cover,
-    );
+    return Image.asset(AssetsData.avatarImage, fit: BoxFit.cover);
   }
 
   Widget _buildLoadMoreIndicator(ArchivedChatsState state) {
-    if (!state.hasMore) return SizedBox.shrink();
+    if (!state.hasMore) return const SizedBox.shrink();
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -306,12 +505,242 @@ class ChatsTabView extends StatelessWidget {
     );
   }
 
-  String _formatTime(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      return DateFormat('h:mm a').format(date);
-    } catch (e) {
-      return '--:--';
+  // String _formatTime(String dateString) {
+  //   try {
+  //     if (dateString.isEmpty) return '--:--';
+
+  //     final date = DateTime.parse(dateString);
+  //     final now = DateTime.now();
+  //     final difference = now.difference(date);
+
+  //     // الحصول على الساعة والدقائق بتنسيق 12 ساعة
+  //     final hour = date.hour % 12;
+  //     final minute = date.minute.toString().padLeft(2, '0');
+  //     final period = date.hour < 12 ? 'ص' : 'م';
+
+  //     final timeStr = '${hour == 0 ? 12 : hour}:$minute $period';
+
+  //     if (difference.inDays == 0) {
+  //       return timeStr;
+  //     } else if (difference.inDays == 1) {
+  //       return 'أمس';
+  //     } else if (difference.inDays < 7) {
+  //       // أسماء الأيام بالعربي
+  //       final arabicDays = [
+  //         'الأحد',
+  //         'الإثنين',
+  //         'الثلاثاء',
+  //         'الأربعاء',
+  //         'الخميس',
+  //         'الجمعة',
+  //         'السبت',
+  //       ];
+  //       return arabicDays[date.weekday % 7];
+  //     } else {
+  //       return DateFormat('dd/MM').format(date);
+  //     }
+  //   } catch (e) {
+  //     return '--:--';
+  //   }
+  // }
+
+  Future<bool> _showUnarchiveConfirmation(
+    BuildContext context,
+    String chatId,
+    String userName,
+  ) async {
+    bool result = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28.r),
+          ),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: BoxConstraints(maxWidth: 380.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 30.r,
+                  offset: Offset(0.w, 15.h),
+                  spreadRadius: 5.r,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28.r),
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFE8B4B8),
+                        Color(0xFFF5E6E8),
+                        Color(0xFFFAF5F5),
+                        Colors.white,
+                      ],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(24.w, 32.h, 24.w, 24.h),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // الأيقونة
+                        Container(
+                          width: 90.w,
+                          height: 90.h,
+                          decoration: BoxDecoration(
+                            color: AppColors.kprimaryColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.unarchive_rounded,
+                            size: 50.w,
+                            color: AppColors.kprimaryColor,
+                          ),
+                        ),
+                        Gap(24.h),
+
+                        // العنوان
+                        Text(
+                          'إلغاء الأرشفة',
+                          style: Styles.textStyle16.copyWith(
+                            color: const Color(0xFF2D2D2D),
+                            fontWeight: FontWeight.bold,
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Gap(12.h),
+
+                        // النص
+                        Text(
+                          'هل تريد إلغاء أرشفة محادثة $userName؟',
+                          style: Styles.textStyle12.copyWith(
+                            color: const Color(0xFF6B6B6B),
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Gap(28.h),
+
+                        // الأزرار
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildDialogButton(
+                                text: 'نعم',
+                                backgroundColor: Colors.green,
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  result = true;
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),
+                            Gap(12.w),
+                            Expanded(
+                              child: _buildDialogButton(
+                                text: 'لا',
+                                backgroundColor: AppColors.kprimaryColor,
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  result = false;
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    return result;
+  }
+
+  // دالة مساعدة لبناء زر الـ Dialog
+  Widget _buildDialogButton({
+    required String text,
+    required Color backgroundColor,
+    required Color textColor,
+    required VoidCallback onPressed,
+    bool fullWidth = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          width: fullWidth ? double.infinity : null,
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: backgroundColor.withOpacity(0.35),
+                blurRadius: 10.r,
+                offset: Offset(0.w, 5.h),
+              ),
+            ],
+          ),
+          child: Text(
+            text,
+            style: Styles.textStyle14Meduim.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openArchivedChat(
+    BuildContext context,
+    ArchiveChatRoomModel chatRoom,
+    ArchiveUserModel? otherUser,
+  ) {
+    if (otherUser == null) {
+      AppToast.error(
+        context,
+        'لا يمكن فتح المحادثة: بيانات المستخدم غير متوفرة',
+      );
+      return;
     }
+
+    context.pushNamed(
+      AppRouter.kConversitionView,
+      arguments: {
+        'chatroomid': chatRoom.id,
+        'receiverid': otherUser.id,
+        'username': otherUser.name,
+        'userimage': otherUser.image,
+        'usertype': otherUser.userType,
+        'isBlocked': chatRoom.isBlocked,
+        'isHaveSession': chatRoom.isHaveSession,
+      },
+    );
   }
 }
