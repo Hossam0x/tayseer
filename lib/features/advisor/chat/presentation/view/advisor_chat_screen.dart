@@ -83,7 +83,6 @@ class AdvisorChatScreen extends StatelessWidget {
 /// Internal Content Widget that extends BaseChatScreen
 class _AdvisorChatContent extends BaseChatScreen {
   const _AdvisorChatContent({
-    super.key,
     super.chatRoomId,
     super.receiverId,
     super.username,

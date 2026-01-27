@@ -311,7 +311,17 @@ class UserAdvisorBioInformation extends StatelessWidget {
                   ),
                   child: GestureDetector(
                     onTap: () {
-                      // TODO: افتح شات مع المستخدم
+                      context.pushNamed(
+                        AppRouter.kConversitionView,
+                        arguments: {
+                          'chatroomid': '697876c46ffae0da67d21a7f',
+                          'receiverid': profile.id,
+                          'username': profile.name,
+                          'userimage': profile.image,
+                          'isBlocked': false,
+                          'isHaveSession': false,
+                        },
+                      );
                     },
                     child: AppImage(AssetsData.chatIconSVG, width: 22.w),
                   ),
