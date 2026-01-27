@@ -56,28 +56,12 @@ import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/face_verification_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/questions_page_view.dart';
-import 'package:tayseer/features/user/questions/view/accept_married_view.dart';
-import 'package:tayseer/features/user/questions/view/add_your_cv_view.dart';
-import 'package:tayseer/features/user/questions/view/children_living_status_view.dart';
-import 'package:tayseer/features/user/questions/view/children_number_view.dart';
-import 'package:tayseer/features/user/questions/view/choose_age_view.dart';
-import 'package:tayseer/features/user/questions/view/choose_employer_view.dart';
-import 'package:tayseer/features/user/questions/view/choose_gender_view.dart';
-import 'package:tayseer/features/user/questions/view/choose_height_view.dart';
-import 'package:tayseer/features/user/questions/view/choose_job_view.dart';
-import 'package:tayseer/features/user/questions/view/choose_weight_view.dart';
-import 'package:tayseer/features/user/questions/view/country_view.dart';
-import 'package:tayseer/features/user/questions/view/education_level_view.dart';
-import 'package:tayseer/features/user/questions/view/has_children_view.dart';
-import 'package:tayseer/features/user/questions/view/health_status_view.dart';
-import 'package:tayseer/features/user/questions/view/hobbies_view.dart';
-import 'package:tayseer/features/user/questions/view/nationality_view.dart';
-import 'package:tayseer/features/user/questions/view/personal_info_view.dart';
-import 'package:tayseer/features/user/questions/view/religious_commitment_view.dart';
-import 'package:tayseer/features/user/questions/view/skin_color_view.dart';
-import 'package:tayseer/features/user/questions/view/smoking_view.dart';
-import 'package:tayseer/features/user/questions/view/social_status_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/choose_gender_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/personal_info_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/verify_data_view.dart';
+
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_cubit.dart';
@@ -160,6 +144,8 @@ abstract class AppRouter {
   static const sessionticketsuccessview = '/SessionTicketSuccessView';
   static const pendingsession = '/kOrderSessionView';
   static const kQuestionsPageView = '/QuestionsPageView';
+  static const kVerifyDataView = '/VerifyDataView';
+  static const kFaceVerificationView = '/FaceVerificationView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -758,6 +744,48 @@ abstract class AppRouter {
           page: const interactionSubscriptionView(),
           routeSettings: settings,
         );
+
+      ///// questions  ///////
+      case kQuestionsPageView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: getIt<AuthCubit>()),
+              BlocProvider.value(value: getIt<QuestionsCubit>()),
+            ],
+            child: QuestionsPageView(
+              currentUserType: args?['currentUserType'] ?? UserTypeEnum.user,
+              selectedGender: args?['selectedGender'] ?? Gender.male,
+            ),
+          ),
+        );
+      case kPersonalInfoView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: PersonalInfoView(),
+          ),
+        );
+      case kVerifyDataView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: VerifyDataView(),
+          ),
+        );
+      case kFaceVerificationView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: FaceVerificationView(),
+          ),
+        );
+
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;
       //   return PageRouteBuilder(
