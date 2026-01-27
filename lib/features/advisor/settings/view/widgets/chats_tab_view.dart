@@ -217,7 +217,7 @@ class ChatsTabView extends StatelessWidget {
           style: Styles.textStyle16Meduim,
         ),
         subtitle: Text(
-          chatRoom.lastMessage ?? 'لا توجد رسائل',
+          '${chatRoom.lastMessage}',
           textAlign: TextAlign.right,
           style: Styles.textStyle14.copyWith(color: AppColors.gray2),
         ),

@@ -31,8 +31,8 @@ class _TimeSlotItemState extends State<TimeSlotItem>
   late TextEditingController fromController;
   late TextEditingController toController;
   late AnimationController _animationController;
-  late Animation<double> _heightAnimation;
-  late Animation<double> _opacityAnimation;
+  late Animation<double> heightAnimation;
+  late Animation<double> opacityAnimation;
 
   @override
   void initState() {
@@ -46,11 +46,11 @@ class _TimeSlotItemState extends State<TimeSlotItem>
       vsync: this,
     );
 
-    _heightAnimation = Tween<double>(begin: 0, end: 70).animate(
+    heightAnimation = Tween<double>(begin: 0, end: 70).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    _opacityAnimation = Tween<double>(begin: 0, end: 1).animate(
+    opacityAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
@@ -165,47 +165,38 @@ class _TimeSlotItemState extends State<TimeSlotItem>
         ),
 
         // الأنيميشن لظهور أو اختفاء حقول الوقت
-        AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _opacityAnimation.value,
-              child: SizedBox(
-                height: _heightAnimation.value,
-                child: OverflowBox(
-                  alignment: Alignment.topCenter,
-                  maxHeight: 70.h,
-                  child: child,
-                ),
-              ),
-            );
-          },
-          child: Column(
-            children: [
-              Gap(8.h),
-              Row(
-                children: [
-                  Text(
-                    'من',
-                    style: Styles.textStyle16.copyWith(
-                      color: AppColors.secondaryText,
+        AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: isActive
+              ? Column(
+                  children: [
+                    Gap(8.h),
+                    Row(
+                      children: [
+                        Text(
+                          'من',
+                          style: Styles.textStyle16.copyWith(
+                            color: AppColors.secondaryText,
+                          ),
+                        ),
+                        Gap(8.w),
+                        Expanded(child: _buildTimeField(toController, false)),
+                        Gap(8.w),
+                        Text(
+                          'إلى',
+                          style: Styles.textStyle16.copyWith(
+                            color: AppColors.secondaryText,
+                          ),
+                        ),
+                        Gap(8.w),
+                        Expanded(child: _buildTimeField(fromController, true)),
+                      ],
                     ),
-                  ),
-                  Gap(8.w),
-                  Expanded(child: _buildTimeField(toController, false)),
-                  Gap(8.w),
-                  Text(
-                    'إلى',
-                    style: Styles.textStyle16.copyWith(
-                      color: AppColors.secondaryText,
-                    ),
-                  ),
-                  Gap(8.w),
-                  Expanded(child: _buildTimeField(fromController, true)),
-                ],
-              ),
-            ],
-          ),
+                  ],
+                )
+              : const SizedBox.shrink(),
         ),
       ],
     );

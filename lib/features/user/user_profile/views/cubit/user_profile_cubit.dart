@@ -98,7 +98,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         id: 'archive',
         title: 'المحادثات المؤرشفة',
         iconAsset: AssetsData.icArchiveSettings,
-        routeName: AppRouter.kArchiveView,
+        routeName: AppRouter.kUserArchiveChatsView,
       ),
       SettingItemModel(
         id: 'blocks',

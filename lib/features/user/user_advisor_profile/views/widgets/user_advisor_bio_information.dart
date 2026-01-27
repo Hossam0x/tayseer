@@ -314,7 +314,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
                       context.pushNamed(
                         AppRouter.kConversitionView,
                         arguments: {
-                          'chatroomid': '697876c46ffae0da67d21a7f',
+                          'chatroomid': '69788effad6578cde163a26a',
                           'receiverid': profile.id,
                           'username': profile.name,
                           'userimage': profile.image,
