@@ -15,7 +15,6 @@ class AuthState {
   final CubitStates guestLoginState;
   final CubitStates resendCodeState;
   final CubitStates getLastLoginState;
-  final CubitStates answerQuestionsState;
   final CubitStates personalDataState;
   final CubitStates addServiceProviderState;
   final CubitStates addCertificateState;
@@ -61,7 +60,6 @@ class AuthState {
     this.authAppleState = CubitStates.initial,
     this.resendCodeState = CubitStates.initial,
     this.getLastLoginState = CubitStates.initial,
-    this.answerQuestionsState = CubitStates.initial,
     this.personalDataState = CubitStates.initial,
     this.addServiceProviderState = CubitStates.initial,
     this.addCertificateState = CubitStates.initial,
@@ -138,7 +136,6 @@ class AuthState {
       authAppleState: authAppleState ?? this.authAppleState,
       resendCodeState: resendCodeState ?? this.resendCodeState,
       getLastLoginState: getLastLoginState ?? this.getLastLoginState,
-      answerQuestionsState: answerQuestionsState ?? this.answerQuestionsState,
       personalDataState: personalDataState ?? this.personalDataState,
       addServiceProviderState:
           addServiceProviderState ?? this.addServiceProviderState,

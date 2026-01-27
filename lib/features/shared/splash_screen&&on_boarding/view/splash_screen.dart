@@ -62,8 +62,8 @@ class _SplashScreenState extends State<SplashScreen>
     if (mounted) {
       if (token.isNotEmpty) {
         selectedUserType == UserTypeEnum.asConsultant
-            ? context.pushReplacementNamed(AppRouter.kRegisrationView)
-            : context.pushReplacementNamed(AppRouter.kRegisrationView);
+            ? context.pushReplacementNamed(AppRouter.kAdvisorLayoutView)
+            : context.pushReplacementNamed(AppRouter.kUserLayoutView);
       } else {
         context.pushReplacementNamed(AppRouter.kRegisrationView);
       }

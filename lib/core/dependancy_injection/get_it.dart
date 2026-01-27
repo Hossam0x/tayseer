@@ -48,6 +48,9 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:tayseer/features/user/interactions/data/repos/InteractionsRepository.dart';
 import 'package:tayseer/features/user/interactions/data/repos/reposiotryImpl.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
+import 'package:tayseer/features/user/questions/repo/questions_repo_impl.dart';
+import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
@@ -308,5 +311,15 @@ Future<void> setupGetIt() async {
   // Interactions Cubit
   getIt.registerFactory<InteractionsCubit>(
     () => InteractionsCubit(getIt<InteractionsRepository>()),
+  );
+
+  /// Questions Repository
+  getIt.registerLazySingleton<QuestionsRepo>(
+    () => QuestionsRepoImpl(apiService: getIt<ApiService>()),
+  );
+
+  /// Questions Cubit
+  getIt.registerLazySingleton<QuestionsCubit>(
+    () => QuestionsCubit(getIt<QuestionsRepo>()),
   );
 }

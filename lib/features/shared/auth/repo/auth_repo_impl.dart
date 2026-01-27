@@ -218,7 +218,7 @@ class AuthRepoImpl implements AuthRepo {
       final platform = Platform.isAndroid ? 'android' : 'ios';
 
       final response = await apiService.post(
-        endPoint:selectedUserType == UserTypeEnum.asConsultant
+        endPoint: selectedUserType == UserTypeEnum.asConsultant
             ? '/advisor/apple'
             : "/auth/apple",
         data: {
@@ -325,53 +325,6 @@ class AuthRepoImpl implements AuthRepo {
     } catch (e) {
       debugPrint('Error fetching last login: $e');
       return Left(ServerFailure('حدث خطأ غير متوقع'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> answerQuestions({
-    required String question,
-    required String questionCategoryEnum,
-    required int questionNumber,
-    required List<Map<String, dynamic>> answers,
-    bool? answerCompleted,
-  }) async {
-    try {
-      final response = await apiService.post(
-        endPoint: '/answer-questions',
-        data: {
-          'question': question,
-          'questionCategory': questionCategoryEnum,
-          'questionNumber': questionNumber,
-          'answers': answers,
-          if (answerCompleted != null) 'answerCompleted': answerCompleted,
-        },
-        isAuth: true,
-      );
-      log('answer-questions:::: $response');
-
-      final success = response['success'] ?? false;
-      debugPrint('success $success');
-
-      if (success) {
-        return right(null);
-      } else {
-        final message = response['message'] ?? 'فشل ارسال الاجابه';
-        debugPrint('message $message');
-
-        return left(ServerFailure(message));
-      }
-    } on DioException catch (error) {
-      debugPrint('DioException error $error');
-      return left(
-        ServerFailure(
-          error.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر',
-        ),
-      );
-    } catch (error) {
-      debugPrint(' error $error');
-
-      return left(ServerFailure('حدث خطأ غير متوقع: $error'));
     }
   }
 

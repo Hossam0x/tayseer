@@ -3,7 +3,6 @@ import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interactions_view.dart';
 import 'package:tayseer/features/user/layout/view/widgets/user_nav_bar.dart';
-import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -45,7 +44,15 @@ class UserLayOutViewBody extends StatelessWidget {
       case UserTypeEnum.user:
         return [
           HomeView(onScroll: cubit.onScroll),
-          MarriageView(),
+          // MarriageView(),
+          GuestLockWidget(
+            titleBott: context.tr('complete_your_profile_bott'),
+            message: context.tr('complete_your_profile'),
+            description: context.tr('complete_your_profile_description'),
+            onTap: () {
+              context.pushNamed(AppRouter.kChooseGenderView);
+            },
+          ),
           MySpaceView(),
           InteractionsView(),
           const UserProfileView(),
