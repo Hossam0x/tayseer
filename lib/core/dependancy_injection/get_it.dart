@@ -9,6 +9,7 @@ import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cu
 import 'package:tayseer/features/advisor/session/data/repos/advisor_session_repo.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_cubit.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
@@ -299,5 +300,9 @@ Future<void> setupGetIt() async {
 
   getIt.registerLazySingleton<FollowersRepository>(
     () => FollowersRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerLazySingleton<BlockedUsersRepository>(
+    () => BlockedUsersRepositoryImpl(getIt<ApiService>()),
   );
 }
