@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/errors/failure.dart';
-import 'package:tayseer/features/user/interactions/data/Model/HistoryResponseModel.dart';
+import 'package:tayseer/features/user/interactions/data/Model/history_response_model.dart';
 import 'package:tayseer/features/user/interactions/data/Model/exploration_response_model.dart';
 
 

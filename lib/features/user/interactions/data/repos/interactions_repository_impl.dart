@@ -3,11 +3,12 @@ import 'package:dio/dio.dart';
 import 'package:tayseer/core/errors/failure.dart';
 import 'package:tayseer/core/utils/api_service.dart';
 import 'package:tayseer/core/utils/assets.dart';
-import 'package:tayseer/features/user/interactions/data/Model/HistoryResponseModel.dart';
+import 'package:tayseer/features/user/interactions/data/Model/history_response_model.dart';
 import 'package:tayseer/features/user/interactions/data/Model/exploration_response_model.dart';
-import 'package:tayseer/features/user/interactions/data/repos/InteractionsRepository.dart';
+import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 
-import '../Model/InteractionUserModel .dart';
+import '../Model/Iinteraction_usermodel .dart';
+
 
 class InteractionsRepositoryImpl implements InteractionsRepository {
   final ApiService apiService;
@@ -189,6 +190,8 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
           job: 'مهندس',
           image: AssetsData.kUserImage,
           likedMe: true,
+          isverified: true,
+        
         ),
         const InteractionUserModel(
           userId: '2',
@@ -199,6 +202,8 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
           job: 'دكتور',
           image: AssetsData.kUserImage,
           likedMe: true,
+          isverified: true,
+
         ),
         const InteractionUserModel(
           userId: '3',
@@ -265,6 +270,8 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
           job: 'مهندس',
           image: AssetsData.kUserImage,
           likedMe: false,
+          isverified: true,
+
         ),
       ],
       
@@ -312,6 +319,8 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
           image: AssetsData.kUserImage,
           likedMe: false,
           isRecentlyJoined: true,
+          isverified: true,
+
         ),
         const InteractionUserModel(
           userId: '13',
@@ -359,6 +368,8 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
           job: 'محامي',
           image: AssetsData.kUserImage,
           likedMe: true,
+          isverified: true,
+
         ),
         const InteractionUserModel(
           userId: '17',
@@ -388,6 +399,7 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
           isFavorite: true,
           isImageBlurred: false,
           likedHim: false,
+          isverified: true
         ),
         const InteractionUserModel(
           userId: '102',
@@ -400,6 +412,8 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
           isFavorite: true,
           isImageBlurred: false,
           likedHim: false,
+          isverified: true
+
         ),
         const InteractionUserModel(
           userId: '103',
@@ -424,6 +438,8 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
           isFavorite: true,
           isImageBlurred: false,
           likedHim: false,
+          isverified: true
+
         ),
                 const InteractionUserModel(
           userId: '105',
@@ -436,6 +452,8 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
           isFavorite: true,
           isImageBlurred: false,
           likedHim: false,
+          isverified: true
+
         ),
                 const InteractionUserModel(
           userId: '106',

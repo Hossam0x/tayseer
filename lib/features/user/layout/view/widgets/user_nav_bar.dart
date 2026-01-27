@@ -4,8 +4,9 @@ import 'package:tayseer/features/advisor/layout/views/widgets/nav_bar_config.dar
 import 'package:tayseer/my_import.dart';
 
 class UserNavBar extends StatelessWidget {
-  const UserNavBar({super.key});
 
+ final Function(int)? onTabReselect;
+  const UserNavBar({super.key, this.onTabReselect});
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<LayoutCubit, LayoutState>(
@@ -29,7 +30,15 @@ class UserNavBar extends StatelessWidget {
                   activeIcon: navItems[index].activeIcon,
                   label: context.tr(navItems[index].labelKey),
                   isActive: state.currentIndex == index,
-                  onTap: () => cubit.changeIndex(index),
+                  onTap: () {
+                    // ✅ التحقق من إعادة الضغط على نفس التاب
+                    if (index == state.currentIndex) {
+                      onTabReselect?.call(index);
+                    } else {
+                      cubit.changeIndex(index);
+                    }
+                    // cubit.changeIndex(index);
+                  },
                 ),
               ),
             ),

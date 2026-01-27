@@ -54,6 +54,7 @@ import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/questions_page_view.dart';
 import 'package:tayseer/features/user/questions/view/accept_married_view.dart';
@@ -203,6 +204,7 @@ abstract class AppRouter {
   static const kUserPublicProfileView = '/user-public-profile';
   static const kUserProfileEditView = '/user-profile-edit';
   static const kInteractionFilterView = '/InteractionFilterView';
+  static const kinteractionSubscriptionView = '/interactionSubscriptionView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -744,203 +746,11 @@ abstract class AppRouter {
             return OrderSessionView();
           },
         );
-
-      /////// questions routes ///////
-      case kQuestionsPageView:
-        final args = settings.arguments as Map<String, dynamic>?;
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => MultiBlocProvider(
-            providers: [
-              BlocProvider.value(value: getIt<AuthCubit>()),
-              BlocProvider.value(value: getIt<QuestionsCubit>()),
-            ],
-            child: QuestionsPageView(
-              currentUserType: args?['currentUserType'] ?? UserTypeEnum.user,
-              selectedGender: args?['selectedGender'] ?? Gender.male,
-            ),
-          ),
+      case AppRouter.kinteractionSubscriptionView:
+        return FadeScaleRoute(
+          page: const interactionSubscriptionView(),
+          routeSettings: settings,
         );
-      case kNationalityView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const NationalityView(),
-          ),
-        );
-
-      case kCountryView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const CountryView(),
-          ),
-        );
-
-      case kChooseAgeView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const ChooseAgeView(),
-          ),
-        );
-
-      case kSocialStatusView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const SocialStatusView(),
-          ),
-        );
-
-      case kChooseWeightView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const ChooseWeightView(),
-          ),
-        );
-
-      case kChooseHeightView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const ChooseHeightView(),
-          ),
-        );
-
-      case kSkinColorView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const SkinColorView(),
-          ),
-        );
-
-      case kSmokingView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const SmokingView(),
-          ),
-        );
-
-      case kReligiousCommitmentView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const ReligiousCommitmentView(),
-          ),
-        );
-
-      case kHasChildrenView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const HasChildrenView(),
-          ),
-        );
-
-      case kChildrenLivingStatusView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const ChildrenLivingStatusView(),
-          ),
-        );
-
-      case kChildrenNumberView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const ChildrenNumberView(),
-          ),
-        );
-
-      case kEducationLevelView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const EducationLevelView(),
-          ),
-        );
-
-      case kChooseJobView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const ChooseJobView(),
-          ),
-        );
-
-      case kChooseEmployerView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const ChooseEmployerView(),
-          ),
-        );
-
-      case kAcceptMarriedView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const AcceptMarriedView(),
-          ),
-        );
-
-      case kHealthStatusView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const HealthStatusView(),
-          ),
-        );
-
-      case kHobbiesView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const HobbiesView(),
-          ),
-        );
-
-      case kAddYourCvView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const AddYourCvView(),
-          ),
-        );
-
-      case kPersonalInfoView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: const PersonalInfoView(),
-          ),
-        );
-
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;
       //   return PageRouteBuilder(

@@ -1,5 +1,6 @@
 import 'package:tayseer/core/models/pagination_model.dart';
-import 'package:tayseer/features/user/interactions/data/Model/InteractionUserModel%20.dart';
+
+import 'Iinteraction_usermodel .dart';
 
 class HistoryResponseModel {
   final bool success;

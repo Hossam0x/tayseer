@@ -1,9 +1,12 @@
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/get_dummy_interaction.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/subscription_prompt_overlay.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/empty_History.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_profilecard.dart';
 import 'package:tayseer/my_import.dart';
 
-import '../../Interactions_cubit/interactions_cubit.dart' show InteractionsCubit;
+import '../../Interactions_cubit/interactions_cubit.dart';
 
 class Historypage extends StatefulWidget {
   final String selectedFilter;
@@ -18,7 +21,6 @@ class _HistorypageState extends State<Historypage> {
   @override
   void initState() {
     super.initState();
-    // ✅ جلب البيانات عند فتح الصفحة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
     });
@@ -27,7 +29,6 @@ class _HistorypageState extends State<Historypage> {
   @override
   void didUpdateWidget(Historypage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // ✅ جلب البيانات عند تغيير الفلتر
     if (oldWidget.selectedFilter != widget.selectedFilter) {
       context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
     }
@@ -37,11 +38,9 @@ class _HistorypageState extends State<Historypage> {
   Widget build(BuildContext context) {
     return BlocBuilder<InteractionsCubit, InteractionsState>(
       builder: (context, state) {
-        // ✅ حالة التحميل
+        // ✅ حالة التحميل مع Skeleton
         if (state.historyState == CubitStates.loading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return _buildSkeletonLoading();
         }
 
         // ✅ حالة الخطأ
@@ -77,24 +76,63 @@ class _HistorypageState extends State<Historypage> {
           return EmptyHistory(selectedFilter: widget.selectedFilter);
         }
 
-        // ✅ عرض البيانات
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 22.w),
-          child: GridView.builder(
-            padding: EdgeInsets.only(top: 16.h, bottom: 20.h),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12.w,
-              mainAxisSpacing: 12.h,
-              childAspectRatio: 0.7,
+        // ✅ عرض البيانات مع Blur والزر الثابت
+        return Stack(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 22.w),
+              child: GridView.builder(
+                padding: EdgeInsets.only(
+                  top: 16.h,
+                  bottom: state.isSubscribed ? 20.h : 160.h, // ✅ مساحة إضافية للزر
+                ),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12.w,
+                  mainAxisSpacing: 12.h,
+                  childAspectRatio: 0.7,
+                ),
+                itemCount: data.length,
+                itemBuilder: (context, index) {
+                  return InteractionProfileCard(
+                    item: data[index],
+                      showFavoriteIcon: widget.selectedFilter == "المفضلة",
+                    forceBlur: !state.isSubscribed, // ✅ Blur إذا لم يكن مشترك
+                  );
+                },
+              ),
             ),
-            itemCount: data.length,
-            itemBuilder: (context, index) {
-              return InteractionProfileCard(item: data[index]);
-            },
-          ),
+            
+            // ✅ الزر الثابت (يظهر فقط للمستخدمين غير المشتركين)
+            if (!state.isSubscribed)
+              const SubscriptionPromptOverlay(),
+          ],
         );
       },
+    );
+  }
+
+  Widget _buildSkeletonLoading() {
+    final dummyData = getDummyInteractionUsers(count: 8);
+
+    return Skeletonizer(
+      enabled: true,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 22.w),
+        child: GridView.builder(
+          padding: EdgeInsets.only(top: 16.h, bottom: 20.h),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12.w,
+            mainAxisSpacing: 12.h,
+            childAspectRatio: 0.7,
+          ),
+          itemCount: dummyData.length,
+          itemBuilder: (context, index) {
+            return InteractionProfileCard(item: dummyData[index]);
+          },
+        ),
+      ),
     );
   }
 }

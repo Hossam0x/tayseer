@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
-import '../../data/Model/InteractionUserModel .dart';
+import '../../data/Model/Iinteraction_usermodel .dart';
 
 class InteractionsState extends Equatable {
   // Exploration
@@ -23,6 +23,9 @@ class InteractionsState extends Equatable {
   final CubitStates actionState;
   final String? actionMessage;
 
+  // ✅ إضافة حالة الاشتراك
+  final bool isSubscribed;
+
   const InteractionsState({
     this.explorationState = CubitStates.initial,
     this.explorationData = const {},
@@ -38,6 +41,7 @@ class InteractionsState extends Equatable {
     this.historyIsLoadingMore = false,
     this.actionState = CubitStates.initial,
     this.actionMessage,
+    this.isSubscribed = true, // ✅ افتراضياً المستخدم غير مشترك
   });
 
   InteractionsState copyWith({
@@ -55,6 +59,7 @@ class InteractionsState extends Equatable {
     bool? historyIsLoadingMore,
     CubitStates? actionState,
     String? actionMessage,
+    bool? isSubscribed, // ✅ إضافة
   }) {
     return InteractionsState(
       explorationState: explorationState ?? this.explorationState,
@@ -71,6 +76,7 @@ class InteractionsState extends Equatable {
       historyIsLoadingMore: historyIsLoadingMore ?? this.historyIsLoadingMore,
       actionState: actionState ?? this.actionState,
       actionMessage: actionMessage ?? this.actionMessage,
+      isSubscribed: isSubscribed ?? this.isSubscribed, // ✅ إضافة
     );
   }
 
@@ -90,5 +96,6 @@ class InteractionsState extends Equatable {
         historyIsLoadingMore,
         actionState,
         actionMessage,
+        isSubscribed, // ✅ إضافة
       ];
 }
