@@ -3,7 +3,6 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/get_dummy_interaction.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/subscription_prompt_overlay.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/empty_Exploration.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/Interaction_ProfileCard.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/greeting_interaction_card.dart';
@@ -157,9 +156,7 @@ class ExplorationState extends State<Exploration> {
 
               SizedBox(height: 24.h),
 
-              if (state
-                      .explorationData["يرغبون في التفاعل معك"]
-                      ?.isNotEmpty ??
+              if (state.explorationData["يرغبون في التفاعل معك"]?.isNotEmpty ??
                   false)
                 _buildSection(
                   title: "أشخاص يرغبون في التفاعل معك",
@@ -224,8 +221,7 @@ class ExplorationState extends State<Exploration> {
                       shrinkWrap: true,
                       itemCount: state.explorationData["ارسل تحية"]!.length,
                       itemBuilder: (context, index) {
-                        final item =
-                            state.explorationData["ارسل تحية"]![index];
+                        final item = state.explorationData["ارسل تحية"]![index];
                         return Padding(
                           padding: EdgeInsetsDirectional.only(bottom: 12.w),
                           child: GreetingProfileCard(

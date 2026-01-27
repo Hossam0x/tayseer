@@ -3,7 +3,6 @@ import 'package:tayseer/features/user/interactions/presentation/Interactions_cub
 import 'package:tayseer/my_import.dart';
 import '../../../data/Model/Iinteraction_usermodel .dart';
 import 'status_ribbon_widget.dart';
-// في ملف interaction_profilecard.dart
 
 class InteractionProfileCard extends StatefulWidget {
   final InteractionUserModel item;
@@ -111,8 +110,8 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                               scale: _scaleAnimation,
                               child: Container(
                                 padding: EdgeInsets.all(6.w),
+
                                 // خلفية خفيفة لتمييز الأيقونة إذا كانت الصورة فاتحة
-                              
                                 child: Icon(
                                   widget.item.isFavorite
                                       ? Icons.favorite

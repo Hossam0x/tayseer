@@ -1,7 +1,3 @@
-import 'package:tayseer/features/advisor/profille/views/cubit/boost_account_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/subscription_card.dart';
-import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/my_import.dart';
 
 class SubscriptionPromptOverlay extends StatelessWidget {
@@ -39,8 +35,6 @@ class SubscriptionPromptOverlay extends StatelessWidget {
                 context,
                 onPressed: () {
                   context.pushNamed(AppRouter.kinteractionSubscriptionView);
-
-              
                 },
               ),
             ],
@@ -49,54 +43,53 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       ),
     );
   }
-  
-Widget _interactionSubscriptionButton(
-  String label,
-  BuildContext context, {
-  required void Function()? onPressed,
-}) {
-  return Container(
-    width: MediaQuery.of(context).size.width * 0.8,
-    height: 55.h,
-    decoration: BoxDecoration(
-      // Linear Gradient implementation from Figma data
-      gradient: const LinearGradient(
-        begin: Alignment.centerRight,
-        end: Alignment.centerLeft,
-        colors: [
-          Color(0xFFEB7A91), // primary/300
-          Color.fromRGBO(245, 192, 3, 1),
-        ],
+
+  Widget _interactionSubscriptionButton(
+    String label,
+    BuildContext context, {
+    required void Function()? onPressed,
+  }) {
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.8,
+      height: 55.h,
+      decoration: BoxDecoration(
+        // Linear Gradient implementation from Figma data
+        gradient: const LinearGradient(
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
+          colors: [
+            Color(0xFFEB7A91), // primary/300
+            Color.fromRGBO(245, 192, 3, 1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16.r),
       ),
-      borderRadius: BorderRadius.circular(16.r),
-    ),
-    child: ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor:
-            Colors.transparent, // Required to show the container gradient
-        shadowColor: Colors.transparent, // Removes shadow to keep it clean
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              Colors.transparent, // Required to show the container gradient
+          shadowColor: Colors.transparent, // Removes shadow to keep it clean
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppImage(AssetsData.diamondIcon, width: 24.w, height: 24.h),
+            SizedBox(width: 20.w),
+            Text(
+              label,
+              style: Styles.textStyle22SemiBold.copyWith(
+                fontSize: 20.sp,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AppImage(AssetsData.diamondIcon, width: 24.w, height: 24.h),
-          SizedBox(width: 20.w),
-          Text(
-            label,
-            style: Styles.textStyle22SemiBold.copyWith(
-              fontSize: 20.sp,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
+    );
+  }
 }
