@@ -2,6 +2,7 @@
 import 'package:equatable/equatable.dart';
 
 class UserAdvisorProfileModel extends Equatable {
+  final String id;
   final String name;
   final String image;
   final String username;
@@ -18,6 +19,7 @@ class UserAdvisorProfileModel extends Equatable {
   final String? jobGrade; // ⭐ إضافة
 
   const UserAdvisorProfileModel({
+    required this.id,
     required this.name,
     required this.image,
     required this.username,
@@ -36,6 +38,11 @@ class UserAdvisorProfileModel extends Equatable {
 
   factory UserAdvisorProfileModel.fromJson(Map<String, dynamic> json) {
     return UserAdvisorProfileModel(
+      id:
+          json['id']?.toString() ??
+          json['_id']?.toString() ??
+          json['advisorId']?.toString() ??
+          '',
       name: json['name'] ?? '',
       image: json['image'] ?? '',
       username: json['username'] ?? '',
@@ -56,6 +63,7 @@ class UserAdvisorProfileModel extends Equatable {
   }
 
   Map<String, dynamic> toJson() => {
+    'id': id,
     'name': name,
     'image': image,
     'username': username,
@@ -73,6 +81,7 @@ class UserAdvisorProfileModel extends Equatable {
   };
 
   UserAdvisorProfileModel copyWith({
+    String? id,
     String? name,
     String? image,
     String? username,
@@ -89,6 +98,7 @@ class UserAdvisorProfileModel extends Equatable {
     String? jobGrade,
   }) {
     return UserAdvisorProfileModel(
+      id: id ?? this.id,
       name: name ?? this.name,
       image: image ?? this.image,
       username: username ?? this.username,
@@ -109,6 +119,7 @@ class UserAdvisorProfileModel extends Equatable {
 
   @override
   List<Object?> get props => [
+    id,
     name,
     image,
     username,

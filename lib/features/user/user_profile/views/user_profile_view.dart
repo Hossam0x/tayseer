@@ -23,6 +23,7 @@ class UserProfileView extends StatefulWidget {
 class _UserProfileViewState extends State<UserProfileView> {
   int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();
+  int _rating = 0;
 
   @override
   void initState() {
@@ -349,11 +350,13 @@ class _UserProfileViewState extends State<UserProfileView> {
         Gap(8.h),
         GestureDetector(
           onTap: () {
+            // ⭐ التحديث: تمرير userId فقط
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    UserPublicProfileView(userProfile: userProfile),
+                builder: (context) => UserPublicProfileView(
+                  userId: userProfile.id, // ⭐ تمرير الـ ID فقط
+                ),
               ),
             );
           },
@@ -568,12 +571,24 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   Widget _buildSettingItem(BuildContext context, SettingItemModel setting) {
     final isNotificationsItem = setting.id == 'notifications';
+    final isInviteItem = setting.id == 'invite';
+    final isRateAppItem = setting.id == 'rate_app';
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
           if (isNotificationsItem) return;
+
+          if (isInviteItem) {
+            setting.onTap?.call();
+            return;
+          }
+
+          if (isRateAppItem) {
+            _showRateAppDialog(); // استدعاء الدالة من الـ View
+            return;
+          }
 
           if (setting.id == 'settings') {
             Navigator.push(
@@ -739,14 +754,14 @@ class _UserProfileViewState extends State<UserProfileView> {
       context,
       title: 'تسجيل الخروج',
       supTitle: 'هل أنت متأكد من تسجيل الخروج من حسابك؟',
-      imageUrl: AssetsData.icBlockedSettings,
-      bottonText: 'نعم، سجل خروج',
-      cancelText: 'إلغاء',
+      imageUrl: AssetsData.pauseIcon,
+      bottonText: 'إلغاء',
+      cancelText: 'نعم',
       showCancelButton: true,
-      onPressed: () {
+      onPressed: () {},
+      onCancel: () {
         _performLogout(context);
       },
-      onCancel: () {},
     );
   }
 
@@ -787,5 +802,131 @@ class _UserProfileViewState extends State<UserProfileView> {
         isError: true,
       );
     }
+  }
+
+  void _showRateAppDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // العنوان
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Icon(Icons.close, size: 24.w),
+                      ),
+                      Text(
+                        'قيمنا',
+                        style: Styles.textStyle20Meduim.copyWith(
+                          color: AppColors.primary500,
+                        ),
+                      ),
+                      Gap(24.w),
+                    ],
+                  ),
+
+                  Gap(25.h),
+
+                  // النجوم للتقييم (قابلة للاختيار)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _rating = index + 1;
+                          });
+                        },
+                        child: Icon(
+                          // اختيار الأيقونة بناءً على التقييم
+                          index < _rating
+                              ? Icons.star_rounded
+                              : Icons.star_rounded,
+                          color: index < _rating
+                              ? AppColors.kprimaryColor
+                              : AppColors.secondary100,
+                          size: 56.w,
+                        ),
+                      );
+                    }),
+                  ),
+
+                  // عرض قيمة التقييم (اختياري)
+                  if (_rating > 0) ...[
+                    Gap(12.h),
+                    Text(
+                      'تقييمك: $_rating / 5',
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.primary500,
+                      ),
+                    ),
+                  ],
+
+                  Gap(24.h),
+
+                  // الرسالة
+                  Text(
+                    'قيمنا حتى نتمكن من تغيير السلبيات\nساعد غيرك في الاستخدام',
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondary700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  Gap(32.h),
+
+                  // زر الإرسال
+                  CustomBotton(
+                    title: 'ارسال التقييم',
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _submitAppRating(context, _rating);
+                      // إعادة تعيين التقييم بعد الإرسال
+                      setState(() {
+                        _rating = 0;
+                      });
+                    },
+                    width: double.infinity,
+                    height: 54.h,
+                    useGradient: true,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _submitAppRating(BuildContext context, int rating) {
+    if (rating > 0) {
+      debugPrint('التقييم المرسل: $rating نجوم');
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      CustomSnackBar(
+        context,
+        text: rating > 0
+            ? 'شكراً لتقييمك التطبيق بـ $rating نجوم!'
+            : 'شكراً لتقييمك التطبيق!',
+        isSuccess: true,
+      ),
+    );
   }
 }

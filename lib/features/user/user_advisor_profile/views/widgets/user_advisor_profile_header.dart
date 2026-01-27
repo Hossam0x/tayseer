@@ -45,10 +45,12 @@ class UserAdvisorProfileHeader extends StatelessWidget {
         followers: '0',
         isVerified: false,
         context: context,
+        profileId: '',
       ),
     );
   }
 
+  // في UserAdvisorProfileHeader
   Widget _buildProfileHeader(
     BuildContext context,
     UserAdvisorProfileModel profile,
@@ -59,6 +61,69 @@ class UserAdvisorProfileHeader extends StatelessWidget {
       followers: profile.followers.toString(),
       isVerified: profile.isVerified,
       context: context,
+      profileId: profile.id, // ⭐ تمرير الـ id فقط
+    );
+  }
+
+  Widget _buildHeaderContent({
+    required String imageUrl,
+    required String following,
+    required String followers,
+    required bool isVerified,
+    required BuildContext context,
+    required String profileId, // ⭐ تغيير إلى String
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Gap(1.w),
+          // Profile picture
+          Stack(
+            children: [MyProfileImage(width: 85.w, imageUrl: imageUrl)],
+          ),
+          Gap(10.w),
+          // Stats
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRouter.kFollowingView,
+              arguments: profileId, // ⭐ استخدام الـ profileId
+            ),
+            child: Column(
+              children: [
+                Text(following, style: Styles.textStyle16SemiBold),
+                Text("Following", style: Styles.textStyle14),
+              ],
+            ),
+          ),
+          Gap(20.w),
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRouter.kFollowersView,
+              arguments: profileId, // ⭐ استخدام الـ profileId
+            ),
+            child: Column(
+              children: [
+                Text(followers, style: Styles.textStyle16SemiBold),
+                Text("Followers", style: Styles.textStyle14),
+              ],
+            ),
+          ),
+          Gap(10.w),
+
+          // More button
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _buildMoreButton(context),
+              SizedBox(height: 40.w),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -99,59 +164,6 @@ class UserAdvisorProfileHeader extends StatelessWidget {
                 color: AppColors.kWhiteColor,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderContent({
-    required String imageUrl,
-    required String following,
-    required String followers,
-    required bool isVerified,
-    required BuildContext context,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Gap(1.w),
-          // Profile picture
-          Stack(
-            children: [MyProfileImage(width: 85.w, imageUrl: imageUrl)],
-          ),
-          Gap(10.w),
-          // Stats
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowingView),
-            child: Column(
-              children: [
-                Text(following, style: Styles.textStyle16SemiBold),
-                Text("Following", style: Styles.textStyle14),
-              ],
-            ),
-          ),
-          Gap(20.w),
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowersView),
-            child: Column(
-              children: [
-                Text(followers, style: Styles.textStyle16SemiBold),
-                Text("Followers", style: Styles.textStyle14),
-              ],
-            ),
-          ),
-          Gap(10.w),
-
-          // More button
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _buildMoreButton(context),
-              SizedBox(height: 40.w),
-            ],
           ),
         ],
       ),

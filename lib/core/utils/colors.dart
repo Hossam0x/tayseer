@@ -144,4 +144,29 @@ abstract class AppColors {
 
   static Color pendingColor = Color.fromRGBO(246, 181, 81, 1);
   static Color alertColor = Color.fromRGBO(229, 69, 69, 1);
+
+  // Success Colors - تدرجات اللون الأخضر للنجاح
+  static Color success50 = Color.fromRGBO(236, 253, 245, 1); // أخضر فاتح جداً
+  static Color success100 = Color.fromRGBO(209, 250, 229, 1); // أخضر فاتح
+  static Color success200 = Color.fromRGBO(167, 243, 208, 1); // أخضر متوسط فاتح
+  static Color success300 = Color.fromRGBO(110, 231, 183, 1); // أخضر متوسط
+  static Color success400 = Color.fromRGBO(52, 211, 153, 1); // أخضر
+  static Color success500 = Color.fromRGBO(16, 185, 129, 1); // أخضر أساسي
+  static Color success600 = Color.fromRGBO(5, 150, 105, 1); // أخضر داكن
+  static Color success700 = Color.fromRGBO(4, 120, 87, 1); // أخفر داكن جداً
+  static Color success800 = Color.fromRGBO(6, 95, 70, 1); // أخضر غامق
+  static Color success900 = Color.fromRGBO(6, 78, 59, 1); // أخضر غامق جداً
+
+  // Error Colors - تدرجات اللون الأحمر للخطأ
+  static Color error50 = Color.fromRGBO(254, 242, 242, 1); // أحمر فاتح جداً
+  static Color error100 = Color.fromRGBO(254, 226, 226, 1); // أحمر فاتح
+  static Color error200 = Color.fromRGBO(254, 202, 202, 1); // أحمر متوسط فاتح
+  static Color error300 = Color.fromRGBO(252, 165, 165, 1); // أحمر متوسط
+  static Color error400 = Color.fromRGBO(248, 113, 113, 1); // أحمر
+  static Color error500 = Color.fromRGBO(239, 68, 68, 1); // أحمر أساسي
+  static Color error600 = Color.fromRGBO(220, 38, 38, 1); // أحمر داكن
+  static Color errorColor = error600; // إضافة اختصار للون الخطأ الأساسي
+  static Color error700 = Color.fromRGBO(185, 28, 28, 1); // أحمر داكن جداً
+  static Color error800 = Color.fromRGBO(153, 27, 27, 1); // أحمر غامق
+  static Color error900 = Color.fromRGBO(127, 29, 29, 1); // أحمر غامق جداً
 }

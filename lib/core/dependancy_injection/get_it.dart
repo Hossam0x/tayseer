@@ -14,6 +14,7 @@ import 'package:tayseer/features/advisor/settings/data/repositories/account_mana
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
+import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
@@ -56,6 +57,7 @@ import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
@@ -169,7 +171,7 @@ Future<void> setupGetIt() async {
   );
 
   /// Ratings Cubit
-  getIt.registerFactory<RatingsCubit>(
+  getIt.registerLazySingleton<RatingsCubit>(
     () => RatingsCubit(getIt<RatingsRepository>()),
   );
 
@@ -179,7 +181,7 @@ Future<void> setupGetIt() async {
   );
 
   /// Certificates Cubit
-  getIt.registerFactory<CertificatesCubit>(
+  getIt.registerLazySingleton<CertificatesCubit>(
     () => CertificatesCubit(getIt<CertificatesRepository>()),
   );
 
@@ -289,15 +291,14 @@ Future<void> setupGetIt() async {
   );
 
   // User Public Profile Cubit Factory
-  getIt
-      .registerFactoryParam<UserPublicProfileCubit, String?, UserProfileModel?>(
-        (userId, initialProfile) => UserPublicProfileCubit(
-          getIt<UserPublicProfileRepository>(),
-          getIt<UserPostsRepository>(),
-          userId: userId,
-          initialProfile: initialProfile,
-        ),
-      );
+  getIt.registerFactoryParam<UserPublicProfileCubit, String, UserProfileModel?>(
+    (userId, initialProfile) => UserPublicProfileCubit(
+      getIt<UserPublicProfileRepository>(),
+      getIt<UserPostsRepository>(),
+      userId: userId,
+      initialProfile: initialProfile,
+    ),
+  );
 
   getIt.registerFactory<UserProfileEditCubit>(
     () => UserProfileEditCubit(getIt<UserProfileRepository>()),
@@ -321,5 +322,13 @@ Future<void> setupGetIt() async {
   /// Questions Cubit
   getIt.registerLazySingleton<QuestionsCubit>(
     () => QuestionsCubit(getIt<QuestionsRepo>()),
+  );
+  // User
+  getIt.registerFactory<UserAccountManagementRepository>(
+    () => UserAccountManagementRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerLazySingleton<FollowersRepository>(
+    () => FollowersRepositoryImpl(getIt<ApiService>()),
   );
 }

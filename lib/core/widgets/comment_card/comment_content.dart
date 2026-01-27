@@ -2,6 +2,8 @@ import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_actions_menu.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_avatar.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 
 /// CommentContent - Displays comment information
@@ -24,6 +26,36 @@ class CommentContent extends StatelessWidget {
     this.callbacks = CommentCallbacks.empty,
   });
 
+  void _navigateToUserAdvisorProfile(BuildContext context) {
+    // التحقق من أن هذا ليس بروفايل المستخدم الحالي
+    // يمكنك استخدام getIt أو أي طريقة أخرى للتحقق من الـ current user id
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            UserAdvisorProfileView(advisorId: comment.commenter.id),
+      ),
+    );
+  }
+
+  void _navigateToUserProfile(BuildContext context) {
+    // ⭐ التحقق من وجود الـ ID
+    if (comment.commenter.id.isEmpty) {
+      // ⭐ يمكنك إظهار رسالة خطأ أو عدم القيام بأي شيء
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserPublicProfileView(
+          userId: comment.commenter.id, // ⭐ استخدام ! بعد التأكد
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return IntrinsicHeight(
@@ -31,7 +63,15 @@ class CommentContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Avatar
-          CommentAvatar(avatarUrl: comment.commenter.avatar, isReply: isReply),
+          GestureDetector(
+            onTap: () => comment.commenter.userType == 'Advisor'
+                ? _navigateToUserAdvisorProfile(context)
+                : _navigateToUserProfile(context),
+            child: CommentAvatar(
+              avatarUrl: comment.commenter.avatar,
+              isReply: isReply,
+            ),
+          ),
           Gap(10.w),
 
           // Content

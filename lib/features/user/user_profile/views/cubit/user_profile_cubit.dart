@@ -126,12 +126,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         title: 'تقييم التطبيق',
         iconAsset: AssetsData.icRateSettings,
         routeName: '',
+        onTap: () async {},
       ),
       SettingItemModel(
         id: 'account_management',
         title: 'إدارة الحساب',
         iconAsset: AssetsData.icManagementSettings,
-        routeName: AppRouter.kAccountManagementView,
+        routeName: AppRouter.kUserAccountManagementView,
       ),
     ];
   }

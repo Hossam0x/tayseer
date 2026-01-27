@@ -12,28 +12,27 @@ class UserPublicProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
       buildWhen: (previous, current) =>
-          previous.state != current.state ||
+          previous.state != current.state || // ⭐ مراقبة state العامة
           previous.profile != current.profile,
       builder: (context, state) {
-        // ⭐ التحديث: التحقق من state.state
-        switch (state.state) {
-          case CubitStates.loading:
-            return SliverToBoxAdapter(child: _buildSkeletonHeader(context));
-          case CubitStates.failure:
-            // ⭐ التحديث: استخدام getter errorMessage
-            return SliverToBoxAdapter(
-              child: _buildErrorHeader(context, state.profileErrorMessage),
-            );
-          case CubitStates.success:
-            if (state.profile != null) {
-              return SliverToBoxAdapter(
-                child: _buildProfileHeader(context, state.profile!),
-              );
-            }
-            return _buildEmptyHeader();
-          default:
-            return _buildEmptyHeader();
+        // ⭐ التحقق من الحالة العامة أولاً
+        if (state.state == CubitStates.loading) {
+          return SliverToBoxAdapter(child: _buildSkeletonHeader(context));
         }
+
+        if (state.state == CubitStates.failure) {
+          return SliverToBoxAdapter(
+            child: _buildErrorHeader(context, state.profileErrorMessage),
+          );
+        }
+
+        if (state.profile != null) {
+          return SliverToBoxAdapter(
+            child: _buildProfileHeader(context, state.profile!),
+          );
+        }
+
+        return _buildEmptyHeader();
       },
     );
   }

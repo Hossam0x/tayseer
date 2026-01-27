@@ -100,9 +100,8 @@ import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/advisor/layout/views/a_layout_view.dart';
 import 'package:tayseer/features/shared/auth/view/regisration_user_view.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
-// import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/on_boarding_screen.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
-import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/views/user_account_management_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import '../../../my_import.dart';
@@ -187,6 +186,7 @@ abstract class AppRouter {
   static const kSessionPricingView = '/session_pricing_view';
   static const kAppointmentsView = '/appointments_view';
   static const kAccountManagementView = '/account_management_view';
+  static const kUserAccountManagementView = '/user_account_management_view';
   static const kLanguageSelectionView = '/language-selection';
   static const kHideStoryFromView = '/hide_story_from_view';
   static const kHelpSupportView = '/help_support_view';
@@ -300,6 +300,12 @@ abstract class AppRouter {
           routeSettings: settings,
         );
 
+      case AppRouter.kUserAccountManagementView:
+        return SlideLeftRoute(
+          page: const UserAccountManagementView(),
+          routeSettings: settings,
+        );
+
       case AppRouter.kLanguageSelectionView:
         return SlideLeftRoute(
           page: const LanguageSelectionView(),
@@ -365,22 +371,23 @@ abstract class AppRouter {
         );
 
       case AppRouter.kFollowersView:
+        final userId = settings.arguments as String? ?? '';
         return FadeScaleRoute(
-          page: const FollowersView(),
+          page: FollowersView(userId: userId),
           routeSettings: settings,
         );
 
       case AppRouter.kFollowingView:
+        final userId = settings.arguments as String? ?? '';
         return FadeScaleRoute(
-          page: const FollowingView(),
+          page: FollowingView(userId: userId),
           routeSettings: settings,
         );
 
       case AppRouter.kUserPublicProfileView:
         return MaterialPageRoute(
-          builder: (_) => UserPublicProfileView(
-            userProfile: settings.arguments as UserProfileModel,
-          ),
+          builder: (_) =>
+              UserPublicProfileView(userId: settings.arguments as String),
         );
 
       case AppRouter.kUserProfileEditView:

@@ -29,6 +29,7 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
 
   UserAdvisorProfileRepositoryImpl(this._apiService);
 
+  // في UserAdvisorProfileRepositoryImpl
   @override
   Future<Either<Failure, UserAdvisorProfileModel>> getUserProfile(
     String advisorId,
@@ -40,6 +41,11 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
 
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
+
+        // ⭐ إضافة الـ ID إلى البيانات إذا لم يكن موجوداً
+        if (!data.containsKey('id') && !data.containsKey('_id')) {
+          data['id'] = advisorId;
+        }
 
         // ⭐ تنظيف نص سنوات الخبرة
         String? yearsExpString = data['yearsOfExperience']?.toString();

@@ -6,36 +6,50 @@ import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 
+// في user_public_profile_cubit.dart
+// في user_public_profile_cubit.dart
 class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
   final UserPublicProfileRepository _profileRepository;
   final UserPostsRepository _postsRepository;
-  final String? userId;
-  final UserProfileModel? initialProfile;
+  final String? userId; // ⭐ ابقاء nullable
+
   final int _pageSize = 10;
 
   UserPublicProfileCubit(
     this._profileRepository,
     this._postsRepository, {
-    this.userId,
-    this.initialProfile,
+    this.userId, // ⭐ nullable
+    UserProfileModel? initialProfile,
   }) : super(
          UserPublicProfileState(
-           state: CubitStates.success,
+           state: CubitStates.initial,
            profile: initialProfile,
            profileState: initialProfile != null
                ? CubitStates.success
                : CubitStates.initial,
          ),
        ) {
-    // إذا كان لدينا بيانات أولية، لا نحتاج لتحميلها
-    if (initialProfile != null) {
-      fetchPosts();
-    } else if (userId != null) {
-      _initialize();
+    // ⭐ التأكد من وجود userId
+    if (userId != null) {
+      if (initialProfile != null) {
+        fetchPosts();
+      } else {
+        _initialize();
+      }
+    } else {
+      // ⭐ إذا لم يكن هناك userId، نغير الحالة إلى failure
+      emit(
+        state.copyWith(
+          state: CubitStates.failure,
+          profileState: CubitStates.failure,
+          profileErrorMessage: 'معرف المستخدم غير متوفر',
+        ),
+      );
     }
   }
 
   Future<void> _initialize() async {
+    if (userId == null) return;
     await Future.wait([fetchProfile(), fetchPosts()]);
   }
 
@@ -45,6 +59,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
     emit(
       state.copyWith(
         profileState: CubitStates.loading,
+        state: CubitStates.loading,
         profileErrorMessage: null,
       ),
     );
@@ -56,6 +71,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
     result.fold(
       (failure) => emit(
         state.copyWith(
+          state: CubitStates.failure,
           profileState: CubitStates.failure,
           profileErrorMessage: failure.message,
         ),
@@ -262,10 +278,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
   }
 
   Future<void> refresh() async {
-    await Future.wait([
-      if (userId != null) fetchProfile(),
-      fetchPosts(loadMore: false),
-    ]);
+    await Future.wait([fetchProfile(), fetchPosts(loadMore: false)]);
   }
 
   Future<void> deleteUserAccount() async {

@@ -137,32 +137,32 @@ class UserPublicProfileBio extends StatelessWidget {
             ),
 
           // زر التواصل (إذا لم يكن المستخدم نفسه وكان جاهز للزواج)
-          if (!profile.isMe && profile.avaliableForMarry)
-            _buildContactButton(context),
+          // if (!profile.isMe && profile.avaliableForMarry)
+          // _buildContactButton(context),
         ],
       ),
     );
   }
 
-  Widget _buildContactButton(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 16.h),
-      child: CustomBotton(
-        height: 54.h,
-        width: double.infinity,
-        title: 'تواصل معي',
-        onPressed: () {
-          // TODO: افتح محادثة مع المستخدم
-          // Navigator.pushNamed(context, AppRouter.ic);
-        },
-        backGroundcolor: AppColors.kprimaryColor,
-        titleColor: AppColors.kWhiteColor,
-        radius: 10.r,
-        useGradient: true,
-        elevation: 0,
-      ),
-    );
-  }
+  // Widget _buildContactButton(BuildContext context) {
+  //   return Container(
+  //     margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 16.h),
+  //     child: CustomBotton(
+  //       height: 54.h,
+  //       width: double.infinity,
+  //       title: 'تواصل معي',
+  //       onPressed: () {
+  //         // TODO: افتح محادثة مع المستخدم
+  //         // Navigator.pushNamed(context, AppRouter.ic);
+  //       },
+  //       backGroundcolor: AppColors.kprimaryColor,
+  //       titleColor: AppColors.kWhiteColor,
+  //       radius: 10.r,
+  //       useGradient: true,
+  //       elevation: 0,
+  //     ),
+  //   );
+  // }
 
   SliverToBoxAdapter _buildEmptyBio() {
     return const SliverToBoxAdapter(child: SizedBox.shrink());
