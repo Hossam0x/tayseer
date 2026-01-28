@@ -10,10 +10,10 @@ class NavigateToChatListener extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
       listenWhen: (previous, current) =>
-          previous.readytoNavigate != current.readytoNavigate &&
-          current.readytoNavigate == true,
+          previous.shouldNavigateToChat  != current.shouldNavigateToChat  &&
+          current.shouldNavigateToChat  == true,
       listener: (context, state) {
-        if (state.readytoNavigate == true &&
+        if (state.shouldNavigateToChat  == true &&
             state.profile != null &&
             state.profile!.room != null) {
           final profile = state.profile!;

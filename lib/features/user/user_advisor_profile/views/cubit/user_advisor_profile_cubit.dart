@@ -42,7 +42,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
           state.copyWith(
             profile: updatedProfile,
             chatRoomId: chatRoomId,
-            readytoNavigate: true,
+            shouldNavigateToChat: true,
           ),
         );
       }
@@ -79,7 +79,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
             profile: profileModel,
             profileErrorMessage: null,
             chatRoomId: chatRoomId,
-            readytoNavigate: room != null && room.chatRoomId.isNotEmpty,
+            shouldNavigateToChat: false,
           ),
         );
       },
@@ -327,11 +327,10 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     if (state.profile?.hasRoom == true &&
         state.profile?.room != null &&
         state.profile!.chatRoomId != null) {
-      emit(state.copyWith(readytoNavigate: true));
+      emit(state.copyWith(shouldNavigateToChat: true));
     }
   }
 
-  // ⭐ تحديث دالة createRoom
   void createRoom(String receiverId) {
     if (state.profile?.hasRoom == true && state.profile!.chatRoomId != null) {
       navigateToChat();
@@ -343,23 +342,74 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     });
   }
 
-  // ⭐ تحديث دالة updateRoomInfo
+  Future<void> startChat() async {
+    // ⭐ إذا كان هناك room بالفعل
+    if (state.profile?.hasRoom == true && state.profile!.chatRoomId != null) {
+      // ⭐ تحديث حالة التحميل
+      emit(state.copyWith(isChatLoading: true, shouldNavigateToChat: true));
+      return;
+    }
+
+    // ⭐ إذا لم يكن هناك room، ننشئ واحد
+    emit(state.copyWith(isChatLoading: true));
+
+    // ⭐ تنظيف أي listeners سابقين
+    socketHelper.off('room_created');
+
+    // ⭐ الاستماع لإنشاء الروم من السوكيت
+    socketHelper.listen('room_created', (data) {
+      final String chatRoomId = data['ChatRoomId']?.toString() ?? '';
+
+      if (chatRoomId.isNotEmpty) {
+        log('Socket room created: $chatRoomId');
+
+        // ⭐ تحديث الـ profile بالـ room الجديد
+        final updatedProfile = state.profile?.copyWith(
+          room: RoomInfoModel(
+            chatRoomId: chatRoomId,
+            isBlocked: false,
+            isHaveSession: false,
+          ),
+        );
+
+        emit(
+          state.copyWith(
+            profile: updatedProfile,
+            chatRoomId: chatRoomId,
+            isChatLoading: false,
+            shouldNavigateToChat: true,
+          ),
+        );
+      }
+    });
+
+    // ⭐ إرسال طلب إنشاء room
+    socketHelper.send('create_room', {'reciverId': advisorId}, (ack) {
+      log("send room create for user: $advisorId");
+    });
+
+    // ⭐ إضافة timeout في حالة عدم الرد
+    Future.delayed(const Duration(seconds: 5), () {
+      if (state.isChatLoading) {
+        emit(state.copyWith(isChatLoading: false));
+        // ⭐ يمكن إضافة toast خطأ هنا
+      }
+    });
+  }
+
+  void resetNavigation() {
+    emit(state.copyWith(shouldNavigateToChat: false, isChatLoading: false));
+  }
+
+  // ⭐ دالة لتحديث room يدويًا
   void updateRoomInfo(RoomInfoModel roomInfo) {
     if (state.profile == null) return;
 
     final updatedProfile = state.profile!.copyWith(room: roomInfo);
 
     emit(
-      state.copyWith(
-        profile: updatedProfile,
-        chatRoomId: roomInfo.chatRoomId,
-        readytoNavigate: roomInfo.chatRoomId.isNotEmpty,
-      ),
+      state.copyWith(profile: updatedProfile, chatRoomId: roomInfo.chatRoomId),
     );
-  }
-
-  void resetNavigation() {
-    emit(state.copyWith(readytoNavigate: false));
   }
 
   void _updatePostInList(String postId, PostModel updatedPost) {

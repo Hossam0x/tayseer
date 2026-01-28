@@ -23,7 +23,10 @@ class UserAdvisorProfileState extends Equatable {
   final CubitStates shareActionState;
   final String? shareMessage;
   final bool? isShareAdded;
-  final bool? readytoNavigate;
+
+  final bool shouldNavigateToChat;
+
+  final bool isChatLoading;
 
   const UserAdvisorProfileState({
     this.profileState = CubitStates.initial,
@@ -42,7 +45,8 @@ class UserAdvisorProfileState extends Equatable {
     this.shareActionState = CubitStates.initial,
     this.shareMessage,
     this.isShareAdded,
-    this.readytoNavigate = false,
+    this.shouldNavigateToChat = false,
+    this.isChatLoading = false,
   });
 
   bool get hasRoom => profile?.hasRoom == true;
@@ -64,7 +68,8 @@ class UserAdvisorProfileState extends Equatable {
     CubitStates? shareActionState,
     String? shareMessage,
     bool? isShareAdded,
-    bool? readytoNavigate,
+    bool? shouldNavigateToChat,
+    bool? isChatLoading,
   }) {
     return UserAdvisorProfileState(
       profileState: profileState ?? this.profileState,
@@ -83,7 +88,8 @@ class UserAdvisorProfileState extends Equatable {
       shareActionState: shareActionState ?? this.shareActionState,
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
-      readytoNavigate: readytoNavigate ?? this.readytoNavigate,
+      shouldNavigateToChat: shouldNavigateToChat ?? this.shouldNavigateToChat,
+      isChatLoading: isChatLoading ?? this.isChatLoading,
     );
   }
 
@@ -105,6 +111,7 @@ class UserAdvisorProfileState extends Equatable {
     shareActionState,
     shareMessage,
     isShareAdded,
-    readytoNavigate,
+    shouldNavigateToChat,
+    isChatLoading,
   ];
 }

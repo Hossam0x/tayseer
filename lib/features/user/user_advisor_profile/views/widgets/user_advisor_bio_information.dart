@@ -254,6 +254,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
     );
   }
 
+  // ⭐ تحديث زر المحادثة في _buildFollowSection
   Widget _buildFollowSection(
     BuildContext context,
     UserAdvisorProfileModel profile,
@@ -261,11 +262,14 @@ class UserAdvisorBioInformation extends StatelessWidget {
     return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
       buildWhen: (previous, current) =>
           previous.profile?.isFollowing != current.profile?.isFollowing ||
-          previous.profile?.room != current.profile?.room,
+          previous.profile?.room != current.profile?.room ||
+          previous.isChatLoading !=
+              current.isChatLoading, // ⭐ إضافة حالة التحميل
       builder: (context, state) {
         final isFollowing = state.profile?.isFollowing ?? false;
         final isLoading = state.followActionState == CubitStates.loading;
-        final room = state.profile?.room;
+        // final room = state.profile?.room;
+        final isChatLoading = state.isChatLoading; // ⭐ حالة تحميل الشات
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
@@ -305,26 +309,36 @@ class UserAdvisorBioInformation extends StatelessWidget {
                     horizontal: 16.w,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary100,
+                    color: isChatLoading
+                        ? AppColors
+                              .infoText // ⭐ لون مختلف أثناء التحميل
+                        : AppColors.primary100,
                     borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(color: AppColors.primary500),
+                    border: Border.all(
+                      color: isChatLoading
+                          ? AppColors.infoText
+                          : AppColors.primary500,
+                    ),
                   ),
                   child: GestureDetector(
-                    onTap: () {
-                      final cubit = context.read<UserAdvisorProfileCubit>();
-
-                      // ⭐ إذا كان هناك room بالفعل من الـ response
-                      if (profile.hasRoom &&
-                          profile.chatRoomId != null &&
-                          room != null) {
-                        // ⭐ تحديث حالة readytoNavigate للانتقال
-                        cubit.updateRoomInfo(room);
-                      } else {
-                        // ⭐ إنشاء room جديد
-                        cubit.createRoom(profile.id);
-                      }
-                    },
-                    child: AppImage(AssetsData.chatIconSVG, width: 22.w),
+                    onTap: isChatLoading
+                        ? null // ⭐ تعطيل الضغط أثناء التحميل
+                        : () {
+                            final cubit = context
+                                .read<UserAdvisorProfileCubit>();
+                            cubit.startChat(); // ⭐ استدعاء دالة بدء المحادثة
+                          },
+                    child: isChatLoading
+                        ? SizedBox(
+                            // ⭐ عرض loading أثناء التحميل
+                            width: 22.w,
+                            height: 22.w,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary500,
+                            ),
+                          )
+                        : AppImage(AssetsData.chatIconSVG, width: 22.w),
                   ),
                 ),
             ],
@@ -333,24 +347,6 @@ class UserAdvisorBioInformation extends StatelessWidget {
       },
     );
   }
-
-  // void _navigateToChat(
-  //   BuildContext context,
-  //   UserAdvisorProfileModel profile,
-  //   RoomInfoModel room,
-  // ) {
-  //   context.pushNamed(
-  //     AppRouter.kConversitionView,
-  //     arguments: {
-  //       'chatroomid': room.chatRoomId,
-  //       'receiverid': profile.id,
-  //       'username': profile.username,
-  //       'userimage': profile.image,
-  //       'isBlocked': room.isBlocked,
-  //       'isHaveSession': room.isHaveSession,
-  //     },
-  //   );
-  // }
 
   SliverToBoxAdapter _buildEmptyBio() {
     return const SliverToBoxAdapter(child: SizedBox.shrink());
