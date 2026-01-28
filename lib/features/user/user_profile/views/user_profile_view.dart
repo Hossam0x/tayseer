@@ -9,6 +9,7 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_profil
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
+import 'package:tayseer/features/user/user_profile/views/marriage_profile_page.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -117,7 +118,8 @@ class _UserProfileViewState extends State<UserProfileView> {
           if (_selectedTabIndex == 0)
             _buildGeneralContentSliver(context, state)
           else
-            _buildMarriageContentSliver(context, state),
+          // ////////////////////////////////////////////////////////////////////
+          MarriageProfilePage(),
 
           // ⭐ زر تسجيل الخروج (موجود دائماً)
           _buildLogoutButtonSliver(context),
