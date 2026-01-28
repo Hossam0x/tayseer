@@ -1,5 +1,3 @@
-// questions_cubit.dart
-
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -7,6 +5,23 @@ import 'package:tayseer/my_import.dart';
 class QuestionsCubit extends Cubit<QuestionsState> {
   QuestionsCubit(this._repo) : super(const QuestionsState());
   final QuestionsRepo _repo;
+
+  // -------------------------------------
+  // الصور للسكرين الجديدة
+  // -------------------------------------
+
+  void setMainImage(File image) {
+    emit(state.copyWith(mainImage: image));
+  }
+
+  void setImages(List<File> images) {
+    final copied = List<File>.from(images);
+    emit(state.copyWith(images: copied));
+  }
+
+  // -------------------------------------
+  // uploadPersonalInfo
+  // -------------------------------------
 
   Future<void> uploadPersonalInfo({File? image, List<File>? images}) async {
     emit(state.copyWith(uploadPersonalInfoState: CubitStates.loading));
@@ -25,6 +40,7 @@ class QuestionsCubit extends Cubit<QuestionsState> {
               errorMessage: failure.message,
             ),
           );
+
           emit(
             state.copyWith(
               uploadPersonalInfoState: CubitStates.initial,
@@ -33,6 +49,8 @@ class QuestionsCubit extends Cubit<QuestionsState> {
           );
         },
         (_) {
+          setMainImage(image!);
+          setImages(images!);
           emit(state.copyWith(uploadPersonalInfoState: CubitStates.success));
           emit(state.copyWith(uploadPersonalInfoState: CubitStates.initial));
         },
@@ -46,6 +64,10 @@ class QuestionsCubit extends Cubit<QuestionsState> {
       );
     }
   }
+
+  // -------------------------------------
+  // answer questions
+  // -------------------------------------
 
   Future<void> sendAnswerQuestions({
     required String question,
@@ -95,6 +117,10 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     }
   }
 
+  // -------------------------------------
+  // verifyFace
+  // -------------------------------------
+
   Future<void> verifyFaceImage({required XFile image}) async {
     emit(
       state.copyWith(
@@ -108,7 +134,6 @@ class QuestionsCubit extends Cubit<QuestionsState> {
       final response = await _repo.verifyFaceImage(image: image);
 
       response.fold(
-        // ✅ 400 = failure
         (failure) {
           emit(
             state.copyWith(
@@ -117,7 +142,6 @@ class QuestionsCubit extends Cubit<QuestionsState> {
             ),
           );
         },
-        // ✅ 200 = success
         (_) {
           emit(
             state.copyWith(
@@ -137,7 +161,6 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     }
   }
 
-  // ✅ إعادة تعيين حالة التحقق
   void resetFaceVerification() {
     emit(
       state.copyWith(
@@ -148,19 +171,16 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     );
   }
 
-  // ✅ تعيين الصورة الملتقطة
   void setCapturedFaceImage(XFile? image) {
     emit(
       state.copyWith(
         capturedFaceImage: image,
-        // إعادة تعيين حالة التحقق عند تغيير الصورة
         faceVerificationState: CubitStates.initial,
         faceVerificationError: null,
       ),
     );
   }
 
-  // ✅ مسح الصورة الملتقطة
   void clearCapturedImage() {
     emit(
       state.copyWith(
@@ -169,5 +189,39 @@ class QuestionsCubit extends Cubit<QuestionsState> {
         faceVerificationError: null,
       ),
     );
+  }
+
+  // -------------------------------------
+  // change image blur
+  // -------------------------------------
+
+  Future<void> changeImageBlur() async {
+    emit(state.copyWith(changeImageBlurState: CubitStates.loading));
+
+    try {
+      final result = await _repo.changeImageBlur();
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              changeImageBlurState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (_) {
+          emit(state.copyWith(changeImageBlurState: CubitStates.success));
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          changeImageBlurState: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+
+    emit(state.copyWith(changeImageBlurState: CubitStates.initial));
   }
 }

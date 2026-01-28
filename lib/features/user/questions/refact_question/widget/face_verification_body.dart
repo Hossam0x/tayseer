@@ -1,6 +1,5 @@
-import 'dart:math' as math;
-
 import 'package:tayseer/my_import.dart';
+import 'face_verification_painters.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
 
@@ -93,66 +92,73 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody>
 
   void _goToNextScreen() {
     // // غيّر الـ route حسب التطبيق
-    // context.pushReplacementNamed(AppRouter.kUserLayoutView);
+    context.pushReplacementNamed(AppRouter.kAddedImagesView);
   }
 
   @override
   Widget build(BuildContext context) {
-    return CustomBackground(
-      child: SafeArea(
-        child: BlocConsumer<QuestionsCubit, QuestionsState>(
-          listenWhen: (previous, current) {
-            return previous.faceVerificationState !=
-                current.faceVerificationState;
-          },
-          listener: (context, state) {
-            if (state.isVerificationSuccess) {
-              Future.delayed(const Duration(seconds: 2), () {
-                if (mounted) {
-                  _goToNextScreen();
-                }
-              });
-            }
-          },
-          builder: (context, state) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  // Header with back button
-                  _buildHeader(context),
+    return WillPopScope(
+      onWillPop: () async {
+        // clear captured image when leaving screen
+        context.read<QuestionsCubit>().clearCapturedImage();
+        return true;
+      },
+      child: CustomBackground(
+        child: SafeArea(
+          child: BlocConsumer<QuestionsCubit, QuestionsState>(
+            listenWhen: (previous, current) {
+              return previous.faceVerificationState !=
+                  current.faceVerificationState;
+            },
+            listener: (context, state) {
+              if (state.isVerificationSuccess) {
+                Future.delayed(const Duration(seconds: 2), () {
+                  if (mounted) {
+                    _goToNextScreen();
+                  }
+                });
+              }
+            },
+            builder: (context, state) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    // Header with back button
+                    _buildHeader(context),
 
-                  SizedBox(height: context.height * 0.02),
+                    SizedBox(height: context.height * 0.02),
 
-                  // Title
-                  _buildTitle(context, state),
+                    // Title
+                    _buildTitle(context, state),
 
-                  SizedBox(height: context.height * 0.02),
+                    SizedBox(height: context.height * 0.02),
 
-                  // Error message (if verification failed - 400)
-                  if (state.isVerificationFailed &&
-                      state.faceVerificationError != null)
-                    _buildErrorMessage(context, state),
+                    // Error message (if verification failed - 400)
+                    if (state.isVerificationFailed &&
+                        state.faceVerificationError != null)
+                      _buildErrorMessage(context, state),
 
-                  SizedBox(height: context.height * 0.08),
+                    SizedBox(height: context.height * 0.08),
 
-                  // Image Frame (constrained height to avoid overly large frame)
-                  SizedBox(
-                    height: context.height * 0.28,
-                    width: context.width * 0.5,
-                    child: Center(child: _buildImageFrame(context, state)),
-                  ),
+                    // Image Frame (constrained height to avoid overly large frame)
+                    SizedBox(
+                      height: context.height * 0.28,
+                      width: context.width * 0.5,
+                      child: Center(child: _buildImageFrame(context, state)),
+                    ),
 
-                  SizedBox(height: context.height * 0.1),
+                    SizedBox(height: context.height * 0.1),
 
-                  // Result Icon or Button
-                  _buildBottomSection(context, state),
+                    // Result Icon or Button
+                    _buildBottomSection(context, state),
 
-                  SizedBox(height: context.height * 0.04),
-                ],
-              ),
-            );
-          },
+                    SizedBox(height: context.height * 0.04),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -430,147 +436,4 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody>
       ),
     );
   }
-}
-
-class BadgePainter extends CustomPainter {
-  final Color color;
-
-  BadgePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    const points = 12;
-
-    for (var i = 0; i < points * 2; i++) {
-      final angle = (i * math.pi / points) - math.pi / 2;
-      final r = i.isEven ? radius : radius * 0.85;
-      final x = center.dx + r * math.cos(angle);
-      final y = center.dy + r * math.sin(angle);
-
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class FacePlaceholderPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.grey.shade400
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
-    final width = size.width;
-    final height = size.height;
-
-    final cornerLength = width * 0.25;
-    final radius = width * 0.15;
-
-    // الزاوية العلوية اليسرى
-    canvas.drawArc(
-      Rect.fromLTWH(0, 0, radius * 2, radius * 2),
-      math.pi,
-      math.pi / 2,
-      false,
-      paint,
-    );
-    canvas.drawLine(Offset(0, radius), Offset(0, cornerLength), paint);
-    canvas.drawLine(Offset(radius, 0), Offset(cornerLength, 0), paint);
-
-    // الزاوية العلوية اليمنى
-    canvas.drawArc(
-      Rect.fromLTWH(width - radius * 2, 0, radius * 2, radius * 2),
-      -math.pi / 2,
-      math.pi / 2,
-      false,
-      paint,
-    );
-    canvas.drawLine(Offset(width, radius), Offset(width, cornerLength), paint);
-    canvas.drawLine(
-      Offset(width - radius, 0),
-      Offset(width - cornerLength, 0),
-      paint,
-    );
-
-    // الزاوية السفلية اليسرى
-    canvas.drawArc(
-      Rect.fromLTWH(0, height - radius * 2, radius * 2, radius * 2),
-      math.pi / 2,
-      math.pi / 2,
-      false,
-      paint,
-    );
-    canvas.drawLine(
-      Offset(0, height - radius),
-      Offset(0, height - cornerLength),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(radius, height),
-      Offset(cornerLength, height),
-      paint,
-    );
-
-    // الزاوية السفلية اليمنى
-    canvas.drawArc(
-      Rect.fromLTWH(
-        width - radius * 2,
-        height - radius * 2,
-        radius * 2,
-        radius * 2,
-      ),
-      0,
-      math.pi / 2,
-      false,
-      paint,
-    );
-    canvas.drawLine(
-      Offset(width, height - radius),
-      Offset(width, height - cornerLength),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(width - radius, height),
-      Offset(width - cornerLength, height),
-      paint,
-    );
-
-    // خطين أفقيين في المنتصف
-    final lineY1 = height * 0.4;
-    final lineY2 = height * 0.6;
-    final lineStartX = width * 0.3;
-    final lineEndX = width * 0.7;
-
-    canvas.drawLine(
-      Offset(lineStartX, lineY1),
-      Offset(lineEndX, lineY1),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(lineStartX, lineY2),
-      Offset(lineEndX, lineY2),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
