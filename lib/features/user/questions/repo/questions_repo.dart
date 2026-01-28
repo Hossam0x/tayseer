@@ -9,4 +9,10 @@ abstract class QuestionsRepo {
     required List<Map<String, dynamic>> answers,
     bool? answerCompleted,
   });
+
+  Future<Either<Failure, void>> uploadPersonalInfo({
+    File? image,
+    List<File>? images,
+  });
+  Future<Either<Failure, void>> verifyFaceImage({required XFile image});
 }

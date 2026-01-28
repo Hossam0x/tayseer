@@ -1,12 +1,14 @@
 import 'dart:developer';
 
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/my_import.dart';
 
 class QuestionsRepoImpl implements QuestionsRepo {
   QuestionsRepoImpl({required this.apiService});
   final ApiService apiService;
+
   @override
   Future<Either<Failure, void>> answerQuestions({
     required String question,
@@ -51,6 +53,84 @@ class QuestionsRepoImpl implements QuestionsRepo {
       debugPrint(' error $error');
 
       return left(ServerFailure('حدث خطأ غير متوقع: $error'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> uploadPersonalInfo({
+    File? image,
+    List<File>? images,
+  }) async {
+    try {
+      final map = <String, dynamic>{};
+
+      if (image != null) {
+        final fileName = image.path.split('/').last;
+        map['image'] = await MultipartFile.fromFile(
+          image.path,
+          filename: fileName,
+        );
+      }
+
+      if (images != null && images.isNotEmpty) {
+        map['images'] = [];
+        for (final f in images) {
+          final fileName = f.path.split('/').last;
+          (map['images'] as List).add(
+            await MultipartFile.fromFile(f.path, filename: fileName),
+          );
+        }
+      }
+
+      final response = await apiService.post(
+        endPoint: '/auth/add-images',
+        data: map,
+        isFromData: true,
+      );
+
+      final success = response['success'] ?? false;
+
+      if (success) {
+        return right(null);
+      } else {
+        return left(ServerFailure(response['message'] ?? 'فشل ارسال البيانات'));
+      }
+    } on DioException catch (e) {
+      return left(
+        ServerFailure(e.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر'),
+      );
+    } catch (e) {
+      return left(ServerFailure('حدث خطأ غير متوقع: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> verifyFaceImage({required XFile image}) async {
+    try {
+      await apiService.post(
+        endPoint: '/auth/verify-user-face',
+        data: {'verifyImage': await uploadImageToApi(image)},
+        isFromData: true,
+      );
+
+      // ✅ 200 = نجاح
+      return const Right(null);
+    } on DioException catch (e) {
+      String errorMessage = 'فشل التحقق من الصورة';
+
+      if (e.response?.data != null) {
+        if (e.response?.data is Map) {
+          errorMessage =
+              e.response?.data['message'] ??
+              e.response?.data['error'] ??
+              'الرجاء التأكد من أن وجهك في الإطار وأن الإضاءة جيدة.';
+        }
+      }
+
+      return Left(ServerFailure(errorMessage));
+    } catch (e) {
+      log('verifyFaceImage: Unknown error - $e');
+      return Left(ServerFailure('حدث خطأ غير متوقع: $e'));
     }
   }
 }

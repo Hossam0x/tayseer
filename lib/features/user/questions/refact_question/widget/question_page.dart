@@ -1,17 +1,20 @@
+import 'package:tayseer/features/user/questions/refact_question/widget/multiselect_chips_widget.dart';
 import 'package:tayseer/features/user/questions/refact_question/widget/question_page_config.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_ios_picker.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_selectable_list.dart';
+
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
-import 'package:tayseer/my_import.dart';
+
+import '../../../../../my_import.dart';
 
 class QuestionPage extends StatelessWidget {
   final QuestionPageConfig config;
-  final ValueChanged<String> onAnswer;
+  final ValueChanged<dynamic> onAnswer; // ✅ تغيير لـ dynamic عشان يدعم List
 
   QuestionPage({super.key, required this.config, required this.onAnswer});
 
-  final ValueNotifier<String?> _selectedValue = ValueNotifier<String?>(null);
+  final ValueNotifier<dynamic> _selectedValue = ValueNotifier<dynamic>(null);
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +46,7 @@ class QuestionPage extends StatelessWidget {
         );
 
       case QuestionType.picker:
-        // للـ Picker نحتاج نحدد القيمة الأولية
         _selectedValue.value = (config.initialValue ?? 0).toString();
-
         return Center(
           child: CustomIosPicker(
             initialValue: config.initialValue ?? 0,
@@ -58,17 +59,34 @@ class QuestionPage extends StatelessWidget {
             },
           ),
         );
+
+      // ✅ جديد: Multi-Select Chips
+      case QuestionType.multiSelectChips:
+        return MultiSelectChipsWidget(
+          itemsWithIcons: config.itemsWithIcons ?? {},
+          primaryColor: AppColors.kprimaryColor,
+          onChanged: (List<String> selectedValues) {
+            _selectedValue.value = selectedValues;
+          },
+        );
     }
   }
 
   Widget _buildNextButton(BuildContext context) {
-    return ValueListenableBuilder<String?>(
+    return ValueListenableBuilder<dynamic>(
       valueListenable: _selectedValue,
       builder: (context, selectedValue, _) {
         return BlocBuilder<QuestionsCubit, QuestionsState>(
           builder: (context, state) {
             final isLoading = state.answerQuestionsState == CubitStates.loading;
-            final isEnabled = selectedValue != null && selectedValue.isNotEmpty;
+
+            // ✅ التحقق من القيمة بناءً على النوع
+            bool isEnabled = false;
+            if (selectedValue is String) {
+              isEnabled = selectedValue.isNotEmpty;
+            } else if (selectedValue is List) {
+              isEnabled = selectedValue.isNotEmpty;
+            }
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 15),

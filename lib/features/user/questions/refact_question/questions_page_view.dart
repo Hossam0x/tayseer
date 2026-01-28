@@ -2,6 +2,7 @@
 
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/features/user/questions/refact_question/widget/custom_question_header.dart';
 import 'package:tayseer/features/user/questions/refact_question/widget/question_page.dart';
 import 'package:tayseer/features/user/questions/refact_question/widget/question_page_config.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
@@ -22,7 +23,23 @@ class QuestionsPageView extends StatelessWidget {
   final PageController _pageController = PageController();
   final ValueNotifier<int> _currentPage = ValueNotifier<int>(0);
 
-  /// قائمة الأسئلة بناءً على الجنس ونوع المستخدم
+  /// ✅ خريطة الهوايات مع الأيقونات
+  static final Map<String, String> _hobbiesWithIcons = {
+    'hobby_music': AssetsData.kmusicIcon,
+    'hobby_sports': AssetsData.ksportsIcon,
+    'hobby_travel': AssetsData.ktravelIcon,
+    'hobby_reading': AssetsData.kreadingIcon,
+    'hobby_cooking': AssetsData.kcookingIcon,
+    'hobby_drawing': AssetsData.kdrawingIcon,
+    'hobby_mountain_climbing': AssetsData.kmountainIcon,
+    'hobby_meditation': AssetsData.kmeditationIcon,
+    'hobby_photography': AssetsData.kphotographyIcon,
+    'hobby_sewing': AssetsData.ksewingIcon,
+    'hobby_writing': AssetsData.kwritingIcon,
+    'hobby_cycling': AssetsData.kcyclingIcon,
+    'hobby_tourism': AssetsData.kswimmingIcon,
+  };
+
   List<QuestionPageConfig> _getQuestions(BuildContext context) {
     final List<QuestionPageConfig> questions = [
       // 1. الجنسية
@@ -251,7 +268,18 @@ class QuestionsPageView extends StatelessWidget {
         searchHintKey: 'search_employer',
       ),
 
-      // 16. الحالة الصحية
+      // 16. قبول الزواج من متزوج (للإناث فقط)
+      if (selectedGender == Gender.female)
+        QuestionPageConfig(
+          titleKey: 'accept_married',
+          questionNumber: 17,
+          questionCategoryEnum: 'acceptMarried',
+          items: const ['yes', 'no'],
+          type: QuestionType.selectableList,
+          showSearch: false,
+        ),
+
+      // 17. الحالة الصحية
       QuestionPageConfig(
         titleKey: 'health_status',
         questionNumber: 18,
@@ -267,23 +295,21 @@ class QuestionsPageView extends StatelessWidget {
         showSearch: false,
       ),
 
-      // 17. الحجاب (للإناث فقط) ✅
+      // ✅ 18. الهوايات (Multi-Select)
+      QuestionPageConfig(
+        titleKey: 'choose_hobbies',
+        questionNumber: 19,
+        questionCategoryEnum: 'hobbies',
+        type: QuestionType.multiSelectChips,
+        itemsWithIcons: _hobbiesWithIcons,
+      ),
+
+      // 19. الحجاب (للإناث فقط)
       if (selectedGender == Gender.female)
         QuestionPageConfig(
           titleKey: 'do_you_wear_hijab',
           questionNumber: 21,
           questionCategoryEnum: 'wearHijab',
-          items: const ['yes', 'no'],
-          type: QuestionType.selectableList,
-          showSearch: false,
-        ),
-
-      // 18. قبول الزواج من متزوج (للإناث فقط) ✅
-      if (selectedGender == Gender.female)
-        QuestionPageConfig(
-          titleKey: 'accept_married',
-          questionNumber: 17,
-          questionCategoryEnum: 'acceptMarried',
           items: const ['yes', 'no'],
           type: QuestionType.selectableList,
           showSearch: false,
@@ -347,7 +373,7 @@ class QuestionsPageView extends StatelessWidget {
                   itemBuilder: (context, index) {
                     return QuestionPage(
                       config: questions[index],
-                      onAnswer: (String answer) {
+                      onAnswer: (dynamic answer) {
                         _submitAnswer(context, questions[index], answer);
                       },
                     );
@@ -364,15 +390,26 @@ class QuestionsPageView extends StatelessWidget {
   void _submitAnswer(
     BuildContext context,
     QuestionPageConfig config,
-    String answer,
+    dynamic answer,
   ) {
+    // ✅ تحويل الإجابة للـ format المطلوب
+    List<Map<String, dynamic>> answers;
+
+    if (answer is List<String>) {
+      // Multi-Select (Hobbies)
+      answers = answer.map((e) => {'answer': e}).toList();
+    } else {
+      // Single Select
+      answers = [
+        {'answer': answer.toString()},
+      ];
+    }
+
     context.read<QuestionsCubit>().sendAnswerQuestions(
       question: context.tr(config.titleKey),
       questionCategoryEnum: config.questionCategoryEnum,
       questionNumber: config.questionNumber,
-      answers: [
-        {'answer': answer},
-      ],
+      answers: answers,
     );
   }
 
