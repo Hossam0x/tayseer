@@ -1,5 +1,8 @@
+import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'user_advisor_profile_state.dart';
@@ -8,10 +11,42 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
   final UserAdvisorProfileRepository _repository;
   final String advisorId;
   final int _pageSize = 10;
+  final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
   UserAdvisorProfileCubit(this._repository, this.advisorId)
     : super(const UserAdvisorProfileState()) {
     _initializeProfile();
+    _setupSocketListeners();
+  }
+  void _setupSocketListeners() {
+    // ⭐ تنظيف أي listeners سابقين
+    socketHelper.off('room_created');
+
+    // ⭐ الاستماع لإنشاء الروم من السوكيت
+    socketHelper.listen('room_created', (data) {
+      final String chatRoomId = data['ChatRoomId']?.toString() ?? '';
+
+      if (chatRoomId.isNotEmpty) {
+        log('Socket room created: $chatRoomId');
+
+        // ⭐ تحديث الـ profile بالـ room الجديد
+        final updatedProfile = state.profile?.copyWith(
+          room: RoomInfoModel(
+            chatRoomId: chatRoomId,
+            isBlocked: false,
+            isHaveSession: false,
+          ),
+        );
+
+        emit(
+          state.copyWith(
+            profile: updatedProfile,
+            chatRoomId: chatRoomId,
+            readytoNavigate: true,
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _initializeProfile() async {
@@ -33,13 +68,21 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
           profileErrorMessage: failure.message,
         ),
       ),
-      (profileModel) => emit(
-        state.copyWith(
-          profileState: CubitStates.success,
-          profile: profileModel,
-          profileErrorMessage: null,
-        ),
-      ),
+      (profileModel) {
+        // ⭐ تحديث state بالـ room من الـ profile
+        final room = profileModel.room;
+        final chatRoomId = room?.chatRoomId;
+
+        emit(
+          state.copyWith(
+            profileState: CubitStates.success,
+            profile: profileModel,
+            profileErrorMessage: null,
+            chatRoomId: chatRoomId,
+            readytoNavigate: room != null && room.chatRoomId.isNotEmpty,
+          ),
+        );
+      },
     );
   }
 
@@ -126,7 +169,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     await Future.wait([fetchProfile(), fetchPosts(loadMore: false)]);
   }
 
-  // ⭐ تحديث دالة toggleFollow لتشمل التحقق من حالة التحميل
+  // ⭐ تحديث دالة toggleFollow
   Future<void> toggleFollow() async {
     if (state.profile == null || state.profile!.isMe) return;
 
@@ -278,6 +321,45 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
         );
       },
     );
+  }
+
+  void navigateToChat() {
+    if (state.profile?.hasRoom == true &&
+        state.profile?.room != null &&
+        state.profile!.chatRoomId != null) {
+      emit(state.copyWith(readytoNavigate: true));
+    }
+  }
+
+  // ⭐ تحديث دالة createRoom
+  void createRoom(String receiverId) {
+    if (state.profile?.hasRoom == true && state.profile!.chatRoomId != null) {
+      navigateToChat();
+      return;
+    }
+
+    socketHelper.send('create_room', {'reciverId': receiverId}, (ack) {
+      log("send room create for user: $receiverId");
+    });
+  }
+
+  // ⭐ تحديث دالة updateRoomInfo
+  void updateRoomInfo(RoomInfoModel roomInfo) {
+    if (state.profile == null) return;
+
+    final updatedProfile = state.profile!.copyWith(room: roomInfo);
+
+    emit(
+      state.copyWith(
+        profile: updatedProfile,
+        chatRoomId: roomInfo.chatRoomId,
+        readytoNavigate: roomInfo.chatRoomId.isNotEmpty,
+      ),
+    );
+  }
+
+  void resetNavigation() {
+    emit(state.copyWith(readytoNavigate: false));
   }
 
   void _updatePostInList(String postId, PostModel updatedPost) {

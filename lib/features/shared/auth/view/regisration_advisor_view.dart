@@ -1,3 +1,4 @@
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/view/widget/build_login_button.dart';
 import 'package:tayseer/features/shared/auth/view/widget/last_login_bubble.dart';
@@ -17,16 +18,29 @@ class RegisrationAdvisorView extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             child: BlocConsumer<AuthCubit, AuthState>(
               listenWhen: (previous, current) {
+                // ✅ تحقق من نوع المستخدم - يجب أن يكون asConsultant فقط
+                if (current.currentAuthUserType != null &&
+                    current.currentAuthUserType != UserTypeEnum.asConsultant) {
+                  return false;
+                }
+
                 return previous.registerState != current.registerState ||
                     previous.signInWithAppleState !=
                         current.signInWithAppleState ||
                     previous.signInWithGoogleState !=
                         current.signInWithGoogleState ||
-                    previous.authGoogleState != current.authGoogleState;
+                    previous.authGoogleState != current.authGoogleState ||
+                    previous.authAppleState != current.authAppleState;
               },
               listener: (context, state) {
                 if (state.fromScreen != 'registration') return;
-                if(selectedUserType==UserTypeEnum.user) return;
+
+                // ✅ تحقق إضافي من نوع المستخدم
+                if (state.currentAuthUserType != null &&
+                    state.currentAuthUserType != UserTypeEnum.asConsultant) {
+                  return;
+                }
+
                 if (state.signInWithGoogleState == CubitStates.loading ||
                     state.signInWithAppleState == CubitStates.loading ||
                     state.registerState == CubitStates.loading) {
@@ -40,9 +54,10 @@ class RegisrationAdvisorView extends StatelessWidget {
                 if (state.signInWithGoogleState == CubitStates.failure ||
                     state.signInWithAppleState == CubitStates.failure ||
                     state.registerState == CubitStates.failure ||
-                    state.authGoogleState == CubitStates.failure||
-                    state.authAppleState== CubitStates.failure
-                ) {
+                    state.authGoogleState == CubitStates.failure ||
+                    state.authAppleState == CubitStates.failure) {
+                  context.read<AuthCubit>().resetAuthStates();
+
                   if (Navigator.canPop(context)) {
                     context.pop();
                   }
@@ -74,11 +89,13 @@ class RegisrationAdvisorView extends StatelessWidget {
                       AppRouter.kPersonalInfoAsConsultantView,
                     );
                   }
+                  context.read<AuthCubit>().resetAuthStates();
                 }
+
                 if (state.signInWithAppleState == CubitStates.success &&
                     state.authAppleState == CubitStates.success) {
                   if (Navigator.canPop(context)) {
-                    context.pop(); // إغلاق أي dialog
+                    context.pop(); // قفل اللودنج
                   }
 
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -88,11 +105,13 @@ class RegisrationAdvisorView extends StatelessWidget {
                       isSuccess: true,
                     ),
                   );
+
                   if (selectedUserType == UserTypeEnum.asConsultant) {
                     context.pushReplacementNamed(
                       AppRouter.kPersonalInfoAsConsultantView,
                     );
                   }
+                  context.read<AuthCubit>().resetAuthStates();
                 }
               },
               builder: (context, state) {
@@ -101,39 +120,54 @@ class RegisrationAdvisorView extends StatelessWidget {
                   children: [
                     Column(
                       children: [
-                        GestureDetector(
-                          onTap: () async {},
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: GestureDetector(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 20,
-                                  left: 20,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-
-                                  children: [
-                                    Text(
-                                      'عربي',
-                                      style: Styles.textStyle16.copyWith(
-                                        color: AppColors.kprimaryColor,
-                                      ),
-                                    ),
-                                    SizedBox(width: context.width * 0.01),
-                                    AppImage(
-                                      AssetsData.kLangImage,
-                                      height: 20,
-                                      width: 20,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            onPressed: () async {
+                              context.pop();
+                              await CachNetwork.removeData(key: kUserType);
+                              selectedUserType = UserTypeEnum.user;
+                            },
+                            icon: Icon(
+                              Icons.arrow_back,
+                              color: Colors.black,
+                              size: 25,
                             ),
                           ),
                         ),
 
+                        // GestureDetector(
+                        //   onTap: () async {},
+                        //   child: Align(
+                        //     alignment: Alignment.topLeft,
+                        //     child: GestureDetector(
+                        //       child: Padding(
+                        //         padding: const EdgeInsets.only(
+                        //           top: 20,
+                        //           left: 20,
+                        //         ),
+                        //         child: Row(
+                        //           mainAxisSize: MainAxisSize.min,
+
+                        //           children: [
+                        //             Text(
+                        //               'عربي',
+                        //               style: Styles.textStyle16.copyWith(
+                        //                 color: AppColors.kprimaryColor,
+                        //               ),
+                        //             ),
+                        //             SizedBox(width: context.width * 0.01),
+                        //             AppImage(
+                        //               AssetsData.kLangImage,
+                        //               height: 20,
+                        //               width: 20,
+                        //             ),
+                        //           ],
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ),
                         Hero(
                           tag: 'app_logo',
                           child: SizedBox(
@@ -248,7 +282,11 @@ class RegisrationAdvisorView extends StatelessWidget {
                                       ],
                                       text: context.tr('login_google'),
                                       icon: AssetsData.kGoogleImage,
-                                      onTap: authCubit.signInWithGoogle,
+                                      onTap: () {
+                                        authCubit.signInWithGoogle(
+                                          userType: UserTypeEnum.asConsultant,
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -291,7 +329,11 @@ class RegisrationAdvisorView extends StatelessWidget {
                                         ],
                                         text: context.tr('login_apple'),
                                         icon: AssetsData.kAppleIcon,
-                                        onTap: authCubit.signInWithApple,
+                                        onTap: () {
+                                          authCubit.signInWithApple(
+                                            userType: UserTypeEnum.asConsultant,
+                                          );
+                                        },
                                       ),
                                     ],
                                   ),

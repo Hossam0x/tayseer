@@ -29,7 +29,6 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
 
   UserAdvisorProfileRepositoryImpl(this._apiService);
 
-  // في UserAdvisorProfileRepositoryImpl
   @override
   Future<Either<Failure, UserAdvisorProfileModel>> getUserProfile(
     String advisorId,
@@ -56,6 +55,19 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         // ⭐ إنشاء بيانات معدلة
         final profileData = Map<String, dynamic>.from(data);
         profileData['yearsOfExperience'] = yearsExpString;
+
+        // ⭐ معالجة room إذا كانت موجودة
+        if (data.containsKey('room')) {
+          final roomData = data['room'];
+          if (roomData is Map<String, dynamic>) {
+            // ⭐ تحويل isBlocked من List إلى boolean
+            if (roomData.containsKey('isBlocked') &&
+                roomData['isBlocked'] is List) {
+              final blockedList = roomData['isBlocked'] as List;
+              roomData['isBlocked'] = blockedList.isNotEmpty;
+            }
+          }
+        }
 
         final profile = UserAdvisorProfileModel.fromJson(profileData);
         return Right(profile);

@@ -1,4 +1,5 @@
 import 'package:tayseer/core/enum/cubit_states.dart';
+import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/model/guest_response_model.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/model/last_login_model.dart';
@@ -14,7 +15,6 @@ class AuthState {
   final CubitStates guestLoginState;
   final CubitStates resendCodeState;
   final CubitStates getLastLoginState;
-  final CubitStates answerQuestionsState;
   final CubitStates personalDataState;
   final CubitStates addServiceProviderState;
   final CubitStates addCertificateState;
@@ -46,6 +46,9 @@ class AuthState {
   final String price30Min;
   final String price60Min;
 
+  // ✅ الحقل الجديد لتحديد نوع المستخدم الحالي أثناء عملية التسجيل
+  final UserTypeEnum? currentAuthUserType;
+
   const AuthState({
     this.registerState = CubitStates.initial,
     this.verifyOtpState = CubitStates.initial,
@@ -57,7 +60,6 @@ class AuthState {
     this.authAppleState = CubitStates.initial,
     this.resendCodeState = CubitStates.initial,
     this.getLastLoginState = CubitStates.initial,
-    this.answerQuestionsState = CubitStates.initial,
     this.personalDataState = CubitStates.initial,
     this.addServiceProviderState = CubitStates.initial,
     this.addCertificateState = CubitStates.initial,
@@ -81,6 +83,7 @@ class AuthState {
     this.message,
     this.price30Min = '',
     this.price60Min = '',
+    this.currentAuthUserType, // ✅ جديد
   });
 
   AuthState copyWith({
@@ -113,13 +116,13 @@ class AuthState {
     List<int>? durations,
     GuestData? guestData,
     String? selectedLanguage,
-
     List<String>? selectedLanguages,
     bool? isThirtyMinutesSelected,
     bool? isSixtyMinutesSelected,
     String? message,
     String? price30Min,
     String? price60Min,
+    UserTypeEnum? currentAuthUserType, // ✅ جديد
   }) {
     return AuthState(
       registerState: registerState ?? this.registerState,
@@ -133,7 +136,6 @@ class AuthState {
       authAppleState: authAppleState ?? this.authAppleState,
       resendCodeState: resendCodeState ?? this.resendCodeState,
       getLastLoginState: getLastLoginState ?? this.getLastLoginState,
-      answerQuestionsState: answerQuestionsState ?? this.answerQuestionsState,
       personalDataState: personalDataState ?? this.personalDataState,
       addServiceProviderState:
           addServiceProviderState ?? this.addServiceProviderState,
@@ -159,9 +161,10 @@ class AuthState {
           isSixtyMinutesSelected ?? this.isSixtyMinutesSelected,
       guestData: guestData ?? this.guestData,
       message: message ?? this.message,
-
       price30Min: price30Min ?? this.price30Min,
       price60Min: price60Min ?? this.price60Min,
+      currentAuthUserType:
+          currentAuthUserType ?? this.currentAuthUserType, // ✅ جديد
     );
   }
 
@@ -173,4 +176,12 @@ class AuthState {
   DayTimeRange? getDayRange(String day) {
     return availableDays[day];
   }
+
+  // ✅ Helper جديد للتحقق من نوع المستخدم
+  bool isUserType(UserTypeEnum type) {
+    return currentAuthUserType == type;
+  }
+
+  bool get isRegularUser => currentAuthUserType == UserTypeEnum.user;
+  bool get isConsultant => currentAuthUserType == UserTypeEnum.asConsultant;
 }

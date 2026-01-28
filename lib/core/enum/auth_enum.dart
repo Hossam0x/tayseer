@@ -18,5 +18,6 @@ enum AuthEnum {
   gender,
   healthStatus,
   acceptMarried,
-  addYourCv
+  addYourCv,
+  hobbies,
 }

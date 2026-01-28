@@ -12,20 +12,13 @@ abstract class AuthRepo {
   Future<Either<Failure, GuestResponseModel>> guestLogin();
   Future<Either<Failure, RegisterResponse>> authGoogle({
     required String idToken,
-  
   });
   Future<Either<Failure, RegisterResponse>> authApple({
     required String idToken,
   });
   Future<Either<Failure, void>> resendOtp();
   Future<Either<Failure, LastLoginResponse>> getLastLogIn();
-  Future<Either<Failure, void>> answerQuestions({
-    required String question,
-    required String questionCategoryEnum,
-    required int questionNumber,
-    required List<Map<String, dynamic>> answers,
-    bool? answerCompleted,
-  });
+
   Future<Either<Failure, void>> personalDataAsConsultant({
     required String name,
     required String dateOfBirth,

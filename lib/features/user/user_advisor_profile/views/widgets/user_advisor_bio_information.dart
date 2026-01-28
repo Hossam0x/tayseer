@@ -254,7 +254,6 @@ class UserAdvisorBioInformation extends StatelessWidget {
     );
   }
 
-  // ⭐ تحديث قسم المتابعة والرسائل
   Widget _buildFollowSection(
     BuildContext context,
     UserAdvisorProfileModel profile,
@@ -262,10 +261,11 @@ class UserAdvisorBioInformation extends StatelessWidget {
     return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
       buildWhen: (previous, current) =>
           previous.profile?.isFollowing != current.profile?.isFollowing ||
-          previous.followActionState != current.followActionState,
+          previous.profile?.room != current.profile?.room,
       builder: (context, state) {
         final isFollowing = state.profile?.isFollowing ?? false;
         final isLoading = state.followActionState == CubitStates.loading;
+        final room = state.profile?.room;
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
@@ -297,8 +297,8 @@ class UserAdvisorBioInformation extends StatelessWidget {
 
               Gap(13.w),
 
-              // زر المحادثة (يظهر فقط إذا كان المستخدم يتابع أو كان صديقاً)
-              if (isFollowing) // ⭐ يظهر فقط إذا كان يتابع
+              // زر المحادثة (يظهر فقط إذا كان المستخدم يتابع)
+              if (isFollowing)
                 Container(
                   padding: EdgeInsets.symmetric(
                     vertical: 13.h,
@@ -311,17 +311,18 @@ class UserAdvisorBioInformation extends StatelessWidget {
                   ),
                   child: GestureDetector(
                     onTap: () {
-                      context.pushNamed(
-                        AppRouter.kConversitionView,
-                        arguments: {
-                          'chatroomid': '69788effad6578cde163a26a',
-                          'receiverid': profile.id,
-                          'username': profile.name,
-                          'userimage': profile.image,
-                          'isBlocked': false,
-                          'isHaveSession': false,
-                        },
-                      );
+                      final cubit = context.read<UserAdvisorProfileCubit>();
+
+                      // ⭐ إذا كان هناك room بالفعل من الـ response
+                      if (profile.hasRoom &&
+                          profile.chatRoomId != null &&
+                          room != null) {
+                        // ⭐ تحديث حالة readytoNavigate للانتقال
+                        cubit.updateRoomInfo(room);
+                      } else {
+                        // ⭐ إنشاء room جديد
+                        cubit.createRoom(profile.id);
+                      }
                     },
                     child: AppImage(AssetsData.chatIconSVG, width: 22.w),
                   ),
@@ -332,6 +333,24 @@ class UserAdvisorBioInformation extends StatelessWidget {
       },
     );
   }
+
+  // void _navigateToChat(
+  //   BuildContext context,
+  //   UserAdvisorProfileModel profile,
+  //   RoomInfoModel room,
+  // ) {
+  //   context.pushNamed(
+  //     AppRouter.kConversitionView,
+  //     arguments: {
+  //       'chatroomid': room.chatRoomId,
+  //       'receiverid': profile.id,
+  //       'username': profile.username,
+  //       'userimage': profile.image,
+  //       'isBlocked': room.isBlocked,
+  //       'isHaveSession': room.isHaveSession,
+  //     },
+  //   );
+  // }
 
   SliverToBoxAdapter _buildEmptyBio() {
     return const SliverToBoxAdapter(child: SizedBox.shrink());

@@ -1,13 +1,58 @@
 // features/user/advisor_profile/data/models/user_profile_model.dart
 import 'package:equatable/equatable.dart';
 
+class RoomInfoModel extends Equatable {
+  final String chatRoomId;
+  final bool isBlocked;
+  final bool isHaveSession;
+
+  const RoomInfoModel({
+    required this.chatRoomId,
+    required this.isBlocked,
+    required this.isHaveSession,
+  });
+
+  factory RoomInfoModel.fromJson(Map<String, dynamic> json) {
+    return RoomInfoModel(
+      chatRoomId: json['chatRoomId']?.toString() ?? '',
+      isBlocked: json['isBlocked'] ?? false,
+      isHaveSession: json['isHaveSession'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'chatRoomId': chatRoomId,
+    'isBlocked': isBlocked,
+    'isHaveSession': isHaveSession,
+  };
+
+  RoomInfoModel copyWith({
+    String? chatRoomId,
+    bool? isBlocked,
+    bool? isHaveSession,
+  }) {
+    return RoomInfoModel(
+      chatRoomId: chatRoomId ?? this.chatRoomId,
+      isBlocked: isBlocked ?? this.isBlocked,
+      isHaveSession: isHaveSession ?? this.isHaveSession,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    chatRoomId,
+    isBlocked,
+    isHaveSession,
+  ];
+}
+
 class UserAdvisorProfileModel extends Equatable {
   final String id;
   final String name;
   final String image;
   final String username;
   final String aboutYou;
-  final String? yearsOfExperience; // ⭐ تغيير إلى String
+  final String? yearsOfExperience;
   final int followers;
   final int following;
   final bool isVerified;
@@ -15,8 +60,9 @@ class UserAdvisorProfileModel extends Equatable {
   final String? videoLink;
   final bool isMe;
   final bool isFollowing;
-  final String? professionalSpecialization; // ⭐ إضافة
-  final String? jobGrade; // ⭐ إضافة
+  final String? professionalSpecialization;
+  final String? jobGrade;
+  final RoomInfoModel? room; // ⭐ إضافة Room
 
   const UserAdvisorProfileModel({
     required this.id,
@@ -24,7 +70,7 @@ class UserAdvisorProfileModel extends Equatable {
     required this.image,
     required this.username,
     required this.aboutYou,
-    this.yearsOfExperience, // ⭐ String
+    this.yearsOfExperience,
     required this.followers,
     required this.following,
     required this.isVerified,
@@ -32,8 +78,9 @@ class UserAdvisorProfileModel extends Equatable {
     this.videoLink,
     required this.isMe,
     this.isFollowing = false,
-    this.professionalSpecialization, // ⭐
-    this.jobGrade, // ⭐
+    this.professionalSpecialization,
+    this.jobGrade,
+    this.room, // ⭐ إضافة Room
   });
 
   factory UserAdvisorProfileModel.fromJson(Map<String, dynamic> json) {
@@ -47,7 +94,7 @@ class UserAdvisorProfileModel extends Equatable {
       image: json['image'] ?? '',
       username: json['username'] ?? '',
       aboutYou: json['aboutYou'] ?? '',
-      yearsOfExperience: json['yearsOfExperience']?.toString(), // ⭐ String
+      yearsOfExperience: json['yearsOfExperience']?.toString(),
       followers: json['followers'] ?? 0,
       following: json['following'] ?? 0,
       isVerified: json['isVerified'] ?? false,
@@ -59,6 +106,7 @@ class UserAdvisorProfileModel extends Equatable {
           json['professionalSpecialization']?.toString() ??
           json['ProfessionalSpecialization']?.toString(),
       jobGrade: json['jobGrade']?.toString() ?? json['JobGrade']?.toString(),
+      room: json['room'] != null ? RoomInfoModel.fromJson(json['room']) : null, // ⭐ إضافة Room
     );
   }
 
@@ -78,6 +126,7 @@ class UserAdvisorProfileModel extends Equatable {
     'isFollowing': isFollowing,
     'professionalSpecialization': professionalSpecialization,
     'jobGrade': jobGrade,
+    'room': room?.toJson(), // ⭐ إضافة Room
   };
 
   UserAdvisorProfileModel copyWith({
@@ -96,6 +145,7 @@ class UserAdvisorProfileModel extends Equatable {
     bool? isFollowing,
     String? professionalSpecialization,
     String? jobGrade,
+    RoomInfoModel? room, // ⭐ إضافة Room
   }) {
     return UserAdvisorProfileModel(
       id: id ?? this.id,
@@ -114,8 +164,15 @@ class UserAdvisorProfileModel extends Equatable {
       professionalSpecialization:
           professionalSpecialization ?? this.professionalSpecialization,
       jobGrade: jobGrade ?? this.jobGrade,
+      room: room ?? this.room, // ⭐ إضافة Room
     );
   }
+
+  // ⭐ دالة مساعدة للحصول على chatRoomId مباشرة
+  String? get chatRoomId => room?.chatRoomId;
+
+  // ⭐ دالة مساعدة للتحقق مما إذا كان هناك room
+  bool get hasRoom => room != null && room!.chatRoomId.isNotEmpty;
 
   @override
   List<Object?> get props => [
@@ -134,6 +191,7 @@ class UserAdvisorProfileModel extends Equatable {
     isFollowing,
     professionalSpecialization,
     jobGrade,
+    room, // ⭐ إضافة Room
   ];
 }
 

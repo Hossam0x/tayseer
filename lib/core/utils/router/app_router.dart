@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:tayseer/core/enum/add_post_enum.dart';
+import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
@@ -52,8 +53,17 @@ import 'package:tayseer/features/shared/auth/view/select_session_duration_view.d
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
+import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/face_verification_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/questions_page_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/choose_gender_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/personal_info_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/verify_data_view.dart';
+
+import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
-import 'package:tayseer/features/user/layout/views/user_layout_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
@@ -65,30 +75,11 @@ import 'package:tayseer/features/user/my_space/presentation/view/ticketSession/t
 import 'package:tayseer/features/user/my_space/presentation/view/ticketSession/ticket_session_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/voic_call/voice_call_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/session_history/session_history_view_body.dart';
-import 'package:tayseer/features/user/questions/accept_married_view.dart';
-import 'package:tayseer/features/user/questions/add_your_cv_view.dart';
-import 'package:tayseer/features/user/questions/children_living_status_view.dart';
-import 'package:tayseer/features/user/questions/children_number_view.dart';
-import 'package:tayseer/features/user/questions/choose_age_view.dart';
-import 'package:tayseer/features/user/questions/choose_employer_view.dart';
-import 'package:tayseer/features/user/questions/choose_gender_view.dart';
-import 'package:tayseer/features/user/questions/choose_height_view.dart';
-import 'package:tayseer/features/user/questions/choose_job_view.dart';
-import 'package:tayseer/features/user/questions/choose_weight_view.dart';
-import 'package:tayseer/features/user/questions/country_view.dart';
-import 'package:tayseer/features/user/questions/education_level_view.dart';
-import 'package:tayseer/features/user/questions/has_children_view.dart';
-import 'package:tayseer/features/user/questions/health_status_view.dart';
-import 'package:tayseer/features/user/questions/hobbies_view.dart';
-import 'package:tayseer/features/user/questions/nationality_view.dart';
+
 import 'package:tayseer/features/shared/auth/view/otp_view.dart';
 import 'package:tayseer/features/shared/auth/view/personal_info_as_consultant_view.dart';
-import 'package:tayseer/features/user/questions/personal_info_view.dart';
 import 'package:tayseer/features/shared/auth/view/register_view.dart';
-import 'package:tayseer/features/user/questions/religious_commitment_view.dart';
-import 'package:tayseer/features/user/questions/skin_color_view.dart';
-import 'package:tayseer/features/user/questions/smoking_view.dart';
-import 'package:tayseer/features/user/questions/social_status_view.dart';
+
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/advisor/layout/views/a_layout_view.dart';
 import 'package:tayseer/features/shared/auth/view/regisration_user_view.dart';
@@ -153,6 +144,9 @@ abstract class AppRouter {
   static const userticketSessionView = '/UserTicketSessionView';
   static const sessionticketsuccessview = '/SessionTicketSuccessView';
   static const pendingsession = '/kOrderSessionView';
+  static const kQuestionsPageView = '/QuestionsPageView';
+  static const kVerifyDataView = '/VerifyDataView';
+  static const kFaceVerificationView = '/FaceVerificationView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -196,6 +190,8 @@ abstract class AppRouter {
   static const kRegisrationAdvisorView = '/RegisrationAdvisorView';
   static const kUserPublicProfileView = '/user-public-profile';
   static const kUserProfileEditView = '/user-profile-edit';
+  static const kInteractionFilterView = '/InteractionFilterView';
+  static const kinteractionSubscriptionView = '/interactionSubscriptionView';
   static const kUserArchiveChatsView = '/user-archive-chats';
 
   // static String getInitialRoute() {
@@ -215,11 +211,12 @@ abstract class AppRouter {
           routeSettings: settings,
         );
       case kUserLayoutView:
+        return SlideLeftRoute(page: UserLayoutView(), routeSettings: settings);
+      case kInteractionFilterView:
         return SlideLeftRoute(
-          page: const UserLayoutView(),
+          page: const InteractionFilterPage(),
           routeSettings: settings,
         );
-
       case kEditPersonalDataView:
         return SlideLeftRoute(
           page: const EditPersonalDataView(),
@@ -428,193 +425,14 @@ abstract class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: getIt<AuthCubit>()),
+              BlocProvider.value(value: getIt<QuestionsCubit>()),
+            ],
             child: ChooseGenderView(
-              currentUserType: args != null && args['currentUserType'] != null
-                  ? args['currentUserType'] as UserTypeEnum
-                  : UserTypeEnum.user,
+              currentUserType: args?['currentUserType'] ?? UserTypeEnum.user,
             ),
-          ),
-        );
-
-      case kNationalityView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const NationalityView(),
-          ),
-        );
-
-      case kCountryView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const CountryView(),
-          ),
-        );
-
-      case kChooseAgeView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const ChooseAgeView(),
-          ),
-        );
-
-      case kSocialStatusView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const SocialStatusView(),
-          ),
-        );
-
-      case kChooseWeightView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const ChooseWeightView(),
-          ),
-        );
-
-      case kChooseHeightView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const ChooseHeightView(),
-          ),
-        );
-
-      case kSkinColorView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const SkinColorView(),
-          ),
-        );
-
-      case kSmokingView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const SmokingView(),
-          ),
-        );
-
-      case kReligiousCommitmentView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const ReligiousCommitmentView(),
-          ),
-        );
-
-      case kHasChildrenView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const HasChildrenView(),
-          ),
-        );
-
-      case kChildrenLivingStatusView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const ChildrenLivingStatusView(),
-          ),
-        );
-
-      case kChildrenNumberView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const ChildrenNumberView(),
-          ),
-        );
-
-      case kEducationLevelView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const EducationLevelView(),
-          ),
-        );
-
-      case kChooseJobView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const ChooseJobView(),
-          ),
-        );
-
-      case kChooseEmployerView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const ChooseEmployerView(),
-          ),
-        );
-
-      case kAcceptMarriedView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const AcceptMarriedView(),
-          ),
-        );
-
-      case kHealthStatusView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const HealthStatusView(),
-          ),
-        );
-
-      case kHobbiesView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const HobbiesView(),
-          ),
-        );
-
-      case kAddYourCvView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const AddYourCvView(),
-          ),
-        );
-
-      case kPersonalInfoView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<AuthCubit>(),
-            child: const PersonalInfoView(),
           ),
         );
 
@@ -928,6 +746,52 @@ abstract class AppRouter {
           builder: (_) {
             return OrderSessionView();
           },
+        );
+      case AppRouter.kinteractionSubscriptionView:
+        return FadeScaleRoute(
+          page: const interactionSubscriptionView(),
+          routeSettings: settings,
+        );
+
+      ///// questions  ///////
+      case kQuestionsPageView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: getIt<AuthCubit>()),
+              BlocProvider.value(value: getIt<QuestionsCubit>()),
+            ],
+            child: QuestionsPageView(
+              currentUserType: args?['currentUserType'] ?? UserTypeEnum.user,
+              selectedGender: args?['selectedGender'] ?? Gender.male,
+            ),
+          ),
+        );
+      case kPersonalInfoView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: PersonalInfoView(),
+          ),
+        );
+      case kVerifyDataView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: VerifyDataView(),
+          ),
+        );
+      case kFaceVerificationView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: FaceVerificationView(),
+          ),
         );
 
       // case kEditCertificateView:

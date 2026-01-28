@@ -1,3 +1,4 @@
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
@@ -6,6 +7,7 @@ import 'package:tayseer/features/advisor/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository.dart';
 import 'package:tayseer/features/advisor/event_detail/repo/event_detail_repository_impl.dart';
 import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/session/data/repos/advisor_session_repo.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_cubit.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
@@ -45,6 +47,12 @@ import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
+import 'package:tayseer/features/user/interactions/data/repos/interactions_repository_impl.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
+import 'package:tayseer/features/user/questions/repo/questions_repo_impl.dart';
+import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
@@ -106,6 +114,10 @@ Future<void> setupGetIt() async {
   // Home Cubit
   getIt.registerFactory<HomeCubit>(() => HomeCubit(getIt<HomeRepository>()));
 
+  // Reels cubit
+  getIt.registerFactoryParam<ReelsCubit, PostModel, void>(
+    (post, _) => ReelsCubit(getIt<HomeRepository>(), initialPost: post),
+  );
   // Stories Feature
   getIt.registerLazySingleton<StoriesRepository>(
     () => StoriesRepositoryImpl(getIt<ApiService>()),
@@ -293,6 +305,25 @@ Future<void> setupGetIt() async {
     () => UserProfileEditCubit(getIt<UserProfileRepository>()),
   );
 
+  // Interactions Repository
+  getIt.registerLazySingleton<InteractionsRepository>(
+    () => InteractionsRepositoryImpl(getIt<ApiService>()),
+  );
+
+  // Interactions Cubit
+  getIt.registerFactory<InteractionsCubit>(
+    () => InteractionsCubit(getIt<InteractionsRepository>()),
+  );
+
+  /// Questions Repository
+  getIt.registerLazySingleton<QuestionsRepo>(
+    () => QuestionsRepoImpl(apiService: getIt<ApiService>()),
+  );
+
+  /// Questions Cubit
+  getIt.registerLazySingleton<QuestionsCubit>(
+    () => QuestionsCubit(getIt<QuestionsRepo>()),
+  );
   // User
   getIt.registerFactory<UserAccountManagementRepository>(
     () => UserAccountManagementRepositoryImpl(getIt<ApiService>()),
