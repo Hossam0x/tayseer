@@ -1,4 +1,3 @@
-// features/otp/otp_state.dart
 part of 'otp_cubit.dart';
 
 enum OtpStatus { initial, loading, success, failure }
@@ -18,7 +17,7 @@ class OtpState {
     required this.isPhoneUpdate,
     this.otpCode = '',
     this.errorMessage = '',
-    this.resendSeconds = 120,
+    this.resendSeconds = 300,
     this.canResend = false,
   });
 
@@ -47,5 +46,9 @@ class OtpState {
 }
 
 class OtpInitial extends OtpState {
-  OtpInitial({required super.phoneNumber, required super.isPhoneUpdate});
+  OtpInitial({
+    required super.phoneNumber,
+    required super.isPhoneUpdate,
+    super.resendSeconds = 300,
+  });
 }

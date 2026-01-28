@@ -1,17 +1,14 @@
 import 'dart:developer';
-
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 part 'phone_edit_state.dart';
 
 class PhoneEditCubit extends Cubit<PhoneEditState> {
-  PhoneEditCubit() : super(PhoneEditInitial()) {
-    // يمكن تهيئة ApiService هنا
-    _apiService = ApiService(Dio());
-  }
+  final ApiService _apiService;
+  final SnackBarService _snackBarService = SnackBarService();
 
-  late final ApiService _apiService; // تأجيل التهيئة
+  PhoneEditCubit() : _apiService = ApiService(Dio()), super(PhoneEditInitial());
 
-  // قائمة الدول (كما هي)
   final List<Map<String, String>> countries = [
     {"name": "السعودية", "code": "+966", "flag": "🇸🇦"},
     {"name": "مصر", "code": "+20", "flag": "🇪🇬"},
@@ -28,7 +25,6 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     {"name": "تونس", "code": "+216", "flag": "🇹🇳"},
   ];
 
-  // باقي الدوال كما هي بدون تغيير
   void initializePhone(String initialPhone) {
     if (initialPhone.isNotEmpty) {
       for (var country in countries) {
@@ -53,6 +49,7 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
         ),
       );
     }
+    validatePhoneNumber();
   }
 
   void updateCountry(Map<String, String> country) {
@@ -75,29 +72,31 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     String error = '';
     final phone = state.phoneNumber.trim();
 
-    if (phone.isNotEmpty) {
-      if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
-        error = 'يجب أن يحتوي الرقم على أرقام فقط';
-      } else if (phone.length < 8) {
-        error = 'رقم الهاتف قصير جداً';
-      } else if (phone.length > 15) {
-        error = 'رقم الهاتف طويل جداً';
-      } else {
-        // تحقق حسب رمز الدولة
-        if (state.selectedCountryCode == "+966" && !phone.startsWith('5')) {
-          error = 'يجب أن يبدأ الرقم السعودي بـ 5';
-        } else if (state.selectedCountryCode == "+20" &&
-            !phone.startsWith('1')) {
-          error = 'يجب أن يبدأ الرقم المصري بـ 1';
-        }
+    if (phone.isEmpty) {
+      error = 'يرجى إدخال رقم الهاتف';
+    } else if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
+      error = 'يجب أن يحتوي الرقم على أرقام فقط';
+    } else if (phone.length < 8) {
+      error = 'رقم الهاتف قصير جداً';
+    } else if (phone.length > 15) {
+      error = 'رقم الهاتف طويل جداً';
+    } else {
+      // تحقق حسب رمز الدولة
+      if (state.selectedCountryCode == "+966" && !phone.startsWith('5')) {
+        error = 'يجب أن يبدأ الرقم السعودي بـ 5';
+      } else if (state.selectedCountryCode == "+20" && !phone.startsWith('1')) {
+        error = 'يجب أن يبدأ الرقم المصري بـ 1';
       }
     }
 
     emit(state.copyWith(phoneError: error));
   }
 
-  Future<void> updatePhone() async {
+  Future<void> updatePhone(BuildContext context) async {
     if (state.phoneNumber.isEmpty || state.phoneError.isNotEmpty) {
+      if (state.phoneError.isNotEmpty) {
+        _showError(context, state.phoneError);
+      }
       return;
     }
 
@@ -105,15 +104,12 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
 
     try {
       final cleanedPhone = state.phoneNumber.replaceAll(RegExp(r'\D'), '');
-      log('The request for phone Update ${state.selectedCountryCode}');
-      log('The request for phone Update $cleanedPhone');
+      log('طلب تحديث الهاتف: ${state.selectedCountryCode}$cleanedPhone');
 
       final response = await _apiService.post(
         endPoint: '/user/update-phone-number',
         data: {'countryCode': state.selectedCountryCode, 'phone': cleanedPhone},
       );
-
-      log('The response for phone Update $response');
 
       if (response['success'] == true) {
         final fullPhoneNumber = '${state.selectedCountryCode}$cleanedPhone';
@@ -121,8 +117,11 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
           state.copyWith(
             updatePhoneStatus: CubitStates.success,
             fullPhoneNumber: fullPhoneNumber,
+            errorMessage: '',
           ),
         );
+
+        _showSuccess(context, 'تم إرسال رمز التحقق بنجاح');
       } else {
         emit(
           state.copyWith(
@@ -130,20 +129,55 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
             errorMessage: response['message'] ?? 'فشل تحديث رقم الهاتف',
           ),
         );
+        _showError(context, response['message'] ?? 'فشل تحديث رقم الهاتف');
       }
-    } catch (error) {
+    } on DioException catch (e) {
+      final failure = ServerFailure.fromDioError(e);
       emit(
         state.copyWith(
           updatePhoneStatus: CubitStates.failure,
-          errorMessage: 'خطأ في الاتصال: $error',
+          errorMessage: failure.message,
         ),
+      );
+      _showError(context, failure.message);
+    } catch (e) {
+      emit(
+        state.copyWith(
+          updatePhoneStatus: CubitStates.failure,
+          errorMessage: 'حدث خطأ غير متوقع',
+        ),
+      );
+      _showError(context, 'حدث خطأ غير متوقع');
+    }
+  }
+
+  void _showError(BuildContext context, String message) {
+    if (context.mounted) {
+      _snackBarService.showSnackBar(
+        context: context,
+        text: message,
+        isError: true,
+      );
+    }
+  }
+
+  void _showSuccess(BuildContext context, String message) {
+    if (context.mounted) {
+      _snackBarService.showSnackBar(
+        context: context,
+        text: message,
+        isSuccess: true,
       );
     }
   }
 
   void resetError() {
     emit(
-      state.copyWith(updatePhoneStatus: CubitStates.initial, errorMessage: ''),
+      state.copyWith(
+        updatePhoneStatus: CubitStates.initial,
+        errorMessage: '',
+        phoneError: '',
+      ),
     );
   }
 }

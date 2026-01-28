@@ -1,8 +1,9 @@
-// features/otp/otp_view.dart
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/repos/otp_repository.dart';
 import 'package:tayseer/my_import.dart';
 
-class OtpViewUser extends StatelessWidget {
+class OtpViewUser extends StatefulWidget {
   final String phoneNumber;
   final bool isPhoneUpdate;
 
@@ -13,59 +14,89 @@ class OtpViewUser extends StatelessWidget {
   });
 
   @override
+  State<OtpViewUser> createState() => _OtpViewUserState();
+}
+
+class _OtpViewUserState extends State<OtpViewUser> {
+  late TextEditingController _otpController;
+
+  @override
+  void initState() {
+    super.initState();
+    _otpController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          OtpCubit(phoneNumber: phoneNumber, isPhoneUpdate: isPhoneUpdate),
+      create: (context) {
+        final dio = Dio();
+
+        dio.options.baseUrl = 'https://tayser-app.net/api/v1';
+        Duration(seconds: 30);
+        dio.options.receiveTimeout = Duration(seconds: 30);
+
+        dio.interceptors.add(
+          InterceptorsWrapper(
+            onRequest: (options, handler) {
+              final token = CachNetwork.getStringData(key: 'token');
+              if (token.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $token';
+              }
+              options.headers['Content-Type'] = 'application/json';
+              return handler.next(options);
+            },
+          ),
+        );
+
+        final otpRepository = OtpRepositoryImpl(dio);
+
+        return OtpCubit(
+          phoneNumber: widget.phoneNumber,
+          isPhoneUpdate: widget.isPhoneUpdate,
+          otpRepository: otpRepository,
+        );
+      },
       child: Scaffold(
         body: CustomBackground(
           child: BlocConsumer<OtpCubit, OtpState>(
             listener: (context, state) {
               if (state.otpStatus == OtpStatus.success) {
-                // إظهار رسالة نجاح
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isPhoneUpdate
-                          ? 'تم تأكيد رقم الهاتف بنجاح'
-                          : 'تم التحقق بنجاح',
-                    ),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-
-                // التنقل للصفحة المناسبة
-                _navigateAfterVerification(context, state);
-
-                // إعادة تعيين الحالة
-                context.read<OtpCubit>().resetError();
-              }
-
-              if (state.otpStatus == OtpStatus.failure &&
-                  state.errorMessage.isNotEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.errorMessage),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                Future.delayed(Duration(milliseconds: 1500), () {
+                  if (mounted) {
+                    _navigateAfterVerification(context, state);
+                    context.read<OtpCubit>().resetError();
+                  }
+                });
               }
             },
             builder: (context, state) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (_otpController.text != state.otpCode) {
+                  _otpController.text = state.otpCode;
+                  _otpController.selection = TextSelection.fromPosition(
+                    TextPosition(offset: state.otpCode.length),
+                  );
+                }
+              });
+
               return SingleChildScrollView(
                 child: Column(
                   children: [
                     SizedBox(height: context.height * 0.05),
 
-                    // Back button
                     Padding(
                       padding: const EdgeInsets.only(right: 25),
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: IconButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
+                          onPressed: () => Navigator.pop(context),
                           icon: const Icon(
                             Icons.arrow_back,
                             color: Colors.black,
@@ -77,7 +108,6 @@ class OtpViewUser extends StatelessWidget {
 
                     SizedBox(height: context.height * 0.1),
 
-                    // Title
                     Text(
                       state.isPhoneUpdate
                           ? 'تأكيد رقم الهاتف الجديد'
@@ -89,7 +119,6 @@ class OtpViewUser extends StatelessWidget {
 
                     SizedBox(height: context.height * 0.02),
 
-                    // Subtitle
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 40.w),
                       child: Text(
@@ -101,71 +130,35 @@ class OtpViewUser extends StatelessWidget {
 
                     SizedBox(height: context.height * 0.04),
 
-                    // OTP input - جعل الحقول معكوسة
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 40.w),
-                      child: Directionality(
-                        textDirection:
-                            TextDirection.ltr, // ✅ جعل الاتجاه LTR للحقول
-                        child: _buildOtpFields(context),
-                      ),
+                      child: _buildPinputField(context),
                     ),
 
                     SizedBox(height: context.height * 0.04),
 
-                    // Resend code timer
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'إعادة إرسال الرمز خلال ',
-                          style: Styles.textStyle14.copyWith(
-                            color: Colors.grey,
-                          ),
-                        ),
-                        Text(
-                          '${(state.resendSeconds ~/ 60).toString().padLeft(2, '0')}:${(state.resendSeconds % 60).toString().padLeft(2, '0')}',
-                          style: Styles.textStyle14.copyWith(
-                            color: AppColors.primary600,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: context.height * 0.02),
-
-                    // Resend button
-                    if (state.canResend)
-                      TextButton(
-                        onPressed: state.isLoading
-                            ? null
-                            : () {
-                                context.read<OtpCubit>().resendCode();
-                              },
-                        child: Text(
-                          'إعادة إرسال الرمز',
-                          style: Styles.textStyle14.copyWith(
-                            color: AppColors.primary600,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
+                    _buildResendSection(context, state),
 
                     SizedBox(height: context.height * 0.06),
 
-                    // Submit button
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 40.w),
                       child: CustomBotton(
                         width: double.infinity,
                         useGradient: true,
                         title: state.isLoading ? 'جاري التحقق...' : 'تأكيد',
-                        // isEnabled: state.canSubmit,
                         onPressed: state.isLoading
                             ? null
                             : () {
-                                context.read<OtpCubit>().verifyOtp();
+                                if (state.otpCode.length == 6) {
+                                  context.read<OtpCubit>().verifyOtp(context);
+                                } else {
+                                  showSafeSnackBar(
+                                    context: context,
+                                    text: 'يجب إدخال الرمز المكون من 6 أرقام',
+                                    isError: true,
+                                  );
+                                }
                               },
                       ),
                     ),
@@ -181,113 +174,103 @@ class OtpViewUser extends StatelessWidget {
     );
   }
 
-  Widget _buildOtpFields(BuildContext context) {
-    return BlocBuilder<OtpCubit, OtpState>(
-      builder: (context, state) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(6, (index) {
-            // حساب المؤشر المعكوس للحقل الأخير أولاً
-            final reversedIndex = 5 - index;
-
-            // الحصول على الرقم الحالي للحقل (من اليمين لليسار)
-            String currentDigit = '';
-            if (reversedIndex < state.otpCode.length) {
-              currentDigit = state.otpCode[reversedIndex];
+  Widget _buildPinputField(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Pinput(
+        length: 6,
+        controller: _otpController,
+        focusNode: FocusNode(),
+        defaultPinTheme: PinTheme(
+          width: 50.w,
+          height: 50.h,
+          textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(17.r),
+            border: Border.all(color: const Color(0xfff8d3da), width: 1.4),
+          ),
+        ),
+        focusedPinTheme: PinTheme(
+          width: 50.w,
+          height: 50.h,
+          textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(17.r),
+            border: Border.all(color: AppColors.kprimaryColor, width: 1.4),
+          ),
+        ),
+        submittedPinTheme: PinTheme(
+          width: 50.w,
+          height: 50.h,
+          textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(17.r),
+            border: Border.all(color: const Color(0xfff8d3da), width: 1.4),
+          ),
+        ),
+        showCursor: true,
+        onChanged: (value) {
+          context.read<OtpCubit>().updateOtpCode(value);
+        },
+        onCompleted: (value) {
+          context.read<OtpCubit>().updateOtpCode(value);
+          Future.delayed(Duration(milliseconds: 300), () {
+            if (value.length == 6 && mounted) {
+              context.read<OtpCubit>().verifyOtp(context);
             }
-
-            // إنشاء controller لهذا الحقل
-            final controller = TextEditingController(text: currentDigit);
-
-            return SizedBox(
-              width: 40.w,
-              child: TextField(
-                controller: controller,
-                textAlign: TextAlign.center,
-                keyboardType: TextInputType.number,
-                maxLength: 1,
-                style: Styles.textStyle18.copyWith(color: Colors.black),
-                decoration: InputDecoration(
-                  counterText: '',
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primary300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primary500),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onChanged: (value) {
-                  if (value.isNotEmpty) {
-                    // حساب المؤشر الفعلي (معكوس)
-                    final actualIndex = 5 - index;
-
-                    // بناء كود OTP جديد
-                    String newOtpCode = state.otpCode;
-
-                    if (newOtpCode.length >= actualIndex + 1) {
-                      // استبدال الرقم الموجود
-                      newOtpCode =
-                          newOtpCode.substring(0, actualIndex) +
-                          value +
-                          (newOtpCode.length > actualIndex + 1
-                              ? newOtpCode.substring(actualIndex + 1)
-                              : '');
-                    } else {
-                      // إضافة رقم جديد
-                      newOtpCode =
-                          newOtpCode.padRight(actualIndex, ' ') + value;
-                      newOtpCode = newOtpCode.replaceAll(' ', '');
-                    }
-
-                    // تحديث الحالة
-                    context.read<OtpCubit>().updateOtpCode(newOtpCode);
-
-                    // نقل التركيز للحقل التالي (اليسار)
-                    if (index < 5 && value.isNotEmpty) {
-                      // لأن المؤشرات معكوسة، ننتقل للحقل التالي على اليسار
-                      final nextIndex = index + 1;
-                      if (nextIndex <= 5) {
-                        // يمكن إضافة منطق لنقل التركيز هنا إذا لزم الأمر
-                      }
-                    }
-                  } else if (value.isEmpty && index < 5) {
-                    // حذف الرقم - الانتقال للحقل السابق (اليمين)
-                    final actualIndex = 5 - index;
-                    if (state.otpCode.length >= actualIndex) {
-                      String newOtpCode = '';
-                      if (state.otpCode.length == actualIndex) {
-                        newOtpCode = state.otpCode.substring(
-                          0,
-                          actualIndex - 1,
-                        );
-                      } else {
-                        newOtpCode =
-                            state.otpCode.substring(0, actualIndex - 1) +
-                            state.otpCode.substring(actualIndex);
-                      }
-                      context.read<OtpCubit>().updateOtpCode(newOtpCode);
-                    }
-                  }
-                },
-              ),
-            );
-          }).reversed.toList(), // ✅ عكس ترتيب الحقول
-        );
-      },
+          });
+        },
+        keyboardType: TextInputType.number,
+        inputFormatters: [],
+      ),
     );
+  }
+
+  Widget _buildResendSection(BuildContext context, OtpState state) {
+    if (state.canResend) {
+      return TextButton(
+        onPressed: state.isLoading
+            ? null
+            : () {
+                context.read<OtpCubit>().resendCode(context);
+              },
+        child: Text(
+          'إعادة إرسال الرمز',
+          style: Styles.textStyle12.copyWith(
+            color: HexColor('4d81e7'),
+            decoration: TextDecoration.underline,
+            decorationColor: HexColor('4d81e7'),
+            decorationThickness: 1.5,
+          ),
+        ),
+      );
+    } else {
+      return Column(
+        children: [
+          Text(
+            'إعادة إرسال الرمز خلال',
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            _formatTime(state.resendSeconds),
+            style: Styles.textStyle12.copyWith(color: HexColor('4d81e7')),
+          ),
+        ],
+      );
+    }
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = (seconds ~/ 60);
+    final secondsRemaining = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secondsRemaining.toString().padLeft(2, '0')}';
   }
 
   void _navigateAfterVerification(BuildContext context, OtpState state) {
     if (state.isPhoneUpdate) {
-      // بعد تحديث الهاتف، العودة للصفحة الرئيسية
       Navigator.popUntil(context, (route) => route.isFirst);
     } else {
-      // في حالات أخرى (تسجيل دخول، إلخ)
       Navigator.pop(context);
     }
   }

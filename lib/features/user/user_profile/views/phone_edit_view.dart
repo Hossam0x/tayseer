@@ -37,29 +37,25 @@ class _PhoneEditViewState extends State<PhoneEditView> {
       child: Scaffold(
         body: BlocConsumer<PhoneEditCubit, PhoneEditState>(
           listener: (context, state) {
+            // التنقل عند النجاح فقط
             if (state.updatePhoneStatus == CubitStates.success) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => OtpViewUser(
-                    phoneNumber: state.fullPhoneNumber,
-                    isPhoneUpdate: true,
-                  ),
-                ),
-              );
-
-              context.read<PhoneEditCubit>().resetError();
+              Future.delayed(Duration(milliseconds: 1500), () {
+                if (mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OtpViewUser(
+                        phoneNumber: state.fullPhoneNumber,
+                        isPhoneUpdate: true,
+                      ),
+                    ),
+                  );
+                  context.read<PhoneEditCubit>().resetError();
+                }
+              });
             }
 
-            if (state.updatePhoneStatus == CubitStates.failure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.errorMessage),
-                  backgroundColor: Colors.red,
-                  duration: Duration(seconds: 3),
-                ),
-              );
-            }
+            // لا حاجة لعرض SnackBar هنا لأن الكيوبت يتولى ذلك
           },
           builder: (context, state) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -145,7 +141,9 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                         onPressed: state.isLoading || !state.canProceed
                             ? null
                             : () {
-                                context.read<PhoneEditCubit>().updatePhone();
+                                context.read<PhoneEditCubit>().updatePhone(
+                                  context,
+                                );
                               },
                       ),
                     ),
@@ -185,10 +183,6 @@ class _PhoneEditViewState extends State<PhoneEditView> {
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(15),
-
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  return newValue;
-                }),
               ],
               style: Styles.textStyle14.copyWith(
                 color: AppColors.secondary800,
@@ -201,11 +195,7 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                   color: AppColors.primary200,
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  // horizontal: 12.w,
-                  vertical: 14.h,
-                ),
-
+                contentPadding: EdgeInsets.symmetric(vertical: 14.h),
                 errorText: null,
               ),
               onChanged: (value) {
