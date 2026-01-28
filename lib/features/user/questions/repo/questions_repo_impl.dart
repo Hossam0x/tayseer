@@ -133,4 +133,28 @@ class QuestionsRepoImpl implements QuestionsRepo {
       return Left(ServerFailure('حدث خطأ غير متوقع: $e'));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> changeImageBlur() async {
+    try {
+      final response = await apiService.patch(
+        endPoint: '/auth/change-image-blur',
+      );
+
+      final success = response['success'] ?? false;
+      if (success) {
+        return right(null);
+      } else {
+        return left(
+          ServerFailure(response['message'] ?? 'فشل تغيير حالة التمويه'),
+        );
+      }
+    } on DioException catch (e) {
+      return left(
+        ServerFailure(e.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر'),
+      );
+    } catch (e) {
+      return left(ServerFailure('حدث خطأ غير متوقع: $e'));
+    }
+  }
 }

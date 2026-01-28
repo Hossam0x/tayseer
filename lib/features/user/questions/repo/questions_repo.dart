@@ -15,4 +15,5 @@ abstract class QuestionsRepo {
     List<File>? images,
   });
   Future<Either<Failure, void>> verifyFaceImage({required XFile image});
+  Future<Either<Failure, void>> changeImageBlur();
 }
