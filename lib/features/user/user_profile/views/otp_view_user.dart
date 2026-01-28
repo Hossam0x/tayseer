@@ -7,11 +7,15 @@ import 'package:tayseer/my_import.dart' hide PinTheme;
 class OtpViewUser extends StatefulWidget {
   final String phoneNumber;
   final bool isPhoneUpdate;
+  final bool isEmailUpdate;
+  final OtpSource otpSource; // ⭐⭐ إضافة
 
   const OtpViewUser({
     super.key,
     required this.phoneNumber,
     this.isPhoneUpdate = false,
+    this.isEmailUpdate = false,
+    this.otpSource = OtpSource.phone, // ⭐⭐ قيمة افتراضية
   });
 
   @override
@@ -68,7 +72,9 @@ class _OtpViewUserState extends State<OtpViewUser> {
         return OtpCubit(
           phoneNumber: widget.phoneNumber,
           isPhoneUpdate: widget.isPhoneUpdate,
+          isEmailUpdate: widget.isEmailUpdate,
           otpRepository: otpRepository,
+          otpSource: widget.otpSource, // ⭐⭐ تمرير المصدر
         );
       },
       child: Scaffold(
@@ -119,6 +125,8 @@ class _OtpViewUserState extends State<OtpViewUser> {
                     Text(
                       state.isPhoneUpdate
                           ? 'تأكيد رقم الهاتف الجديد'
+                          : state.isEmailUpdate
+                          ? 'تأكيد البريد الإلكتروني الجديد'
                           : 'رمز التحقق',
                       style: Styles.textStyle24.copyWith(
                         color: HexColor('590d1c'),

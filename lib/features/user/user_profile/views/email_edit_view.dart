@@ -1,5 +1,7 @@
-import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/otp_view_user.dart';
 import 'package:tayseer/my_import.dart';
 
 class EmailEditView extends StatefulWidget {
@@ -11,85 +13,162 @@ class EmailEditView extends StatefulWidget {
 }
 
 class _EmailEditViewState extends State<EmailEditView> {
-  late TextEditingController emailController;
+  late TextEditingController _emailController;
 
   @override
   void initState() {
     super.initState();
-    emailController = TextEditingController(text: widget.initialEmail);
+    _emailController = TextEditingController(text: widget.initialEmail);
   }
 
   @override
   void dispose() {
-    emailController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AdvisorBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Gap(16.h),
-              // الهيدر
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: SimpleAppBar(
-                  title: 'البريد الالكترونى',
-                  isLargeTitle: true,
+    return BlocProvider(
+      create: (_) => EmailEditCubit(),
+      child: Scaffold(
+        body: BlocConsumer<EmailEditCubit, EmailEditState>(
+          listener: (context, state) {
+            if (state.status == CubitStates.success) {
+              Future.delayed(const Duration(milliseconds: 1400), () {
+                if (!mounted) return;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => OtpViewUser(
+                      phoneNumber: state.fullEmail,
+                      isPhoneUpdate: false,
+                      isEmailUpdate: true,
+                      otpSource: OtpSource.email, // ⭐⭐ تحديد المصدر
+                    ),
+                  ),
+                );
+                context.read<EmailEditCubit>().reset();
+              });
+            }
+          },
+          builder: (context, state) {
+            if (_emailController.text != state.email) {
+              _emailController.text = state.email;
+              _emailController.selection = TextSelection.fromPosition(
+                TextPosition(offset: state.email.length),
+              );
+            }
+
+            return AdvisorBackground(
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    Gap(16.h),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      child: SimpleAppBar(
+                        title: 'البريد الإلكتروني',
+                        isLargeTitle: true,
+                      ),
+                    ),
+                    Gap(8.h),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      child: Text(
+                        'سنرسل لك رمز تحقق على البريد الإلكتروني لتأكيد بريدك الجديد',
+                        textAlign: TextAlign.center,
+                        style: Styles.textStyle14.copyWith(
+                          color: AppColors.primary800,
+                        ),
+                      ),
+                    ),
+                    Gap(100.h),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 40.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // حقل الإيميل
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.kWhiteColor,
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border.all(
+                                color: state.emailError.isNotEmpty
+                                    ? Colors.red
+                                    : AppColors.primary100,
+                                width: state.emailError.isNotEmpty ? 1.5 : 1,
+                              ),
+                            ),
+                            child: TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              textDirection: TextDirection.ltr,
+                              textAlign: TextAlign.left,
+                              style: Styles.textStyle14.copyWith(
+                                color: AppColors.secondary800,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'أدخل البريد الإلكتروني',
+                                hintStyle: Styles.textStyle14.copyWith(
+                                  color: AppColors.primary200,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 14.h,
+                                ),
+                              ),
+                              onChanged: (v) =>
+                                  context.read<EmailEditCubit>().updateEmail(v),
+                            ),
+                          ),
+                          if (state.emailError.isNotEmpty) ...[
+                            Gap(8.h),
+                            Padding(
+                              padding: EdgeInsets.only(right: 12.w),
+                              child: Text(
+                                state.emailError,
+                                style: Styles.textStyle12.copyWith(
+                                  color: Colors.red,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 50.w,
+                        vertical: 30.h,
+                      ),
+                      child: CustomBotton(
+                        height: 53.h,
+                        width: double.infinity,
+                        title: state.isLoading ? 'جاري الإرسال...' : 'التالي',
+                        useGradient: true,
+                        backGroundcolor: state.canProceed && !state.isLoading
+                            ? Colors.transparent
+                            : Colors.grey,
+                        onPressed: state.isLoading || !state.canProceed
+                            ? null
+                            : () => context
+                                  .read<EmailEditCubit>()
+                                  .updateEmailRequest(context),
+                      ),
+                    ),
+                    Gap(MediaQuery.of(context).viewInsets.bottom),
+                  ],
                 ),
               ),
-
-              Gap(8.h),
-
-              // النص الفرعي
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Text(
-                  'سنرسل لك رمز تحقق علي البريد الالكترونى لتأكيد بريدك الجديد',
-                  textAlign: TextAlign.center,
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.primary800,
-                  ), // لون مناسب للنص الفرعي
-                ),
-              ),
-
-              Gap(100.h),
-
-              // حقل الإدخال المستخدم فيه الـ Widget الخاص بك
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 40.w),
-                child: ProfileTextField(
-                  controller: emailController,
-                  hint: 'ادخل بريدك الالكترونى',
-                  keyboardType: TextInputType.emailAddress,
-                  onChanged: (value) {
-                    setState(() {});
-                  },
-                ),
-              ),
-
-              const Spacer(),
-
-              // زر التأكيد
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 50.w, vertical: 30.h),
-                child: CustomBotton(
-                  height: 53.h,
-                  width: double.infinity,
-                  title: 'تأكيد',
-                  useGradient: true,
-                  onPressed: () {
-                    if (emailController.text.isNotEmpty) {
-                      Navigator.pop(context, emailController.text);
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

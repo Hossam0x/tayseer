@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/otp_view_user.dart';
 import 'package:tayseer/my_import.dart';
@@ -44,9 +45,10 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => OtpViewUser(
+                      builder: (_) => OtpViewUser(
                         phoneNumber: state.fullPhoneNumber,
                         isPhoneUpdate: true,
+                        otpSource: OtpSource.editPhone, // ⭐⭐ تحديد المصدر
                       ),
                     ),
                   );
