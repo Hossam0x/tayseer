@@ -1,7 +1,8 @@
+import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/repos/otp_repository.dart';
-import 'package:tayseer/my_import.dart';
+import 'package:tayseer/my_import.dart' hide PinTheme;
 
 class OtpViewUser extends StatefulWidget {
   final String phoneNumber;
@@ -39,15 +40,22 @@ class _OtpViewUserState extends State<OtpViewUser> {
         final dio = Dio();
 
         dio.options.baseUrl = 'https://tayser-app.net/api/v1';
-        Duration(seconds: 30);
+        dio.options.connectTimeout = Duration(seconds: 30);
         dio.options.receiveTimeout = Duration(seconds: 30);
+
+        // ⭐⭐ إضافة validateStatus هنا أيضاً
+        dio.options.validateStatus = (status) => status! < 500;
 
         dio.interceptors.add(
           InterceptorsWrapper(
             onRequest: (options, handler) {
               final token = CachNetwork.getStringData(key: 'token');
               if (token.isNotEmpty) {
+                // ⭐ تصحيح التحقق من null
                 options.headers['Authorization'] = 'Bearer $token';
+                print('🔑 إضافة Token إلى الطلب');
+              } else {
+                print('⚠️ Token غير موجود أو فارغ');
               }
               options.headers['Content-Type'] = 'application/json';
               return handler.next(options);
@@ -70,7 +78,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
               if (state.otpStatus == OtpStatus.success) {
                 Future.delayed(Duration(milliseconds: 1500), () {
                   if (mounted) {
-                    _navigateAfterVerification(context, state);
+                    Navigator.pop(context);
                     context.read<OtpCubit>().resetError();
                   }
                 });
@@ -132,7 +140,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
 
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 40.w),
-                      child: _buildPinputField(context),
+                      child: _buildPinCodeField(context),
                     ),
 
                     SizedBox(height: context.height * 0.04),
@@ -174,54 +182,81 @@ class _OtpViewUserState extends State<OtpViewUser> {
     );
   }
 
-  Widget _buildPinputField(BuildContext context) {
+  Widget _buildPinCodeField(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: Pinput(
+      child: PinCodeTextField(
+        appContext: context,
         length: 6,
         controller: _otpController,
-        focusNode: FocusNode(),
-        defaultPinTheme: PinTheme(
-          width: 50.w,
-          height: 50.h,
-          textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(17.r),
-            border: Border.all(color: const Color(0xfff8d3da), width: 1.4),
-          ),
-        ),
-        focusedPinTheme: PinTheme(
-          width: 50.w,
-          height: 50.h,
-          textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(17.r),
-            border: Border.all(color: AppColors.kprimaryColor, width: 1.4),
-          ),
-        ),
-        submittedPinTheme: PinTheme(
-          width: 50.w,
-          height: 50.h,
-          textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(17.r),
-            border: Border.all(color: const Color(0xfff8d3da), width: 1.4),
-          ),
-        ),
-        showCursor: true,
         onChanged: (value) {
+          print('🔢 تغيير OTP: $value');
           context.read<OtpCubit>().updateOtpCode(value);
         },
         onCompleted: (value) {
-          context.read<OtpCubit>().updateOtpCode(value);
-          Future.delayed(Duration(milliseconds: 300), () {
-            if (value.length == 6 && mounted) {
-              context.read<OtpCubit>().verifyOtp(context);
-            }
-          });
+          print('✅ اكتمل OTP: $value');
+          if (value.length == 6) {
+            Future.delayed(Duration(milliseconds: 300), () {
+              if (mounted) {
+                context.read<OtpCubit>().verifyOtp(context);
+              }
+            });
+          }
         },
+
+        // ⭐⭐ الإعدادات الأساسية
+        autoFocus: true,
         keyboardType: TextInputType.number,
-        inputFormatters: [],
+        textInputAction: TextInputAction.done,
+
+        // ⭐⭐ إعدادات المسح
+        enableActiveFill: true,
+        autoDisposeControllers: false,
+        autoDismissKeyboard: false, // ⭐⭐ هذا هو الـ parameter الصحيح
+
+        pinTheme: PinTheme(
+          shape: PinCodeFieldShape.box,
+          borderRadius: BorderRadius.circular(17.r),
+          fieldHeight: 50.h,
+          fieldWidth: 50.w,
+          activeFillColor: Colors.white,
+          activeColor: AppColors.kprimaryColor,
+          selectedColor: AppColors.kprimaryColor,
+          selectedFillColor: Colors.white,
+          inactiveColor: const Color(0xfff8d3da),
+          inactiveFillColor: Colors.white,
+          borderWidth: 0.4,
+        ),
+
+        animationType: AnimationType.fade,
+        animationDuration: Duration(milliseconds: 300),
+        enablePinAutofill: false,
+        textStyle: const TextStyle(fontSize: 20, color: Colors.black),
+
+        // ⭐⭐ إعدادات الكيبورد
+        cursorColor: Colors.black,
+        cursorHeight: 24,
+        cursorWidth: 2,
+
+        // ⭐⭐ السماح بالمسح - التصحيح هنا
+        useHapticFeedback: true,
+        hapticFeedbackTypes: HapticFeedbackTypes.light, // ⭐⭐ التصحيح
+        // ⭐⭐ لا تقفل الكيبورد عند الاكتمال
+        // autoDismissKeyboard: false, // تم تعيينه أعلاه
+
+        // ⭐⭐ إعدادات الـ error
+        errorAnimationController: null,
+        errorTextSpace: 40.h,
+
+        // ⭐⭐ إعدادات إضافية
+        beforeTextPaste: (text) {
+          // التحقق من أن النص أرقام فقط
+          return RegExp(r'^[0-9]+$').hasMatch(text ?? '');
+        },
+
+        // ⭐⭐ السماح بالمسح بشكل كامل
+        autoUnfocus: false,
+        blinkWhenObscuring: true,
       ),
     );
   }
@@ -267,11 +302,11 @@ class _OtpViewUserState extends State<OtpViewUser> {
     return '${minutes.toString().padLeft(2, '0')}:${secondsRemaining.toString().padLeft(2, '0')}';
   }
 
-  void _navigateAfterVerification(BuildContext context, OtpState state) {
-    if (state.isPhoneUpdate) {
-      Navigator.popUntil(context, (route) => route.isFirst);
-    } else {
-      Navigator.pop(context);
-    }
-  }
+  // void _navigateAfterVerification(BuildContext context, OtpState state) {
+  //   if (state.isPhoneUpdate) {
+  //     Navigator.pop(context);
+  //   } else {
+  //     Navigator.pop(context);
+  //   }
+  // }
 }
