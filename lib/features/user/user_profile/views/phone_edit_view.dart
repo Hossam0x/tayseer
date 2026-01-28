@@ -252,6 +252,7 @@ class _PhoneEditViewState extends State<PhoneEditView> {
 
   void _showCountryPicker(BuildContext context) {
     final cubit = context.read<PhoneEditCubit>();
+    String searchText = '';
 
     showModalBottomSheet(
       context: context,
@@ -259,68 +260,86 @@ class _PhoneEditViewState extends State<PhoneEditView> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          padding: EdgeInsets.all(16.r),
-          child: Column(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primary50,
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: TextField(
-                  textDirection: TextDirection.rtl,
-                  decoration: InputDecoration(
-                    hintText: 'ابحث عن الدولة...',
-                    hintTextDirection: TextDirection.rtl,
-                    hintStyle: Styles.textStyle14.copyWith(
-                      color: AppColors.primary300,
-                    ),
-                    prefixIcon: Icon(Icons.search, color: AppColors.primary300),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 14.h,
-                    ),
-                  ),
-                  onChanged: (value) {},
-                ),
-              ),
-              Gap(16.h),
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filtered = cubit.countries.where((c) {
+              final name = c['name']!.toLowerCase();
+              final code = c['code']!.toLowerCase();
+              final query = searchText.toLowerCase();
+              return name.contains(query) || code.contains(query);
+            }).toList();
 
-              Text("اختر الدولة", style: Styles.textStyle18Meduim),
-              Gap(10.h),
-              const Divider(),
-
-              Expanded(
-                child: ListView.builder(
-                  itemCount: cubit.countries.length,
-                  itemBuilder: (context, index) {
-                    final item = cubit.countries[index];
-                    return ListTile(
-                      leading: Text(
-                        item['flag']!,
-                        style: TextStyle(fontSize: 24.sp),
-                      ),
-                      title: Text(item['name']!, style: Styles.textStyle16),
-                      trailing: Text(
-                        item['code']!,
-                        style: Styles.textStyle14.copyWith(
-                          color: AppColors.primary600,
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              padding: EdgeInsets.all(16.r),
+              child: Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.primary50,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: TextField(
+                      textDirection: TextDirection.rtl,
+                      decoration: InputDecoration(
+                        hintText: 'ابحث عن الدولة...',
+                        hintTextDirection: TextDirection.rtl,
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: AppColors.primary300,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 14.h,
                         ),
                       ),
-                      onTap: () {
-                        cubit.updateCountry(item);
-                        Navigator.pop(context);
+                      onChanged: (value) {
+                        setModalState(() {
+                          searchText = value.trim();
+                        });
                       },
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                  Gap(16.h),
+                  Text("اختر الدولة", style: Styles.textStyle18Meduim),
+                  Gap(10.h),
+                  const Divider(),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? Center(child: Text('لا توجد نتائج'))
+                        : ListView.builder(
+                            itemCount: filtered.length,
+                            itemBuilder: (context, index) {
+                              final item = filtered[index];
+                              return ListTile(
+                                leading: Text(
+                                  item['flag']!,
+                                  style: TextStyle(fontSize: 24.sp),
+                                ),
+                                title: Text(
+                                  item['name']!,
+                                  style: Styles.textStyle16,
+                                ),
+                                trailing: Text(
+                                  item['code']!,
+                                  style: Styles.textStyle14.copyWith(
+                                    color: AppColors.primary600,
+                                  ),
+                                ),
+                                onTap: () {
+                                  cubit.updateCountry(item);
+                                  Navigator.pop(context);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

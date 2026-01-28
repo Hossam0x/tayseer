@@ -301,12 +301,4 @@ class _OtpViewUserState extends State<OtpViewUser> {
     final secondsRemaining = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${secondsRemaining.toString().padLeft(2, '0')}';
   }
-
-  // void _navigateAfterVerification(BuildContext context, OtpState state) {
-  //   if (state.isPhoneUpdate) {
-  //     Navigator.pop(context);
-  //   } else {
-  //     Navigator.pop(context);
-  //   }
-  // }
 }
