@@ -46,7 +46,10 @@ class UserPublicProfileBio extends StatelessWidget {
           image: '',
           following: 0,
           isMe: false,
-          avaliableForMarry: false,
+          age: 0,
+          gender: 'ذكر',
+          isAnonymous: false,
+          availableForMarry: false,
         ),
       ),
     );
@@ -107,13 +110,13 @@ class UserPublicProfileBio extends StatelessWidget {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: profile.avaliableForMarry
+                color: profile.availableForMarry
                     ? AppColors.primary300
                     : AppColors.secondary400,
                 borderRadius: BorderRadius.circular(34.r),
               ),
               child: Text(
-                profile.avaliableForMarry ? 'متاح الآن' : 'غير متاح',
+                profile.availableForMarry ? 'متاح الآن' : 'غير متاح',
                 style: Styles.textStyle14.copyWith(
                   color: AppColors.secondary950,
                 ),
@@ -137,7 +140,7 @@ class UserPublicProfileBio extends StatelessWidget {
             ),
 
           // زر التواصل (إذا لم يكن المستخدم نفسه وكان جاهز للزواج)
-          // if (!profile.isMe && profile.avaliableForMarry)
+          // if (!profile.isMe && profile.availableForMarry)
           // _buildContactButton(context),
         ],
       ),

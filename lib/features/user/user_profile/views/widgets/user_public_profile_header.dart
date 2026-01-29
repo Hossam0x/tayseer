@@ -52,7 +52,10 @@ class UserPublicProfileHeader extends StatelessWidget {
           image: '',
           following: 0,
           isMe: false,
-          avaliableForMarry: false,
+          age: 0,
+          gender: 'ذكر',
+          isAnonymous: false,
+          availableForMarry: false,
         ),
       ),
     );

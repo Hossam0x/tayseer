@@ -19,11 +19,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     _loadInitialData();
   }
 
-  // ⭐ دالة جديدة: جلب بيانات المستخدم
   Future<UserProfileModel> _fetchUserProfile() async {
     try {
       final result = await _userProfileRepository.getUserProfile();
-
       return result.fold((failure) {
         throw Exception(failure.message);
       }, (profile) => profile);
@@ -39,7 +37,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     emit(currentState.copyWith(userProfile: updatedProfile));
   }
 
-  // ⭐ دالة لجلب بيانات المستخدم منفردة (لـ refresh)
   Future<void> fetchUserProfile() async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
@@ -48,13 +45,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final profile = await _fetchUserProfile();
       emit(currentState.copyWith(userProfile: profile));
     } catch (e) {
-      // يمكنك التعامل مع الخطأ هنا
       debugPrint('❌ خطأ في جلب بيانات المستخدم: $e');
     }
   }
 
-  // features/user/user_profile/views/cubit/user_profile_cubit.dart
-  // ⭐ تصحيح: تغيير _loadSettings لترجع List<SettingItemModel>
   Future<List<SettingItemModel>> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final savedLanguage = prefs.getString('app_language') ?? 'العربية';
@@ -137,7 +131,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     ];
   }
 
-  // ⭐ تصحيح: _loadInitialData
   Future<void> _loadInitialData() async {
     emit(SettingsLoading());
 
@@ -151,20 +144,210 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     }
   }
 
-  // في دالة updateLanguage:
-  /// تحديث اللغة المختارة + حفظها + تحديث الـ UI
+  // ⭐ وظيفة جديدة: تحديث السن
+  Future<void> updateAge(int newAge, BuildContext context) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded || currentState.userProfile == null) {
+      return;
+    }
+
+    try {
+      final result = await _userProfileRepository.updateUserProfile(
+        age: newAge,
+      );
+
+      result.fold(
+        (failure) {
+          showSafeSnackBar(
+            context: context,
+            text: 'فشل تحديث السن: ${failure.message}',
+            isError: true,
+          );
+        },
+        (updatedProfile) {
+          emit(currentState.copyWith(userProfile: updatedProfile));
+          showSafeSnackBar(
+            context: context,
+            text: 'تم تحديث السن بنجاح',
+            isSuccess: true,
+          );
+        },
+      );
+    } catch (e) {
+      showSafeSnackBar(
+        context: context,
+        text: 'حدث خطأ في تحديث السن',
+        isError: true,
+      );
+    }
+  }
+
+  // ⭐ وظيفة جديدة: تحديث النوع (الجندر)
+  Future<void> updateGender(String newGender, BuildContext context) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded || currentState.userProfile == null) {
+      return;
+    }
+
+    try {
+      final result = await _userProfileRepository.updateUserProfile(
+        gender: newGender == 'ذكر' ? 'male' : 'female',
+      );
+
+      result.fold(
+        (failure) {
+          showSafeSnackBar(
+            context: context,
+            text: 'فشل تحديث النوع: ${failure.message}',
+            isError: true,
+          );
+        },
+        (updatedProfile) {
+          emit(currentState.copyWith(userProfile: updatedProfile));
+          showSafeSnackBar(
+            context: context,
+            text: 'تم تحديث النوع بنجاح',
+            isSuccess: true,
+          );
+        },
+      );
+    } catch (e) {
+      showSafeSnackBar(
+        context: context,
+        text: 'حدث خطأ في تحديث النوع',
+        isError: true,
+      );
+    }
+  }
+
+  // ⭐ وظيفة جديدة: تبديل حالة المجهول
+  Future<void> toggleAnonymousStatus(
+    bool isAnonymous,
+    BuildContext context,
+  ) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded || currentState.userProfile == null) {
+      return;
+    }
+
+    try {
+      final result = await _userProfileRepository.toggleAnonymousStatus(
+        isAnonymous,
+      );
+
+      result.fold(
+        (failure) {
+          showSafeSnackBar(
+            context: context,
+            text: 'فشل تحديث حالة المجهول: ${failure.message}',
+            isError: true,
+          );
+        },
+        (_) {
+          final updatedProfile = currentState.userProfile!.copyWith(
+            isAnonymous: isAnonymous,
+          );
+          emit(currentState.copyWith(userProfile: updatedProfile));
+
+          showSafeSnackBar(
+            context: context,
+            text: isAnonymous ? 'تم تفعيل المجهولية' : 'تم إلغاء المجهولية',
+            isSuccess: true,
+          );
+        },
+      );
+    } catch (e) {
+      showSafeSnackBar(
+        context: context,
+        text: 'حدث خطأ في تحديث حالة المجهول',
+        isError: true,
+      );
+    }
+  }
+
+  // ⭐ وظيفة جديدة: تبديل حالة الزواج
+  Future<void> toggleMarriageStatus(bool enable, BuildContext context) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded || currentState.userProfile == null) {
+      return;
+    }
+
+    try {
+      final result = await _userProfileRepository.toggleMarriageStatus(enable);
+
+      result.fold(
+        (failure) {
+          showSafeSnackBar(
+            context: context,
+            text: 'فشل تحديث حالة الزواج: ${failure.message}',
+            isError: true,
+          );
+        },
+        (_) {
+          final updatedProfile = currentState.userProfile!.copyWith(
+            availableForMarry: enable,
+          );
+          emit(currentState.copyWith(userProfile: updatedProfile));
+
+          showSafeSnackBar(
+            context: context,
+            text: enable ? 'تم تفعيل الزواج' : 'تم إيقاف الزواج',
+            isSuccess: true,
+          );
+        },
+      );
+    } catch (e) {
+      showSafeSnackBar(
+        context: context,
+        text: 'حدث خطأ في تحديث حالة الزواج',
+        isError: true,
+      );
+    }
+  }
+
+  // ⭐ وظيفة جديدة: تحديث تمويه الصورة
+  Future<void> updateImageBlur(bool blurEnabled, BuildContext context) async {
+    try {
+      final result = await _userProfileRepository.updateImageBlur(blurEnabled);
+
+      result.fold(
+        (failure) {
+          showSafeSnackBar(
+            context: context,
+            text: 'فشل تحديث إعدادات الصورة: ${failure.message}',
+            isError: true,
+          );
+        },
+        (_) {
+          showSafeSnackBar(
+            context: context,
+            text: blurEnabled
+                ? 'تم تفعيل تمويه الصورة'
+                : 'تم إلغاء تمويه الصورة',
+            isSuccess: true,
+          );
+        },
+      );
+    } catch (e) {
+      showSafeSnackBar(
+        context: context,
+        text: 'حدث خطأ في تحديث إعدادات الصورة',
+        isError: true,
+      );
+    }
+  }
+
+  // وظائف موجودة مسبقاً (بدون تغيير)
   Future<void> updateLanguage(String languageName, BuildContext context) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
-    // الحصول على الكود من اسم اللغة
     final languageCode = getLanguageCode(languageName);
 
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('app_language', languageCode);
 
-      // تحديث القائمة محلياً بعرض اسم اللغة
       final updatedSettings = currentState.settings.map((item) {
         if (item.id == 'language') {
           return item.copyWith(subtitle: languageName);
@@ -174,7 +357,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       emit(SettingsLoaded(settings: updatedSettings));
 
-      // عرض رسالة نجاح
       showSafeSnackBar(
         context: context,
         text: 'تم تحديث اللغة إلى $languageName',
@@ -189,7 +371,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     }
   }
 
-  /// الحصول على حالة الاشعارات الحالية
   Future<bool> _getNotificationStatus() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('notifications_enabled') ?? true;
@@ -197,7 +378,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
   Future<void> _shareAppLink() async {
     try {
-      // رابط التطبيق - يمكنك تغييره
       const String appLink =
           'https://play.google.com/store/apps/details?id=com.tayseer.app';
       const String message = 'جرب تطبيق تيسير الآن! 😊\n$appLink';
@@ -208,17 +388,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     }
   }
 
-  /// التحكم في الاشعارات (فتح/قفل)
-  // تحديث دالة _toggleNotificationSetting
   Future<void> _toggleNotificationSetting(String id, bool newValue) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
     try {
-      // حفظ القيمة القديمة للتراجع عند الخطأ
       currentState.settings.firstWhere((item) => item.id == id).switchValue;
 
-      // تحديث محلي أولاً لسرعة الاستجابة
       final updatedSettings = currentState.settings.map((item) {
         if (item.id == id) {
           return item.copyWith(switchValue: newValue);
@@ -231,16 +407,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final prefs = await SharedPreferences.getInstance();
 
       if (newValue) {
-        // تفعيل الاشعارات
         await _enableNotifications();
         await prefs.setBool('notifications_enabled', true);
       } else {
-        // تعطيل الاشعارات
         await _disableNotifications();
         await prefs.setBool('notifications_enabled', false);
       }
     } catch (e) {
-      // عند الخطأ، إرجاع القيمة السابقة
       final currentState = state;
       if (currentState is SettingsLoaded) {
         final revertedSettings = currentState.settings.map((item) {
@@ -252,13 +425,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
         emit(currentState.copyWith(settings: revertedSettings));
       }
-
-      // إعادة رمي الخطأ للتعامل معه في updateSwitch
       rethrow;
     }
   }
 
-  // تحديث دالة updateSwitch لتكون أسرع
   Future<void> updateSwitch(String id, bool value, BuildContext context) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
@@ -266,7 +436,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     try {
       SnackBarService().clearAll(context);
 
-      // تحديث فوري بدون انتظار
       final updatedSettings = currentState.settings.map((item) {
         if (item.id == id) {
           return item.copyWith(switchValue: value);
@@ -276,7 +445,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       emit(currentState.copyWith(settings: updatedSettings));
 
-      // تنفيذ العملية في الخلفية
       unawaited(_toggleNotificationSetting(id, value));
 
       showSafeSnackBar(
@@ -286,7 +454,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         duration: const Duration(milliseconds: 1500),
       );
     } catch (e) {
-      // إرجاع القيمة الأصلية عند الخطأ
       final currentState = state;
       if (currentState is SettingsLoaded) {
         final revertedSettings = currentState.settings.map((item) {
@@ -307,10 +474,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     }
   }
 
-  /// تفعيل الاشعارات في النظام والتطبيق
   Future<void> _enableNotifications() async {
     try {
-      // 1. طلب إذن النظام
       final messaging = FirebaseMessaging.instance;
       final settings = await messaging.requestPermission(
         alert: true,
@@ -324,10 +489,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        // 2. إعادة الاشتراك في المواضيع
         await messaging.subscribeToTopic("all");
 
-        // 3. تشغيل عرض الاشعارات في الخلفية
         if (Platform.isIOS) {
           await messaging.setForegroundNotificationPresentationOptions(
             alert: true,
@@ -347,17 +510,12 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     }
   }
 
-  /// تعطيل الاشعارات في النظام والتطبيق
   Future<void> _disableNotifications() async {
     try {
-      // 1. إلغاء الاشتراك من جميع المواضيع
       final messaging = FirebaseMessaging.instance;
       await messaging.unsubscribeFromTopic("all");
-
-      // 2. إلغاء جميع الاشعارات المحلية
       await _notificationService.clearAllNotifications();
 
-      // 3. تعطيل عرض الاشعارات في الخلفية
       if (Platform.isIOS) {
         await messaging.setForegroundNotificationPresentationOptions(
           alert: false,

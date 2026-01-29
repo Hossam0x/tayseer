@@ -332,7 +332,10 @@ class _UserProfileEditContent extends StatelessWidget {
       image: state.imagePreviewUrl,
       following: state.profile?.following ?? 0,
       isMe: true,
-      avaliableForMarry: state.profile?.avaliableForMarry ?? false,
+      availableForMarry: state.profile?.availableForMarry ?? false,
+      age: state.profile?.age ?? 0,
+      gender: state.profile?.gender ?? 'male',
+      isAnonymous: state.profile?.isAnonymous ?? false,
     );
 
     Navigator.push(
@@ -365,7 +368,10 @@ class _UserProfileEditContent extends StatelessWidget {
       image: state.imagePreviewUrl,
       following: state.profile?.following ?? 0,
       isMe: true,
-      avaliableForMarry: state.profile?.avaliableForMarry ?? false,
+      availableForMarry: state.profile?.availableForMarry ?? false,
+      age: state.profile?.age ?? 0,
+      gender: state.profile?.gender ?? 'male',
+      isAnonymous: state.profile?.isAnonymous ?? false,
     );
 
     Navigator.push(
@@ -398,7 +404,10 @@ class _UserProfileEditContent extends StatelessWidget {
       image: state.imagePreviewUrl,
       following: state.profile?.following ?? 0,
       isMe: true,
-      avaliableForMarry: state.profile?.avaliableForMarry ?? false,
+      availableForMarry: state.profile?.availableForMarry ?? false,
+      age: state.profile?.age ?? 0,
+      gender: state.profile?.gender ?? 'male',
+      isAnonymous: state.profile?.isAnonymous ?? false,
     );
 
     Navigator.push(

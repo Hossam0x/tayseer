@@ -24,14 +24,17 @@ class _UserProfileViewState extends State<UserProfileView> {
   int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();
   int _rating = 0;
+  late UserProfileCubit _userProfileCubit; // ⭐ إضافة late للـ Cubit
 
   @override
   void initState() {
     super.initState();
+    _userProfileCubit = UserProfileCubit(getIt<UserProfileRepository>());
   }
 
   @override
   void dispose() {
+    _userProfileCubit.close(); // ⭐ مهم: إغلاق الـ Cubit عند التخلص
     _scrollController.dispose();
     super.dispose();
   }
@@ -39,20 +42,17 @@ class _UserProfileViewState extends State<UserProfileView> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => UserProfileCubit(getIt<UserProfileRepository>()),
+      create: (context) => _userProfileCubit, // ⭐ استخدام الـ Cubit المنشأ
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
           children: [
-            // الخلفية الكاملة في الخلف
             Positioned.fill(
               child: Image.asset(
                 AssetsData.homeBarBackgroundImage,
                 fit: BoxFit.cover,
               ),
             ),
-
-            // المحتوى فوق الخلفية
             AdvisorBackground(
               child: BlocBuilder<UserProfileCubit, UserProfileState>(
                 builder: (context, state) {
@@ -459,7 +459,7 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   Widget _buildMarriageContent(UserProfileModel? userProfile) {
-    final isAvailableForMarry = userProfile?.avaliableForMarry ?? false;
+    final isAvailableForMarry = userProfile?.availableForMarry ?? false;
 
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.6,
@@ -586,15 +586,19 @@ class _UserProfileViewState extends State<UserProfileView> {
           }
 
           if (isRateAppItem) {
-            _showRateAppDialog(); // استدعاء الدالة من الـ View
+            _showRateAppDialog();
             return;
           }
 
           if (setting.id == 'settings') {
+            final cubit = context.read<UserProfileCubit>();
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const GeneralSettingsView(),
+                builder: (context) => BlocProvider.value(
+                  value: cubit,
+                  child: const GeneralSettingsView(),
+                ),
               ),
             );
           } else if (setting.routeName.isNotEmpty) {

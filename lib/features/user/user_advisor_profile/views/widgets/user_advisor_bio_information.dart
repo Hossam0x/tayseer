@@ -267,7 +267,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
               current.isChatLoading, // ⭐ إضافة حالة التحميل
       builder: (context, state) {
         final isFollowing = state.profile?.isFollowing ?? false;
-        final isLoading = state.followActionState == CubitStates.loading;
+        // final isLoading = state.followActionState == CubitStates.loading;
         // final room = state.profile?.room;
         final isChatLoading = state.isChatLoading; // ⭐ حالة تحميل الشات
 
@@ -281,11 +281,13 @@ class UserAdvisorBioInformation extends StatelessWidget {
                   height: 54.h,
                   width: double.infinity,
                   title: isFollowing ? 'متابَع' : 'متابعة',
-                  onPressed: isLoading
-                      ? null
-                      : () => context
-                            .read<UserAdvisorProfileCubit>()
-                            .toggleFollow(),
+                  // onPressed: isLoading
+                  //     ? null
+                  //     : () => context
+                  //           .read<UserAdvisorProfileCubit>()
+                  //           .toggleFollow(),
+                  onPressed: () =>
+                      context.read<UserAdvisorProfileCubit>().toggleFollow(),
                   backGroundcolor: isFollowing
                       ? AppColors.kWhiteColor
                       : AppColors.kprimaryColor,
@@ -294,7 +296,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
                       : AppColors.kWhiteColor,
                   radius: 10.r,
                   useGradient: isFollowing ? false : true,
-                  isLoading: isLoading,
+                  // isLoading: isLoading,
                   elevation: 0,
                 ),
               ),
@@ -309,10 +311,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
                     horizontal: 16.w,
                   ),
                   decoration: BoxDecoration(
-                    color: isChatLoading
-                        ? AppColors
-                              .infoText // ⭐ لون مختلف أثناء التحميل
-                        : AppColors.primary100,
+                    color: AppColors.primary100,
                     borderRadius: BorderRadius.circular(10.r),
                     border: Border.all(
                       color: isChatLoading
@@ -322,15 +321,14 @@ class UserAdvisorBioInformation extends StatelessWidget {
                   ),
                   child: GestureDetector(
                     onTap: isChatLoading
-                        ? null // ⭐ تعطيل الضغط أثناء التحميل
+                        ? null
                         : () {
                             final cubit = context
                                 .read<UserAdvisorProfileCubit>();
-                            cubit.startChat(); // ⭐ استدعاء دالة بدء المحادثة
+                            cubit.startChat();
                           },
                     child: isChatLoading
                         ? SizedBox(
-                            // ⭐ عرض loading أثناء التحميل
                             width: 22.w,
                             height: 22.w,
                             child: CircularProgressIndicator(
