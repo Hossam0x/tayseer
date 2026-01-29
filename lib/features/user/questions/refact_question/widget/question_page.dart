@@ -89,9 +89,9 @@ class QuestionPage extends StatelessWidget {
             }
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: 15),
+              padding:  EdgeInsets.only(bottom: 30),
               child: CustomBotton(
-                width: context.width,
+                width: context.width*0.9,
                 title: isLoading ? context.tr('sending') : context.tr('next'),
                 useGradient: isEnabled,
                 backGroundcolor: AppColors.kgreyColor,
