@@ -97,7 +97,7 @@ class _PersonalInfoBodyState extends State<PersonalInfoBody> {
                         images.clear();
                         mainImage = null;
                       });
-                      context.pushNamed(AppRouter.kVerifyDataView);
+                      context.pushNamed(AppRouter.kFaceVerificationView);
                       debugPrint('Personal info uploaded successfully');
                     } else if (state.uploadPersonalInfoState ==
                         CubitStates.failure) {

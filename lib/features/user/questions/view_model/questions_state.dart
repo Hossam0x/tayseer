@@ -1,9 +1,14 @@
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/user/questions/model/last_question_number_model.dart';
 
 class QuestionsState {
   final CubitStates answerQuestionsState;
   final CubitStates uploadPersonalInfoState;
   final CubitStates changeImageBlurState;
+  final CubitStates verifyOtpState;
+  final CubitStates phoneNumberState;
+  final CubitStates lastQuestionNumberState;
+  final LastQuestionNumber? lastQuestionNumberResponse;
   final String? errorMessage;
 
   // التحقق من الصورة الشخصية
@@ -20,6 +25,10 @@ class QuestionsState {
     this.answerQuestionsState = CubitStates.initial,
     this.uploadPersonalInfoState = CubitStates.initial,
     this.changeImageBlurState = CubitStates.initial,
+    this.verifyOtpState = CubitStates.initial,
+    this.phoneNumberState = CubitStates.initial,
+    this.lastQuestionNumberState = CubitStates.initial,
+    this.lastQuestionNumberResponse,
     this.errorMessage,
     this.faceVerificationState = CubitStates.initial,
     this.faceVerificationError,
@@ -35,6 +44,10 @@ class QuestionsState {
     CubitStates? answerQuestionsState,
     CubitStates? uploadPersonalInfoState,
     CubitStates? changeImageBlurState,
+    CubitStates? verifyOtpState,
+    CubitStates? phoneNumberState,
+    CubitStates? lastQuestionNumberState,
+    LastQuestionNumber? lastQuestionNumberResponse,
     String? errorMessage,
     CubitStates? faceVerificationState,
     String? faceVerificationError,
@@ -50,6 +63,12 @@ class QuestionsState {
       uploadPersonalInfoState:
           uploadPersonalInfoState ?? this.uploadPersonalInfoState,
       changeImageBlurState: changeImageBlurState ?? this.changeImageBlurState,
+      verifyOtpState: verifyOtpState ?? this.verifyOtpState,
+        phoneNumberState: phoneNumberState ?? this.phoneNumberState,
+        lastQuestionNumberState:
+          lastQuestionNumberState ?? this.lastQuestionNumberState,
+        lastQuestionNumberResponse:
+          lastQuestionNumberResponse ?? this.lastQuestionNumberResponse,
       errorMessage: errorMessage ?? this.errorMessage,
       faceVerificationState:
           faceVerificationState ?? this.faceVerificationState,

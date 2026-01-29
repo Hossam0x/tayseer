@@ -6,6 +6,10 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   QuestionsCubit(this._repo) : super(const QuestionsState());
   final QuestionsRepo _repo;
 
+  final phoneController = TextEditingController();
+  final countryCodeController = TextEditingController();
+  final phoneFormKey = GlobalKey<FormState>();
+
   // -------------------------------------
   // الصور للسكرين الجديدة
   // -------------------------------------
@@ -192,7 +196,7 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   }
 
   // -------------------------------------
-  // change image blur
+  // change image blur ✅ التعديل هنا
   // -------------------------------------
 
   Future<void> changeImageBlur() async {
@@ -210,7 +214,13 @@ class QuestionsCubit extends Cubit<QuestionsState> {
           );
         },
         (_) {
-          emit(state.copyWith(changeImageBlurState: CubitStates.success));
+          // ✅ التعديل: إضافة blurEnabled: true عند النجاح
+          emit(
+            state.copyWith(
+              changeImageBlurState: CubitStates.success,
+              blurEnabled: true,
+            ),
+          );
         },
       );
     } catch (e) {
@@ -223,5 +233,165 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     }
 
     emit(state.copyWith(changeImageBlurState: CubitStates.initial));
+  }
+
+  // ✅ دالة جديدة لإعادة تعيين حالة البلور (اختياري)
+  void resetBlurState() {
+    emit(state.copyWith(changeImageBlurState: CubitStates.initial));
+  }
+
+  // ✅ دالة جديدة لإلغاء تفعيل البلور (اختياري)
+  Future<void> disableBlur() async {
+    emit(state.copyWith(changeImageBlurState: CubitStates.loading));
+
+    try {
+      final result = await _repo.changeImageBlur();
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              changeImageBlurState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (_) {
+          emit(
+            state.copyWith(
+              changeImageBlurState: CubitStates.success,
+              blurEnabled: false,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          changeImageBlurState: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+
+    emit(state.copyWith(changeImageBlurState: CubitStates.initial));
+  }
+
+  // -------------------------------------
+  // phone number ✅ دالة جديدة
+  // -------------------------------------
+
+  Future<void> sendPhoneNumber() async {
+    if (!phoneFormKey.currentState!.validate()) {
+      return;
+    }
+    emit(state.copyWith(phoneNumberState: CubitStates.loading));
+
+    try {
+      final result = await _repo.phoneNumber(
+        phoneNumber: phoneController.text,
+        countryCode: countryCodeController.text,
+      );
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              phoneNumberState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (_) {
+          emit(state.copyWith(phoneNumberState: CubitStates.success));
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          phoneNumberState: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+
+    emit(state.copyWith(phoneNumberState: CubitStates.initial));
+  }
+
+  // -------------------------------------
+  // verify OTP for phone number
+  // -------------------------------------
+
+  Future<void> verifyOtp({required String otp}) async {
+    emit(state.copyWith(verifyOtpState: CubitStates.loading));
+
+    try {
+      final result = await _repo.verifyOtp(otp: otp);
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              verifyOtpState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (_) {
+          emit(state.copyWith(verifyOtpState: CubitStates.success));
+          clear();
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          verifyOtpState: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+
+    emit(state.copyWith(verifyOtpState: CubitStates.initial));
+  }
+
+  // -------------------------------------
+  // get last question number
+  // -------------------------------------
+
+  Future<void> fetchLastQuestionNumber() async {
+    emit(state.copyWith(lastQuestionNumberState: CubitStates.loading));
+
+    try {
+      final result = await _repo.getLastQuestionNumber();
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              lastQuestionNumberState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (responseModel) {
+          emit(
+            state.copyWith(
+              lastQuestionNumberState: CubitStates.success,
+              lastQuestionNumberResponse: responseModel,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          lastQuestionNumberState: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+
+    emit(state.copyWith(lastQuestionNumberState: CubitStates.initial));
+  }
+
+  void clear() {
+    phoneController.clear();
+    countryCodeController.clear();
   }
 }

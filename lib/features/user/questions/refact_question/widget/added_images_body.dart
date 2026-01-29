@@ -12,9 +12,6 @@ class AddedImagesBody extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<QuestionsCubit>();
 
-        // Debug: show number of images present in cubit state
-        debugPrint('QuestionsState.images.length = ${state.images.length}');
-
         return Directionality(
           textDirection: TextDirection.rtl,
           child: Scaffold(
@@ -43,7 +40,7 @@ class AddedImagesBody extends StatelessWidget {
 
                     // العنوان
                     Text(
-                      "الصور المضافة",
+                      context.tr("add_images"),
                       style: Styles.textStyle20Bold.copyWith(
                         color: AppColors.kscandryTextColor,
                       ),
@@ -70,7 +67,9 @@ class AddedImagesBody extends StatelessWidget {
                     // زر التحقق
                     CustomBotton(
                       useGradient: true,
-                      onPressed: () {},
+                      onPressed: () {
+                        context.pushNamed(AppRouter.kAddPhoneView);
+                      },
                       title: context.tr("verify"),
                     ),
                     Gap(context.height * 0.03),
@@ -110,35 +109,38 @@ class AddedImagesBody extends StatelessWidget {
   }
 
   // ويدجت زر التمويه
+  // ويدجت زر التمويه
   Widget _buildBlurToggle(
     QuestionsState state,
     QuestionsCubit cubit,
     BuildContext context,
   ) {
     return BlocConsumer<QuestionsCubit, QuestionsState>(
+      listenWhen: (previous, current) =>
+          previous.changeImageBlurState != current.changeImageBlurState,
       listener: (context, state) {
         if (state.changeImageBlurState == CubitStates.success) {
-          context.pop(); // Close the loading dialog if open
+          context.pop(); // Close the loading dialog
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.tr("blur_change_success")),
-              backgroundColor: Colors.green,
+            CustomSnackBar(
+              context,
+              text: context.tr("blur_change_success"),
+              isSuccess: true,
             ),
           );
-          context.pop(); // Close the confirmation dialog
         } else if (state.changeImageBlurState == CubitStates.failure) {
-          context.pop(); // Close the loading dialog if open
+          context.pop(); // Close the loading dialog
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                state.errorMessage ?? context.tr("blur_change_fail"),
-              ),
-              backgroundColor: Colors.red,
+            CustomSnackBar(
+              context,
+              text: context.tr("blur_change_failed"),
+              isSuccess: false,
             ),
           );
         } else if (state.changeImageBlurState == CubitStates.loading) {
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (_) => Center(child: CustomloadingApp()),
           );
         }
@@ -168,14 +170,15 @@ class AddedImagesBody extends StatelessWidget {
                 activeTrackColor: const Color(0xFFF08CA0),
                 inactiveThumbColor: Colors.white,
                 inactiveTrackColor: Colors.grey.shade300,
-                onChanged: (val) async {
-                  if (val) {
+                onChanged: (val) {
+                  if (val && !state.blurEnabled) {
+                    // تفعيل البلور
                     CustomshowDialogWithImage(
                       context,
                       title: context.tr("title_blur_dilog"),
                       supTitle: context.tr("blur_dialog_text"),
                       bottonText: 'تأكيد',
-                      icon: Icons.blur_on,
+                      imageUrl: AssetsData.kblurImage,
                       onPressed: () {
                         cubit.changeImageBlur();
                       },

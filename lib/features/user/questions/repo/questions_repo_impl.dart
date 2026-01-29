@@ -1,8 +1,10 @@
 import 'dart:developer';
 
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
+import 'package:tayseer/features/user/questions/model/last_question_number_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class QuestionsRepoImpl implements QuestionsRepo {
@@ -25,7 +27,7 @@ class QuestionsRepoImpl implements QuestionsRepo {
           'questionCategory': questionCategoryEnum,
           'questionNumber': questionNumber,
           'answers': answers,
-          if (answerCompleted != null) 'answerCompleted': answerCompleted,
+          if (answerCompleted != null) 'answersCompleted': answerCompleted,
         },
         isAuth: true,
       );
@@ -35,6 +37,9 @@ class QuestionsRepoImpl implements QuestionsRepo {
       debugPrint('success $success');
 
       if (success) {
+        if (answerCompleted == true) {
+          await CachNetwork.setBool(key: kIsCompletedQuestions, value: true);
+        }
         return right(null);
       } else {
         final message = response['message'] ?? 'فشل ارسال الاجابه';
@@ -147,6 +152,92 @@ class QuestionsRepoImpl implements QuestionsRepo {
       } else {
         return left(
           ServerFailure(response['message'] ?? 'فشل تغيير حالة التمويه'),
+        );
+      }
+    } on DioException catch (e) {
+      return left(
+        ServerFailure(e.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر'),
+      );
+    } catch (e) {
+      return left(ServerFailure('حدث خطأ غير متوقع: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> phoneNumber({
+    required String phoneNumber,
+    required String countryCode,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/user/update-phone-number',
+        data: {'countryCode': countryCode, 'phone': phoneNumber},
+      );
+
+      final success = response['success'] ?? false;
+      if (success) {
+        return right(null);
+      } else {
+        return left(
+          ServerFailure(response['message'] ?? 'فشل ارسال رقم الهاتف'),
+        );
+      }
+    } on DioException catch (e) {
+      return left(
+        ServerFailure(e.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر'),
+      );
+    } catch (e) {
+      return left(ServerFailure('حدث خطأ غير متوقع: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> verifyOtp({required String otp}) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/user/verfiy-phone',
+        data: {'otp': otp},
+      );
+
+      final success = response['success'] ?? false;
+      if (success) {
+        return right(null);
+      } else {
+        return left(
+          ServerFailure(response['message'] ?? 'فشل التحقق من الكود'),
+        );
+      }
+    } on DioException catch (e) {
+      return left(
+        ServerFailure(e.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر'),
+      );
+    } catch (e) {
+      return left(ServerFailure('حدث خطأ غير متوقع: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, LastQuestionNumber>> getLastQuestionNumber() async {
+    try {
+      final response = await apiService.get(
+        endPoint: '/user/last-question-number',
+      );
+
+      final success = response['success'] ?? false;
+      if (success) {
+        try {
+          final model = LastQuestionNumber.fromJson(
+            response['data']['lastQuestionNumber'] ?? {},
+          );
+          return right(model);
+        } catch (e) {
+          return left(ServerFailure('فشل تجزئة بيانات الاستجابة: $e'));
+        }
+      } else {
+        return left(
+          ServerFailure(
+            response['message'] ?? 'فشل الحصول على رقم السؤال الأخير',
+          ),
         );
       }
     } on DioException catch (e) {

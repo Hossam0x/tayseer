@@ -20,4 +20,6 @@ enum AuthEnum {
   acceptMarried,
   addYourCv,
   hobbies,
+  phone,
+  descreption
 }

@@ -1,11 +1,16 @@
 import 'dart:async';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
-import '../../../../../my_import.dart';
+import '../../my_import.dart';
 
 class CustomOtpTimer extends StatefulWidget {
   final Function(String) onOtpSubmitted;
+  final bool isphone;
 
-  const CustomOtpTimer({super.key, required this.onOtpSubmitted});
+  const CustomOtpTimer({
+    super.key,
+    required this.onOtpSubmitted,
+    this.isphone = false,
+  });
 
   @override
   _CustomOtpTimerState createState() => _CustomOtpTimerState();
@@ -65,7 +70,8 @@ class _CustomOtpTimerState extends State<CustomOtpTimer> {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          Text(context.tr('otp_sub_title'), style: Styles.textStyle14),
+          if (!widget.isphone)
+            Text(context.tr('otp_sub_title'), style: Styles.textStyle14),
           SizedBox(height: context.height * 0.05),
 
           Directionality(
@@ -123,33 +129,37 @@ class _CustomOtpTimerState extends State<CustomOtpTimer> {
 
           SizedBox(height: context.height * 0.03),
 
-          _isTimerActive
-              ? Column(
-                  children: [
-                    Text(
-                      context.tr('resend_code_after'),
-                      style: const TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                    Text(
-                      _formatTime(_start),
+          if (!widget.isphone)
+            _isTimerActive
+                ? Column(
+                    children: [
+                      Text(
+                        context.tr('resend_code_after'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        _formatTime(_start),
+                        style: Styles.textStyle12.copyWith(
+                          color: HexColor('4d81e7'),
+                        ),
+                      ),
+                    ],
+                  )
+                : TextButton(
+                    onPressed: _resetAndResend,
+                    child: Text(
+                      context.tr('resend_code'),
                       style: Styles.textStyle12.copyWith(
                         color: HexColor('4d81e7'),
+                        decoration: TextDecoration.underline,
+                        decorationColor: HexColor('4d81e7'),
+                        decorationThickness: 1.5,
                       ),
                     ),
-                  ],
-                )
-              : TextButton(
-                  onPressed: _resetAndResend,
-                  child: Text(
-                    context.tr('resend_code'),
-                    style: Styles.textStyle12.copyWith(
-                      color: HexColor('4d81e7'),
-                      decoration: TextDecoration.underline,
-                      decorationColor: HexColor('4d81e7'),
-                      decorationThickness: 1.5,
-                    ),
                   ),
-                ),
         ],
       ),
     );

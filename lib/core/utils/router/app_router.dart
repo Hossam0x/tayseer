@@ -56,12 +56,15 @@ import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/add_phone_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/added_images_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/face_verification_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/otp_phone_user_question.dart';
 import 'package:tayseer/features/user/questions/refact_question/questions_page_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/choose_gender_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/personal_info_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/verify_data_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/widget/blocked_contacts_success_widget.dart';
 
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
@@ -148,6 +151,9 @@ abstract class AppRouter {
   static const kVerifyDataView = '/VerifyDataView';
   static const kFaceVerificationView = '/FaceVerificationView';
   static const kAddedImagesView = '/AddedImagesView';
+  static const kAddPhoneView = '/AddPhoneView';
+  static const kOtpPhoneUserQuestion = '/OtpPhoneUserQuestion';
+  static const kBlockedContactsSuccessScreen = '/BlockedContactsSuccessScreen';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -758,6 +764,7 @@ abstract class AppRouter {
               BlocProvider.value(value: getIt<QuestionsCubit>()),
             ],
             child: QuestionsPageView(
+              lastQuestionNumber: args?['lastQuestionNumber'] ?? 0,
               currentUserType: args?['currentUserType'] ?? UserTypeEnum.user,
               selectedGender: args?['selectedGender'] ?? Gender.male,
             ),
@@ -794,6 +801,27 @@ abstract class AppRouter {
             value: getIt<QuestionsCubit>(),
             child: AddedImagesView(),
           ),
+        );
+      case kAddPhoneView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: AddPhoneView(),
+          ),
+        );
+      case kOtpPhoneUserQuestion:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: OtpPhoneUserQuestion(),
+          ),
+        );
+      case kBlockedContactsSuccessScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlockedContactsSuccessScreen(),
         );
 
       // case kEditCertificateView:
