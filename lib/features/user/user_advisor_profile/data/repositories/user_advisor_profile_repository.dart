@@ -60,11 +60,18 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         if (data.containsKey('room')) {
           final roomData = data['room'];
           if (roomData is Map<String, dynamic>) {
-            // ⭐ تحويل isBlocked من List إلى boolean
-            if (roomData.containsKey('isBlocked') &&
-                roomData['isBlocked'] is List) {
-              final blockedList = roomData['isBlocked'] as List;
-              roomData['isBlocked'] = blockedList.isNotEmpty;
+            // ⭐ التحقق مما إذا كانت room فارغة
+            if (roomData.isEmpty ||
+                roomData['chatRoomId'] == null ||
+                roomData['chatRoomId']?.toString().isEmpty == true) {
+              profileData['room'] = null; // ⭐ تعيين null إذا كانت فارغة
+            } else {
+              // ⭐ تحويل isBlocked من List إلى boolean
+              if (roomData.containsKey('isBlocked') &&
+                  roomData['isBlocked'] is List) {
+                final blockedList = roomData['isBlocked'] as List;
+                roomData['isBlocked'] = blockedList.isNotEmpty;
+              }
             }
           }
         }

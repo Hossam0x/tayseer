@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
@@ -11,6 +12,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
   final UserAdvisorProfileRepository _repository;
   final String advisorId;
   final int _pageSize = 10;
+  Timer? _chatTimeoutTimer;
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
   UserAdvisorProfileCubit(this._repository, this.advisorId)
@@ -18,6 +20,15 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     _initializeProfile();
     _setupSocketListeners();
   }
+
+  @override
+  Future<void> close() {
+    _chatTimeoutTimer?.cancel();
+    socketHelper.off('room_created');
+    socketHelper.off('fail');
+    return super.close();
+  }
+
   void _setupSocketListeners() {
     // ⭐ تنظيف أي listeners سابقين
     socketHelper.off('room_created');
@@ -169,11 +180,13 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     await Future.wait([fetchProfile(), fetchPosts(loadMore: false)]);
   }
 
-  // ⭐ تحديث دالة toggleFollow
   Future<void> toggleFollow() async {
     if (state.profile == null || state.profile!.isMe) return;
 
-    if (state.followActionState == CubitStates.loading) return;
+    // ⭐ إعادة تعيين حالة التحميل إذا كانت معلقة
+    if (state.followActionState == CubitStates.loading) {
+      emit(state.copyWith(followActionState: CubitStates.initial));
+    }
 
     emit(
       state.copyWith(
@@ -343,9 +356,14 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
   }
 
   Future<void> startChat() async {
+    // ⭐ إلغاء أي timer سابق
+    _chatTimeoutTimer?.cancel();
+
     // ⭐ إذا كان هناك room بالفعل
-    if (state.profile?.hasRoom == true && state.profile!.chatRoomId != null) {
-      // ⭐ تحديث حالة التحميل
+    if (state.profile?.hasRoom == true &&
+        state.profile!.chatRoomId != null &&
+        state.profile!.chatRoomId!.isNotEmpty) {
+      // ⭐ تحديث حالة التحميل والتنقل
       emit(state.copyWith(isChatLoading: true, shouldNavigateToChat: true));
       return;
     }
@@ -355,32 +373,16 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
 
     // ⭐ تنظيف أي listeners سابقين
     socketHelper.off('room_created');
+    socketHelper.off('fail');
 
-    // ⭐ الاستماع لإنشاء الروم من السوكيت
+    // ⭐ الاستماع لإنشاء الروم بنجاح
     socketHelper.listen('room_created', (data) {
-      final String chatRoomId = data['ChatRoomId']?.toString() ?? '';
+      _handleRoomCreated(data);
+    });
 
-      if (chatRoomId.isNotEmpty) {
-        log('Socket room created: $chatRoomId');
-
-        // ⭐ تحديث الـ profile بالـ room الجديد
-        final updatedProfile = state.profile?.copyWith(
-          room: RoomInfoModel(
-            chatRoomId: chatRoomId,
-            isBlocked: false,
-            isHaveSession: false,
-          ),
-        );
-
-        emit(
-          state.copyWith(
-            profile: updatedProfile,
-            chatRoomId: chatRoomId,
-            isChatLoading: false,
-            shouldNavigateToChat: true,
-          ),
-        );
-      }
+    // ⭐ الاستماع لفشل إنشاء الروم
+    socketHelper.listen('fail', (data) {
+      _handleRoomCreationFailed(data);
     });
 
     // ⭐ إرسال طلب إنشاء room
@@ -389,12 +391,57 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     });
 
     // ⭐ إضافة timeout في حالة عدم الرد
-    Future.delayed(const Duration(seconds: 5), () {
-      if (state.isChatLoading) {
+    _chatTimeoutTimer = Timer(const Duration(seconds: 10), () {
+      if (!isClosed && state.isChatLoading) {
         emit(state.copyWith(isChatLoading: false));
         // ⭐ يمكن إضافة toast خطأ هنا
+        log("Chat room creation timeout");
       }
     });
+  }
+
+  void _handleRoomCreated(Map<String, dynamic> data) {
+    final String chatRoomId = data['ChatRoomId']?.toString() ?? '';
+
+    if (chatRoomId.isNotEmpty && !isClosed) {
+      log('Socket room created: $chatRoomId');
+
+      // ⭐ إلغاء الـ timeout
+      _chatTimeoutTimer?.cancel();
+
+      // ⭐ تحديث الـ profile بالـ room الجديد
+      final updatedProfile = state.profile?.copyWith(
+        room: RoomInfoModel(
+          chatRoomId: chatRoomId,
+          isBlocked: false,
+          isHaveSession: false,
+        ),
+      );
+
+      emit(
+        state.copyWith(
+          profile: updatedProfile,
+          chatRoomId: chatRoomId,
+          isChatLoading: false,
+          shouldNavigateToChat: true,
+        ),
+      );
+    }
+  }
+
+  void _handleRoomCreationFailed(Map<String, dynamic> data) {
+    if (!isClosed) {
+      final message = data['message']?.toString() ?? 'فشل إنشاء غرفة المحادثة';
+      log('Room creation failed: $message');
+
+      // ⭐ إلغاء الـ timeout
+      _chatTimeoutTimer?.cancel();
+
+      emit(state.copyWith(isChatLoading: false));
+
+      // ⭐ يمكن إضافة Toast أو snackbar للإخطار
+      log('⚠️ Chat room creation failed: $message');
+    }
   }
 
   void resetNavigation() {

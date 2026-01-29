@@ -39,11 +39,7 @@ class RoomInfoModel extends Equatable {
   }
 
   @override
-  List<Object?> get props => [
-    chatRoomId,
-    isBlocked,
-    isHaveSession,
-  ];
+  List<Object?> get props => [chatRoomId, isBlocked, isHaveSession];
 }
 
 class UserAdvisorProfileModel extends Equatable {
@@ -106,7 +102,9 @@ class UserAdvisorProfileModel extends Equatable {
           json['professionalSpecialization']?.toString() ??
           json['ProfessionalSpecialization']?.toString(),
       jobGrade: json['jobGrade']?.toString() ?? json['JobGrade']?.toString(),
-      room: json['room'] != null ? RoomInfoModel.fromJson(json['room']) : null, // ⭐ إضافة Room
+      room: json['room'] != null
+          ? RoomInfoModel.fromJson(json['room'])
+          : null, // ⭐ إضافة Room
     );
   }
 

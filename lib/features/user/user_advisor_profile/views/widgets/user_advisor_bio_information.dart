@@ -255,21 +255,44 @@ class UserAdvisorBioInformation extends StatelessWidget {
   }
 
   // ⭐ تحديث زر المحادثة في _buildFollowSection
+  // ⭐ تحديث _buildFollowSection
   Widget _buildFollowSection(
     BuildContext context,
     UserAdvisorProfileModel profile,
   ) {
-    return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+    return BlocConsumer<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+      listenWhen: (previous, current) =>
+          previous.followActionState != current.followActionState ||
+          (previous.followMessage != current.followMessage &&
+              current.followMessage != null),
+      listener: (context, state) {
+        // ⭐ معالجة رسائل المتابعة
+        final message = state.followMessage;
+        if (message != null) {
+          switch (state.followActionState) {
+            case CubitStates.success:
+              state.isFollowAdded == true
+                  ? AppToast.success(context, message)
+                  : AppToast.info(context, message);
+              break;
+            case CubitStates.failure:
+              AppToast.error(context, message);
+              break;
+            default:
+              break;
+          }
+        }
+      },
       buildWhen: (previous, current) =>
           previous.profile?.isFollowing != current.profile?.isFollowing ||
           previous.profile?.room != current.profile?.room ||
-          previous.isChatLoading !=
-              current.isChatLoading, // ⭐ إضافة حالة التحميل
+          previous.isChatLoading != current.isChatLoading ||
+          previous.followActionState != current.followActionState,
       builder: (context, state) {
         final isFollowing = state.profile?.isFollowing ?? false;
-        // final isLoading = state.followActionState == CubitStates.loading;
-        // final room = state.profile?.room;
-        final isChatLoading = state.isChatLoading; // ⭐ حالة تحميل الشات
+        final isLoadingFollow = state.followActionState == CubitStates.loading;
+        final isChatLoading = state.isChatLoading;
+        final room = state.profile?.room;
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
@@ -281,13 +304,11 @@ class UserAdvisorBioInformation extends StatelessWidget {
                   height: 54.h,
                   width: double.infinity,
                   title: isFollowing ? 'متابَع' : 'متابعة',
-                  // onPressed: isLoading
-                  //     ? null
-                  //     : () => context
-                  //           .read<UserAdvisorProfileCubit>()
-                  //           .toggleFollow(),
-                  onPressed: () =>
-                      context.read<UserAdvisorProfileCubit>().toggleFollow(),
+                  onPressed: isLoadingFollow
+                      ? null
+                      : () => context
+                            .read<UserAdvisorProfileCubit>()
+                            .toggleFollow(),
                   backGroundcolor: isFollowing
                       ? AppColors.kWhiteColor
                       : AppColors.kprimaryColor,
@@ -296,7 +317,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
                       : AppColors.kWhiteColor,
                   radius: 10.r,
                   useGradient: isFollowing ? false : true,
-                  // isLoading: isLoading,
+                  isLoading: isLoadingFollow,
                   elevation: 0,
                 ),
               ),
@@ -313,11 +334,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.primary100,
                     borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(
-                      color: isChatLoading
-                          ? AppColors.infoText
-                          : AppColors.primary500,
-                    ),
+                    border: Border.all(color: AppColors.primary500),
                   ),
                   child: GestureDetector(
                     onTap: isChatLoading
@@ -325,7 +342,16 @@ class UserAdvisorBioInformation extends StatelessWidget {
                         : () {
                             final cubit = context
                                 .read<UserAdvisorProfileCubit>();
-                            cubit.startChat();
+
+                            // ⭐ التحقق من وجود room
+                            if (profile.hasRoom &&
+                                profile.chatRoomId != null &&
+                                profile.chatRoomId!.isNotEmpty &&
+                                room != null) {
+                              cubit.startChat(); // ⭐ سيفتح الشات مباشرة
+                            } else {
+                              cubit.startChat(); // ⭐ سينشئ room جديد
+                            }
                           },
                     child: isChatLoading
                         ? SizedBox(
