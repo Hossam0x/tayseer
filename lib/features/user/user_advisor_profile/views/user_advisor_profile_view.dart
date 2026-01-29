@@ -1,5 +1,6 @@
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/widgets/navigate_to_chat_listener.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_bio_information.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_profile_header.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_profile_tabs_section.dart';
@@ -19,31 +20,32 @@ class UserAdvisorProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: AdvisorBackground(
-        child: Stack(
-          children: [
-            // Main scrollable content
-            SafeArea(
-              child: BlocProvider<UserAdvisorProfileCubit>(
-                create: (_) => UserAdvisorProfileCubit(
-                  getIt<UserAdvisorProfileRepository>(),
-                  advisorId,
-                ),
-                child: _UserProfileContent(advisorName: advisorName),
-              ),
-            ),
+        child: BlocProvider<UserAdvisorProfileCubit>(
+          create: (_) => UserAdvisorProfileCubit(
+            getIt<UserAdvisorProfileRepository>(),
+            advisorId,
+          ),
+          child: Stack(
+            children: [
+              // Main scrollable content
+              SafeArea(child: _UserProfileContent(advisorName: advisorName)),
 
-            Positioned(
-              top: 40.h,
-              right: 5.w,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(Icons.arrow_back_ios, size: 22.w),
+              Positioned(
+                top: 40.h,
+                right: 5.w,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.arrow_back_ios, size: 22.w),
+                  ),
                 ),
               ),
-            ),
-          ],
+
+              // ⭐ نقل NavigateToChatListener داخل BlocProvider
+              const NavigateToChatListener(),
+            ],
+          ),
         ),
       ),
     );

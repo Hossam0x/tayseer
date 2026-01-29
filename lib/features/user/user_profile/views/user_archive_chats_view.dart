@@ -1,18 +1,20 @@
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
-import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_service.dart';
+import 'package:tayseer/my_import.dart';
 
-class ChatsTabView extends StatefulWidget {
-  const ChatsTabView({super.key});
+class UserArchiveChatsView extends StatefulWidget {
+  const UserArchiveChatsView({super.key});
 
   @override
-  State<ChatsTabView> createState() => _ChatsTabViewState();
+  State<UserArchiveChatsView> createState() => _UserArchiveChatsViewState();
 }
 
-class _ChatsTabViewState extends State<ChatsTabView> {
+class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
   String? _currentUserId;
 
   @override
@@ -34,33 +36,84 @@ class _ChatsTabViewState extends State<ChatsTabView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ArchivedChatsCubit, ArchivedChatsState>(
-      listener: (context, state) {
-        if (state.errorMessage != null) {
-          AppToast.error(context, state.errorMessage.toString());
-          context.read<ArchivedChatsCubit>().clearError();
-        }
-      },
-      builder: (context, state) {
-        if (_currentUserId == null) {
-          return _buildSkeletonChats();
-        }
+    return BlocProvider(
+      create: (_) => getIt<ArchivedChatsCubit>(),
+      child: Scaffold(
+        body: AdvisorBackground(
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 105.h,
+                child: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(AssetsData.homeBarBackgroundImage),
+                      fit: BoxFit.fill,
+                    ),
+                  ),
+                ),
+              ),
+              SafeArea(
+                child: Column(
+                  children: [
+                    // Header with Back Button
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 15.h,
+                      ),
+                      child: SimpleAppBar(
+                        title: 'المحادثات المؤرشفة',
+                        isLargeTitle: true,
+                      ),
+                    ),
 
-        switch (state.state) {
-          case CubitStates.loading:
-            return _buildSkeletonChats();
-          case CubitStates.failure:
-            return _buildErrorChats(context, state.errorMessage);
-          case CubitStates.success:
-            if (state.chatRooms.isEmpty) {
-              return _buildEmptyState();
-            }
-            return _buildChatsList(context, state);
-          default:
-            return const SizedBox.shrink();
-        }
-      },
+                    // Main Content
+                    Expanded(
+                      child:
+                          BlocConsumer<ArchivedChatsCubit, ArchivedChatsState>(
+                            listener: (context, state) {
+                              if (state.errorMessage != null) {
+                                showSafeSnackBar(
+                                  context: context,
+                                  text: state.errorMessage!,
+                                  isError: true,
+                                );
+                                context.read<ArchivedChatsCubit>().clearError();
+                              }
+                            },
+                            builder: (context, state) {
+                              return _buildContent(context, state);
+                            },
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
+  }
+
+  Widget _buildContent(BuildContext context, ArchivedChatsState state) {
+    switch (state.state) {
+      case CubitStates.loading:
+        return _buildSkeletonChats();
+      case CubitStates.failure:
+        return _buildErrorChats(context, state.errorMessage);
+      case CubitStates.success:
+        if (state.chatRooms.isEmpty) {
+          return _buildEmptyState();
+        }
+        return _buildChatsList(context, state);
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildSkeletonChats() {
@@ -234,13 +287,13 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     final displayImage = otherUser?.image;
 
     // الحصول على محتوى آخر رسالة
-    final lastMessageContent = _getLastMessageContent(chatRoom);
+    final lastMessageContent = chatRoom.lastMessageContent;
     final lastMessageText = lastMessageContent.isNotEmpty
         ? lastMessageContent
         : 'لا توجد رسائل';
 
-    // الحصول على الوقت
-    // final messageTime = _formatTime(chatRoom.lastMessageAt ?? '');
+    // الحصول على الوقت بتوقيت مصر
+    // final messageTime = chatRoom.formattedLastMessageTime;
 
     return Dismissible(
       key: Key('archived_chat_${chatRoom.id}'),
@@ -258,14 +311,14 @@ class _ChatsTabViewState extends State<ChatsTabView> {
           children: [
             Icon(
               Icons.unarchive_rounded,
-              color: AppColors.kprimaryColor,
+              color: AppColors.kWhiteColor,
               size: 24.w,
             ),
             Gap(8.w),
             Text(
               'إلغاء الأرشفة',
               style: Styles.textStyle14.copyWith(
-                color: AppColors.kprimaryColor,
+                color: AppColors.kWhiteColor,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -282,7 +335,11 @@ class _ChatsTabViewState extends State<ChatsTabView> {
       onDismissed: (direction) {
         context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
 
-        AppToast.success(context, 'تم إلغاء أرشفة محادثة $displayName');
+        showSafeSnackBar(
+          context: context,
+          text: 'تم إلغاء أرشفة محادثة $displayName',
+          isSuccess: true,
+        );
       },
       child: Material(
         color: Colors.transparent,
@@ -342,7 +399,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                       ),
                     ),
                     SizedBox(height: 4.h),
-                    if ((chatRoom.unreadCount) > 0)
+                    if (chatRoom.unreadCount > 0)
                       Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: 8.w,
@@ -406,28 +463,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     } catch (e) {
       print('❌ Error getting other user: $e');
       return null;
-    }
-  }
-
-  String _getLastMessageContent(ArchiveChatRoomModel chatRoom) {
-    final lastMessage = chatRoom.lastMessage;
-    if (lastMessage == null) {
-      return 'بدء محادثة جديدة';
-    }
-
-    switch (lastMessage.messageType.toLowerCase()) {
-      case 'text':
-        return lastMessage.content;
-      case 'image':
-        return '📷 صورة';
-      case 'video':
-        return '🎥 فيديو';
-      case 'audio':
-        return '🎵 رسالة صوتية';
-      case 'file':
-        return '📄 ملف';
-      default:
-        return 'رسالة';
     }
   }
 
@@ -504,45 +539,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
       ),
     );
   }
-
-  // String _formatTime(String dateString) {
-  //   try {
-  //     if (dateString.isEmpty) return '--:--';
-
-  //     final date = DateTime.parse(dateString);
-  //     final now = DateTime.now();
-  //     final difference = now.difference(date);
-
-  //     // الحصول على الساعة والدقائق بتنسيق 12 ساعة
-  //     final hour = date.hour % 12;
-  //     final minute = date.minute.toString().padLeft(2, '0');
-  //     final period = date.hour < 12 ? 'ص' : 'م';
-
-  //     final timeStr = '${hour == 0 ? 12 : hour}:$minute $period';
-
-  //     if (difference.inDays == 0) {
-  //       return timeStr;
-  //     } else if (difference.inDays == 1) {
-  //       return 'أمس';
-  //     } else if (difference.inDays < 7) {
-  //       // أسماء الأيام بالعربي
-  //       final arabicDays = [
-  //         'الأحد',
-  //         'الإثنين',
-  //         'الثلاثاء',
-  //         'الأربعاء',
-  //         'الخميس',
-  //         'الجمعة',
-  //         'السبت',
-  //       ];
-  //       return arabicDays[date.weekday % 7];
-  //     } else {
-  //       return DateFormat('dd/MM').format(date);
-  //     }
-  //   } catch (e) {
-  //     return '--:--';
-  //   }
-  // }
 
   Future<bool> _showUnarchiveConfirmation(
     BuildContext context,
@@ -723,13 +719,15 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     ArchiveUserModel? otherUser,
   ) {
     if (otherUser == null) {
-      AppToast.error(
-        context,
-        'لا يمكن فتح المحادثة: بيانات المستخدم غير متوفرة',
+      showSafeSnackBar(
+        context: context,
+        text: 'لا يمكن فتح المحادثة: بيانات المستخدم غير متوفرة',
+        isError: true,
       );
       return;
     }
 
+    // فتح شاشة المحادثة مع البيانات الحقيقية
     context.pushNamed(
       AppRouter.kConversitionView,
       arguments: {

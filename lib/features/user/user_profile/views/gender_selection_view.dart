@@ -21,13 +21,11 @@ class _GenderSelectionViewState extends State<GenderSelectionView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // لمنع لوحة المفاتيح من التأثير على التصميم إذا ظهرت
       resizeToAvoidBottomInset: false,
       body: AdvisorBackground(
         child: SafeArea(
           child: Column(
             children: [
-              // Header
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                 child: SimpleAppBar(title: 'النوع', isLargeTitle: true),
@@ -35,12 +33,11 @@ class _GenderSelectionViewState extends State<GenderSelectionView> {
 
               Gap(80.h),
 
-              // خيارات النوع
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 35.w),
                 child: Column(
                   children: [
-                    _buildGenderOption("انثي"),
+                    _buildGenderOption("أنثى"),
                     Gap(16.h),
                     _buildGenderOption("ذكر"),
                   ],

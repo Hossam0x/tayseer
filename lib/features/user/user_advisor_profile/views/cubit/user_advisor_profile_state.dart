@@ -7,6 +7,7 @@ class UserAdvisorProfileState extends Equatable {
   final CubitStates profileState;
   final UserAdvisorProfileModel? profile;
   final String? profileErrorMessage;
+  final String? chatRoomId;
 
   final CubitStates postsState;
   final List<PostModel> posts;
@@ -23,10 +24,15 @@ class UserAdvisorProfileState extends Equatable {
   final String? shareMessage;
   final bool? isShareAdded;
 
+  final bool shouldNavigateToChat;
+
+  final bool isChatLoading;
+
   const UserAdvisorProfileState({
     this.profileState = CubitStates.initial,
     this.profile,
     this.profileErrorMessage,
+    this.chatRoomId,
     this.postsState = CubitStates.initial,
     this.posts = const [],
     this.postsErrorMessage,
@@ -39,12 +45,17 @@ class UserAdvisorProfileState extends Equatable {
     this.shareActionState = CubitStates.initial,
     this.shareMessage,
     this.isShareAdded,
+    this.shouldNavigateToChat = false,
+    this.isChatLoading = false,
   });
+
+  bool get hasRoom => profile?.hasRoom == true;
 
   UserAdvisorProfileState copyWith({
     CubitStates? profileState,
     UserAdvisorProfileModel? profile,
     String? profileErrorMessage,
+    String? chatRoomId,
     CubitStates? postsState,
     List<PostModel>? posts,
     String? postsErrorMessage,
@@ -57,11 +68,14 @@ class UserAdvisorProfileState extends Equatable {
     CubitStates? shareActionState,
     String? shareMessage,
     bool? isShareAdded,
+    bool? shouldNavigateToChat,
+    bool? isChatLoading,
   }) {
     return UserAdvisorProfileState(
       profileState: profileState ?? this.profileState,
       profile: profile ?? this.profile,
       profileErrorMessage: profileErrorMessage ?? this.profileErrorMessage,
+      chatRoomId: chatRoomId ?? this.chatRoomId,
       postsState: postsState ?? this.postsState,
       posts: posts ?? this.posts,
       postsErrorMessage: postsErrorMessage ?? this.postsErrorMessage,
@@ -74,6 +88,8 @@ class UserAdvisorProfileState extends Equatable {
       shareActionState: shareActionState ?? this.shareActionState,
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
+      shouldNavigateToChat: shouldNavigateToChat ?? this.shouldNavigateToChat,
+      isChatLoading: isChatLoading ?? this.isChatLoading,
     );
   }
 
@@ -82,6 +98,7 @@ class UserAdvisorProfileState extends Equatable {
     profileState,
     profile,
     profileErrorMessage,
+    chatRoomId,
     postsState,
     posts,
     postsErrorMessage,
@@ -94,5 +111,7 @@ class UserAdvisorProfileState extends Equatable {
     shareActionState,
     shareMessage,
     isShareAdded,
+    shouldNavigateToChat,
+    isChatLoading,
   ];
 }

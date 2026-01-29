@@ -53,6 +53,7 @@ import 'package:tayseer/features/shared/auth/view/select_session_duration_view.d
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
+import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
@@ -90,6 +91,7 @@ import 'package:tayseer/features/shared/auth/view/regisration_user_view.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_account_management_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_archive_chats_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import '../../../my_import.dart';
@@ -199,6 +201,8 @@ abstract class AppRouter {
   static const kUserProfileEditView = '/user-profile-edit';
   static const kInteractionFilterView = '/InteractionFilterView';
   static const kinteractionSubscriptionView = '/interactionSubscriptionView';
+  static const kUserArchiveChatsView = '/user-archive-chats';
+  static const kUserFollowingsView = '/userFollowingsView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -388,6 +392,18 @@ abstract class AppRouter {
         return FadeScaleRoute(
           page: const UserProfileEditView(),
           routeSettings: settings,
+        );
+
+      case AppRouter.kUserArchiveChatsView:
+        return FadeScaleRoute(
+          page: const UserArchiveChatsView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kUserFollowingsView:
+        final userId = settings.arguments as String;
+        return MaterialPageRoute(
+          builder: (_) => UserFollowingsView(userId: userId),
         );
 
       case kHomeScreen:

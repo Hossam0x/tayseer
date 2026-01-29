@@ -141,15 +141,16 @@ class __CertificatesSectionContentState
             _buildNoCertificatesSection(),
           Gap(24.h),
           // Boost Button
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 35.w),
-            child: BoostButton(
-              onPressed: () {
-                Navigator.pushNamed(context, AppRouter.kBoostAccountView);
-              },
-              text: 'تعزيز',
+          if (state.isMe)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 35.w),
+              child: BoostButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRouter.kBoostAccountView);
+                },
+                text: 'تعزيز',
+              ),
             ),
-          ),
         ],
       ),
     );
