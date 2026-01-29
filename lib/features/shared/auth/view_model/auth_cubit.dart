@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/core/enum/user_type.dart';
@@ -425,6 +426,9 @@ class AuthCubit extends Cubit<AuthState> {
 
   // ✅ تم التعديل - إضافة userType parameter
   Future<void> signInWithApple({required UserTypeEnum userType}) async {
+    // امنع الضغط مرتين
+    if (state.signInWithAppleState == CubitStates.loading) return;
+
     emit(
       state.copyWith(
         signInWithAppleState: CubitStates.loading,
@@ -437,44 +441,66 @@ class AuthCubit extends Cubit<AuthState> {
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
 
-      // Get Apple credential with timeout to avoid hanging
+      // 🍎 Apple Sign In (بدون timeout)
       final appleCredential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
+        scopes: const [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
         nonce: nonce,
-      ).timeout(const Duration(seconds: 12));
+      );
 
+      if (appleCredential.identityToken == null) {
+        throw Exception('Apple identityToken is null');
+      }
+
+      // 🔥 Firebase credential
       final oauthCredential = OAuthProvider("apple.com").credential(
         idToken: appleCredential.identityToken,
         rawNonce: rawNonce,
         accessToken: appleCredential.authorizationCode,
       );
 
-      final userCredential = await _firebaseAuth.signInWithCredential(
-        oauthCredential,
-      );
+      final userCredential =
+      await _firebaseAuth.signInWithCredential(oauthCredential);
 
       final firebaseIdToken = await userCredential.user?.getIdToken();
 
-      if (firebaseIdToken == null) {
-        emit(
-          state.copyWith(
-            signInWithAppleState: CubitStates.failure,
-            errorMessage: 'Failed to obtain Firebase ID token',
-          ),
-        );
-        return;
+      if (firebaseIdToken == null || firebaseIdToken.isEmpty) {
+        throw Exception('Failed to obtain Firebase ID token');
       }
 
-      // ⬅️ سيبها تكمل عادي
-      await sendAuthApple(idToken: firebaseIdToken, userType: userType);
-    } catch (e) {
+      // ⬅️ Backend login
+      await sendAuthApple(
+        idToken: firebaseIdToken,
+        userType: userType,
+      );
+
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // المستخدم قفل الـ dialog أو Cancel
       emit(
         state.copyWith(
           signInWithAppleState: CubitStates.failure,
-          errorMessage: e.toString(),
+          errorMessage: e.code == AuthorizationErrorCode.canceled
+              ? 'تم إلغاء تسجيل الدخول'
+              : e.message,
+        ),
+      );
+    } on PlatformException catch (e) {
+      emit(
+        state.copyWith(
+          signInWithAppleState: CubitStates.failure,
+          errorMessage: e.message ?? 'Apple sign in failed',
+        ),
+      );
+    } catch (e, stackTrace) {
+      debugPrint('❌ signInWithApple error: $e');
+      debugPrint('📍 stackTrace: $stackTrace');
+
+      emit(
+        state.copyWith(
+          signInWithAppleState: CubitStates.failure,
+          errorMessage: 'حدث خطأ أثناء تسجيل الدخول',
         ),
       );
     }
@@ -517,6 +543,7 @@ class AuthCubit extends Cubit<AuthState> {
           errorMessage: e.toString(),
         ),
       );
+      debugPrint('sendAuthApple:::::::::$e');
     }
   }
 
