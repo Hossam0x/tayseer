@@ -22,14 +22,12 @@ import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository_impl.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/comments_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/comments_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
@@ -188,14 +186,6 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<EditCertificateCubit>(
     () => EditCertificateCubit(getIt<CertificatesRepository>()),
-  );
-
-  getIt.registerLazySingleton<CommentsRepository>(
-    () => CommentsRepositoryImpl(getIt<ApiService>()),
-  );
-
-  getIt.registerFactory<CommentsCubit>(
-    () => CommentsCubit(getIt<CommentsRepository>()),
   );
 
   getIt.registerLazySingleton<ArchiveRepository>(
