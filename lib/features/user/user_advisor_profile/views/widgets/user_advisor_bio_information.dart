@@ -324,35 +324,31 @@ class UserAdvisorBioInformation extends StatelessWidget {
 
               Gap(13.w),
 
-              // زر المحادثة (يظهر فقط إذا كان المستخدم يتابع)
               if (isFollowing)
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 13.h,
-                    horizontal: 16.w,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary100,
-                    borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(color: AppColors.primary500),
-                  ),
-                  child: GestureDetector(
-                    onTap: isChatLoading
-                        ? null
-                        : () {
-                            final cubit = context
-                                .read<UserAdvisorProfileCubit>();
-
-                            // ⭐ التحقق من وجود room
-                            if (profile.hasRoom &&
-                                profile.chatRoomId != null &&
-                                profile.chatRoomId!.isNotEmpty &&
-                                room != null) {
-                              cubit.startChat(); // ⭐ سيفتح الشات مباشرة
-                            } else {
-                              cubit.startChat(); // ⭐ سينشئ room جديد
-                            }
-                          },
+                GestureDetector(
+                  onTap: isChatLoading
+                      ? null
+                      : () {
+                          final cubit = context.read<UserAdvisorProfileCubit>();
+                          if (profile.hasRoom &&
+                              profile.chatRoomId != null &&
+                              profile.chatRoomId!.isNotEmpty &&
+                              room != null) {
+                            cubit.startChat();
+                          } else {
+                            cubit.startChat();
+                          }
+                        },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 13.h,
+                      horizontal: 16.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary100,
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(color: AppColors.primary500),
+                    ),
                     child: isChatLoading
                         ? SizedBox(
                             width: 22.w,

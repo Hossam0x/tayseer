@@ -1,4 +1,6 @@
 // features/user/user_advisor_profile/views/widgets/navigate_to_chat_listener.dart
+import 'dart:developer';
+
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -12,10 +14,10 @@ class NavigateToChatListener extends StatelessWidget {
       listenWhen: (previous, current) =>
           previous.shouldNavigateToChat != current.shouldNavigateToChat &&
           current.shouldNavigateToChat == true,
+
       listener: (context, state) {
-        if (state.shouldNavigateToChat == true &&
-            state.profile != null &&
-            state.profile!.room != null) {
+        if (state.shouldNavigateToChat == true) {
+          log("test navigate to chat");
           final profile = state.profile!;
           final room = profile.room!;
 
@@ -29,7 +31,7 @@ class NavigateToChatListener extends StatelessWidget {
               arguments: {
                 'chatroomid': room.chatRoomId,
                 'receiverid': profile.id,
-                'username': profile.username,
+                'username': profile.name,
                 'userimage': profile.image,
                 'isBlocked': room.isBlocked,
                 'isHaveSession': room.isHaveSession,

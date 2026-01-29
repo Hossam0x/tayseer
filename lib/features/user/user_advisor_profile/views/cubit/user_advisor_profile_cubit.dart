@@ -30,12 +30,10 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
   }
 
   void _setupSocketListeners() {
-    // ⭐ تنظيف أي listeners سابقين
-    socketHelper.off('room_created');
-
     // ⭐ الاستماع لإنشاء الروم من السوكيت
     socketHelper.listen('room_created', (data) {
-      final String chatRoomId = data['ChatRoomId']?.toString() ?? '';
+      final String chatRoomId =
+          data['chatRoomId']?.toString() ?? ''; //chatRoomId
 
       if (chatRoomId.isNotEmpty) {
         log('Socket room created: $chatRoomId');
@@ -386,7 +384,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     });
 
     // ⭐ إرسال طلب إنشاء room
-    socketHelper.send('create_room', {'reciverId': advisorId}, (ack) {
+    socketHelper.send('create_room', {'receiverId': advisorId}, (ack) {
       log("send room create for user: $advisorId");
     });
 
@@ -401,7 +399,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
   }
 
   void _handleRoomCreated(Map<String, dynamic> data) {
-    final String chatRoomId = data['ChatRoomId']?.toString() ?? '';
+    final String chatRoomId = data['chatRoomId']?.toString() ?? '';
 
     if (chatRoomId.isNotEmpty && !isClosed) {
       log('Socket room created: $chatRoomId');
