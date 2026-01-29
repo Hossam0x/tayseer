@@ -53,6 +53,7 @@ import 'package:tayseer/features/shared/auth/view/select_session_duration_view.d
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
+import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
@@ -193,6 +194,7 @@ abstract class AppRouter {
   static const kInteractionFilterView = '/InteractionFilterView';
   static const kinteractionSubscriptionView = '/interactionSubscriptionView';
   static const kUserArchiveChatsView = '/user-archive-chats';
+  static const kUserFollowingsView = '/userFollowingsView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -388,6 +390,12 @@ abstract class AppRouter {
         return FadeScaleRoute(
           page: const UserArchiveChatsView(),
           routeSettings: settings,
+        );
+
+      case AppRouter.kUserFollowingsView:
+        final userId = settings.arguments as String;
+        return MaterialPageRoute(
+          builder: (_) => UserFollowingsView(userId: userId),
         );
 
       case kHomeScreen:

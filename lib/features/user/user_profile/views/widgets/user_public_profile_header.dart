@@ -1,4 +1,5 @@
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
+import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
@@ -131,7 +132,13 @@ class UserPublicProfileHeader extends StatelessWidget {
           Gap(55.w),
 
           // الإحصائيات
-          _buildStatsItem(value: following, label: 'متابَع', onTap: () {}),
+          _buildStatsItem(
+            value: following,
+            label: 'متابَع',
+            onTap: () {},
+            userId: profile.id,
+            context: context,
+          ),
           Spacer(),
           if (!profile.isMe)
             Column(
@@ -150,9 +157,16 @@ class UserPublicProfileHeader extends StatelessWidget {
     required String value,
     required String label,
     required VoidCallback onTap,
+    required BuildContext context,
+    required String userId,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserFollowingsView(userId: userId),
+        ),
+      ),
       child: Column(
         children: [
           Text(value, style: Styles.textStyle16SemiBold),
