@@ -4,7 +4,7 @@ import '../models/certificate_model.dart';
 
 abstract class CertificatesRepository {
   Future<Either<Failure, CertificatesAndVideosResponse>>
-  getCertificatesAndVideos();
+  getCertificatesAndVideos({String? advisorId, int page = 1, int limit = 10});
 
   Future<Either<Failure, Map<String, dynamic>>> addCertificate({
     required String nameCertificate,

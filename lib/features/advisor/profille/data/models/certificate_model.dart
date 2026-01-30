@@ -84,27 +84,51 @@ class CertificatesAndVideosResponse extends Equatable {
   final List<CertificateModel> certificates;
   final String? videos;
   final bool isMe;
+  final int currentPage;
+  final int totalPages;
+  final bool hasMore;
 
   const CertificatesAndVideosResponse({
     required this.certificates,
     this.videos,
     required this.isMe,
+    required this.currentPage,
+    required this.totalPages,
+    required this.hasMore,
   });
 
-  factory CertificatesAndVideosResponse.fromJson(Map<String, dynamic> json) {
+  factory CertificatesAndVideosResponse.fromJson(
+    Map<String, dynamic> json, {
+    Map<String, dynamic>? pagination,
+  }) {
     final certificatesList = (json['certificates'] as List)
         .map(
           (cert) => CertificateModel.fromJson(Map<String, dynamic>.from(cert)),
         )
         .toList();
 
+    final paginationData =
+        pagination ?? Map<String, dynamic>.from(json['pagination'] ?? {});
+    final currentPage = paginationData['currentPage'] as int? ?? 1;
+    final totalPages = paginationData['totalPages'] as int? ?? 1;
+
     return CertificatesAndVideosResponse(
       certificates: certificatesList,
       videos: json['videos'] as String?,
       isMe: json['isMe'] as bool,
+      currentPage: currentPage,
+      totalPages: totalPages,
+      hasMore: currentPage < totalPages,
     );
   }
 
   @override
-  List<Object?> get props => [certificates, videos, isMe];
+  List<Object?> get props => [
+    certificates,
+    videos,
+    isMe,
+    currentPage,
+    totalPages,
+    hasMore,
+  ];
 }

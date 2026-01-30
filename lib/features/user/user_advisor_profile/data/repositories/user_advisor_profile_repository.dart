@@ -96,7 +96,7 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
     try {
       final response = await _apiService.get(
         endPoint: '/posts/all-for-advisor/$advisorId',
-        query: {'page': page},
+        query: {'page': page, 'limit': 10},
       );
 
       if (response['success'] == true) {

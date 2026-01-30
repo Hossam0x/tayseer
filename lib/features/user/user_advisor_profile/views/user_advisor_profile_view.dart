@@ -80,7 +80,9 @@ class _UserProfileContent extends StatelessWidget {
           SliverToBoxAdapter(child: Gap(20.h)),
 
           // Posts Tabs Section
-          const UserAdvisorProfileTabsSection(),
+          UserAdvisorProfileTabsSection(
+            advisorId: context.read<UserAdvisorProfileCubit>().advisorId,
+          ),
 
           // Bottom padding
           SliverToBoxAdapter(child: Gap(100.h)),

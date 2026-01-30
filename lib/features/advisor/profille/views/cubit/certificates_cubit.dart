@@ -5,50 +5,121 @@ import 'package:tayseer/my_import.dart';
 
 class CertificatesCubit extends Cubit<CertificatesState> {
   final CertificatesRepository _certificatesRepository;
+  final int _pageSize = 10;
+  String? _currentAdvisorId;
 
   CertificatesCubit(this._certificatesRepository)
-    : super(const CertificatesState()) {
-    fetchCertificatesAndVideos();
-  }
+    : super(const CertificatesState());
 
   // ═══════════════════════════════════════════════════════════
   // 📌 FETCH CERTIFICATES AND VIDEOS
   // ═══════════════════════════════════════════════════════════
-  Future<void> fetchCertificatesAndVideos() async {
-    emit(state.copyWith(state: CubitStates.loading));
+  Future<void> fetchCertificatesAndVideos({
+    String? advisorId,
+    bool loadMore = false,
+  }) async {
+    if (loadMore) {
+      if (state.isLoadingMore || !state.hasMore) return;
 
-    final result = await _certificatesRepository.getCertificatesAndVideos();
+      emit(state.copyWith(isLoadingMore: true));
 
-    if (isClosed) return;
+      final nextPage = state.currentPage + 1;
+      final result = await _certificatesRepository.getCertificatesAndVideos(
+        advisorId: advisorId,
+        page: nextPage,
+        limit: _pageSize,
+      );
 
-    result.fold(
-      (failure) {
-        emit(
-          state.copyWith(
-            state: CubitStates.failure,
-            errorMessage: failure.message,
-          ),
-        );
-      },
-      (response) {
-        emit(
-          state.copyWith(
-            state: CubitStates.success,
-            certificates: response.certificates,
-            videoUrl: response.videos,
-            isMe: response.isMe,
-            errorMessage: null,
-          ),
-        );
-      },
-    );
+      if (isClosed) return;
+
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(isLoadingMore: false, errorMessage: failure.message),
+          );
+        },
+        (response) {
+          final updatedCertificates = [
+            ...state.certificates,
+            ...response.certificates,
+          ];
+          emit(
+            state.copyWith(
+              state: CubitStates.success,
+              certificates: updatedCertificates,
+              videoUrl: response.videos,
+              isMe: response.isMe,
+              currentPage: nextPage,
+              hasMore: response.hasMore,
+              isLoadingMore: false,
+              errorMessage: null,
+            ),
+          );
+        },
+      );
+    } else {
+      _currentAdvisorId = advisorId;
+      emit(
+        state.copyWith(
+          state: CubitStates.loading,
+          certificates: [],
+          currentPage: 1,
+          hasMore: true,
+          errorMessage: null,
+        ),
+      );
+
+      final result = await _certificatesRepository.getCertificatesAndVideos(
+        advisorId: advisorId,
+        page: 1,
+        limit: _pageSize,
+      );
+
+      if (isClosed) return;
+
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              state: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (response) {
+          emit(
+            state.copyWith(
+              state: CubitStates.success,
+              certificates: response.certificates,
+              videoUrl: response.videos,
+              isMe: response.isMe,
+              currentPage: 1,
+              hasMore: response.hasMore,
+              errorMessage: null,
+            ),
+          );
+        },
+      );
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
   // 📌 REFRESH
   // ═══════════════════════════════════════════════════════════
-  Future<void> refresh() async {
-    await fetchCertificatesAndVideos();
+  Future<void> refresh({String? advisorId}) async {
+    await fetchCertificatesAndVideos(advisorId: advisorId, loadMore: false);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 LOAD MORE
+  // ═══════════════════════════════════════════════════════════
+  Future<void> loadMore() async {
+    if (_currentAdvisorId != null) {
+      await fetchCertificatesAndVideos(
+        advisorId: _currentAdvisorId,
+        loadMore: true,
+      );
+    }
   }
 
   // ═══════════════════════════════════════════════════════════

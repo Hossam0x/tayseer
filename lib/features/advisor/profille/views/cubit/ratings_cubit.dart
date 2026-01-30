@@ -6,14 +6,15 @@ class RatingsCubit extends Cubit<RatingsState> {
   final RatingsRepository _ratingsRepository;
   final int _pageSize = 10;
 
-  RatingsCubit(this._ratingsRepository) : super(const RatingsState()) {
-    fetchRatings();
-  }
+  RatingsCubit(this._ratingsRepository) : super(const RatingsState());
 
   // ═══════════════════════════════════════════════════════════
   // 📌 FETCH RATINGS
   // ═══════════════════════════════════════════════════════════
-  Future<void> fetchRatings({bool loadMore = false}) async {
+  Future<void> fetchRatings({
+    required String advisorId,
+    bool loadMore = false,
+  }) async {
     if (loadMore) {
       // لا تسمح بتحميل المزيد إذا كان التحميل جارياً أو لا يوجد المزيد
       if (state.isLoadingMore || !state.hasMore) return;
@@ -22,6 +23,7 @@ class RatingsCubit extends Cubit<RatingsState> {
 
       final nextPage = state.currentPage + 1;
       final result = await _ratingsRepository.getAdvisorRatings(
+        advisorId: advisorId,
         page: nextPage,
         limit: _pageSize,
       );
@@ -59,6 +61,7 @@ class RatingsCubit extends Cubit<RatingsState> {
       );
 
       final result = await _ratingsRepository.getAdvisorRatings(
+        advisorId: advisorId,
         page: 1,
         limit: _pageSize,
       );
@@ -92,8 +95,10 @@ class RatingsCubit extends Cubit<RatingsState> {
   // ═══════════════════════════════════════════════════════════
   // 📌 REFRESH RATINGS
   // ═══════════════════════════════════════════════════════════
-  Future<void> refresh() async {
-    await fetchRatings(loadMore: false);
+  Future<void> refresh({String? advisorId}) async {
+    if (advisorId != null) {
+      await fetchRatings(advisorId: advisorId, loadMore: false);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════

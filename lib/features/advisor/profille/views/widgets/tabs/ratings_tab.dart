@@ -1,24 +1,30 @@
 import 'package:intl/intl.dart';
-// import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_state.dart';
+import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class RatingsTab extends StatelessWidget {
-  const RatingsTab({super.key});
+  final String advisorId;
+
+  const RatingsTab({super.key, required this.advisorId});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RatingsCubit>(
       create: (_) => getIt<RatingsCubit>(),
-      child: const _RatingsTabContent(),
+      child: _RatingsTabContent(advisorId: advisorId),
     );
   }
 }
 
 class _RatingsTabContent extends StatefulWidget {
-  const _RatingsTabContent();
+  final String advisorId;
+
+  const _RatingsTabContent({required this.advisorId});
 
   @override
   State<_RatingsTabContent> createState() => __RatingsTabContentState();
@@ -27,21 +33,19 @@ class _RatingsTabContent extends StatefulWidget {
 class __RatingsTabContentState extends State<_RatingsTabContent> {
   late RatingsCubit _cubit;
   bool _isInitialized = false;
-
+  int _rating = 0;
+  final TextEditingController _reviewController = TextEditingController();
+  bool _isSubmitting = false;
   @override
   void initState() {
     super.initState();
-    _initializeCubit();
-  }
-
-  Future<void> _initializeCubit() async {
-    _cubit = getIt<RatingsCubit>();
-    await _loadData();
+    _cubit = RatingsCubit(getIt<RatingsRepository>());
+    _loadData();
   }
 
   Future<void> _loadData() async {
     if (!_isInitialized) {
-      await _cubit.refresh();
+      await _cubit.refresh(advisorId: widget.advisorId);
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -50,9 +54,8 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
     }
   }
 
-  // دالة لاستدعاء الرفريش من الخارج
   Future<void> refreshFromParent() async {
-    await _cubit.refresh();
+    await _cubit.refresh(advisorId: widget.advisorId);
     if (mounted) {
       setState(() {});
     }
@@ -60,19 +63,248 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
 
   @override
   Widget build(BuildContext context) {
+    final UserAdvisorProfileModel? profile = context
+        .read<UserAdvisorProfileCubit>()
+        .state
+        .profile;
+    final bool isMe = profile?.isMe ?? false;
+
     if (!_isInitialized) {
       return _buildSkeletonRatings();
     }
 
-    return BlocBuilder<RatingsCubit, RatingsState>(
-      bloc: _cubit,
-      builder: (context, state) {
-        return RefreshIndicator(
-          onRefresh: () async => await _cubit.refresh(),
-          child: _buildRatingsContent(context, state),
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: () async => await _cubit.refresh(advisorId: widget.advisorId),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            // زر إضافة تقييم إذا لم يكن بروفايل المستخدم نفسه
+            if (!isMe) _buildAddRatingButton(context),
+
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              child: Column(
+                children: [
+                  // قسم الإحصائيات العلوي
+                  _buildSummarySection(_cubit.state),
+
+                  Gap(20.h),
+
+                  // قائمة التقييمات
+                  _buildRatingsList(context, _cubit.state),
+                ],
+              ),
+            ),
+
+            // زر تحميل المزيد للتقييمات
+            if (_cubit.state.hasMore)
+              _buildLoadMoreButton(context, _cubit.state),
+
+            Gap(20.h),
+          ],
+        ),
+      ),
     );
+  }
+
+  Widget _buildAddRatingButton(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 24.w),
+      child: ElevatedButton(
+        onPressed: () => _showRateDialog(context),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.kprimaryColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          minimumSize: Size(double.infinity, 54.h),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.star, color: AppColors.kWhiteColor, size: 20.w),
+            Gap(8.w),
+            Text(
+              'إضافة تقييم',
+              style: Styles.textStyle16Meduim.copyWith(
+                color: AppColors.kWhiteColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRateDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // العنوان
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Icon(Icons.close, size: 24.w),
+                      ),
+                      Text(
+                        'تقييم المستشار',
+                        style: Styles.textStyle20Meduim.copyWith(
+                          color: AppColors.primary500,
+                        ),
+                      ),
+                      Gap(24.w),
+                    ],
+                  ),
+
+                  Gap(25.h),
+
+                  // النجوم للتقييم (قابلة للاختيار)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _rating = index + 1;
+                          });
+                        },
+                        child: Icon(
+                          // اختيار الأيقونة بناءً على التقييم
+                          index < _rating
+                              ? Icons.star_rounded
+                              : Icons.star_rounded,
+                          color: index < _rating
+                              ? AppColors.kprimaryColor
+                              : AppColors.secondary100,
+                          size: 56.w,
+                        ),
+                      );
+                    }),
+                  ),
+
+                  // عرض قيمة التقييم (اختياري)
+                  if (_rating > 0) ...[
+                    Gap(12.h),
+                    Text(
+                      'تقييمك: $_rating / 5',
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.primary500,
+                      ),
+                    ),
+                  ],
+
+                  Gap(24.h),
+
+                  // حقل كتابة المراجعة
+                  TextFormField(
+                    controller: _reviewController,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      labelText: 'اكتب مراجعتك',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                    ),
+                  ),
+
+                  Gap(24.h),
+
+                  // زر الإرسال
+                  _isSubmitting
+                      ? Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.kprimaryColor,
+                          ),
+                        )
+                      : CustomBotton(
+                          title: 'إرسال التقييم',
+                          onPressed: () async {
+                            if (_rating == 0) {
+                              AppToast.error(
+                                context,
+                                'الرجاء اختيار عدد النجوم',
+                              );
+                              return;
+                            }
+
+                            setState(() {
+                              _isSubmitting = true;
+                            });
+
+                            await _submitRating(
+                              context,
+                              _rating,
+                              _reviewController.text,
+                            );
+
+                            setState(() {
+                              _isSubmitting = false;
+                            });
+
+                            Navigator.pop(context);
+                          },
+                          width: double.infinity,
+                          height: 54.h,
+                          useGradient: true,
+                        ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitRating(
+    BuildContext context,
+    int rating,
+    String review,
+  ) async {
+    try {
+      final apiService = getIt<ApiService>();
+      final response = await apiService.post(
+        endPoint: '/advisor-rating',
+        data: {
+          "rating": rating,
+          "review": review,
+          "advisorId": widget.advisorId,
+        },
+      );
+
+      if (response['success'] == true) {
+        AppToast.success(
+          context,
+          response['message'] ?? 'تم إرسال التقييم بنجاح',
+        );
+        _reviewController.clear();
+        _rating = 0;
+
+        // Refresh ratings
+        await _cubit.refresh(advisorId: widget.advisorId);
+      } else {
+        AppToast.error(context, response['message'] ?? 'فشل إرسال التقييم');
+      }
+    } catch (e) {
+      AppToast.error(context, 'حدث خطأ أثناء إرسال التقييم');
+    }
   }
 
   Widget _buildSkeletonRatings() {
@@ -239,64 +471,12 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
     );
   }
 
-  // Widget _buildErrorRatings(BuildContext context, String? errorMessage) {
-  //   return Padding(
-  //     padding: EdgeInsets.all(24.w),
-  //     child: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-  //         Gap(16.h),
-  //         Text(
-  //           errorMessage ?? 'حدث خطأ في تحميل التقييمات',
-  //           style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-  //           textAlign: TextAlign.center,
-  //         ),
-  //         Gap(24.h),
-  //         ElevatedButton(
-  //           style: ElevatedButton.styleFrom(
-  //             backgroundColor: AppColors.kprimaryColor,
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(10.r),
-  //             ),
-  //             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-  //           ),
-  //           onPressed: () => context.read<RatingsCubit>().refresh(),
-  //           child: Text(
-  //             'إعادة المحاولة',
-  //             style: Styles.textStyle14Meduim.copyWith(
-  //               color: AppColors.kWhiteColor,
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  Widget _buildRatingsContent(BuildContext context, RatingsState state) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-      child: Column(
-        children: [
-          // قسم الإحصائيات العلوي
-          _buildSummarySection(state),
-
-          Gap(20.h),
-
-          // قائمة التقييمات
-          _buildRatingsList(context, state),
-
-          // زر تحميل المزيد (إذا كان هناك المزيد)
-          if (state.hasMore) _buildLoadMoreButton(context, state),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSummarySection(RatingsState state) {
     final starsBreakdown = state.starsBreakdown;
-    final maxStarCount = starsBreakdown[5] ?? 1; // لتجنب القسمة على صفر
+
+    // ⭐ الحل: التحقق من maxStarCount لتجنب القسمة على صفر
+    final maxStarCount = starsBreakdown[5] ?? 0;
+    final safeMaxStarCount = maxStarCount > 0 ? maxStarCount : 1;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -377,8 +557,11 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4.r),
                                 child: LinearProgressIndicator(
-                                  value:
-                                      (starsBreakdown[i] ?? 0) / maxStarCount,
+                                  // ⭐ الحل: التحقق من القيمة لتجنب NaN أو Infinity
+                                  value: safeMaxStarCount > 0
+                                      ? (starsBreakdown[i] ?? 0) /
+                                            safeMaxStarCount
+                                      : 0,
                                   backgroundColor: AppColors.barGreyColor,
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     AppColors.primary400,
@@ -504,38 +687,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
     );
   }
 
-  Widget _buildLoadMoreButton(BuildContext context, RatingsState state) {
-    return Padding(
-      padding: EdgeInsets.all(16.w),
-      child: SizedBox(
-        width: double.infinity,
-        child: state.isLoadingMore
-            ? Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.kprimaryColor,
-                ),
-              )
-            : OutlinedButton(
-                onPressed: () => _loadMoreRatings(context),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.kprimaryColor, width: 1.w),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                ),
-                child: Text(
-                  'تحميل المزيد من التقييمات',
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.kprimaryColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-      ),
-    );
-  }
-
   String _formatDate(String dateString) {
     try {
       // 1️⃣ parse التاريخ بصيغته الصح
@@ -551,7 +702,38 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
     }
   }
 
-  void _loadMoreRatings(BuildContext context) {
-    context.read<RatingsCubit>().fetchRatings(loadMore: true);
+  Widget _buildLoadMoreButton(BuildContext context, RatingsState state) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 24.w),
+      child: state.isLoadingMore
+          ? Center(
+              child: CircularProgressIndicator(color: AppColors.kprimaryColor),
+            )
+          : SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _cubit.fetchRatings(
+                  advisorId: widget.advisorId,
+                  loadMore: true,
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.kWhiteColor,
+                  foregroundColor: AppColors.kprimaryColor,
+                  side: BorderSide(color: AppColors.kprimaryColor, width: 1.w),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'تحميل المزيد من التقييمات',
+                  style: Styles.textStyle14Meduim.copyWith(
+                    color: AppColors.kprimaryColor,
+                  ),
+                ),
+              ),
+            ),
+    );
   }
 }

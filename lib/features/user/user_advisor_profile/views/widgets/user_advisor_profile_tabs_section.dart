@@ -4,7 +4,9 @@ import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_ad
 import 'package:tayseer/my_import.dart';
 
 class UserAdvisorProfileTabsSection extends StatefulWidget {
-  const UserAdvisorProfileTabsSection({super.key});
+  final String advisorId;
+
+  const UserAdvisorProfileTabsSection({super.key, required this.advisorId});
 
   @override
   State<UserAdvisorProfileTabsSection> createState() =>
@@ -103,9 +105,11 @@ class _UserAdvisorProfileTabsSectionState
     return IndexedStack(
       index: _tabController.index,
       children: [
-        KeepAlive(child: UserAdvisorPostsTab()),
-        KeepAlive(child: ProfileCertificatesSection()),
-        KeepAlive(child: RatingsTab()),
+        KeepAlive(child: UserAdvisorPostsTab(advisorId: widget.advisorId)),
+        KeepAlive(
+          child: ProfileCertificatesSection(advisorId: widget.advisorId),
+        ),
+        KeepAlive(child: RatingsTab(advisorId: widget.advisorId)),
       ],
     );
   }

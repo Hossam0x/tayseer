@@ -10,16 +10,28 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
 
   @override
   Future<Either<Failure, CertificatesAndVideosResponse>>
-  getCertificatesAndVideos() async {
+  getCertificatesAndVideos({
+    String? advisorId,
+    int page = 1,
+    int limit = 10,
+  }) async {
     try {
-      final response = await _apiService.get(
-        endPoint: '/advisor/getAllCertificatesAndVideos',
-      );
+      String endpoint = '/advisor/getAllCertificatesAndVideos';
+      Map<String, dynamic> query = {'page': page, 'limit': limit};
+
+      if (advisorId != null) {
+        endpoint = '/advisor/getAllCertificatesAndVideos/$advisorId';
+      }
+
+      final response = await _apiService.get(endPoint: endpoint, query: query);
 
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
+        final pagination = Map<String, dynamic>.from(data['pagination'] ?? {});
+
         final certificatesResponse = CertificatesAndVideosResponse.fromJson(
           data,
+          pagination: pagination,
         );
         return Right(certificatesResponse);
       } else {

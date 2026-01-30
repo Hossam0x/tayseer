@@ -163,12 +163,12 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
         return ProfileCertificatesSection(
           key: ValueKey(
             'certificates_${DateTime.now().millisecondsSinceEpoch}',
-          ),
+          ), advisorId: '',
         );
       case 2:
         // س🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
         return RatingsTab(
-          key: ValueKey('ratings_${DateTime.now().millisecondsSinceEpoch}'),
+          key: ValueKey('ratings_${DateTime.now().millisecondsSinceEpoch}'), advisorId: '',
         );
       default:
         return Container();

@@ -4,6 +4,7 @@ import '../models/rating_model.dart';
 
 abstract class RatingsRepository {
   Future<Either<Failure, RatingsResponseModel>> getAdvisorRatings({
+    required String advisorId,
     int page = 1,
     int limit = 10,
   });

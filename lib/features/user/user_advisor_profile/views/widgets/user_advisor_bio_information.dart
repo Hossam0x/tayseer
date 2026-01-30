@@ -76,6 +76,8 @@ class UserAdvisorBioInformation extends StatelessWidget {
           isMe: false,
           professionalSpecialization: null,
           jobGrade: null,
+          isFollowing: false,
+          videoLink: null,
         ),
       ),
     );
@@ -174,7 +176,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
 
     // ⭐ إذا لم يكن هناك بيانات، لا تعرض أي شيء
     if (!hasSpecialization && !hasYearsExperience) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
 
     return Column(
@@ -211,7 +213,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
     final hasLocation =
         profile.location != null && profile.location!.isNotEmpty;
 
-    if (!hasLocation) return SizedBox.shrink();
+    if (!hasLocation) return const SizedBox.shrink();
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4.h),
@@ -234,7 +236,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
   Widget _buildAboutYou(UserAdvisorProfileModel profile) {
     final hasAboutYou = profile.aboutYou.isNotEmpty;
 
-    if (!hasAboutYou) return SizedBox.shrink();
+    if (!hasAboutYou) return const SizedBox.shrink();
 
     return Padding(
       padding: EdgeInsets.only(top: 8.h, bottom: 24.h),
