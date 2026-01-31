@@ -28,6 +28,10 @@ class UserPublicProfileState extends Equatable {
   final CubitStates reportActionState;
   final String? reportMessage;
 
+  final bool isSendingGreeting;
+  final String? greetingMessage;
+  final bool greetingSuccess;
+
   const UserPublicProfileState({
     this.state = CubitStates.initial,
     this.profile,
@@ -47,6 +51,9 @@ class UserPublicProfileState extends Equatable {
     this.blockMessage,
     this.reportActionState = CubitStates.initial,
     this.reportMessage,
+    this.isSendingGreeting = false,
+    this.greetingMessage,
+    this.greetingSuccess = false,
   });
 
   UserPublicProfileState copyWith({
@@ -68,6 +75,9 @@ class UserPublicProfileState extends Equatable {
     String? blockMessage,
     CubitStates? reportActionState,
     String? reportMessage,
+    bool? isSendingGreeting,
+    String? greetingMessage,
+    bool? greetingSuccess,
   }) {
     return UserPublicProfileState(
       state: state ?? this.state,
@@ -88,6 +98,9 @@ class UserPublicProfileState extends Equatable {
       blockMessage: blockMessage ?? this.blockMessage,
       reportActionState: reportActionState ?? this.reportActionState,
       reportMessage: reportMessage ?? this.reportMessage,
+      isSendingGreeting: isSendingGreeting ?? this.isSendingGreeting,
+      greetingMessage: greetingMessage ?? this.greetingMessage,
+      greetingSuccess: greetingSuccess ?? this.greetingSuccess,
     );
   }
 
@@ -111,5 +124,8 @@ class UserPublicProfileState extends Equatable {
     blockMessage,
     reportActionState,
     reportMessage,
+    isSendingGreeting,
+    greetingMessage,
+    greetingSuccess,
   ];
 }

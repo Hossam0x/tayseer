@@ -361,4 +361,58 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
       ),
     );
   }
+
+  // في user_public_profile_cubit.dart
+  Future<void> sendGreeting({
+    required String receiverId,
+    required String message,
+  }) async {
+    if (isClosed) return;
+
+    emit(
+      state.copyWith(
+        isSendingGreeting: true,
+        greetingMessage: null,
+        greetingSuccess: false,
+      ),
+    );
+
+    final result = await _profileRepository.sendGreeting(
+      receiverId: receiverId,
+      message: message,
+    );
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            isSendingGreeting: false,
+            greetingMessage: failure.message,
+            greetingSuccess: false,
+          ),
+        );
+      },
+      (successMessage) {
+        emit(
+          state.copyWith(
+            isSendingGreeting: false,
+            greetingMessage: successMessage,
+            greetingSuccess: true,
+          ),
+        );
+      },
+    );
+  }
+
+  void clearGreetingState() {
+    emit(
+      state.copyWith(
+        isSendingGreeting: false,
+        greetingMessage: null,
+        greetingSuccess: false,
+      ),
+    );
+  }
 }

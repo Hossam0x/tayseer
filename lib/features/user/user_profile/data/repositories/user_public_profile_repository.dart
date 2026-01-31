@@ -15,6 +15,10 @@ abstract class UserPublicProfileRepository {
     required String reason,
     required String reasonDetails,
   });
+  Future<Either<Failure, String>> sendGreeting({
+    required String receiverId,
+    required String message,
+  });
 }
 
 // features/user/user_public_profile/data/repositories/user_public_profile_repository_impl.dart
@@ -103,6 +107,30 @@ class UserPublicProfileRepositoryImpl implements UserPublicProfileRepository {
         return Right(response['message'] ?? 'تم إرسال الإبلاغ بنجاح');
       }
       return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> sendGreeting({
+    required String receiverId,
+    required String message,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: '/user/send-greeting',
+        data: {"receiverId": receiverId, "message": message},
+      );
+
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم إرسال التحية بنجاح');
+      }
+      return Left(
+        ServerFailure(response['message'] ?? 'حدث خطأ أثناء إرسال التحية'),
+      );
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
