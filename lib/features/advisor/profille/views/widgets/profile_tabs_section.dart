@@ -30,10 +30,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
 
     _tabController = TabController(length: _tabs.length, vsync: this);
     _tabController.addListener(_onTabChanged);
-
-    // ✅ إزالة HomeRepository من هنا
     _profileCubit = ProfileCubit(getIt<ProfileRepository>());
-
     _loadUserPosts();
   }
 
@@ -163,12 +160,15 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
         return ProfileCertificatesSection(
           key: ValueKey(
             'certificates_${DateTime.now().millisecondsSinceEpoch}',
-          ), advisorId: '',
+          ),
+          advisorId: '',
         );
       case 2:
         // س🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
         return RatingsTab(
-          key: ValueKey('ratings_${DateTime.now().millisecondsSinceEpoch}'), advisorId: '',
+          isMe: true,
+          key: ValueKey('ratings_${DateTime.now().millisecondsSinceEpoch}'),
+          advisorId: '',
         );
       default:
         return Container();

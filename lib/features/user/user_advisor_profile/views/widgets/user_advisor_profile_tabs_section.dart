@@ -1,5 +1,6 @@
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_posts_tab.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -44,8 +45,12 @@ class _UserAdvisorProfileTabsSectionState
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final profileCubit = context.read<UserAdvisorProfileCubit>();
+    final profile = profileCubit.state.profile;
+    final isMe = profile?.isMe ?? false;
+    super.build(context);
     return SliverToBoxAdapter(
-      child: Column(children: [_buildTabsHeader(), _buildTabContent()]),
+      child: Column(children: [_buildTabsHeader(), _buildTabContent(isMe)]),
     );
   }
 
@@ -101,7 +106,7 @@ class _UserAdvisorProfileTabsSectionState
     );
   }
 
-  Widget _buildTabContent() {
+  Widget _buildTabContent(bool isMe) {
     return IndexedStack(
       index: _tabController.index,
       children: [
@@ -109,7 +114,9 @@ class _UserAdvisorProfileTabsSectionState
         KeepAlive(
           child: ProfileCertificatesSection(advisorId: widget.advisorId),
         ),
-        KeepAlive(child: RatingsTab(advisorId: widget.advisorId)),
+        KeepAlive(
+          child: RatingsTab(advisorId: widget.advisorId, isMe: isMe),
+        ),
       ],
     );
   }

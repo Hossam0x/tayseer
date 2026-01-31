@@ -2,29 +2,29 @@ import 'package:intl/intl.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_state.dart';
-import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
-import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class RatingsTab extends StatelessWidget {
   final String advisorId;
+  final bool isMe;
 
-  const RatingsTab({super.key, required this.advisorId});
+  const RatingsTab({super.key, required this.advisorId, required this.isMe});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RatingsCubit>(
       create: (_) => getIt<RatingsCubit>(),
-      child: _RatingsTabContent(advisorId: advisorId),
+      child: _RatingsTabContent(advisorId: advisorId, isMe: isMe),
     );
   }
 }
 
 class _RatingsTabContent extends StatefulWidget {
   final String advisorId;
+  final bool isMe;
 
-  const _RatingsTabContent({required this.advisorId});
+  const _RatingsTabContent({required this.advisorId, required this.isMe});
 
   @override
   State<_RatingsTabContent> createState() => __RatingsTabContentState();
@@ -36,6 +36,7 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
   int _rating = 0;
   final TextEditingController _reviewController = TextEditingController();
   bool _isSubmitting = false;
+
   @override
   void initState() {
     super.initState();
@@ -63,11 +64,7 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
 
   @override
   Widget build(BuildContext context) {
-    final UserAdvisorProfileModel? profile = context
-        .read<UserAdvisorProfileCubit>()
-        .state
-        .profile;
-    final bool isMe = profile?.isMe ?? false;
+    final bool isMe = widget.isMe;
 
     if (!_isInitialized) {
       return _buildSkeletonRatings();
@@ -75,35 +72,31 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
 
     return RefreshIndicator(
       onRefresh: () async => await _cubit.refresh(advisorId: widget.advisorId),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          children: [
-            // زر إضافة تقييم إذا لم يكن بروفايل المستخدم نفسه
-            if (!isMe) _buildAddRatingButton(context),
+      child: Column(
+        children: [
+          // زر إضافة تقييم إذا لم يكن بروفايل المستخدم نفسه
+          if (!isMe) _buildAddRatingButton(context),
 
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-              child: Column(
-                children: [
-                  // قسم الإحصائيات العلوي
-                  _buildSummarySection(_cubit.state),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+            child: Column(
+              children: [
+                // قسم الإحصائيات العلوي
+                _buildSummarySection(_cubit.state),
 
-                  Gap(20.h),
+                Gap(20.h),
 
-                  // قائمة التقييمات
-                  _buildRatingsList(context, _cubit.state),
-                ],
-              ),
+                // قائمة التقييمات
+                _buildRatingsList(context, _cubit.state),
+              ],
             ),
+          ),
 
-            // زر تحميل المزيد للتقييمات
-            if (_cubit.state.hasMore)
-              _buildLoadMoreButton(context, _cubit.state),
+          // زر تحميل المزيد للتقييمات
+          if (_cubit.state.hasMore) _buildLoadMoreButton(context, _cubit.state),
 
-            Gap(20.h),
-          ],
-        ),
+          Gap(20.h),
+        ],
       ),
     );
   }
