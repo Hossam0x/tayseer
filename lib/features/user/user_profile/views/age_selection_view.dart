@@ -111,7 +111,7 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
                           scrollController: _scrollController,
                           itemExtent: 80.h,
                           onSelectedItemChanged: _onSelectedItemChanged,
-                          children: List.generate(83, (index) {
+                          children: List.generate(48, (index) {
                             int age = 18 + index;
                             bool isSelected = age == selectedAge;
                             return Center(

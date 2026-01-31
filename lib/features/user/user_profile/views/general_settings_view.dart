@@ -243,7 +243,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           },
           child: _buildSettingRow(
             label: "السن",
-            value: userProfile?.age.toString() ?? '0',
+            value: userProfile?.age.toString() ?? '',
           ),
         ),
         InkWell(
