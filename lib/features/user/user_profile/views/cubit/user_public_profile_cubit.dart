@@ -303,4 +303,62 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
   void clearError() {
     emit(state.copyWith(profileErrorMessage: null, postsErrorMessage: null));
   }
+
+  Future<void> blockUser(String userId) async {
+    if (isClosed) return;
+
+    emit(state.copyWith(blockActionState: CubitStates.loading));
+
+    final result = await _profileRepository.blockUser(userId);
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.failure,
+            blockMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.success,
+            blockMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> reportUser({
+    required String reportedId,
+    required String reason,
+    required String reasonDetails,
+  }) async {
+    emit(state.copyWith(reportActionState: CubitStates.loading));
+    final result = await _profileRepository.reportUser(
+      reportedId: reportedId,
+      reason: reason,
+      reasonDetails: reasonDetails,
+    );
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          reportActionState: CubitStates.failure,
+          reportMessage: failure.message,
+        ),
+      ),
+      (message) => emit(
+        state.copyWith(
+          reportActionState: CubitStates.success,
+          reportMessage: message,
+        ),
+      ),
+    );
+  }
 }
