@@ -495,4 +495,64 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
 
     emit(state.copyWith(posts: updatedPosts));
   }
+
+  Future<void> blockUser(String advisorId) async {
+    // لو الـ Cubit مقفول → متكملش
+    if (isClosed) return;
+
+    emit(state.copyWith(blockActionState: CubitStates.loading));
+
+    final result = await _repository.blockUser(advisorId);
+
+    // بعد الـ await → تحقق تاني قبل الـ emit
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.failure,
+            blockMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.success,
+            blockMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> reportUser({
+    required String reportedId,
+    required String reason,
+    required String reasonDetails,
+  }) async {
+    emit(state.copyWith(reportActionState: CubitStates.loading));
+    final result = await _repository.reportUser(
+      reportedId: reportedId,
+      reason: reason,
+      reasonDetails: reasonDetails,
+    );
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          reportActionState: CubitStates.failure,
+          reportMessage: failure.message,
+        ),
+      ),
+      (message) => emit(
+        state.copyWith(
+          reportActionState: CubitStates.success,
+          reportMessage: message,
+        ),
+      ),
+    );
+  }
 }

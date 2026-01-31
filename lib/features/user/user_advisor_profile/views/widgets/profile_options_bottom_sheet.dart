@@ -1,21 +1,26 @@
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/widgets/reposrt_bottom_sheet.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileOptionsBottomSheet extends StatelessWidget {
   final String advisorId;
   final String? advisorName;
+  final UserAdvisorProfileCubit cubit;
 
   const ProfileOptionsBottomSheet({
     super.key,
     required this.advisorId,
     this.advisorName,
+    required this.cubit,
   });
 
   static void show(
     BuildContext context, {
     required String advisorId,
     String? advisorName,
+    required UserAdvisorProfileCubit cubit,
   }) {
     showModalBottomSheet(
       context: context,
@@ -24,6 +29,7 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
       builder: (context) => ProfileOptionsBottomSheet(
         advisorId: advisorId,
         advisorName: advisorName,
+        cubit: cubit,
       ),
     );
   }
@@ -166,17 +172,31 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
       supTitle: context.tr(AppStrings.blockUserConfirmation),
       icon: Icons.block,
       bottonText: context.tr(AppStrings.yes),
-      onPressed: () {
-        // هنا نفذ الـ API بتاعة Block
-        // مثال:
-        // context.read<UserAdvisorProfileCubit>().blockUser(advisorId);
-        showSafeSnackBar(
-          context: context,
-          text: "تم حظر المستخدم",
-          isSuccess: true,
-        );
-        Navigator.pop(context); // إغلاق الـ dialog
-        Navigator.pop(context); // إغلاق الـ bottom sheet
+      onPressed: () async {
+        final scaffoldContext = context;
+
+        Navigator.pop(context); // dialog
+        Navigator.pop(context); // sheet
+
+        await cubit.blockUser(advisorId);
+
+        final state = cubit.state;
+
+        if (!scaffoldContext.mounted) return;
+
+        if (state.blockActionState == CubitStates.success) {
+          showSafeSnackBar(
+            context: scaffoldContext,
+            text: state.blockMessage ?? "تم حظر المستخدم",
+            isSuccess: true,
+          );
+        } else {
+          showSafeSnackBar(
+            context: scaffoldContext,
+            text: state.blockMessage ?? "فشل الحظر",
+            isError: true,
+          );
+        }
       },
       showCancelButton: true,
       cancelText: context.tr(AppStrings.no),
@@ -186,31 +206,10 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
     );
   }
 
+  // للـ Report: بدلاً من confirmation بسيط، افتح bottom sheet جديدة
   void _showReportConfirmation(BuildContext context) {
-    // هنا ممكن تعمل dialog أكثر تعقيداً فيه اختيار سبب + تفاصيل
-    // لكن حالياً هنعمل بسيط
-    CustomshowDialogWithImage(
-      context,
-      title: 'إبلاغ',
-      supTitle: "هل أنت متأكد من الإبلاغ عن هذا المستخدم؟",
-      icon: Icons.report,
-      bottonText: context.tr(AppStrings.report),
-      onPressed: () {
-        // TODO: نفذ API الإبلاغ
-        // مثال:
-        // await _reportUser(context, advisorId, reason: "سبب عام", details: "");
-        showSafeSnackBar(
-          context: context,
-          text: "تم إرسال الإبلاغ بنجاح",
-          isSuccess: true,
-        );
-        Navigator.pop(context); // dialog
-        Navigator.pop(context); // bottom sheet
-      },
-      showCancelButton: true,
-      cancelText: context.tr(AppStrings.cancel),
-      onCancel: () => Navigator.pop(context),
-    );
+    // افتح الـ ReportBottomSheet الجديدة
+    ReportBottomSheet.show(context, reportedId: advisorId, cubit: cubit);
   }
 }
 

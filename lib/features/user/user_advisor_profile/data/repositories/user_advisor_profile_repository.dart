@@ -21,6 +21,12 @@ abstract class UserAdvisorProfileRepository {
     required String postId,
     required String action,
   });
+  Future<Either<Failure, String>> blockUser(String advisorId);
+  Future<Either<Failure, String>> reportUser({
+    required String reportedId,
+    required String reason,
+    required String reasonDetails,
+  });
 }
 
 // features/advisor/user_profile/data/repositories/user_profile_repository_impl.dart
@@ -158,6 +164,51 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         data: requestData,
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> blockUser(String advisorId) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.blockuser,
+        data: {"blockedId": advisorId},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> reportUser({
+    required String reportedId,
+    required String reason,
+    required String reasonDetails,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint:
+            '/personal-reports/', // افترض أن ده الـ endPoint الكامل، غيره لو مختلف
+        data: {
+          "reportedId": reportedId,
+          "reason": reason,
+          "reasonDetails": reasonDetails,
+        },
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم إرسال الإبلاغ بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {

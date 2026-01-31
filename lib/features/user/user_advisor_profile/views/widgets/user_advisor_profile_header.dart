@@ -172,9 +172,9 @@ class UserAdvisorProfileHeader extends StatelessWidget {
   }
 
   Widget _buildMoreButton(BuildContext context) {
+    final cubit = context.read<UserAdvisorProfileCubit>();
     return GestureDetector(
       onTap: () {
-        final cubit = context.read<UserAdvisorProfileCubit>();
         final profileId = cubit.advisorId;
         final name = cubit.state.profile?.name;
 
@@ -182,6 +182,7 @@ class UserAdvisorProfileHeader extends StatelessWidget {
           context,
           advisorId: profileId,
           advisorName: name,
+          cubit: cubit,
         );
       },
       child: Icon(Icons.more_vert, color: AppColors.secondary600, size: 28.w),
