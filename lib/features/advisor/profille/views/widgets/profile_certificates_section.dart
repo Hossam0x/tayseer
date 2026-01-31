@@ -12,22 +12,31 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 class ProfileCertificatesSection extends StatelessWidget {
   final String advisorId;
+  final bool isMe;
 
-  const ProfileCertificatesSection({super.key, required this.advisorId});
+  const ProfileCertificatesSection({
+    super.key,
+    required this.advisorId,
+    required this.isMe,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<CertificatesCubit>(
       create: (_) => getIt<CertificatesCubit>(),
-      child: _CertificatesSectionContent(advisorId: advisorId),
+      child: _CertificatesSectionContent(advisorId: advisorId, isMe: isMe),
     );
   }
 }
 
 class _CertificatesSectionContent extends StatefulWidget {
   final String advisorId;
+  final bool isMe;
 
-  const _CertificatesSectionContent({required this.advisorId});
+  const _CertificatesSectionContent({
+    required this.advisorId,
+    required this.isMe,
+  });
 
   @override
   State<_CertificatesSectionContent> createState() =>
@@ -70,6 +79,7 @@ class __CertificatesSectionContentState
 
   @override
   Widget build(BuildContext context) {
+    final bool isMe = widget.isMe;
     super.build(context);
     if (!_isInitialized) {
       return _buildSkeletonSection();
@@ -79,7 +89,7 @@ class __CertificatesSectionContentState
       onRefresh: () async => await _cubit.refresh(advisorId: widget.advisorId),
       child: Column(
         children: [
-          _buildContentSection(context, _cubit.state),
+          _buildContentSection(context, _cubit.state, isMe),
 
           // زر تحميل المزيد للشهادات
           if (_cubit.state.hasMore) _buildLoadMoreButton(context, _cubit.state),
@@ -122,7 +132,11 @@ class __CertificatesSectionContentState
     );
   }
 
-  Widget _buildContentSection(BuildContext context, CertificatesState state) {
+  Widget _buildContentSection(
+    BuildContext context,
+    CertificatesState state,
+    bool isMe,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 24.h),
       child: Column(
@@ -131,7 +145,7 @@ class __CertificatesSectionContentState
           // Video Section
           if (state.hasVideo) _buildVideoSection(context, state.videoUrl!),
           Gap(24.h),
-          if (state.isMe)
+          if (isMe)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -171,7 +185,7 @@ class __CertificatesSectionContentState
                   child: _buildCertificateItem(
                     context,
                     state.certificates[index],
-                    state.isMe,
+                    isMe,
                   ),
                 );
               },
@@ -180,7 +194,7 @@ class __CertificatesSectionContentState
             _buildNoCertificatesSection(),
           Gap(24.h),
           // Boost Button
-          if (state.isMe)
+          if (isMe)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 35.w),
               child: BoostButton(
@@ -325,7 +339,8 @@ class __CertificatesSectionContentState
     }
 
     return GestureDetector(
-      onTap: () => _navigateToEditCertificate(context, certificate),
+      onTap: () =>
+          isMe ? _navigateToEditCertificate(context, certificate) : null,
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(

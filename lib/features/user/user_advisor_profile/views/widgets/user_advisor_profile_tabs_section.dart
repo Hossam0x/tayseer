@@ -157,6 +157,7 @@ class _UserAdvisorProfileTabsSectionState
         return UserAdvisorPostsTab(advisorId: widget.advisorId);
       case 1:
         return ProfileCertificatesSection(
+          isMe: isMe,
           key: ValueKey(
             'certificates_${DateTime.now().millisecondsSinceEpoch}',
           ), // للـ rebuild

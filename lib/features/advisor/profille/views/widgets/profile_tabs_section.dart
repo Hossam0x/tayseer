@@ -25,7 +25,6 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   int _previousTabIndex = 0;
 
   @override
-
   void initState() {
     super.initState();
 
@@ -159,6 +158,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
       case 1:
         // 🔹 استخدام key فريد لإجبار rebuild عند الضغط على نفس التاب
         return ProfileCertificatesSection(
+          isMe: true,
           key: ValueKey(
             'certificates_${DateTime.now().millisecondsSinceEpoch}',
           ),
