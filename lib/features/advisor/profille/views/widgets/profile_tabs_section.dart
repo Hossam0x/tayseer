@@ -25,6 +25,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   int _previousTabIndex = 0;
 
   @override
+
   void initState() {
     super.initState();
 

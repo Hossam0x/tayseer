@@ -7,23 +7,13 @@ import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advi
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class UserAdvisorPostsTab extends StatefulWidget {
+class UserAdvisorPostsTab extends StatelessWidget {
   final String advisorId;
 
   const UserAdvisorPostsTab({super.key, required this.advisorId});
 
   @override
-  State<UserAdvisorPostsTab> createState() => _UserAdvisorPostsTabState();
-}
-
-class _UserAdvisorPostsTabState extends State<UserAdvisorPostsTab>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
   Widget build(BuildContext context) {
-    super.build(context);
     final cubit = context.read<UserAdvisorProfileCubit>();
 
     return BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
@@ -50,6 +40,7 @@ class _UserAdvisorPostsTabState extends State<UserAdvisorPostsTab>
             onRefresh: () => cubit.fetchPosts(),
             child: Column(
               children: [
+                // المنشورات نفسها
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -105,11 +96,11 @@ class _UserAdvisorPostsTabState extends State<UserAdvisorPostsTab>
                   },
                 ),
 
-                // زر تحميل المزيد
+                // زر تحميل المزيد (يظهر فقط لو لسه فيه محتوى متبقي)
                 if (state.hasMore) _buildLoadMoreButton(context, state, cubit),
 
-                // مسافة إضافية في الأسفل
-                Gap(20.h),
+                // مسافة تحت عشان الـ scroll يبقى مريح
+                Gap(40.h),
               ],
             ),
           );
@@ -123,20 +114,18 @@ class _UserAdvisorPostsTabState extends State<UserAdvisorPostsTab>
     UserAdvisorProfileState state,
     UserAdvisorProfileCubit cubit,
   ) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 24.w),
-      child: state.isLoadingMore
-          ? Center(
-              child: CircularProgressIndicator(color: AppColors.kprimaryColor),
-            )
-          : SizedBox(
+    return state.isLoadingMore
+        ? _buildShimmerListMore()
+        : Padding(
+            padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 24.w),
+            child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => cubit.fetchPosts(loadMore: true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.kWhiteColor,
                   foregroundColor: AppColors.kprimaryColor,
-                  side: BorderSide(color: AppColors.kprimaryColor, width: 1.w),
+                  side: BorderSide(color: AppColors.kprimaryColor, width: 1),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.r),
                   ),
@@ -151,7 +140,7 @@ class _UserAdvisorPostsTabState extends State<UserAdvisorPostsTab>
                 ),
               ),
             ),
-    );
+          );
   }
 
   bool _shouldListenToShare(
@@ -182,6 +171,19 @@ class _UserAdvisorPostsTabState extends State<UserAdvisorPostsTab>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(vertical: 16.h),
+      itemCount: 3,
+      itemBuilder: (context, index) {
+        return Column(
+          children: [const PostCardShimmer(), if (index < 2) Gap(16.h)],
+        );
+      },
+    );
+  }
+
+  Widget _buildShimmerListMore() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: 3,
       itemBuilder: (context, index) {
         return Column(
