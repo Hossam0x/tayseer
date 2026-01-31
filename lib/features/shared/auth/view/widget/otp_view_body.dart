@@ -1,5 +1,5 @@
 import 'package:tayseer/core/enum/user_type.dart';
-import 'package:tayseer/features/shared/auth/view/widget/custom_otp_timer.dart';
+import 'package:tayseer/core/widgets/custom_otp_timer.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import '../../../../../my_import.dart';

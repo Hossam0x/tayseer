@@ -13,11 +13,12 @@ import '../../../../my_import.dart';
 class QuestionsPageView extends StatelessWidget {
   final UserTypeEnum currentUserType;
   final Gender selectedGender;
-
+  final int lastQuestionNumber;
   QuestionsPageView({
     super.key,
     required this.currentUserType,
     required this.selectedGender,
+    required this.lastQuestionNumber,
   });
 
   final PageController _pageController = PageController();
@@ -323,6 +324,23 @@ class QuestionsPageView extends StatelessWidget {
   Widget build(BuildContext context) {
     final questions = _getQuestions(context);
     final totalPages = questions.length;
+
+    // إذا تم تمرير آخر رقم سؤال من السيرفر، نحدد الصفحة التي تحتوي على السؤال التالي
+    // نبحث عن السؤال الذي رقمه = lastQuestionNumber + 1
+    final targetQuestionNumber = lastQuestionNumber + 1;
+    final startIndex = questions.indexWhere(
+      (q) => q.questionNumber == targetQuestionNumber,
+    );
+
+    // نقوم بالقفز إلى الصفحة المطلوبة بعد بناء الواجهة لتجنّب مشاكل السياق
+    if (startIndex != -1 && _currentPage.value == 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(startIndex);
+          _currentPage.value = startIndex;
+        }
+      });
+    }
 
     return Scaffold(
       body: CustomBackground(

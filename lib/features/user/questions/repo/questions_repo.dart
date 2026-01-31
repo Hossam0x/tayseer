@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/features/user/questions/model/last_question_number_model.dart';
 import 'package:tayseer/my_import.dart';
 
 abstract class QuestionsRepo {
@@ -15,4 +16,11 @@ abstract class QuestionsRepo {
     List<File>? images,
   });
   Future<Either<Failure, void>> verifyFaceImage({required XFile image});
+  Future<Either<Failure, void>> changeImageBlur();
+  Future<Either<Failure, void>> phoneNumber({
+    required String phoneNumber,
+    required String countryCode,
+  });
+  Future<Either<Failure, void>> verifyOtp({required String otp});
+  Future<Either<Failure, LastQuestionNumber>> getLastQuestionNumber();
 }

@@ -45,6 +45,9 @@ abstract class AssetsData {
   static const String ribbonImage = "assets/images/ribbonImage.png";
   static const String vector4 = "assets/images/vector4.png";
   static const String userBGImage = "assets/images/user_BG.png";
+  static const String kblurImage = "assets/images/blur_image.png";
+  static const String kmapImage = "assets/images/map_image.png";
+  static const String ksuccessTrueImage = "assets/images/success_true_image.png";
 
   //////////////////////icons//////////////////////
   static const String kArroBackIcon = "assets/icons/arro_back.svg";

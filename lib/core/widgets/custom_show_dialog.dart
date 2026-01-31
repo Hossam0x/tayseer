@@ -70,9 +70,9 @@ void CustomshowDialogWithImage(
   BuildContext context, {
   required String title,
   required String supTitle,
-  String? imageUrl,           // ✅ صورة (اختياري)
-  IconData? icon,             // ✅ أيقونة (اختياري)
-  Color? iconColor,           // ✅ لون الأيقونة (اختياري)
+  String? imageUrl, // ✅ صورة (اختياري)
+  IconData? icon, // ✅ أيقونة (اختياري)
+  Color? iconColor, // ✅ لون الأيقونة (اختياري)
   Color? iconBackgroundColor, // ✅ لون خلفية الأيقونة (اختياري)
   required String bottonText,
   required void Function() onPressed,
@@ -81,10 +81,7 @@ void CustomshowDialogWithImage(
   bool showCancelButton = false,
 }) {
   // ✅ التأكد إن واحد منهم على الأقل موجود
-  assert(
-    imageUrl != null || icon != null,
-    'يجب توفير إما imageUrl أو icon',
-  );
+  assert(imageUrl != null || icon != null, 'يجب توفير إما imageUrl أو icon');
 
   HapticFeedback.mediumImpact();
 
@@ -116,9 +113,9 @@ void CustomshowDialogWithImage(
 class _DialogContent extends StatelessWidget {
   final String title;
   final String supTitle;
-  final String? imageUrl;           // ✅ صورة
-  final IconData? icon;             // ✅ أيقونة
-  final Color? iconColor;           // ✅ لون الأيقونة
+  final String? imageUrl; // ✅ صورة
+  final IconData? icon; // ✅ أيقونة
+  final Color? iconColor; // ✅ لون الأيقونة
   final Color? iconBackgroundColor; // ✅ لون خلفية الأيقونة
   final String bottonText;
   final void Function() onPressed;
@@ -220,11 +217,7 @@ class _DialogContent extends StatelessWidget {
           color: iconBackgroundColor ?? Colors.red.withOpacity(0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          size: 50,
-          color: iconColor ?? Colors.red,
-        ),
+        child: Icon(icon, size: 50, color: iconColor ?? Colors.red),
       );
     } else {
       // ✅ في حالة عدم وجود أي منهم (احتياطي)
@@ -235,11 +228,7 @@ class _DialogContent extends StatelessWidget {
           color: Colors.grey.withOpacity(0.1),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.info_outline,
-          size: 50,
-          color: Colors.grey,
-        ),
+        child: const Icon(Icons.info_outline, size: 50, color: Colors.grey),
       );
     }
 
@@ -452,10 +441,7 @@ void CustomSHowDetailsDialog(
     },
     transitionBuilder: (context, animation, secondaryAnimation, child) {
       return ScaleTransition(
-        scale: CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutBack,
-        ),
+        scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
         child: FadeTransition(
           opacity: animation,
           child: Center(

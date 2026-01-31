@@ -5,8 +5,6 @@ const String kIsUserAnonymous = "is_user_anonymous";
 const String kUserType = "user_type";
 const String ktoken = "token";
 const String kuserData = "user_data";
+const String kIsCompletedQuestions = "is_completed_questions";
 
-//////////// app store keys ////////////
-const int kAppId = 2043268088;
-const String kAppSign =
-    '2c9e700053f5ba28ddc9e1d02a19bb728b9d82467bd337483c8a3d8616dcb1dc';
+
