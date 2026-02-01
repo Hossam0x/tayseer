@@ -1,13 +1,13 @@
 import 'package:tayseer/my_import.dart';
 
 class CusttomImageGrid extends StatelessWidget {
-  final List<File> images;
+  final List<dynamic> imageUrls; // ⭐ Accepts both String (URLs) and File objects
   final VoidCallback onAdd;
   final Function(int) onRemove;
-
+  
   const CusttomImageGrid({
     super.key,
-    required this.images,
+    required this.imageUrls, // ⭐ Can be List<String> or List<File>
     required this.onAdd,
     required this.onRemove,
   });
@@ -16,27 +16,47 @@ class CusttomImageGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return GridView.builder(
       shrinkWrap: true,
-      itemCount: images.length + 1,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: imageUrls.length + 1,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
       ),
       itemBuilder: (context, index) {
-        if (index == images.length) {
+        if (index == imageUrls.length) {
           return AddGridItem(onTap: onAdd);
         }
-        return ImageItem(file: images[index], onRemove: () => onRemove(index));
+        return ImageItem(
+          imageData: imageUrls[index], // ⭐ Can be either File or String
+          onRemove: () => onRemove(index),
+        );
       },
     );
   }
 }
 
 class ImageItem extends StatelessWidget {
-  final File file;
+  final dynamic imageData; // ⭐ Can be File or String
   final VoidCallback onRemove;
+  
+  const ImageItem({
+    super.key, 
+    required this.imageData, 
+    required this.onRemove,
+  });
 
-  const ImageItem({super.key, required this.file, required this.onRemove});
+  // ⭐ Check if it's a local File object
+  bool get isFile => imageData is File;
+  
+  // ⭐ Check if it's a network URL
+  bool get isNetworkUrl => imageData is String && 
+      (imageData.startsWith('http://') || imageData.startsWith('https://'));
+  
+  // ⭐ Check if it's a local file path
+  bool get isLocalPath => imageData is String && 
+      !imageData.startsWith('http://') && 
+      !imageData.startsWith('https://');
 
   @override
   Widget build(BuildContext context) {
@@ -44,12 +64,7 @@ class ImageItem extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Image.file(
-            file,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-          ),
+          child: _buildImage(),
         ),
         Positioned(
           top: -6,
@@ -62,10 +77,74 @@ class ImageItem extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildImage() {
+    // ⭐ File object (from image picker)
+    if (isFile) {
+      return Image.file(
+        imageData as File,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildErrorWidget();
+        },
+      );
+    }
+    
+    // ⭐ Network URL (from API)
+    if (isNetworkUrl) {
+      return CachedNetworkImage(
+        imageUrl: imageData as String,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        placeholder: (context, url) => Center(
+          child: CircularProgressIndicator(
+            color: AppColors.kprimaryColor,
+            strokeWidth: 2,
+          ),
+        ),
+        errorWidget: (context, url, error) {
+          return _buildErrorWidget();
+        },
+      );
+    }
+    
+    // ⭐ Local file path (fallback)
+    if (isLocalPath) {
+      return Image.file(
+        File(imageData as String),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildErrorWidget();
+        },
+      );
+    }
+    
+    // ⭐ Unknown type
+    return _buildErrorWidget();
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      color: Colors.grey[300],
+      child: const Center(
+        child: Icon(
+          Icons.broken_image,
+          color: Colors.grey,
+          size: 40,
+        ),
+      ),
+    );
+  }
 }
 
 class AddGridItem extends StatelessWidget {
   final VoidCallback onTap;
+  
   const AddGridItem({super.key, required this.onTap});
 
   @override

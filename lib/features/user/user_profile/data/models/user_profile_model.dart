@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-
 class UserProfileModel extends Equatable {
   final String id;
   final String name;
@@ -19,6 +18,7 @@ class UserProfileModel extends Equatable {
   final Map<String, dynamic> room;
   final String? email;
   final String? phone;
+  final bool? dataCompleted;
 
   const UserProfileModel({
     required this.id,
@@ -31,6 +31,7 @@ class UserProfileModel extends Equatable {
     required this.isAnonymous,
     required this.availableForMarry,
     this.following = 0,
+  
     this.followers = 0,
     required this.isMe,
     this.isVerified,
@@ -39,6 +40,7 @@ class UserProfileModel extends Equatable {
     this.room = const {},
     this.email = '',
     this.phone = '',
+    this.dataCompleted,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -67,6 +69,8 @@ class UserProfileModel extends Equatable {
       room: json['room'] is Map<String, dynamic>
           ? Map<String, dynamic>.from(json['room'])
           : {},
+    
+      dataCompleted: json['dataCompleted'],
     );
   }
 
@@ -84,6 +88,7 @@ class UserProfileModel extends Equatable {
     'isMe': isMe,
     'email': email,
     'phone': phone,
+    "dataCompleted": dataCompleted,
   };
 
   UserProfileModel copyWith({
@@ -103,6 +108,8 @@ class UserProfileModel extends Equatable {
     String? location,
     String? email,
     String? phone,
+    bool? avaliableForMarry,
+    bool? dataCompleted,
   }) {
     return UserProfileModel(
       id: id ?? this.id,
@@ -123,6 +130,7 @@ class UserProfileModel extends Equatable {
       phone: phone ?? this.phone,
       isBlocked: isBlocked,
       room: room,
+      dataCompleted: dataCompleted ?? this.dataCompleted,
     );
   }
 
@@ -144,5 +152,7 @@ class UserProfileModel extends Equatable {
     location,
     email,
     phone,
+    dataCompleted,
+
   ];
 }
