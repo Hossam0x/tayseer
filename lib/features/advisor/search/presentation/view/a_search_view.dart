@@ -6,10 +6,8 @@ import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/event/view/widget/event_cart_item.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_advisor_model.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_event_model.dart';
-import 'package:tayseer/features/advisor/search/data/models/search_group_model.dart';
 import 'package:tayseer/features/advisor/search/presentation/cubit/search_cubit.dart';
 import 'package:tayseer/features/advisor/search/presentation/cubit/search_state.dart';
-import 'package:tayseer/features/advisor/search/presentation/widgets/group_card.dart';
 import 'package:tayseer/features/advisor/search/presentation/widgets/search_empty_state.dart';
 import 'package:tayseer/features/advisor/search/presentation/widgets/search_loading_state.dart';
 import 'package:tayseer/features/advisor/search/presentation/widgets/search_error_state.dart';
@@ -38,18 +36,21 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   late FocusNode _searchFocusNode;
   Timer? _searchDebounce;
 
-  // قائمة التبويبات - 5 تبويبات (مع المجموعات)
+  // استخدام late final للـ SearchCubit
+  late final SearchCubit _searchCubit;
+
+  // قائمة التبويبات - 4 تبويبات فقط (بدون المجموعات)
   final List<SearchTab> _tabs = [
     SearchTab(id: 'all', title: 'الكل'),
     SearchTab(id: 'advisors', title: 'المستشارين'),
     SearchTab(id: 'posts', title: 'المنشورات'),
     SearchTab(id: 'events', title: 'الأحداث'),
-    SearchTab(id: 'groups', title: 'المجموعات'),
   ];
 
   @override
   void initState() {
     super.initState();
+    _searchCubit = SearchCubit();
     _tabController = TabController(
       length: _tabs.length,
       vsync: this,
@@ -64,14 +65,8 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     // إعطاء التركيز لشريط البحث
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.requestFocus();
+      _searchCubit.loadInitialData();
     });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // تحميل البيانات الأولية
-    context.read<SearchCubit>().loadInitialData();
   }
 
   @override
@@ -81,6 +76,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     _searchController.dispose();
     _searchFocusNode.dispose();
     _searchDebounce?.cancel();
+    _searchCubit.close();
     super.dispose();
   }
 
@@ -94,6 +90,9 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
 
   void _onTabChanged() {
     if (_tabController.indexIsChanging) {
+      if (mounted) {
+        setState(() {});
+      }
       _performSearch();
     }
   }
@@ -111,14 +110,13 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   void _performSearch() {
     final query = _searchController.text.trim();
     final currentTab = _tabs[_tabController.index];
-
-    context.read<SearchCubit>().search(query: query, category: currentTab.id);
+    _searchCubit.search(query: query, category: currentTab.id);
   }
 
   void _clearSearch() {
     _searchController.clear();
     _searchFocusNode.requestFocus();
-    context.read<SearchCubit>().clearSearch();
+    _searchCubit.clearSearch();
   }
 
   @override
@@ -136,6 +134,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
             // محتوى البحث
             Expanded(
               child: BlocBuilder<SearchCubit, SearchState>(
+                bloc: _searchCubit, // ✅ تمرير الـ cubit مباشرة هنا
                 builder: (context, state) {
                   return _buildSearchContent(context, state);
                 },
@@ -180,6 +179,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 12.w),
                         child: BlocBuilder<SearchCubit, SearchState>(
+                          bloc: _searchCubit, // ✅ تمرير الـ cubit مباشرة
                           builder: (context, state) {
                             return state.isLoading
                                 ? SizedBox(
@@ -323,10 +323,6 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
           message = 'لا توجد أحداث مطابقة';
           iconPath = AssetsData.icNoContentSeach;
           break;
-        case 'groups':
-          message = 'لا توجد مجموعات مطابقة';
-          iconPath = AssetsData.icNoContentSeach;
-          break;
         default:
           message = 'لا توجد نتائج للبحث';
           iconPath = AssetsData.icNoContentSeach;
@@ -358,8 +354,6 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
         return _buildPostsList(context, state.posts);
       case 'events':
         return _buildEventsList(state.events);
-      case 'groups':
-        return _buildGroupsList(context, state.groups);
       default:
         return const SizedBox.shrink();
     }
@@ -382,12 +376,14 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                 child: _buildAdvisorItem(context, advisor),
               ),
             ),
+            SizedBox(height: 20.h),
           ],
 
           // المنشورات
           if (state.posts.isNotEmpty) ...[
             _buildSectionHeader(title: 'المنشورات', count: state.posts.length),
             ...state.posts.map((post) => _buildPostItem(context, post)),
+            SizedBox(height: 20.h),
           ],
 
           // الأحداث
@@ -399,15 +395,8 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                 child: _buildEventItem(event),
               ),
             ),
+            SizedBox(height: 20.h),
           ],
-
-          // المجموعات
-          if (state.groups.isNotEmpty) ...[
-            _buildSectionHeader(title: 'المجموعات', count: state.groups.length),
-            ...state.groups.map((group) => _buildGroupItem(context, group)),
-          ],
-
-          SizedBox(height: 20.h),
         ],
       ),
     );
@@ -430,7 +419,6 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   }
 
   Widget _buildAdvisorItem(BuildContext context, SearchAdvisor advisor) {
-    // تحويل SearchAdvisor إلى FollowerModel
     final follower = FollowerModel(
       id: advisor.id,
       name: advisor.name,
@@ -444,7 +432,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     return FollowerItem(
       follower: follower,
       onToggleFollow: () {
-        context.read<SearchCubit>().toggleFollowAdvisor(advisor.id);
+        _searchCubit.toggleFollowAdvisor(advisor.id);
       },
     );
   }
@@ -498,34 +486,6 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
           child: _buildEventItem(events[index]),
         );
-      },
-    );
-  }
-
-  Widget _buildGroupsList(BuildContext context, List<SearchGroup> groups) {
-    return ListView.builder(
-      padding: EdgeInsets.only(top: 12.h),
-      itemCount: groups.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-          child: _buildGroupItem(context, groups[index]),
-        );
-      },
-    );
-  }
-
-  Widget _buildGroupItem(BuildContext context, SearchGroup group) {
-    return GroupCard(
-      groupId: group.id,
-      groupName: group.name,
-      groupImage: group.imageUrl,
-      groupDescription: group.description,
-      membersCount: group.membersCount,
-      postsCount: group.postsCount,
-      isJoined: group.isJoined,
-      onJoinToggle: () {
-        context.read<SearchCubit>().toggleJoinGroup(group.id);
       },
     );
   }
