@@ -1,8 +1,6 @@
-// features/user/user_profile/views/cubit/marriage_profile_state.dart
-
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
-import 'package:tayseer/my_import.dart';
 
 class MarriageProfileState extends Equatable {
   final CubitStates state;
@@ -10,7 +8,7 @@ class MarriageProfileState extends Equatable {
   final String? errorMessage;
   final String? successMessage;
   final bool isLoading;
-  final bool isUpdating;
+  final bool isUpdating; // ⭐ Added missing field
 
   const MarriageProfileState({
     this.state = CubitStates.initial,
@@ -18,7 +16,7 @@ class MarriageProfileState extends Equatable {
     this.errorMessage,
     this.successMessage,
     this.isLoading = false,
-    this.isUpdating = false,
+    this.isUpdating = false, // ⭐ Added missing field
   });
 
   MarriageProfileState copyWith({
@@ -27,15 +25,18 @@ class MarriageProfileState extends Equatable {
     String? errorMessage,
     String? successMessage,
     bool? isLoading,
-    bool? isUpdating,
+    bool? isUpdating, // ⭐ Added missing field
+    bool clearMessages = false,
   }) {
     return MarriageProfileState(
       state: state ?? this.state,
       profile: profile ?? this.profile,
-      errorMessage: errorMessage,
-      successMessage: successMessage,
+      errorMessage: clearMessages ? null : (errorMessage ?? this.errorMessage),
+      successMessage: clearMessages
+          ? null
+          : (successMessage ?? this.successMessage),
       isLoading: isLoading ?? this.isLoading,
-      isUpdating: isUpdating ?? this.isUpdating,
+      isUpdating: isUpdating ?? this.isUpdating, // ⭐ Added missing field
     );
   }
 
@@ -46,6 +47,6 @@ class MarriageProfileState extends Equatable {
         errorMessage,
         successMessage,
         isLoading,
-        isUpdating,
+        isUpdating, // ⭐ Added missing field
       ];
 }

@@ -12,6 +12,7 @@ class UserProfileModel extends Equatable {
   final bool avaliableForMarry;
   final bool? isVerified;
   final String? location;
+  final bool? dataCompleted;
 
   const UserProfileModel({
     required this.id,
@@ -20,11 +21,13 @@ class UserProfileModel extends Equatable {
     this.description,
     this.image,
     required this.following,
+    
     this.followers = 0,
     required this.isMe,
     required this.avaliableForMarry,
     this.isVerified,
     this.location,
+    this.dataCompleted,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +43,7 @@ class UserProfileModel extends Equatable {
       avaliableForMarry: json['avaliableForMarry'] ?? false,
       isVerified: json['isVerified'],
       location: json['location'],
+      dataCompleted: json['dataCompleted'],
     );
   }
 
@@ -52,6 +56,7 @@ class UserProfileModel extends Equatable {
     'following': following,
     'isMe': isMe,
     'avaliableForMarry': avaliableForMarry,
+    "dataCompleted": dataCompleted,
   };
 
   UserProfileModel copyWith({
@@ -63,6 +68,7 @@ class UserProfileModel extends Equatable {
     int? following,
     bool? isMe,
     bool? avaliableForMarry,
+    bool? dataCompleted,
   }) {
     return UserProfileModel(
       id: id ?? this.id,
@@ -73,6 +79,7 @@ class UserProfileModel extends Equatable {
       following: following ?? this.following,
       isMe: isMe ?? this.isMe,
       avaliableForMarry: avaliableForMarry ?? this.avaliableForMarry,
+      dataCompleted: dataCompleted ?? this.dataCompleted,
     );
   }
 
@@ -85,6 +92,7 @@ class UserProfileModel extends Equatable {
     image,
     following,
     isMe,
+    dataCompleted,
     avaliableForMarry,
   ];
 }

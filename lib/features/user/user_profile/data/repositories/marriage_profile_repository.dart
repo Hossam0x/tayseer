@@ -1,282 +1,325 @@
-// features/user/user_profile/data/repositories/marriage_profile_repository.dart
+// marriage_profile_repository.dart - FIXED VERSION
+// ════════════════════════════════════════════════════════════════
+// ✅ الحل: تحويل البيانات لـ format السيرفر (answers array)
+// ════════════════════════════════════════════════════════════════
 
 import 'dart:convert';
 import 'dart:io';
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tayseer/core/errors/failure.dart';
+import 'package:tayseer/core/utils/api_service.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
-import 'package:tayseer/my_import.dart';
 
-/// 🎭 MOCKUP Repository - استخدام البيانات المحلية بدلاً من API
-/// هذا mockup مؤقت حتى يكتمل الباك إند
 class MarriageProfileRepository {
   final ApiService _apiService;
-  static const String _storageKey = 'marriage_profile_data';
+  static const String _storageKey = 'marriage_profile_data_v3';
 
   MarriageProfileRepository(this._apiService);
 
-  // ========== GET MARRIAGE PROFILE ==========
+  // ⭐ GET MARRIAGE PROFILE
   Future<Either<Failure, MarriageUserProfileModel>> getMarriageProfile() async {
     try {
-      // محاكاة تأخير الشبكة
-      await Future.delayed(const Duration(milliseconds: 800));
+      debugPrint('📥 Fetching Marriage Profile...');
 
-      final prefs = await SharedPreferences.getInstance();
-      final profileData = prefs.getString(_storageKey);
+      final response = await _apiService.get(
+        endPoint: '/user/marry-profile-for-update',
+      );
 
-      if (profileData != null) {
-        // تحميل البروفايل المحفوظ
-        final jsonData = jsonDecode(profileData) as Map<String, dynamic>;
-        final profile = MarriageUserProfileModel.fromJson(jsonData);
-        debugPrint('✅ تم تحميل ملف الزواج من التخزين المحلي');
-        debugPrint('   نسبة الاكتمال: ${profile.marriageCompletionPercentage}%');
+      if (response['success'] == true) {
+        final data = response['data'] as Map<String, dynamic>;
+        final profile = MarriageUserProfileModel.fromJson(data);
+
+        debugPrint('✅ Profile loaded - Images: ${profile.userMedia?.images.length}');
+        await _saveProfileLocally(profile);
         return Right(profile);
-      } else {
-        // إنشاء بروفايل افتراضي جديد (فارغ)
-        final defaultProfile = MarriageUserProfileModel(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: 'مستخدم جديد',
-          username: 'user_${DateTime.now().millisecondsSinceEpoch}',
-          isMe: true,
-          following: 0,
-          followers: 0,
-          isAvailableForMarriage: false,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-
-        // حفظ البروفايل الافتراضي
-        await _saveProfile(defaultProfile);
-        debugPrint('✅ تم إنشاء ملف زواج افتراضي جديد');
-        return Right(defaultProfile);
       }
+      
+      return Left(ServerFailure(response['message'] ?? 'فشل جلب البيانات'));
+    } on DioException catch (e) {
+      debugPrint('❌ DioException: ${e.message}');
+      
+      final localProfile = await _loadProfileLocally();
+      if (localProfile != null) {
+        debugPrint('✅ Loaded from local storage');
+        return Right(localProfile);
+      }
+      return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      debugPrint('❌ خطأ في تحميل ملف الزواج: $e');
-      return Left(ServerFailure('حدث خطأ في تحميل البيانات: $e'));
+      debugPrint('❌ Error: $e');
+      return Left(ServerFailure('حدث خطأ: $e'));
     }
   }
 
-  // ========== UPDATE MARRIAGE PROFILE ==========
+  // ⭐⭐⭐ UPDATE PROFILE - FIXED VERSION
   Future<Either<Failure, MarriageUserProfileModel>> updateMarriageProfile(
     MarriageUserProfileModel profile,
   ) async {
     try {
-      // محاكاة تأخير الشبكة
-      await Future.delayed(const Duration(milliseconds: 600));
+      debugPrint('💾 Updating profile...');
+      
+      // ✅✅✅ تحويل البيانات للـ format الصحيح
+      final requestData = _convertToServerFormat(profile);
+      
+      debugPrint('📤 Sending data: ${jsonEncode(requestData)}');
 
-      // تحديث وقت التعديل
-      final updatedProfile = profile.copyWith(
-        updatedAt: DateTime.now(),
+      final response = await _apiService.patch(
+        endPoint: '/user/update-marry-profile',
+        data: requestData,
       );
 
-      // حفظ البروفايل
-      await _saveProfile(updatedProfile);
+      debugPrint('📥 Response: ${jsonEncode(response)}');
 
-      debugPrint('✅ تم تحديث ملف الزواج بنجاح');
-      debugPrint('   نسبة الاكتمال: ${updatedProfile.marriageCompletionPercentage}%');
-      
-      return Right(updatedProfile);
-    } catch (e) {
-      debugPrint('❌ خطأ في تحديث ملف الزواج: $e');
-      return Left(ServerFailure('حدث خطأ في التحديث: $e'));
-    }
-  }
-
-  // ========== UPLOAD IMAGE ==========
-  Future<Either<Failure, String>> uploadMarriageImage(File imageFile) async {
-    try {
-      // محاكاة تأخير رفع الصورة
-      await Future.delayed(const Duration(seconds: 1));
-
-      // حفظ مسار الصورة المحلي
-      final imagePath = imageFile.path;
-
-      debugPrint('✅ تم رفع الصورة: $imagePath');
-      return Right(imagePath);
-    } catch (e) {
-      debugPrint('❌ خطأ في رفع الصورة: $e');
-      return Left(ServerFailure('حدث خطأ في رفع الصورة: $e'));
-    }
-  }
-
-  // ========== DELETE IMAGE ==========
-  Future<Either<Failure, void>> deleteMarriageImage(String imageUrl) async {
-    try {
-      // محاكاة تأخير الحذف
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      debugPrint('✅ تم حذف الصورة: $imageUrl');
-      return const Right(null);
-    } catch (e) {
-      debugPrint('❌ خطأ في حذف الصورة: $e');
-      return Left(ServerFailure('حدث خطأ في حذف الصورة: $e'));
-    }
-  }
-
-  // ========== HELPER: SAVE PROFILE ==========
-  Future<void> _saveProfile(MarriageUserProfileModel profile) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonData = jsonEncode(profile.toJson());
-    await prefs.setString(_storageKey, jsonData);
-    debugPrint('💾 تم حفظ البروفايل محلياً');
-  }
-
-  // ========== HELPER: CLEAR ALL DATA (للاختبار) ==========
-  Future<void> clearAllData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_storageKey);
-    debugPrint('🗑️ تم مسح جميع بيانات ملف الزواج');
-  }
-
-  // ========== HELPER: CREATE SAMPLE PROFILE (للاختبار) ==========
-  Future<Either<Failure, MarriageUserProfileModel>> createSampleProfile() async {
-    try {
-      final sampleProfile = MarriageUserProfileModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: 'أحمد محمد',
-        username: 'ahmed_mohamed',
-        description: 'مهندس برمجيات، أبحث عن شريكة حياة',
-        image: 'https://via.placeholder.com/150',
-        following: 120,
-        followers: 350,
-        isMe: true,
-        isVerified: true,
-        location: 'القاهرة، مصر',
+      if (response['success'] == true) {
+        debugPrint('✅ Profile updated successfully');
         
-        // معلومات الزواج
-        country: 'مصر',
-        nationality: 'مصري',
-        religion: 'مسلم',
-        age: 28,
-        height: '170 - 180 سم',
-        ethnicity: 'قمحاوي',
-        maritalStatus: 'سليم',
-        financialStatus: 'جيد جداً',
-        smoking: 'لا',
-        marriageImages: [
-          'https://via.placeholder.com/300x300/FF69B4/FFFFFF?text=صورة+1',
-          'https://via.placeholder.com/300x300/87CEEB/FFFFFF?text=صورة+2',
-        ],
-        occupation: 'مهندس برمجيات',
-        jobTitle: 'مطور تطبيقات موبايل',
-        professionalLevel: 'موظف',
-        religiosity: 'متدين',
-        isAvailableForMarriage: true,
-        createdAt: DateTime.now().subtract(const Duration(days: 30)),
-        updatedAt: DateTime.now(),
-      );
-
-      await _saveProfile(sampleProfile);
-      debugPrint('✅ تم إنشاء ملف زواج تجريبي كامل');
-      debugPrint('   نسبة الاكتمال: ${sampleProfile.marriageCompletionPercentage}%');
+        await _saveProfileLocally(profile);
+        
+        debugPrint('🔄 Fetching updated profile...');
+        final fetchResult = await getMarriageProfile();
+        
+        return fetchResult.fold(
+          (failure) {
+            debugPrint('⚠️ Failed to fetch after save, using local profile');
+            return Right(profile);
+          },
+          (updatedProfile) {
+            debugPrint('✅ Got updated profile from server');
+            return Right(updatedProfile);
+          },
+        );
+      }
       
-      return Right(sampleProfile);
+      return Left(ServerFailure(response['message'] ?? 'فشل التحديث'));
+    } on DioException catch (e) {
+      debugPrint('❌ Update failed: ${e.response?.data}');
+      return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      debugPrint('❌ خطأ في إنشاء البروفايل التجريبي: $e');
-      return Left(ServerFailure('حدث خطأ: $e'));
+      debugPrint('❌ Update error: $e');
+      return Left(ServerFailure('خطأ: $e'));
     }
+  }
+
+  // ✅✅✅ NEW METHOD: Convert profile to server format
+  Map<String, dynamic> _convertToServerFormat(MarriageUserProfileModel profile) {
+    final List<Map<String, dynamic>> answers = [];
+
+    // Helper function to clean string values
+    String? _cleanValue(String? value) {
+      if (value == null) return null;
+      final cleaned = value.trim();
+      return cleaned.isEmpty ? null : cleaned;
+    }
+
+    // AboutMe fields → answers array
+    if (profile.aboutMe != null) {
+      final aboutMe = profile.aboutMe!;
+      
+      if (aboutMe.weight != null) {
+        final cleaned = _cleanValue(aboutMe.weight);
+        if (cleaned != null) answers.add({'category': 'weight', 'answer': cleaned});
+      }
+      if (aboutMe.height != null) {
+        final cleaned = _cleanValue(aboutMe.height);
+        if (cleaned != null) answers.add({'category': 'height', 'answer': cleaned});
+      }
+      if (aboutMe.age != null) {
+        final cleaned = _cleanValue(aboutMe.age);
+        if (cleaned != null) answers.add({'category': 'age', 'answer': cleaned});
+      }
+      if (aboutMe.socialStatus != null) {
+        final cleaned = _cleanValue(aboutMe.socialStatus);
+        if (cleaned != null) answers.add({'category': 'socialStatus', 'answer': cleaned});
+      }
+      if (aboutMe.nationality != null) {
+        final cleaned = _cleanValue(aboutMe.nationality);
+        if (cleaned != null) answers.add({'category': 'nationality', 'answer': cleaned});
+      }
+      if (aboutMe.country != null) {
+        final cleaned = _cleanValue(aboutMe.country);
+        if (cleaned != null) answers.add({'category': 'country', 'answer': cleaned});
+      }
+      if (aboutMe.skinColor != null) {
+        final cleaned = _cleanValue(aboutMe.skinColor);
+        if (cleaned != null) answers.add({'category': 'skinColor', 'answer': cleaned});
+      }
+      if (aboutMe.healthStatus != null) {
+        final cleaned = _cleanValue(aboutMe.healthStatus);
+        if (cleaned != null) answers.add({'category': 'healthStatus', 'answer': cleaned});
+      }
+      if (aboutMe.smoker != null) {
+        final cleaned = _cleanValue(aboutMe.smoker);
+        if (cleaned != null) answers.add({'category': 'smoker', 'answer': cleaned});
+      }
+      if (aboutMe.religiousCommitment != null) {
+        final cleaned = _cleanValue(aboutMe.religiousCommitment);
+        if (cleaned != null) answers.add({'category': 'religiousCommitment', 'answer': cleaned});
+      }
+    }
+
+    // ProfessionalLife fields → answers array
+    if (profile.professionalLife != null) {
+      final pro = profile.professionalLife!;
+      
+      if (pro.job != null) {
+        final cleaned = _cleanValue(pro.job);
+        if (cleaned != null) answers.add({'category': 'job', 'answer': cleaned});
+      }
+      if (pro.educationLevel != null) {
+        final cleaned = _cleanValue(pro.educationLevel);
+        if (cleaned != null) answers.add({'category': 'educationLevel', 'answer': cleaned});
+      }
+      if (pro.chooseEmployer != null) {
+        final cleaned = _cleanValue(pro.chooseEmployer);
+        if (cleaned != null) answers.add({'category': 'chooseEmployer', 'answer': cleaned});
+      }
+    }
+
+    // Family fields → answers array
+    if (profile.family != null) {
+      final family = profile.family!;
+      
+      if (family.hasChildren != null) {
+        final cleaned = _cleanValue(family.hasChildren);
+        if (cleaned != null) answers.add({'category': 'hasChildren', 'answer': cleaned});
+      }
+      if (family.childrenNumber != null) {
+        final cleaned = _cleanValue(family.childrenNumber);
+        if (cleaned != null) answers.add({'category': 'childrenNumber', 'answer': cleaned});
+      }
+      if (family.childrenLivingStatus != null) {
+        final cleaned = _cleanValue(family.childrenLivingStatus);
+        if (cleaned != null) answers.add({'category': 'childrenLivingStatus', 'answer': cleaned});
+      }
+    }
+
+    // Hobbies → answers array
+    if (profile.hobbies.isNotEmpty) {
+      final cleanedHobbies = profile.hobbies
+          .map((h) => h.trim())
+          .where((h) => h.isNotEmpty)
+          .join(', ');
+      if (cleanedHobbies.isNotEmpty) {
+        answers.add({'category': 'hobbies', 'answer': cleanedHobbies});
+      }
+    }
+
+    // ✅ Build final request body (matching Postman format)
+    final Map<String, dynamic> requestBody = {
+      'answers': answers,
+    };
+// إضافة حقل الوصف الشخصي كحقل أساسي بناءً على صورة Postman
+if (profile.myDescription != null) {
+  final cleanedBio = _cleanValue(profile.myDescription);
+  if (cleanedBio != null) {
+    requestBody['mydescription'] = cleanedBio; 
   }
 }
-
-// ========== 🔄 READY FOR REAL API ==========
-// عندما يكتمل الباك إند، استبدل هذا الكود بالتالي:
-
-/*
-class MarriageProfileRepository {
-  final ApiService _apiService;
-
-  MarriageProfileRepository(this._apiService);
-
-  Future<Either<Failure, MarriageUserProfileModel>> getMarriageProfile() async {
-    try {
-      final response = await _apiService.get(
-        endPoint: '/user/marriage-profile',
-      );
-
-      if (response['success'] == true) {
-        final profile = MarriageUserProfileModel.fromJson(
-          response['data'] as Map<String, dynamic>,
-        );
-        return Right(profile);
-      } else {
-        return Left(
-          ServerFailure(response['message'] ?? 'فشل تحميل بيانات ملف الزواج'),
-        );
-      }
-    } catch (e) {
-      return Left(ServerFailure('حدث خطأ: $e'));
+    // Top-level fields
+    if (profile.aboutMe?.age != null) {
+      requestBody['age'] = int.tryParse(profile.aboutMe!.age!.trim()) ?? 25;
     }
+    
+    // ⚠️⚠️⚠️ IMPORTANT: Don't send myDescription in update request
+    // The server rejects it in PATCH but returns it in GET
+    // Bio is handled separately through answers array or other endpoint
+
+    // YourGoals (direct object, not in answers)
+    if (profile.yourGoals != null) {
+      final goalsMap = <String, String>{};
+      
+      if (profile.yourGoals!.travel != null) {
+        final cleaned = _cleanValue(profile.yourGoals!.travel);
+        if (cleaned != null) goalsMap['travel'] = cleaned;
+      }
+      if (profile.yourGoals!.children != null) {
+        final cleaned = _cleanValue(profile.yourGoals!.children);
+        if (cleaned != null) goalsMap['children'] = cleaned;
+      }
+      if (profile.yourGoals!.marry != null) {
+        final cleaned = _cleanValue(profile.yourGoals!.marry);
+        if (cleaned != null) goalsMap['marry'] = cleaned;
+      }
+      if (profile.yourGoals!.engagement != null) {
+        final cleaned = _cleanValue(profile.yourGoals!.engagement);
+        if (cleaned != null) goalsMap['engagment'] = cleaned; // Note: typo in API
+      }
+      
+      if (goalsMap.isNotEmpty) {
+        requestBody['yourGoals'] = goalsMap;
+      }
+    }
+
+    debugPrint('✅ Converted to server format: ${answers.length} answers');
+    return requestBody;
   }
 
-  Future<Either<Failure, MarriageUserProfileModel>> updateMarriageProfile(
-    MarriageUserProfileModel profile,
-  ) async {
-    try {
-      final response = await _apiService.patch(
-        endPoint: '/user/marriage-profile',
-        isFromData: true,
-        data: profile.toJson(),
-      );
-
-      if (response['success'] == true) {
-        final updatedProfile = MarriageUserProfileModel.fromJson(
-          response['data'] as Map<String, dynamic>,
-        );
-        return Right(updatedProfile);
-      } else {
-        return Left(
-          ServerFailure(response['message'] ?? 'فشل تحديث بيانات ملف الزواج'),
-        );
-      }
-    } catch (e) {
-      return Left(ServerFailure('حدث خطأ: $e'));
-    }
-  }
-
+  // ⭐ UPLOAD IMAGE
   Future<Either<Failure, String>> uploadMarriageImage(File imageFile) async {
     try {
+      debugPrint('📤 Uploading image...');
+      
       final formData = FormData.fromMap({
         'image': await MultipartFile.fromFile(
           imageFile.path,
-          filename: imageFile.path.split('/').last,
+          filename: 'marriage_${DateTime.now().millisecondsSinceEpoch}.jpg',
         ),
       });
 
       final response = await _apiService.post(
-        endPoint: '/user/marriage-profile/image',
+        endPoint: '/user/upload-marriage-image',
         data: formData,
       );
 
       if (response['success'] == true) {
-        final imageUrl = response['data']['imageUrl'] as String;
+        final imageUrl = response['data']['url'] as String;
+        debugPrint('✅ Image uploaded: $imageUrl');
         return Right(imageUrl);
-      } else {
-        return Left(
-          ServerFailure(response['message'] ?? 'فشل رفع الصورة'),
-        );
       }
+      
+      return Left(ServerFailure(response['message'] ?? 'فشل رفع الصورة'));
     } catch (e) {
-      return Left(ServerFailure('حدث خطأ: $e'));
+      debugPrint('❌ Upload error: $e');
+      return Left(ServerFailure('خطأ: $e'));
     }
   }
 
-  Future<Either<Failure, void>> deleteMarriageImage(String imageUrl) async {
+  // ⭐ Local Storage - Save
+  Future<void> _saveProfileLocally(MarriageUserProfileModel profile) async {
     try {
-      final response = await _apiService.delete(
-        endPoint: '/user/marriage-profile/image',
-        data: {'imageUrl': imageUrl},
-      );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_storageKey, jsonEncode(profile.toJson()));
+      debugPrint('💾 Saved locally');
+    } catch (e) {
+      debugPrint('⚠️ Local save failed: $e');
+    }
+  }
 
-      if (response['success'] == true) {
-        return const Right(null);
-      } else {
-        return Left(
-          ServerFailure(response['message'] ?? 'فشل حذف الصورة'),
-        );
+  // ⭐ Local Storage - Load
+  Future<MarriageUserProfileModel?> _loadProfileLocally() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getString(_storageKey);
+      if (data != null) {
+        debugPrint('📂 Loading from local storage...');
+        return MarriageUserProfileModel.fromJson(jsonDecode(data));
       }
     } catch (e) {
-      return Left(ServerFailure('حدث خطأ: $e'));
+      debugPrint('⚠️ Local load failed: $e');
+    }
+    return null;
+  }
+
+  // ⭐ Clear Local Storage
+  Future<void> clearLocalStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_storageKey);
+      debugPrint('🗑️ Local storage cleared');
+    } catch (e) {
+      debugPrint('⚠️ Failed to clear local storage: $e');
     }
   }
 }
-*/

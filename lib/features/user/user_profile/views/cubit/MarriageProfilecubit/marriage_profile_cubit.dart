@@ -1,7 +1,8 @@
-// features/user/user_profile/views/cubit/marriage_profile_cubit.dart
+// marriage_profile_cubit.dart - CORRECT VERSION
 
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/marriage_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
@@ -9,55 +10,63 @@ import 'package:tayseer/my_import.dart';
 
 class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   final MarriageProfileRepository _repository;
+  final UserProfileModel? initialUserProfile;
 
-  MarriageProfileCubit(this._repository) : super(const MarriageProfileState());
+  MarriageProfileCubit(
+    this._repository, {
+    this.initialUserProfile,
+  }) : super(const MarriageProfileState());
 
-  // ⭐ تحميل البروفايل
+  // ⭐⭐⭐ Load profile (واحد للعرض والتعديل)
   Future<void> loadProfile() async {
     emit(state.copyWith(
       state: CubitStates.loading,
       isLoading: true,
+      clearMessages: true,
     ));
 
+    debugPrint('🔄 Loading profile...');
     final result = await _repository.getMarriageProfile();
 
     result.fold(
       (failure) {
+        debugPrint('❌ Failed to load profile: ${failure.message}');
         emit(state.copyWith(
           state: CubitStates.failure,
           errorMessage: failure.message,
           isLoading: false,
         ));
       },
-      (profile) {
+      (marriageProfile) {
+        debugPrint('✅ Profile loaded successfully');
         emit(state.copyWith(
           state: CubitStates.success,
-          profile: profile,
+          profile: marriageProfile,
           isLoading: false,
         ));
       },
     );
   }
 
-  // ⭐ حفظ البروفايل
+  // ⭐⭐⭐ Save profile - يحفظ ثم يجلب البيانات الجديدة
   Future<void> saveProfile() async {
     if (state.profile == null) {
-      emit(state.copyWith(
-        state: CubitStates.failure,
-        errorMessage: 'لا توجد بيانات للحفظ',
-      ));
+      debugPrint('⚠️ No profile to save');
       return;
     }
 
     emit(state.copyWith(
       state: CubitStates.loading,
       isUpdating: true,
+      clearMessages: true,
     ));
 
+    debugPrint('💾 Saving profile...');
     final result = await _repository.updateMarriageProfile(state.profile!);
 
     result.fold(
       (failure) {
+        debugPrint('❌ Failed to save profile: ${failure.message}');
         emit(state.copyWith(
           state: CubitStates.failure,
           errorMessage: failure.message,
@@ -65,163 +74,284 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         ));
       },
       (updatedProfile) {
+        // ⭐⭐⭐ البيانات الجديدة من السيرفر
+        debugPrint('✅ Profile saved and refreshed successfully');
         emit(state.copyWith(
           state: CubitStates.success,
-          profile: updatedProfile,
-          successMessage: 'تم حفظ التغييرات بنجاح',
+          profile: updatedProfile,  // ✅ البيانات المحدثة
+          successMessage: 'تم حفظ البيانات بنجاح',
           isUpdating: false,
         ));
       },
     );
   }
 
-  // ⭐ تحديث حقل معين
+  // ⭐⭐⭐ Update specific field
   void updateField(String fieldKey, dynamic value) {
-    if (state.profile == null) return;
+    if (state.profile == null) {
+      debugPrint('⚠️ No profile to update');
+      return;
+    }
 
-    MarriageUserProfileModel updatedProfile = state.profile!;
+    debugPrint('🔄 Updating field: $fieldKey = $value');
 
-    switch (fieldKey) {
-      case 'country':
-        updatedProfile = updatedProfile.copyWith(country: value as String);
-        break;
-      case 'nationality':
-        updatedProfile = updatedProfile.copyWith(nationality: value as String);
-        break;
-      case 'religion':
-        updatedProfile = updatedProfile.copyWith(religion: value as String);
-        break;
-      case 'age':
-        updatedProfile = updatedProfile.copyWith(age: value as int);
-        break;
-      case 'height':
-        updatedProfile = updatedProfile.copyWith(height: value as String);
-        break;
-      case 'ethnicity':
-        updatedProfile = updatedProfile.copyWith(ethnicity: value as String);
-        break;
-      case 'maritalStatus':
-        updatedProfile = updatedProfile.copyWith(maritalStatus: value as String);
-        break;
-      case 'financialStatus':
-        updatedProfile = updatedProfile.copyWith(financialStatus: value as String);
-        break;
-      case 'smoking':
-        updatedProfile = updatedProfile.copyWith(smoking: value as String);
-        break;
-      case 'occupation':
-        updatedProfile = updatedProfile.copyWith(occupation: value as String);
-        break;
-      case 'jobTitle':
-        updatedProfile = updatedProfile.copyWith(jobTitle: value as String);
-        break;
-      case 'professionalLevel':
-        updatedProfile = updatedProfile.copyWith(professionalLevel: value as String);
-        break;
-      case 'religiosity':
-        updatedProfile = updatedProfile.copyWith(religiosity: value as String);
-        break;
-      default:
-        debugPrint('⚠️ Unknown field: $fieldKey');
-        return;
+    final profile = state.profile!;
+    MarriageUserProfileModel updatedProfile;
+
+    // ════════════════════════════════════════════════════════════════
+    // AboutMe Fields
+    // ════════════════════════════════════════════════════════════════
+    if (_isAboutMeField(fieldKey)) {
+      final currentAbout = profile.aboutMe ?? AboutMe();
+      AboutMe updatedAbout;
+
+      switch (fieldKey) {
+        case 'country':
+          updatedAbout = currentAbout.copyWith(country: value);
+          break;
+        case 'nationality':
+          updatedAbout = currentAbout.copyWith(nationality: value);
+          break;
+        case 'height':
+          updatedAbout = currentAbout.copyWith(height: value);
+          break;
+        case 'weight':
+          updatedAbout = currentAbout.copyWith(weight: value);
+          break;
+        case 'skinColor':
+        case 'ethnicity':
+          updatedAbout = currentAbout.copyWith(skinColor: value);
+          break;
+        case 'healthStatus':
+          updatedAbout = currentAbout.copyWith(healthStatus: value);
+          break;
+        case 'religiousCommitment':
+        case 'religiosity':
+          updatedAbout = currentAbout.copyWith(religiousCommitment: value);
+          break;
+        case 'smoker':
+        case 'smoking':
+          updatedAbout = currentAbout.copyWith(smoker: value);
+          break;
+        case 'maritalStatus':
+        case 'socialStatus':
+        case 'previouslyMarried':
+          updatedAbout = currentAbout.copyWith(socialStatus: value);
+          break;
+        case 'age':
+          updatedAbout = currentAbout.copyWith(age: value.toString());
+          break;
+        default:
+          updatedAbout = currentAbout;
+      }
+
+      updatedProfile = profile.copyWith(aboutMe: updatedAbout);
+    }
+    // ════════════════════════════════════════════════════════════════
+    // ProfessionalLife Fields
+    // ════════════════════════════════════════════════════════════════
+    else if (_isProfessionalLifeField(fieldKey)) {
+      final currentPro = profile.professionalLife ?? ProfessionalLife();
+      ProfessionalLife updatedPro;
+
+      switch (fieldKey) {
+        case 'job':
+        case 'occupation':
+        case 'choose_job':
+          updatedPro = currentPro.copyWith(job: value);
+          break;
+        case 'jobTitle':
+        case 'professionalLevel':
+        case 'educationLevel':
+        case 'education_level':
+          updatedPro = currentPro.copyWith(educationLevel: value);
+          break;
+        case 'employer':
+        case 'chooseEmployer':
+        case 'choose_employer':
+          updatedPro = currentPro.copyWith(chooseEmployer: value);
+          break;
+        default:
+          updatedPro = currentPro;
+      }
+
+      updatedProfile = profile.copyWith(professionalLife: updatedPro);
+    }
+    // ════════════════════════════════════════════════════════════════
+    // Family Fields
+    // ════════════════════════════════════════════════════════════════
+    else if (_isFamilyField(fieldKey)) {
+      final currentFamily = profile.family ?? Family();
+      Family updatedFamily;
+
+      switch (fieldKey) {
+        case 'hasChildren':
+          updatedFamily = currentFamily.copyWith(hasChildren: value);
+          break;
+        case 'childrenNumber':
+          updatedFamily = currentFamily.copyWith(childrenNumber: value);
+          break;
+        case 'childrenLiveWithYou':
+        case 'childrenLivingStatus':
+          updatedFamily = currentFamily.copyWith(childrenLivingStatus: value);
+          break;
+        default:
+          updatedFamily = currentFamily;
+      }
+
+      updatedProfile = profile.copyWith(family: updatedFamily);
+    }
+    // ════════════════════════════════════════════════════════════════
+    // YourGoals Fields
+    // ════════════════════════════════════════════════════════════════
+    else if (_isYourGoalsField(fieldKey)) {
+      final currentGoals = profile.yourGoals ?? YourGoals();
+      YourGoals updatedGoals;
+
+      switch (fieldKey) {
+        case 'communicationTimeline':
+        case 'marry':
+          updatedGoals = currentGoals.copyWith(marry: value);
+          break;
+        case 'engagementTimeline':
+        case 'engagement':
+          updatedGoals = currentGoals.copyWith(engagement: value);
+          break;
+        case 'marriageTimeline':
+          updatedGoals = currentGoals.copyWith(marry: value);
+          break;
+        case 'travelPreference':
+        case 'travel':
+          updatedGoals = currentGoals.copyWith(travel: value);
+          break;
+        case 'dowry':
+        case 'children':
+          updatedGoals = currentGoals.copyWith(children: value);
+          break;
+        default:
+          updatedGoals = currentGoals;
+      }
+
+      updatedProfile = profile.copyWith(yourGoals: updatedGoals);
+    }
+    // ════════════════════════════════════════════════════════════════
+    // Top-level Fields (bio, hobbies, interests)
+    // ════════════════════════════════════════════════════════════════
+    else {
+      switch (fieldKey) {
+        case 'bio':
+        case 'myDescription':
+          updatedProfile = profile.copyWith(myDescription: value);
+          break;
+        case 'interests':
+        case 'hobbies':
+          final hobbiesList = value is String 
+              ? value.split(', ').where((s) => s.isNotEmpty).toList()
+              : (value as List<String>);
+          updatedProfile = profile.copyWith(hobbies: hobbiesList);
+          break;
+        default:
+          debugPrint('⚠️ Unknown field: $fieldKey');
+          updatedProfile = profile;
+      }
     }
 
     emit(state.copyWith(profile: updatedProfile));
-    debugPrint('✅ تم تحديث $fieldKey إلى: $value');
+    debugPrint('✅ Field updated successfully');
   }
 
-  // ⭐ رفع صورة
-  Future<void> uploadImage(File imageFile) async {
-    emit(state.copyWith(
-      state: CubitStates.loading,
-      isLoading: true,
-    ));
+  // ════════════════════════════════════════════════════════════════
+  // Helper Methods
+  // ════════════════════════════════════════════════════════════════
 
+  bool _isAboutMeField(String fieldKey) {
+    return [
+      'country', 'nationality', 'height', 'weight', 'skinColor',
+      'ethnicity', 'healthStatus', 'religiousCommitment', 'religiosity',
+      'smoker', 'smoking', 'maritalStatus', 'socialStatus',
+      'previouslyMarried', 'age',
+    ].contains(fieldKey);
+  }
+
+  bool _isProfessionalLifeField(String fieldKey) {
+    return [
+      'job', 'occupation', 'choose_job', 'jobTitle', 'professionalLevel',
+      'educationLevel', 'education_level', 'employer', 'chooseEmployer',
+      'choose_employer',
+    ].contains(fieldKey);
+  }
+
+  bool _isFamilyField(String fieldKey) {
+    return [
+      'hasChildren', 'childrenNumber', 'childrenLiveWithYou',
+      'childrenLivingStatus',
+    ].contains(fieldKey);
+  }
+
+  bool _isYourGoalsField(String fieldKey) {
+    return [
+      'communicationTimeline', 'engagementTimeline', 'marriageTimeline',
+      'dowry', 'travelPreference', 'travel', 'marry', 'engagement', 'children',
+    ].contains(fieldKey);
+  }
+
+  // ⭐⭐⭐ Upload image
+  Future<void> uploadImage(File imageFile) async {
+    if (state.profile == null) return;
+
+    emit(state.copyWith(isLoading: true, clearMessages: true));
+    
     final result = await _repository.uploadMarriageImage(imageFile);
 
     result.fold(
-      (failure) {
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isLoading: false,
-        ));
-      },
+      (failure) => emit(state.copyWith(
+        state: CubitStates.failure,
+        errorMessage: failure.message,
+        isLoading: false,
+      )),
       (imageUrl) {
-        if (state.profile != null) {
-          final currentImages = List<String>.from(state.profile!.marriageImages);
-          currentImages.add(imageUrl);
+        final currentMedia = state.profile!.userMedia ?? UserMedia(images: []);
+        final updatedImages = List<String>.from(currentMedia.images)..add(imageUrl);
 
-          final updatedProfile = state.profile!.copyWith(
-            marriageImages: currentImages,
-          );
-
-          emit(state.copyWith(
-            state: CubitStates.success,
-            profile: updatedProfile,
-            successMessage: 'تم رفع الصورة بنجاح',
-            isLoading: false,
-          ));
-        }
-      },
-    );
-  }
-
-  // ⭐ حذف صورة
-  Future<void> deleteImage(String imageUrl) async {
-    emit(state.copyWith(
-      state: CubitStates.loading,
-      isLoading: true,
-    ));
-
-    final result = await _repository.deleteMarriageImage(imageUrl);
-
-    result.fold(
-      (failure) {
+        final updatedProfile = state.profile!.copyWith(
+          userMedia: currentMedia.copyWith(images: updatedImages),
+        );
+        
         emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
+          profile: updatedProfile,
           isLoading: false,
+          successMessage: 'تم رفع الصورة بنجاح',
         ));
       },
-      (_) {
-        if (state.profile != null) {
-          final currentImages = List<String>.from(state.profile!.marriageImages);
-          currentImages.remove(imageUrl);
-
-          final updatedProfile = state.profile!.copyWith(
-            marriageImages: currentImages,
-          );
-
-          emit(state.copyWith(
-            state: CubitStates.success,
-            profile: updatedProfile,
-            successMessage: 'تم حذف الصورة بنجاح',
-            isLoading: false,
-          ));
-        }
-      },
     );
   }
 
-  // ⭐ تفعيل/إلغاء تفعيل متاح للزواج
-  void toggleAvailability(bool value) {
+  // ⭐⭐⭐ Delete image
+  Future<void> deleteImage(String imageUrl) async {
     if (state.profile == null) return;
 
+    final currentMedia = state.profile!.userMedia ?? UserMedia(images: []);
+    final updatedImages = List<String>.from(currentMedia.images)..remove(imageUrl);
+
     final updatedProfile = state.profile!.copyWith(
-      isAvailableForMarriage: value,
+      userMedia: currentMedia.copyWith(images: updatedImages),
     );
 
-    emit(state.copyWith(profile: updatedProfile));
-    debugPrint('✅ تم ${value ? "تفعيل" : "إلغاء"} متاح للزواج');
+    emit(state.copyWith(
+      profile: updatedProfile,
+      successMessage: 'تم حذف الصورة',
+    ));
+
+    await saveProfile();
   }
 
-  // ⭐ إعادة تعيين الحالة
-  void resetState() {
-    emit(state.copyWith(
-      state: CubitStates.initial,
-      errorMessage: null,
-      successMessage: null,
-    ));
+  void resetState() => emit(state.copyWith(
+        state: CubitStates.initial,
+        clearMessages: true,
+      ));
+
+  Future<void> clearAllData() async {
+    await _repository.clearLocalStorage();
+    emit(const MarriageProfileState());
   }
 }

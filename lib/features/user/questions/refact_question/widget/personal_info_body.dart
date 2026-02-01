@@ -84,7 +84,7 @@ class _PersonalInfoBodyState extends State<PersonalInfoBody> {
                 const SizedBox(height: 16),
 
                 CusttomImageGrid(
-                  images: images,
+                  imageUrls: images,
                   onAdd: pickImage,
                   onRemove: removeImage,
                 ),
