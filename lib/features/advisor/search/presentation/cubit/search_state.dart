@@ -6,6 +6,7 @@ import 'package:tayseer/features/advisor/search/data/models/search_event_model.d
 import 'package:tayseer/features/advisor/search/data/models/search_group_model.dart';
 import 'package:tayseer/my_import.dart';
 
+// features/shared/search/presentation/cubit/search_state.dart
 class SearchState extends Equatable {
   final String query;
   final CubitStates searchStatus;

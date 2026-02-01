@@ -1,8 +1,10 @@
+// features/shared/search/presentation/cubit/search_cubit.dart
 import 'dart:async';
 
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_advisor_model.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_event_model.dart';
+import 'package:tayseer/features/advisor/search/data/models/search_group_model.dart';
 import 'package:tayseer/my_import.dart';
 import 'search_state.dart';
 
@@ -12,8 +14,21 @@ class SearchCubit extends Cubit<SearchState> {
   SearchCubit() : super(const SearchState());
 
   Future<void> search({required String query, String category = 'all'}) async {
+    // إذا كان البحث فارغاً، نعرض البيانات الوهمية
     if (query.isEmpty) {
-      emit(const SearchState());
+      final dummyData = _getDummySearchData("", category);
+
+      emit(
+        state.copyWith(
+          query: query,
+          searchStatus: CubitStates.success,
+          advisors: dummyData.advisors,
+          posts: dummyData.posts,
+          events: dummyData.events,
+          groups: dummyData.groups,
+          errorMessage: null,
+        ),
+      );
       return;
     }
 
@@ -38,6 +53,7 @@ class SearchCubit extends Cubit<SearchState> {
           advisors: dummyData.advisors,
           posts: dummyData.posts,
           events: dummyData.events,
+          groups: dummyData.groups,
           errorMessage: null,
         ),
       );
@@ -52,7 +68,34 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   void clearSearch() {
-    emit(const SearchState());
+    // عند مسح البحث، نعرض البيانات الوهمية أيضاً
+    final dummyData = _getDummySearchData("", 'all');
+
+    emit(
+      SearchState(
+        query: '',
+        searchStatus: CubitStates.success,
+        advisors: dummyData.advisors,
+        posts: dummyData.posts,
+        events: dummyData.events,
+        groups: dummyData.groups,
+      ),
+    );
+  }
+
+  Future<void> loadInitialData() async {
+    // تحميل البيانات الأولية عند بدء التشغيل
+    final dummyData = _getDummySearchData("", 'all');
+
+    emit(
+      state.copyWith(
+        searchStatus: CubitStates.success,
+        advisors: dummyData.advisors,
+        posts: dummyData.posts,
+        events: dummyData.events,
+        groups: dummyData.groups,
+      ),
+    );
   }
 
   void toggleFollowAdvisor(String advisorId) {
@@ -74,8 +117,51 @@ class SearchCubit extends Cubit<SearchState> {
     }
   }
 
+  void toggleJoinGroup(String groupId) {
+    final currentGroups = List<SearchGroup>.from(state.groups);
+    final groupIndex = currentGroups.indexWhere((g) => g.id == groupId);
+
+    if (groupIndex >= 0) {
+      final group = currentGroups[groupIndex];
+      final updatedGroup = group.copyWith(
+        isJoined: !group.isJoined,
+        membersCount: group.isJoined
+            ? group.membersCount - 1
+            : group.membersCount + 1,
+      );
+
+      currentGroups[groupIndex] = updatedGroup;
+
+      emit(state.copyWith(groups: currentGroups));
+    }
+  }
+
   _SearchData _getDummySearchData(String query, String category) {
-    // محاكاة بيانات وهمية للبحث
+    // إضافة بيانات وهمية للمجموعات
+    final dummyGroups = category == 'all' || category == 'groups'
+        ? <SearchGroup>[
+            SearchGroup(
+              id: '1',
+              name: 'رواد الأعمال العرب',
+              imageUrl: 'https://randomuser.me/api/portraits/men/10.jpg',
+              description: 'مجتمع لرواد الأعمال والمستثمرين العرب',
+              membersCount: 1250,
+              postsCount: 320,
+              isJoined: false,
+            ),
+            SearchGroup(
+              id: '2',
+              name: 'متخصصو التسويق الرقمي',
+              imageUrl: 'https://randomuser.me/api/portraits/women/11.jpg',
+              description: 'نقاشات واستراتيجيات التسويق الرقمي',
+              membersCount: 890,
+              postsCount: 210,
+              isJoined: true,
+            ),
+          ]
+        : <SearchGroup>[];
+
+    // بيانات وهمية للبحث - نعرض نفس البيانات مع أو بدون query
     final dummyAdvisors = category == 'all' || category == 'advisors'
         ? <SearchAdvisor>[
             SearchAdvisor(
@@ -198,6 +284,7 @@ class SearchCubit extends Cubit<SearchState> {
       advisors: dummyAdvisors,
       posts: dummyPosts,
       events: dummyEvents,
+      groups: dummyGroups,
     );
   }
 
@@ -212,10 +299,12 @@ class _SearchData {
   final List<SearchAdvisor> advisors;
   final List<PostModel> posts;
   final List<SearchEvent> events;
+  final List<SearchGroup> groups;
 
   const _SearchData({
     required this.advisors,
     required this.posts,
     required this.events,
+    required this.groups,
   });
 }
