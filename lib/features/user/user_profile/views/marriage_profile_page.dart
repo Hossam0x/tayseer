@@ -525,10 +525,14 @@ class _MarriageProfilePageState extends State<MarriageProfilePage> {
           }
 
           if (setting.id == 'settings' || setting.id == 'general_settings') {
+            final cubit = context.read<UserProfileCubit>();
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const GeneralSettingsView(),
+                builder: (context) => BlocProvider.value(
+                  value: cubit,
+                  child: const GeneralSettingsView(),
+                ),
               ),
             );
           } else if (setting.routeName.isNotEmpty) {

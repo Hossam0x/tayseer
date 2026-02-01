@@ -1,4 +1,7 @@
-// marriage_profile_cubit.dart - CORRECT VERSION
+// marriage_profile_cubit.dart - FIXED DELETE IMAGE
+// ════════════════════════════════════════════════════════════════
+// ✅ استخدام deleteMarriageImage بدلاً من saveProfile للحذف
+// ════════════════════════════════════════════════════════════════
 
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,7 +20,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     this.initialUserProfile,
   }) : super(const MarriageProfileState());
 
-  // ⭐⭐⭐ Load profile (واحد للعرض والتعديل)
   Future<void> loadProfile() async {
     emit(state.copyWith(
       state: CubitStates.loading,
@@ -48,7 +50,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     );
   }
 
-  // ⭐⭐⭐ Save profile - يحفظ ثم يجلب البيانات الجديدة
   Future<void> saveProfile() async {
     if (state.profile == null) {
       debugPrint('⚠️ No profile to save');
@@ -74,11 +75,10 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         ));
       },
       (updatedProfile) {
-        // ⭐⭐⭐ البيانات الجديدة من السيرفر
         debugPrint('✅ Profile saved and refreshed successfully');
         emit(state.copyWith(
           state: CubitStates.success,
-          profile: updatedProfile,  // ✅ البيانات المحدثة
+          profile: updatedProfile,
           successMessage: 'تم حفظ البيانات بنجاح',
           isUpdating: false,
         ));
@@ -86,7 +86,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     );
   }
 
-  // ⭐⭐⭐ Update specific field
   void updateField(String fieldKey, dynamic value) {
     if (state.profile == null) {
       debugPrint('⚠️ No profile to update');
@@ -98,9 +97,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     final profile = state.profile!;
     MarriageUserProfileModel updatedProfile;
 
-    // ════════════════════════════════════════════════════════════════
-    // AboutMe Fields
-    // ════════════════════════════════════════════════════════════════
     if (_isAboutMeField(fieldKey)) {
       final currentAbout = profile.aboutMe ?? AboutMe();
       AboutMe updatedAbout;
@@ -146,11 +142,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       }
 
       updatedProfile = profile.copyWith(aboutMe: updatedAbout);
-    }
-    // ════════════════════════════════════════════════════════════════
-    // ProfessionalLife Fields
-    // ════════════════════════════════════════════════════════════════
-    else if (_isProfessionalLifeField(fieldKey)) {
+    } else if (_isProfessionalLifeField(fieldKey)) {
       final currentPro = profile.professionalLife ?? ProfessionalLife();
       ProfessionalLife updatedPro;
 
@@ -176,11 +168,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       }
 
       updatedProfile = profile.copyWith(professionalLife: updatedPro);
-    }
-    // ════════════════════════════════════════════════════════════════
-    // Family Fields
-    // ════════════════════════════════════════════════════════════════
-    else if (_isFamilyField(fieldKey)) {
+    } else if (_isFamilyField(fieldKey)) {
       final currentFamily = profile.family ?? Family();
       Family updatedFamily;
 
@@ -200,11 +188,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       }
 
       updatedProfile = profile.copyWith(family: updatedFamily);
-    }
-    // ════════════════════════════════════════════════════════════════
-    // YourGoals Fields
-    // ════════════════════════════════════════════════════════════════
-    else if (_isYourGoalsField(fieldKey)) {
+    } else if (_isYourGoalsField(fieldKey)) {
       final currentGoals = profile.yourGoals ?? YourGoals();
       YourGoals updatedGoals;
 
@@ -233,11 +217,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       }
 
       updatedProfile = profile.copyWith(yourGoals: updatedGoals);
-    }
-    // ════════════════════════════════════════════════════════════════
-    // Top-level Fields (bio, hobbies, interests)
-    // ════════════════════════════════════════════════════════════════
-    else {
+    } else {
       switch (fieldKey) {
         case 'bio':
         case 'myDescription':
@@ -259,10 +239,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     emit(state.copyWith(profile: updatedProfile));
     debugPrint('✅ Field updated successfully');
   }
-
-  // ════════════════════════════════════════════════════════════════
-  // Helper Methods
-  // ════════════════════════════════════════════════════════════════
 
   bool _isAboutMeField(String fieldKey) {
     return [
@@ -295,7 +271,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     ].contains(fieldKey);
   }
 
-  // ⭐⭐⭐ Upload image
+
   Future<void> uploadImage(File imageFile) async {
     if (state.profile == null) return;
 
@@ -309,42 +285,231 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         errorMessage: failure.message,
         isLoading: false,
       )),
-      (imageUrl) {
+      (_) async {
+        // ⭐⭐⭐ السيرفر ضاف الصورة بنجاح، دلوقتي نعمل reload للبروفايل
+        debugPrint('✅ Image uploaded, reloading profile...');
+        await loadProfile();
+      },
+    );
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // ⭐⭐⭐ DELETE IMAGE - FIXED
+  Future<void> deleteImage(String imageUrl) async {
+    if (state.profile == null) return;
+
+    emit(state.copyWith(isLoading: true, clearMessages: true));
+
+    debugPrint('🗑️ Deleting image from profile: $imageUrl');
+
+    // ⭐⭐⭐ استخدام الـ endpoint الصحيح
+    final result = await _repository.deleteMarriageImage(imageUrl);
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ Delete failed: ${failure.message}');
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (_) {
+        debugPrint('✅ Image deleted from server, updating local state');
+        
+        // Update local state
         final currentMedia = state.profile!.userMedia ?? UserMedia(images: []);
-        final updatedImages = List<String>.from(currentMedia.images)..add(imageUrl);
+        final updatedImages = List<String>.from(currentMedia.images)..remove(imageUrl);
 
         final updatedProfile = state.profile!.copyWith(
           userMedia: currentMedia.copyWith(images: updatedImages),
         );
-        
+
         emit(state.copyWith(
           profile: updatedProfile,
           isLoading: false,
-          successMessage: 'تم رفع الصورة بنجاح',
+          successMessage: 'تم حذف الصورة بنجاح',
         ));
       },
     );
   }
 
-  // ⭐⭐⭐ Delete image
-  Future<void> deleteImage(String imageUrl) async {
+  Future<void> uploadVideo(File videoFile) async {
     if (state.profile == null) return;
 
-    final currentMedia = state.profile!.userMedia ?? UserMedia(images: []);
-    final updatedImages = List<String>.from(currentMedia.images)..remove(imageUrl);
-
-    final updatedProfile = state.profile!.copyWith(
-      userMedia: currentMedia.copyWith(images: updatedImages),
-    );
-
     emit(state.copyWith(
-      profile: updatedProfile,
-      successMessage: 'تم حذف الصورة',
+      isLoading: true,
+      clearMessages: true,
     ));
 
-    await saveProfile();
+    debugPrint('📤 Uploading video...');
+    
+    final result = await _repository.uploadVideoAndAudio(
+      videoFile: videoFile,
+    );
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ Video upload failed: ${failure.message}');
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (urls) {
+        debugPrint('✅ Video uploaded: ${urls['video']}');
+        
+        final currentMedia = state.profile!.userMedia ?? UserMedia(images: []);
+        final updatedProfile = state.profile!.copyWith(
+          userMedia: currentMedia.copyWith(
+            video: urls['video'],
+          ),
+        );
+
+        emit(state.copyWith(
+          profile: updatedProfile,
+          isLoading: false,
+          successMessage: 'تم رفع الفيديو بنجاح',
+        ));
+      },
+    );
   }
 
+  Future<void> uploadAudio(File audioFile) async {
+    if (state.profile == null) return;
+
+    emit(state.copyWith(
+      isLoading: true,
+      clearMessages: true,
+    ));
+
+    debugPrint('📤 Uploading audio...');
+    
+    final result = await _repository.uploadVideoAndAudio(
+      audioFile: audioFile,
+    );
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ Audio upload failed: ${failure.message}');
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (urls) {
+        debugPrint('✅ Audio uploaded: ${urls['audio']}');
+        
+        final currentMedia = state.profile!.userMedia ?? UserMedia(images: []);
+        final updatedProfile = state.profile!.copyWith(
+          userMedia: currentMedia.copyWith(
+            audio: urls['audio'],
+          ),
+        );
+
+        emit(state.copyWith(
+          profile: updatedProfile,
+          isLoading: false,
+          successMessage: 'تم رفع التسجيل الصوتي بنجاح',
+        ));
+      },
+    );
+  }
+
+  Future<void> deleteVideo() async {
+    // التأكد إن فيه فيديو أصلاً عشان نحذفه
+    final currentVideoUrl = state.profile?.userMedia?.video;
+    if (currentVideoUrl == null) return;
+
+    emit(state.copyWith(isLoading: true, clearMessages: true));
+
+    debugPrint('🗑️ Deleting video from server...');
+    
+    // نمرر الـ URL للـ repository
+    final result = await _repository.deleteVideo(currentVideoUrl);
+
+    result.fold(
+      (failure) {
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (_) {
+        debugPrint('✅ Video deleted from server, updating local state');
+        
+        // تحديث الـ state المحلي لمسح الفيديو من الواجهة
+        final currentMedia = state.profile!.userMedia ?? UserMedia(images: []);
+        final updatedProfile = state.profile!.copyWith(
+          userMedia: currentMedia.copyWith(video: null), // مسح رابط الفيديو
+        );
+
+        emit(state.copyWith(
+          profile: updatedProfile,
+          isLoading: false,
+          successMessage: 'تم حذف الفيديو بنجاح',
+        ));
+      },
+    );
+  }
+  Future<void> deleteAudio() async {
+    // جلب رابط الصوت الحالي من الـ State
+    final currentAudioUrl = state.profile?.userMedia?.audio;
+    if (currentAudioUrl == null) return;
+
+    emit(state.copyWith(isLoading: true, clearMessages: true));
+
+    debugPrint('🗑️ Deleting audio from server...');
+
+    final result = await _repository.deleteAudio(currentAudioUrl);
+
+    result.fold(
+      (failure) {
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (_) {
+        debugPrint('✅ Audio deleted from server, updating local state');
+        
+        // تحديث الحالة المحلية لمسح الرابط
+        final currentMedia = state.profile!.userMedia ?? UserMedia(images: []);
+        final updatedProfile = state.profile!.copyWith(
+          userMedia: currentMedia.copyWith(audio: null), // مسح الرابط من الـ Model
+        );
+
+        emit(state.copyWith(
+          profile: updatedProfile,
+          isLoading: false,
+          successMessage: 'تم حذف التسجيل الصوتي بنجاح',
+        ));
+      },
+    );
+  }
   void resetState() => emit(state.copyWith(
         state: CubitStates.initial,
         clearMessages: true,
