@@ -464,6 +464,7 @@
     "blur_change_failed": "فشل في تغيير حالة تمويه الصورة",
     "blur_image": "تمويه الصورة",
     "choose_blur_level": "اختر درجة الوضوح المناسبة للحصول على صورة واضحة أو مموهة",
+
 "select_country_title": "اختر بلدك",
   "select_nationality_title": "اختر جنسيتك",
   "select_religion_title": "اختر الدين",
@@ -539,6 +540,15 @@
   "interest_art": "الفن",
   "interest_music": "الموسيقى",
   "interest_technology": "التكنولوجيا",
-  "interest_nature": "الطبيعة"
+  "interest_nature": "الطبيعة",
+
+
+    "add_images": "الصور المضافة",
+    "add_phone": "ادخل رقم الهاتف",
+    "add_phone_desc": "ادخل رقم الهاتف الخاص بك وسنرسل اليك رمز تحقق لاثبات هويتك" ,
+    "otp_title_phone": "رمز التحقق للهاتف",
+    "otp_verified": "تم التحقق من رقم الهاتف بنجاح ",
+    "head_phone":" اخفاء ملفك الشخصى عن جهات اتصالك!",
+    "head_phone_subtitle":"لن يستطيع احد من جهات اتصالك رؤية ملفك او معلومات عنك "
 
 }

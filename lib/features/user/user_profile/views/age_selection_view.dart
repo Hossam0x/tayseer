@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:vibration/vibration.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/my_import.dart'; // تأكد من وجود تعريفات الـ AppColors والـ Styles هنا
+import 'package:tayseer/my_import.dart';
 
 class AgeSelectionView extends StatefulWidget {
   final int initialAge;
@@ -16,17 +16,13 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
   late int selectedAge;
   late FixedExtentScrollController _scrollController;
   int _lastIndex = 0;
-  // final bool _isScrolling = false;
 
   @override
   void initState() {
     super.initState();
     selectedAge = widget.initialAge;
-    // السن يبدأ من 18، لذا الـ Index هو (السن - 18)
     _lastIndex = selectedAge - 18;
     _scrollController = FixedExtentScrollController(initialItem: _lastIndex);
-
-    // إضافة مستمع للتحكم في التمرير
     _scrollController.addListener(_onScroll);
   }
 
@@ -42,7 +38,6 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
 
     final currentIndex = _scrollController.selectedItem;
 
-    // التحقق إذا تغير الفهرس (اختار رقم جديد)
     if (currentIndex != _lastIndex) {
       _lastIndex = currentIndex;
       _triggerHapticFeedback();
@@ -50,15 +45,10 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
   }
 
   Future<void> _triggerHapticFeedback() async {
-    // 1. اهتزاز هابتي (خفيف)
     if (await Vibration.hasVibrator()) {
-      Vibration.vibrate(duration: 10); // اهتزاز خفيف جداً
+      Vibration.vibrate(duration: 10);
     }
-
-    // 2. تأثير هابتي للنقر (feedbackType.lightImpact)
     HapticFeedback.heavyImpact();
-
-    // 3. صوت نقر (اختياري - يمكن إزالته إذا لم تكن تريده)
     SystemSound.play(SystemSoundType.alert);
   }
 
@@ -67,7 +57,6 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
       selectedAge = 18 + index;
     });
 
-    // تأثير عند التغيير النهائي (أقوى)
     if (await Vibration.hasVibrator()) {
       Vibration.vibrate(duration: 20);
     }
@@ -81,7 +70,6 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
         child: SafeArea(
           child: Column(
             children: [
-              // الـ App Bar العلوي
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                 child: SimpleAppBar(title: 'السن', isLargeTitle: true),
@@ -99,7 +87,6 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        // الخطوط الحمراء التي تحدد الاختيار
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -119,7 +106,6 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
                           ],
                         ),
 
-                        // أداة اختيار السن
                         CupertinoPicker(
                           selectionOverlay: null,
                           scrollController: _scrollController,
@@ -158,10 +144,7 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
                   title: 'تأكيد',
                   useGradient: true,
                   onPressed: () {
-                    // تأثير عند الضغط على الزر
                     HapticFeedback.selectionClick();
-
-                    // نرجع بالقيمة المختارة
                     Navigator.pop(context, selectedAge.toString());
                   },
                 ),

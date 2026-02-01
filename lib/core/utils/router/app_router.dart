@@ -53,15 +53,19 @@ import 'package:tayseer/features/shared/auth/view/select_session_duration_view.d
 import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
+import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/add_phone_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/added_images_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/face_verification_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/otp_phone_user_question.dart';
 import 'package:tayseer/features/user/questions/refact_question/questions_page_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/choose_gender_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/personal_info_view.dart';
 import 'package:tayseer/features/user/questions/refact_question/verify_data_view.dart';
+import 'package:tayseer/features/user/questions/refact_question/widget/blocked_contacts_success_widget.dart';
 
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
@@ -87,6 +91,7 @@ import 'package:tayseer/features/shared/auth/view/regisration_user_view.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_account_management_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_archive_chats_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import '../../../my_import.dart';
@@ -148,6 +153,9 @@ abstract class AppRouter {
   static const kVerifyDataView = '/VerifyDataView';
   static const kFaceVerificationView = '/FaceVerificationView';
   static const kAddedImagesView = '/AddedImagesView';
+  static const kAddPhoneView = '/AddPhoneView';
+  static const kOtpPhoneUserQuestion = '/OtpPhoneUserQuestion';
+  static const kBlockedContactsSuccessScreen = '/BlockedContactsSuccessScreen';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -193,6 +201,8 @@ abstract class AppRouter {
   static const kUserProfileEditView = '/user-profile-edit';
   static const kInteractionFilterView = '/InteractionFilterView';
   static const kinteractionSubscriptionView = '/interactionSubscriptionView';
+  static const kUserArchiveChatsView = '/user-archive-chats';
+  static const kUserFollowingsView = '/userFollowingsView';
 
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
@@ -382,6 +392,18 @@ abstract class AppRouter {
         return FadeScaleRoute(
           page: const UserProfileEditView(),
           routeSettings: settings,
+        );
+
+      case AppRouter.kUserArchiveChatsView:
+        return FadeScaleRoute(
+          page: const UserArchiveChatsView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kUserFollowingsView:
+        final userId = settings.arguments as String;
+        return MaterialPageRoute(
+          builder: (_) => UserFollowingsView(userId: userId),
         );
 
       case kHomeScreen:
@@ -758,6 +780,7 @@ abstract class AppRouter {
               BlocProvider.value(value: getIt<QuestionsCubit>()),
             ],
             child: QuestionsPageView(
+              lastQuestionNumber: args?['lastQuestionNumber'] ?? 0,
               currentUserType: args?['currentUserType'] ?? UserTypeEnum.user,
               selectedGender: args?['selectedGender'] ?? Gender.male,
             ),
@@ -794,6 +817,27 @@ abstract class AppRouter {
             value: getIt<QuestionsCubit>(),
             child: AddedImagesView(),
           ),
+        );
+      case kAddPhoneView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: AddPhoneView(),
+          ),
+        );
+      case kOtpPhoneUserQuestion:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: OtpPhoneUserQuestion(),
+          ),
+        );
+      case kBlockedContactsSuccessScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlockedContactsSuccessScreen(),
         );
 
       // case kEditCertificateView:

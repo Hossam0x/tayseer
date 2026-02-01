@@ -1,82 +1,119 @@
-import 'dart:ui';
-
+import 'package:tayseer/features/advisor/settings/data/models/blocked_user_model.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/image_placeholder.dart';
 import 'package:tayseer/my_import.dart';
 
 class BlockedUserItem extends StatelessWidget {
-  final String name;
-  final String username;
-  final String imageUrl;
+  final BlockedUserModel blockedUser;
   final VoidCallback onUnblock;
 
   const BlockedUserItem({
     super.key,
-    required this.name,
-    required this.username,
-    required this.imageUrl,
+    required this.blockedUser,
     required this.onUnblock,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 12.h),
-          child: Row(
-            children: [
-              Container(
-                width: 56.r,
-                height: 56.r,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey.shade200,
-                ),
-                child: ClipOval(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.asset(AssetsData.avatarImage, fit: BoxFit.cover, ),
-                      BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                        child: Container(color: Colors.white.withOpacity(0.1)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 12.h),
+      child: Row(
+        children: [
+          // User Avatar
+          _buildUserAvatar(),
 
-              SizedBox(width: 12.w),
-              // Right Side: Info and Avatar
-              Column(
-                children: [
-                  Text(
-                    name,
-                    style: Styles.textStyle16.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.secondary700,
-                    ),
-                  ),
-                  Text(
-                    username,
-                    style: Styles.textStyle14.copyWith(color: AppColors.gray2),
-                  ),
-                ],
-              ),
+          SizedBox(width: 12.w),
 
-              const Spacer(),
-              // Left Side: Unblock Button
-              CustomBotton(
-                title: 'الغاء الحظر',
-                onPressed: onUnblock,
-                width: 100.w,
-                useGradient: true,
-              ),
-            ],
+          // User Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  blockedUser.blockedUser.name,
+                  style: Styles.textStyle16.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  blockedUser.blockedUser.userName,
+                  style: Styles.textStyle14.copyWith(color: AppColors.gray2),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                // SizedBox(height: 4.h),
+                // Text(
+                //   _formatDate(blockedUser.createdAt),
+                //   style: Styles.textStyle12.copyWith(
+                //     color: AppColors.secondary400,
+                //   ),
+                // ),
+              ],
+            ),
           ),
-        ),
-        // Divider line as seen in the image
-        Divider(color: Colors.grey.shade200, height: 1),
-      ],
+
+          const Spacer(),
+
+          // Unblock Button
+          CustomBotton(
+            title: 'الغاء الحظر',
+            onPressed: onUnblock,
+            width: 105.w,
+            height: 50.w,
+            useGradient: true,
+          ),
+        ],
+      ),
     );
   }
+
+  Widget _buildUserAvatar() {
+    final imageUrl = blockedUser.blockedUser.image;
+
+    return Container(
+      width: 56.r,
+      height: 56.r,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.secondary100,
+        border: Border.all(color: AppColors.secondary200, width: 1),
+      ),
+      child: ClipOval(
+        child: imageUrl != null && imageUrl.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                placeholder: (context, url) =>
+                    ImagePlaceholder(iconData: Icons.person, size: 24.w),
+                errorWidget: (context, url, error) =>
+                    ImagePlaceholder(iconData: Icons.person, size: 24.w),
+              )
+            : ImagePlaceholder(iconData: Icons.person, size: 24.w),
+      ),
+    );
+  }
+
+  // String _formatDate(DateTime date) {
+  //   final now = DateTime.now();
+  //   final difference = now.difference(date);
+
+  //   if (difference.inDays > 365) {
+  //     final years = (difference.inDays / 365).floor();
+  //     return 'منذ $years ${years == 1 ? 'سنة' : 'سنوات'}';
+  //   } else if (difference.inDays > 30) {
+  //     final months = (difference.inDays / 30).floor();
+  //     return 'منذ $months ${months == 1 ? 'شهر' : 'أشهر'}';
+  //   } else if (difference.inDays > 0) {
+  //     return 'منذ ${difference.inDays} ${difference.inDays == 1 ? 'يوم' : 'أيام'}';
+  //   } else if (difference.inHours > 0) {
+  //     return 'منذ ${difference.inHours} ${difference.inHours == 1 ? 'ساعة' : 'ساعات'}';
+  //   } else if (difference.inMinutes > 0) {
+  //     return 'منذ ${difference.inMinutes} ${difference.inMinutes == 1 ? 'دقيقة' : 'دقائق'}';
+  //   } else {
+  //     return 'الآن';
+  //   }
+  // }
 }

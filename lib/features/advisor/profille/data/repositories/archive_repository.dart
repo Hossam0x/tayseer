@@ -44,7 +44,7 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   @override
   Future<Either<Failure, ArchivedChatsResponseModel>> getArchivedChats({
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   }) async {
     try {
       final response = await _apiService.get(
@@ -52,13 +52,12 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         query: {'page': page, 'limit': limit},
       );
 
-      // Debug: طباعة الـ response بالكامل
-      print('📌 Full Response: $response');
+      print('✅ Archived Chats Response received');
 
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>?;
         if (data == null) {
-          print('⚠️ Data is null');
+          print('⚠️ Data is null in archived chats');
           return Right(
             ArchivedChatsResponseModel(
               chatRooms: [],
@@ -70,28 +69,24 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
           );
         }
 
-        // Debug: طباعة الـ chatRooms
-        if (data['chatRooms'] != null) {
-          print('📦 Chat Rooms count: ${(data['chatRooms'] as List).length}');
-          for (var i = 0; i < (data['chatRooms'] as List).length; i++) {
-            print('   Chat $i: ${data['chatRooms'][i]}');
-          }
-        }
-
         final chatsResponse = ArchivedChatsResponseModel.fromJson(data);
+        print('✅ Parsed ${chatsResponse.chatRooms.length} archived chats');
+
         return Right(chatsResponse);
       } else {
-        return Left(
-          ServerFailure(
-            response['message']?.toString() ?? 'فشل جلب المحادثات المؤرشفة',
-          ),
-        );
+        final errorMessage =
+            response['message']?.toString() ?? 'فشل جلب المحادثات المؤرشفة';
+        print('❌ Archived chats error: $errorMessage');
+        return Left(ServerFailure(errorMessage));
       }
     } on DioException catch (e) {
-      print('❌ Dio Error: ${e.message}');
+      print('❌ Dio Error in archived chats: ${e.message}');
+      if (e.response != null) {
+        print('❌ Response: ${e.response?.data}');
+      }
       return Left(ServerFailure.fromDioError(e));
     } catch (e, stackTrace) {
-      print('❌ Error: $e');
+      print('❌ Error in archived chats: $e');
       print('Stack Trace: $stackTrace');
       return Left(ServerFailure(e.toString()));
     }
@@ -100,9 +95,11 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   @override
   Future<Either<Failure, void>> unarchiveChat(String chatId) async {
     try {
-      final response = await _apiService.post(
-        endPoint: '/chat/unarchive/$chatId',
+      final response = await _apiService.patch(
+        endPoint: '/chat/$chatId/unarchive', // ✅ تصحيح المسار
       );
+
+      print('✅ Unarchive response: $response');
 
       if (response['success'] == true) {
         return const Right(null);
@@ -114,8 +111,11 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         );
       }
     } on DioException catch (e) {
+      print('❌ Dio Error in unarchiveChat: ${e.message}');
+      print('❌ Response data: ${e.response?.data}');
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
+      print('❌ General Error in unarchiveChat: $e');
       return Left(ServerFailure(e.toString()));
     }
   }

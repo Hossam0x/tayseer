@@ -254,18 +254,45 @@ class UserAdvisorBioInformation extends StatelessWidget {
     );
   }
 
-  // ⭐ تحديث قسم المتابعة والرسائل
+  // ⭐ تحديث زر المحادثة في _buildFollowSection
+  // ⭐ تحديث _buildFollowSection
   Widget _buildFollowSection(
     BuildContext context,
     UserAdvisorProfileModel profile,
   ) {
-    return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+    return BlocConsumer<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+      listenWhen: (previous, current) =>
+          previous.followActionState != current.followActionState ||
+          (previous.followMessage != current.followMessage &&
+              current.followMessage != null),
+      listener: (context, state) {
+        // ⭐ معالجة رسائل المتابعة
+        final message = state.followMessage;
+        if (message != null) {
+          switch (state.followActionState) {
+            case CubitStates.success:
+              state.isFollowAdded == true
+                  ? AppToast.success(context, message)
+                  : AppToast.info(context, message);
+              break;
+            case CubitStates.failure:
+              AppToast.error(context, message);
+              break;
+            default:
+              break;
+          }
+        }
+      },
       buildWhen: (previous, current) =>
           previous.profile?.isFollowing != current.profile?.isFollowing ||
+          previous.profile?.room != current.profile?.room ||
+          previous.isChatLoading != current.isChatLoading ||
           previous.followActionState != current.followActionState,
       builder: (context, state) {
         final isFollowing = state.profile?.isFollowing ?? false;
-        final isLoading = state.followActionState == CubitStates.loading;
+        final isLoadingFollow = state.followActionState == CubitStates.loading;
+        final isChatLoading = state.isChatLoading;
+        final room = state.profile?.room;
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
@@ -277,7 +304,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
                   height: 54.h,
                   width: double.infinity,
                   title: isFollowing ? 'متابَع' : 'متابعة',
-                  onPressed: isLoading
+                  onPressed: isLoadingFollow
                       ? null
                       : () => context
                             .read<UserAdvisorProfileCubit>()
@@ -290,40 +317,48 @@ class UserAdvisorBioInformation extends StatelessWidget {
                       : AppColors.kWhiteColor,
                   radius: 10.r,
                   useGradient: isFollowing ? false : true,
-                  isLoading: isLoading,
+                  isLoading: isLoadingFollow,
                   elevation: 0,
                 ),
               ),
 
               Gap(13.w),
 
-              // زر المحادثة (يظهر فقط إذا كان المستخدم يتابع أو كان صديقاً)
-              if (isFollowing) // ⭐ يظهر فقط إذا كان يتابع
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 13.h,
-                    horizontal: 16.w,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary100,
-                    borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(color: AppColors.primary500),
-                  ),
-                  child: GestureDetector(
-                    onTap: () {
-                      context.pushNamed(
-                        AppRouter.kConversitionView,
-                        arguments: {
-                          'chatroomid': '697876c46ffae0da67d21a7f',
-                          'receiverid': profile.id,
-                          'username': profile.name,
-                          'userimage': profile.image,
-                          'isBlocked': false,
-                          'isHaveSession': false,
+              if (isFollowing)
+                GestureDetector(
+                  onTap: isChatLoading
+                      ? null
+                      : () {
+                          final cubit = context.read<UserAdvisorProfileCubit>();
+                          if (profile.hasRoom &&
+                              profile.chatRoomId != null &&
+                              profile.chatRoomId!.isNotEmpty &&
+                              room != null) {
+                            cubit.startChat();
+                          } else {
+                            cubit.startChat();
+                          }
                         },
-                      );
-                    },
-                    child: AppImage(AssetsData.chatIconSVG, width: 22.w),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 13.h,
+                      horizontal: 16.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary100,
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(color: AppColors.primary500),
+                    ),
+                    child: isChatLoading
+                        ? SizedBox(
+                            width: 22.w,
+                            height: 22.w,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary500,
+                            ),
+                          )
+                        : AppImage(AssetsData.chatIconSVG, width: 22.w),
                   ),
                 ),
             ],
