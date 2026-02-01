@@ -15,6 +15,7 @@ import 'package:tayseer/features/advisor/profille/views/boost_properties_view.da
 import 'package:tayseer/features/advisor/profille/views/consultation_topics_view.dart';
 import 'package:tayseer/features/advisor/profille/views/location_selection_view.dart';
 import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
+import 'package:tayseer/features/advisor/search/presentation/cubit/search_cubit.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/order_session_view.dart';
 import 'package:tayseer/features/advisor/settings/view/account_management_view.dart';
 import 'package:tayseer/features/advisor/settings/view/appointments_view.dart';
@@ -43,7 +44,7 @@ import 'package:tayseer/features/advisor/wallet/view/withdraw_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
-import 'package:tayseer/features/advisor/search/view/a_search_view.dart';
+import 'package:tayseer/features/advisor/search/presentation/view/a_search_view.dart';
 import 'package:tayseer/features/shared/auth/view/consultant_upload_certificate_view.dart';
 import 'package:tayseer/features/shared/auth/view/professional_information_consultant_view.dart';
 import 'package:tayseer/features/shared/auth/view/regisration_advisor_view.dart';
@@ -558,10 +559,19 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => ALayoutView(currentUserType: userType),
         );
+      // تحديث في app_router.dart
+      // في app_router.dart
       case kAdvisorSearchView:
+        final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const ASearchView(),
+          builder: (_) => BlocProvider(
+            create: (context) => SearchCubit(),
+            child: AdvisorSearchView(
+              initialQuery: args?['query'] ?? '',
+              initialTab: args?['tab'] ?? 'all',
+            ),
+          ),
         );
       case kSessionDetailsView:
         return MaterialPageRoute(

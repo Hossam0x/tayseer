@@ -47,7 +47,8 @@ abstract class AssetsData {
   static const String userBGImage = "assets/images/user_BG.png";
   static const String kblurImage = "assets/images/blur_image.png";
   static const String kmapImage = "assets/images/map_image.png";
-  static const String ksuccessTrueImage = "assets/images/success_true_image.png";
+  static const String ksuccessTrueImage =
+      "assets/images/success_true_image.png";
 
   //////////////////////icons//////////////////////
   static const String kArroBackIcon = "assets/icons/arro_back.svg";
@@ -236,4 +237,8 @@ abstract class AssetsData {
   static const String errorIcon = "assets/icons/error.png";
   static const String icSettingsProf = "assets/icons/icSettingsProf.svg";
   static const String icSendGreeting = "assets/icons/icSendGreeting.svg";
+
+  // Search Icons
+  static const String icSeachFor = "assets/icons/icNoAdvisorSearch.svg";
+  static const String icNoContentSeach = "assets/images/icNoContentSeach.png";
 }

@@ -381,7 +381,14 @@ class _PostItemState extends State<_PostItem> {
   }
 
   void _onHashtagTap(String hashtag) {
-    context.pushNamed(AppRouter.kAdvisorSearchView);
+    final cleanHashtag = hashtag.startsWith('#')
+        ? hashtag.substring(1)
+        : hashtag;
+
+    context.pushNamed(
+      AppRouter.kAdvisorSearchView,
+      arguments: {'query': cleanHashtag, 'tab': 'posts'},
+    );
   }
 
   void _onNavigateToDetails(
