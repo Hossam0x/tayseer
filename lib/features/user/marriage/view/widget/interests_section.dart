@@ -8,6 +8,19 @@ class InterestsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final filteredInterests = interests
+        .where(
+          (i) =>
+              i['label'] != null &&
+              i['label'].toString().trim().isNotEmpty &&
+              i['label'].toString().toLowerCase() != 'null',
+        )
+        .toList();
+
+    if (filteredInterests.isEmpty) {
+      return const SizedBox.shrink(); // 👈 مفيش اهتمامات = السيكشن يختفي
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -16,8 +29,8 @@ class InterestsSection extends StatelessWidget {
         Wrap(
           spacing: 10.w,
           runSpacing: 8.h,
-          children: interests
-              .map((i) => buildIconTag(i['label'], i['icon']))
+          children: filteredInterests
+              .map((i) => buildIconTag(i['label']))
               .toList(),
         ),
       ],

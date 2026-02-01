@@ -86,14 +86,14 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                         if (lastQuestionNumber == 0) {
                           context.pushNamed(AppRouter.kChooseGenderView);
                         } else if (lastQuestionNumber >= 1 &&
-                            lastQuestionNumber < 19) {
+                            lastQuestionNumber < 20) {
                           context.pushNamed(
                             AppRouter.kQuestionsPageView,
                             arguments: {
                               'lastQuestionNumber': lastQuestionNumber,
                             },
                           );
-                        } else if (lastQuestionNumber == 19) {
+                        } else if (lastQuestionNumber == 20) {
                           context.pushNamed(AppRouter.kPersonalInfoView);
                         }
                         // else if (lastQuestionNumber == 23) {

@@ -8,6 +8,18 @@ class EducationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final filteredItems = items
+        .where(
+          (item) =>
+              item['label'] != null &&
+              item['label'].toString().trim().isNotEmpty,
+        )
+        .toList();
+
+    if (filteredItems.isEmpty) {
+      return const SizedBox.shrink(); // 👈 لو مفيش داتا
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -17,11 +29,11 @@ class EducationSection extends StatelessWidget {
         ),
         Gap(10.h),
         Row(
-          children: items
+          children: filteredItems
               .map(
                 (item) => Padding(
                   padding: EdgeInsets.only(left: 10.w),
-                  child: buildIconTag(item['label'], item['icon']),
+                  child: buildIconTag(item['label']),
                 ),
               )
               .toList(),

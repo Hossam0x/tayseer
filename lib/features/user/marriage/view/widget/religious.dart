@@ -8,6 +8,19 @@ class ReligiousSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final filteredTags = tags
+        .where(
+          (tag) =>
+              tag['label'] != null &&
+              tag['label'].toString().trim().isNotEmpty &&
+              tag['label'].toString().toLowerCase() != 'null',
+        )
+        .toList();
+
+    if (filteredTags.isEmpty) {
+      return const SizedBox.shrink(); // 👈 السيكشن كله يختفي
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -16,8 +29,8 @@ class ReligiousSection extends StatelessWidget {
         Wrap(
           spacing: 8.w,
           runSpacing: 8.h,
-          children: tags
-              .map((tag) => buildIconTag(tag['label'], tag['icon']))
+          children: filteredTags
+              .map((tag) => buildIconTag(tag['label']))
               .toList(),
         ),
       ],

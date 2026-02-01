@@ -8,6 +8,18 @@ class AboutMeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final filteredItems = items
+        .where(
+          (item) =>
+              item['label'] != null &&
+              item['label'].toString().trim().isNotEmpty,
+        )
+        .toList();
+
+    if (filteredItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -16,8 +28,8 @@ class AboutMeSection extends StatelessWidget {
         Wrap(
           spacing: 8.w,
           runSpacing: 8.h,
-          children: items
-              .map((item) => buildIconTag(item['label'], item['icon']))
+          children: filteredItems
+              .map((item) => buildIconTag(item['label']))
               .toList(),
         ),
       ],
