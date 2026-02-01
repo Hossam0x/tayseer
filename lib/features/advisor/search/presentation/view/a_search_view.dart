@@ -36,10 +36,8 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   late FocusNode _searchFocusNode;
   Timer? _searchDebounce;
 
-  // استخدام late final للـ SearchCubit
   late final SearchCubit _searchCubit;
 
-  // قائمة التبويبات - 4 تبويبات فقط (بدون المجموعات)
   final List<SearchTab> _tabs = [
     SearchTab(id: 'all', title: 'الكل'),
     SearchTab(id: 'advisors', title: 'المستشارين'),
@@ -59,10 +57,17 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     _searchController = TextEditingController(text: widget.initialQuery);
     _searchFocusNode = FocusNode();
 
-    // استماع لتغييرات التبويب
-    _tabController.addListener(_onTabChanged);
+    // ✅ استماع لتغيير التبويب من خلال السحب
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        // هذا يعني أن التغيير حصل من خلال السحب
+        if (mounted) {
+          setState(() {});
+        }
+        _performSearch();
+      }
+    });
 
-    // إعطاء التركيز لشريط البحث
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.requestFocus();
       _searchCubit.loadInitialData();
@@ -122,25 +127,28 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // شريط البحث
-            _buildSearchBar(),
+      body: AdvisorBackground(
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // شريط البحث
+              _buildSearchBar(),
 
-            // تبويبات البحث
-            _buildSearchTabs(),
+              // تبويبات البحث
+              _buildSearchTabs(),
 
-            // محتوى البحث
-            Expanded(
-              child: BlocBuilder<SearchCubit, SearchState>(
-                bloc: _searchCubit, // ✅ تمرير الـ cubit مباشرة هنا
-                builder: (context, state) {
-                  return _buildSearchContent(context, state);
-                },
+              // محتوى البحث
+              Expanded(
+                child: BlocBuilder<SearchCubit, SearchState>(
+                  bloc: _searchCubit, // ✅ تمرير الـ cubit مباشرة هنا
+                  builder: (context, state) {
+                    return _buildSearchContent(context, state);
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -152,7 +160,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       child: Material(
         color: Colors.transparent,
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+          padding: EdgeInsets.only(left: 20.w, top: 12.h, bottom: 12.h),
           child: Row(
             children: [
               // زر الرجوع
@@ -164,24 +172,22 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
-
-              // حقل البحث
               Expanded(
-                child: Container(
-                  height: 47.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(30.r),
-                  ),
-                  child: Row(
-                    children: [
-                      // أيقونة البحث
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w),
-                        child: BlocBuilder<SearchCubit, SearchState>(
-                          bloc: _searchCubit, // ✅ تمرير الـ cubit مباشرة
-                          builder: (context, state) {
-                            return state.isLoading
+                child: BlocBuilder<SearchCubit, SearchState>(
+                  bloc: _searchCubit,
+                  builder: (context, state) {
+                    return Container(
+                      height: 47.h,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Row(
+                        children: [
+                          // أيقونة البحث / اللودينج
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
+                            child: state.isLoading
                                 ? SizedBox(
                                     width: 20.w,
                                     height: 20.w,
@@ -192,46 +198,52 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                                   )
                                 : Icon(
                                     Icons.search,
-                                    color: Colors.grey,
-                                    size: 20.w,
-                                  );
-                          },
-                        ),
-                      ),
+                                    color: AppColors.kGreyB3,
+                                    size: 20.sp,
+                                  ),
+                          ),
 
-                      // حقل النص
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          focusNode: _searchFocusNode,
-                          autofocus: true,
-                          textAlign: TextAlign.right,
-                          onChanged: (_) => _onSearchChanged(),
-                          decoration: InputDecoration(
-                            hintText: widget.initialQuery?.isNotEmpty == true
-                                ? widget.initialQuery
-                                : "ابحث عن ما تريده...",
-                            hintStyle: Styles.textStyle14.copyWith(
-                              color: Colors.grey,
+                          // حقل النص
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              focusNode: _searchFocusNode,
+                              autofocus: true,
+                              textAlign: TextAlign.right,
+                              style: Styles.textStyle14SemiBold,
+                              onChanged: (_) => _onSearchChanged(),
+                              decoration: InputDecoration(
+                                hintText:
+                                    widget.initialQuery?.isNotEmpty == true
+                                    ? widget.initialQuery
+                                    : "ابحث عن ما تريده",
+                                hintStyle: Styles.textStyle14.copyWith(
+                                  color: AppColors.kGreyB3,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.only(
+                                  left: 12.w,
+                                  top: 15.h,
+                                  bottom: 15.h,
+                                ),
+                              ),
                             ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.only(right: 12.w),
                           ),
-                        ),
-                      ),
 
-                      // زر المسح
-                      if (_searchController.text.isNotEmpty)
-                        IconButton(
-                          icon: Icon(
-                            Icons.clear,
-                            size: 20.w,
-                            color: Colors.grey,
-                          ),
-                          onPressed: _clearSearch,
-                        ),
-                    ],
-                  ),
+                          // زر المسح
+                          if (_searchController.text.isNotEmpty)
+                            IconButton(
+                              icon: Icon(
+                                Icons.clear,
+                                size: 20.w,
+                                color: Colors.grey,
+                              ),
+                              onPressed: _clearSearch,
+                            ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -245,17 +257,20 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Container(
-        padding: EdgeInsets.only(bottom: 10.h, right: 24.w, left: 24.w),
+        padding: EdgeInsets.only(bottom: 10.h, right: 20.w),
         child: Row(
           children: [
             // جميع التبويبات
-            ..._tabs.map((tab) {
-              final isSelected = _tabs.indexOf(tab) == _tabController.index;
+            ..._tabs.asMap().entries.map((entry) {
+              final index = entry.key;
+              final tab = entry.value;
+              final isSelected = index == _tabController.index;
+
               return Padding(
-                padding: EdgeInsets.only(left: 8.w),
+                padding: EdgeInsets.only(left: 10.w),
                 child: GestureDetector(
                   onTap: () {
-                    _tabController.animateTo(_tabs.indexOf(tab));
+                    _tabController.animateTo(index);
                     _performSearch();
                   },
                   child: AnimatedContainer(
@@ -266,18 +281,25 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.kprimaryColor.withOpacity(0.6)
+                          ? AppColors.primary100
                           : const Color(0xB8F9F8EC),
                       borderRadius: BorderRadius.circular(6.r),
                     ),
                     child: Text(
                       tab.title,
-                      style: Styles.textStyle14.copyWith(
-                        color: isSelected ? Colors.black : AppColors.kGreyB3,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
+                      style: isSelected
+                          ? Styles.textStyle14Meduim.copyWith(
+                              color: AppColors.secondary800,
+                            )
+                          : Styles.textStyle14.copyWith(
+                              color: AppColors.secondary600,
+                            ),
+                      // style: Styles.textStyle14.copyWith(
+                      //   color: isSelected ? Colors.black : AppColors.kGreyB3,
+                      //   fontWeight: isSelected
+                      //       ? FontWeight.bold
+                      //       : FontWeight.normal,
+                      // ),
                     ),
                   ),
                 ),
@@ -292,12 +314,10 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   Widget _buildSearchContent(BuildContext context, SearchState state) {
     final currentTab = _tabs[_tabController.index];
 
-    // حالة التحميل
     if (state.isLoading) {
       return SearchLoadingState(tabType: currentTab.id);
     }
 
-    // حالة الخطأ
     if (state.isError) {
       return SearchErrorState(
         errorMessage: state.errorMessage,
@@ -305,7 +325,6 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       );
     }
 
-    // حالة البحث بدون نتائج (عندما يكون هناك query ولكن لا توجد نتائج)
     if (state.query.isNotEmpty && state.isEmpty) {
       String message;
       String iconPath;
@@ -331,7 +350,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       return SearchEmptyState(message: message, iconPath: iconPath);
     }
 
-    // عرض النتائج حسب التبويب
+    // ✅ استخدام TabBarView مع listener للتحديث
     return TabBarView(
       controller: _tabController,
       children: _tabs.map((tab) {
