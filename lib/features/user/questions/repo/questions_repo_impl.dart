@@ -227,7 +227,7 @@ class QuestionsRepoImpl implements QuestionsRepo {
       if (success) {
         try {
           final model = LastQuestionNumber.fromJson(
-            response['data']['lastQuestionNumber'] ?? {},
+            response['data'] ?? {},
           );
           return right(model);
         } catch (e) {
