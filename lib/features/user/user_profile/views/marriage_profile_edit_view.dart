@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
-import 'package:tayseer/features/user/questions/refact_question/widget/custtom_image_grid.dart';
+import 'package:tayseer/features/user/questions/view/widget/custtom_image_grid.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
@@ -537,51 +537,52 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   // ════════════════════════════════════════════════════════════════
   // FIX للـ _pickAudio - حل مشكلة الـ UI state
   // ════════════════════════════════════════════════════════════════
-Future<void> _pickAudio(BuildContext context) async {
-  // ✅ Capture ScaffoldMessenger BEFORE any async operations
-  final scaffoldMessenger = ScaffoldMessenger.of(context);
-  
-  try {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-      allowCompression: true,
-    );
+  Future<void> _pickAudio(BuildContext context) async {
+    // ✅ Capture ScaffoldMessenger BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    if (result != null && result.files.single.path != null) {
-      final file = File(result.files.single.path!);
-
-      // Check file size (max 10MB)
-      final fileSize = await file.length();
-      if (fileSize > 10 * 1024 * 1024) {
-        scaffoldMessenger.showSnackBar(
-          CustomSnackBar(
-            context,
-            text: 'حجم الملف كبير جداً (الحد الأقصى 10 ميجا)',
-            isError: true,
-          ),
-        );
-        return;
-      }
-
-      // Show loading
-      scaffoldMessenger.showSnackBar(
-        CustomSnackBar(context, text: 'جاري رفع الملف الصوتي...'),
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+        allowCompression: true,
       );
 
-      // Upload
-      await widget.cubit.uploadAudio(file);
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+
+        // Check file size (max 10MB)
+        final fileSize = await file.length();
+        if (fileSize > 10 * 1024 * 1024) {
+          scaffoldMessenger.showSnackBar(
+            CustomSnackBar(
+              context,
+              text: 'حجم الملف كبير جداً (الحد الأقصى 10 ميجا)',
+              isError: true,
+            ),
+          );
+          return;
+        }
+
+        // Show loading
+        scaffoldMessenger.showSnackBar(
+          CustomSnackBar(context, text: 'جاري رفع الملف الصوتي...'),
+        );
+
+        // Upload
+        await widget.cubit.uploadAudio(file);
+      }
+    } catch (e) {
+      debugPrint('❌ Error picking audio: $e');
+      scaffoldMessenger.showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'خطأ في اختيار الملف الصوتي',
+          isError: true,
+        ),
+      );
     }
-  } catch (e) {
-    debugPrint('❌ Error picking audio: $e');
-    scaffoldMessenger.showSnackBar(
-      CustomSnackBar(
-        context,
-        text: 'خطأ في اختيار الملف الصوتي',
-        isError: true,
-      ),
-    );
-  }
-}  // ════════════════════════════════════════════════════════════════
+  } // ════════════════════════════════════════════════════════════════
+
   // RECORD AUDIO (Placeholder - requires record package)
   // ════════════════════════════════════════════════════════════════
   Future<void> _recordAudio(BuildContext context) async {
@@ -1045,11 +1046,3 @@ Future<void> _pickAudio(BuildContext context) async {
     );
   }
 }
-
-
-
-
-
-
-
-

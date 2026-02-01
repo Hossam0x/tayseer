@@ -11,7 +11,7 @@ import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/marriage/view/widget/additional_image.dart';
 // import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
-import 'package:tayseer/features/user/questions/refact_question/widget/custtom_image_grid.dart';
+import 'package:tayseer/features/user/questions/view/widget/custtom_image_grid.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/marriage_profile_repository.dart';
