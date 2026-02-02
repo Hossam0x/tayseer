@@ -3,7 +3,6 @@ import 'package:tayseer/features/user/questions/view/widget/custom_selectable_li
 import 'package:tayseer/features/user/questions/view/widget/multiselect_chips_widget.dart';
 import 'package:tayseer/features/user/questions/view/widget/question_page_config.dart';
 import 'package:tayseer/features/user/questions/view/widget/text_input_question.dart';
-
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
 
@@ -61,7 +60,6 @@ class QuestionPage extends StatelessWidget {
           ),
         );
 
-      // ✅ جديد: Multi-Select Chips
       case QuestionType.multiSelectChips:
         return MultiSelectChipsWidget(
           itemsWithIcons: config.itemsWithIcons ?? {},
@@ -72,7 +70,11 @@ class QuestionPage extends StatelessWidget {
         );
 
       case QuestionType.textInput:
-        return TextInputQuestion(onSubmit: onAnswer);
+        return TextInputQuestion(
+          onChanged: (value) {
+            _selectedValue.value = value;
+          },
+        );
     }
   }
 
@@ -84,10 +86,9 @@ class QuestionPage extends StatelessWidget {
           builder: (context, state) {
             final isLoading = state.answerQuestionsState == CubitStates.loading;
 
-            // ✅ التحقق من القيمة بناءً على النوع
             bool isEnabled = false;
             if (selectedValue is String) {
-              isEnabled = selectedValue.isNotEmpty;
+              isEnabled = selectedValue.trim().isNotEmpty;
             } else if (selectedValue is List) {
               isEnabled = selectedValue.isNotEmpty;
             }
