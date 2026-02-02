@@ -446,53 +446,6 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  // ⭐ تحديث بناء محتوى الزواج
-  SliverToBoxAdapter _buildMarriageContentSliver(
-    BuildContext context,
-    UserProfileState state,
-  ) {
-    UserProfileModel? userProfile;
-
-    if (state is SettingsLoaded) {
-      userProfile = state.userProfile;
-    }
-
-    return SliverToBoxAdapter(child: _buildMarriageContent(userProfile));
-  }
-
-  Widget _buildMarriageContent(UserProfileModel? userProfile) {
-    final isAvailableForMarry = userProfile?.availableForMarry ?? false;
-
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.6,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              isAvailableForMarry ? "جاهز/ة للزواج" : "غير مفعل حاليا",
-              style: Styles.textStyle20Bold.copyWith(
-                color: isAvailableForMarry
-                    ? AppColors.primary500
-                    : AppColors.secondary600,
-              ),
-            ),
-            if (isAvailableForMarry) ...[
-              Gap(8.h),
-              Text(
-                "يمكن للآخرين التواصل معك",
-                style: Styles.textStyle14.copyWith(
-                  color: AppColors.secondary600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
   // ⭐ تحديث زر تسجيل الخروج ليكون دائماً
   SliverToBoxAdapter _buildLogoutButtonSliver(BuildContext context) {
     return SliverToBoxAdapter(child: _buildLogoutButton(context));

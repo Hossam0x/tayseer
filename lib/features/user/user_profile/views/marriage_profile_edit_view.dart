@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/questions/refact_question/widget/custtom_image_grid.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
@@ -435,54 +436,71 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
 
   // ════════════════════════════════════════════════════════════════
   // PICK VIDEO
-  // ════════════════════════════════════════════════════════════════
   Future<void> _pickVideo(BuildContext context) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     try {
+      // ✅ طلب الـ Permission للمعرض
+      final status = await Permission.photos.request();
+
+      if (status.isDenied) {
+        scaffoldMessenger.showSnackBar(
+          CustomSnackBar(
+            context,
+            text: 'يرجى السماح بالوصول للمعرض',
+            isError: true,
+          ),
+        );
+        return;
+      }
+
+      if (status.isPermanentlyDenied) {
+        scaffoldMessenger.showSnackBar(
+          CustomSnackBar(
+            context,
+            text: 'يرجى تفعيل الصلاحية من الإعدادات',
+            isError: true,
+          ),
+        );
+        await openAppSettings();
+        return;
+      }
+
       final ImagePicker picker = ImagePicker();
       final XFile? video = await picker.pickVideo(
         source: ImageSource.gallery,
-        maxDuration: const Duration(minutes: 2), // Max 2 minutes
+        maxDuration: const Duration(minutes: 2),
       );
 
       if (video != null) {
         final file = File(video.path);
-
-        // Check file size (max 50MB)
         final fileSize = await file.length();
+
         if (fileSize > 50 * 1024 * 1024) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(
-                context,
-                text: 'حجم الفيديو كبير جداً (الحد الأقصى 50 ميجا)',
-                isError: true,
-              ),
-            );
-          }
+          scaffoldMessenger.showSnackBar(
+            CustomSnackBar(
+              context,
+              text: 'حجم الفيديو كبير جداً (الحد الأقصى 50 ميجا)',
+              isError: true,
+            ),
+          );
           return;
         }
 
-        // Show loading
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(CustomSnackBar(context, text: 'جاري رفع الفيديو...'));
-        }
+        scaffoldMessenger.showSnackBar(
+          CustomSnackBar(context, text: 'جاري رفع الفيديو...'),
+        );
 
-        // Upload
         await widget.cubit.uploadVideo(file);
       }
     } catch (e) {
       debugPrint('❌ Error picking video: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: 'خطأ في اختيار الفيديو', isError: true),
-        );
-      }
+      scaffoldMessenger.showSnackBar(
+        CustomSnackBar(context, text: 'خطأ في اختيار الفيديو', isError: true),
+      );
     }
-  }
+  } // ════════════════════════════════════════════════════════════════
 
-  // ════════════════════════════════════════════════════════════════
   // SHOW AUDIO OPTIONS (Record or Upload)
   // ════════════════════════════════════════════════════════════════
   void _showAudioOptions(BuildContext context) {
@@ -537,51 +555,87 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   // ════════════════════════════════════════════════════════════════
   // FIX للـ _pickAudio - حل مشكلة الـ UI state
   // ════════════════════════════════════════════════════════════════
-Future<void> _pickAudio(BuildContext context) async {
-  // ✅ Capture ScaffoldMessenger BEFORE any async operations
-  final scaffoldMessenger = ScaffoldMessenger.of(context);
-  
-  try {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-      allowCompression: true,
-    );
+  Future<void> _pickAudio(BuildContext context) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    if (result != null && result.files.single.path != null) {
-      final file = File(result.files.single.path!);
+    try {
+      // ✅ طلب الـ Permission للـ Storage/Media Library على iOS
+      PermissionStatus status;
 
-      // Check file size (max 10MB)
-      final fileSize = await file.length();
-      if (fileSize > 10 * 1024 * 1024) {
+      if (Platform.isIOS) {
+        // iOS: نحتاج Media Library permission
+        status = await Permission.mediaLibrary.request();
+      } else {
+        // Android: نحتاج Storage permission
+        status = await Permission.storage.request();
+      }
+
+      // معالجة حالة الرفض
+      if (status.isDenied) {
         scaffoldMessenger.showSnackBar(
           CustomSnackBar(
             context,
-            text: 'حجم الملف كبير جداً (الحد الأقصى 10 ميجا)',
+            text: 'يرجى السماح بالوصول للملفات',
             isError: true,
           ),
         );
         return;
       }
 
-      // Show loading
-      scaffoldMessenger.showSnackBar(
-        CustomSnackBar(context, text: 'جاري رفع الملف الصوتي...'),
+      if (status.isPermanentlyDenied) {
+        scaffoldMessenger.showSnackBar(
+          CustomSnackBar(
+            context,
+            text: 'يرجى تفعيل الصلاحية من الإعدادات',
+            isError: true,
+          ),
+        );
+        await openAppSettings();
+        return;
+      }
+
+      // ✅ المستخدم وافق على الـ Permission
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+        allowCompression: true,
       );
 
-      // Upload
-      await widget.cubit.uploadAudio(file);
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+
+        // Check file size (max 10MB)
+        final fileSize = await file.length();
+        if (fileSize > 10 * 1024 * 1024) {
+          scaffoldMessenger.showSnackBar(
+            CustomSnackBar(
+              context,
+              text: 'حجم الملف كبير جداً (الحد الأقصى 10 ميجا)',
+              isError: true,
+            ),
+          );
+          return;
+        }
+
+        // Show loading
+        scaffoldMessenger.showSnackBar(
+          CustomSnackBar(context, text: 'جاري رفع الملف الصوتي...'),
+        );
+
+        // Upload
+        await widget.cubit.uploadAudio(file);
+      }
+    } catch (e) {
+      debugPrint('❌ Error picking audio: $e');
+      scaffoldMessenger.showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'خطأ في اختيار الملف الصوتي',
+          isError: true,
+        ),
+      );
     }
-  } catch (e) {
-    debugPrint('❌ Error picking audio: $e');
-    scaffoldMessenger.showSnackBar(
-      CustomSnackBar(
-        context,
-        text: 'خطأ في اختيار الملف الصوتي',
-        isError: true,
-      ),
-    );
   }
-}  // ════════════════════════════════════════════════════════════════
+
   // RECORD AUDIO (Placeholder - requires record package)
   // ════════════════════════════════════════════════════════════════
   Future<void> _recordAudio(BuildContext context) async {
@@ -1045,11 +1099,3 @@ Future<void> _pickAudio(BuildContext context) async {
     );
   }
 }
-
-
-
-
-
-
-
-
