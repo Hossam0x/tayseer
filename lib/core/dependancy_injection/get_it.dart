@@ -49,6 +49,8 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository_impl.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/marriage/repositories/marriage_repository.dart';
+import 'package:tayseer/features/user/marriage/repositories/marriage_repository_impl.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo_impl.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
@@ -57,6 +59,7 @@ import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/marriage_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
@@ -315,6 +318,13 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<QuestionsCubit>(
     () => QuestionsCubit(getIt<QuestionsRepo>()),
   );
+
+  /// MarriageRepository
+
+  getIt.registerLazySingleton<MarriageRepository>(
+    () => MarriageRepositoryImpl(getIt<ApiService>()),
+  );
+
   // User
   getIt.registerFactory<UserAccountManagementRepository>(
     () => UserAccountManagementRepositoryImpl(getIt<ApiService>()),
@@ -331,4 +341,8 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<UserFollowingsRepository>(
     () => UserFollowingsRepositoryImpl(getIt<ApiService>()),
   );
+  
+  getIt.registerLazySingleton<MarriageProfileRepository>(
+  () => MarriageProfileRepository(getIt<ApiService>()),
+);
 }

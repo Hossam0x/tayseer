@@ -226,9 +226,7 @@ class QuestionsRepoImpl implements QuestionsRepo {
       final success = response['success'] ?? false;
       if (success) {
         try {
-          final model = LastQuestionNumber.fromJson(
-            response['data']['lastQuestionNumber'] ?? {},
-          );
+          final model = LastQuestionNumber.fromJson(response['data'] ?? {});
           return right(model);
         } catch (e) {
           return left(ServerFailure('فشل تجزئة بيانات الاستجابة: $e'));
