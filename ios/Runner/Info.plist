@@ -49,6 +49,14 @@
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>يحتاج التطبيق إضافة الصور والفيديوهات إلى مكتبة الصور</string>
 
+    <!-- ✅✅✅ أضف ده للـ Audio Files (مهم جداً لـ file_picker على iOS) -->
+    <key>NSAppleMusicUsageDescription</key>
+    <string>يحتاج التطبيق الوصول للملفات الصوتية لرفعها</string>
+    
+    <!-- ✅✅✅ أضف ده كمان للـ Media Library (iOS 14+) -->
+    <key>kTCCServiceMediaLibrary</key>
+    <string>يحتاج التطبيق الوصول لمكتبة الوسائط لاختيار الملفات الصوتية</string>
+
     <!-- Location -->
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>يحتاج التطبيق الوصول لموقعك لتقديم خدمات الموقع داخل التطبيق</string>

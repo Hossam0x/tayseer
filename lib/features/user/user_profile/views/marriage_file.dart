@@ -5,20 +5,15 @@
 
 import 'dart:developer';
 import 'dart:ui';
-
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/marriage/view/widget/additional_image.dart';
-// import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
-import 'package:tayseer/features/user/questions/view/widget/custtom_image_grid.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/marriage_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_profile_edit_view.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/marriage_field_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_life_events_section.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -200,7 +195,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
             sliver: SliverToBoxAdapter(
-              child: AdditionalImageSection(imageUrl: displayImages[1]),
+              child: displayImages.isNotEmpty
+                  ? AdditionalImageSection(
+                      imageUrl: displayImages.length > 1
+                          ? displayImages[1]
+                          : displayImages[0],
+                    )
+                  : const SizedBox.shrink(), // في حال كانت القائمة فارغة تماماً
             ),
           ),
 
@@ -212,14 +213,8 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
             sliver: SliverToBoxAdapter(
               child: VideoSection(
-                videoUrl:
-                     profile.userMedia?.video,
-      //      onDelete: profile.userMedia?.video != null
-      //     ? () => cubit.deleteVideo()
-      //     : null,
-      // onUpload: profile.userMedia?.video == null
-      //     ? () => _pickVideo()
-      //     : null,       
+                videoUrl: profile.userMedia?.video,
+
               ),
             ),
           ),
@@ -246,46 +241,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ EDIT CONTENT - المحتوى في وضع التعديل
-  // ════════════════════════════════════════════════════════════════
-
-  Widget _buildEditContent(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-    MarriageProfileState state,
-  ) {
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              Gap(24.h),
-              _buildPersonalInfoSection(context, cubit, profile),
-              Gap(20.h),
-              _buildImagesSection(context, cubit, profile),
-              Gap(24.h),
-              _buildProfessionalInfoSection(context, cubit, profile),
-              Gap(24.h),
-              _buildMediaSection(context),
-              Gap(24.h),
-              _buildFamilyAndPreferencesSection(context, cubit, profile),
-              Gap(24.h),
-              _buildGoalsSection(context, cubit, profile),
-              Gap(24.h),
-              _buildKnowMeMoreSection(context, cubit, profile),
-              Gap(32.h),
-              _buildSaveButton(context, cubit, state),
-              Gap(100.h),
-            ]),
-          ),
-        ),
-      ],
-    );
-  }
 
   // ════════════════════════════════════════════════════════════════
   // VIEW CONTENT HELPERS
@@ -734,620 +689,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
         .toList();
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // EDIT CONTENT HELPERS
-  // ════════════════════════════════════════════════════════════════
-
-  Widget _buildPersonalInfoSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('معلومات عني', style: Styles.textStyle18Meduim),
-          Gap(12.h),
-          _buildInfoRow('البلد', profile.aboutMe?.country ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'country',
-              profile.aboutMe?.country,
-            );
-          }),
-          _buildInfoRow('الجنسية', profile.aboutMe?.nationality ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'nationality',
-              profile.aboutMe?.nationality,
-            );
-          }),
-          _buildInfoRow('الطول', profile.aboutMe?.height ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'height',
-              profile.aboutMe?.height,
-            );
-          }),
-          _buildInfoRow('الوزن', profile.aboutMe?.weight ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'weight',
-              profile.aboutMe?.weight,
-            );
-          }),
-          _buildInfoRow('لون البشرة', profile.aboutMe?.skinColor ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'skinColor',
-              profile.aboutMe?.skinColor,
-            );
-          }),
-          _buildInfoRow(
-            'الحالة الصحية',
-            profile.aboutMe?.healthStatus ?? 'اختر',
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'healthStatus',
-                profile.aboutMe?.healthStatus,
-              );
-            },
-          ),
-          _buildInfoRow(
-            'الالتزام الديني',
-            profile.aboutMe?.religiousCommitment ?? 'اختر',
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'religiousCommitment',
-                profile.aboutMe?.religiousCommitment,
-              );
-            },
-          ),
-          _buildInfoRow('التدخين', profile.aboutMe?.smoker ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'smoker',
-              profile.aboutMe?.smoker,
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImagesSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    final allImages = profile.userMedia?.images ?? [];
-    final displayImages = allImages.length > 5
-        ? allImages.sublist(allImages.length - 5)
-        : allImages;
-
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'الصور (آخر ${displayImages.length} صور)',
-            style: Styles.textStyle18Meduim,
-          ),
-          Gap(12.h),
-          CusttomImageGrid(
-            imageUrls: displayImages,
-            onAdd: () {
-              if (displayImages.length < _maxImages) {
-                _pickImage(context, cubit, profile);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  CustomSnackBar(
-                    context,
-                    text: 'الحد الأقصى للصور هو $_maxImages',
-                    isError: true,
-                  ),
-                );
-              }
-            },
-            onRemove: (index) {
-              final realIndex = allImages.length - displayImages.length + index;
-              final imagePath = allImages[realIndex];
-              CustomshowDialogWithImage(
-                context,
-                title: 'حذف الصورة',
-                supTitle: 'هل أنت متأكد من حذف هذه الصورة؟',
-                icon: Icons.delete_outline,
-                iconColor: Colors.red,
-                iconBackgroundColor: Colors.red.withOpacity(0.1),
-                bottonText: 'حذف',
-                showCancelButton: true,
-                cancelText: 'إلغاء',
-                onPressed: () {
-                  cubit.deleteImage(imagePath);
-                  Navigator.pop(context);
-                },
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _pickImage(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) async {
-    final currentImageCount = profile.userMedia?.images.length ?? 0;
-    if (currentImageCount >= _maxImages) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: 'الحد الأقصى للصور هو $_maxImages',
-          isError: true,
-        ),
-      );
-      return;
-    }
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      cubit.uploadImage(File(image.path));
-    }
-  }
-
-  Widget _buildProfessionalInfoSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('المعلومات المهنية', style: Styles.textStyle18Meduim),
-          Gap(12.h),
-          _buildInfoRow(
-            'المؤهل',
-            profile.professionalLife?.educationLevel ?? 'اختر',
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'education_level',
-                profile.professionalLife?.educationLevel,
-              );
-            },
-          ),
-          Gap(12.h),
-          _buildInfoRow('الوظيفة', profile.professionalLife?.job ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'choose_job',
-              profile.professionalLife?.job,
-            );
-          }),
-          Gap(12.h),
-          _buildInfoRow(
-            'الجهة الموظفة',
-            profile.professionalLife?.chooseEmployer ?? 'اختر',
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'choose_employer',
-                profile.professionalLife?.chooseEmployer,
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMediaSection(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(252, 255, 255, 0.22)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('الفيديو', style: Styles.textStyle18Meduim),
-          Gap(12.h),
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-            decoration: BoxDecoration(
-              color: AppColors.secondary50,
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColors.primary200, width: 1.w),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('ارفاق فيديو تعريفي', style: Styles.textStyle16),
-                Icon(
-                  Icons.play_circle_outline,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-              ],
-            ),
-          ),
-          Gap(16.h),
-          Text('مقطع صوتي', style: Styles.textStyle18Bold),
-          Gap(12.h),
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-            decoration: BoxDecoration(
-              color: AppColors.secondary50,
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColors.primary200, width: 1.w),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('ارفاق تسجيل صوتي', style: Styles.textStyle16),
-                Icon(Icons.mic_none, color: AppColors.primary200, size: 30.w),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFamilyAndPreferencesSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('المعلومات العائلية', style: Styles.textStyle18Meduim),
-          Gap(12.h),
-          _buildInfoRow(
-            'الحالة الاجتماعية',
-            profile.aboutMe?.socialStatus ?? 'اختر',
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'maritalStatus',
-                profile.aboutMe?.socialStatus,
-              );
-            },
-          ),
-          _buildInfoRow(
-            'لديك أطفال',
-            profile.family?.hasChildren ?? 'اختر',
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'hasChildren',
-                profile.family?.hasChildren,
-              );
-            },
-          ),
-          _buildInfoRow(
-            'عدد الأطفال',
-            profile.family?.childrenNumber ?? 'اختر',
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'childrenNumber',
-                profile.family?.childrenNumber,
-              );
-            },
-          ),
-          _buildInfoRow(
-            'يعيش الأطفال معك',
-            profile.family?.childrenLivingStatus ?? 'اختر',
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'childrenLiveWithYou',
-                profile.family?.childrenLivingStatus,
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGoalsSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('أهدافي', style: Styles.textStyle18Meduim),
-          Gap(12.h),
-          _buildInfoRow('الخطوبة', profile.yourGoals?.engagement ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'engagement',
-              profile.yourGoals?.engagement,
-            );
-          }),
-          _buildInfoRow('الزواج', profile.yourGoals?.marry ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'marry',
-              profile.yourGoals?.marry,
-            );
-          }),
-          _buildInfoRow('الاسرة', profile.yourGoals?.children ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'children',
-              profile.yourGoals?.children,
-            );
-          }),
-          _buildInfoRow('السفر', profile.yourGoals?.travel ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'travel',
-              profile.yourGoals?.travel,
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildKnowMeMoreSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('تعرف عليّ أكثر', style: Styles.textStyle18Meduim),
-          Gap(12.h),
-          _buildInfoRow('السيرة الذاتية', profile.myDescription ?? 'اختر', () {
-            _navigateToBioEdit(context, cubit, profile.myDescription);
-          }),
-          _buildInfoRow(
-            'الاهتمامات',
-            profile.hobbies.isNotEmpty ? profile.hobbies.join(', ') : 'اختر',
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'interests',
-                profile.hobbies.isNotEmpty ? profile.hobbies.join(', ') : null,
-              );
-            },
-          ),
-          _buildInfoRow(
-            'الهوايات',
-            profile.hobbies.isNotEmpty ? profile.hobbies.join(', ') : 'اختر',
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'hobbies',
-                profile.hobbies.isNotEmpty ? profile.hobbies.join(', ') : null,
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSaveButton(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageProfileState state,
-  ) {
-    return CustomBotton(
-      title: state.isUpdating ? 'جاري الحفظ...' : 'حفظ التغييرات',
-      onPressed: state.isUpdating
-          ? null
-          : () async {
-              await cubit.saveProfile();
-              if (mounted && state.state == CubitStates.success) {
-                // ✅ Switch to view tab after saving
-                setState(() {
-                  _selectedTabIndex = 0;
-                });
-              }
-            },
-      width: double.infinity,
-      height: 54.h,
-      useGradient: !state.isUpdating,
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
-    final isLongText = value.length > 30;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: AppColors.kWhiteColor,
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isLongText) ...[
-              Text(label, style: Styles.textStyle18),
-              Gap(8.h),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      value,
-                      textAlign: TextAlign.right,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: Styles.textStyle16,
-                    ),
-                  ),
-                  Gap(8.w),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14.w,
-                    color: AppColors.secondary400,
-                  ),
-                ],
-              ),
-            ] else ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(label, style: Styles.textStyle18),
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            value,
-                            textAlign: TextAlign.right,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Styles.textStyle16,
-                          ),
-                        ),
-                        Gap(8.w),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 14.w,
-                          color: AppColors.secondary400,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            Gap(8.h),
-            Divider(color: AppColors.secondary100, height: 1),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _navigateToFieldSelection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    String fieldKey,
-    String? currentValue,
-  ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MarriageFieldSelectionView(
-          fieldName: fieldKey,
-          currentValue: currentValue,
-          onValueSelected: (value) {
-            cubit.updateField(fieldKey, value);
-          },
-        ),
-      ),
-    );
-  }
-
-  void _navigateToBioEdit(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    String? currentBio,
-  ) {
-    final TextEditingController controller = TextEditingController(
-      text: currentBio,
-    );
-    CustomSHowDetailsDialog(
-      context,
-      title: 'تعديل السيرة الذاتية',
-      contantWidget: TextField(
-        controller: controller,
-        maxLines: 5,
-        decoration: InputDecoration(
-          hintText: 'اكتب نبذة عنك...',
-          hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
-          border: InputBorder.none,
-        ),
-      ),
-      onSendPressed: () {
-        final newBio = controller.text.trim();
-        if (newBio.isNotEmpty) {
-          cubit.updateField('bio', newBio);
-          Navigator.pop(context);
-        }
-      },
-    );
-  }
-
   Widget _buildError(BuildContext context, String? message) {
     return Center(
       child: Column(
@@ -1376,7 +717,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
 // ════════════════════════════════════════════════════════════════
 // ✅ AppVideo محسّن مع معالجة الأخطاء وحالات التحميل
 // ════════════════════════════════════════════════════════════════
-
 
 class AppVideo extends StatefulWidget {
   final String url;
@@ -1431,40 +771,44 @@ class _AppVideoState extends State<AppVideo> {
 
     try {
       _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
-        ..initialize().then((_) {
-          if (mounted) {
-            setState(() => _isInitialized = true);
-            _controller!.setLooping(widget.looping);
-            _controller!.setVolume(widget.muted ? 0 : 1);
+        ..initialize()
+            .then((_) {
+              if (mounted) {
+                setState(() => _isInitialized = true);
+                _controller!.setLooping(widget.looping);
+                _controller!.setVolume(widget.muted ? 0 : 1);
 
-            if (widget.autoPlay) {
-              _controller!.play();
-            }
+                if (widget.autoPlay) {
+                  _controller!.play();
+                }
 
-            // ⭐ إرسال الـ controller للـ parent
-            if (widget.onControllerReady != null) {
-              widget.onControllerReady!(_controller!);
-            }
-          }
-        }).catchError((error) {
-          // ⭐⭐⭐ معالجة أخطاء التحميل
-          if (mounted) {
-            setState(() {
-              _hasError = true;
-              _errorMessage = 'فشل تحميل الفيديو: ${error.toString()}';
+                // ⭐ إرسال الـ controller للـ parent
+                if (widget.onControllerReady != null) {
+                  widget.onControllerReady!(_controller!);
+                }
+              }
+            })
+            .catchError((error) {
+              // ⭐⭐⭐ معالجة أخطاء التحميل
+              if (mounted) {
+                setState(() {
+                  _hasError = true;
+                  _errorMessage = 'فشل تحميل الفيديو: ${error.toString()}';
+                });
+                if (widget.onError != null) {
+                  widget.onError!(_errorMessage!);
+                }
+              }
             });
-            if (widget.onError != null) {
-              widget.onError!(_errorMessage!);
-            }
-          }
-        });
 
       // ⭐⭐⭐ الاستماع لأخطاء التشغيل
       _controller?.addListener(() {
         if (_controller!.value.hasError && mounted) {
           setState(() {
             _hasError = true;
-            _errorMessage = _controller!.value.errorDescription ?? 'حدث خطأ في تشغيل الفيديو';
+            _errorMessage =
+                _controller!.value.errorDescription ??
+                'حدث خطأ في تشغيل الفيديو';
           });
           if (widget.onError != null) {
             widget.onError!(_errorMessage!);
@@ -1501,21 +845,14 @@ class _AppVideoState extends State<AppVideo> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                color: Colors.red.shade300,
-                size: 48,
-              ),
+              Icon(Icons.error_outline, color: Colors.red.shade300, size: 48),
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   _errorMessage ?? 'حدث خطأ',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.red.shade300,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.red.shade300, fontSize: 14),
                 ),
               ),
             ],
@@ -1570,7 +907,6 @@ class _AppVideoState extends State<AppVideo> {
 // ════════════════════════════════════════════════════════════════
 // ✅ VideoSection محسّن مع معالجة شاملة للأخطاء
 // ════════════════════════════════════════════════════════════════
-
 
 class VideoSection extends StatefulWidget {
   final String? videoUrl;
@@ -1688,9 +1024,12 @@ class _VideoSectionState extends State<VideoSection> {
     if (_controller!.value.hasError) {
       setState(() {
         hasError = true;
-        errorMessage = _controller!.value.errorDescription ?? 'خطأ في تشغيل الفيديو';
+        errorMessage =
+            _controller!.value.errorDescription ?? 'خطأ في تشغيل الفيديو';
       });
-      debugPrint('❌ Video playback error: ${_controller!.value.errorDescription}');
+      debugPrint(
+        '❌ Video playback error: ${_controller!.value.errorDescription}',
+      );
     }
 
     // تحديث حالة التشغيل
@@ -1778,10 +1117,7 @@ class _VideoSectionState extends State<VideoSection> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.r),
         color: Colors.grey.shade50,
-        border: Border.all(
-          color: Colors.grey.shade300,
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.grey.shade300, width: 1.5),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1807,10 +1143,7 @@ class _VideoSectionState extends State<VideoSection> {
               icon: const Icon(Icons.upload),
               label: const Text('رفع فيديو'),
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 24.w,
-                  vertical: 12.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.r),
                 ),
@@ -1832,19 +1165,12 @@ class _VideoSectionState extends State<VideoSection> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.r),
         color: Colors.red.shade50,
-        border: Border.all(
-          color: Colors.red.shade300,
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.red.shade300, width: 1.5),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 60.sp,
-            color: Colors.red.shade400,
-          ),
+          Icon(Icons.error_outline, size: 60.sp, color: Colors.red.shade400),
           SizedBox(height: 12.h),
           Text(
             'فشل تحميل الفيديو',
@@ -1863,10 +1189,7 @@ class _VideoSectionState extends State<VideoSection> {
                 textAlign: TextAlign.center,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: Colors.red.shade600,
-                ),
+                style: TextStyle(fontSize: 12.sp, color: Colors.red.shade600),
               ),
             ),
           ],
@@ -1885,10 +1208,7 @@ class _VideoSectionState extends State<VideoSection> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade400,
               foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(
-                horizontal: 24.w,
-                vertical: 12.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
               ),
@@ -1914,10 +1234,7 @@ class _VideoSectionState extends State<VideoSection> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(
-              color: Colors.white,
-              strokeWidth: 3.w,
-            ),
+            CircularProgressIndicator(color: Colors.white, strokeWidth: 3.w),
             SizedBox(height: 12.h),
             Text(
               'جاري تحميل الفيديو...',
@@ -1939,7 +1256,9 @@ class _VideoSectionState extends State<VideoSection> {
     return VisibilityDetector(
       key: Key(widget.videoUrl!),
       onVisibilityChanged: (info) {
-        if (!mounted || _controller == null || !_controller!.value.isInitialized) {
+        if (!mounted ||
+            _controller == null ||
+            !_controller!.value.isInitialized) {
           return;
         }
 
@@ -1983,11 +1302,7 @@ class _VideoSectionState extends State<VideoSection> {
 
               // زر الحذف
               if (widget.onDelete != null)
-                Positioned(
-                  top: 10.h,
-                  right: 10.w,
-                  child: _buildDeleteButton(),
-                ),
+                Positioned(top: 10.h, right: 10.w, child: _buildDeleteButton()),
 
               // طبقة شفافة للتحكم
               GestureDetector(
@@ -2034,10 +1349,7 @@ class _VideoSectionState extends State<VideoSection> {
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text(
-                    'حذف',
-                    style: TextStyle(color: Colors.red),
-                  ),
+                  child: const Text('حذف', style: TextStyle(color: Colors.red)),
                 ),
               ],
             ),
@@ -2062,11 +1374,7 @@ class _VideoSectionState extends State<VideoSection> {
               ),
             ],
           ),
-          child: Icon(
-            Icons.delete_outline,
-            color: Colors.white,
-            size: 20.sp,
-          ),
+          child: Icon(Icons.delete_outline, color: Colors.white, size: 20.sp),
         ),
       ),
     );
@@ -2081,10 +1389,7 @@ class _VideoSectionState extends State<VideoSection> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.black.withOpacity(0.3),
-          ],
+          colors: [Colors.transparent, Colors.black.withOpacity(0.3)],
         ),
       ),
       child: Center(
@@ -2153,11 +1458,7 @@ class _VideoSectionState extends State<VideoSection> {
               ),
             ],
           ),
-          child: Icon(
-            icon,
-            color: Colors.black87,
-            size: 24.sp,
-          ),
+          child: Icon(icon, color: Colors.black87, size: 24.sp),
         ),
       ),
     );
