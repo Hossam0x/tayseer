@@ -266,40 +266,54 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
     );
   }
 
-  Future<void> _submitRating(
-    BuildContext context,
-    int rating,
-    String review,
-  ) async {
-    try {
-      final apiService = getIt<ApiService>();
-      final response = await apiService.post(
-        endPoint: '/advisor-rating',
-        data: {
-          "rating": rating,
-          "review": review,
-          "advisorId": widget.advisorId,
-        },
+Future<void> _submitRating(
+  BuildContext context,
+  int rating,
+  String review,
+) async {
+  try {
+    final apiService = getIt<ApiService>();
+    final response = await apiService.post(
+      endPoint: '/advisor-rating',
+      data: {
+        "rating": rating,
+        "review": review,
+        "advisorId": widget.advisorId,
+      },
+    );
+
+    if (response['success'] == true) {
+      AppToast.success(
+        context,
+        response['message'] ?? 'تم إرسال التقييم بنجاح',
       );
+      _reviewController.clear();
+      _rating = 0;
 
-      if (response['success'] == true) {
-        AppToast.success(
-          context,
-          response['message'] ?? 'تم إرسال التقييم بنجاح',
-        );
-        _reviewController.clear();
-        _rating = 0;
-
-        // Refresh ratings
-        await _cubit.refresh(advisorId: widget.advisorId);
-      } else {
-        AppToast.error(context, response['message'] ?? 'فشل إرسال التقييم');
+      // 🔥 الحل: تحديث البيانات فورًا قبل إغلاق الـ dialog
+      // 1. أولاً، تحديث حالة Cubit
+      await _cubit.refresh(advisorId: widget.advisorId);
+      
+      // 2. إغلاق الـ dialog بعد تحديث البيانات
+      if (mounted) {
+        // Navigator.pop(context);
+        
+        // 3. إرسال إشعار لتحديث الواجهة (اختياري)
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            setState(() {}); // إعادة بناء الواجهة
+          }
+        });
       }
-    } catch (e) {
-      AppToast.error(context, 'حدث خطأ أثناء إرسال التقييم');
+    } else {
+      AppToast.error(context, response['message'] ?? 'فشل إرسال التقييم');
+      _isSubmitting = false;
     }
+  } catch (e) {
+    AppToast.error(context, 'حدث خطأ أثناء إرسال التقييم');
+    _isSubmitting = false;
   }
-
+}
   Widget _buildSkeletonRatings() {
     return Skeletonizer(
       enabled: true,
