@@ -9,6 +9,16 @@ abstract class UserPublicProfileRepository {
     String userId,
   );
   Future<Either<Failure, String>> deleteUserAccount();
+  Future<Either<Failure, String>> blockUser(String userId);
+  Future<Either<Failure, String>> reportUser({
+    required String reportedId,
+    required String reason,
+    required String reasonDetails,
+  });
+  Future<Either<Failure, String>> sendGreeting({
+    required String receiverId,
+    required String message,
+  });
 }
 
 // features/user/user_public_profile/data/repositories/user_public_profile_repository_impl.dart
@@ -53,6 +63,74 @@ class UserPublicProfileRepositoryImpl implements UserPublicProfileRepository {
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل حذف الحساب'));
       }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> blockUser(String userId) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.blockuser,
+        data: {"blockedId": userId},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> reportUser({
+    required String reportedId,
+    required String reason,
+    required String reasonDetails,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: '/personal-reports/',
+        data: {
+          "reportedId": reportedId,
+          "reason": reason,
+          "reasonDetails": reasonDetails,
+        },
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم إرسال الإبلاغ بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> sendGreeting({
+    required String receiverId,
+    required String message,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: '/user/send-greeting',
+        data: {"receiverId": receiverId, "message": message},
+      );
+
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم إرسال التحية بنجاح');
+      }
+      return Left(
+        ServerFailure(response['message'] ?? 'حدث خطأ أثناء إرسال التحية'),
+      );
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {

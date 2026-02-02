@@ -23,6 +23,15 @@ class UserPublicProfileState extends Equatable {
 
   final bool isLoadingDelete;
 
+  final CubitStates blockActionState;
+  final String? blockMessage;
+  final CubitStates reportActionState;
+  final String? reportMessage;
+
+  final bool isSendingGreeting;
+  final String? greetingMessage;
+  final bool greetingSuccess;
+
   const UserPublicProfileState({
     this.state = CubitStates.initial,
     this.profile,
@@ -38,6 +47,13 @@ class UserPublicProfileState extends Equatable {
     this.shareMessage,
     this.isShareAdded,
     this.isLoadingDelete = false,
+    this.blockActionState = CubitStates.initial,
+    this.blockMessage,
+    this.reportActionState = CubitStates.initial,
+    this.reportMessage,
+    this.isSendingGreeting = false,
+    this.greetingMessage,
+    this.greetingSuccess = false,
   });
 
   UserPublicProfileState copyWith({
@@ -55,6 +71,13 @@ class UserPublicProfileState extends Equatable {
     String? shareMessage,
     bool? isShareAdded,
     bool? isLoadingDelete,
+    CubitStates? blockActionState,
+    String? blockMessage,
+    CubitStates? reportActionState,
+    String? reportMessage,
+    bool? isSendingGreeting,
+    String? greetingMessage,
+    bool? greetingSuccess,
   }) {
     return UserPublicProfileState(
       state: state ?? this.state,
@@ -71,6 +94,13 @@ class UserPublicProfileState extends Equatable {
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
       isLoadingDelete: isLoadingDelete ?? this.isLoadingDelete,
+      blockActionState: blockActionState ?? this.blockActionState,
+      blockMessage: blockMessage ?? this.blockMessage,
+      reportActionState: reportActionState ?? this.reportActionState,
+      reportMessage: reportMessage ?? this.reportMessage,
+      isSendingGreeting: isSendingGreeting ?? this.isSendingGreeting,
+      greetingMessage: greetingMessage ?? this.greetingMessage,
+      greetingSuccess: greetingSuccess ?? this.greetingSuccess,
     );
   }
 
@@ -90,5 +120,12 @@ class UserPublicProfileState extends Equatable {
     shareMessage,
     isShareAdded,
     isLoadingDelete,
+    blockActionState,
+    blockMessage,
+    reportActionState,
+    reportMessage,
+    isSendingGreeting,
+    greetingMessage,
+    greetingSuccess,
   ];
 }

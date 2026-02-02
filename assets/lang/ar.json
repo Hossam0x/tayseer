@@ -549,6 +549,13 @@
     "otp_title_phone": "رمز التحقق للهاتف",
     "otp_verified": "تم التحقق من رقم الهاتف بنجاح ",
     "head_phone":" اخفاء ملفك الشخصى عن جهات اتصالك!",
+    "head_phone_subtitle":"لن يستطيع احد من جهات اتصالك رؤية ملفك او معلومات عنك ",
+    "apply_filter":"تطبيق الفلتر",
+    "marriage_profile":"زواج",
+    "engagement_profile":"خطوبة",
+    "agree":"توافق",
+    "children_profile":"الاسرة",
+    "travel_profile":"السفر"
     "head_phone_subtitle":"لن يستطيع احد من جهات اتصالك رؤية ملفك او معلومات عنك "
 
 }

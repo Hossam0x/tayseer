@@ -3,51 +3,118 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/send_greeting_dialog.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_bio.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_header.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_tabs.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserPublicProfileView extends StatelessWidget {
-  final String userId; // ⭐ تغيير: من UserProfileModel إلى String
+  final String userId;
 
-  const UserPublicProfileView({super.key, required this.userId}); // ⭐ تحديث
+  const UserPublicProfileView({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AdvisorBackground(
-        child: Stack(
-          children: [
-            // المحتوى الرئيسي
-            SafeArea(
-              child: BlocProvider<UserPublicProfileCubit>(
-                create: (_) => UserPublicProfileCubit(
-                  getIt<UserPublicProfileRepository>(),
-                  getIt<UserPostsRepository>(),
-                  userId: userId, // ⭐ تمرير userId فقط
-                  initialProfile: null, // ⭐ لا توجد بيانات أولية
-                ),
-                child: const _UserPublicProfileContent(),
-              ),
-            ),
-
-            // زر الرجوع
-            Positioned(
-              top: 40.h,
-              right: 8.w,
-              child: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: Icon(
-                  Icons.arrow_back_ios,
-                  color: AppColors.secondary600,
-                  size: 24.w,
-                ),
-              ),
-            ),
-          ],
-        ),
+    return BlocProvider<UserPublicProfileCubit>(
+      create: (_) => UserPublicProfileCubit(
+        getIt<UserPublicProfileRepository>(),
+        getIt<UserPostsRepository>(),
+        userId: userId,
+        initialProfile: null,
       ),
+      child: Scaffold(
+        body: AdvisorBackground(
+          child: Stack(
+            children: [
+              // المحتوى الرئيسي
+              const SafeArea(child: _UserPublicProfileContent()),
+
+              // زر الرجوع
+              Positioned(
+                top: 40.h,
+                right: 8.w,
+                child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(
+                    Icons.arrow_back_ios,
+                    color: AppColors.secondary600,
+                    size: 24.w,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // FloatingActionButton الآن داخل BlocProvider
+        floatingActionButton: _buildFloatingActionButton(),
+      ),
+    );
+  }
+
+  Widget _buildFloatingActionButton() {
+    return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
+      builder: (context, state) {
+        // لا يظهر الزر إذا كان هو نفسه أو إذا لم يتم تحميل البيانات بعد
+        if (state.profile?.isMe == true ||
+            state.state != CubitStates.success ||
+            state.profile == null) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: 10.h),
+          child: FloatingActionButton(
+            onPressed: () {
+              final cubit = context.read<UserPublicProfileCubit>();
+              SendGreetingDialog.show(
+                context,
+                receiverName: state.profile!.name,
+                receiverId: state.profile!.id,
+                cubit: cubit,
+              );
+            },
+            backgroundColor: AppColors.kprimaryColor,
+            shape: const CircleBorder(),
+            elevation: 4,
+            highlightElevation: 8,
+            child: Container(
+              width: 56.w,
+              height: 56.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.kprimaryColor.withOpacity(0.9),
+                    AppColors.kprimaryColor,
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.kprimaryColor.withOpacity(0.3),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(10.w),
+                child: SvgPicture.asset(
+                  AssetsData.icSendGreeting,
+                  width: 26.w,
+                  height: 26.w,
+                  color: Colors.white,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -6,9 +6,14 @@ import 'package:tayseer/my_import.dart';
 class SliverProfileHeader extends StatelessWidget {
   final List<String> images;
   final String name;
-  final int age;
+  final String age;
   final String location;
-  final List<dynamic> tags;
+  final String? tagsjob;
+  final String? educationLevel;
+  final String? religiousCommitment;
+  final String? nationality;
+  final String? height;
+  final String? transitionKey;
 
   const SliverProfileHeader({
     super.key,
@@ -16,7 +21,12 @@ class SliverProfileHeader extends StatelessWidget {
     required this.name,
     required this.age,
     required this.location,
-    required this.tags,
+    this.tagsjob,
+    this.educationLevel,
+    this.religiousCommitment,
+    this.nationality,
+    this.height,
+    this.transitionKey,
   });
 
   @override
@@ -25,7 +35,9 @@ class SliverProfileHeader extends StatelessWidget {
 
     return SliverAppBar(
       expandedHeight: context.height * 0.85,
-      pinned: true,
+      pinned: false,
+      floating: false,
+      snap: false,
       backgroundColor: Colors.transparent,
       elevation: 0,
       automaticallyImplyLeading: false,
@@ -36,7 +48,9 @@ class SliverProfileHeader extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             GestureDetector(
-              onTap: () {},
+              onTap: () {
+                context.pushNamed(AppRouter.kMarriageFilterView);
+              },
               child: CircleAvatar(
                 backgroundColor: Colors.black26,
                 child: AppImage(AssetsData.kfilterIcon, width: 20, height: 20),
@@ -69,7 +83,7 @@ class SliverProfileHeader extends StatelessWidget {
             ),
 
             Positioned(
-              bottom: 20.h,
+              bottom: 60.h,
               right: 16.w,
               left: 16.w,
               child: glassCard(
@@ -77,60 +91,90 @@ class SliverProfileHeader extends StatelessWidget {
                 blur: 18,
                 opacity: 0.18,
                 paddingAll: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 380),
+                  transitionBuilder: (child, animation) {
+                    final offsetAnimation =
+                        Tween<Offset>(
+                          begin: const Offset(0, 0.35),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        );
+                    return SlideTransition(
+                      position: offsetAnimation,
+                      child: FadeTransition(opacity: animation, child: child),
+                    );
+                  },
+                  child: Container(
+                    key: ValueKey(transitionKey ?? name),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          name,
-                          style: Styles.textStyle18Bold.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                        Gap(5.w),
-                        Text(
-                          "$age ${context.tr("age")}",
-                          style: Styles.textStyle14.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                        Gap(8.w),
-                        const Icon(
-                          Icons.verified,
-                          color: Colors.blue,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                    Gap(5.h),
-                    Row(
-                      children: [
-                        const Icon(Icons.flag, color: Colors.white, size: 16),
-                        Gap(5.w),
-                        Text(
-                          location,
-                          style: Styles.textStyle12.copyWith(
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Gap(10.h),
-                    Row(
-                      children: tags
-                          .map(
-                            (tag) => Padding(
-                              padding: EdgeInsets.only(left: 5.w),
-                              child: _buildTransparentTag(
-                                tag['label'],
-                                tag['icon'],
+                        Row(
+                          children: [
+                            Text(
+                              name,
+                              style: Styles.textStyle18Bold.copyWith(
+                                color: Colors.white,
                               ),
                             ),
-                          )
-                          .toList(),
+                            Gap(5.w),
+                            Text(
+                              "$age ${context.tr("age")}",
+                              style: Styles.textStyle14.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                            Gap(8.w),
+                            const Icon(
+                              Icons.verified,
+                              color: Colors.blue,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                        Gap(5.h),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.flag,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            Gap(5.w),
+                            Text(
+                              location,
+                              style: Styles.textStyle12.copyWith(
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Gap(10.h),
+                        Row(
+                          children: [
+                            if (tagsjob != null && tagsjob!.isNotEmpty)
+                              _buildTransparentTag(tagsjob!),
+                            Gap(8.w),
+                            if (educationLevel != null &&
+                                educationLevel!.isNotEmpty)
+                              _buildTransparentTag(educationLevel!),
+                            Gap(8.w),
+                            if (religiousCommitment != null &&
+                                religiousCommitment!.isNotEmpty)
+                              _buildTransparentTag(religiousCommitment!),
+                            Gap(8.w),
+                            if (nationality != null && nationality!.isNotEmpty)
+                              _buildTransparentTag(nationality!),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -140,18 +184,15 @@ class SliverProfileHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildTransparentTag(String text, String icon) {
+  Widget _buildTransparentTag(String text) {
     return glassCard(
       borderRadius: 24,
       blur: 18,
       opacity: 0.18,
       paddingAll: 6,
-      child: Row(
-        children: [
-          AppImage(icon, gradientColorSvg: AppColors.linearGradientIcon),
-          Gap(4.w),
-          Text(text, style: Styles.textStyle10.copyWith(color: Colors.white)),
-        ],
+      child: Text(
+        text,
+        style: Styles.textStyle10.copyWith(color: Colors.white),
       ),
     );
   }

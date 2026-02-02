@@ -3,6 +3,7 @@ import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/user_profile_options_bottom_sheet.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -176,176 +177,23 @@ class UserPublicProfileHeader extends StatelessWidget {
     );
   }
 
+  // في user_public_profile_header.dart
   Widget _buildMoreButton(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showMoreOptions(context),
+      onTap: () {
+        final cubit = context.read<UserPublicProfileCubit>();
+        final profile = cubit.state.profile;
+        final profileId = cubit.userId ?? profile?.id ?? '';
+        final name = profile?.name;
+
+        UserProfileOptionsBottomSheet.show(
+          context,
+          userId: profileId,
+          userName: name,
+          cubit: cubit,
+        );
+      },
       child: Icon(Icons.more_vert, color: AppColors.secondary600, size: 28.w),
-    );
-  }
-
-  void _showMoreOptions(BuildContext context) {
-    final cubit = context.read<UserPublicProfileCubit>();
-    final state = cubit.state;
-
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) => Container(
-        padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // زر المشاركة
-            ListTile(
-              leading: Icon(Icons.share, color: AppColors.kprimaryColor),
-              title: Text('مشاركة البروفايل', style: Styles.textStyle16),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement share functionality
-              },
-            ),
-
-            // زر الحظر (إذا لم يكن المستخدم نفسه)
-            if (!state.profile!.isMe)
-              ListTile(
-                leading: Icon(Icons.block, color: AppColors.kRedColor),
-                title: Text('حظر المستخدم', style: Styles.textStyle16),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showBlockConfirmation(context);
-                },
-              ),
-
-            // زر الإبلاغ (إذا لم يكن المستخدم نفسه)
-            if (!state.profile!.isMe)
-              ListTile(
-                leading: Icon(Icons.report, color: AppColors.kRedColor),
-                title: Text('الإبلاغ', style: Styles.textStyle16),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showReportDialog(context);
-                },
-              ),
-
-            // زر حذف الحساب (إذا كان المستخدم نفسه)
-            if (state.profile!.isMe)
-              ListTile(
-                leading: Icon(Icons.delete, color: AppColors.kRedColor),
-                title: Text(
-                  'حذف الحساب',
-                  style: Styles.textStyle16.copyWith(
-                    color: AppColors.kRedColor,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDeleteAccountConfirmation(context);
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showBlockConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('حظر المستخدم', style: Styles.textStyle18Bold),
-        content: Text(
-          'هل أنت متأكد من حظر هذا المستخدم؟ لن تتمكن من رؤية منشوراته أو التواصل معه.',
-          style: Styles.textStyle14,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('إلغاء', style: Styles.textStyle14),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implement block functionality
-              AppToast.success(context, 'تم حظر المستخدم بنجاح');
-            },
-            child: Text(
-              'حظر',
-              style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteAccountConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('حذف الحساب', style: Styles.textStyle18Bold),
-        content: Text(
-          'هل أنت متأكد من حذف حسابك؟ هذه العملية لا يمكن التراجع عنها.',
-          style: Styles.textStyle14,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('إلغاء', style: Styles.textStyle14),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final cubit = context.read<UserPublicProfileCubit>();
-              await cubit.deleteUserAccount();
-
-              // بعد الحذف، ارجع للصفحة الرئيسية
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                AppRouter.kRegisrationView,
-                (route) => false,
-              );
-            },
-            child: Text(
-              'حذف',
-              style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showReportDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('الإبلاغ عن المستخدم', style: Styles.textStyle18Bold),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('اختر السبب:', style: Styles.textStyle14Meduim),
-            Gap(12.h),
-            ...['محتوى غير لائق', 'تصرف مزعج', 'حساب وهمي', 'سبب آخر'].map(
-              (reason) => ListTile(
-                title: Text(reason, style: Styles.textStyle14),
-                onTap: () {
-                  Navigator.pop(context);
-                  AppToast.success(context, 'تم الإبلاغ بنجاح');
-                },
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('إلغاء', style: Styles.textStyle14),
-          ),
-        ],
-      ),
     );
   }
 

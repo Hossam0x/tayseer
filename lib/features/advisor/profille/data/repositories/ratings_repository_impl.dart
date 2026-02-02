@@ -10,12 +10,11 @@ class RatingsRepositoryImpl implements RatingsRepository {
 
   @override
   Future<Either<Failure, RatingsResponseModel>> getAdvisorRatings({
+    required String advisorId,
     int page = 1,
     int limit = 10,
   }) async {
     try {
-      final advisorId = await _getAdvisorId();
-
       final response = await _apiService.get(
         endPoint: '/advisor-rating/advisor/$advisorId',
         query: {'page': page, 'limit': limit},
@@ -33,11 +32,5 @@ class RatingsRepositoryImpl implements RatingsRepository {
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
-  }
-
-  Future<String> _getAdvisorId() async {
-    // TODO: استبدل هذا بآلية حقيقية لجلب الـ advisorId
-    // يمكن أن يكون من SharedPreferences أو من Profile Cubit
-    return '6947e98df9f8bce3bf355fc0'; // ID مؤقت للاختبار
   }
 }

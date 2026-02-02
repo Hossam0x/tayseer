@@ -95,51 +95,45 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     );
   }
 
-  Future<void> fetchPosts({bool loadMore = false}) async {
+  Future<void> fetchPosts({
+    bool loadMore = false,
+    bool isSilent = false,
+    bool forceRefresh = false,
+  }) async {
     if (loadMore) {
       if (state.isLoadingMore || !state.hasMore) return;
-      if (isClosed) return;
       emit(state.copyWith(isLoadingMore: true));
 
       final nextPage = state.currentPage + 1;
-
       final result = await _repository.fetchUserPosts(
         advisorId: advisorId,
         page: nextPage,
       );
 
-      if (isClosed) return;
-      result.fold(
-        (failure) {
-          emit(
-            state.copyWith(
-              isLoadingMore: false,
-              postsErrorMessage: failure.message,
-            ),
-          );
-        },
-        (newPosts) {
-          final updatedList = [...state.posts, ...newPosts];
-          emit(
-            state.copyWith(
-              posts: updatedList,
-              currentPage: nextPage,
-              hasMore: newPosts.length >= _pageSize,
-              isLoadingMore: false,
-              postsErrorMessage: null,
-            ),
-          );
-        },
-      );
-    } else {
-      if (isClosed) return;
+      result.fold((failure) => emit(state.copyWith(isLoadingMore: false)), (
+        newPosts,
+      ) {
+        final updatedList = [...state.posts, ...newPosts];
+        emit(
+          state.copyWith(
+            posts: updatedList,
+            currentPage: nextPage,
+            hasMore: newPosts.length >= _pageSize,
+            isLoadingMore: false,
+          ),
+        );
+      });
+      return;
+    }
+
+    // ── حالة التحميل الأولي أو force refresh ──
+    if (forceRefresh || state.posts.isEmpty) {
       emit(
         state.copyWith(
           postsState: CubitStates.loading,
           posts: [],
           currentPage: 1,
           hasMore: true,
-          postsErrorMessage: null,
         ),
       );
 
@@ -148,30 +142,65 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
         page: 1,
       );
 
-      if (isClosed) return;
+      result.fold(
+        (failure) => emit(state.copyWith(postsState: CubitStates.failure)),
+        (postsList) => emit(
+          state.copyWith(
+            postsState: CubitStates.success,
+            posts: postsList,
+            currentPage: 1,
+            hasMore: postsList.length >= _pageSize,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // ── Silent refresh (الحالة الافتراضية لما نرجع للتب) ──
+    if (isSilent && state.posts.isNotEmpty) {
+      // لا نغير postsState → نبقى success
+      // بس نجيب البيانات الجديدة
+
+      final result = await _repository.fetchUserPosts(
+        advisorId: advisorId,
+        page: 1,
+      );
 
       result.fold(
         (failure) {
-          emit(
-            state.copyWith(
-              postsState: CubitStates.failure,
-              postsErrorMessage: failure.message,
-            ),
-          );
+          // ممكن نعمل log فقط، أو نعرض toast خفيف إذا أردت
+          log("Silent refresh failed: ${failure.message}");
         },
-        (postsList) {
-          emit(
-            state.copyWith(
-              postsState: CubitStates.success,
-              posts: postsList,
-              currentPage: 1,
-              hasMore: postsList.length >= _pageSize,
-              postsErrorMessage: null,
-            ),
-          );
+        (freshPosts) {
+          // نقارن لو فيه تغيير حقيقي ولا لأ (اختياري)
+          if (!_listsAreEqual(state.posts, freshPosts)) {
+            emit(
+              state.copyWith(
+                posts: freshPosts,
+                currentPage: 1,
+                hasMore: freshPosts.length >= _pageSize,
+              ),
+            );
+          }
+          // لو نفس البيانات → مفيش داعي نعمل emit
         },
       );
     }
+  }
+
+  // مساعدة للمقارنة (اختياري - يمنع flicker غير ضروري)
+  bool _listsAreEqual(List<PostModel> a, List<PostModel> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].postId != b[i].postId ||
+          a[i].content != b[i].content ||
+          a[i].likesCount != b[i].likesCount ||
+          a[i].sharesCount != b[i].sharesCount ||
+          a[i].myReaction != b[i].myReaction) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<void> refresh() async {
@@ -465,5 +494,65 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     updatedPosts[currentIndex] = updatedPost;
 
     emit(state.copyWith(posts: updatedPosts));
+  }
+
+  Future<void> blockUser(String advisorId) async {
+    // لو الـ Cubit مقفول → متكملش
+    if (isClosed) return;
+
+    emit(state.copyWith(blockActionState: CubitStates.loading));
+
+    final result = await _repository.blockUser(advisorId);
+
+    // بعد الـ await → تحقق تاني قبل الـ emit
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.failure,
+            blockMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.success,
+            blockMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> reportUser({
+    required String reportedId,
+    required String reason,
+    required String reasonDetails,
+  }) async {
+    emit(state.copyWith(reportActionState: CubitStates.loading));
+    final result = await _repository.reportUser(
+      reportedId: reportedId,
+      reason: reason,
+      reasonDetails: reasonDetails,
+    );
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          reportActionState: CubitStates.failure,
+          reportMessage: failure.message,
+        ),
+      ),
+      (message) => emit(
+        state.copyWith(
+          reportActionState: CubitStates.success,
+          reportMessage: message,
+        ),
+      ),
+    );
   }
 }

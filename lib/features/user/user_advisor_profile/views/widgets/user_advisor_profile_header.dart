@@ -2,6 +2,7 @@ import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/widgets/profile_options_bottom_sheet.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -171,50 +172,20 @@ class UserAdvisorProfileHeader extends StatelessWidget {
   }
 
   Widget _buildMoreButton(BuildContext context) {
+    final cubit = context.read<UserAdvisorProfileCubit>();
     return GestureDetector(
-      onTap: () => _showMoreOptions(context),
-      child: Icon(Icons.more_vert, color: AppColors.secondary600, size: 28.w),
-    );
-  }
+      onTap: () {
+        final profileId = cubit.advisorId;
+        final name = cubit.state.profile?.name;
 
-  void _showMoreOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) => Container(
-        padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.share, color: AppColors.kprimaryColor),
-              title: Text('مشاركة البروفايل', style: Styles.textStyle16),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement share functionality
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.block, color: AppColors.kRedColor),
-              title: Text('حظر المستخدم', style: Styles.textStyle16),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement block functionality
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.report, color: AppColors.kRedColor),
-              title: Text('الإبلاغ', style: Styles.textStyle16),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement report functionality
-              },
-            ),
-          ],
-        ),
-      ),
+        ProfileOptionsBottomSheet.show(
+          context,
+          advisorId: profileId,
+          advisorName: name,
+          cubit: cubit,
+        );
+      },
+      child: Icon(Icons.more_vert, color: AppColors.secondary600, size: 28.w),
     );
   }
 

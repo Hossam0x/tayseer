@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/add_certificate_view.dart';
 import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
@@ -10,19 +11,32 @@ import 'package:tayseer/features/advisor/profille/views/cubit/certificates_state
 import 'package:skeletonizer/skeletonizer.dart';
 
 class ProfileCertificatesSection extends StatelessWidget {
-  const ProfileCertificatesSection({super.key});
+  final String advisorId;
+  final bool isMe;
+
+  const ProfileCertificatesSection({
+    super.key,
+    required this.advisorId,
+    required this.isMe,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<CertificatesCubit>(
       create: (_) => getIt<CertificatesCubit>(),
-      child: const _CertificatesSectionContent(),
+      child: _CertificatesSectionContent(advisorId: advisorId, isMe: isMe),
     );
   }
 }
 
 class _CertificatesSectionContent extends StatefulWidget {
-  const _CertificatesSectionContent();
+  final String advisorId;
+  final bool isMe;
+
+  const _CertificatesSectionContent({
+    required this.advisorId,
+    required this.isMe,
+  });
 
   @override
   State<_CertificatesSectionContent> createState() =>
@@ -41,13 +55,13 @@ class __CertificatesSectionContentState
   @override
   void initState() {
     super.initState();
-    _cubit = getIt<CertificatesCubit>();
+    _cubit = CertificatesCubit(getIt<CertificatesRepository>());
     _loadData();
   }
 
   Future<void> _loadData() async {
     if (!_isInitialized) {
-      await _cubit.refresh();
+      await _cubit.fetchCertificatesAndVideos(advisorId: widget.advisorId);
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -56,9 +70,8 @@ class __CertificatesSectionContentState
     }
   }
 
-  // دالة لاستدعاء الرفريش من الخارج
   Future<void> refreshFromParent() async {
-    await _cubit.refresh();
+    await _cubit.refresh(advisorId: widget.advisorId);
     if (mounted) {
       setState(() {});
     }
@@ -66,24 +79,64 @@ class __CertificatesSectionContentState
 
   @override
   Widget build(BuildContext context) {
+    final bool isMe = widget.isMe;
     super.build(context);
     if (!_isInitialized) {
       return _buildSkeletonSection();
     }
 
-    return BlocBuilder<CertificatesCubit, CertificatesState>(
-      bloc: _cubit,
-      builder: (context, state) {
-        return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: _buildContentSection(context, state),
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: () async => await _cubit.refresh(advisorId: widget.advisorId),
+      child: Column(
+        children: [
+          _buildContentSection(context, _cubit.state, isMe),
+
+          // زر تحميل المزيد للشهادات
+          if (_cubit.state.hasMore) _buildLoadMoreButton(context, _cubit.state),
+
+          Gap(20.h),
+        ],
+      ),
     );
   }
 
-  // ... باقي الدوال كما هي بدون تغيير
-  Widget _buildContentSection(BuildContext context, CertificatesState state) {
+  Widget _buildLoadMoreButton(BuildContext context, CertificatesState state) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 24.w),
+      child: state.isLoadingMore
+          ? Center(
+              child: CircularProgressIndicator(color: AppColors.kprimaryColor),
+            )
+          : SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _cubit.loadMore(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.kWhiteColor,
+                  foregroundColor: AppColors.kprimaryColor,
+                  side: BorderSide(color: AppColors.kprimaryColor, width: 1.w),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'تحميل المزيد من الشهادات',
+                  style: Styles.textStyle14Meduim.copyWith(
+                    color: AppColors.kprimaryColor,
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildContentSection(
+    BuildContext context,
+    CertificatesState state,
+    bool isMe,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 24.h),
       child: Column(
@@ -92,7 +145,7 @@ class __CertificatesSectionContentState
           // Video Section
           if (state.hasVideo) _buildVideoSection(context, state.videoUrl!),
           Gap(24.h),
-          if (state.isMe)
+          if (isMe)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -132,7 +185,7 @@ class __CertificatesSectionContentState
                   child: _buildCertificateItem(
                     context,
                     state.certificates[index],
-                    state.isMe,
+                    isMe,
                   ),
                 );
               },
@@ -141,7 +194,7 @@ class __CertificatesSectionContentState
             _buildNoCertificatesSection(),
           Gap(24.h),
           // Boost Button
-          if (state.isMe)
+          if (isMe)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 35.w),
               child: BoostButton(
@@ -270,7 +323,7 @@ class __CertificatesSectionContentState
       ),
     ).then((result) {
       if (result == true && context.mounted) {
-        context.read<CertificatesCubit>().refresh();
+        context.read<CertificatesCubit>().refresh(advisorId: widget.advisorId);
       }
     });
   }
@@ -286,7 +339,8 @@ class __CertificatesSectionContentState
     }
 
     return GestureDetector(
-      onTap: () => _navigateToEditCertificate(context, certificate),
+      onTap: () =>
+          isMe ? _navigateToEditCertificate(context, certificate) : null,
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
@@ -401,7 +455,7 @@ class __CertificatesSectionContentState
       ),
     ).then((result) {
       if (result == true && context.mounted) {
-        certificatesCubit.refresh();
+        certificatesCubit.refresh(advisorId: widget.advisorId);
       }
     });
   }

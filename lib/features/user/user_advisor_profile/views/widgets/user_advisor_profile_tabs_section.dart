@@ -1,10 +1,15 @@
+import 'dart:developer'; // للـ log إذا عايز
+
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_posts_tab.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserAdvisorProfileTabsSection extends StatefulWidget {
-  const UserAdvisorProfileTabsSection({super.key});
+  final String advisorId;
+
+  const UserAdvisorProfileTabsSection({super.key, required this.advisorId});
 
   @override
   State<UserAdvisorProfileTabsSection> createState() =>
@@ -13,37 +18,83 @@ class UserAdvisorProfileTabsSection extends StatefulWidget {
 
 class _UserAdvisorProfileTabsSectionState
     extends State<UserAdvisorProfileTabsSection>
-    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late UserAdvisorProfileCubit _profileCubit;
 
   final List<String> _tabs = ["المنشورات", "الشهادات", "التقييمات"];
 
-  @override
-  bool get wantKeepAlive => true;
+  int _previousTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
-    // إضافة listener عشان نعمل setState لما الـ tab يتغير
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() {});
-      }
-    });
+    _tabController.addListener(_onTabChanged);
+    _profileCubit = context
+        .read<UserAdvisorProfileCubit>(); // استخدم الـ cubit الموجود
+    _loadUserPosts();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) {
+      setState(() {
+        _previousTabIndex = _tabController.index;
+        log('$_previousTabIndex'); // optional
+      });
+    }
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
-    super.dispose();
+    super
+        .dispose(); // مش لازم close الـ cubit هنا عشان موجود في BlocProvider أعلى
+  }
+
+  Future<void> _loadUserPosts() async {
+    await _profileCubit.fetchPosts();
+  }
+
+  void _handleTabTap(int index) {
+    if (index == _tabController.index) {
+      _refreshCurrentTab(index);
+    } else {
+      _tabController.animateTo(index);
+    }
+  }
+
+  void _refreshCurrentTab(int index) {
+    switch (index) {
+      case 0: // المنشورات
+        // silent refresh → يحافظ على البيانات القديمة
+        context.read<UserAdvisorProfileCubit>().fetchPosts(isSilent: true);
+        break;
+
+      case 1: // الشهادات
+        // لو عندك CertificatesCubit منفصل → نفس المنطق
+        // context.read<CertificatesCubit>().fetchCertificatesAndVideos(
+        //   advisorId: widget.advisorId,
+        //   loadMore: false,
+        //   isSilent: true,   // تحتاج تضيف الباراميتر ده كمان
+        // );
+        setState(() {}); // أو أفضل: استخدم key + silent fetch
+        break;
+
+      case 2: // التقييمات
+        // نفس الفكرة مع RatingsCubit
+        setState(() {});
+        break;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
+    final profile = _profileCubit.state.profile;
+    final isMe = profile?.isMe ?? false;
     return SliverToBoxAdapter(
-      child: Column(children: [_buildTabsHeader(), _buildTabContent()]),
+      child: Column(children: [_buildTabsHeader(), _buildTabContent(isMe)]),
     );
   }
 
@@ -89,6 +140,7 @@ class _UserAdvisorProfileTabsSectionState
                       ),
                     );
                   }).toList(),
+                  onTap: _handleTabTap, // أضف onTap للـ refresh
                 ),
               ),
             ],
@@ -99,36 +151,28 @@ class _UserAdvisorProfileTabsSectionState
     );
   }
 
-  Widget _buildTabContent() {
-    return IndexedStack(
-      index: _tabController.index,
-      children: [
-        KeepAlive(child: UserAdvisorPostsTab()),
-        KeepAlive(child: ProfileCertificatesSection()),
-        KeepAlive(child: RatingsTab()),
-      ],
-    );
-  }
-}
-
-// ويدجت KeepAlive مساعد
-class KeepAlive extends StatefulWidget {
-  final Widget child;
-
-  const KeepAlive({super.key, required this.child});
-
-  @override
-  State<KeepAlive> createState() => _KeepAliveState();
-}
-
-class _KeepAliveState extends State<KeepAlive>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return widget.child;
+  Widget _buildTabContent(bool isMe) {
+    switch (_tabController.index) {
+      case 0:
+        return UserAdvisorPostsTab(advisorId: widget.advisorId);
+      case 1:
+        return ProfileCertificatesSection(
+          isMe: isMe,
+          key: ValueKey(
+            'certificates_${DateTime.now().millisecondsSinceEpoch}',
+          ), // للـ rebuild
+          advisorId: widget.advisorId,
+        );
+      case 2:
+        return RatingsTab(
+          isMe: isMe,
+          key: ValueKey(
+            'ratings_${DateTime.now().millisecondsSinceEpoch}',
+          ), // للـ rebuild
+          advisorId: widget.advisorId,
+        );
+      default:
+        return Container();
+    }
   }
 }

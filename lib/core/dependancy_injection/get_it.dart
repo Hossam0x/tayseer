@@ -49,6 +49,8 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository_impl.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/marriage/repositories/marriage_repository.dart';
+import 'package:tayseer/features/user/marriage/repositories/marriage_repository_impl.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo_impl.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
@@ -316,6 +318,13 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<QuestionsCubit>(
     () => QuestionsCubit(getIt<QuestionsRepo>()),
   );
+
+  /// MarriageRepository
+
+  getIt.registerLazySingleton<MarriageRepository>(
+    () => MarriageRepositoryImpl(getIt<ApiService>()),
+  );
+
   // User
   getIt.registerFactory<UserAccountManagementRepository>(
     () => UserAccountManagementRepositoryImpl(getIt<ApiService>()),

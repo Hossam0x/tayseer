@@ -303,4 +303,116 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
   void clearError() {
     emit(state.copyWith(profileErrorMessage: null, postsErrorMessage: null));
   }
+
+  Future<void> blockUser(String userId) async {
+    if (isClosed) return;
+
+    emit(state.copyWith(blockActionState: CubitStates.loading));
+
+    final result = await _profileRepository.blockUser(userId);
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.failure,
+            blockMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.success,
+            blockMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> reportUser({
+    required String reportedId,
+    required String reason,
+    required String reasonDetails,
+  }) async {
+    emit(state.copyWith(reportActionState: CubitStates.loading));
+    final result = await _profileRepository.reportUser(
+      reportedId: reportedId,
+      reason: reason,
+      reasonDetails: reasonDetails,
+    );
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          reportActionState: CubitStates.failure,
+          reportMessage: failure.message,
+        ),
+      ),
+      (message) => emit(
+        state.copyWith(
+          reportActionState: CubitStates.success,
+          reportMessage: message,
+        ),
+      ),
+    );
+  }
+
+  // في user_public_profile_cubit.dart
+  Future<void> sendGreeting({
+    required String receiverId,
+    required String message,
+  }) async {
+    if (isClosed) return;
+
+    emit(
+      state.copyWith(
+        isSendingGreeting: true,
+        greetingMessage: null,
+        greetingSuccess: false,
+      ),
+    );
+
+    final result = await _profileRepository.sendGreeting(
+      receiverId: receiverId,
+      message: message,
+    );
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            isSendingGreeting: false,
+            greetingMessage: failure.message,
+            greetingSuccess: false,
+          ),
+        );
+      },
+      (successMessage) {
+        emit(
+          state.copyWith(
+            isSendingGreeting: false,
+            greetingMessage: successMessage,
+            greetingSuccess: true,
+          ),
+        );
+      },
+    );
+  }
+
+  void clearGreetingState() {
+    emit(
+      state.copyWith(
+        isSendingGreeting: false,
+        greetingMessage: null,
+        greetingSuccess: false,
+      ),
+    );
+  }
 }

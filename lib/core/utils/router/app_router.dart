@@ -43,7 +43,7 @@ import 'package:tayseer/features/advisor/wallet/view/withdraw_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
-import 'package:tayseer/features/advisor/search/view/a_search_view.dart';
+import 'package:tayseer/features/advisor/search/presentation/view/a_search_view.dart';
 import 'package:tayseer/features/shared/auth/view/consultant_upload_certificate_view.dart';
 import 'package:tayseer/features/shared/auth/view/professional_information_consultant_view.dart';
 import 'package:tayseer/features/shared/auth/view/regisration_advisor_view.dart';
@@ -57,15 +57,16 @@ import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
-import 'package:tayseer/features/user/questions/refact_question/add_phone_view.dart';
-import 'package:tayseer/features/user/questions/refact_question/added_images_view.dart';
-import 'package:tayseer/features/user/questions/refact_question/face_verification_view.dart';
-import 'package:tayseer/features/user/questions/refact_question/otp_phone_user_question.dart';
-import 'package:tayseer/features/user/questions/refact_question/questions_page_view.dart';
-import 'package:tayseer/features/user/questions/refact_question/choose_gender_view.dart';
-import 'package:tayseer/features/user/questions/refact_question/personal_info_view.dart';
-import 'package:tayseer/features/user/questions/refact_question/verify_data_view.dart';
-import 'package:tayseer/features/user/questions/refact_question/widget/blocked_contacts_success_widget.dart';
+import 'package:tayseer/features/user/marriage_filter/view/marriage_filter_view.dart';
+import 'package:tayseer/features/user/questions/view/add_phone_view.dart';
+import 'package:tayseer/features/user/questions/view/added_images_view.dart';
+import 'package:tayseer/features/user/questions/view/face_verification_view.dart';
+import 'package:tayseer/features/user/questions/view/otp_phone_user_question.dart';
+import 'package:tayseer/features/user/questions/view/questions_page_view.dart';
+import 'package:tayseer/features/user/questions/view/choose_gender_view.dart';
+import 'package:tayseer/features/user/questions/view/personal_info_view.dart';
+import 'package:tayseer/features/user/questions/view/verify_data_view.dart';
+import 'package:tayseer/features/user/questions/view/widget/blocked_contacts_success_widget.dart';
 
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
@@ -156,6 +157,7 @@ abstract class AppRouter {
   static const kAddPhoneView = '/AddPhoneView';
   static const kOtpPhoneUserQuestion = '/OtpPhoneUserQuestion';
   static const kBlockedContactsSuccessScreen = '/BlockedContactsSuccessScreen';
+  static const kMarriageFilterView = '/MarriageFilterView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -559,9 +561,13 @@ abstract class AppRouter {
           builder: (_) => ALayoutView(currentUserType: userType),
         );
       case kAdvisorSearchView:
+        final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const ASearchView(),
+          builder: (_) => AdvisorSearchView(
+            initialQuery: args?['query'] ?? '',
+            initialTab: args?['tab'] ?? 'all',
+          ),
         );
       case kSessionDetailsView:
         return MaterialPageRoute(
@@ -838,6 +844,11 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => BlockedContactsSuccessScreen(),
+        );
+      case kMarriageFilterView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => MarriageFilterView(),
         );
 
       // case kEditCertificateView:
