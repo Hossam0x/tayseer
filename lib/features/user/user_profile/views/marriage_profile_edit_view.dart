@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
+import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
+import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/view/widget/custtom_image_grid.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/audioWidget.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_field_selection_view.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/voiceWidget.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,18 +22,28 @@ class MarriageProfileEditView extends StatefulWidget {
     required this.state,
     required this.selectedTabIndex,
     required this.maxImages,
+    this.onTabChanged, // ✅ Callback للتغيير
   });
   final int maxImages;
   final MarriageProfileCubit cubit;
   final MarriageUserProfileModel profile;
   final MarriageProfileState state;
   late int selectedTabIndex;
+  final Function(int)? onTabChanged; // ✅ Callback للـ parent
+
   @override
   State<MarriageProfileEditView> createState() =>
       _MarriageProfileEditViewState();
 }
 
 class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
+  // ✅ حالة التسجيل الصوتي
+  bool _isRecordingInPlace = false;
+
+  // ✅ حالات التحميل
+  bool _isUploadingVideo = false;
+  bool _isUploadingAudio = false;
+
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
@@ -105,7 +119,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   CustomSnackBar(
                     context,
-                    text: 'الحد الأقصى للصور هو $widget.maxImages',
+                    text: 'الحد الأقصى للصور هو ${widget.maxImages}',
                     isError: true,
                   ),
                 );
@@ -126,7 +140,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 cancelText: 'إلغاء',
                 onPressed: () {
                   cubit.deleteImage(imagePath);
-                  // Navigator.pop(context);
                 },
               );
             },
@@ -147,7 +160,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(
           context,
-          text: 'الحد الأقصى للصور هو $widget.maxImages',
+          text: 'الحد الأقصى للصور هو ${widget.maxImages}',
           isError: true,
         ),
       );
@@ -216,8 +229,12 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   Widget _buildMediaSection(BuildContext context) {
-    final hasVideo = widget.profile.userMedia?.video != null;
-    final hasAudio = widget.profile.userMedia?.audio != null;
+    final hasVideo =
+        widget.profile.userMedia?.video != null &&
+        widget.profile.userMedia!.video!.isNotEmpty;
+    final hasAudio =
+        widget.profile.userMedia?.audio != null &&
+        widget.profile.userMedia!.audio!.isNotEmpty;
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -235,23 +252,125 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           Text('الفيديو التعريفي', style: Styles.textStyle18Meduim),
           Gap(12.h),
 
-          if (hasVideo)
-            _buildVideoPreview(context)
+          // ✅ استخدام VideoSection مع callbacks
+          if (_isUploadingVideo)
+            _buildLoadingWidget('جاري رفع الفيديو...')
           else
-            _buildVideoUploadButton(context),
+            VideoSection(
+              videoUrl: widget.profile.userMedia?.video,
+              onDelete: hasVideo ? () => _deleteVideo(context) : null,
+              onUpload: !hasVideo ? () => _pickVideo(context) : null,
+              showControls: true,
+            ),
 
           Gap(16.h),
 
           // ════════════════════════════════════════════════════════════
           // AUDIO SECTION
           // ════════════════════════════════════════════════════════════
-          Text('مقطع صوتي', style: Styles.textStyle18Bold),
+          Text('مقطع صوتي', style:  Styles.textStyle18Meduim),  
           Gap(12.h),
 
-          if (hasAudio)
-            _buildAudioPreview(context)
+          if (_isUploadingAudio)
+            _buildLoadingWidget('جاري رفع التسجيل الصوتي...')
+          else if (_isRecordingInPlace)
+            _buildRecordingWidget(context)
+          else if (hasAudio)
+            _buildAudioPreviewFull(context)
           else
             _buildAudioUploadButton(context),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // AUDIO PREVIEW - FULL PLAYER (زي صفحة العرض)
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildAudioPreviewFull(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.primary200.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header مع زر الحذف
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'تسجيل صوتي',
+                style: Styles.textStyle16.copyWith(fontWeight: FontWeight.w600),
+              ),
+              IconButton(
+                onPressed: () => _deleteAudio(context),
+                icon: Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 20.w,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          Gap(12.h),
+
+          // Audio Player
+          VoiceSection(
+        
+            audioPath: widget.profile.userMedia?.audio ?? '',
+            // ⭐ هنضيف parameter جديد
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ✅ LOADING WIDGET
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildLoadingWidget(String message) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: AppColors.secondary50,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.primary200, width: 1.w),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 24.w,
+            height: 24.w,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.w,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary200),
+            ),
+          ),
+          Gap(12.w),
+          Text(
+            message,
+            style: Styles.textStyle14.copyWith(color: AppColors.primary200),
+          ),
         ],
       ),
     );
@@ -350,38 +469,68 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   // AUDIO UPLOAD BUTTON
   // ════════════════════════════════════════════════════════════════
   Widget _buildAudioUploadButton(BuildContext context) {
-    return Column(
-      children: [
-        // Record Audio
-        GestureDetector(
-          onTap: () => _showAudioOptions(context),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-            decoration: BoxDecoration(
-              color: AppColors.secondary50,
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColors.primary200, width: 1.w),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return GestureDetector(
+      onTap: () => _showAudioOptions(context),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+        decoration: BoxDecoration(
+          color: AppColors.secondary50,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: AppColors.primary200, width: 1.w),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('ارفاق تسجيل صوتي', style: Styles.textStyle16),
-                    Gap(4.h),
-                    Text(
-                      'تسجيل مباشر أو رفع ملف',
-                      style: Styles.textStyle12.copyWith(color: Colors.grey),
-                    ),
-                  ],
+                Text('ارفاق تسجيل صوتي', style: Styles.textStyle16),
+                Gap(4.h),
+                Text(
+                  'تسجيل مباشر أو رفع ملف',
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
                 ),
-                Icon(Icons.mic_none, color: AppColors.primary200, size: 30.w),
               ],
             ),
-          ),
+            Icon(Icons.mic_none, color: AppColors.primary200, size: 30.w),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // RECORDING WIDGET
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildRecordingWidget(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: AppColors.secondary50,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.primary200, width: 1.w),
+      ),
+      child: VoiceRecordingWidget(
+        onAudioRecorded: (audioFile) async {
+          setState(() {
+            _isRecordingInPlace = false;
+            _isUploadingAudio = true;
+          });
+
+          await widget.cubit.uploadAudio(audioFile);
+
+          if (mounted) {
+            setState(() {
+              _isUploadingAudio = false;
+            });
+          }
+        },
+        onCancel: () {
+          setState(() {
+            _isRecordingInPlace = false;
+          });
+        },
+      ),
     );
   }
 
@@ -436,36 +585,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
 
   // ════════════════════════════════════════════════════════════════
   // PICK VIDEO
+  // ════════════════════════════════════════════════════════════════
   Future<void> _pickVideo(BuildContext context) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
     try {
-      // ✅ طلب الـ Permission للمعرض
-      final status = await Permission.photos.request();
-
-      if (status.isDenied) {
-        scaffoldMessenger.showSnackBar(
-          CustomSnackBar(
-            context,
-            text: 'يرجى السماح بالوصول للمعرض',
-            isError: true,
-          ),
-        );
-        return;
-      }
-
-      if (status.isPermanentlyDenied) {
-        scaffoldMessenger.showSnackBar(
-          CustomSnackBar(
-            context,
-            text: 'يرجى تفعيل الصلاحية من الإعدادات',
-            isError: true,
-          ),
-        );
-        await openAppSettings();
-        return;
-      }
-
       final ImagePicker picker = ImagePicker();
       final XFile? video = await picker.pickVideo(
         source: ImageSource.gallery,
@@ -477,100 +599,127 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         final fileSize = await file.length();
 
         if (fileSize > 50 * 1024 * 1024) {
-          scaffoldMessenger.showSnackBar(
-            CustomSnackBar(
-              context,
-              text: 'حجم الفيديو كبير جداً (الحد الأقصى 50 ميجا)',
-              isError: true,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(
+                context,
+                text: 'حجم الفيديو كبير جداً (الحد الأقصى 50 ميجا)',
+                isError: true,
+              ),
+            );
+          }
           return;
         }
 
-        scaffoldMessenger.showSnackBar(
-          CustomSnackBar(context, text: 'جاري رفع الفيديو...'),
-        );
+        // ✅ تفعيل حالة التحميل
+        setState(() {
+          _isUploadingVideo = true;
+        });
 
         await widget.cubit.uploadVideo(file);
+
+        // ✅ إيقاف حالة التحميل
+        if (mounted) {
+          setState(() {
+            _isUploadingVideo = false;
+          });
+        }
       }
     } catch (e) {
       debugPrint('❌ Error picking video: $e');
-      scaffoldMessenger.showSnackBar(
-        CustomSnackBar(context, text: 'خطأ في اختيار الفيديو', isError: true),
-      );
-    }
-  } // ════════════════════════════════════════════════════════════════
 
-  // SHOW AUDIO OPTIONS (Record or Upload)
+      if (mounted) {
+        setState(() {
+          _isUploadingVideo = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(context, text: 'خطأ في اختيار الفيديو', isError: true),
+        );
+      }
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // SHOW AUDIO OPTIONS
   // ════════════════════════════════════════════════════════════════
   void _showAudioOptions(BuildContext context) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.all(20.w),
-        decoration: BoxDecoration(
-          color: AppColors.kWhiteColor,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Record Audio Option
-            ListTile(
-              leading: Icon(Icons.mic, color: AppColors.primary200),
-              title: Text('تسجيل صوتي', style: Styles.textStyle16),
-              subtitle: Text(
-                'تسجيل مباشر',
-                style: Styles.textStyle12.copyWith(color: Colors.grey),
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          title: Text(
+            'إرفاق تسجيل صوتي',
+            style: Styles.textStyle18Meduim,
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(
+                  Icons.mic,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text('تسجيل مباشر', style: Styles.textStyle16),
+                subtitle: Text(
+                  'سجل صوتك الآن',
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _startRecordingInPlace(context);
+                },
               ),
-              onTap: () {
-              
-                _recordAudio(context);
-              },
-            ),
-            Divider(),
-            // Upload Audio File
-            ListTile(
-              leading: Icon(Icons.upload_file, color: AppColors.primary200),
-              title: Text('رفع ملف صوتي', style: Styles.textStyle16),
-              subtitle: Text(
-                'من المعرض',
-                style: Styles.textStyle12.copyWith(color: Colors.grey),
+              Divider(height: 1, color: AppColors.secondary100),
+              ListTile(
+                leading: Icon(
+                  Icons.upload_file,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text('رفع ملف', style: Styles.textStyle16),
+                subtitle: Text(
+                  'اختر ملف صوتي من جهازك',
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAudio(context);
+                },
               ),
-              onTap: () {
-          
-                _pickAudio(context);
-              },
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  void _startRecordingInPlace(BuildContext context) {
+    setState(() {
+      _isRecordingInPlace = true;
+    });
   }
 
   // ════════════════════════════════════════════════════════════════
   // PICK AUDIO FILE
   // ════════════════════════════════════════════════════════════════
-  // ════════════════════════════════════════════════════════════════
-  // FIX للـ _pickAudio - حل مشكلة الـ UI state
-  // ════════════════════════════════════════════════════════════════
   Future<void> _pickAudio(BuildContext context) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     try {
-      // ✅ طلب الـ Permission للـ Storage/Media Library على iOS
       PermissionStatus status;
 
       if (Platform.isIOS) {
-        // iOS: نحتاج Media Library permission
         status = await Permission.mediaLibrary.request();
       } else {
-        // Android: نحتاج Storage permission
         status = await Permission.storage.request();
       }
 
-      // معالجة حالة الرفض
       if (status.isDenied) {
         scaffoldMessenger.showSnackBar(
           CustomSnackBar(
@@ -594,7 +743,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         return;
       }
 
-      // ✅ المستخدم وافق على الـ Permission
       final result = await FilePicker.platform.pickFiles(
         type: FileType.audio,
         allowCompression: true,
@@ -602,23 +750,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
 
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
+        final fileSize = await file.length();
 
-        // Check file size (max 10MB)
-        final fileSize = await file.length();
-        if (fileSize > 10 * 1024 * 1024) {
-          scaffoldMessenger.showSnackBar(
-            CustomSnackBar(
-              context,
-              text: 'حجم الملف كبير جداً (الحد الأقصى 10 ميجا)',
-              isError: true,
-            ),
-          );
-          return;
-        }
-        // Check file size (max 10MB)
-        final fileSize = await file.length();
         if (fileSize > 10 * 1024 * 1024) {
           scaffoldMessenger.showSnackBar(
             CustomSnackBar(
@@ -630,62 +763,70 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           return;
         }
 
-        // Show loading
-        scaffoldMessenger.showSnackBar(
-          CustomSnackBar(context, text: 'جاري رفع الملف الصوتي...'),
-        );
-        // Show loading
-        scaffoldMessenger.showSnackBar(
-          CustomSnackBar(context, text: 'جاري رفع الملف الصوتي...'),
-        );
+        // ✅ تفعيل حالة التحميل
+        setState(() {
+          _isUploadingAudio = true;
+        });
 
-        // Upload
         await widget.cubit.uploadAudio(file);
+
+        // ✅ إيقاف حالة التحميل
+        if (mounted) {
+          setState(() {
+            _isUploadingAudio = false;
+          });
+        }
       }
     } catch (e) {
       debugPrint('❌ Error picking audio: $e');
-      scaffoldMessenger.showSnackBar(
-        CustomSnackBar(
-          context,
-          text: 'خطأ في اختيار الملف الصوتي',
-          isError: true,
-        ),
-      );
+
+      if (mounted) {
+        setState(() {
+          _isUploadingAudio = false;
+        });
+
+        scaffoldMessenger.showSnackBar(
+          CustomSnackBar(
+            context,
+            text: 'خطأ في اختيار الملف الصوتي',
+            isError: true,
+          ),
+        );
+      }
     }
   }
 
-  // RECORD AUDIO (Placeholder - requires record package)
   // ════════════════════════════════════════════════════════════════
-  Future<void> _recordAudio(BuildContext context) async {
-    // TODO: Implement audio recording using record package
-    ScaffoldMessenger.of(context).showSnackBar(
-      CustomSnackBar(context, text: 'سيتم إضافة ميزة التسجيل قريباً'),
-    );
-  }
-
-  // ════════════════════════════════════════════════════════════════
-  // DELETE VIDEO
+  // DELETE VIDEO - ✅ مع تحديث الـ State
   // ════════════════════════════════════════════════════════════════
   void _deleteVideo(BuildContext context) {
     CustomshowDialogWithImage(
       context,
       title: 'حذف الفيديو',
       supTitle: 'هل أنت متأكد من حذف الفيديو التعريفي؟',
-      icon: Icons.delete_outline,
+      icon: Icons.close_outlined,
       iconColor: Colors.red,
       iconBackgroundColor: Colors.red.withOpacity(0.1),
       bottonText: 'حذف',
       showCancelButton: true,
       cancelText: 'إلغاء',
       onPressed: () async {
-      
+        // Navigator.pop(context); // ✅ أغلق الـ Dialog أولاً
+
         await widget.cubit.deleteVideo();
+
+        // ✅ تحديث الـ State بعد الحذف
+        if (mounted) {
+          setState(() {
+            // Force rebuild to show the upload button
+          });
+        }
       },
     );
   }
 
   // ════════════════════════════════════════════════════════════════
-  // DELETE AUDIO
+  // DELETE AUDIO - ✅ مع تحديث الـ State
   // ════════════════════════════════════════════════════════════════
   void _deleteAudio(BuildContext context) {
     CustomshowDialogWithImage(
@@ -699,8 +840,16 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       showCancelButton: true,
       cancelText: 'إلغاء',
       onPressed: () async {
-        
+        // Navigator.pop(context); // ✅ أغلق الـ Dialog أولاً
+
         await widget.cubit.deleteAudio();
+
+        // ✅ تحديث الـ State بعد الحذف
+        if (mounted) {
+          setState(() {
+            // Force rebuild to show the upload button
+          });
+        }
       },
     );
   }
@@ -889,11 +1038,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           ? null
           : () async {
               await cubit.saveProfile();
+
               if (mounted && state.state == CubitStates.success) {
-                // ✅ Switch to view tab after saving
-                setState(() {
-                  widget.selectedTabIndex = 0;
-                });
+                // ✅ استخدام الـ callback لتحديث الـ parent
+                widget.onTabChanged?.call(0);
               }
             },
       width: double.infinity,

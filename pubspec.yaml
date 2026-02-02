@@ -81,7 +81,7 @@ dependencies:
   country_picker: ^2.0.25
   pin_code_fields: ^8.0.1   
   permission_handler: ^12.0.1
-
+  flutter_sound: ^9.30.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
