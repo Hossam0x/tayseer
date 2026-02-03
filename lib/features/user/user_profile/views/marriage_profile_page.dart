@@ -9,7 +9,6 @@ import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubi
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_file.dart';
-import 'package:tayseer/features/user/user_profile/views/marriage_profile_edit_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageProfilePage extends StatefulWidget {
@@ -33,6 +32,7 @@ class _MarriageProfilePageState extends State<MarriageProfilePage> {
   ];
 
   // ⭐ إنشاء الإعدادات الخاصة بالزواج
+
   List<SettingItemModel> _getMarriageSettings(
     List<SettingItemModel> generalSettings,
     bool isNotProfileComplete,

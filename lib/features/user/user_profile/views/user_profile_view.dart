@@ -1,7 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
-import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
+// import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
@@ -9,6 +9,7 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_profil
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
+import 'package:tayseer/features/user/user_profile/views/marriage_file.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_profile_page.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
@@ -22,7 +23,7 @@ class UserProfileView extends StatefulWidget {
 }
 
 class _UserProfileViewState extends State<UserProfileView> {
-  int _selectedTabIndex = 0;
+  final int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();
   int _rating = 0;
   late UserProfileCubit _userProfileCubit; // ⭐ إضافة late للـ Cubit
@@ -94,16 +95,6 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
               child: Column(
                 children: [
-                  CustomToggleTabBar(
-                    firstTabText: "عام",
-                    secondTabText: "زواج",
-                    initialIndex: _selectedTabIndex,
-                    onTabChanged: (index) {
-                      setState(() {
-                        _selectedTabIndex = index;
-                      });
-                    },
-                  ),
                   Gap(18.h),
 
                   // ⭐ جزء البروفايل فقط يتغير حسب الحالة
@@ -122,7 +113,7 @@ class _UserProfileViewState extends State<UserProfileView> {
             MarriageProfilePage(),
 
           // ⭐ زر تسجيل الخروج (موجود دائماً)
-          _buildLogoutButtonSliver(context),
+          _buildLogoutButtonSliver(context, state),
 
           // مساحة في الأسفل
           SliverToBoxAdapter(child: Gap(100.h)),
@@ -467,20 +458,25 @@ class _UserProfileViewState extends State<UserProfileView> {
       delegate: SliverChildListDelegate([
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: _buildSettingsList(context, settings),
+          child: _buildSettingsList(context, settings, state),
         ),
       ]),
     );
   }
 
   // ⭐ تحديث زر تسجيل الخروج ليكون دائماً
-  SliverToBoxAdapter _buildLogoutButtonSliver(BuildContext context) {
+
+  SliverToBoxAdapter _buildLogoutButtonSliver(
+    BuildContext context,
+    UserProfileState state,
+  ) {
     return SliverToBoxAdapter(child: _buildLogoutButton(context));
   }
 
   Widget _buildSettingsList(
     BuildContext context,
     List<SettingItemModel> settings,
+    UserProfileState state,
   ) {
     // إذا كانت القائمة فارغة، نعرض سكلتون أو ننتظر
     if (settings.isEmpty) {
@@ -497,7 +493,7 @@ class _UserProfileViewState extends State<UserProfileView> {
     return Column(
       children: [
         for (var i = 0; i < settings.length; i++) ...[
-          _buildSettingItem(context, settings[i]),
+          _buildSettingItem(context, settings[i], state),
           if (i < settings.length - 1)
             Divider(color: AppColors.secondary100, height: 1),
         ],
@@ -551,10 +547,15 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  Widget _buildSettingItem(BuildContext context, SettingItemModel setting) {
+  Widget _buildSettingItem(
+    BuildContext context,
+    SettingItemModel setting,
+    UserProfileState state,
+  ) {
     final isNotificationsItem = setting.id == 'notifications';
     final isInviteItem = setting.id == 'invite';
     final isRateAppItem = setting.id == 'rate_app';
+    final isEditMarriageProfile = setting.id == 'edit_marriage_profile';
 
     return Material(
       color: Colors.transparent,
@@ -569,6 +570,11 @@ class _UserProfileViewState extends State<UserProfileView> {
 
           if (isRateAppItem) {
             _showRateAppDialog();
+            return;
+          }
+
+          if (isEditMarriageProfile) {
+            _openMarriageEditProfile(context, state);
             return;
           }
 
@@ -597,7 +603,12 @@ class _UserProfileViewState extends State<UserProfileView> {
               : EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16.r),
-            color: Colors.transparent,
+            border: isEditMarriageProfile
+                ? Border.all(color: AppColors.primary200)
+                : null,
+            color: isEditMarriageProfile
+                ? Color.fromRGBO(235, 122, 145, 0.07)
+                : Colors.transparent,
           ),
           child: Row(
             children: [
@@ -895,6 +906,34 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  void _openMarriageEditProfile(BuildContext context, UserProfileState state) {
+    if (state is! SettingsLoaded || state.userProfile == null) {
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              // الخلفية الكاملة في الخلف
+              Positioned.fill(
+                child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
+              ),
+              AdvisorBackground(
+                child: MarriagefilePage(
+                  userProfile: state.userProfile, // ⭐ تمرير UserProfileModel
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

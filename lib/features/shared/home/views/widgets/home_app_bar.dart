@@ -38,7 +38,10 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 child: Row(
                   children: [
                     // ⭐ استخدام state.homeInfo?.image بدل kCurrentUserData?.image
-                    MyProfileImage(imageUrl: state.homeInfo?.image ?? ''),
+                    MyProfileImage(
+                      imageUrl:
+                          kCurrentUserData?.image ?? state.homeInfo?.image,
+                    ),
                     Gap(context.responsiveWidth(14)),
                     Expanded(
                       child: Column(
