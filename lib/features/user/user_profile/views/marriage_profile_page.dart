@@ -1,7 +1,6 @@
 // features/user/user_profile/views/marriage_profile_page.dart
 
 import 'dart:developer';
-
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
@@ -180,36 +179,42 @@ class _MarriageProfilePageState extends State<MarriageProfilePage> {
                       // Handle button tap
                     },
                     child: Container(
-                      width: 125.w,
-                      height: 36.h,
                       decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors
-                                .primary300, // Light pink at bottom (primary50/secondary200)
-
-                            blurRadius: 11,
-                            spreadRadius: 0,
-                          ),
-                        ],
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            AppColors.primary200, // Your primary color
-                            AppColors.primary200, // Your secondary color
-                            AppColors.primary100, // Your secondary color
-                          ],
-                        ),
                         borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(color: Colors.white, width: 2.w),
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "تواصل معنا",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
+                      child: Container(
+                        width: 125.w,
+                        height: 36.h,
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors
+                                  .primary300, // Light pink at bottom (primary50/secondary200)
+
+                              blurRadius: 11,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppColors.primary200, // Your primary color
+                              AppColors.primary200, // Your secondary color
+                              AppColors.primary100, // Your secondary color
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "تواصل معنا",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),

@@ -50,63 +50,101 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
   // ═══════════════════════════════════════════════════════════════════
   // HISTORY
   // ═══════════════════════════════════════════════════════════════════
+// Add this constant at the top of the class
+static const int _pageSize = 6;
 
-  @override
-  Future<Either<Failure, HistoryResponseModel>> fetchHistoryUsers({
-    required String filter,
-    required int page,
-  }) async {
-    try {
-      // TODO: Replace with actual API call when backend is ready
-      // final response = await apiService.get(
-      //   endPoint: '/interactions/history',
-      //   query: {
-      //     'filter': filter,
-      //     'page': page,
-      //   },
-      // );
+@override
+Future<Either<Failure, HistoryResponseModel>> fetchHistoryUsers({
+  required String filter,
+  required int page,
+}) async {
+  try {
+    // ✅ Real API Call with type parameter
+    final response = await apiService.get(
+      endPoint: '/user/user-interactions',
+      query: {
+        'page': page.toString(),
+        'limit': _pageSize.toString(),
+        'type': _mapFilterToApiType(filter),
+      },
+    );
 
-      // ✅ Mock Data Response
-      await Future.delayed(const Duration(milliseconds: 600));
-      
-      final mockResponse = _getMockHistoryResponse(filter);
-      return Right(mockResponse);
+    final historyResponse = HistoryResponseModel.fromJson(response);
+    return Right(historyResponse);
 
-    } on DioException catch (e) {
-      return Left(ServerFailure.fromDioError(e));
-    } catch (e) {
-      return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
-    }
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
   }
+}
+
+// Helper method to map filter names to API types
+String _mapFilterToApiType(String filter) {
+  switch (filter) {
+    case 'المفضلة':
+      return 'favorites';
+    case 'نال إعجابك':
+      return 'likes';
+    case 'صادفتهم':
+      return 'encountered';
+    case 'أرسلت مجاملة':
+      return 'regards';
+    case 'اُعجب بك':
+      return 'likedMe';  // ✅ Fixed to match API
+    default:
+      return 'likes';
+  }
+}
 
   // ═══════════════════════════════════════════════════════════════════
-  // ACTIONS
+  // ACTIONS - ✅ FIXED BASED ON POSTMAN SCREENSHOTS
   // ═══════════════════════════════════════════════════════════════════
+@override
+Future<Either<Failure, String>> toggleFavorite({
+  required String userId,
+  required bool isAdd,
+}) async {
+  try {
+    if (isAdd) {
+      // ✅ حالة الإضافة: بدون action parameter خالص
+      // بناءً على صورة Postman الثالثة (201 Created)
+      final Map<String, dynamic> bodyData = {
+        'personInteractedWith': userId,
+        'interactionType': 'favorite',
+        // ⚠️ لاحظ: مفيش action هنا خالص
+      };
 
-  @override
-  Future<Either<Failure, String>> toggleFavorite({
-    required String userId,
-    required bool isAdd,
-  }) async {
-    try {
-      // TODO: Replace with actual API call when backend is ready
-      // final response = await apiService.post(
-      //   endPoint: '/interactions/favorite?action=${isAdd ? "add" : "remove"}',
-      //   data: {"userId": userId},
-      // );
+      final response = await apiService.post(
+        endPoint: '/user/user-interaction',
+        data: bodyData,
+      );
 
-      // ✅ Mock Response
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      final message = isAdd ? 'تمت الإضافة للمفضلة بنجاح' : 'تمت الإزالة من المفضلة بنجاح';
+      final message = response['message'] ?? 'تمت الإضافة للمفضلة بنجاح';
       return Right(message);
+      
+    } else {
+      // ✅ حالة الحذف: استخدام POST مع ?action=remove في الـ URL
+      // بناءً على صورة Postman الأولى اللي بتستخدم query parameter
+      final response = await apiService.post(
+        endPoint: '/user/user-interaction?action=remove',  // ✅ في الـ URL نفسه
+        data: {
+          'personInteractedWith': userId,
+          'interactionType': 'favorite',
+          // ⚠️ بدون action في الـ body
+        },
+      );
 
-    } on DioException catch (e) {
-      return Left(ServerFailure.fromDioError(e));
-    } catch (e) {
-      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+      final message = response['message'] ?? 'تمت الإزالة من المفضلة بنجاح';
+      return Right(message);
     }
+
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
   }
+}
 
   @override
   Future<Either<Failure, String>> sendCompliment({
@@ -153,7 +191,7 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // MOCK DATA HELPERS
+  // MOCK DATA HELPERS (Same as before)
   // ═══════════════════════════════════════════════════════════════════
 
   ExplorationResponseModel _getMockExplorationResponse(String category) {
@@ -163,17 +201,6 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
       success: true,
       message: 'تم جلب البيانات بنجاح',
       users: mockData[category] ?? [],
-      pagination: null,
-    );
-  }
-
-  HistoryResponseModel _getMockHistoryResponse(String filter) {
-    final mockData = _getMockHistoryData();
-    
-    return HistoryResponseModel(
-      success: true,
-      message: 'تم جلب البيانات بنجاح',
-      users: mockData[filter] ?? [],
       pagination: null,
     );
   }

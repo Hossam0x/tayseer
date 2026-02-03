@@ -110,7 +110,7 @@ class InteractionBodyState extends State<InteractionBody> {
                       title: "التفاعلات",
                       leadingWidget: GestureDetector(
                         onTap: () {
-                          context.pushNamed(AppRouter.kInteractionFilterView);
+                          context.pushNamed(AppRouter.kMarriageFilterView);
                         },
                         child: SvgPicture.asset(
                           AssetsData.kfilterIcon,
@@ -161,7 +161,7 @@ class InteractionBodyState extends State<InteractionBody> {
             title: "التفاعلات",
             leadingWidget: GestureDetector(
               onTap: () {
-                context.pushNamed(AppRouter.kInteractionFilterView);
+              context.pushNamed(AppRouter.kMarriageFilterView);
               },
               child: SvgPicture.asset(
                 AssetsData.kfilterIcon,

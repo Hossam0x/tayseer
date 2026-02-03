@@ -38,8 +38,9 @@ List<InteractionUserModel> getDummyInteractionUsers({
       age: 25 + (index % 10),
       image: _getDummyImage(index),
       country: '',
+
       day: _getDummyDay(index),
-      job: _getDummyJob(index),
+      job: "",
       isverified: isVerified, // ✅ All verified
       isFavorite: index != 0 && index % 3 == 0,
       likedHim: index != 0 && index % 5 == 0,

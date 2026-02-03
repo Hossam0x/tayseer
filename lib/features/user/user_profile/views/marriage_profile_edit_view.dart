@@ -103,7 +103,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'الصور (آخر ${displayImages.length} صور)',
+            'الصور ( ${displayImages.length} صور)',
             style: Styles.textStyle18Meduim,
           ),
           Gap(12.h),
@@ -1038,7 +1038,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
 
               if (mounted && state.state == CubitStates.success) {
                 // ✅ استخدام الـ callback لتحديث الـ parent
-                widget.onTabChanged?.call(0);
+                widget.onTabChanged?.call(1);
               }
             },
       width: double.infinity,

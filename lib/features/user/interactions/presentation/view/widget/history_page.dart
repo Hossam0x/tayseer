@@ -18,9 +18,15 @@ class Historypage extends StatefulWidget {
 }
 
 class _HistorypageState extends State<Historypage> {
+  late ScrollController _scrollController;
+  bool _isLoadingMore = false;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
     });
@@ -30,7 +36,57 @@ class _HistorypageState extends State<Historypage> {
   void didUpdateWidget(Historypage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedFilter != widget.selectedFilter) {
+      _scrollController.jumpTo(0);
       context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_isLoadingMore) return;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    final delta = 200.0;
+
+    if (currentScroll >= (maxScroll - delta)) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore) return;
+
+    final cubit = context.read<InteractionsCubit>();
+    final hasMore = cubit.state.historyHasMore[widget.selectedFilter] ?? false;
+
+    if (!hasMore) return;
+
+    setState(() => _isLoadingMore = true);
+
+    await cubit.loadMoreHistory(filter: widget.selectedFilter);
+
+    if (mounted) {
+      setState(() => _isLoadingMore = false);
+    }
+  }
+
+  // ✅ دالة الـ Refresh
+  Future<void> _onRefresh() async {
+    final cubit = context.read<InteractionsCubit>();
+    
+    if (widget.selectedFilter == "المفضلة") {
+      // ✅ للمفضلة: نستخدم refreshFavorites اللي هيحذف المعلق ويعمل fetch
+      await cubit.refreshFavorites();
+    } else {
+      // ✅ باقي الفلاتر: refresh عادي
+      await cubit.fetchHistory(filter: widget.selectedFilter);
     }
   }
 
@@ -38,12 +94,11 @@ class _HistorypageState extends State<Historypage> {
   Widget build(BuildContext context) {
     return BlocBuilder<InteractionsCubit, InteractionsState>(
       builder: (context, state) {
-        // ✅ حالة التحميل مع Skeleton
-        if (state.historyState == CubitStates.loading) {
+        if (state.historyState == CubitStates.loading && 
+            (state.historyData[widget.selectedFilter]?.isEmpty ?? true)) {
           return _buildSkeletonLoading();
         }
 
-        // ✅ حالة الخطأ
         if (state.historyState == CubitStates.failure) {
           return Center(
             child: Column(
@@ -68,44 +123,57 @@ class _HistorypageState extends State<Historypage> {
           );
         }
 
-        // ✅ جلب البيانات
         final data = state.historyData[widget.selectedFilter] ?? [];
 
-        // ✅ حالة البيانات الفارغة
         if (data.isEmpty) {
-          return EmptyHistory(selectedFilter: widget.selectedFilter);
+          return RefreshIndicator.adaptive(
+            onRefresh: _onRefresh,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: EmptyHistory(selectedFilter: widget.selectedFilter),
+              ),
+            ),
+          );
         }
 
-        // ✅ عرض البيانات مع Blur والزر الثابت
         return Stack(
           children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 22.w),
-              child: GridView.builder(
-                padding: EdgeInsets.only(
-                  top: 16.h,
-                  bottom: state.isSubscribed ? 20.h : 160.h, // ✅ مساحة إضافية للزر
-                ),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12.w,
-                  mainAxisSpacing: 12.h,
-                  childAspectRatio: 0.7,
-                ),
-                itemCount: data.length,
-                itemBuilder: (context, index) {
-                  return InteractionProfileCard(
-                    item: data[index],
+            RefreshIndicator.adaptive(
+              onRefresh: _onRefresh,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 22.w),
+                child: GridView.builder(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.only(
+                    top: 16.h,
+                    bottom: state.isSubscribed ? 80.h : 160.h,
+                  ),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12.w,
+                    mainAxisSpacing: 12.h,
+                    childAspectRatio: 0.7,
+                  ),
+                  itemCount: data.length + (_isLoadingMore ? 2 : 0),
+                  itemBuilder: (context, index) {
+                    if (index >= data.length) {
+                      return _buildLoadingCard();
+                    }
+
+                    return InteractionProfileCard(
+                      item: data[index],
                       showFavoriteIcon: widget.selectedFilter == "المفضلة",
-                    forceBlur: !state.isSubscribed, // ✅ Blur إذا لم يكن مشترك
-                  );
-                },
+                      forceBlur: !state.isSubscribed,
+                    );
+                  },
+                ),
               ),
             ),
             
-            // ✅ الزر الثابت (يظهر فقط للمستخدمين غير المشتركين)
-            if (!state.isSubscribed)
-              const SubscriptionPromptOverlay(),
+            if (!state.isSubscribed) const SubscriptionPromptOverlay(),
           ],
         );
       },
@@ -113,7 +181,7 @@ class _HistorypageState extends State<Historypage> {
   }
 
   Widget _buildSkeletonLoading() {
-    final dummyData = getDummyInteractionUsers(count: 8);
+    final dummyData = getDummyInteractionUsers(count: 6);
 
     return Skeletonizer(
       enabled: true,
@@ -132,6 +200,15 @@ class _HistorypageState extends State<Historypage> {
             return InteractionProfileCard(item: dummyData[index]);
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingCard() {
+    return Skeletonizer(
+      enabled: true,
+      child: InteractionProfileCard(
+        item: getDummyInteractionUsers(count: 1).first,
       ),
     );
   }
