@@ -66,7 +66,7 @@ class LifeEventsSection extends StatelessWidget {
           children: List.generate(events.length, (index) {
             return Expanded(
               child: Text(
-                events[index]['timeLabel'] ?? '',
+                "${events[index]['timeLabel'] ?? ''}",
                 textAlign: TextAlign.center,
                 style: Styles.textStyle12.copyWith(
                   color: Colors.grey.shade600,

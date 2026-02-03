@@ -1,3 +1,49 @@
+  // Future<void> _pickVideo(BuildContext context) async {
+  //   try {
+  //     final ImagePicker picker = ImagePicker();
+  //     final XFile? video = await picker.pickVideo(
+  //       source: ImageSource.gallery,
+  //       maxDuration: const Duration(minutes: 2), // Max 2 minutes
+  //     );
+
+  //     if (video != null) {
+  //       final file = File(video.path);
+
+  //       // Check file size (max 50MB)
+  //       final fileSize = await file.length();
+  //       if (fileSize > 50 * 1024 * 1024) {
+  //         if (mounted) {
+  //           ScaffoldMessenger.of(context).showSnackBar(
+  //             CustomSnackBar(
+  //               context,
+  //               text: 'حجم الفيديو كبير جداً (الحد الأقصى 50 ميجا)',
+  //               isError: true,
+  //             ),
+  //           );
+  //         }
+  //         return;
+  //       }
+
+  //       // Show loading
+  //       if (mounted) {
+  //         ScaffoldMessenger.of(
+  //           context,
+  //         ).showSnackBar(CustomSnackBar(context, text: 'جاري رفع الفيديو...'));
+  //       }
+
+  //       // Upload
+  //       await widget.cubit.uploadVideo(file);
+  //     }
+  //   } catch (e) {
+  //     debugPrint('❌ Error picking video: $e');
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         CustomSnackBar(context, text: 'خطأ في اختيار الفيديو', isError: true),
+  //       );
+  //     }
+  //   }
+  // }
+
 // marriage_profile_repository.dart - AUDIO UPLOAD FIXED
 // ════════════════════════════════════════════════════════════════
 // ✅ Fixed: Audio upload using FormData.fromMap

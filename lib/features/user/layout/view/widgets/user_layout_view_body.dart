@@ -80,7 +80,9 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                           CubitStates.success) {
                         context.pop(); // Close loading dialog if open
                         final lastQuestionNumber =
-                            state.lastQuestionNumberResponse?.questionNumber ??
+                            state
+                                .lastQuestionNumberResponse
+                                ?.lastQuestionNumber ??
                             0;
                         debugPrint('Last Question Number: $lastQuestionNumber');
                         if (lastQuestionNumber == 0) {

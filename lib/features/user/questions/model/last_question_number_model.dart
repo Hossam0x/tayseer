@@ -1,9 +1,9 @@
 class LastQuestionNumber {
-  final int questionNumber;
+  final int lastQuestionNumber;
 
-  LastQuestionNumber({required this.questionNumber});
+  LastQuestionNumber({required this.lastQuestionNumber});
 
   factory LastQuestionNumber.fromJson(Map<String, dynamic> json) {
-    return LastQuestionNumber(questionNumber: json['questionNumber'] ?? 0);
+    return LastQuestionNumber(lastQuestionNumber: json['lastQuestionNumber'] ?? 0);
   }
 }
