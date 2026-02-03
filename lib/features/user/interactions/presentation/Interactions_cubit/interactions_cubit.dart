@@ -3,11 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 import '../../data/Model/Iinteraction_usermodel .dart';
+import '../../data/Model/history_response_model.dart'; // ✅ For PaginationModel
 import 'interactions_state.dart';
 
 class InteractionsCubit extends Cubit<InteractionsState> {
   final InteractionsRepository repository;
-  static const int _pageSize = 10;
+  static const int _pageSize = 5; // ✅ تغيير لـ 5 عناصر
 
   InteractionsCubit(this.repository) : super(const InteractionsState());
 
@@ -15,7 +16,6 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   // SUBSCRIPTION STATUS
   // ═══════════════════════════════════════════════════════════════════
 
-  /// ✅ تحديث حالة الاشتراك
   void updateSubscriptionStatus(bool isSubscribed) {
     emit(state.copyWith(isSubscribed: isSubscribed));
   }
@@ -52,9 +52,9 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // HISTORY
+  // HISTORY - INITIAL FETCH
   // ═══════════════════════════════════════════════════════════════════
-
+  
   Future<void> fetchHistory({required String filter}) async {
     emit(state.copyWith(historyState: CubitStates.loading));
 
@@ -69,15 +69,114 @@ class InteractionsCubit extends Cubit<InteractionsState> {
         historyErrorMessage: failure.message,
       )),
       (response) {
-        final newData = Map<String, List<InteractionUserModel>>.from(state.historyData);
-        newData[filter] = response.users;
+        updateSubscriptionStatus(response.userSubscription);
+        
+        // ✅ استخراج البيانات للفلتر المطلوب فقط
+        final section = response.sections[filter];
+        
+        if (section == null) {
+          emit(state.copyWith(
+            historyState: CubitStates.success,
+            historyData: {filter: []},
+            historyCurrentPage: {filter: 1},
+            historyHasMore: {filter: false},
+            historyPagination: {filter: null},
+          ));
+          return;
+        }
+
+        final Map<String, List<InteractionUserModel>> newData = Map.from(state.historyData);
+        final Map<String, int> newCurrentPage = Map.from(state.historyCurrentPage);
+        final Map<String, bool> newHasMore = Map.from(state.historyHasMore);
+        final Map<String, PaginationModel?> newPagination = Map.from(state.historyPagination);
+        
+        newData[filter] = section.users;
+        newCurrentPage[filter] = section.pagination?.currentPage ?? 1;
+        
+        // ✅ تحديد hasMore بناءً على pagination
+        if (section.pagination != null) {
+          newHasMore[filter] = section.pagination!.currentPage < section.pagination!.totalPages;
+        } else {
+          newHasMore[filter] = false;
+        }
+        
+        newPagination[filter] = section.pagination;
 
         emit(state.copyWith(
           historyState: CubitStates.success,
           historyData: newData,
-          historyCurrentPage: 1,
-          historyHasMore: response.users.length >= _pageSize,
+          historyCurrentPage: newCurrentPage,
+          historyHasMore: newHasMore,
+          historyPagination: newPagination,
         ));
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // HISTORY - LOAD MORE (PAGINATION)
+  // ═══════════════════════════════════════════════════════════════════
+  
+  Future<void> loadMoreHistory({required String filter}) async {
+    // ✅ تأكد أن في بيانات أكثر
+    final hasMore = state.historyHasMore[filter] ?? false;
+    if (!hasMore) {
+      log('No more data for filter: $filter');
+      return;
+    }
+
+    // ✅ منع استدعاءات متعددة
+    if (state.historyState == CubitStates.loading) {
+      return;
+    }
+
+    final currentPage = state.historyCurrentPage[filter] ?? 1;
+    final nextPage = currentPage + 1;
+
+    log('Loading more history for $filter - Page $nextPage');
+
+    final result = await repository.fetchHistoryUsers(
+      filter: filter,
+      page: nextPage,
+    );
+
+    result.fold(
+      (failure) {
+        log('Load more failed: ${failure.message}');
+        // ✅ لا نغير الـ state إلى failure، فقط نتجاهل الخطأ
+      },
+      (response) {
+        // ✅ دمج البيانات الجديدة مع القديمة
+        final currentData = Map<String, List<InteractionUserModel>>.from(state.historyData);
+        final currentPageMap = Map<String, int>.from(state.historyCurrentPage);
+        final currentHasMoreMap = Map<String, bool>.from(state.historyHasMore);
+        final currentPaginationMap = Map<String, PaginationModel?>.from(state.historyPagination);
+
+        // ✅ إضافة البيانات الجديدة للـ filter المحدد
+        final section = response.sections[filter];
+        if (section != null) {
+          final existingUsers = currentData[filter] ?? [];
+          currentData[filter] = [...existingUsers, ...section.users];
+          
+          currentPageMap[filter] = section.pagination?.currentPage ?? nextPage;
+          
+          if (section.pagination != null) {
+            currentHasMoreMap[filter] = section.pagination!.currentPage < section.pagination!.totalPages;
+          } else {
+            currentHasMoreMap[filter] = false;
+          }
+          
+          currentPaginationMap[filter] = section.pagination;
+        }
+
+        emit(state.copyWith(
+          historyData: currentData,
+          historyCurrentPage: currentPageMap,
+          historyHasMore: currentHasMoreMap,
+          historyPagination: currentPaginationMap,
+        ));
+
+        log('Successfully loaded page $nextPage for $filter');
       },
     );
   }
@@ -85,94 +184,69 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   // ═══════════════════════════════════════════════════════════════════
   // ACTIONS
   // ═══════════════════════════════════════════════════════════════════
-// في ملف interactions_cubit.dart
 
-Future<void> toggleFavorite({
-  required String userId,
-  required bool isAdd,
-}) async {
-  // ✅ تحديث فوري في الـ UI (Optimistic Update)
-  _updateUserFavoriteStatus(userId, isAdd);
-  
-  emit(state.copyWith(actionState: CubitStates.loading));
+  Future<void> toggleFavorite({
+    required String userId,
+    required bool isAdd,
+  }) async {
+    _updateUserFavoriteStatus(userId, isAdd);
+    
+    emit(state.copyWith(actionState: CubitStates.loading));
 
-  final result = await repository.toggleFavorite(
-    userId: userId,
-    isAdd: isAdd,
-  );
+    final result = await repository.toggleFavorite(
+      userId: userId,
+      isAdd: isAdd,
+    );
 
-  result.fold(
-    (failure) {
-      log('Toggle Favorite Failed: ${failure.message}');
-      
-      // ✅ لو فشل، نرجع الحالة لما كانت
-      _updateUserFavoriteStatus(userId, !isAdd);
-      
-      emit(state.copyWith(
-        actionState: CubitStates.failure,
-        actionMessage: failure.message,
-      ));
-    },
-    (message) {
-      log('Toggle Favorite Success: $message');
-      
-      // ❌ شلنا الحذف التلقائي من هنا
-      // المستخدم هيتحذف بس لما نعمل refresh
-      
-      emit(state.copyWith(
-        actionState: CubitStates.success,
-        actionMessage: message,
-      ));
-    },
-  );
-}
+    result.fold(
+      (failure) {
+        log('Toggle Favorite Failed: ${failure.message}');
+        _updateUserFavoriteStatus(userId, !isAdd);
+        
+        emit(state.copyWith(
+          actionState: CubitStates.failure,
+          actionMessage: failure.message,
+        ));
+      },
+      (message) {
+        log('Toggle Favorite Success: $message');
+        
+        emit(state.copyWith(
+          actionState: CubitStates.success,
+          actionMessage: message,
+        ));
+      },
+    );
+  }
 
-// ✅ تحديث دالة _updateUserFavoriteStatus (زي ما هي)
-void _updateUserFavoriteStatus(String userId, bool isFavorite) {
-  // ✅ تحديث في Exploration Data
-  final updatedExploration = <String, List<InteractionUserModel>>{};
-  
-  state.explorationData.forEach((category, users) {
-    updatedExploration[category] = users.map((user) {
-      if (user.userId == userId) {
-        return user.copyWith(isFavorite: isFavorite);
-      }
-      return user;
-    }).toList();
-  });
+  void _updateUserFavoriteStatus(String userId, bool isFavorite) {
+    final updatedExploration = <String, List<InteractionUserModel>>{};
+    
+    state.explorationData.forEach((category, users) {
+      updatedExploration[category] = users.map((user) {
+        if (user.userId == userId) {
+          return user.copyWith(isFavorite: isFavorite);
+        }
+        return user;
+      }).toList();
+    });
 
-  // ✅ تحديث في History Data
-  final updatedHistory = <String, List<InteractionUserModel>>{};
-  
-  state.historyData.forEach((filter, users) {
-    updatedHistory[filter] = users.map((user) {
-      if (user.userId == userId) {
-        return user.copyWith(isFavorite: isFavorite);
-      }
-      return user;
-    }).toList();
-  });
+    final updatedHistory = <String, List<InteractionUserModel>>{};
+    
+    state.historyData.forEach((filter, users) {
+      updatedHistory[filter] = users.map((user) {
+        if (user.userId == userId) {
+          return user.copyWith(isFavorite: isFavorite);
+        }
+        return user;
+      }).toList();
+    });
 
-  // ✅ Emit التحديث
-  emit(state.copyWith(
-    explorationData: updatedExploration,
-    historyData: updatedHistory,
-  ));
-}
-
-// // void _removeUserFromHistory(String userId) { ... }
-// // ✅ دالة جديدة: حذف المستخدم من History فقط
-// void _removeUserFromHistory(String userId) {
-//   final updatedHistory = <String, List<InteractionUserModel>>{};
-  
-//   state.historyData.forEach((filter, users) {
-//     // احذف المستخدم من كل الفلاتر
-//     updatedHistory[filter] = users.where((user) => user.userId != userId).toList();
-//   });
-
-//   emit(state.copyWith(historyData: updatedHistory));
-// }
-
+    emit(state.copyWith(
+      explorationData: updatedExploration,
+      historyData: updatedHistory,
+    ));
+  }
 
   Future<void> sendCompliment({required String userId}) async {
     emit(state.copyWith(actionState: CubitStates.loading));
@@ -220,40 +294,6 @@ void _updateUserFavoriteStatus(String userId, bool isFavorite) {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // HELPER METHODS
-  // ═══════════════════════════════════════════════════════════════════
-
-  // /// تحديث حالة الإعجاب للمستخدم في جميع البيانات
-  // void _updateUserFavoriteStatus(String userId, bool isFavorite) {
-  //   // تحديث في Exploration Data
-  //   final updatedExploration = Map<String, List<InteractionUserModel>>.from(state.explorationData);
-    
-  //   updatedExploration.forEach((category, users) {
-  //     final index = users.indexWhere((user) => user.userId == userId);
-  //     if (index != -1) {
-  //       users[index] = users[index].copyWith(isFavorite: isFavorite);
-  //     }
-  //   });
-
-  //   // تحديث في History Data
-  //   final updatedHistory = Map<String, List<InteractionUserModel>>.from(state.historyData);
-    
-  //   updatedHistory.forEach((filter, users) {
-  //     final index = users.indexWhere((user) => user.userId == userId);
-  //     if (index != -1) {
-  //       users[index] = users[index].copyWith(isFavorite: isFavorite);
-  //     }
-  //   });
-
-  //   // Emit التحديث
-  //   emit(state.copyWith(
-  //     explorationData: updatedExploration,
-  //     historyData: updatedHistory,
-  //   ));
-  // }
-
-  /// إعادة تعيين حالة الـ Action
   void resetActionState() {
     emit(state.copyWith(
       actionState: CubitStates.initial,

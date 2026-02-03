@@ -18,9 +18,15 @@ class Historypage extends StatefulWidget {
 }
 
 class _HistorypageState extends State<Historypage> {
+  late ScrollController _scrollController;
+  bool _isLoadingMore = false;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
     });
@@ -30,7 +36,46 @@ class _HistorypageState extends State<Historypage> {
   void didUpdateWidget(Historypage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedFilter != widget.selectedFilter) {
+      _scrollController.jumpTo(0); // ✅ Reset scroll position
       context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  // ✅ دالة مراقبة الـ Scroll
+  void _onScroll() {
+    if (_isLoadingMore) return;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    final delta = 200.0; // ✅ ابدأ التحميل قبل الوصول للنهاية بـ 200 بكسل
+
+    if (currentScroll >= (maxScroll - delta)) {
+      _loadMore();
+    }
+  }
+
+  // ✅ دالة تحميل المزيد من البيانات
+  Future<void> _loadMore() async {
+    if (_isLoadingMore) return;
+
+    final cubit = context.read<InteractionsCubit>();
+    final hasMore = cubit.state.historyHasMore[widget.selectedFilter] ?? false;
+
+    if (!hasMore) return;
+
+    setState(() => _isLoadingMore = true);
+
+    await cubit.loadMoreHistory(filter: widget.selectedFilter);
+
+    if (mounted) {
+      setState(() => _isLoadingMore = false);
     }
   }
 
@@ -39,7 +84,8 @@ class _HistorypageState extends State<Historypage> {
     return BlocBuilder<InteractionsCubit, InteractionsState>(
       builder: (context, state) {
         // ✅ حالة التحميل مع Skeleton
-        if (state.historyState == CubitStates.loading) {
+        if (state.historyState == CubitStates.loading && 
+            (state.historyData[widget.selectedFilter]?.isEmpty ?? true)) {
           return _buildSkeletonLoading();
         }
 
@@ -76,15 +122,16 @@ class _HistorypageState extends State<Historypage> {
           return EmptyHistory(selectedFilter: widget.selectedFilter);
         }
 
-        // ✅ عرض البيانات مع Blur والزر الثابت
+        // ✅ عرض البيانات مع Pagination
         return Stack(
           children: [
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 22.w),
               child: GridView.builder(
+                controller: _scrollController, // ✅ ربط الـ ScrollController
                 padding: EdgeInsets.only(
                   top: 16.h,
-                  bottom: state.isSubscribed ? 20.h : 160.h, // ✅ مساحة إضافية للزر
+                  bottom: state.isSubscribed ? 80.h : 160.h, // ✅ مساحة للـ loader
                 ),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
@@ -92,28 +139,33 @@ class _HistorypageState extends State<Historypage> {
                   mainAxisSpacing: 12.h,
                   childAspectRatio: 0.7,
                 ),
-                itemCount: data.length,
+                itemCount: data.length + (_isLoadingMore ? 2 : 0), // ✅ إضافة skeleton loaders
                 itemBuilder: (context, index) {
+                  // ✅ عرض loader في النهاية
+                  if (index >= data.length) {
+                    return _buildLoadingCard();
+                  }
+
                   return InteractionProfileCard(
                     item: data[index],
-                      showFavoriteIcon: widget.selectedFilter == "المفضلة",
-                    forceBlur: !state.isSubscribed, // ✅ Blur إذا لم يكن مشترك
+                    showFavoriteIcon: widget.selectedFilter == "المفضلة",
+                    forceBlur: !state.isSubscribed,
                   );
                 },
               ),
             ),
             
-            // ✅ الزر الثابت (يظهر فقط للمستخدمين غير المشتركين)
-            if (!state.isSubscribed)
-              const SubscriptionPromptOverlay(),
+            // ✅ الزر الثابت للمستخدمين غير المشتركين
+            if (!state.isSubscribed) const SubscriptionPromptOverlay(),
           ],
         );
       },
     );
   }
 
+  // ✅ Skeleton loader للتحميل الأولي
   Widget _buildSkeletonLoading() {
-    final dummyData = getDummyInteractionUsers(count: 8);
+    final dummyData = getDummyInteractionUsers(count: 6);
 
     return Skeletonizer(
       enabled: true,
@@ -132,6 +184,16 @@ class _HistorypageState extends State<Historypage> {
             return InteractionProfileCard(item: dummyData[index]);
           },
         ),
+      ),
+    );
+  }
+
+  // ✅ Loading card أثناء Pagination
+  Widget _buildLoadingCard() {
+    return Skeletonizer(
+      enabled: true,
+      child: InteractionProfileCard(
+        item: getDummyInteractionUsers(count: 1).first,
       ),
     );
   }

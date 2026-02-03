@@ -32,7 +32,7 @@ class MarriagefilePage extends StatefulWidget {
   const MarriagefilePage({
     super.key,
     this.userProfile,
-    this.initialTabIndex = 0, // Default to عرض
+    this.initialTabIndex = 1, // Default to عرض
   });
 
   @override
@@ -107,7 +107,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
 
                   // ⭐⭐⭐ DYNAMIC CONTENT - Changes based on tab
                   Expanded(
-                    child: _selectedTabIndex == 0
+                    child: _selectedTabIndex == 1
                         ? _buildViewContent(profile)
                         : MarriageProfileEditView(
                             profile: profile,
@@ -142,8 +142,8 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 5.h),
             child: CustomToggleTabBar(
-              firstTabText: "عرض",
-              secondTabText: "تعديل",
+              firstTabText:"تعديل" ,
+              secondTabText: "عرض",
               initialIndex: _selectedTabIndex,
               onTabChanged: (index) {
                 setState(() {

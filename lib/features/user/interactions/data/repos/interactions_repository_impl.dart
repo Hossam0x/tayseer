@@ -50,34 +50,52 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
   // ═══════════════════════════════════════════════════════════════════
   // HISTORY
   // ═══════════════════════════════════════════════════════════════════
+// Add this constant at the top of the class
+static const int _pageSize = 6;
 
-  @override
-  Future<Either<Failure, HistoryResponseModel>> fetchHistoryUsers({
-    required String filter,
-    required int page,
-  }) async {
-    try {
-      // TODO: Replace with actual API call when backend is ready
-      // final response = await apiService.get(
-      //   endPoint: '/interactions/history',
-      //   query: {
-      //     'filter': filter,
-      //     'page': page,
-      //   },
-      // );
+@override
+Future<Either<Failure, HistoryResponseModel>> fetchHistoryUsers({
+  required String filter,
+  required int page,
+}) async {
+  try {
+    // ✅ Real API Call with type parameter
+    final response = await apiService.get(
+      endPoint: '/user/user-interactions',
+      query: {
+        'page': page.toString(),
+        'limit': _pageSize.toString(),
+        'type': _mapFilterToApiType(filter),
+      },
+    );
 
-      // ✅ Mock Data Response
-      await Future.delayed(const Duration(milliseconds: 600));
-      
-      final mockResponse = _getMockHistoryResponse(filter);
-      return Right(mockResponse);
+    final historyResponse = HistoryResponseModel.fromJson(response);
+    return Right(historyResponse);
 
-    } on DioException catch (e) {
-      return Left(ServerFailure.fromDioError(e));
-    } catch (e) {
-      return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
-    }
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
   }
+}
+
+// Helper method to map filter names to API types
+String _mapFilterToApiType(String filter) {
+  switch (filter) {
+    case 'المفضلة':
+      return 'favorites';
+    case 'نال إعجابك':
+      return 'likes';
+    case 'صادفتهم':
+      return 'encountered';
+    case 'أرسلت مجاملة':
+      return 'regards';
+    case 'اُعجب بك':
+      return 'likedMe';  // ✅ Fixed to match API
+    default:
+      return 'likes';
+  }
+}
 
   // ═══════════════════════════════════════════════════════════════════
   // ACTIONS
@@ -167,16 +185,16 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
     );
   }
 
-  HistoryResponseModel _getMockHistoryResponse(String filter) {
-    final mockData = _getMockHistoryData();
+  // HistoryResponseModel _getMockHistoryResponse(String filter) {
+  //   final mockData = _getMockHistoryData();
     
-    return HistoryResponseModel(
-      success: true,
-      message: 'تم جلب البيانات بنجاح',
-      users: mockData[filter] ?? [],
-      pagination: null,
-    );
-  }
+  //   return HistoryResponseModel(
+  //     success: true,
+  //     message: 'تم جلب البيانات بنجاح',
+  //     users: mockData[filter] ?? [],
+  //     pagination: null,
+  //   );
+  // }
 
   Map<String, List<InteractionUserModel>> _getMockExplorationData() {
     return {
