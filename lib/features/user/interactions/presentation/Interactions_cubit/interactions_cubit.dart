@@ -3,12 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 import '../../data/Model/Iinteraction_usermodel .dart';
-import '../../data/Model/history_response_model.dart'; // ✅ For PaginationModel
+import '../../data/Model/history_response_model.dart';
 import 'interactions_state.dart';
 
 class InteractionsCubit extends Cubit<InteractionsState> {
   final InteractionsRepository repository;
-  static const int _pageSize = 5; // ✅ تغيير لـ 5 عناصر
+  static const int _pageSize = 5;
+
+  // ✅ قائمة للـ favorites المحذوفة (المعلقة)
+  final Set<String> _pendingRemovalFavorites = {};
+  
+  // ✅ قائمة للـ favorites المضافة (المعلقة)
+  final Set<String> _pendingAddFavorites = {};
 
   InteractionsCubit(this.repository) : super(const InteractionsState());
 
@@ -71,7 +77,6 @@ class InteractionsCubit extends Cubit<InteractionsState> {
       (response) {
         updateSubscriptionStatus(response.userSubscription);
         
-        // ✅ استخراج البيانات للفلتر المطلوب فقط
         final section = response.sections[filter];
         
         if (section == null) {
@@ -90,10 +95,29 @@ class InteractionsCubit extends Cubit<InteractionsState> {
         final Map<String, bool> newHasMore = Map.from(state.historyHasMore);
         final Map<String, PaginationModel?> newPagination = Map.from(state.historyPagination);
         
-        newData[filter] = section.users;
+        // ✅ تطبيق التغييرات المعلقة على البيانات الجديدة
+        List<InteractionUserModel> filteredUsers = section.users.map((user) {
+          // إذا كان في قائمة الحذف المعلقة، نعتبره محذوف
+          if (_pendingRemovalFavorites.contains(user.userId)) {
+            return user.copyWith(isFavorite: false);
+          }
+          // إذا كان في قائمة الإضافة المعلقة، نعتبره مضاف
+          if (_pendingAddFavorites.contains(user.userId)) {
+            return user.copyWith(isFavorite: true);
+          }
+          return user;
+        }).toList();
+        
+        // ✅ حذف العناصر المحذوفة من قائمة المفضلة
+        if (filter == "المفضلة") {
+          filteredUsers = filteredUsers
+              .where((user) => !_pendingRemovalFavorites.contains(user.userId))
+              .toList();
+        }
+        
+        newData[filter] = filteredUsers;
         newCurrentPage[filter] = section.pagination?.currentPage ?? 1;
         
-        // ✅ تحديد hasMore بناءً على pagination
         if (section.pagination != null) {
           newHasMore[filter] = section.pagination!.currentPage < section.pagination!.totalPages;
         } else {
@@ -118,14 +142,12 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   // ═══════════════════════════════════════════════════════════════════
   
   Future<void> loadMoreHistory({required String filter}) async {
-    // ✅ تأكد أن في بيانات أكثر
     final hasMore = state.historyHasMore[filter] ?? false;
     if (!hasMore) {
       log('No more data for filter: $filter');
       return;
     }
 
-    // ✅ منع استدعاءات متعددة
     if (state.historyState == CubitStates.loading) {
       return;
     }
@@ -143,20 +165,35 @@ class InteractionsCubit extends Cubit<InteractionsState> {
     result.fold(
       (failure) {
         log('Load more failed: ${failure.message}');
-        // ✅ لا نغير الـ state إلى failure، فقط نتجاهل الخطأ
       },
       (response) {
-        // ✅ دمج البيانات الجديدة مع القديمة
         final currentData = Map<String, List<InteractionUserModel>>.from(state.historyData);
         final currentPageMap = Map<String, int>.from(state.historyCurrentPage);
         final currentHasMoreMap = Map<String, bool>.from(state.historyHasMore);
         final currentPaginationMap = Map<String, PaginationModel?>.from(state.historyPagination);
 
-        // ✅ إضافة البيانات الجديدة للـ filter المحدد
         final section = response.sections[filter];
         if (section != null) {
           final existingUsers = currentData[filter] ?? [];
-          currentData[filter] = [...existingUsers, ...section.users];
+          
+          // ✅ تطبيق التغييرات المعلقة
+          List<InteractionUserModel> newUsers = section.users.map((user) {
+            if (_pendingRemovalFavorites.contains(user.userId)) {
+              return user.copyWith(isFavorite: false);
+            }
+            if (_pendingAddFavorites.contains(user.userId)) {
+              return user.copyWith(isFavorite: true);
+            }
+            return user;
+          }).toList();
+          
+          if (filter == "المفضلة") {
+            newUsers = newUsers
+                .where((user) => !_pendingRemovalFavorites.contains(user.userId))
+                .toList();
+          }
+          
+          currentData[filter] = [...existingUsers, ...newUsers];
           
           currentPageMap[filter] = section.pagination?.currentPage ?? nextPage;
           
@@ -182,43 +219,126 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // ACTIONS
+  // REFRESH FAVORITES - يرسل الـ API للحذف/الإضافة الفعلي
   // ═══════════════════════════════════════════════════════════════════
-
-  Future<void> toggleFavorite({
-    required String userId,
-    required bool isAdd,
-  }) async {
-    _updateUserFavoriteStatus(userId, isAdd);
-    
-    emit(state.copyWith(actionState: CubitStates.loading));
-
-    final result = await repository.toggleFavorite(
+  
+  Future<void> refreshFavorites() async {
+  // 1. إرسال طلبات الـ API الفعلي
+  for (String userId in _pendingRemovalFavorites) {
+    await repository.toggleFavorite(
       userId: userId,
-      isAdd: isAdd,
-    );
-
-    result.fold(
-      (failure) {
-        log('Toggle Favorite Failed: ${failure.message}');
-        _updateUserFavoriteStatus(userId, !isAdd);
-        
-        emit(state.copyWith(
-          actionState: CubitStates.failure,
-          actionMessage: failure.message,
-        ));
-      },
-      (message) {
-        log('Toggle Favorite Success: $message');
-        
-        emit(state.copyWith(
-          actionState: CubitStates.success,
-          actionMessage: message,
-        ));
-      },
+      isAdd: false, // يرسل action=remove بناءً على صورة بوستمان
     );
   }
 
+  for (String userId in _pendingAddFavorites) {
+    await repository.toggleFavorite(
+      userId: userId,
+      isAdd: true,
+    );
+  }
+
+  // 2. تحديث الـ State محلياً فوراً لحذف العناصر من القائمة "المفضلة" 
+  // لضمان عدم ظهورها حتى لو الـ API تأخر في التحديث
+  final updatedHistory = Map<String, List<InteractionUserModel>>.from(state.historyData);
+  
+  if (updatedHistory.containsKey("المفضلة")) {
+    updatedHistory["المفضلة"] = updatedHistory["المفضلة"]!
+        .where((user) => !_pendingRemovalFavorites.contains(user.userId))
+        .toList();
+  }
+
+  // 3. تفريغ القوائم المعلقة
+  _pendingRemovalFavorites.clear();
+  _pendingAddFavorites.clear();
+
+  // 4. تحديث الحالة بالقائمة المصفاة
+  emit(state.copyWith(historyData: updatedHistory));
+
+  // 5. الآن استدعي fetchHistory للتأكد من مطابقة بيانات السيرفر
+  await fetchHistory(filter: "المفضلة");
+}
+  // ═══════════════════════════════════════════════════════════════════
+  // TOGGLE FAVORITE - بدون إرسال API فوري
+  // ═══════════════════════════════════════════════════════════════════
+  
+void toggleFavorite({
+  required String userId,
+  required bool isAdd,
+}) async {
+  // 1. تحديث الـ UI فوراً
+  if (isAdd) {
+    _pendingAddFavorites.add(userId);
+    _pendingRemovalFavorites.remove(userId);
+  } else {
+    _pendingRemovalFavorites.add(userId);
+    _pendingAddFavorites.remove(userId);
+  }
+  
+  _updateUserFavoriteStatusInUI(userId, isAdd);
+  
+  // 2. ✅ إرسال الـ API call فوراً
+  final result = await repository.toggleFavorite(
+    userId: userId,
+    isAdd: isAdd,
+  );
+  
+  result.fold(
+    (failure) {
+      // في حالة الفشل: رجع التغيير
+      if (isAdd) {
+        _pendingAddFavorites.remove(userId);
+      } else {
+        _pendingRemovalFavorites.remove(userId);
+      }
+      _updateUserFavoriteStatusInUI(userId, !isAdd);
+      log('Toggle favorite failed: ${failure.message}');
+    },
+    (message) {
+      // ✅ نجح: احذف من القائمة لو كان حذف
+      if (!isAdd) {
+        _removeFromFavoritesList(userId);
+      }
+      
+      // امسح من الـ pending
+      _pendingRemovalFavorites.remove(userId);
+      _pendingAddFavorites.remove(userId);
+      
+      log('Toggle favorite success: $message');
+    },
+  );
+}
+
+  // تحديث حالة المستخدم في الـ State الحالية دون حذف من القوائم
+  void _updateUserFavoriteStatusInUI(String userId, bool isFavorite) {
+    final updatedHistory = Map<String, List<InteractionUserModel>>.from(state.historyData);
+
+    updatedHistory.forEach((filter, users) {
+      updatedHistory[filter] = users.map((user) {
+        if (user.userId == userId) {
+          return user.copyWith(isFavorite: isFavorite);
+        }
+        return user;
+      }).toList();
+    });
+
+    emit(state.copyWith(historyData: updatedHistory));
+  }
+
+  // ✅ حذف من قائمة المفضلة المعروضة - FIXED VERSION
+  void _removeFromFavoritesList(String userId) {
+    final updatedHistory = Map<String, List<InteractionUserModel>>.from(state.historyData);
+    
+    if (updatedHistory.containsKey("المفضلة")) {
+      updatedHistory["المفضلة"] = updatedHistory["المفضلة"]!
+          .where((user) => user.userId != userId)
+          .toList();
+    }
+
+    emit(state.copyWith(historyData: updatedHistory));
+  }
+
+  // ✅ تحديث حالة الأيقونة في كل القوائم
   void _updateUserFavoriteStatus(String userId, bool isFavorite) {
     final updatedExploration = <String, List<InteractionUserModel>>{};
     

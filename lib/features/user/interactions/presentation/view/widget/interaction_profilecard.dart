@@ -60,7 +60,9 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
+              // ✅ Fixed height for image
+              SizedBox(
+                height: 147.h,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16.r),
                   child: Stack(
@@ -76,10 +78,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                           ),
                         ),
 
-                      // داخل ملف interaction_profilecard.dart في الجزء الخاص بالـ Stack
-
-                      // ✅ تعديل الشرط ليظهر القلب إذا كان مفعل خارجيًا أو إذا كان العنصر مفضلاً بالفعل
-                      if (widget.showFavoriteIcon || widget.item.isFavorite)
+                      if (widget.showFavoriteIcon)
                         Positioned(
                           top: 12.h,
                           left: 12.w,
@@ -88,30 +87,36 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                               final cubit = context.read<InteractionsCubit>();
                               final currentStatus = widget.item.isFavorite;
 
-                              // ✅ إذا كان في المفضلة (سيتم حذفه)، اطلب التأكيد
                               if (currentStatus) {
+                                // حالة الحذف: يظهر الديالوج أولاً
                                 final shouldRemove =
                                     await showRemoveFavoriteDialog(context);
                                 if (shouldRemove != true || !mounted) return;
+
+                                // تنفيذ الحذف (isAdd = false) مما سيجعل الـ action = 'remove' في الـ repo
+                                cubit.toggleFavorite(
+                                  userId: widget.item.userId,
+                                  isAdd: false,
+                                );
+                              } else {
+                                // حالة الإضافة: تنفيذ مباشرة (isAdd = true) بدون action في الـ repo
+                                _animationController.forward().then(
+                                  (_) => _animationController.reverse(),
+                                );
+
+                                cubit.toggleFavorite(
+                                  userId: widget.item.userId,
+                                  isAdd: true,
+                                );
                               }
-
-                              // ✅ Animation
-                              _animationController.forward().then(
-                                (_) => _animationController.reverse(),
-                              );
-
-                              // ✅ Toggle
-                              cubit.toggleFavorite(
-                                userId: widget.item.userId,
-                                isAdd: !currentStatus,
-                              );
                             },
                             child: ScaleTransition(
                               scale: _scaleAnimation,
                               child: Container(
                                 padding: EdgeInsets.all(6.w),
-
-                                // خلفية خفيفة لتمييز الأيقونة إذا كانت الصورة فاتحة
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                ),
                                 child: Icon(
                                   widget.item.isFavorite
                                       ? Icons.favorite
@@ -119,7 +124,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                                   color: widget.item.isFavorite
                                       ? AppColors.primary400
                                       : Colors.white,
-                                  size: 27.sp,
+                                  size: 24.sp,
                                 ),
                               ),
                             ),
@@ -130,59 +135,60 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                 ),
               ),
 
-              // ... باقي الكود (الـ Padding والبيانات)
+              // ✅ معلومات الكارد
               Padding(
                 padding: EdgeInsets.only(top: 10.h, right: 4.w, left: 4.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ✅ الاسم + العمر + التوثيق
                     Row(
                       children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  '${widget.item.name},',
-                                  style: Styles.textStyle16SemiBold,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Text(
-                                ' ${widget.item.age} سنة',
-                                style: Styles.textStyle16.copyWith(
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              SizedBox(width: 5.w),
-                              if (widget.item.isverified)
-                                Icon(
-                                  Icons.verified,
-                                  color: Colors.blue,
-                                  size: 16.sp,
-                                ),
-                            ],
+                        Flexible(
+                          child: Text(
+                            '${widget.item.name},',
+                            style: Styles.textStyle16SemiBold,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        Text(
+                          ' ${widget.item.age} سنة',
+                          style: Styles.textStyle16.copyWith(
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        if (widget.item.isverified) ...[
+                          SizedBox(width: 5.w),
+                          Icon(Icons.verified, color: Colors.blue, size: 16.sp),
+                        ],
                       ],
                     ),
 
                     SizedBox(height: 8.h),
 
+                    // ✅ اليوم + الدولة في نفس السطر مع التعامل مع overflow
                     Row(
                       children: [
-                        _buildBadge(text: widget.item.day),
-                        SizedBox(width: 8.w),
-                        if (widget.item.country.isNotEmpty)
-                          _buildBadge(
-                            text: widget.item.country,
-                            icon: AssetsData.EgyFlagIcon,
+                        Flexible(
+                          flex: 0,
+                          child: _buildBadge(text: widget.item.day),
+                        ),
+                        if (widget.item.country.isNotEmpty) ...[
+                          SizedBox(width: 4.w),
+                          Flexible(
+                            child: _buildBadge(
+                              text: widget.item.country,
+                              icon: AssetsData.EgyFlagIcon,
+                            ),
                           ),
+                        ],
                       ],
                     ),
 
                     SizedBox(height: 8.h),
-                    if (widget.item.country.isNotEmpty)
+
+                    // ✅ الوظيفة
+                    if (widget.item.job.isNotEmpty)
                       _buildBadge(
                         text: widget.item.job,
                         icon: AssetsData.workIcon,
@@ -219,7 +225,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
 
   Widget _buildBadge({required String text, String? icon}) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: const Color.fromRGBO(186, 186, 186, 0.24),
         borderRadius: BorderRadius.circular(15.r),
@@ -229,13 +235,18 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            AppImage(icon, width: 14.w),
-            SizedBox(width: 4.w),
+            AppImage(icon, width: 12.w, height: 12.h),
+            SizedBox(width: 3.w),
           ],
-          Text(
-            text,
-            style: Styles.textStyle14SemiBold.copyWith(
-              fontWeight: FontWeight.w400,
+          Flexible(
+            child: Text(
+              text,
+              style: Styles.textStyle14SemiBold.copyWith(
+                fontWeight: FontWeight.w400,
+                fontSize: 14.sp,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

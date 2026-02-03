@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
+import 'package:tayseer/core/functions/formate_time.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chatView/chat_item_model.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_list_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
@@ -299,7 +300,7 @@ class ChatListItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      _formatTime(chatRoom.lastMessageAt!),
+                      formatTime(chatRoom.lastMessageAt!),
                       style: TextStyle(
                         color: Colors.grey.shade400,
                         fontSize: timeFontSize,
@@ -335,20 +336,7 @@ class ChatListItem extends StatelessWidget {
     );
   }
 
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays == 0) {
-      return DateFormat('h:mm a', 'ar').format(dateTime);
-    } else if (difference.inDays == 1) {
-      return 'أمس';
-    } else if (difference.inDays < 7) {
-      return DateFormat('EEEE', 'ar').format(dateTime);
-    } else {
-      return DateFormat('d/M/yyyy', 'ar').format(dateTime);
-    }
-  }
+  
 
   Widget _buildActionButton(
     BuildContext context, {

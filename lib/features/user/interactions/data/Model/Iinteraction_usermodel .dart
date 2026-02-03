@@ -1,11 +1,12 @@
 import 'package:equatable/equatable.dart';
+import 'package:intl/intl.dart';
 
 class InteractionUserModel extends Equatable {
   final String userId;
   final String name;
   final int age;
   final String country;
-  final String day;
+  final String day; // ✅ Formatted string
   final String job;
   final String image;
   final bool isFavorite;
@@ -68,23 +69,57 @@ class InteractionUserModel extends Equatable {
     );
   }
 
+  /// ✅ Helper function to format DateTime
+  static String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays == 0) {
+      // return DateFormat('h:mm a', 'ar').format(dateTime);
+      return "اليوم";
+    } else if (difference.inDays == 1) {
+      return 'أمس';
+    } else if (difference.inDays < 7) {
+      return DateFormat('EEEE', 'ar').format(dateTime);
+    } else {
+      return DateFormat('d/M/yyyy', 'ar').format(dateTime);
+    }
+  }
+
   /// fromJson
   factory InteractionUserModel.fromJson(Map<String, dynamic> json) {
+    // ✅ Parse the day field as DateTime and format it
+    String formattedDay = '';
+    try {
+      if (json['day'] != null && json['day'].toString().isNotEmpty) {
+        final dateTime = DateTime.parse(json['day'].toString());
+        formattedDay = _formatTime(dateTime);
+      }
+    } catch (e) {
+      // If parsing fails, use the original string or default to empty
+      formattedDay = json['day']?.toString() ?? '';
+    }
+
     return InteractionUserModel(
       userId: json['userId'] ?? json['id'] ?? '',
       name: json['name'] ?? '',
       age: json['age'] ?? 0,
       country: json['country'] ?? '',
-      day: json['day'] ?? '',
+      day: formattedDay, // ✅ Use formatted day
       job: json['job'] ?? '',
-      isverified: json['isverified'] ?? json['IsVerified'] ?? false,
+      isverified:
+          json['isVerified'] ??
+          json['isverified'] ??
+          false, // ✅ Fixed capital V
       image: json['image'] ?? '',
       isFavorite: json['isFavorite'] ?? false,
       isImageBlurred: json['isImageBlurred'] ?? false,
       likedHim: json['likedHim'] ?? false,
       likedMe: json['likedMe'] ?? false,
-      sentCompliment: json['Sent_compliment'] ?? json['sentCompliment'] ?? false,
-      isRecentlyJoined: json['IsRecentlyJoined'] ?? json['isRecentlyJoined'] ?? false,
+      sentCompliment:
+          json['sentCompliment'] ?? json['Sent_compliment'] ?? false,
+      isRecentlyJoined:
+          json['isRecentlyJoined'] ?? json['IsRecentlyJoined'] ?? false,
     );
   }
 
@@ -97,32 +132,32 @@ class InteractionUserModel extends Equatable {
       'country': country,
       'day': day,
       'job': job,
-      "isverified": isverified,
+      'isVerified': isverified,
       'image': image,
       'isFavorite': isFavorite,
       'isImageBlurred': isImageBlurred,
       'likedHim': likedHim,
       'likedMe': likedMe,
-      'Sent_compliment': sentCompliment,
-      'IsRecentlyJoined': isRecentlyJoined,
+      'sentCompliment': sentCompliment,
+      'isRecentlyJoined': isRecentlyJoined,
     };
   }
 
   @override
   List<Object?> get props => [
-        userId,
-        name,
-        age,
-        country,
-        day,
-        job,
-        image,
-        isFavorite,
-        isImageBlurred,
-        isverified, 
-        likedHim,
-        likedMe,
-        sentCompliment,
-        isRecentlyJoined,
-      ];
+    userId,
+    name,
+    age,
+    country,
+    day,
+    job,
+    image,
+    isFavorite,
+    isImageBlurred,
+    isverified,
+    likedHim,
+    likedMe,
+    sentCompliment,
+    isRecentlyJoined,
+  ];
 }
