@@ -56,7 +56,11 @@ class SliverProfileHeader extends StatelessWidget {
                 child: AppImage(AssetsData.kfilterIcon, width: 20, height: 20),
               ),
             ),
-            const AnimatedBeFirstButton(),
+            AnimatedBeFirstButton(
+              onTap: () {
+                context.pushNamed(AppRouter.kBoostAccountView);
+              },
+            ),
           ],
         ),
       ),
@@ -155,19 +159,18 @@ class SliverProfileHeader extends StatelessWidget {
                           ],
                         ),
                         Gap(10.h),
-                        Row(
+                        Wrap(
+                          spacing: 8.w,
+                          runSpacing: 8.h,
                           children: [
                             if (tagsjob != null && tagsjob!.isNotEmpty)
                               _buildTransparentTag(tagsjob!),
-                            Gap(8.w),
                             if (educationLevel != null &&
                                 educationLevel!.isNotEmpty)
                               _buildTransparentTag(educationLevel!),
-                            Gap(8.w),
                             if (religiousCommitment != null &&
                                 religiousCommitment!.isNotEmpty)
                               _buildTransparentTag(religiousCommitment!),
-                            Gap(8.w),
                             if (nationality != null && nationality!.isNotEmpty)
                               _buildTransparentTag(nationality!),
                           ],

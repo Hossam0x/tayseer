@@ -1,8 +1,14 @@
+import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class AdditionalImageSection extends StatelessWidget {
   final String imageUrl;
-  const AdditionalImageSection({super.key, required this.imageUrl});
+  final String? personId;
+  const AdditionalImageSection({
+    super.key,
+    required this.imageUrl,
+    this.personId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +27,19 @@ class AdditionalImageSection extends StatelessWidget {
             left: 15.w,
             child: CircleAvatar(
               backgroundColor: HexColor('cccab3'),
-              child: Icon(
-                Icons.star,
-                color: AppColors.kWhiteColor,
-                size: 20.sp,
+              child: IconButton(
+                icon: Icon(
+                  Icons.star,
+                  color: AppColors.kWhiteColor,
+                  size: 20.sp,
+                ),
+                onPressed: () {
+                  if (personId != null) {
+                    context.read<MarriageCubit>().sendRegard(
+                      personId: personId!,
+                    );
+                  }
+                },
               ),
             ),
           ),

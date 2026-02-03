@@ -26,4 +26,58 @@ class MarriageRepositoryImpl implements MarriageRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> userInteraction({
+    required String personId,
+    required String interactionType,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: '/user/user-interaction',
+        data: {
+          'personInteractedWith': personId,
+          'interactionType': interactionType,
+        },
+      );
+
+      if (response['success'] == true) {
+        return Right(null);
+      } else {
+        return Left(
+          ServerFailure(response['message'] ?? 'فشل التفاعل مع المستخدم'),
+        );
+      }
+    } on DioException catch (e) {
+      return Future.value(Left(ServerFailure.fromDioError(e)));
+    } catch (e) {
+      return Future.value(Left(ServerFailure(e.toString())));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> sendRegard({
+    required String personId,
+    String? text,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: '/user/send-regards',
+        data: {
+          'personInteractedWith': personId,
+          if (text != null) 'text': text,
+        },
+      );
+
+      if (response['success'] == true) {
+        return Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل ارسال التحيه'));
+      }
+    } on DioException catch (e) {
+      return Future.value(Left(ServerFailure.fromDioError(e)));
+    } catch (e) {
+      return Future.value(Left(ServerFailure(e.toString())));
+    }
+  }
 }

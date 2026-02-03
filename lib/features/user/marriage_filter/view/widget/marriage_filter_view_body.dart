@@ -57,10 +57,10 @@ class MarriageFilterBody extends StatelessWidget {
                   child: CustomDataCard(
                     sectionTitle: "الأهداف",
                     items: [
-                      _buildRow(context, "marriage_goal", "marriage"),
-                      _buildRow(context, "engagement_goal", "engagement"),
-                      _buildRow(context, "travel_goal", "travel"),
-                      _buildRow(context, "family_goal", "family"),
+                      _buildRow(context, "marriage", "marriage"),
+                      _buildRow(context, "engagement", "engagement"),
+                      _buildRow(context, "travel", "travel"),
+                      _buildRow(context, "family", "family"),
                     ],
                   ),
                 ),
@@ -278,6 +278,7 @@ class MarriageFilterBody extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 20),
         child: Center(
           child: CustomBotton(
+            backGroundcolor: AppColors.kgreyColor,
             width: context.width * 0.9,
             title: context.tr('apply_filters'),
             onPressed: () {

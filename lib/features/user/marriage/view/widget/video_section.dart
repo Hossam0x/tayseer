@@ -2,9 +2,9 @@ import 'package:tayseer/core/widgets/custom_app_video.dart';
 import 'package:tayseer/my_import.dart';
 
 class VideoSection extends StatefulWidget {
-  final String? videoUrl; // ⭐ خليها nullable
-  final VoidCallback? onDelete; // ⭐ NEW
-  final VoidCallback? onUpload; // ⭐ NEW
+  final String? videoUrl;
+  final VoidCallback? onDelete;
+  final VoidCallback? onUpload;
   final bool showControls;
 
   const VideoSection({
@@ -38,90 +38,49 @@ class _VideoSectionState extends State<VideoSection> {
     }
 
     return VisibilityDetector(
-      key: Key(widget.videoUrl!),
-      onVisibilityChanged: (VisibilityInfo info) {
-        if (info.visibleFraction > 0.6) {
-          if (_controller != null &&
-              !_controller!.value.isPlaying &&
-              _controller!.value.isInitialized) {
-            _controller?.play();
-            if (mounted) {
-              setState(() {
-                isPlaying = true;
-                showOverlay = false;
-              });
-            }
-          }
-        } else {
-          if (_controller != null && _controller!.value.isPlaying) {
-            _controller?.pause();
-            if (mounted) {
-              setState(() {
-                isPlaying = false;
-                showOverlay = true;
-              });
-            }
-          }
-        }
-      },
+      key: const ValueKey('video_section'),
+      onVisibilityChanged: _handleVisibility,
       child: Container(
         height: 250.h,
         width: context.width,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20.r),
           color: Colors.black,
+          borderRadius: BorderRadius.circular(20.r),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20.r),
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // 1. The Video Component
+              /// ================= Video =================
               AppVideo(
                 widget.videoUrl!,
                 fit: BoxFit.cover,
                 autoPlay: false,
                 muted: false,
-                onControllerReady: (controller) {
-                  setState(() {
-                    _controller = controller;
-                  });
-                  _controller?.addListener(() {
-                    if (mounted) {
-                      setState(() {
-                        isPlaying = _controller!.value.isPlaying;
-                      });
-                    }
-                  });
-                },
+                onControllerReady: _onControllerReady,
               ),
 
-              // 2. Transparent Control Layer 
-              // This is moved BEFORE the delete button so it doesn't block it
+              /// ================= Overlay Detector =================
               GestureDetector(
                 onTap: () {
-                  setState(() {
-                    showOverlay = !showOverlay;
-                  });
+                  if (!mounted) return;
+                  setState(() => showOverlay = !showOverlay);
                 },
                 child: Container(
-                  color: Colors.transparent,
                   width: double.infinity,
                   height: double.infinity,
+                  color: Colors.transparent,
                 ),
               ),
 
-              // 3. Playback Controls (Play/Pause/Forward/Backward)
+              /// ================= Controls =================
               if (widget.showControls && (showOverlay || !isPlaying))
                 _buildPlaybackControls(),
 
-              // 4. ⭐ Delete Button (Positioned at the end of the stack to be on TOP)
+              /// ================= Delete Button =================
               if (widget.onDelete != null)
-                Positioned(
-                  top: 10.h, 
-                  right: 10.w, 
-                  child: _buildDeleteButton(),
-                ),
+                Positioned(top: 10.h, right: 10.w, child: _buildDeleteButton()),
             ],
           ),
         ),
@@ -129,12 +88,57 @@ class _VideoSectionState extends State<VideoSection> {
     );
   }
 
-  // Updated Delete Button with propagation check
+  // ════════════════════════════════════════════════════════════════
+  // Controller Ready
+  // ════════════════════════════════════════════════════════════════
+  void _onControllerReady(VideoPlayerController controller) {
+    if (!mounted) return;
+
+    _controller = controller;
+
+    _controller?.addListener(() {
+      if (!mounted || _controller == null) return;
+
+      final playing = _controller!.value.isPlaying;
+      if (playing != isPlaying) {
+        setState(() => isPlaying = playing);
+      }
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // Visibility Handler
+  // ════════════════════════════════════════════════════════════════
+  void _handleVisibility(VisibilityInfo info) {
+    if (!mounted || _controller == null) return;
+
+    if (info.visibleFraction > 0.6) {
+      if (_controller!.value.isInitialized && !_controller!.value.isPlaying) {
+        _controller!.play();
+        setState(() {
+          isPlaying = true;
+          showOverlay = false;
+        });
+      }
+    } else {
+      if (_controller!.value.isPlaying) {
+        _controller!.pause();
+        setState(() {
+          isPlaying = false;
+          showOverlay = true;
+        });
+      }
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // Delete Button
+  // ════════════════════════════════════════════════════════════════
   Widget _buildDeleteButton() {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: widget.onDelete, // Executes your deletion logic
+        onTap: widget.onDelete,
         customBorder: const CircleBorder(),
         child: Container(
           width: 40.w,
@@ -156,14 +160,12 @@ class _VideoSectionState extends State<VideoSection> {
     );
   }
 
-  // ... (Keep _buildUploadButton, _buildPlaybackControls, and dispose as they were)
-
   // ════════════════════════════════════════════════════════════════
-  // ⭐ زر الرفع (لما مافيش فيديو)
+  // Upload Button (No Video)
   // ════════════════════════════════════════════════════════════════
-    Widget _buildVideoUploadButton(BuildContext context) {
+  Widget _buildVideoUploadButton(BuildContext context) {
     return GestureDetector(
-    onTap: widget.onUpload,
+      onTap: widget.onUpload,
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
         decoration: BoxDecoration(
@@ -196,90 +198,30 @@ class _VideoSectionState extends State<VideoSection> {
     );
   }
 
-  
-  Widget _buildUploadButton() {
-    return GestureDetector(
-      onTap: widget.onUpload,
-      child: Container(
-        height: 180.h,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppColors.secondary50,
-          borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(
-            color: AppColors.primary200.withOpacity(0.3),
-            width: 2.w,
-            style: BorderStyle.solid,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: AppColors.primary200.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.videocam_outlined,
-                size: 48.sp,
-                color: AppColors.primary200,
-              ),
-            ),
-            Gap(16.h),
-            Text(
-              'ارفاق فيديو تعريفي',
-              style: Styles.textStyle16.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary200,
-              ),
-            ),
-            Gap(4.h),
-            Text(
-              'الحد الأقصى 50 ميجا',
-              style: Styles.textStyle12.copyWith(color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-  // أزرار التشغيل (Play/Pause/Forward/Backward)
+  // ════════════════════════════════════════════════════════════════
+  // Playback Controls
   // ════════════════════════════════════════════════════════════════
   Widget _buildPlaybackControls() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildCircleButton(
-          icon: Icons.replay_10_rounded,
-          onTap: () async {
-            if (_controller == null || !_controller!.value.isInitialized) {
-              return;
-            }
-            final currentPos = _controller!.value.position;
-            final newPos = currentPos - const Duration(seconds: 10);
+        _circleButton(Icons.replay_10_rounded, () async {
+          if (_controller == null || !_controller!.value.isInitialized) return;
 
-            await _controller!.seekTo(
-              newPos < Duration.zero ? Duration.zero : newPos,
-            );
-          },
-        ),
+          final pos = _controller!.value.position - const Duration(seconds: 10);
+          await _controller!.seekTo(pos < Duration.zero ? Duration.zero : pos);
+        }),
         Gap(20.w),
         GestureDetector(
           onTap: () {
-            if (_controller == null || !_controller!.value.isInitialized) {
+            if (_controller == null || !_controller!.value.isInitialized)
               return;
-            }
 
             if (_controller!.value.isPlaying) {
               _controller!.pause();
               setState(() => showOverlay = true);
             } else {
               _controller!.play();
-
               Future.delayed(const Duration(seconds: 2), () {
                 if (mounted && _controller!.value.isPlaying && showOverlay) {
                   setState(() => showOverlay = false);
@@ -293,46 +235,28 @@ class _VideoSectionState extends State<VideoSection> {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.9),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             child: Icon(
               isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              color: Colors.black87,
               size: 35.sp,
+              color: Colors.black87,
             ),
           ),
         ),
         Gap(20.w),
-        _buildCircleButton(
-          icon: Icons.forward_10_rounded,
-          onTap: () async {
-            if (_controller == null || !_controller!.value.isInitialized) {
-              return;
-            }
+        _circleButton(Icons.forward_10_rounded, () async {
+          if (_controller == null || !_controller!.value.isInitialized) return;
 
-            final currentPos = _controller!.value.position;
-            final totalDuration = _controller!.value.duration;
-            final newPos = currentPos + const Duration(seconds: 10);
+          final pos = _controller!.value.position + const Duration(seconds: 10);
+          final total = _controller!.value.duration;
 
-            await _controller!.seekTo(
-              newPos > totalDuration ? totalDuration : newPos,
-            );
-          },
-        ),
+          await _controller!.seekTo(pos > total ? total : pos);
+        }),
       ],
     );
   }
 
-  Widget _buildCircleButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _circleButton(IconData icon, VoidCallback onTap) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -344,15 +268,8 @@ class _VideoSectionState extends State<VideoSection> {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.8),
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
-          child: Icon(icon, color: Colors.black87, size: 24.sp),
+          child: Icon(icon, size: 24.sp),
         ),
       ),
     );
@@ -360,7 +277,7 @@ class _VideoSectionState extends State<VideoSection> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller = null;
     super.dispose();
   }
 }

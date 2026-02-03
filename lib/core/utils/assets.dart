@@ -153,6 +153,8 @@ abstract class AssetsData {
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
       "assets/animations/loading_animations.json";
+  static const String kSuccessMarriageAnimationsLottie =
+      "assets/animations/success_marriage.json";
 
   /////////////// Profile assests/////////////////////
   static const String certificatePlaceholder =

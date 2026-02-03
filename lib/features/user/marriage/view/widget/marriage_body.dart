@@ -2,7 +2,6 @@ import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
 import 'package:tayseer/features/user/marriage/view/widget/additional_image.dart';
 import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
@@ -35,11 +34,44 @@ class _MarriageBodyState extends State<MarriageBody> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<MarriageCubit, MarriageState>(
-      builder: (context, state) {
-        if (state.state == CubitStates.loading) return _buildShimmerScreen();
+    return BlocConsumer<MarriageCubit, MarriageState>(
+      listenWhen: (previous, current) =>
+          previous.marriageProfileState != current.marriageProfileState ||
+          previous.userInteractionState != current.userInteractionState ||
+          previous.sendRegardState != current.sendRegardState,
+      listener: (context, state) {
+        if (state.userInteractionState == CubitStates.failure ||
+            state.sendRegardState == CubitStates.failure ||
+            state.sendRegardTextState == CubitStates.failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: state.errorMessage ?? 'حدث خطأ ما',
+              isError: true,
+            ),
+          );
+          context.read<MarriageCubit>().resetState();
+        }
 
-        if (state.state == CubitStates.failure) {
+        if (state.sendRegardState == CubitStates.success) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) {
+              return AppImage(AssetsData.kSuccessMarriageAnimationsLottie);
+            },
+          );
+          Future.delayed(const Duration(seconds: 4), () {
+            context.pop();
+          });
+          context.read<MarriageCubit>().resetState();
+        }
+      },
+      builder: (context, state) {
+        if (state.marriageProfileState == CubitStates.loading)
+          return _buildShimmerScreen();
+
+        if (state.marriageProfileState == CubitStates.failure) {
           return Center(
             child: Text(
               state.errorMessage ?? 'حدث خطأ ما',
@@ -210,6 +242,7 @@ class _MarriageBodyState extends State<MarriageBody> {
                           ),
                           sliver: SliverToBoxAdapter(
                             child: AdditionalImageSection(
+                              personId: user?.id ?? '',
                               imageUrl: images.first,
                             ),
                           ),
@@ -286,7 +319,10 @@ class _MarriageBodyState extends State<MarriageBody> {
                           vertical: 10.h,
                         ),
                         sliver: SliverToBoxAdapter(
-                          child: MessageInputSection(name: user?.name ?? ''),
+                          child: MessageInputSection(
+                            name: user?.name ?? '',
+                            personId: user?.id ?? '',
+                          ),
                         ),
                       ),
 
@@ -314,41 +350,26 @@ class _MarriageBodyState extends State<MarriageBody> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      if (_currentIndex < users.length - 1)
-                        buildCircleButton(
-                          onTap: () {
-                            setState(() {
-                              _currentIndex = (_currentIndex + 1).clamp(
-                                0,
-                                users.length - 1,
-                              );
-                            });
-                          },
-                          Icons.favorite_outline,
-                          AppColors.kprimaryTextColor,
-                          HexColor('f8d3da'),
-                        ),
                       buildCircleButton(
                         onTap: () {
-                          CustomSHowDetailsDialog(
-                            context,
-                            title: context.tr('send_a_greeting'),
-                            onSendPressed: () {
-                              print("تم الارسال");
-                              Navigator.pop(context);
-                            },
-                            contantWidget: TextField(
-                              maxLines: 5,
-                              decoration: InputDecoration(
-                                hintText: context.tr(
-                                  'tell_us_more_about_yourself',
-                                ),
-                                hintStyle: Styles.textStyle12.copyWith(
-                                  color: Colors.grey,
-                                ),
-                                border: InputBorder.none,
-                              ),
-                            ),
+                          context.read<MarriageCubit>().userInteraction(
+                            personId: profile.user?.id ?? '',
+                            interactionType: 'like',
+                          );
+                          setState(() {
+                            _currentIndex = (_currentIndex + 1) >= users.length
+                                ? 0
+                                : (_currentIndex + 1);
+                          });
+                        },
+                        Icons.favorite_outline,
+                        AppColors.kprimaryTextColor,
+                        HexColor('f8d3da'),
+                      ),
+                      buildCircleButton(
+                        onTap: () {
+                          context.read<MarriageCubit>().sendRegard(
+                            personId: profile.user?.id ?? '',
                           );
                         },
                         Icons.star,
@@ -356,6 +377,17 @@ class _MarriageBodyState extends State<MarriageBody> {
                         HexColor('cccab3'),
                       ),
                       buildCircleButton(
+                        onTap: () {
+                          context.read<MarriageCubit>().userInteraction(
+                            personId: profile.user?.id ?? '',
+                            interactionType: 'dislike',
+                          );
+                          setState(() {
+                            _currentIndex = (_currentIndex + 1) >= users.length
+                                ? 0
+                                : (_currentIndex + 1);
+                          });
+                        },
                         Icons.close,
                         Colors.white,
                         HexColor('e44e6c'),

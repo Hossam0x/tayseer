@@ -1,8 +1,30 @@
+import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
-class MessageInputSection extends StatelessWidget {
+class MessageInputSection extends StatefulWidget {
   final String name;
-  const MessageInputSection({super.key, required this.name});
+  final String personId;
+
+  const MessageInputSection({
+    super.key,
+    required this.name,
+    this.personId = '',
+  });
+
+  @override
+  State<MessageInputSection> createState() => _MessageInputSectionState();
+}
+
+class _MessageInputSectionState extends State<MessageInputSection> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool _hasText(String text) => text.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -10,7 +32,7 @@ class MessageInputSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "$name ${context.tr('messge_profil_title')}",
+          "${widget.name} ${context.tr('messge_profil_title')}",
           style: Styles.textStyle14Bold,
         ),
         Text(
@@ -27,6 +49,8 @@ class MessageInputSection extends StatelessWidget {
           child: Column(
             children: [
               TextField(
+                controller: _controller,
+                maxLines: 4,
                 decoration: InputDecoration(
                   fillColor: HexColor('f9f8ec'),
                   filled: true,
@@ -37,13 +61,30 @@ class MessageInputSection extends StatelessWidget {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                maxLines: 4,
               ),
               Gap(20.h),
-              CustomBotton(
-                backGroundcolor: AppColors.kgreyColor,
-                title: context.tr('send_reply'),
-                onPressed: () {},
+
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _controller,
+                builder: (context, value, _) {
+                  final enabled = _hasText(value.text);
+
+                  return CustomBotton(
+                    backGroundcolor: AppColors.kgreyColor,
+                    useGradient: enabled,
+                    title: context.tr('send_reply'),
+                    onPressed: enabled
+                        ? () {
+                            context.read<MarriageCubit>().sendRegardText(
+                              personId: widget.personId,
+                              text: value.text.trim(),
+                            );
+
+                            _controller.clear();
+                          }
+                        : null,
+                  );
+                },
               ),
             ],
           ),
