@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class RegisterResponse {
   final bool? success;
   final String? message;
@@ -93,15 +95,41 @@ class UserModel {
     this.updatedAt,
   });
 
+  /// Helper method to build full image URL from filename
+  static String? _buildImageUrl(String? imageValue, String? userId) {
+    if (imageValue == null || imageValue.isEmpty) return null;
+
+    // إذا كانت الصورة URL كامل بالفعل، نرجعها كما هي
+    if (imageValue.startsWith('http://') || imageValue.startsWith('https://')) {
+      debugPrint('🌐 UserModel - الصورة URL كامل: $imageValue');
+      return imageValue;
+    }
+
+    // إذا كانت اسم ملف فقط، نبني الـ URL الكامل
+    if (userId != null && userId.isNotEmpty) {
+      final fullUrl =
+          'https://tayser-app.net/uploads/users/$userId/$imageValue';
+      debugPrint('🔧 UserModel - بناء URL كامل: $fullUrl');
+      return fullUrl;
+    }
+
+    debugPrint(
+      '⚠️ UserModel - لا يمكن بناء URL: imageValue=$imageValue, userId=$userId',
+    );
+    return imageValue;
+  }
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final userId = json['id']?.toString() ?? '';
+
     return UserModel(
-      id: json['id'],
+      id: userId,
       name: json['name'],
       email: json['email'],
       username: json['username'] ?? "",
       isVerified: json['isVerified'] ?? false,
       gender: json['gender'],
-      image: json['image'],
+      image: _buildImageUrl(json['image'], userId),
       phone: json['phone'],
       inreview: json['inreview'],
       notifyCount: json['notifyCount'],

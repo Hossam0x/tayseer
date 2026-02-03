@@ -118,8 +118,8 @@ class _UserProfileViewState extends State<UserProfileView> {
           if (_selectedTabIndex == 0)
             _buildGeneralContentSliver(context, state)
           else
-          // ////////////////////////////////////////////////////////////////////
-          MarriageProfilePage(),
+            // ////////////////////////////////////////////////////////////////////
+            MarriageProfilePage(),
 
           // ⭐ زر تسجيل الخروج (موجود دائماً)
           _buildLogoutButtonSliver(context),
@@ -291,7 +291,7 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   // ⭐ تحديث الدوال المساعدة للبروفايل
   Widget _buildProfileImage(UserProfileModel? userProfile) {
-    final imageUrl = userProfile?.image;
+    final imageUrl = kCurrentUserData?.image ?? userProfile?.image;
 
     return SizedBox(
       width: 120.w,
@@ -304,22 +304,38 @@ class _UserProfileViewState extends State<UserProfileView> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.secondary100,
-              image: (imageUrl != null && imageUrl.isNotEmpty)
-                  ? DecorationImage(
-                      image: NetworkImage(imageUrl),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
             ),
-            child: (imageUrl == null || imageUrl.isEmpty)
-                ? Center(
+            child: (imageUrl != null && imageUrl.isNotEmpty)
+                ? ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary100,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                      errorWidget: (context, url, error) {
+                        debugPrint('❌ خطأ في تحميل الصورة: $url');
+                        debugPrint('❌ الخطأ: $error');
+                        return Center(
+                          child: Icon(
+                            Icons.person,
+                            size: 48.w,
+                            color: AppColors.secondary400,
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                : Center(
                     child: Icon(
                       Icons.person,
                       size: 48.w,
                       color: AppColors.secondary400,
                     ),
-                  )
-                : null,
+                  ),
           ),
         ],
       ),
@@ -331,20 +347,31 @@ class _UserProfileViewState extends State<UserProfileView> {
       return _buildUserInfoSkeleton();
     }
 
+    // ⭐ استخدام kCurrentUserData كمصدر أساسي للاسم و username
+    final displayName = kCurrentUserData?.name ?? userProfile.name;
+    final displayUsername = kCurrentUserData?.username ?? userProfile.username;
+
+    debugPrint(
+      '👤 عرض الاسم: $displayName (من ${kCurrentUserData?.name != null ? "kCurrentUserData" : "userProfile"})',
+    );
+    debugPrint(
+      '🏷️ عرض username: $displayUsername (من ${kCurrentUserData?.username != null ? "kCurrentUserData" : "userProfile"})',
+    );
+
     return Column(
       children: [
         Text(
-          userProfile.name,
+          displayName,
           style: Styles.textStyle24Bold.copyWith(color: AppColors.blueText),
           maxLines: 2,
           textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
         ),
 
-        if (userProfile.username.isNotEmpty) ...[
+        if (displayUsername.isNotEmpty) ...[
           Gap(4.h),
           Text(
-            userProfile.username,
+            displayUsername,
             style: Styles.textStyle16.copyWith(color: AppColors.secondary600),
           ),
         ],

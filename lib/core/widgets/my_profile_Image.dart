@@ -1,4 +1,3 @@
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/my_import.dart';
 
 class MyProfileImage extends StatelessWidget {
@@ -8,7 +7,7 @@ class MyProfileImage extends StatelessWidget {
   const MyProfileImage({super.key, this.width, this.size = 45, this.imageUrl});
   @override
   Widget build(BuildContext context) {
-    String image = imageUrl ?? kCurrentUserData?.image??'';
+    String image = imageUrl ?? kCurrentUserData?.image ?? '';
     if (image.isEmpty) {
       return SizedBox();
     }

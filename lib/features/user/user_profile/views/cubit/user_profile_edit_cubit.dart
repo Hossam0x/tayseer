@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:tayseer/core/constant/constans_keys.dart';
+import 'package:tayseer/features/shared/auth/model/login_data.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
@@ -139,6 +142,35 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
           );
         },
         (updatedProfile) {
+          debugPrint('🔄 تحديث الصورة في kCurrentUserData');
+          debugPrint('📸 الصورة الجديدة: ${updatedProfile.image}');
+
+          if (kCurrentUserData != null) {
+            final Map<String, dynamic> currentUserJson = kCurrentUserData!
+                .toJson();
+            currentUserJson['image'] = updatedProfile.image;
+            kCurrentUserData = UserModel.fromJson(currentUserJson);
+
+            debugPrint(
+              '✅ تم تحديث kCurrentUserData.image: ${kCurrentUserData!.image}',
+            );
+
+            CachNetwork.setData(
+              key: kuserData,
+              value: jsonEncode(kCurrentUserData!.toJson()),
+            );
+
+            // ⭐ مسح الـ cache للصورة القديمة لضمان تحميل الصورة الجديدة
+            if (state.imagePreviewUrl != null &&
+                state.imagePreviewUrl!.isNotEmpty) {
+              try {
+                CachedNetworkImage.evictFromCache(state.imagePreviewUrl!);
+                debugPrint('🗑️ تم مسح cache الصورة القديمة');
+              } catch (e) {
+                debugPrint('⚠️ خطأ في مسح cache الصورة: $e');
+              }
+            }
+          }
           emit(
             state.copyWith(
               isLoading: false,

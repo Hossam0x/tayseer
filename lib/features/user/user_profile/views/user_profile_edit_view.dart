@@ -181,7 +181,7 @@ class _UserProfileEditContent extends StatelessWidget {
     UserProfileEditState state,
     BuildContext context,
   ) {
-    final imageUrl = state.imagePreviewUrl;
+    final imageUrl = kCurrentUserData?.image ?? state.imagePreviewUrl;
     final imageFile = state.imageFile;
 
     return Column(
@@ -207,11 +207,18 @@ class _UserProfileEditContent extends StatelessWidget {
                           width: double.infinity,
                         )
                       : (imageUrl != null && imageUrl.isNotEmpty)
-                      ? Image.network(
-                          imageUrl,
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl,
                           fit: BoxFit.cover,
                           width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) {
+                          placeholder: (context, url) => Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary100,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                          errorWidget: (context, error, stackTrace) {
+                            debugPrint('❌ خطأ في تحميل الصورة: $imageUrl');
                             return _buildDefaultAvatar();
                           },
                         )
