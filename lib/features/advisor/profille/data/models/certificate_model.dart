@@ -6,9 +6,9 @@ class CertificateModel extends Equatable {
   final String fromWhere;
   final DateTime date;
   final String? image;
-  final String? degree; // إضافة حقل الدرجة العلمية
-  final String? university; // إضافة حقل الجامعة
-  final int? graduationYear; // إضافة حقل سنة التخرج
+  final String? degree;
+  final String? university;
+  final int? graduationYear;
 
   const CertificateModel({
     required this.id,
@@ -101,21 +101,38 @@ class CertificatesAndVideosResponse extends Equatable {
     Map<String, dynamic> json, {
     Map<String, dynamic>? pagination,
   }) {
-    final certificatesList = (json['certificates'] as List)
-        .map(
-          (cert) => CertificateModel.fromJson(Map<String, dynamic>.from(cert)),
-        )
-        .toList();
+    final certificatesList =
+        (json['certificates'] as List?)
+            ?.map(
+              (cert) =>
+                  CertificateModel.fromJson(Map<String, dynamic>.from(cert)),
+            )
+            .toList() ??
+        [];
 
+    // ⭐ استخراج pagination من الـ response
     final paginationData =
-        pagination ?? Map<String, dynamic>.from(json['pagination'] ?? {});
-    final currentPage = paginationData['currentPage'] as int? ?? 1;
-    final totalPages = paginationData['totalPages'] as int? ?? 1;
+        pagination ??
+        (json.containsKey('pagination')
+            ? Map<String, dynamic>.from(json['pagination'])
+            : <String, dynamic>{});
+
+    // ⭐ استخدام dynamic ثم تحويله
+    final dynamic currentPageDynamic = paginationData['currentPage'];
+    final dynamic totalPagesDynamic = paginationData['totalPages'];
+
+    final int currentPage = (currentPageDynamic is int)
+        ? currentPageDynamic
+        : int.tryParse(currentPageDynamic?.toString() ?? '1') ?? 1;
+
+    final int totalPages = (totalPagesDynamic is int)
+        ? totalPagesDynamic
+        : int.tryParse(totalPagesDynamic?.toString() ?? '1') ?? 1;
 
     return CertificatesAndVideosResponse(
       certificates: certificatesList,
       videos: json['videos'] as String?,
-      isMe: json['isMe'] as bool,
+      isMe: json['isMe'] as bool? ?? false,
       currentPage: currentPage,
       totalPages: totalPages,
       hasMore: currentPage < totalPages,

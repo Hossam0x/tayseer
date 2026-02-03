@@ -5,6 +5,7 @@ import 'ratings_state.dart';
 class RatingsCubit extends Cubit<RatingsState> {
   final RatingsRepository _ratingsRepository;
   final int _pageSize = 10;
+  // String? _currentAdvisorId;
 
   RatingsCubit(this._ratingsRepository) : super(const RatingsState());
 
@@ -14,9 +15,13 @@ class RatingsCubit extends Cubit<RatingsState> {
   Future<void> fetchRatings({
     required String advisorId,
     bool loadMore = false,
+    bool isSilent = false, // ⭐ Silent Refresh (مثل Posts)
+    bool forceRefresh = false, // ⭐ إعادة تحميل إجباري
   }) async {
+    // _currentAdvisorId = advisorId;
+
+    // ═══ Load More ═══
     if (loadMore) {
-      // لا تسمح بتحميل المزيد إذا كان التحميل جارياً أو لا يوجد المزيد
       if (state.isLoadingMore || !state.hasMore) return;
 
       emit(state.copyWith(isLoadingMore: true));
@@ -28,6 +33,8 @@ class RatingsCubit extends Cubit<RatingsState> {
         limit: _pageSize,
       );
 
+      if (isClosed) return;
+
       result.fold(
         (failure) {
           emit(
@@ -38,6 +45,7 @@ class RatingsCubit extends Cubit<RatingsState> {
           final updatedRatings = [...state.ratings, ...response.ratings];
           emit(
             state.copyWith(
+              state: CubitStates.success,
               summary: response.summary,
               ratings: updatedRatings,
               currentPage: nextPage,
@@ -48,8 +56,11 @@ class RatingsCubit extends Cubit<RatingsState> {
           );
         },
       );
-    } else {
-      // التحميل الأولي
+      return;
+    }
+
+    // ═══ Force Refresh أو أول تحميل ═══
+    if (forceRefresh || state.ratings.isEmpty) {
       emit(
         state.copyWith(
           state: CubitStates.loading,
@@ -65,6 +76,7 @@ class RatingsCubit extends Cubit<RatingsState> {
         page: 1,
         limit: _pageSize,
       );
+
       if (isClosed) return;
 
       result.fold(
@@ -85,11 +97,53 @@ class RatingsCubit extends Cubit<RatingsState> {
               currentPage: 1,
               hasMore: response.hasMore,
               errorMessage: null,
+              hasLoadedOnce: true, // ⭐ تم التحميل
             ),
           );
         },
       );
+      return;
     }
+
+    // ═══ Silent Refresh (من غير loading) ═══
+    if (isSilent && state.ratings.isNotEmpty) {
+      final result = await _ratingsRepository.getAdvisorRatings(
+        advisorId: advisorId,
+        page: 1,
+        limit: _pageSize,
+      );
+
+      if (isClosed) return;
+
+      result.fold(
+        (failure) {
+          // Silent failure - لا نعرض خطأ
+        },
+        (response) {
+          // تحديث فقط إذا كانت البيانات مختلفة
+          if (!_listsAreEqual(state.ratings, response.ratings)) {
+            emit(
+              state.copyWith(
+                summary: response.summary,
+                ratings: response.ratings,
+                currentPage: 1,
+                hasMore: response.hasMore,
+                errorMessage: null,
+              ),
+            );
+          }
+        },
+      );
+    }
+  }
+
+  // ⭐ مساعدة للمقارنة (منع flicker)
+  bool _listsAreEqual(List<dynamic> a, List<dynamic> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -97,7 +151,11 @@ class RatingsCubit extends Cubit<RatingsState> {
   // ═══════════════════════════════════════════════════════════
   Future<void> refresh({String? advisorId}) async {
     if (advisorId != null) {
-      await fetchRatings(advisorId: advisorId, loadMore: false);
+      await fetchRatings(
+        advisorId: advisorId,
+        loadMore: false,
+        isSilent: false, // Normal refresh
+      );
     }
   }
 

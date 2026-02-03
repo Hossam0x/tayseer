@@ -11,6 +11,7 @@ class CertificatesState extends Equatable {
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
+  final bool hasLoadedOnce; // ⭐ Flag للتحقق من أول تحميل
 
   const CertificatesState({
     this.state = CubitStates.initial,
@@ -21,6 +22,7 @@ class CertificatesState extends Equatable {
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
+    this.hasLoadedOnce = false, // ⭐ افتراضي false
   });
 
   bool get hasVideo => videoUrl != null && videoUrl!.isNotEmpty;
@@ -35,6 +37,7 @@ class CertificatesState extends Equatable {
     int? currentPage,
     bool? hasMore,
     bool? isLoadingMore,
+    bool? hasLoadedOnce, // ⭐ إضافة parameter
   }) {
     return CertificatesState(
       state: state ?? this.state,
@@ -45,6 +48,7 @@ class CertificatesState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasLoadedOnce: hasLoadedOnce ?? this.hasLoadedOnce, // ⭐
     );
   }
 
@@ -58,5 +62,6 @@ class CertificatesState extends Equatable {
     currentPage,
     hasMore,
     isLoadingMore,
+    hasLoadedOnce, // ⭐
   ];
 }
