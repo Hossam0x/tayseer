@@ -6,6 +6,6 @@ class MarriageFilterView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MarriageFilterBody();
+    return Scaffold(body: MarriageFilterBody());
   }
 }
