@@ -17,7 +17,12 @@ class CertificatesCubit extends Cubit<CertificatesState> {
   Future<void> fetchCertificatesAndVideos({
     String? advisorId,
     bool loadMore = false,
+    bool isSilent = false, // ⭐ Silent Refresh (مثل Posts)
+    bool forceRefresh = false, // ⭐ إعادة تحميل إجباري
   }) async {
+    _currentAdvisorId = advisorId;
+
+    // ═══ Load More ═══
     if (loadMore) {
       if (state.isLoadingMore || !state.hasMore) return;
 
@@ -57,8 +62,11 @@ class CertificatesCubit extends Cubit<CertificatesState> {
           );
         },
       );
-    } else {
-      _currentAdvisorId = advisorId;
+      return;
+    }
+
+    // ═══ Force Refresh أو أول تحميل ═══
+    if (forceRefresh || state.certificates.isEmpty) {
       emit(
         state.copyWith(
           state: CubitStates.loading,
@@ -96,18 +104,70 @@ class CertificatesCubit extends Cubit<CertificatesState> {
               currentPage: 1,
               hasMore: response.hasMore,
               errorMessage: null,
+              hasLoadedOnce: true, // ⭐ تم التحميل
             ),
           );
         },
       );
+      return;
     }
+
+    // ═══ Silent Refresh (من غير loading) ═══
+    if (isSilent && state.certificates.isNotEmpty) {
+      final result = await _certificatesRepository.getCertificatesAndVideos(
+        advisorId: advisorId,
+        page: 1,
+        limit: _pageSize,
+      );
+
+      if (isClosed) return;
+
+      result.fold(
+        (failure) {
+          // Silent failure - لا نعرض خطأ
+        },
+        (response) {
+          // تحديث فقط إذا كانت البيانات مختلفة
+          if (!_listsAreEqual(state.certificates, response.certificates)) {
+            emit(
+              state.copyWith(
+                certificates: response.certificates,
+                videoUrl: response.videos,
+                isMe: response.isMe,
+                currentPage: 1,
+                hasMore: response.hasMore,
+                errorMessage: null,
+              ),
+            );
+          }
+        },
+      );
+    }
+  }
+
+  // ⭐ مساعدة للمقارنة (منع flicker)
+  bool _listsAreEqual(List<CertificateModel> a, List<CertificateModel> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id ||
+          a[i].nameCertificate != b[i].nameCertificate ||
+          a[i].fromWhere != b[i].fromWhere) {
+        return false;
+      }
+    }
+    return true;
   }
 
   // ═══════════════════════════════════════════════════════════
   // 📌 REFRESH
   // ═══════════════════════════════════════════════════════════
   Future<void> refresh({String? advisorId}) async {
-    await fetchCertificatesAndVideos(advisorId: advisorId, loadMore: false);
+    await fetchCertificatesAndVideos(
+      advisorId: advisorId,
+      loadMore: false,
+      isSilent: false,
+      forceRefresh: true, // ⭐ إعادة تحميل إجباري لتحديث القائمة
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -150,6 +210,16 @@ class CertificatesCubit extends Cubit<CertificatesState> {
         .where((cert) => cert.id != certificateId)
         .toList();
 
+    emit(state.copyWith(certificates: updatedCertificates));
+  }
+
+  // في CertificatesCubit
+  void updateCertificateLocally(CertificateModel updatedCertificate) {
+    final updatedCertificates = state.certificates.map((cert) {
+      return cert.id == updatedCertificate.id ? updatedCertificate : cert;
+    }).toList();
+
+    if (isClosed) return;
     emit(state.copyWith(certificates: updatedCertificates));
   }
 

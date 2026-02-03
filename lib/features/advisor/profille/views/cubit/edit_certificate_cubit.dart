@@ -253,7 +253,16 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
         }
       },
       (response) {
-        emit(state.copyWith(isLoading: false));
+        // ⭐ تحديث الصورة في الـ state إذا كان هناك صورة جديدة من الـ response
+        String? newImageUrl = state.certificateImageUrl;
+        if (response['data'] != null && response['data']['image'] != null) {
+          newImageUrl = response['data']['image'];
+        }
+
+        emit(
+          state.copyWith(isLoading: false, certificateImageUrl: newImageUrl),
+        );
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
@@ -262,7 +271,18 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
               isSuccess: true,
             ),
           );
-          Navigator.pop(context, true);
+
+          // ⭐ إرجاع البيانات المحدثة
+          Navigator.pop(context, {
+            'updated': true,
+            'certificate': CertificateModel(
+              id: state.selectedCertificateId!,
+              nameCertificate: state.nameCertificate,
+              fromWhere: state.fromWhere,
+              date: state.date!,
+              image: newImageUrl,
+            ),
+          });
         }
       },
     );

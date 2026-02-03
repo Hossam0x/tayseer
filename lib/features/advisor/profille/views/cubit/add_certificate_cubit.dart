@@ -6,17 +6,26 @@ import 'package:tayseer/my_import.dart';
 class AddCertificateCubit extends Cubit<AddCertificateState> {
   final CertificatesRepository _repository;
 
-  AddCertificateCubit(this._repository) : super(const AddCertificateState());
+  late TextEditingController nameCertificateController;
+  late TextEditingController fromWhereController;
+
+  AddCertificateCubit(this._repository) : super(const AddCertificateState()) {
+    nameCertificateController = TextEditingController();
+    fromWhereController = TextEditingController();
+    emit(
+      state.copyWith(
+        nameCertificateController: nameCertificateController,
+        fromWhereController: fromWhereController,
+      ),
+    );
+  }
 
   void updateNameCertificate(String value) {
-    // ⭐ تنظيف النص والحفاظ على الاتجاه
-    final cleanedText = value.trim();
-    emit(state.copyWith(nameCertificate: cleanedText));
+    emit(state.copyWith(nameCertificate: value));
   }
 
   void updateFromWhere(String value) {
-    final cleanedText = value.trim();
-    emit(state.copyWith(fromWhere: cleanedText));
+    emit(state.copyWith(fromWhere: value));
   }
 
   Future<void> pickDate(BuildContext context) async {
@@ -138,7 +147,21 @@ class AddCertificateCubit extends Cubit<AddCertificateState> {
   }
 
   void _clearForm() {
-    emit(AddCertificateState());
+    nameCertificateController.clear();
+    fromWhereController.clear();
+    emit(
+      AddCertificateState(
+        nameCertificateController: nameCertificateController,
+        fromWhereController: fromWhereController,
+      ),
+    );
+  }
+
+  @override
+  Future<void> close() {
+    nameCertificateController.dispose();
+    fromWhereController.dispose();
+    return super.close();
   }
 
   void _showErrorSnackBar(BuildContext context, String message) {

@@ -10,6 +10,7 @@ class RatingsState extends Equatable {
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
+  final bool hasLoadedOnce; // ⭐ Flag للتحقق من أول تحميل
 
   const RatingsState({
     this.state = CubitStates.initial,
@@ -19,6 +20,7 @@ class RatingsState extends Equatable {
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
+    this.hasLoadedOnce = false, // ⭐ افتراضي false
   });
 
   // Getters
@@ -34,6 +36,7 @@ class RatingsState extends Equatable {
     int? currentPage,
     bool? hasMore,
     bool? isLoadingMore,
+    bool? hasLoadedOnce, // ⭐ إضافة parameter
   }) {
     return RatingsState(
       state: state ?? this.state,
@@ -43,6 +46,7 @@ class RatingsState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasLoadedOnce: hasLoadedOnce ?? this.hasLoadedOnce, // ⭐
     );
   }
 
@@ -55,5 +59,6 @@ class RatingsState extends Equatable {
     currentPage,
     hasMore,
     isLoadingMore,
+    hasLoadedOnce, // ⭐
   ];
 }

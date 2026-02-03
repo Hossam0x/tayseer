@@ -1,5 +1,6 @@
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
 import 'profile_state.dart';
@@ -59,9 +60,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       final nextPage = state.currentPage + 1;
 
       // ⭐️ استخدم ProfileRepository بدل HomeRepository
-      final result = await _profileRepository.fetchSavedPosts(
-        page: nextPage,
-      );
+      final result = await _profileRepository.fetchSavedPosts(page: nextPage);
 
       if (isClosed) return;
       result.fold(
@@ -143,6 +142,43 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (isClosed) return;
       emit(state.copyWith(profile: updatedProfile));
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 UPDATE PROFILE DATA (تحديث البيانات من الكاش)
+  // ═══════════════════════════════════════════════════════════
+  void updateProfileData({
+    String? image,
+    String? name,
+    String? username,
+    String? aboutYou,
+    String? professionalSpecialization,
+    String? jobGrade,
+    String? yearsOfExperience,
+    String? location,
+  }) {
+    if (state.profile != null) {
+      final updatedProfile = state.profile!.copyWith(
+        image: image,
+        name: name,
+        username: username,
+        aboutYou: aboutYou,
+        professionalSpecialization: professionalSpecialization,
+        jobGrade: jobGrade,
+        yearsOfExperience: yearsOfExperience,
+        location: location,
+      );
+      if (isClosed) return;
+      emit(state.copyWith(profile: updatedProfile));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 UPDATE PROFILE FROM CACHE (تحديث كامل من الكاش)
+  // ═══════════════════════════════════════════════════════════
+  void updateProfileFromCache(ProfileModel updatedProfile) {
+    if (isClosed) return;
+    emit(state.copyWith(profile: updatedProfile));
   }
 
   // ═══════════════════════════════════════════════════════════

@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
+
 class UserProfileModel extends Equatable {
   final String id;
   final String name;
@@ -31,7 +33,7 @@ class UserProfileModel extends Equatable {
     required this.isAnonymous,
     required this.availableForMarry,
     this.following = 0,
-  
+
     this.followers = 0,
     required this.isMe,
     this.isVerified,
@@ -43,13 +45,39 @@ class UserProfileModel extends Equatable {
     this.dataCompleted,
   });
 
+  /// Helper method to build full image URL from filename
+  static String? _buildImageUrl(String? imageValue, String? userId) {
+    if (imageValue == null || imageValue.isEmpty) return null;
+
+    // إذا كانت الصورة URL كامل بالفعل، نرجعها كما هي
+    if (imageValue.startsWith('http://') || imageValue.startsWith('https://')) {
+      debugPrint('🌐 UserProfileModel - الصورة URL كامل: $imageValue');
+      return imageValue;
+    }
+
+    // إذا كانت اسم ملف فقط، نبني الـ URL الكامل
+    if (userId != null && userId.isNotEmpty) {
+      final fullUrl =
+          'https://tayser-app.net/uploads/users/$userId/$imageValue';
+      debugPrint('🔧 UserProfileModel - بناء URL كامل: $fullUrl');
+      return fullUrl;
+    }
+
+    debugPrint(
+      '⚠️ UserProfileModel - لا يمكن بناء URL: imageValue=$imageValue, userId=$userId',
+    );
+    return imageValue;
+  }
+
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
+    final userId = json['id']?.toString() ?? '';
+
     return UserProfileModel(
-      id: json['id']?.toString() ?? '',
+      id: userId,
       name: json['name']?.toString() ?? '',
       username: json['username']?.toString() ?? '',
       description: json['descreption'] ?? json['description'],
-      image: json['image']?.toString(),
+      image: _buildImageUrl(json['image']?.toString(), userId),
       age: json['age'] is String
           ? int.tryParse(json['age']) ?? 0
           : json['age'] ?? 0,
@@ -69,7 +97,7 @@ class UserProfileModel extends Equatable {
       room: json['room'] is Map<String, dynamic>
           ? Map<String, dynamic>.from(json['room'])
           : {},
-    
+
       dataCompleted: json['dataCompleted'],
     );
   }
@@ -153,6 +181,5 @@ class UserProfileModel extends Equatable {
     email,
     phone,
     dataCompleted,
-
   ];
 }

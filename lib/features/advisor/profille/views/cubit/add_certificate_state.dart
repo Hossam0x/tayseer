@@ -6,6 +6,8 @@ class AddCertificateState {
   final DateTime? date;
   final File? certificateImageFile;
   final bool isLoading;
+  final TextEditingController? nameCertificateController;
+  final TextEditingController? fromWhereController;
 
   const AddCertificateState({
     this.nameCertificate = '',
@@ -13,13 +15,9 @@ class AddCertificateState {
     this.date,
     this.certificateImageFile,
     this.isLoading = false,
+    this.nameCertificateController,
+    this.fromWhereController,
   });
-
-  TextEditingController get nameCertificateController =>
-      TextEditingController(text: nameCertificate);
-
-  TextEditingController get fromWhereController =>
-      TextEditingController(text: fromWhere);
 
   AddCertificateState copyWith({
     String? nameCertificate,
@@ -27,6 +25,8 @@ class AddCertificateState {
     DateTime? date,
     File? certificateImageFile,
     bool? isLoading,
+    TextEditingController? nameCertificateController,
+    TextEditingController? fromWhereController,
   }) {
     return AddCertificateState(
       nameCertificate: nameCertificate ?? this.nameCertificate,
@@ -34,6 +34,9 @@ class AddCertificateState {
       date: date ?? this.date,
       certificateImageFile: certificateImageFile ?? this.certificateImageFile,
       isLoading: isLoading ?? this.isLoading,
+      nameCertificateController:
+          nameCertificateController ?? this.nameCertificateController,
+      fromWhereController: fromWhereController ?? this.fromWhereController,
     );
   }
 }

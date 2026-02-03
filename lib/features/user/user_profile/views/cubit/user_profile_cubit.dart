@@ -62,6 +62,12 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         routeName: '',
       ),
       SettingItemModel(
+        id: 'edit_marriage_profile',
+        title: 'إستكمال ملف الزواج',
+        iconAsset: AssetsData.icEditSettings,
+        routeName: '',
+      ),
+      SettingItemModel(
         id: 'settings',
         title: 'الاعدادات العامة',
         iconAsset: AssetsData.icSettingsProf,

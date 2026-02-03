@@ -1,3 +1,4 @@
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
@@ -187,6 +188,16 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
           emit(state.copyWith(isSaving: false, errorMessage: failure.message));
         },
         (response) {
+          // ⭐ مسح cache الصورة القديمة لضمان تحميل الصورة الجديدة
+          if (state.imageFile != null && state.imagePreviewUrl != null) {
+            try {
+              CachedNetworkImage.evictFromCache(state.imagePreviewUrl!);
+              debugPrint('🗑️ تم مسح cache الصورة القديمة');
+            } catch (e) {
+              debugPrint('⚠️ خطأ في مسح cache الصورة: $e');
+            }
+          }
+
           // تحديث البروفايل بعد الحفظ الناجح
           final updatedProfile = state.profile?.copyWith(
             name: state.currentData.name ?? state.profile!.name,
@@ -201,6 +212,19 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
             image: response.data?['image'] ?? state.profile!.image,
             video: response.data?['videoLink'] ?? state.profile!.video,
           );
+
+          // ⭐ تحديث الكاش للصورة والاسم (للـ HomeAppBar)
+          if (updatedProfile != null) {
+            CachNetwork.setData(
+              key: kMyProfileImage,
+              value: updatedProfile.image ?? '',
+            );
+            CachNetwork.setData(
+              key: kMyProfileName,
+              value: updatedProfile.name,
+            );
+            debugPrint('✅ تم تحديث كاش الصورة والاسم في HomeAppBar');
+          }
 
           emit(
             state.copyWith(
@@ -220,7 +244,8 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
               text: 'تم تحديث البيانات بنجاح',
               isSuccess: true,
             );
-            Navigator.pop(context);
+            // ⭐ إرجاع البروفايل المحدث للصفحة السابقة
+            Navigator.pop(context, updatedProfile);
           }
         },
       );

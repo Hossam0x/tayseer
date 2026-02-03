@@ -68,6 +68,10 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
         final updatedProfile = widget.initialProfile.copyWith(
           description: newDescription,
         );
+
+        // ⭐ UserModel لا يحتوي على description، لكن نحدث الـ profile
+        debugPrint('✅ تم تحديث النبذة التعريفية: $newDescription');
+
         widget.onProfileUpdated(updatedProfile);
 
         AppToast.success(context, 'تم تحديث النبذة التعريفية بنجاح');

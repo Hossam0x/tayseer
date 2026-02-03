@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:tayseer/core/constant/constans_keys.dart';
+import 'package:tayseer/features/shared/auth/model/login_data.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/my_import.dart';
@@ -112,6 +115,23 @@ class _EditUsernameViewState extends State<EditUsernameView> {
         final updatedProfile = widget.initialProfile.copyWith(
           username: formattedUsername,
         );
+
+        // ⭐ تحديث kCurrentUserData والـ cache
+        if (kCurrentUserData != null) {
+          final Map<String, dynamic> currentUserJson = kCurrentUserData!
+              .toJson();
+          currentUserJson['username'] = formattedUsername;
+          kCurrentUserData = UserModel.fromJson(currentUserJson);
+
+          CachNetwork.setData(
+            key: kuserData,
+            value: jsonEncode(kCurrentUserData!.toJson()),
+          );
+          debugPrint(
+            '✅ تم تحديث kCurrentUserData.username: ${kCurrentUserData!.username}',
+          );
+        }
+
         widget.onProfileUpdated(updatedProfile);
 
         AppToast.success(context, 'تم تحديث اسم المستخدم بنجاح');

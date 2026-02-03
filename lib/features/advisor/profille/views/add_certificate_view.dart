@@ -55,7 +55,7 @@ class AddCertificateView extends StatelessWidget {
                             Gap(32.h),
                             // Name Certificate field
                             ProfileTextField(
-                              controller: state.nameCertificateController,
+                              controller: state.nameCertificateController!,
                               onChanged: cubit.updateNameCertificate,
                               hint: 'اسم الشهادة (مثال: بكالوريوس علم النفس)',
                             ),
@@ -63,7 +63,7 @@ class AddCertificateView extends StatelessWidget {
                             Gap(20.h),
 
                             ProfileTextField(
-                              controller: state.fromWhereController,
+                              controller: state.fromWhereController!,
                               onChanged: cubit.updateFromWhere,
                               hint: 'من أين (مثال: جامعة الملك فيصل)',
                             ),

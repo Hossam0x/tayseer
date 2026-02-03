@@ -1,103 +1,66 @@
 import 'package:intl/intl.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class RatingsTab extends StatelessWidget {
+class RatingsTab extends StatefulWidget {
   final String advisorId;
   final bool isMe;
-
   const RatingsTab({super.key, required this.advisorId, required this.isMe});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider<RatingsCubit>(
-      create: (_) => getIt<RatingsCubit>(),
-      child: _RatingsTabContent(advisorId: advisorId, isMe: isMe),
-    );
-  }
+  State<RatingsTab> createState() => _RatingsTabState();
 }
 
-class _RatingsTabContent extends StatefulWidget {
-  final String advisorId;
-  final bool isMe;
-
-  const _RatingsTabContent({required this.advisorId, required this.isMe});
-
-  @override
-  State<_RatingsTabContent> createState() => __RatingsTabContentState();
-}
-
-class __RatingsTabContentState extends State<_RatingsTabContent> {
-  late RatingsCubit _cubit;
-  bool _isInitialized = false;
+class _RatingsTabState extends State<RatingsTab>
+    with AutomaticKeepAliveClientMixin {
   int _rating = 0;
   final TextEditingController _reviewController = TextEditingController();
   bool _isSubmitting = false;
 
   @override
-  void initState() {
-    super.initState();
-    _cubit = RatingsCubit(getIt<RatingsRepository>());
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    if (!_isInitialized) {
-      await _cubit.refresh(advisorId: widget.advisorId);
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
-    }
-  }
-
-  Future<void> refreshFromParent() async {
-    await _cubit.refresh(advisorId: widget.advisorId);
-    if (mounted) {
-      setState(() {});
-    }
-  }
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final bool isMe = widget.isMe;
 
-    if (!_isInitialized) {
-      return _buildSkeletonRatings();
-    }
+    // ⭐ استخدام الـ Cubit الموجود من الـ context
+    return BlocBuilder<RatingsCubit, RatingsState>(
+      builder: (context, state) {
+        if (state.state == CubitStates.loading && !state.hasLoadedOnce) {
+          return _buildSkeletonRatings();
+        }
 
-    return RefreshIndicator(
-      onRefresh: () async => await _cubit.refresh(advisorId: widget.advisorId),
-      child: Column(
-        children: [
-          // زر إضافة تقييم إذا لم يكن بروفايل المستخدم نفسه
-          if (!isMe) _buildAddRatingButton(context),
+        if (state.state == CubitStates.failure && state.ratings.isEmpty) {
+          return _buildErrorSection(context);
+        }
 
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-            child: Column(
-              children: [
-                // قسم الإحصائيات العلوي
-                _buildSummarySection(_cubit.state),
-
-                Gap(20.h),
-
-                // قائمة التقييمات
-                _buildRatingsList(context, _cubit.state),
-              ],
-            ),
+        return RefreshIndicator(
+          onRefresh: () async => await context.read<RatingsCubit>().refresh(
+            advisorId: widget.advisorId,
           ),
-
-          // زر تحميل المزيد للتقييمات
-          if (_cubit.state.hasMore) _buildLoadMoreButton(context, _cubit.state),
-
-          Gap(20.h),
-        ],
-      ),
+          child: Column(
+            children: [
+              if (!isMe) _buildAddRatingButton(context),
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+                child: Column(
+                  children: [
+                    _buildSummarySection(state),
+                    Gap(20.h),
+                    _buildRatingsList(context, state),
+                  ],
+                ),
+              ),
+              if (state.hasMore) _buildLoadMoreButton(context, state),
+              Gap(20.h),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -131,14 +94,18 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
   }
 
   void _showRateDialog(BuildContext context) {
+    _rating = 0;
+    _reviewController.clear();
+    _isSubmitting = false; // ⭐ إضافة هذا السطر
+
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20.r),
         ),
         child: StatefulBuilder(
-          builder: (context, setState) {
+          builder: (statefulContext, setDialogState) {
             return Container(
               padding: EdgeInsets.all(24.w),
               decoration: BoxDecoration(
@@ -148,12 +115,16 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // العنوان
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          setDialogState(() {
+                            _isSubmitting = false;
+                          });
+                          Navigator.pop(dialogContext);
+                        },
                         child: Icon(Icons.close, size: 24.w),
                       ),
                       Text(
@@ -165,24 +136,18 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                       Gap(24.w),
                     ],
                   ),
-
                   Gap(25.h),
-
-                  // النجوم للتقييم (قابلة للاختيار)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (index) {
                       return GestureDetector(
                         onTap: () {
-                          setState(() {
+                          setDialogState(() {
                             _rating = index + 1;
                           });
                         },
                         child: Icon(
-                          // اختيار الأيقونة بناءً على التقييم
-                          index < _rating
-                              ? Icons.star_rounded
-                              : Icons.star_rounded,
+                          Icons.star_rounded,
                           color: index < _rating
                               ? AppColors.kprimaryColor
                               : AppColors.secondary100,
@@ -191,8 +156,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                       );
                     }),
                   ),
-
-                  // عرض قيمة التقييم (اختياري)
                   if (_rating > 0) ...[
                     Gap(12.h),
                     Text(
@@ -202,10 +165,7 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                       ),
                     ),
                   ],
-
                   Gap(24.h),
-
-                  // حقل كتابة المراجعة
                   TextFormField(
                     controller: _reviewController,
                     maxLines: 4,
@@ -216,10 +176,7 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                       ),
                     ),
                   ),
-
                   Gap(24.h),
-
-                  // زر الإرسال
                   _isSubmitting
                       ? Center(
                           child: CircularProgressIndicator(
@@ -231,27 +188,22 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                           onPressed: () async {
                             if (_rating == 0) {
                               AppToast.error(
-                                context,
+                                context, // ⭐ استخدم context الأصلي
                                 'الرجاء اختيار عدد النجوم',
                               );
                               return;
                             }
 
-                            setState(() {
+                            setDialogState(() {
                               _isSubmitting = true;
                             });
 
+                            // ⭐ تمرير context الأصلي (من build method) وليس dialogContext
                             await _submitRating(
-                              context,
+                              context, // ⭐ هنا context الأصلي
                               _rating,
                               _reviewController.text,
                             );
-
-                            setState(() {
-                              _isSubmitting = false;
-                            });
-
-                            Navigator.pop(context);
                           },
                           width: double.infinity,
                           height: 54.h,
@@ -283,20 +235,48 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
       );
 
       if (response['success'] == true) {
-        AppToast.success(
-          context,
-          response['message'] ?? 'تم إرسال التقييم بنجاح',
-        );
+        // ⭐ تنظيف الحقول
         _reviewController.clear();
         _rating = 0;
 
-        // Refresh ratings
-        await _cubit.refresh(advisorId: widget.advisorId);
+        if (mounted) {
+          // ⭐ إظهار رسالة النجاح
+          AppToast.success(
+            context,
+            response['message'] ?? 'تم إرسال التقييم بنجاح',
+          );
+
+          // ⭐ إغلاق الـ Dialog
+          Navigator.pop(context);
+
+          // ⭐ الانتظار قليلاً قبل عمل refresh (عشان الـ Dialog يتقفل الأول)
+          await Future.delayed(const Duration(milliseconds: 100));
+
+          // ⭐ عمل refresh للتقييمات
+          if (mounted) {
+            context.read<RatingsCubit>().fetchRatings(
+              advisorId: widget.advisorId,
+              loadMore: false,
+              isSilent: false,
+              forceRefresh: true, // ⭐ إعادة تحميل إجباري
+            );
+          }
+        }
       } else {
-        AppToast.error(context, response['message'] ?? 'فشل إرسال التقييم');
+        if (mounted) {
+          AppToast.error(context, response['message'] ?? 'فشل إرسال التقييم');
+        }
       }
     } catch (e) {
-      AppToast.error(context, 'حدث خطأ أثناء إرسال التقييم');
+      if (mounted) {
+        AppToast.error(context, 'حدث خطأ أثناء إرسال التقييم');
+      }
+    } finally {
+      if (mounted && _isSubmitting) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
@@ -307,7 +287,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
         padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
         child: Column(
           children: [
-            // Summary skeleton
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10.r),
@@ -400,7 +379,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
               ),
             ),
             Gap(20.h),
-            // Ratings list skeleton
             ...List.generate(
               3,
               (index) => Padding(
@@ -464,10 +442,42 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
     );
   }
 
+  Widget _buildErrorSection(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 100.h),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
+          Gap(16.h),
+          Text(
+            'حدث خطأ في تحميل التقييمات',
+            style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
+          ),
+          Gap(24.h),
+          ElevatedButton(
+            onPressed: () => context.read<RatingsCubit>().refresh(
+              advisorId: widget.advisorId,
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.kprimaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+            ),
+            child: Text(
+              'إعادة المحاولة',
+              style: Styles.textStyle14Meduim.copyWith(
+                color: AppColors.kWhiteColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSummarySection(RatingsState state) {
     final starsBreakdown = state.starsBreakdown;
-
-    // ⭐ الحل: التحقق من maxStarCount لتجنب القسمة على صفر
     final maxStarCount = starsBreakdown[5] ?? 0;
     final safeMaxStarCount = maxStarCount > 0 ? maxStarCount : 1;
 
@@ -479,7 +489,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // التقييم الكبير على اليمين
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -517,7 +526,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                 ],
               ),
               Gap(24.w),
-              // البارات والأرقام
               Expanded(
                 child: Column(
                   children: [
@@ -526,7 +534,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                         padding: EdgeInsets.only(bottom: 8.h),
                         child: Row(
                           children: [
-                            // النجوم والرقم
                             Row(
                               children: [
                                 Text(
@@ -544,13 +551,11 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                               ],
                             ),
                             Gap(12.w),
-                            // شريط التقدم
                             Expanded(
                               flex: 2,
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4.r),
                                 child: LinearProgressIndicator(
-                                  // ⭐ الحل: التحقق من القيمة لتجنب NaN أو Infinity
                                   value: safeMaxStarCount > 0
                                       ? (starsBreakdown[i] ?? 0) /
                                             safeMaxStarCount
@@ -564,7 +569,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                               ),
                             ),
                             Gap(12.w),
-                            // النسبة والنص
                             Text(
                               starsBreakdown[i] == 0
                                   ? 'لا يوجد'
@@ -600,7 +604,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // صورة المستخدم
               SizedBox(
                 width: 60.r,
                 height: 60.r,
@@ -618,12 +621,10 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                 ),
               ),
               Gap(12.w),
-              // محتوى التقييم
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header (الاسم + التاريخ)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -643,7 +644,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                       ],
                     ),
                     Gap(8.h),
-                    // النجوم
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: List.generate(
@@ -661,7 +661,6 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
                       ),
                     ),
                     Gap(12.h),
-                    // نص التقييم
                     Text(
                       rating.review,
                       textAlign: TextAlign.right,
@@ -682,13 +681,11 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
 
   String _formatDate(String dateString) {
     try {
-      // 1️⃣ parse التاريخ بصيغته الصح
       final parsedDate = DateFormat(
         'M/d/yyyy, hh:mm:ss a',
         'en',
       ).parse(dateString);
 
-      // 2️⃣ عرضه بالعربي ومن غير وقت
       return DateFormat('dd MMMM yyyy', 'ar').format(parsedDate);
     } catch (e) {
       return dateString;
@@ -705,7 +702,7 @@ class __RatingsTabContentState extends State<_RatingsTabContent> {
           : SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _cubit.fetchRatings(
+                onPressed: () => context.read<RatingsCubit>().fetchRatings(
                   advisorId: widget.advisorId,
                   loadMore: true,
                 ),

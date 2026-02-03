@@ -1,5 +1,8 @@
-import 'dart:developer'; // للـ log إذا عايز
-
+import 'dart:developer';
+import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
@@ -8,7 +11,6 @@ import 'package:tayseer/my_import.dart';
 
 class UserAdvisorProfileTabsSection extends StatefulWidget {
   final String advisorId;
-
   const UserAdvisorProfileTabsSection({super.key, required this.advisorId});
 
   @override
@@ -22,8 +24,11 @@ class _UserAdvisorProfileTabsSectionState
   late TabController _tabController;
   late UserAdvisorProfileCubit _profileCubit;
 
-  final List<String> _tabs = ["المنشورات", "الشهادات", "التقييمات"];
+  // ⭐ إنشاء الـ Cubits مرة واحدة فقط
+  late CertificatesCubit _certificatesCubit;
+  late RatingsCubit _ratingsCubit;
 
+  final List<String> _tabs = ["المنشورات", "المؤهلات", "التقييمات"];
   int _previousTabIndex = 0;
 
   @override
@@ -31,8 +36,12 @@ class _UserAdvisorProfileTabsSectionState
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
     _tabController.addListener(_onTabChanged);
-    _profileCubit = context
-        .read<UserAdvisorProfileCubit>(); // استخدم الـ cubit الموجود
+    _profileCubit = context.read<UserAdvisorProfileCubit>();
+
+    // ⭐ إنشاء الـ Cubits مرة واحدة
+    _certificatesCubit = CertificatesCubit(getIt<CertificatesRepository>());
+    _ratingsCubit = RatingsCubit(getIt<RatingsRepository>());
+
     _loadUserPosts();
   }
 
@@ -40,8 +49,49 @@ class _UserAdvisorProfileTabsSectionState
     if (_tabController.indexIsChanging) {
       setState(() {
         _previousTabIndex = _tabController.index;
-        log('$_previousTabIndex'); // optional
+        log('Tab changed to: $_previousTabIndex');
+
+        // ⭐ تحميل البيانات حسب الـ Tab
+        _loadDataForTab(_previousTabIndex);
       });
+    }
+  }
+
+  Future<void> _loadDataForTab(int index) async {
+    switch (index) {
+      case 0: // المنشورات
+        await _profileCubit.fetchPosts(isSilent: true);
+        break;
+      case 1: // الشهادات
+        if (!_certificatesCubit.state.hasLoadedOnce) {
+          await _certificatesCubit.fetchCertificatesAndVideos(
+            advisorId: widget.advisorId,
+            loadMore: false,
+            isSilent: false,
+          );
+        } else {
+          await _certificatesCubit.fetchCertificatesAndVideos(
+            advisorId: widget.advisorId,
+            loadMore: false,
+            isSilent: true,
+          );
+        }
+        break;
+      case 2: // التقييمات
+        if (!_ratingsCubit.state.hasLoadedOnce) {
+          await _ratingsCubit.fetchRatings(
+            advisorId: widget.advisorId,
+            loadMore: false,
+            isSilent: false,
+          );
+        } else {
+          await _ratingsCubit.fetchRatings(
+            advisorId: widget.advisorId,
+            loadMore: false,
+            isSilent: true,
+          );
+        }
+        break;
     }
   }
 
@@ -49,8 +99,9 @@ class _UserAdvisorProfileTabsSectionState
   void dispose() {
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
-    super
-        .dispose(); // مش لازم close الـ cubit هنا عشان موجود في BlocProvider أعلى
+    _certificatesCubit.close();
+    _ratingsCubit.close();
+    super.dispose();
   }
 
   Future<void> _loadUserPosts() async {
@@ -68,23 +119,13 @@ class _UserAdvisorProfileTabsSectionState
   void _refreshCurrentTab(int index) {
     switch (index) {
       case 0: // المنشورات
-        // silent refresh → يحافظ على البيانات القديمة
-        context.read<UserAdvisorProfileCubit>().fetchPosts(isSilent: true);
+        _profileCubit.fetchPosts(isSilent: true);
         break;
-
       case 1: // الشهادات
-        // لو عندك CertificatesCubit منفصل → نفس المنطق
-        // context.read<CertificatesCubit>().fetchCertificatesAndVideos(
-        //   advisorId: widget.advisorId,
-        //   loadMore: false,
-        //   isSilent: true,   // تحتاج تضيف الباراميتر ده كمان
-        // );
-        setState(() {}); // أو أفضل: استخدم key + silent fetch
+        _certificatesCubit.refresh(advisorId: widget.advisorId);
         break;
-
       case 2: // التقييمات
-        // نفس الفكرة مع RatingsCubit
-        setState(() {});
+        _ratingsCubit.refresh(advisorId: widget.advisorId);
         break;
     }
   }
@@ -93,8 +134,21 @@ class _UserAdvisorProfileTabsSectionState
   Widget build(BuildContext context) {
     final profile = _profileCubit.state.profile;
     final isMe = profile?.isMe ?? false;
+
     return SliverToBoxAdapter(
-      child: Column(children: [_buildTabsHeader(), _buildTabContent(isMe)]),
+      child: Column(
+        children: [
+          _buildTabsHeader(),
+          // ⭐ استخدام MultiBlocProvider لتوفير الـ Cubits
+          MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: _certificatesCubit),
+              BlocProvider.value(value: _ratingsCubit),
+            ],
+            child: _buildTabContent(isMe),
+          ),
+        ],
+      ),
     );
   }
 
@@ -140,7 +194,7 @@ class _UserAdvisorProfileTabsSectionState
                       ),
                     );
                   }).toList(),
-                  onTap: _handleTabTap, // أضف onTap للـ refresh
+                  onTap: _handleTabTap,
                 ),
               ),
             ],
@@ -159,16 +213,16 @@ class _UserAdvisorProfileTabsSectionState
         return ProfileCertificatesSection(
           isMe: isMe,
           key: ValueKey(
-            'certificates_${DateTime.now().millisecondsSinceEpoch}',
-          ), // للـ rebuild
+            'certificates_${widget.advisorId}',
+          ), // ⭐ key ثابت بناءً على advisorId
           advisorId: widget.advisorId,
         );
       case 2:
         return RatingsTab(
           isMe: isMe,
           key: ValueKey(
-            'ratings_${DateTime.now().millisecondsSinceEpoch}',
-          ), // للـ rebuild
+            'ratings_${widget.advisorId}',
+          ), // ⭐ key ثابت بناءً على advisorId
           advisorId: widget.advisorId,
         );
       default:

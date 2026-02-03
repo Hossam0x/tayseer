@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
-import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/view/widget/custtom_image_grid.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
@@ -12,7 +10,6 @@ import 'package:tayseer/features/user/user_profile/views/widgets/marriage_field_
 import 'package:tayseer/features/user/user_profile/views/widgets/voiceWidget.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:image_picker/image_picker.dart';
 
 class MarriageProfileEditView extends StatefulWidget {
   MarriageProfileEditView({

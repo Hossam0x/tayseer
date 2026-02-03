@@ -1,5 +1,4 @@
 import 'package:intl/intl.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/add_certificate_view.dart';
 import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
@@ -10,7 +9,7 @@ import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates_state.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class ProfileCertificatesSection extends StatelessWidget {
+class ProfileCertificatesSection extends StatefulWidget {
   final String advisorId;
   final bool isMe;
 
@@ -21,82 +20,46 @@ class ProfileCertificatesSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider<CertificatesCubit>(
-      create: (_) => getIt<CertificatesCubit>(),
-      child: _CertificatesSectionContent(advisorId: advisorId, isMe: isMe),
-    );
-  }
+  State<ProfileCertificatesSection> createState() =>
+      _ProfileCertificatesSectionState();
 }
 
-class _CertificatesSectionContent extends StatefulWidget {
-  final String advisorId;
-  final bool isMe;
-
-  const _CertificatesSectionContent({
-    required this.advisorId,
-    required this.isMe,
-  });
-
-  @override
-  State<_CertificatesSectionContent> createState() =>
-      __CertificatesSectionContentState();
-}
-
-class __CertificatesSectionContentState
-    extends State<_CertificatesSectionContent>
+class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
     with AutomaticKeepAliveClientMixin {
-  late CertificatesCubit _cubit;
-  bool _isInitialized = false;
-
   @override
   bool get wantKeepAlive => true;
 
   @override
-  void initState() {
-    super.initState();
-    _cubit = CertificatesCubit(getIt<CertificatesRepository>());
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    if (!_isInitialized) {
-      await _cubit.fetchCertificatesAndVideos(advisorId: widget.advisorId);
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
-    }
-  }
-
-  Future<void> refreshFromParent() async {
-    await _cubit.refresh(advisorId: widget.advisorId);
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final bool isMe = widget.isMe;
     super.build(context);
-    if (!_isInitialized) {
-      return _buildSkeletonSection();
-    }
+    final bool isMe = widget.isMe;
 
-    return RefreshIndicator(
-      onRefresh: () async => await _cubit.refresh(advisorId: widget.advisorId),
-      child: Column(
-        children: [
-          _buildContentSection(context, _cubit.state, isMe),
+    // ⭐ استخدام الـ Cubit الموجود من الـ context
+    return BlocBuilder<CertificatesCubit, CertificatesState>(
+      builder: (context, state) {
+        if (state.state == CubitStates.loading && !state.hasLoadedOnce) {
+          return _buildSkeletonSection();
+        }
 
-          // زر تحميل المزيد للشهادات
-          if (_cubit.state.hasMore) _buildLoadMoreButton(context, _cubit.state),
+        if (state.state == CubitStates.failure && state.certificates.isEmpty) {
+          return _buildErrorSection(context);
+        }
 
-          Gap(20.h),
-        ],
-      ),
+        return RefreshIndicator(
+          onRefresh: () async {
+            await context.read<CertificatesCubit>().refresh(
+              advisorId: widget.advisorId,
+            );
+          },
+          child: Column(
+            children: [
+              _buildContentSection(context, state, isMe),
+              if (state.hasMore) _buildLoadMoreButton(context, state),
+              Gap(20.h),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -110,7 +73,7 @@ class __CertificatesSectionContentState
           : SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _cubit.loadMore(),
+                onPressed: () => context.read<CertificatesCubit>().loadMore(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.kWhiteColor,
                   foregroundColor: AppColors.kprimaryColor,
@@ -142,7 +105,6 @@ class __CertificatesSectionContentState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Video Section
           if (state.hasVideo) _buildVideoSection(context, state.videoUrl!),
           Gap(24.h),
           if (isMe)
@@ -173,7 +135,6 @@ class __CertificatesSectionContentState
                 ),
               ],
             ),
-          // Certificates List
           if (state.hasCertificates)
             ListView.builder(
               shrinkWrap: true,
@@ -193,7 +154,6 @@ class __CertificatesSectionContentState
           else
             _buildNoCertificatesSection(),
           Gap(24.h),
-          // Boost Button
           if (isMe)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 35.w),
@@ -209,6 +169,7 @@ class __CertificatesSectionContentState
     );
   }
 
+  // ... باقي الـ methods كما هي (نفس الكود السابق)
   Widget _buildSkeletonSection() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 24.h),
@@ -216,7 +177,6 @@ class __CertificatesSectionContentState
         enabled: true,
         child: Column(
           children: [
-            // Video skeleton
             Container(
               width: double.infinity,
               height: 400.h,
@@ -226,7 +186,6 @@ class __CertificatesSectionContentState
               ),
             ),
             Gap(24.h),
-            // Certificates skeleton
             ...List.generate(
               3,
               (index) => Padding(
@@ -281,7 +240,6 @@ class __CertificatesSectionContentState
               ),
             ),
             Gap(24.h),
-            // Boost button skeleton
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 35.w),
               child: Container(
@@ -299,12 +257,44 @@ class __CertificatesSectionContentState
     );
   }
 
-  // إضافة دالة التنقل لإضافة الشهادة
+  Widget _buildErrorSection(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 100.h),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
+          Gap(16.h),
+          Text(
+            'حدث خطأ في تحميل الشهادات',
+            style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
+          ),
+          Gap(24.h),
+          ElevatedButton(
+            onPressed: () => context.read<CertificatesCubit>().refresh(
+              advisorId: widget.advisorId,
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.kprimaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+            ),
+            child: Text(
+              'إعادة المحاولة',
+              style: Styles.textStyle14Meduim.copyWith(
+                color: AppColors.kWhiteColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _navigateToAddCertificate(BuildContext context) {
     Navigator.push(
       context,
       PageRouteBuilder(
-        // settings: const RouteSettings(name: AppRouter.kAddCertificateView),
         pageBuilder: (context, animation, secondaryAnimation) =>
             const AddCertificateView(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -333,9 +323,8 @@ class __CertificatesSectionContentState
     CertificateModel certificate,
     bool isMe,
   ) {
-    // ⭐ تحقق من وجود بيانات الشهادة
     if (certificate.nameCertificate.isEmpty) {
-      return Container(); // أو عرض عنصر فارغ
+      return Container();
     }
 
     return GestureDetector(
@@ -351,7 +340,6 @@ class __CertificatesSectionContentState
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // الصورة
             Container(
               width: 110.w,
               height: 90.w,
@@ -375,7 +363,6 @@ class __CertificatesSectionContentState
                   : Icon(Icons.school, color: Colors.grey.shade400, size: 22.w),
             ),
             SizedBox(width: 16.w),
-            // التفاصيل
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,7 +405,6 @@ class __CertificatesSectionContentState
     );
   }
 
-  // تعديل دالة التنقل لتأخذ الشهادة المفردة
   void _navigateToEditCertificate(
     BuildContext context,
     CertificateModel selectedCertificate,
@@ -430,7 +416,6 @@ class __CertificatesSectionContentState
       PageRouteBuilder(
         settings: const RouteSettings(name: AppRouter.kEditCertificateView),
         pageBuilder: (context, animation, secondaryAnimation) {
-          // ⭐ استخدام BlocProvider.value لنقل الـ Cubit الحالي
           return BlocProvider.value(
             value: certificatesCubit,
             child: EditCertificateView(
@@ -454,7 +439,12 @@ class __CertificatesSectionContentState
         },
       ),
     ).then((result) {
-      if (result == true && context.mounted) {
+      if (result != null && result is Map && result['updated'] == true) {
+        // ⭐ تحديث محلي فوري
+        if (result['certificate'] != null) {
+          certificatesCubit.updateCertificateLocally(result['certificate']);
+        }
+        // ⭐ تحديث من السيرفر للتأكد
         certificatesCubit.refresh(advisorId: widget.advisorId);
       }
     });
@@ -463,7 +453,7 @@ class __CertificatesSectionContentState
   Widget _buildVideoSection(BuildContext context, String videoUrl) {
     return SizedBox(
       width: double.infinity,
-      height: 400.h,
+      height: 300.h,
       child: VideoPlayerWidget(videoUrl: videoUrl, showFullScreenButton: true),
     );
   }
