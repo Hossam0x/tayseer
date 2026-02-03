@@ -113,17 +113,16 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
 
   Future<void> _uploadImage(File imageFile, BuildContext context) async {
     try {
+      // ⭐ إرسال الصورة فقط لتجنب مشاكل التحقق في الحقول الأخرى (مثل الوصف)
+      // نظرًا لأن هذا إجراء "تحديث صورة" منفصل
       final result = await _repository.updateUserProfile(
-        name: state.name,
-        username: state.username,
-        description: state.description,
         imageFile: imageFile,
+        // لا نرسل الحقول الأخرى لأننا نريد تحديث الصورة فقط هنا
+        // هذا يعتمد على أن الـ Backend يدعم PATCH لتحديث جزئي
       );
-      showSafeSnackBar(
-        context: context,
-        text: 'تم تحديث الصوره بنجاح',
-        isSuccess: true,
-      );
+
+      if (isClosed) return;
+
       result.fold(
         (failure) {
           emit(
@@ -135,7 +134,7 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
           );
           showSafeSnackBar(
             context: context,
-            text: state.errorMessage!,
+            text: failure.message,
             isError: true,
           );
         },

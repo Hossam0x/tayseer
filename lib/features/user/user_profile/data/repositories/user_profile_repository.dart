@@ -55,60 +55,57 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
     String? gender,
   }) async {
     try {
-      final formData = FormData();
+      final Map<String, dynamic> data = {};
 
-      // إضافة الحقول النصية إذا كانت موجودة
-      if (name != null) formData.fields.add(MapEntry('name', name));
-      if (username != null) formData.fields.add(MapEntry('username', username));
-      if (description != null)
-        formData.fields.add(MapEntry('description', description));
-      if (age != null) formData.fields.add(MapEntry('age', age.toString()));
-      if (gender != null) formData.fields.add(MapEntry('gender', gender));
+      if (name != null) data['name'] = name;
+      if (username != null) data['username'] = username;
+      if (description != null) data['description'] = description;
+      if (age != null) data['age'] = age;
+      if (gender != null) data['gender'] = gender;
 
-      // إضافة ملف الصورة إذا كان موجوداً
       if (imageFile != null && await imageFile.exists()) {
-        formData.files.add(
-          MapEntry(
-            'image',
-            await MultipartFile.fromFile(
-              imageFile.path,
-              filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
-            ),
-          ),
+        final String fileName = imageFile.path.split('/').last;
+        data['image'] = await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
         );
       }
 
-      debugPrint('📤 إرسال تحديث الملف الشخصي:');
-      if (name != null) debugPrint('   - الاسم: $name');
-      if (username != null) debugPrint('   - اسم المستخدم: $username');
-      if (description != null) debugPrint('   - الوصف: $description');
-      if (age != null) debugPrint('   - السن: $age');
-      if (gender != null) debugPrint('   - النوع: $gender');
-      debugPrint('   - يوجد صورة: ${imageFile != null}');
-
       final response = await _apiService.patch(
         endPoint: '/user/update-profile',
-        data: formData,
+        data: data,
+        isFromData: true,
       );
-
-      debugPrint('📥 استجابة تحديث الملف الشخصي: $response');
 
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
         final profile = UserProfileModel.fromJson(data);
         return Right(profile);
       } else {
-        debugPrint('❌ فشل تحديث الملف الشخصي: ${response['message']}');
         return Left(
           ServerFailure(response['message'] ?? 'فشل تحديث الملف الشخصي'),
         );
       }
     } on DioException catch (e) {
-      debugPrint('❌ خطأ Dio في تحديث الملف الشخصي: ${e.message}');
-      debugPrint('   - الاستجابة: ${e.response?.data}');
+      if (e.response != null) {
+        final message = e.response?.data['message'] ?? 'فشل الاتصال بالسيرفر';
+        final errors = e.response?.data['errors'];
+        // دمج الأخطاء في رسالة واحدة (مثل description: error)
+        String finalMessage = message;
+        if (errors != null) {
+          if (errors is List) {
+            finalMessage = '$message: ${errors.join(", ")}';
+          } else if (errors is Map) {
+            // Handle map of errors if needed
+            finalMessage = '$message: $errors';
+          } else {
+            finalMessage = '$message: $errors';
+          }
+        }
+        return Left(ServerFailure(finalMessage));
+      }
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      debugPrint('❌ خطأ غير متوقع في تحديث الملف الشخصي: $e');
       return Left(ServerFailure(e.toString()));
     }
   }
