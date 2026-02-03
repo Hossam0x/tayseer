@@ -361,17 +361,17 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
     }
   }
 
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(duration.inHours);
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
+  // String _formatDuration(Duration duration) {
+  //   String twoDigits(int n) => n.toString().padLeft(2, '0');
+  //   final hours = twoDigits(duration.inHours);
+  //   final minutes = twoDigits(duration.inMinutes.remainder(60));
+  //   final seconds = twoDigits(duration.inSeconds.remainder(60));
 
-    if (duration.inHours > 0) {
-      return '$hours:$minutes:$seconds';
-    }
-    return '$minutes:$seconds';
-  }
+  //   if (duration.inHours > 0) {
+  //     return '$hours:$minutes:$seconds';
+  //   }
+  //   return '$minutes:$seconds';
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -397,8 +397,6 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
     );
   }
 
-  // ... باقي الـ methods بدون تغيير
-
   Widget _buildLoadingState() {
     return Container(
       height: 400.h,
@@ -421,21 +419,14 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
                   ),
                 ],
               )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: AppColors.kprimaryColor),
-                  SizedBox(height: 16.h),
-                  Text('جاري التحميل...', style: Styles.textStyle14),
-                ],
-              ),
+            : Container(),
       ),
     );
   }
 
   Widget _buildVideoPlayer() {
-    final duration = _controller!.value.duration;
-    final position = _controller!.value.position;
+    // final duration = _controller!.value.duration;
+    // final position = _controller!.value.position;
     final videoSize = _controller!.value.size;
 
     return SizedBox(
@@ -453,19 +444,19 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
           ),
 
           // Play Button Overlay
-          if (!_controller!.value.isPlaying && !_isBuffering)
-            GestureDetector(
-              onTap: _togglePlayPause,
-              child: Container(
-                width: 64.w,
-                height: 64.w,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.play_arrow, color: Colors.white, size: 32.w),
-              ),
-            ),
+          // if (!_controller!.value.isPlaying && !_isBuffering)
+          //   GestureDetector(
+          //     onTap: _togglePlayPause,
+          //     child: Container(
+          //       width: 64.w,
+          //       height: 64.w,
+          //       decoration: BoxDecoration(
+          //         color: Colors.black.withOpacity(0.6),
+          //         shape: BoxShape.circle,
+          //       ),
+          //       child: Icon(Icons.play_arrow, color: Colors.white, size: 32.w),
+          //     ),
+          //   ),
 
           // Controls
           if (_showControls)
@@ -530,56 +521,26 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
                 children: [
                   if (widget.showFullScreenButton)
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: Alignment.centerRight,
                       child: IconButton(
                         onPressed: _openFullscreen,
                         icon: Icon(
                           Icons.fullscreen,
                           color: Colors.white,
-                          size: 24.w,
+                          size: 30.w,
                         ),
                       ),
                     ),
-                  Row(
-                    children: [
-                      Text(
-                        _formatDuration(position),
-                        style: Styles.textStyle12.copyWith(color: Colors.white),
-                      ),
-                      Expanded(
-                        child: Slider(
-                          value: position.inMilliseconds.toDouble().clamp(
-                            0.0,
-                            duration.inMilliseconds.toDouble(),
-                          ),
-                          min: 0,
-                          max: duration.inMilliseconds.toDouble(),
-                          onChanged: (value) {
-                            _controller!.seekTo(
-                              Duration(milliseconds: value.toInt()),
-                            );
-                          },
-                          activeColor: AppColors.kprimaryColor,
-                          inactiveColor: Colors.grey.shade400,
-                        ),
-                      ),
-                      Text(
-                        _formatDuration(duration),
-                        style: Styles.textStyle12.copyWith(color: Colors.white),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
           ),
 
           // Buffering Indicator
-          if (_isBuffering)
-            Center(
-              child: CircularProgressIndicator(color: AppColors.kprimaryColor),
-            ),
-
+          // if (_isBuffering)
+          // Center(
+          //   child: CircularProgressIndicator(color: AppColors.kprimaryColor),
+          // ),
           // Tap to show/hide controls
           if (!_showControls && !_isBuffering)
             Positioned.fill(

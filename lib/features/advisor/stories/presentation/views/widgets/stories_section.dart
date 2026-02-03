@@ -5,6 +5,8 @@ import 'package:tayseer/features/advisor/stories/presentation/view_model/stories
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 
 class StoriesSection extends StatelessWidget {
   const StoriesSection({super.key});
@@ -43,7 +45,7 @@ class StoriesSection extends StatelessWidget {
         return _StoriesListView(stories: state.storiesList);
     }
   }
-} // في ملف HomeStoriesSection.dart
+}
 
 class _StoriesListView extends StatefulWidget {
   final List<UserStoriesModel> stories;
@@ -156,15 +158,14 @@ class _UserStoryItem extends StatelessWidget {
       child: Column(
         children: [
           Hero(
-            tag: userStoryModel.userId, // استخدام معرف المستخدم كـ tag
+            tag: userStoryModel.userId,
             child: Container(
               width: context.responsiveWidth(76),
               height: context.responsiveWidth(76),
-              padding: EdgeInsets.all(3.r), // مسافة بين البوردر والصورة
+              padding: EdgeInsets.all(3.r),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  // تغيير اللون إذا تمت المشاهدة بالكامل
                   color: userStoryModel.allViewed
                       ? AppColors.kGreyB3
                       : AppColors.kprimaryColor,
@@ -306,7 +307,16 @@ class _AddStoryItem extends StatelessWidget {
           Stack(
             alignment: Alignment.center,
             children: [
-              MyProfileImage(width: context.responsiveWidth(76)),
+              BlocBuilder<HomeCubit, HomeState>(
+                buildWhen: (previous, current) =>
+                    previous.homeInfo != current.homeInfo,
+                builder: (context, state) {
+                  return MyProfileImage(
+                    width: context.responsiveWidth(76),
+                    imageUrl: state.homeInfo?.image,
+                  );
+                },
+              ),
               Positioned(
                 bottom: 0,
                 right: 0,

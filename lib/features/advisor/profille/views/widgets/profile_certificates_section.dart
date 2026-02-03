@@ -453,7 +453,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
   Widget _buildVideoSection(BuildContext context, String videoUrl) {
     return SizedBox(
       width: double.infinity,
-      height: 400.h,
+      height: 300.h,
       child: VideoPlayerWidget(videoUrl: videoUrl, showFullScreenButton: true),
     );
   }

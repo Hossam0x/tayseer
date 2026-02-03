@@ -37,14 +37,17 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 ),
                 child: Row(
                   children: [
-                    MyProfileImage(imageUrl: kCurrentUserData?.image ),
+                    // ⭐ استخدام state.homeInfo?.image بدل kCurrentUserData?.image
+                    MyProfileImage(imageUrl: state.homeInfo?.image ?? ''),
                     Gap(context.responsiveWidth(14)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           GradientText(
-                            text: isUser ? context.tr("welcome") : context.tr("welcomeAdvisor"),
+                            text: isUser
+                                ? context.tr("welcome")
+                                : context.tr("welcomeAdvisor"),
                             style: Styles.textStyle24Bold,
                             gradient: AppColors.blueOrangeGradient,
                           ),

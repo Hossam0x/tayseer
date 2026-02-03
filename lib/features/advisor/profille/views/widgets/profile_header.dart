@@ -6,6 +6,7 @@ import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key});
@@ -217,13 +218,21 @@ class ProfileHeader extends StatelessWidget {
     return const SliverToBoxAdapter(child: SizedBox.shrink());
   }
 
-  void _openSettings(BuildContext context) {
-    Navigator.push(
+  void _openSettings(BuildContext context) async {
+    // ⭐ انتظار الرجوع من صفحة الإعدادات
+    await Navigator.push(
       context,
       SlideLeftRoute(
         page: const SettingsView(),
         routeSettings: const RouteSettings(name: AppRouter.kSettingsView),
       ),
     );
+
+    // ⭐ تحديث البروفايل بعد الرجوع من الإعدادات
+    if (context.mounted) {
+      context.read<ProfileCubit>().fetchProfile();
+      // تحديث بيانات الهوم من الكاش أيضاً لضمان التزامن
+      getIt<HomeCubit>().refreshUserInfoFromCache();
+    }
   }
 }

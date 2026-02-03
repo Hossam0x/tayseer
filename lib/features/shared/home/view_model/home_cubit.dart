@@ -42,6 +42,30 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  /// تحديث بيانات اليوزر من الكاش (للاستخدام بعد تحديث البيانات)
+  void refreshUserInfoFromCache() {
+    final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
+    final cachedName = CachNetwork.getStringData(key: kMyProfileName);
+
+    if (cachedImage.isNotEmpty || cachedName.isNotEmpty) {
+      final newData = ImageAndNameModel(
+        image: cachedImage,
+        name: cachedName,
+        notifications: state.homeInfo?.notifications ?? 0,
+      );
+
+      // تحديث فقط لو البيانات اتغيرت
+      if (_isUserInfoChanged(newData)) {
+        emit(
+          state.copyWith(
+            homeInfo: newData,
+            fetchNameAndImageState: CubitStates.success,
+          ),
+        );
+      }
+    }
+  }
+
   /// ريفريش كامل للصفحة - يعيد كل شيء للقيم الأولية ويحمل من جديد
   Future<void> refreshHome() async {
     // إعادة تعيين كل شيء للقيم الأولية (مع الحفاظ على بيانات اليوزر المخزنة)
@@ -543,7 +567,7 @@ class HomeCubit extends Cubit<HomeState> {
       );
     });
   }
- 
+
   // ═══════════════════════════════════════════════════════════════════════════
   //  Archive POST
   // ═══════════════════════════════════════════════════════════════════════════
@@ -601,7 +625,7 @@ class HomeCubit extends Cubit<HomeState> {
       );
     });
   }
-  
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 👁️ TOGGLE HIDE POST
   // ═══════════════════════════════════════════════════════════════════════════
