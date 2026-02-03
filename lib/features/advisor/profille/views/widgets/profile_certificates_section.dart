@@ -444,6 +444,8 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
         if (result['certificate'] != null) {
           certificatesCubit.updateCertificateLocally(result['certificate']);
         }
+        // ⭐ تحديث من السيرفر للتأكد
+        certificatesCubit.refresh(advisorId: widget.advisorId);
       }
     });
   }

@@ -165,7 +165,8 @@ class CertificatesCubit extends Cubit<CertificatesState> {
     await fetchCertificatesAndVideos(
       advisorId: advisorId,
       loadMore: false,
-      isSilent: false, // Normal refresh
+      isSilent: false,
+      forceRefresh: true, // ⭐ إعادة تحميل إجباري لتحديث القائمة
     );
   }
 
