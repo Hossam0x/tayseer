@@ -70,10 +70,15 @@ class QuestionPage extends StatelessWidget {
         );
 
       case QuestionType.textInput:
-        return TextInputQuestion(
-          onChanged: (value) {
-            _selectedValue.value = value;
-          },
+        return SingleChildScrollView(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: TextInputQuestion(
+            onChanged: (value) {
+              _selectedValue.value = value;
+            },
+          ),
         );
     }
   }

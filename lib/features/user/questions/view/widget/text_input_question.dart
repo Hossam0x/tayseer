@@ -4,10 +4,7 @@ import 'package:tayseer/my_import.dart';
 class TextInputQuestion extends StatefulWidget {
   final ValueChanged<String> onChanged;
 
-  const TextInputQuestion({
-    super.key,
-    required this.onChanged,
-  });
+  const TextInputQuestion({super.key, required this.onChanged});
 
   @override
   State<TextInputQuestion> createState() => _TextInputQuestionState();
