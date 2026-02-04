@@ -17,7 +17,7 @@ import 'package:tayseer/my_import.dart';
 class UserProfileView extends StatefulWidget {
   const UserProfileView({super.key});
 
-  @override 
+  @override
   State<UserProfileView> createState() => _UserProfileViewState();
 }
 
@@ -610,7 +610,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      setting.title,
+                      context.tr(setting.title),
                       style: Styles.textStyle16Meduim.copyWith(
                         color: isNotificationsItem
                             ? AppColors.secondary800.withOpacity(0.9)

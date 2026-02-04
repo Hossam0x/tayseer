@@ -57,25 +57,25 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     return [
       SettingItemModel(
         id: 'edit_profile',
-        title: 'تعديل الملف الشخصى',
+        title: 'edit_my_profile',
         iconAsset: AssetsData.icEditSettings,
         routeName: '',
       ),
       SettingItemModel(
         id: 'edit_marriage_profile',
-        title: 'إستكمال ملف الزواج',
+        title: 'complete_marriage_profile',
         iconAsset: AssetsData.icManagementSettings,
         routeName: '',
       ),
       SettingItemModel(
         id: 'settings',
-        title: 'الاعدادات العامة',
+        title: 'general_settings',
         iconAsset: AssetsData.icSettingsProf,
         routeName: '',
       ),
       SettingItemModel(
         id: 'notifications',
-        title: 'الاشعارات',
+        title: 'notifications_settings',
         iconAsset: AssetsData.icNotificationSettings,
         hasSwitch: true,
         routeName: '',
@@ -89,32 +89,32 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       ),
       SettingItemModel(
         id: 'language',
-        title: 'اللغة',
+        title: 'app_language',
         subtitle: getLanguageName(savedLanguage),
         iconAsset: AssetsData.icLanguageSettings,
         routeName: AppRouter.kLanguageSelectionView,
       ),
       SettingItemModel(
         id: 'archive',
-        title: 'المحادثات المؤرشفة',
+        title: 'archived_chats',
         iconAsset: AssetsData.icArchiveSettings,
         routeName: AppRouter.kUserArchiveChatsView,
       ),
       SettingItemModel(
         id: 'blocks',
-        title: 'المحظورات',
+        title: 'blocked_users',
         iconAsset: AssetsData.icBlockedSettings,
         routeName: AppRouter.kBlockedUsersView,
       ),
       SettingItemModel(
         id: 'help_support',
-        title: 'المساعدة والدعم',
+        title: 'help_and_support',
         iconAsset: AssetsData.icHelpSettings,
         routeName: AppRouter.kHelpSupportView,
       ),
       SettingItemModel(
         id: 'invite',
-        title: 'دعوة',
+        title: 'invite_friend',
         iconAsset: AssetsData.icInviteSettings,
         routeName: '',
         onTap: () async {
@@ -123,14 +123,14 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       ),
       SettingItemModel(
         id: 'rate_app',
-        title: 'تقييم التطبيق',
+        title: 'rate_the_app',
         iconAsset: AssetsData.icRateSettings,
         routeName: '',
         onTap: () async {},
       ),
       SettingItemModel(
         id: 'account_management',
-        title: 'إدارة الحساب',
+        title: 'manage_account',
         iconAsset: AssetsData.icManagementSettings,
         routeName: AppRouter.kUserAccountManagementView,
       ),
@@ -166,7 +166,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           showSafeSnackBar(
             context: context,
-            text: 'فشل تحديث السن: ${failure.message}',
+            text: '${context.tr("update_age_failed")}: ${failure.message}',
             isError: true,
           );
         },
@@ -174,7 +174,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           emit(currentState.copyWith(userProfile: updatedProfile));
           showSafeSnackBar(
             context: context,
-            text: 'تم تحديث السن بنجاح',
+            text: context.tr("update_age_success"),
             isSuccess: true,
           );
         },
@@ -182,7 +182,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     } catch (e) {
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ في تحديث السن',
+        text: context.tr("update_age_error"),
         isError: true,
       );
     }
@@ -204,7 +204,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           showSafeSnackBar(
             context: context,
-            text: 'فشل تحديث النوع: ${failure.message}',
+            text: '${context.tr("update_gender_failed")}: ${failure.message}',
             isError: true,
           );
         },
@@ -212,7 +212,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           emit(currentState.copyWith(userProfile: updatedProfile));
           showSafeSnackBar(
             context: context,
-            text: 'تم تحديث النوع بنجاح',
+            text: context.tr("update_gender_success"),
             isSuccess: true,
           );
         },
@@ -220,7 +220,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     } catch (e) {
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ في تحديث النوع',
+        text: context.tr("update_gender_error"),
         isError: true,
       );
     }
@@ -245,7 +245,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           showSafeSnackBar(
             context: context,
-            text: 'فشل تحديث حالة المجهول: ${failure.message}',
+            text:
+                '${context.tr("update_anonymous_failed")}: ${failure.message}',
             isError: true,
           );
         },
@@ -257,7 +258,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
           showSafeSnackBar(
             context: context,
-            text: isAnonymous ? 'تم تفعيل المجهولية' : 'تم إلغاء المجهولية',
+            text: isAnonymous
+                ? context.tr("anonymous_enabled")
+                : context.tr("anonymous_disabled"),
             isSuccess: true,
           );
         },
@@ -265,7 +268,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     } catch (e) {
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ في تحديث حالة المجهول',
+        text: context.tr("update_anonymous_error"),
         isError: true,
       );
     }
@@ -285,7 +288,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           showSafeSnackBar(
             context: context,
-            text: 'فشل تحديث حالة الزواج: ${failure.message}',
+            text:
+                '${context.tr("update_marriage_status_failed")}: ${failure.message}',
             isError: true,
           );
         },
@@ -297,7 +301,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
           showSafeSnackBar(
             context: context,
-            text: enable ? 'تم تفعيل الزواج' : 'تم إيقاف الزواج',
+            text: enable
+                ? context.tr("marriage_status_enabled")
+                : context.tr("marriage_status_disabled"),
             isSuccess: true,
           );
         },
@@ -305,7 +311,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     } catch (e) {
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ في تحديث حالة الزواج',
+        text: context.tr("update_marriage_status_error"),
         isError: true,
       );
     }
@@ -320,7 +326,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           showSafeSnackBar(
             context: context,
-            text: 'فشل تحديث إعدادات الصورة: ${failure.message}',
+            text: '${context.tr("update_blur_failed")}: ${failure.message}',
             isError: true,
           );
         },
@@ -328,8 +334,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           showSafeSnackBar(
             context: context,
             text: blurEnabled
-                ? 'تم تفعيل تمويه الصورة'
-                : 'تم إلغاء تمويه الصورة',
+                ? context.tr("blur_enabled")
+                : context.tr("blur_disabled"),
             isSuccess: true,
           );
         },
@@ -337,7 +343,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     } catch (e) {
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ في تحديث إعدادات الصورة',
+        text: context.tr("update_blur_error"),
         isError: true,
       );
     }
@@ -365,13 +371,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       showSafeSnackBar(
         context: context,
-        text: 'تم تحديث اللغة إلى $languageName',
+        text: '${context.tr("update_language_success")} $languageName',
         isSuccess: true,
       );
     } catch (e) {
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ في تحديث اللغة ⚠️',
+        text: context.tr("update_language_error"),
         isError: true,
       );
     }
@@ -455,7 +461,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       showSafeSnackBar(
         context: context,
-        text: value ? 'تم تفعيل الاشعارات ✅' : 'تم تعطيل الاشعارات 🔕',
+        text: value
+            ? context.tr("notifications_enabled_success")
+            : context.tr("notifications_disabled_success"),
         isSuccess: value ? true : false,
         duration: const Duration(milliseconds: 1500),
       );
@@ -474,7 +482,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ في تحديث الإعدادات ⚠️',
+        text: context.tr("update_settings_error"),
         isError: true,
       );
     }
