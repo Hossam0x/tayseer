@@ -21,56 +21,56 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
 
   // ⭐ خرائط تحويل للمناصب
   final Map<String, String> _positionMapping = {
-    "advisor": "استشاري",
-    "senior": "كبير",
-    "junior": "أخصائي",
-    "trainer": "مدرب",
-    "lecturer": "محاضر",
+    "advisor": "job_consultant_title",
+    "senior": "job_senior",
+    "junior": "job_specialist",
+    "trainer": "job_trainer",
+    "lecturer": "job_lecturer",
   };
 
   // ⭐ خرائط تحويل للتخصصات (تأكد من اكتمالها)
   final Map<String, String> _specializationMapping = {
-    "doctor": "طبيب نفسي",
-    "psychology": "استشاري نفسي وعلاقات زوجية",
-    "psychiatrist": "طبيب نفسي",
-    "psychologist": "أخصائي نفسي",
-    "life_coach": "مدرب حياة",
-    "family_counselor": "مستشار أسري",
-    "specialist": "أخصائي",
-    "consultant": "استشاري",
+    "doctor": "spec_psychiatrist", // Or spec_doctor_psych if distinct
+    "psychology": "spec_psych_counseling",
+    "psychiatrist": "spec_psychiatrist",
+    "psychologist": "spec_psychologist",
+    "life_coach": "spec_life_coach",
+    "family_counselor": "spec_family_counselor",
+    "specialist": "spec_specialist",
+    "consultant": "spec_consultant",
   };
 
   // ⭐ تحديث القوائم
   final List<String> _positions = [
-    "استشاري",
-    "كبير",
-    "أخصائي",
-    "مدرب",
-    "محاضر",
+    "job_consultant_title",
+    "job_senior",
+    "job_specialist",
+    "job_trainer",
+    "job_lecturer",
   ];
   // ⭐ خرائط تحويل لسنوات الخبرة
   final Map<String, String> _experienceMapping = {
-    "2": "سنتين",
-    "3": "3 سنوات",
-    "5": "5 سنوات",
-    "10": "10 سنوات",
-    "11": "أكثر من 10 سنوات",
+    "2": "exp_2_years",
+    "3": "exp_3_years",
+    "5": "exp_5_years",
+    "10": "exp_10_years",
+    "11": "exp_more_than_10_years",
   };
 
   final List<String> _specializations = [
-    "استشاري نفسي وعلاقات زوجية",
-    "طبيب نفسي",
-    "أخصائي نفسي",
-    "مدرب حياة",
-    "مستشار أسري",
+    "spec_psych_counseling",
+    "spec_psychiatrist",
+    "spec_psychologist",
+    "spec_life_coach",
+    "spec_family_counselor",
   ];
 
   final List<Map<String, String>> _experienceOptions = [
-    {"display": "سنتين", "value": "2"},
-    {"display": "3 سنوات", "value": "3"},
-    {"display": "5 سنوات", "value": "5"},
-    {"display": "10 سنوات", "value": "10"},
-    {"display": "أكثر من 10 سنوات", "value": "11"},
+    {"display": "exp_2_years", "value": "2"},
+    {"display": "exp_3_years", "value": "3"},
+    {"display": "exp_5_years", "value": "5"},
+    {"display": "exp_10_years", "value": "10"},
+    {"display": "exp_more_than_10_years", "value": "11"},
   ];
 
   String? _selectedPosition;
@@ -150,11 +150,17 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
 
   // ⭐ دالة لاستخراج القيمة الرقمية من نص الخبرة
   String _getValueFromExperience(String displayValue) {
-    if (displayValue.contains("سنتين")) return "2";
-    if (displayValue.contains("3 سنوات")) return "3";
-    if (displayValue.contains("5 سنوات")) return "5";
-    if (displayValue.contains("10 سنوات")) return "10";
-    if (displayValue.contains("أكثر من")) return "11";
+    if (displayValue == "exp_2_years" || displayValue.contains("سنتين"))
+      return "2";
+    if (displayValue == "exp_3_years" || displayValue.contains("3 سنوات"))
+      return "3";
+    if (displayValue == "exp_5_years" || displayValue.contains("5 سنوات"))
+      return "5";
+    if (displayValue == "exp_10_years" || displayValue.contains("10 سنوات"))
+      return "10";
+    if (displayValue == "exp_more_than_10_years" ||
+        displayValue.contains("أكثر من"))
+      return "11";
 
     final match = RegExp(r'(\d+)').firstMatch(displayValue);
     return match?.group(1) ?? displayValue;
@@ -231,7 +237,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             errorBuilder: (context, errorMessage) {
               return Center(
                 child: Text(
-                  'تعذر تحميل الفيديو',
+                  context.tr("video_load_error"),
                   style: Styles.textStyle14.copyWith(
                     color: AppColors.kRedColor,
                   ),
@@ -265,7 +271,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'حجم الفيديو يجب أن يكون أقل من 4 ميجابايت',
+              context.tr("video_size_error_4mb"),
               textDirection: TextDirection.rtl,
             ),
             backgroundColor: Colors.red,
@@ -307,7 +313,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'تعذر تحميل الفيديو',
+              context.tr("video_load_error"),
               textDirection: TextDirection.rtl,
             ),
             backgroundColor: Colors.red,
@@ -451,7 +457,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             SimpleAppBar(
-                              title: 'تعديل البيانات الشخصية',
+                              title: context.tr("edit_personal_data"),
                               isLargeTitle: true,
                             ),
                             Padding(
@@ -476,7 +482,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           Gap(16.h),
                                           Text(
                                             state.errorMessage ??
-                                                'حدث خطأ في تحميل البيانات',
+                                                context.tr("data_load_error"),
                                             textAlign: TextAlign.center,
                                             style: Styles.textStyle14.copyWith(
                                               color: AppColors.secondary600,
@@ -485,7 +491,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           Gap(24.h),
                                           CustomBotton(
                                             width: context.width * 0.6,
-                                            title: 'إعادة المحاولة',
+                                            title: context.tr("retry"),
                                             onPressed: () =>
                                                 cubit.loadProfileData(),
                                           ),
@@ -504,14 +510,14 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           controller: _nameController,
                                           onChanged: (value) =>
                                               cubit.updateName(value),
-                                          hint: 'أدخل اسمك',
+                                          hint: context.tr("enter_name"),
                                         ),
                                         Gap(11.h),
                                         ProfileTextField(
                                           controller: _usernameController,
                                           onChanged: (value) =>
                                               cubit.updateUsername(value),
-                                          hint: 'اسم المستخدم',
+                                          hint: context.tr("enter_username"),
                                         ),
                                         Gap(11.h),
 
@@ -531,7 +537,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           controller: _bioController,
                                           onChanged: (value) =>
                                               cubit.updateBio(value),
-                                          hint: 'اكتب سيرتك الذاتية هنا...',
+                                          hint: context.tr("bio_hint"),
                                           maxLines: 4,
                                         ),
                                         Gap(6.h),
@@ -556,8 +562,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           width: double.infinity,
                                           useGradient: true,
                                           title: state.isSaving
-                                              ? 'جاري الحفظ...'
-                                              : 'حفظ',
+                                              ? context.tr("saving")
+                                              : context.tr("save"),
                                           onPressed:
                                               state.isSaving ||
                                                   !state.hasChanges
@@ -799,7 +805,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           elevation: 16,
           style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
           hint: Text(
-            hint,
+            context.tr(hint),
             style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
             textAlign: TextAlign.right,
           ),
@@ -808,7 +814,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             return DropdownMenuItem<String>(
               value: item,
               child: Text(
-                item,
+                context.tr(item),
                 textAlign: TextAlign.right,
                 // ⭐ إضافة نمط للقيم غير المعروفة
                 style: Styles.textStyle14.copyWith(
@@ -885,8 +891,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                   Gap(8.h),
                                   Text(
                                     videoFile != null
-                                        ? 'جاري تحميل الفيديو الجديد...'
-                                        : 'جاري تحميل الفيديو...',
+                                        ? context.tr("loading_new_video")
+                                        : context.tr("loading_video"),
                                     style: Styles.textStyle14.copyWith(
                                       color: Colors.white70,
                                     ),
@@ -929,7 +935,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                         ),
                         Gap(4.w),
                         Text(
-                          'تم اختيار فيديو جديد',
+                          context.tr("new_video_selected"),
                           style: Styles.textStyle12.copyWith(
                             color: AppColors.secondary600,
                           ),
@@ -963,8 +969,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                   Gap(12.h),
                   Text(
                     isVideoDeleted
-                        ? 'تم حذف الفيديو (اضغط لإضافة فيديو جديد)'
-                        : 'اضغط لرفع فيديو التعريف',
+                        ? context.tr("video_deleted_click_to_add")
+                        : context.tr("click_to_upload_intro_video"),
                     style: Styles.textStyle16.copyWith(
                       color: isVideoDeleted
                           ? AppColors.kRedColor
@@ -978,7 +984,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           ),
         Gap(8.h),
         Text(
-          'يجب أن يكون حجم الفيديو أقل من 4 MB',
+          context.tr("video_size_limit_hint"),
           style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
         ),
       ],
@@ -1003,7 +1009,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           cubit.updateSpecialization(backendValue ?? displayValue);
         }
       },
-      hint: 'اختر التخصص',
+      hint: 'select_specialization',
     );
   }
 
@@ -1028,7 +1034,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           cubit.updatePosition(backendValue ?? displayValue);
         }
       },
-      hint: 'اختر المنصب',
+      hint: 'select_position',
       isPosition: true, // ⭐ إضافة باراميتر جديد
     );
   }
@@ -1054,7 +1060,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           cubit.updateExperience(_selectedExperienceValue!);
         }
       },
-      hint: 'اختر سنوات الخبرة',
+      hint: 'select_experience_years',
     );
   }
 }
