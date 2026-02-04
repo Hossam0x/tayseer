@@ -30,7 +30,10 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
                   Gap(16.h),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: SimpleAppBar(title: 'الإعدادات', isLargeTitle: true),
+                    child: SimpleAppBar(
+                      title: context.tr('settings'),
+                      isLargeTitle: true,
+                    ),
                   ),
                   Expanded(child: _buildContent(context, state)),
                 ],
@@ -55,7 +58,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
             Icon(Icons.error, color: AppColors.kRedColor, size: 48.w),
             Gap(16.h),
             Text(
-              'حدث خطأ في تحميل البيانات',
+              context.tr('error_occurred'),
               style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
             ),
             Gap(8.h),
@@ -75,7 +78,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
               ),
               child: Text(
-                'إعادة المحاولة',
+                context.tr('retry'),
                 style: Styles.textStyle16Meduim.copyWith(
                   color: AppColors.kWhiteColor,
                 ),
@@ -111,9 +114,9 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
       child: Column(
         children: [
           Gap(30.h),
-          _buildSectionSkeleton(title: "المعلومات الشخصية"),
+          _buildSectionSkeleton(title: context.tr('personal_info')),
           Gap(30.h),
-          _buildSectionSkeleton(title: "الخصوصية"),
+          _buildSectionSkeleton(title: context.tr('privacy')),
           Gap(40.h),
         ],
       ),
@@ -223,7 +226,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
     UserProfileModel? userProfile,
   ) {
     return _buildSectionContainer(
-      title: "المعلومات الشخصية",
+      title: context.tr('personal_info'),
       children: [
         InkWell(
           onTap: () async {
@@ -241,7 +244,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
             }
           },
           child: _buildSettingRow(
-            label: "السن",
+            label: context.tr('age'),
             value: userProfile?.age.toString() ?? '',
           ),
         ),
@@ -274,7 +277,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
             );
           },
           child: _buildSettingRow(
-            label: "البريد الالكتروني",
+            label: context.tr('email'),
             value: '',
             // value: userProfile?.email?.isNotEmpty == true
             //     ? userProfile!.email!
@@ -289,7 +292,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
             );
           },
           child: _buildSettingRow(
-            label: "رقم الهاتف",
+            label: context.tr('phone'),
             value: '',
             // value: userProfile?.phone?.isNotEmpty == true
             //     ? userProfile!.phone!
@@ -306,10 +309,10 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
     UserProfileModel? userProfile,
   ) {
     return _buildSectionContainer(
-      title: "الخصوصية",
+      title: context.tr('privacy'),
       children: [
         _buildSwitchRow(
-          label: "إيقاف الزواج",
+          label: context.tr('stop_marriage'),
           value: !(userProfile?.availableForMarry ?? false),
           onChanged: (value) async {
             final cubit = context.read<UserProfileCubit>();
@@ -323,18 +326,17 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
               context,
               MaterialPageRoute(
                 builder: (context) => PrivacySelectionView(
-                  title: "من يمكنه رؤية ملفك الشخصي",
+                  title: context.tr('who_can_see_my_profile'),
                   initialValue: currentStatus,
                   options: [
                     {
-                      "title": "إظهار ملفى للجميع",
-                      "subtitle": "سيظهر ملفك الشخصي وصورك لجميع المستخدمين",
+                      "title": context.tr('show_to_all'),
+                      "subtitle": context.tr('show_to_all_subtitle'),
                       "value": "الجميع",
                     },
                     {
-                      "title": "إخفاء ملفى عن الجميع",
-                      "subtitle":
-                          "لن يتمكن احد من مستخدمي التطبيق من رؤية ملفك",
+                      "title": context.tr('hide_from_all'),
+                      "subtitle": context.tr('hide_from_all_subtitle'),
                       "value": "مخفي",
                     },
                   ],
@@ -348,7 +350,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
             }
           },
           child: _buildSettingRow(
-            label: "من يمكنه رؤية ملفك الشخصي",
+            label: context.tr('who_can_see_my_profile'),
             value: _getPrivacyStatus(userProfile?.isAnonymous),
           ),
         ),
@@ -361,18 +363,17 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
               context,
               MaterialPageRoute(
                 builder: (context) => PrivacySelectionView(
-                  title: "رؤية صورة الملف الشخصي",
+                  title: context.tr('profile_picture_visibility'),
                   initialValue: currentStatus,
                   options: [
                     {
-                      "title": "عرض الصورة الشخصية",
-                      "subtitle": "سيظهر ملفك الشخصي وصورك لجميع المستخدمين",
+                      "title": context.tr('show_profile_picture'),
+                      "subtitle": context.tr('show_profile_picture_subtitle'),
                       "value": "عرض",
                     },
                     {
-                      "title": "تمويه صورتي عن الجميع",
-                      "subtitle":
-                          "لن يتمكن احد من مستخدمي التطبيق من رؤية صورتك",
+                      "title": context.tr('hide_profile_picture'),
+                      "subtitle": context.tr('hide_profile_picture_subtitle'),
                       "value": "تمويه",
                     },
                   ],
@@ -397,17 +398,21 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
               context,
               MaterialPageRoute(
                 builder: (context) => PrivacySelectionView(
-                  title: "اخفاء ملفك الشخصي عن جهات اتصالك",
+                  title: context.tr('hide_profile_from_contacts'),
                   initialValue: currentStatus,
                   options: [
                     {
-                      "title": "اخفاء الملف الشخصي",
-                      "subtitle": "لن يرى أحد من جهات اتصالك ملفك الشخصي",
+                      "title": context.tr('hide_profile_from_contacts'),
+                      "subtitle": context.tr(
+                        'hide_profile_from_contacts_subtitle',
+                      ),
                       "value": "إخفاء",
                     },
                     {
-                      "title": "اظهار الملف الشخصي",
-                      "subtitle": "سيظهر ملفك الشخصي لجهات اتصالك",
+                      "title": context.tr('show_profile_from_contacts'),
+                      "subtitle": context.tr(
+                        'show_profile_from_contacts_subtitle',
+                      ),
                       "value": "إظهار",
                     },
                   ],
