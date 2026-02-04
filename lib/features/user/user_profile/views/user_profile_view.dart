@@ -11,7 +11,6 @@ import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubi
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_file.dart';
-import 'package:tayseer/features/user/user_profile/views/marriage_profile_page.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -109,7 +108,6 @@ class _UserProfileViewState extends State<UserProfileView> {
           // ⭐ المحتوى حسب التبويب (موجود دائماً)
           if (_selectedTabIndex == 0)
             _buildGeneralContentSliver(context, state),
-
           // ⭐ زر تسجيل الخروج (موجود دائماً)
           _buildLogoutButtonSliver(context, state),
 
@@ -222,7 +220,7 @@ class _UserProfileViewState extends State<UserProfileView> {
 
         // رسالة الخطأ
         Text(
-          'فشل تحميل بيانات البروفايل',
+          context.tr("error_loading_data"),
           style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
           textAlign: TextAlign.center,
         ),
@@ -253,7 +251,7 @@ class _UserProfileViewState extends State<UserProfileView> {
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
           ),
           child: Text(
-            'إعادة المحاولة',
+            context.tr("retry"),
             style: Styles.textStyle16Meduim.copyWith(
               color: AppColors.kWhiteColor,
             ),
@@ -306,8 +304,6 @@ class _UserProfileViewState extends State<UserProfileView> {
                         ),
                       ),
                       errorWidget: (context, url, error) {
-                        debugPrint('❌ خطأ في تحميل الصورة: $url');
-                        debugPrint('❌ الخطأ: $error');
                         return Center(
                           child: Icon(
                             Icons.person,
@@ -339,13 +335,6 @@ class _UserProfileViewState extends State<UserProfileView> {
     // ⭐ استخدام kCurrentUserData كمصدر أساسي للاسم و username
     final displayName = kCurrentUserData?.name ?? userProfile.name;
     final displayUsername = kCurrentUserData?.username ?? userProfile.username;
-
-    debugPrint(
-      '👤 عرض الاسم: $displayName (من ${kCurrentUserData?.name != null ? "kCurrentUserData" : "userProfile"})',
-    );
-    debugPrint(
-      '🏷️ عرض username: $displayUsername (من ${kCurrentUserData?.username != null ? "kCurrentUserData" : "userProfile"})',
-    );
 
     return Column(
       children: [
@@ -384,7 +373,7 @@ class _UserProfileViewState extends State<UserProfileView> {
               AppImage(AssetsData.navigateIcon, width: 12.w),
               Gap(10.w),
               Text(
-                "عرض الملف الشخصي",
+                context.tr("show_profile"),
                 style: Styles.textStyle14.copyWith(
                   color: AppColors.secondary600,
                   fontWeight: FontWeight.w500,
@@ -622,7 +611,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      setting.title,
+                      context.tr(setting.title),
                       style: Styles.textStyle16Meduim.copyWith(
                         color: isNotificationsItem
                             ? AppColors.secondary800.withOpacity(0.9)
@@ -731,7 +720,7 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
               SizedBox(width: 8.w),
               Text(
-                'تسجيل الخروج',
+                context.tr("logout"),
                 style: Styles.textStyle16Meduim.copyWith(
                   color: AppColors.kRedColor,
                   fontWeight: FontWeight.w600,
@@ -747,11 +736,11 @@ class _UserProfileViewState extends State<UserProfileView> {
   void _showLogoutConfirmation(BuildContext context) {
     CustomshowDialogWithImage(
       context,
-      title: 'تسجيل الخروج',
-      supTitle: 'هل أنت متأكد من تسجيل الخروج من حسابك؟',
+      title: context.tr("logout"),
+      supTitle: context.tr("logout_confirmation"),
       imageUrl: AssetsData.pauseIcon,
-      bottonText: 'إلغاء',
-      cancelText: 'نعم',
+      bottonText: context.tr("cancel"),
+      cancelText: context.tr("yes"),
       showCancelButton: true,
       onPressed: () {},
       onCancel: () {
@@ -786,14 +775,14 @@ class _UserProfileViewState extends State<UserProfileView> {
 
       showSafeSnackBar(
         context: context,
-        text: 'تم تسجيل الخروج بنجاح',
+        text: context.tr("logout_success"),
         isSuccess: true,
       );
     } catch (e) {
       Navigator.pop(context);
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ أثناء تسجيل الخروج',
+        text: context.tr("logout_error"),
         isError: true,
       );
     }
@@ -826,7 +815,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                         child: Icon(Icons.close, size: 24.w),
                       ),
                       Text(
-                        'قيمنا',
+                        context.tr("rate_app"),
                         style: Styles.textStyle20Meduim.copyWith(
                           color: AppColors.primary500,
                         ),
@@ -865,7 +854,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                   if (_rating > 0) ...[
                     Gap(12.h),
                     Text(
-                      'تقييمك: $_rating / 5',
+                      '${context.tr("rating")}: $_rating / 5',
                       style: Styles.textStyle14.copyWith(
                         color: AppColors.primary500,
                       ),
@@ -876,7 +865,7 @@ class _UserProfileViewState extends State<UserProfileView> {
 
                   // الرسالة
                   Text(
-                    'قيمنا حتى نتمكن من تغيير السلبيات\nساعد غيرك في الاستخدام',
+                    context.tr("rate_app_message"),
                     style: Styles.textStyle16.copyWith(
                       color: AppColors.secondary700,
                     ),
@@ -887,7 +876,7 @@ class _UserProfileViewState extends State<UserProfileView> {
 
                   // زر الإرسال
                   CustomBotton(
-                    title: 'ارسال التقييم',
+                    title: context.tr("send_rating"),
                     onPressed: () {
                       Navigator.pop(context);
                       _submitAppRating(context, _rating);
@@ -914,38 +903,37 @@ void _openMarriageEditProfile(BuildContext context, UserProfileState state) {
     return;
   }
 
-  // ⭐ التحقق من اكتمال البيانات
-  final isDataCompleted = state.userProfile!.dataCompleted ?? false;
+    // ⭐ التحقق من اكتمال البيانات
+    final isDataCompleted = state.userProfile!.dataCompleted ?? false;
 
-  if (!isDataCompleted) {
-    // ⭐ إذا البيانات غير مكتملة، نروح لتاب الزواج مباشرة
-    final layoutCubit = context.read<LayoutCubit>();
-    layoutCubit.changeIndex(1); // Marriage tab index
-    return;
-  }
+    if (!isDataCompleted) {
+      // ⭐ إذا البيانات غير مكتملة، نروح لتاب الزواج مباشرة
+      final layoutCubit = context.read<LayoutCubit>();
+      layoutCubit.changeIndex(1); // Marriage tab index
+      return;
+    }
 
-  // ⭐ إذا البيانات مكتملة، نفتح صفحة التعديل كاملة
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
-        backgroundColor: Colors.white,
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
-            ),
-            AdvisorBackground(
-              child: MarriagefilePage(
-                userProfile: state.userProfile,
+    // ⭐ إذا البيانات مكتملة، نفتح صفحة التعديل كاملة
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
               ),
-            ),
-          ],
+              AdvisorBackground(
+                child: MarriagefilePage(userProfile: state.userProfile),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
   void _submitAppRating(BuildContext context, int rating) {
     if (rating > 0) {
       debugPrint('التقييم المرسل: $rating نجوم');
@@ -954,9 +942,7 @@ void _openMarriageEditProfile(BuildContext context, UserProfileState state) {
     ScaffoldMessenger.of(context).showSnackBar(
       CustomSnackBar(
         context,
-        text: rating > 0
-            ? 'شكراً لتقييمك التطبيق بـ $rating نجوم!'
-            : 'شكراً لتقييمك التطبيق!',
+        text: context.tr("rate_app_success"),
         isSuccess: true,
       ),
     );

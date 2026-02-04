@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart'; // ⭐ تأكد من المسار
+import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
+import 'package:tayseer/features/advisor/profille/data/models/analytics_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileState extends Equatable {
@@ -15,11 +16,14 @@ class ProfileState extends Equatable {
   final bool hasMore;
   final bool isLoadingMore;
 
-  // ⭐️ أضف Share State
   final CubitStates shareActionState;
   final String? shareMessage;
   final bool? isShareAdded;
   final String? sharePostId;
+
+  final CubitStates analyticsState;
+  final AnalyticsModel? analytics;
+  final String? analyticsErrorMessage;
 
   const ProfileState({
     this.profileState = CubitStates.initial,
@@ -31,11 +35,13 @@ class ProfileState extends Equatable {
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
-    // ⭐️
     this.shareActionState = CubitStates.initial,
     this.shareMessage,
     this.isShareAdded,
     this.sharePostId,
+    this.analyticsState = CubitStates.initial,
+    this.analytics,
+    this.analyticsErrorMessage,
   });
 
   ProfileState copyWith({
@@ -48,11 +54,13 @@ class ProfileState extends Equatable {
     int? currentPage,
     bool? hasMore,
     bool? isLoadingMore,
-    // ⭐️
     CubitStates? shareActionState,
     String? shareMessage,
     bool? isShareAdded,
     String? sharePostId,
+    CubitStates? analyticsState,
+    AnalyticsModel? analytics,
+    String? analyticsErrorMessage,
   }) {
     return ProfileState(
       profileState: profileState ?? this.profileState,
@@ -64,11 +72,14 @@ class ProfileState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      // ⭐️
       shareActionState: shareActionState ?? this.shareActionState,
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
       sharePostId: sharePostId ?? this.sharePostId,
+      analyticsState: analyticsState ?? this.analyticsState,
+      analytics: analytics ?? this.analytics,
+      analyticsErrorMessage:
+          analyticsErrorMessage ?? this.analyticsErrorMessage,
     );
   }
 
@@ -83,10 +94,12 @@ class ProfileState extends Equatable {
     currentPage,
     hasMore,
     isLoadingMore,
-    // ⭐️
     shareActionState,
     shareMessage,
     isShareAdded,
     sharePostId,
+    analyticsState,
+    analytics,
+    analyticsErrorMessage,
   ];
 }

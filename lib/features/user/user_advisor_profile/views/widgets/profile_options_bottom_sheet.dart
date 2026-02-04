@@ -39,19 +39,19 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
     final List<OptionItem> options = [
       OptionItem(
         // text: context.tr(AppStrings.shareProfile),
-        text: 'مشاركة الملف الشخصي',
+        text: context.tr('share_profile'),
         icon: Icons.ios_share_rounded,
         onTap: () => _handleShare(context),
       ),
       OptionItem(
-        text: context.tr(AppStrings.blockUser),
+        text: context.tr('block'),
         icon: Icons.block_outlined,
         onTap: () => _showBlockConfirmation(context),
         isDestructive: true,
         isBlock: true,
       ),
       OptionItem(
-        text: context.tr(AppStrings.report),
+        text: context.tr('report'),
         icon: Icons.error_outline_rounded,
         onTap: () => _showReportConfirmation(context),
         isDestructive: true,
@@ -160,7 +160,7 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
     // Share.share(profileLink, subject: "تعرف على $advisorName");
     showSafeSnackBar(
       context: context,
-      text: "تم نسخ رابط البروفايل",
+      text: context.tr('copied_to_clipboard'),
       isSuccess: true,
     );
   }
@@ -187,13 +187,13 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
         if (state.blockActionState == CubitStates.success) {
           showSafeSnackBar(
             context: scaffoldContext,
-            text: state.blockMessage ?? "تم حظر المستخدم",
+            text: state.blockMessage ?? context.tr('blocked_successfully'),
             isSuccess: true,
           );
         } else {
           showSafeSnackBar(
             context: scaffoldContext,
-            text: state.blockMessage ?? "فشل الحظر",
+            text: state.blockMessage ?? context.tr('failed_to_block'),
             isError: true,
           );
         }
