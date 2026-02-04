@@ -38,16 +38,16 @@ class AnalyticsOverview extends Equatable {
   factory AnalyticsOverview.fromJson(Map<String, dynamic> json) {
     return AnalyticsOverview(
       views: json['views'] ?? 0,
-      visits: json['visits'] ?? 0,
-      newFollowers: json['newFollowers'] ?? 0,
+      visits: json['visitors'] ?? 0,
+      newFollowers: json['followers'] ?? 0,
       interactions: json['interactions'] ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'views': views,
-    'visits': visits,
-    'newFollowers': newFollowers,
+    'visitors': visits,
+    'followers': newFollowers,
     'interactions': interactions,
   };
 
@@ -74,7 +74,7 @@ class ChartData extends Equatable {
     return ChartData(
       date: DateTime.parse(json['date']),
       views: json['views'] ?? 0,
-      visits: json['visits'] ?? 0,
+      visits: json['visitors'] ?? 0,
       followers: json['followers'] ?? 0,
       interactions: json['interactions'] ?? 0,
     );

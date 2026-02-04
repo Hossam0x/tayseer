@@ -245,27 +245,25 @@ class AnalyticsChart extends StatelessWidget {
   //   );
   // }
 
-  Widget _buildLegendItem(Color color, String text) {
-    return Row(
-      children: [
-        Container(
-          width: 12.w,
-          height: 12.h,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2.r),
-          ),
-        ),
-        Gap(4.w),
-        Text(
-          text,
-          style: Styles.textStyle12.copyWith(color: AppColors.blackColor),
-        ),
-      ],
-    );
-  }
-
-  /// نموذج بيانات الأسبوع لكل فئة
+  // Widget _buildLegendItem(Color color, String text) {
+  //   return Row(
+  //     children: [
+  //       Container(
+  //         width: 12.w,
+  //         height: 12.h,
+  //         decoration: BoxDecoration(
+  //           color: color,
+  //           borderRadius: BorderRadius.circular(2.r),
+  //         ),
+  //       ),
+  //       Gap(4.w),
+  //       Text(
+  //         text,
+  //         style: Styles.textStyle12.copyWith(color: AppColors.blackColor),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   /// تجميع البيانات على 4 أسابيع لكل فئة
   List<CategoryWeeklyData> _calculateWeeklyData() {
