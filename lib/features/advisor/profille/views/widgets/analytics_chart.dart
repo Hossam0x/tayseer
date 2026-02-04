@@ -41,7 +41,7 @@ class AnalyticsChart extends StatelessWidget {
                 getDrawingHorizontalLine: (value) =>
                     FlLine(color: Colors.grey.shade400, strokeWidth: 1.w),
                 getDrawingVerticalLine: (value) =>
-                    FlLine(color: Colors.grey.shade400, strokeWidth: 1.w),
+                    FlLine(color: Colors.grey.withOpacity(0.3), strokeWidth: 1),
               ),
 
               /// Border
@@ -127,13 +127,25 @@ class AnalyticsChart extends StatelessWidget {
                   sideTitles: SideTitles(
                     showTitles: true,
                     interval: _calculateMaxValue(weeklyData) / 4,
-                    reservedSize: 30.w,
                     getTitlesWidget: (value, meta) {
-                      return Text(
-                        value.toInt().toString(),
-                        style: Styles.textStyle12.copyWith(
-                          color: AppColors.blackColor,
-                        ),
+                      return Row(
+                        children: [
+                          Text(
+                            '-',
+                            style: Styles.textStyle12.copyWith(
+                              color: AppColors.blackColor,
+                            ),
+                          ),
+                          Gap(5.w),
+                          Text(
+                            value.toInt().toString(),
+                            style: Styles.textStyle12.copyWith(
+                              color: AppColors.blackColor,
+                            ),
+                          ),
+
+                          // Dash icon from flutter
+                        ],
                       );
                     },
                   ),
