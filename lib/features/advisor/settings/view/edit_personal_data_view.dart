@@ -170,6 +170,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   ChewieController? _chewieController;
   String? _currentVideoUrl;
   bool _controllersInitialized = false;
+  bool _isVideoLoading = false;
+  double _uploadProgress = 0.0;
 
   @override
   void initState() {
@@ -190,40 +192,63 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     super.dispose();
   }
 
-  void _disposeVideoPlayer() async {
-    if (_chewieController != null) {
-      _chewieController!.dispose();
-      _chewieController = null;
+  Future<void> _disposeVideoPlayer() async {
+    try {
+      if (_chewieController != null) {
+        await _chewieController!.pause();
+        _chewieController!.dispose();
+        _chewieController = null;
+      }
+      if (_videoPlayerController != null) {
+        await _videoPlayerController!.pause();
+        await _videoPlayerController!.dispose();
+        _videoPlayerController = null;
+      }
+      _currentVideoUrl = null;
+    } catch (e) {
+      print('Error disposing video player: $e');
     }
-    if (_videoPlayerController != null) {
-      await _videoPlayerController!.dispose();
-      _videoPlayerController = null;
-    }
-    _currentVideoUrl = null;
   }
 
   Future<void> _initializeVideoPlayer(String videoUrl) async {
-    if (_currentVideoUrl == videoUrl && _videoPlayerController != null) {
+    if (_currentVideoUrl == videoUrl &&
+        _videoPlayerController != null &&
+        _videoPlayerController!.value.isInitialized) {
       return;
     }
 
-    _disposeVideoPlayer();
+    await _disposeVideoPlayer();
     _currentVideoUrl = videoUrl;
+
+    if (!mounted) return;
+
+    setState(() {
+      _isVideoLoading = true;
+      _uploadProgress = 0.0;
+    });
 
     try {
       _videoPlayerController = VideoPlayerController.networkUrl(
         Uri.parse(videoUrl),
       );
 
+      // محاكاة التقدم للفيديوهات من الشبكة
+      _simulateProgress();
+
       await _videoPlayerController!.initialize();
 
       if (mounted) {
         setState(() {
+          _isVideoLoading = false;
+          _uploadProgress = 1.0;
           _chewieController = ChewieController(
             videoPlayerController: _videoPlayerController!,
             autoPlay: false,
             looping: false,
             showControls: true,
+            allowFullScreen: true,
+            allowMuting: true,
+            showControlsOnInitialize: false,
             placeholder: Container(
               color: AppColors.secondary100,
               child: Center(
@@ -253,72 +278,114 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         setState(() {
           _chewieController = null;
           _videoPlayerController = null;
+          _isVideoLoading = false;
+          _uploadProgress = 0.0;
         });
       }
     }
   }
 
+  void _simulateProgress() {
+    _uploadProgress = 0.0;
+    const steps = 20;
+    const duration = Duration(milliseconds: 100);
+
+    for (int i = 1; i <= steps; i++) {
+      Future.delayed(duration * i, () {
+        if (mounted && _isVideoLoading) {
+          setState(() {
+            _uploadProgress = i / steps;
+          });
+        }
+      });
+    }
+  }
+
   Future<void> _pickVideo(EditPersonalDataCubit cubit) async {
+    final SnackBarService snackBarService = SnackBarService();
     final picker = ImagePicker();
     final pickedFile = await picker.pickVideo(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       final file = File(pickedFile.path);
-      final fileSizeInBytes = await file.length();
-      final fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+      final int fileSizeInBytes = await file.length();
+      final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
 
-      if (fileSizeInMB > 4) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.tr("video_size_error_4mb"),
-              textDirection: TextDirection.rtl,
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+      // ⭐ تغيير الحد الأقصى إلى 10MB
+      if (fileSizeInMB > 10) {
+        if (mounted) {
+          snackBarService.showSnackBar(
+            context: context,
+            text: context.tr("video_size_error_10mb"),
+            isError: true,
+          );
+        }
         return;
       }
 
-      _disposeVideoPlayer();
+      // ⭐ تحديث الـ cubit أولاً
+      cubit.updateVideoFile(file, previewUrl: pickedFile.path);
+
+      // ⭐ ثم نبدأ تحميل الفيديو
+      if (mounted) {
+        setState(() {
+          _isVideoLoading = true;
+          _uploadProgress = 0.0;
+        });
+      }
+
+      await _disposeVideoPlayer();
 
       try {
         _videoPlayerController = VideoPlayerController.file(file);
+
+        // محاكاة التقدم
+        _simulateProgress();
+
         await _videoPlayerController!.initialize();
 
         if (mounted) {
           setState(() {
+            _currentVideoUrl = pickedFile.path;
             _chewieController = ChewieController(
               videoPlayerController: _videoPlayerController!,
               autoPlay: false,
               looping: false,
               showControls: true,
+              allowFullScreen: true,
+              allowMuting: true,
+              showControlsOnInitialize: false,
               placeholder: Container(
                 color: AppColors.secondary100,
                 child: Center(
                   child: Icon(
                     Icons.video_library,
-                    size: 50,
+                    size: 50.w,
                     color: AppColors.primary300,
                   ),
                 ),
               ),
             );
+            // ⭐ إيقاف التحميل بعد النجاح
+            _isVideoLoading = false;
+            _uploadProgress = 1.0;
           });
         }
-
-        cubit.updateVideoFile(file, previewUrl: pickedFile.path);
       } catch (e) {
-        print('Error initializing local video player: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.tr("video_load_error"),
-              textDirection: TextDirection.rtl,
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+        print('Error loading video: $e');
+        if (mounted) {
+          setState(() {
+            _isVideoLoading = false;
+            _uploadProgress = 0.0;
+            _chewieController = null;
+            _videoPlayerController = null;
+          });
+          snackBarService.showSnackBar(
+            context: context,
+            text: context.tr("video_load_error"),
+            isError: true,
+          );
+        }
       }
     }
   }
@@ -333,11 +400,27 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   }
 
   void _removeVideo(EditPersonalDataCubit cubit) async {
-    _disposeVideoPlayer();
+    // ⭐ أولاً: تحديث الحالة في الـ Cubit لإخفاء الفيديو فوراً من الواجهة
     cubit.removeVideo();
-    setState(() {
-      _currentVideoUrl = null;
-    });
+
+    // ⭐ ثانياً: تحديث الحالة المحلية
+    if (mounted) {
+      setState(() {
+        _isVideoLoading = false;
+        _uploadProgress = 0.0;
+      });
+    }
+
+    // ⭐ ثالثاً: التخلص من الـ controllers في الخلفية
+    await _disposeVideoPlayer();
+
+    if (mounted) {
+      setState(() {
+        _currentVideoUrl = null;
+        _chewieController = null;
+        _videoPlayerController = null;
+      });
+    }
   }
 
   void _initializeControllers(EditPersonalDataState state) {
@@ -735,7 +818,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 child: GestureDetector(
                   onTap: () => cubit.removeImage(),
                   child: Container(
-                    padding: EdgeInsets.all(4.w),
+                    padding: EdgeInsets.all(6.w),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppColors.kWhiteColor,
@@ -842,15 +925,78 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     final videoPreviewUrl = state.videoPreviewUrl;
     // ⭐ تحقق إذا كان الفيديو محذوفاً
     final isVideoDeleted = state.currentData.video == "";
+
+    // ⭐ الفيديو موجود فقط إذا:
+    // 1. في ملف جديد محلي OR
+    // 2. في URL من السيرفر وليس محذوف
     final hasVideo =
-        !isVideoDeleted &&
-        (videoFile != null ||
-            (videoPreviewUrl != null && videoPreviewUrl.isNotEmpty));
+        videoFile != null ||
+        (!isVideoDeleted &&
+            videoPreviewUrl != null &&
+            videoPreviewUrl.isNotEmpty &&
+            _chewieController != null);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasVideo)
+        if (_isVideoLoading)
+          Container(
+            width: double.infinity,
+            height: 250.h,
+            decoration: BoxDecoration(
+              color: AppColors.kWhiteColor,
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: AppColors.primary100, width: 1.0),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 60.w,
+                    height: 60.w,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 60.w,
+                          height: 60.w,
+                          child: CircularProgressIndicator(
+                            value: _uploadProgress,
+                            color: AppColors.primary500,
+                            backgroundColor: AppColors.primary100,
+                            strokeWidth: 4,
+                          ),
+                        ),
+                        Text(
+                          '${(_uploadProgress * 100).toInt()}%',
+                          style: Styles.textStyle14.copyWith(
+                            color: AppColors.primary500,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Gap(16.h),
+                  Text(
+                    context.tr("loading_video"),
+                    style: Styles.textStyle14.copyWith(
+                      color: AppColors.secondary600,
+                    ),
+                  ),
+                  Gap(8.h),
+                  Text(
+                    '${(_uploadProgress * 100).toInt()}%',
+                    style: Styles.textStyle12.copyWith(
+                      color: AppColors.secondary400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else if (hasVideo)
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -961,21 +1107,20 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.video_camera_back_rounded,
-                    size: 40.w,
-                    color: AppColors.primary300,
-                  ),
+                  AppImage(AssetsData.kvideoIcon, width: 60.w, height: 60.h),
                   Gap(12.h),
-                  Text(
-                    isVideoDeleted
-                        ? context.tr("video_deleted_click_to_add")
-                        : context.tr("click_to_upload_intro_video"),
-                    style: Styles.textStyle16.copyWith(
-                      color: isVideoDeleted
-                          ? AppColors.kRedColor
-                          : AppColors.secondary600,
-                      fontWeight: FontWeight.w500,
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      textAlign: TextAlign.center,
+                      isVideoDeleted
+                          ? context.tr("video_deleted_click_to_add")
+                          : context.tr("click_to_upload_intro_video"),
+                      style: Styles.textStyle16.copyWith(
+                        color: isVideoDeleted
+                            ? AppColors.kRedColor
+                            : AppColors.secondary600,
+                      ),
                     ),
                   ),
                 ],
@@ -984,7 +1129,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           ),
         Gap(8.h),
         Text(
-          context.tr("video_size_limit_hint"),
+          context.tr("video_size_limit_10mb"),
           style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
         ),
       ],
