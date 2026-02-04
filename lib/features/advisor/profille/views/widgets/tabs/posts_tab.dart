@@ -33,7 +33,7 @@ class PostsTab extends StatelessWidget {
           final userPosts = state.posts;
 
           if (userPosts.isEmpty) {
-            return _buildEmptyState();
+            return _buildEmptyState(context);
           }
 
           return RefreshIndicator(
@@ -56,11 +56,11 @@ class PostsTab extends StatelessWidget {
     switch (state.shareActionState) {
       case CubitStates.success:
         state.isShareAdded == true
-            ? AppToast.success(context, message ?? 'تمت المشاركة بنجاح')
-            : AppToast.info(context, message ?? 'تم إلغاء المشاركة');
+            ? AppToast.success(context, message ?? context.tr('shared_success'))
+            : AppToast.info(context, message ?? context.tr('unshared_success'));
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء المشاركة');
+        AppToast.error(context, message ?? context.tr('shared_error'));
         break;
       default:
         break;
@@ -115,12 +115,10 @@ class PostsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(top: 100.h),
-      child: const SharedEmptyState(
-        title: "انشأ اول منشور لك حتي تكتسب ثقة الناس .",
-      ),
+      child: SharedEmptyState(title: context.tr('create_first_post')),
     );
   }
 

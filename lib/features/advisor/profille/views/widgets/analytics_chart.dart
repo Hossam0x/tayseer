@@ -62,16 +62,16 @@ class AnalyticsChart extends StatelessWidget {
 
                     switch (groupIndex) {
                       case 0:
-                        category = 'المشاهدات';
+                        category = context.tr('views');
                         break;
                       case 1:
-                        category = 'الزيارات';
+                        category = context.tr('visits');
                         break;
                       case 2:
-                        category = 'متابعين جدد';
+                        category = context.tr('new_followers');
                         break;
                       case 3:
-                        category = 'التفاعلات';
+                        category = context.tr('interactions');
                         break;
                       default:
                         category = '';
@@ -79,19 +79,19 @@ class AnalyticsChart extends StatelessWidget {
 
                     switch (rodIndex) {
                       case 0:
-                        week = 'الأسبوع 1';
+                        week = context.tr('week_1');
                         value = _getWeekValue(weeklyData, groupIndex, 0);
                         break;
                       case 1:
-                        week = 'الأسبوع 2';
+                        week = context.tr('week_2');
                         value = _getWeekValue(weeklyData, groupIndex, 1);
                         break;
                       case 2:
-                        week = 'الأسبوع 3';
+                        week = context.tr('week_3');
                         value = _getWeekValue(weeklyData, groupIndex, 2);
                         break;
                       case 3:
-                        week = 'الأسبوع 4';
+                        week = context.tr('week_4');
                         value = _getWeekValue(weeklyData, groupIndex, 3);
                         break;
                       default:
@@ -160,16 +160,16 @@ class AnalyticsChart extends StatelessWidget {
                       String text;
                       switch (value.toInt()) {
                         case 0:
-                          text = 'المشاهدات';
+                          text = context.tr('views');
                           break;
                         case 1:
-                          text = 'الزيارات';
+                          text = context.tr('visits');
                           break;
                         case 2:
-                          text = 'متابعين جدد';
+                          text = context.tr('new_followers');
                           break;
                         case 3:
-                          text = 'التفاعلات';
+                          text = context.tr('interactions');
                           break;
                         default:
                           text = '';

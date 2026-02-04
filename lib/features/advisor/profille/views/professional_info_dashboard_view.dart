@@ -61,7 +61,7 @@ class _ProfessionalInfoDashboardViewState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SimpleAppBar(
-                            title: 'لوحة المعلومات الاحترافية',
+                            title: context.tr('professional_info_dashboard'),
                             isLargeTitle: true,
                           ),
                           Gap(24.h),
@@ -91,7 +91,7 @@ class _ProfessionalInfoDashboardViewState
                                   AppRouter.kBoostAccountView,
                                 );
                               },
-                              text: 'تعزيز',
+                              text: context.tr('boost'),
                             ),
                           ),
                         ],
@@ -164,18 +164,24 @@ class _ProfessionalInfoDashboardViewState
   Widget _buildAnalysisSection(AnalyticsOverview? overview) {
     final analysisItems = [
       AnalysisItem(
-        title: 'من زار ملفك الشخصى',
+        title: context.tr('who_viewed_profile'),
         subtitle: '${overview?.views ?? 0}',
         isViewProfile: true,
       ),
-      AnalysisItem(title: 'المشاهدات', subtitle: '${overview?.views ?? 0}'),
-      AnalysisItem(title: 'الزيارات', subtitle: '${overview?.visits ?? 0}'),
       AnalysisItem(
-        title: 'المتابعين الجدد',
+        title: context.tr('views'),
+        subtitle: '${overview?.views ?? 0}',
+      ),
+      AnalysisItem(
+        title: context.tr('visits'),
+        subtitle: '${overview?.visits ?? 0}',
+      ),
+      AnalysisItem(
+        title: context.tr('new_followers'),
         subtitle: '${overview?.newFollowers ?? 0}',
       ),
       AnalysisItem(
-        title: 'التفاعلات',
+        title: context.tr('interactions'),
         subtitle: '${overview?.interactions ?? 0}',
       ),
     ];
