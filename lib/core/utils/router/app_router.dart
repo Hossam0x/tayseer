@@ -4,6 +4,7 @@ import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/screens/report_reasons_screen.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
@@ -205,7 +206,8 @@ abstract class AppRouter {
   static const kinteractionSubscriptionView = '/interactionSubscriptionView';
   static const kUserArchiveChatsView = '/user-archive-chats';
   static const kUserFollowingsView = '/userFollowingsView';
-
+  ///// report screens /////
+  static const kReportReasonsScreen = '/ReportReasonsScreen';
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
   //     return kOnBoardingScreen;
@@ -850,7 +852,12 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => MarriageFilterView(),
         );
-
+      /////  report screens ///////
+      case kReportReasonsScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ReportReasonsScreen(),
+        );
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;
       //   return PageRouteBuilder(
