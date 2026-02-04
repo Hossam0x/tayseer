@@ -1,15 +1,17 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/my_import.dart';
 
 class SimpleAppBar extends StatelessWidget {
   final String title;
   final bool? isLargeTitle;
-  final IconData icon;
+  final IconData? icon; // خليناه nullable عشان نقدر نميّز
 
   const SimpleAppBar({
     super.key,
     required this.title,
     this.isLargeTitle,
-    this.icon = Icons.arrow_back,
+    this.icon, // مش هنحدد قيمة افتراضية هنا
   });
 
   @override
@@ -18,9 +20,7 @@ class SimpleAppBar extends StatelessWidget {
         ? Styles.textStyle24SemiBold.copyWith(color: AppColors.primary800)
         : Styles.textStyle20Meduim.copyWith(color: AppColors.secondary700);
 
-    final Color iconColor = icon == Icons.close
-        ? AppColors.secondary600
-        : AppColors.blackColor;
+    final bool useCustomBackIcon = icon == null;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -34,8 +34,16 @@ class SimpleAppBar extends StatelessWidget {
               onTap: () => Navigator.pop(context),
               borderRadius: BorderRadius.circular(24.r),
               child: Padding(
-                padding: EdgeInsets.all(10.w),
-                child: Icon(icon, color: iconColor, size: 24.w),
+                padding: EdgeInsets.all(12.w),
+                child: useCustomBackIcon
+                    ? AppImage(AssetsData.backArrow, width: 19.w)
+                    : Icon(
+                        icon,
+                        color: icon == Icons.close
+                            ? AppColors.secondary600
+                            : AppColors.blackColor,
+                        size: 24.w,
+                      ),
               ),
             ),
           ),

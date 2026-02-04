@@ -16,7 +16,7 @@ class ProfileVisitorsView extends StatelessWidget {
               top: 0,
               left: 0,
               right: 0,
-              height: 100.h,
+              height: 110.h,
               child: Container(
                 decoration: BoxDecoration(
                   image: DecorationImage(
@@ -29,6 +29,7 @@ class ProfileVisitorsView extends StatelessWidget {
             SafeArea(
               child: Column(
                 children: [
+                  Gap(10.h),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24.w),
                     child: const SimpleAppBar(

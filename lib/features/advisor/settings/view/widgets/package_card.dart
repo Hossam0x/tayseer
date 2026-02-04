@@ -24,16 +24,11 @@ class PackageCard extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 16.h),
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: isFeatured ? AppColors.backCardBaqa : Colors.white,
+        color: isFeatured
+            ? AppColors.backCardBaqa
+            : AppColors.secondary950.withOpacity(0.75),
         borderRadius: BorderRadius.circular(20.r),
         border: isFeatured ? Border.all(color: const Color(0xFFF18DA3)) : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -54,6 +49,7 @@ class PackageCard extends StatelessWidget {
                 // عرض features فقط إذا كانت موجودة
                 if (features != null && features!.isNotEmpty)
                   Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: features!
                         .map(
                           (f) => Text(
