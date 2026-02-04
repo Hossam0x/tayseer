@@ -5,66 +5,88 @@ import 'package:tayseer/features/advisor/settings/view/widgets/subscriprion_card
     show SubscriptionCard;
 import 'package:tayseer/my_import.dart';
 
-class PackagesTabView extends StatelessWidget {
+class PackagesTabView extends StatefulWidget {
   const PackagesTabView({super.key});
 
   @override
+  State<PackagesTabView> createState() => _PackagesTabViewState();
+}
+
+class _PackagesTabViewState extends State<PackagesTabView>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      initialIndex: 0,
-      child: Scaffold(
-        body: AdvisorBackground(
-          child: Stack(
-            children: [
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 105.h,
-                child: Container(
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(AssetsData.homeBarBackgroundImage),
-                      fit: BoxFit.fill,
-                    ),
+    return Scaffold(
+      body: AdvisorBackground(
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 105.h,
+              child: Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(AssetsData.homeBarBackgroundImage),
+                    fit: BoxFit.fill,
                   ),
                 ),
               ),
-              SafeArea(
-                child: Column(
-                  children: [
-                    // Header
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 30.w,
-                        vertical: 15.h,
-                      ),
-                      child: SimpleAppBar(title: 'الباقات'),
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 30.w,
+                      vertical: 15.h,
                     ),
+                    child: SimpleAppBar(title: 'الباقات'),
+                  ),
 
-                    // Tab Bar Container
-                    const CustomToggleTabBar(
-                      firstTabText: 'الباقات',
-                      secondTabText: 'الاشتراكات',
+                  // بنستخدم AnimatedBuilder عشان يعمل rebuild بس للـ CustomToggleTabBar
+                  AnimatedBuilder(
+                    animation: _tabController,
+                    builder: (context, child) {
+                      return CustomToggleTabBar(
+                        firstTabText: 'الباقات',
+                        secondTabText: 'الاشتراكات',
+                        initialIndex: _tabController.index,
+                        onTabChanged: (index) {
+                          _tabController.animateTo(index);
+                        },
+                      );
+                    },
+                  ),
+
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _PackagesTabContent(),
+                        _SubscriptionsTabContent(),
+                      ],
                     ),
-
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          // Packages Tab Content
-                          _PackagesTabContent(),
-
-                          // Subscriptions Tab Content
-                          _SubscriptionsTabContent(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

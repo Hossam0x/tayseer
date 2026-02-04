@@ -1,4 +1,5 @@
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
@@ -9,14 +10,14 @@ class PostsTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final SnackBarService snackBarService = SnackBarService();
     return BlocConsumer<ArchivedPostsCubit, ArchivedPostsState>(
       listener: (context, state) {
         if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: AppColors.kRedColor,
-            ),
+          snackBarService.showSnackBar(
+            context: context,
+            text: state.errorMessage!,
+            isError: true,
           );
           context.read<ArchivedPostsCubit>().clearError();
         }

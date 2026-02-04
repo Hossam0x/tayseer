@@ -127,7 +127,7 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   }) async {
     try {
       final response = await _apiService.get(
-        endPoint: '/posts/archive',
+        endPoint: '/posts/archived',
         query: {'page': page, 'limit': limit},
       );
 
