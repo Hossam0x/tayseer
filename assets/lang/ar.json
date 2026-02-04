@@ -663,5 +663,18 @@
   "session_settings_title": "مدة وأسعار الجلسات",
   "saved_posts": "المنشورات المحفوظه",
   "settings_load_error": "حدث خطأ في تحميل الإعدادات",
-  "settings_title": "الاعدادات"
+  "settings_title": "الاعدادات",
+  "followers": "متابعون",
+  "followings": "متابَعون",
+  "follow_success": "تمت المتابعة بنجاح",
+  "unfollow_success": "تم إلغاء المتابعة",
+  "follow_error": "حدث خطأ أثناء المتابعة",
+  "years_experience": "من الخبرة",
+  "certificates": "المؤهلات",
+  "ratings": "التقييمات",
+  "share_profile": "مشارك الملف الشخصي",
+  "copied_to_clipboard": "تم نسخ الرابط",
+  "blocked_successfully": "تم حظر المستخدم بنجاح",
+  "failed_to_block": "فشل حظر المستخدم",
+  "select_reason": "اختر السبب"
 }

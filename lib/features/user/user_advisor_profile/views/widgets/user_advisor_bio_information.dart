@@ -46,11 +46,12 @@ class UserAdvisorBioInformation extends StatelessWidget {
     switch (state.followActionState) {
       case CubitStates.success:
         state.isFollowAdded == true
-            ? AppToast.success(context, message ?? 'تمت المتابعة بنجاح')
-            : AppToast.info(context, message ?? 'تم إلغاء المتابعة');
+            // make translation here for text
+            ? AppToast.success(context, message ?? context.tr('follow_success'))
+            : AppToast.info(context, message ?? context.tr('unfollow_success'));
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء المتابعة');
+        AppToast.error(context, message ?? context.tr('follow_error'));
         break;
       default:
         break;
@@ -97,7 +98,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
           Icon(Icons.info_outline, color: AppColors.kRedColor, size: 32.w),
           Gap(10.h),
           Text(
-            errorMessage ?? 'حدث خطأ في تحميل البيانات',
+            errorMessage ?? context.tr('error_loading_data'),
             style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
           ),
@@ -132,7 +133,11 @@ class UserAdvisorBioInformation extends StatelessWidget {
           ],
 
           // Professional info - عرض فقط إذا كان هناك بيانات
-          _buildProfessionalInfo(displaySpecialization, displayYearsExperience),
+          _buildProfessionalInfo(
+            displaySpecialization,
+            displayYearsExperience,
+            context,
+          ),
 
           // Location - عرض فقط إذا كان موجوداً
           _buildLocation(profile),
@@ -168,6 +173,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
   Widget _buildProfessionalInfo(
     String? displaySpecialization,
     String? displayYearsExperience,
+    BuildContext context,
   ) {
     final hasSpecialization =
         displaySpecialization != null && displaySpecialization.isNotEmpty;
@@ -198,7 +204,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
         // ⭐ عرض سنوات الخبرة إذا كانت موجودة
         if (hasYearsExperience)
           Text(
-            '$displayYearsExperience من الخبرة',
+            '$displayYearsExperience ${context.tr('years_experience')}',
             style: Styles.textStyle14Meduim.copyWith(
               color: AppColors.secondary800,
             ),
@@ -305,7 +311,9 @@ class UserAdvisorBioInformation extends StatelessWidget {
                 child: CustomBotton(
                   height: 54.h,
                   width: double.infinity,
-                  title: isFollowing ? 'متابَع' : 'متابعة',
+                  title: isFollowing
+                      ? context.tr('following')
+                      : context.tr('follow'),
                   onPressed: isLoadingFollow
                       ? null
                       : () => context
