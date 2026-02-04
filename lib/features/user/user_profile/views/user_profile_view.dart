@@ -902,6 +902,17 @@ class _UserProfileViewState extends State<UserProfileView> {
       return;
     }
 
+    // ⭐ التحقق من اكتمال البيانات
+    final isDataCompleted = state.userProfile!.dataCompleted ?? false;
+
+    if (!isDataCompleted) {
+      // ⭐ إذا البيانات غير مكتملة، نروح لتاب الزواج مباشرة
+      final layoutCubit = context.read<LayoutCubit>();
+      layoutCubit.changeIndex(1); // Marriage tab index
+      return;
+    }
+
+    // ⭐ إذا البيانات مكتملة، نفتح صفحة التعديل كاملة
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -909,14 +920,11 @@ class _UserProfileViewState extends State<UserProfileView> {
           backgroundColor: Colors.white,
           body: Stack(
             children: [
-              // الخلفية الكاملة في الخلف
               Positioned.fill(
                 child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
               ),
               AdvisorBackground(
-                child: MarriagefilePage(
-                  userProfile: state.userProfile, // ⭐ تمرير UserProfileModel
-                ),
+                child: MarriagefilePage(userProfile: state.userProfile),
               ),
             ],
           ),
