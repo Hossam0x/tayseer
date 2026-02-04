@@ -39,7 +39,8 @@ class SettingsView extends StatelessWidget {
             children: [
               Gap(20.h),
               Text(
-                state.message,
+                state
+                    .message, // Ensure this key is translated if possible or display as is
                 style: Styles.textStyle16.copyWith(
                   color: AppColors.kWhiteColor,
                 ),
@@ -59,7 +60,7 @@ class SettingsView extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'إعادة المحاولة',
+                  context.tr("retry"),
                   style: Styles.textStyle16Meduim.copyWith(
                     color: AppColors.kWhiteColor,
                   ),
@@ -97,7 +98,7 @@ class SettingsView extends StatelessWidget {
                   child: Column(
                     children: [
                       Gap(16.h),
-                      SimpleAppBar(title: 'الاعدادات'),
+                      SimpleAppBar(title: context.tr("settings_title")),
                     ],
                   ),
                 ),
@@ -105,21 +106,19 @@ class SettingsView extends StatelessWidget {
 
               // القائمة الرئيسية
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.transparent, // خلفية شفافة
-                  ),
-                  child: Column(
-                    children: [
-                      // قائمة الإعدادات
-                      Expanded(
-                        child: _buildSettingsList(context, state.settings),
+                child: CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 16.h,
                       ),
-
-                      // زر تسجيل الخروج - بدون مساحات زائدة
-                      _buildLogoutButton(context),
-                    ],
-                  ),
+                      sliver: _buildSettingsSliverList(context, state.settings),
+                    ),
+                    SliverToBoxAdapter(child: _buildLogoutButton(context)),
+                    SliverToBoxAdapter(child: Gap(30.h)),
+                  ],
                 ),
               ),
             ],
@@ -131,25 +130,19 @@ class SettingsView extends StatelessWidget {
     return const SizedBox();
   }
 
-  Widget _buildSettingsList(
+  Widget _buildSettingsSliverList(
     BuildContext context,
     List<SettingItemModel> settings,
   ) {
-    return ListView.separated(
-      physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.only(
-        top: 16.h,
-        bottom: 16.h,
-        right: 20.w,
-        left: 20.w,
-      ),
-      itemCount: settings.length,
-      separatorBuilder: (context, index) =>
-          Divider(color: AppColors.secondary100, height: 1),
-      itemBuilder: (context, index) {
-        final setting = settings[index];
+    return SliverList(
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index.isOdd) {
+          return Divider(color: AppColors.secondary100, height: 1);
+        }
+        final itemIndex = index ~/ 2;
+        final setting = settings[itemIndex];
         return _buildSettingItem(context, setting);
-      },
+      }, childCount: settings.length * 2 - 1),
     );
   }
 
@@ -165,8 +158,6 @@ class SettingsView extends StatelessWidget {
               ? null
               : () => _handleSettingTap(context, setting),
           borderRadius: BorderRadius.circular(16.r),
-          // splashColor: isNotificationsItem
-          //     ? Colors.transparent,
           highlightColor: isNotificationsItem ? Colors.transparent : null,
           child: Container(
             padding: isNotificationsItem
@@ -195,7 +186,7 @@ class SettingsView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        setting.title,
+                        context.tr(setting.title),
                         style: Styles.textStyle16Meduim.copyWith(
                           color: isNotificationsItem
                               ? AppColors.secondary800.withOpacity(0.9)
@@ -265,7 +256,7 @@ class SettingsView extends StatelessWidget {
   Widget _buildLogoutButton(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.only(left: 50.w, right: 50.w, bottom: 30.h),
+      margin: EdgeInsets.only(left: 50.w, right: 50.w, top: 30.h),
       child: InkWell(
         onTap: () => _showLogoutConfirmation(context),
         borderRadius: BorderRadius.circular(16.r),
@@ -293,7 +284,7 @@ class SettingsView extends StatelessWidget {
               ),
               SizedBox(width: 8.w),
               Text(
-                'تسجيل الخروج',
+                context.tr("logout"),
                 style: Styles.textStyle16Meduim.copyWith(
                   color: AppColors.kRedColor,
                   fontWeight: FontWeight.w600,
@@ -309,11 +300,11 @@ class SettingsView extends StatelessWidget {
   void _showLogoutConfirmation(BuildContext context) {
     CustomshowDialogWithImage(
       context,
-      title: 'تسجيل الخروج',
-      supTitle: 'هل أنت متأكد من تسجيل الخروج من حسابك؟',
+      title: context.tr("logout"),
+      supTitle: context.tr("logout_confirmation"),
       imageUrl: AssetsData.pauseIcon,
-      bottonText: 'إلغاء',
-      cancelText: 'نعم',
+      bottonText: context.tr("cancel"),
+      cancelText: context.tr("yes"),
       showCancelButton: true,
       onPressed: () {},
       onCancel: () {
@@ -348,14 +339,14 @@ class SettingsView extends StatelessWidget {
 
       showSafeSnackBar(
         context: context,
-        text: 'تم تسجيل الخروج بنجاح',
+        text: context.tr("logout_success"),
         isSuccess: true,
       );
     } catch (e) {
       Navigator.pop(context);
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ أثناء تسجيل الخروج',
+        text: context.tr("logout_error"),
         isError: true,
       );
     }
@@ -364,6 +355,11 @@ class SettingsView extends StatelessWidget {
   void _handleSettingTap(BuildContext context, SettingItemModel setting) async {
     if (setting.onTap != null) {
       await setting.onTap!();
+      return;
+    }
+
+    if (setting.id == 'invite') {
+      await context.read<SettingsCubit>().shareApp(context);
       return;
     }
 

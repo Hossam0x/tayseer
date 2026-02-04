@@ -653,5 +653,15 @@
   "notifications_enabled_success": "تم تفعيل الاشعارات ✅",
   "notifications_disabled_success": "تم تعطيل الاشعارات 🔕",
   "update_settings_error": "حدث خطأ في تحديث الإعدادات ⚠️",
-  "update_data_error": "حدث خطأ في تحديث البيانات"
+  "update_data_error": "حدث خطأ في تحديث البيانات",
+  "edit_personal_data": "تعديل البيانات الشخصية",
+  "wallet": "المحفظة",
+  "packages": "الباقات",
+  "archive_general": "أرشيف",
+  "hide_story_from": "إخفاء القصة من",
+  "appointments": "المواعيد",
+  "session_settings_title": "مدة وأسعار الجلسات",
+  "saved_posts": "المنشورات المحفوظه",
+  "settings_load_error": "حدث خطأ في تحميل الإعدادات",
+  "settings_title": "الاعدادات"
 }

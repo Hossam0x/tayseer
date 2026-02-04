@@ -29,7 +29,7 @@ class SettingsCubit extends Cubit<SettingsState> {
       final settings = [
         SettingItemModel(
           id: 'notifications',
-          title: 'الاشعارات',
+          title: 'notifications_settings',
           iconAsset: AssetsData.icNotificationSettings,
           hasSwitch: true,
           routeName: '',
@@ -44,85 +44,81 @@ class SettingsCubit extends Cubit<SettingsState> {
         ),
         SettingItemModel(
           id: 'edit_profile',
-          title: 'تعديل البيانات الشخصية',
+          title: 'edit_personal_data',
           iconAsset: AssetsData.icEditSettings,
           routeName: AppRouter.kEditPersonalDataView,
         ),
         SettingItemModel(
           id: 'savers',
-          title: 'المحفظة',
+          title: 'wallet',
           iconAsset: AssetsData.icWalletSettings,
           routeName: AppRouter.kWalletView,
         ),
-        // في دالة _loadSettings:
         SettingItemModel(
           id: 'language',
-          title: 'اللغة',
+          title: 'app_language',
           subtitle: getLanguageName(savedLanguage),
           iconAsset: AssetsData.icLanguageSettings,
           routeName: AppRouter.kLanguageSelectionView,
         ),
         SettingItemModel(
           id: 'packages',
-          title: 'الباقات',
+          title: 'packages',
           iconAsset: AssetsData.icPackesSettinngs,
           routeName: AppRouter.kPackagesTabView,
         ),
         SettingItemModel(
           id: 'archive',
-          title: 'أرشيف',
+          title: 'archive_general',
           iconAsset: AssetsData.icArchiveSettings,
           routeName: AppRouter.kArchiveView,
         ),
         SettingItemModel(
           id: 'hide_story',
-          title: 'إخفاء القصة من',
+          title: 'hide_story_from',
           iconAsset: AssetsData.icHideSettings,
           switchValue: prefs.getBool('setting_hide_story') ?? false,
           routeName: AppRouter.kHideStoryFromView,
         ),
         SettingItemModel(
           id: 'appointments',
-          title: 'المواعيد',
+          title: 'appointments',
           iconAsset: AssetsData.icDatesSettings,
           routeName: AppRouter.kAppointmentsView,
         ),
         SettingItemModel(
           id: 'session_settings',
-          title: 'مدة وأسعار الجلسات',
+          title: 'session_settings_title',
           iconAsset: AssetsData.icDurationSettings,
           routeName: AppRouter.kSessionPricingView,
         ),
         SettingItemModel(
           id: 'workshops',
-          title: 'المنشورات المحفوظه',
+          title: 'saved_posts',
           iconAsset: AssetsData.icSavedSettings,
           routeName: AppRouter.kSavedPostsView,
         ),
         SettingItemModel(
           id: 'blocks',
-          title: 'المحظورات',
+          title: 'blocked_users',
           iconAsset: AssetsData.icBlockedSettings,
           routeName: AppRouter.kBlockedUsersView,
         ),
         SettingItemModel(
           id: 'help_support',
-          title: 'المساعدة والدعم',
+          title: 'help_and_support',
           iconAsset: AssetsData.icHelpSettings,
           routeName: AppRouter.kHelpSupportView,
         ),
         SettingItemModel(
           id: 'invite',
-          title: 'دعوة',
+          title: 'invite_friend',
           iconAsset: AssetsData.icInviteSettings,
           routeName: '',
-          onTap: () async {
-            await _shareAppLink();
-          },
         ),
         SettingItemModel(
           id: 'account_management',
-          title: 'إدارة الحساب',
+          title: 'manage_account',
           iconAsset: AssetsData.icManagementSettings,
           routeName: AppRouter.kAccountManagementView,
         ),
@@ -130,11 +126,10 @@ class SettingsCubit extends Cubit<SettingsState> {
 
       emit(SettingsLoaded(settings: settings));
     } catch (e) {
-      emit(SettingsError(message: 'حدث خطأ في تحميل الإعدادات'));
+      emit(SettingsError(message: 'settings_load_error'));
     }
   }
 
-  // في دالة updateLanguage:
   /// تحديث اللغة المختارة + حفظها + تحديث الـ UI
   Future<void> updateLanguage(String languageName, BuildContext context) async {
     final currentState = state;
@@ -160,13 +155,13 @@ class SettingsCubit extends Cubit<SettingsState> {
       // عرض رسالة نجاح
       showSafeSnackBar(
         context: context,
-        text: 'تم تحديث اللغة إلى $languageName',
+        text: '${context.tr("update_language_success")} $languageName',
         isSuccess: true,
       );
     } catch (e) {
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ في تحديث اللغة ⚠️',
+        text: context.tr("update_language_error"),
         isError: true,
       );
     }
@@ -178,14 +173,14 @@ class SettingsCubit extends Cubit<SettingsState> {
     return prefs.getBool('notifications_enabled') ?? true;
   }
 
-  Future<void> _shareAppLink() async {
+  Future<void> shareApp(BuildContext context) async {
     try {
-      // رابط التطبيق - يمكنك تغييره
+      // رابط التطبيق
       const String appLink =
           'https://play.google.com/store/apps/details?id=com.tayseer.app';
-      const String message = 'جرب تطبيق تيسير الآن! 😊\n$appLink';
+      String message = '${context.tr("share_app_message")}$appLink';
 
-      await Share.share(message, subject: 'دعوة لتطبيق تيسير');
+      await Share.share(message, subject: context.tr("share_app_subject"));
     } catch (e) {
       debugPrint('❌ خطأ في المشاركة: $e');
     }
@@ -307,14 +302,16 @@ class SettingsCubit extends Cubit<SettingsState> {
 
       showSafeSnackBar(
         context: context,
-        text: value ? 'تم تفعيل الاشعارات ✅' : 'تم تعطيل الاشعارات 🔕',
+        text: value
+            ? context.tr("notifications_enabled_success")
+            : context.tr("notifications_disabled_success"),
         isSuccess: value,
         duration: const Duration(milliseconds: 1500),
       );
     } catch (e) {
       showSafeSnackBar(
         context: context,
-        text: 'حدث خطأ في تحديث الإعدادات ⚠️',
+        text: context.tr("update_settings_error"),
         isError: true,
       );
     }
