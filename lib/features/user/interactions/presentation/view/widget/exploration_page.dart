@@ -11,35 +11,22 @@ import 'package:tayseer/my_import.dart';
 import '../../../data/Model/Iinteraction_usermodel .dart';
 
 class Exploration extends StatefulWidget {
-  const Exploration({super.key});
-
+  const Exploration({super.key, required this.mainScrollController});
+  final ScrollController mainScrollController;
   @override
   State<Exploration> createState() => ExplorationState();
 }
 
 class ExplorationState extends State<Exploration> {
-  final List<String> categories = [
-    "من ضمن اختياراتك",
-    "من خارج اختياراتك",
-    "يرغبون في التفاعل معك",
-    "الزيارات المحفزة",
-    "منضم حديثاً",
-    "ارسل تحية",
-  ];
+    // ✅ ScrollController للصفحة بالكامل
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchAllCategories();
+      // ✅ Fetch once - API returns all categories
+      context.read<InteractionsCubit>().fetchExploration(category: "all");
     });
-  }
-
-  void _fetchAllCategories() {
-    final cubit = context.read<InteractionsCubit>();
-    for (var category in categories) {
-      cubit.fetchExploration(category: category);
-    }
   }
 
   @override
@@ -68,7 +55,11 @@ class ExplorationState extends State<Exploration> {
                 SizedBox(height: 16.h),
                 CustomBotton(
                   title: 'إعادة المحاولة',
-                  onPressed: _fetchAllCategories,
+                  onPressed: () {
+                    context.read<InteractionsCubit>().fetchExploration(
+                      category: "all",
+                    );
+                  },
                 ),
               ],
             ),
@@ -122,121 +113,155 @@ class ExplorationState extends State<Exploration> {
     );
   }
 
-  // ✅ شلنا الـ SingleChildScrollView من هنا
   Widget _buildContent(InteractionsState state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 16.h),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ??
-                  false)
-                _buildSection(
-                  title: "الإعجابات من ضمن اختياراتك",
-                  subtitle:
-                      "الأشخاص الذين تم اقتراحهم لك بناءً على اهتماماتك أو تفاعلاتك السابقة.",
-                  data: state.explorationData["من ضمن اختياراتك"]!,
-                  isSubscribed: state.isSubscribed,
-                ),
-              SizedBox(height: 24.h),
-
-              if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ??
-                  false)
-                _buildSection(
-                  title: "الإعجابات من خارج اختياراتك",
-                  subtitle:
-                      "أشخاص أرسلوا مرتبطة بتفاعلاتك السابقة أو اهتماماتك.",
-                  data: state.explorationData["من خارج اختياراتك"]!,
-                  isSubscribed: state.isSubscribed,
-                ),
-
-              SizedBox(height: 24.h),
-
-              if (state.explorationData["يرغبون في التفاعل معك"]?.isNotEmpty ??
-                  false)
-                _buildSection(
-                  title: "أشخاص يرغبون في التفاعل معك",
-                  subtitle:
-                      "تمكنت من النجاح. وتأكيد أعجابها بك فقط حتى دون أن تفاعل أخر.",
-                  data: state.explorationData["يرغبون في التفاعل معك"]!,
-                  isSubscribed: state.isSubscribed,
-                ),
-
-              SizedBox(height: 24.h),
-
-              if (state.explorationData["الزيارات المحفزة"]?.isNotEmpty ??
-                  false)
-                _buildSection(
-                  title: "الزيارات المحفزة",
-                  subtitle:
-                      "هؤلاء الأشخاص قاموا بزيارة ملفك الشخصي بعد تحديثه.",
-                  data: state.explorationData["الزيارات المحفزة"]!,
-                  isSubscribed: state.isSubscribed,
-                ),
-
-              SizedBox(height: 24.h),
-
-              if (state.explorationData["منضم حديثاً"]?.isNotEmpty ??
-                  false) ...[
-                Text("منضم حديثاً", style: Styles.textStyle18SemiBold),
-                Text(
-                  "تعرف علي الاشخاص المنضمين حديثًا وقابل المطابق لك",
-                  style: Styles.textStyle14.copyWith(
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.secondary600,
+    return SingleChildScrollView(
+      controller: widget.mainScrollController,
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 16.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ✅ 1. من ضمن اختياراتك (favoritedMe)
+                if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ??
+                    false)
+                  _buildSection(
+                    title: "الإعجابات من ضمن اختياراتك",
+                    subtitle:
+                        "الأشخاص الذين تم اقتراحهم لك بناءً على اهتماماتك",
+                    data: state.explorationData["من ضمن اختياراتك"]!,
+                    isSubscribed: state.isSubscribed,
                   ),
-                ),
-                SizedBox(height: 4.h),
-                Wrap(
-                  children: state.explorationData["منضم حديثاً"]!.map((item) {
-                    return RecentlyJoined(
-                      item: item,
-                      forceBlur: !state.isSubscribed,
-                    );
-                  }).toList(),
-                ),
-              ],
 
-              SizedBox(height: 24.h),
+                if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ??
+                    false)
+                  SizedBox(height: 24.h),
 
-              if (state.explorationData["ارسل تحية"]?.isNotEmpty ?? false)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("أرسل تحية", style: Styles.textStyle18SemiBold),
-                    Text(
-                      "هؤلاء الأشخاص من قبل أرسل فقد يكون الشخص المناسب لك منهم",
-                      style: Styles.textStyle14.copyWith(
-                        color: AppColors.secondary600,
+                // ✅ 2. من خارج اختياراتك (likesFromOutsideChoices)
+                if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ??
+                    false)
+                  _buildSection(
+                    title: "الإعجابات من خارج اختياراتك",
+                    subtitle: "أشخاص خارج نطاق تفضيلاتك المحددة",
+                    data: state.explorationData["من خارج اختياراتك"]!,
+                    isSubscribed: state.isSubscribed,
+                  ),
+
+                if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ??
+                    false)
+                  SizedBox(height: 24.h),
+
+                // ✅ 3. يرغبون في التفاعل معك (wantToInteract)
+                if (state
+                        .explorationData["يرغبون في التفاعل معك"]
+                        ?.isNotEmpty ??
+                    false)
+                  _buildSection(
+                    title: "أشخاص يرغبون في التفاعل معك",
+                    subtitle: "مستخدمون أظهروا اهتماماً بملفك الشخصي",
+                    data: state.explorationData["يرغبون في التفاعل معك"]!,
+                    isSubscribed: state.isSubscribed,
+                  ),
+
+                if (state
+                        .explorationData["يرغبون في التفاعل معك"]
+                        ?.isNotEmpty ??
+                    false)
+                  SizedBox(height: 24.h),
+
+                if (state
+                        .explorationData["يرغبون في التفاعل معك"]
+                        ?.isNotEmpty ??
+                    false)
+                  SizedBox(height: 24.h),
+                // ✅ 4. 'الزيارات المحفزة' معك (wantToInteract)
+                if (state.explorationData['الزيارات المحفزة']?.isNotEmpty ??
+                    false)
+                  _buildSection(
+                    title: "الزيارات المحفزة",
+                    subtitle:
+                        "هؤلاء الأشخاص قاموا بزيارة ملفك الشخصي بعد تحديثه.",
+                    data: state.explorationData["الزيارات المحفزة"]!,
+                    isSubscribed: state.isSubscribed,
+                  ),
+                SizedBox(height: 24.h),
+
+                if (state
+                        .explorationData["يرغبون في التفاعل معك"]
+                        ?.isNotEmpty ??
+                    false)
+                  SizedBox(height: 24.h),
+
+                if (state
+                        .explorationData["يرغبون في التفاعل معك"]
+                        ?.isNotEmpty ??
+                    false)
+                  SizedBox(height: 24.h),
+
+                // ✅ 4. منضم حديثاً (recentlyJoined)
+                if (state.explorationData["منضم حديثاً"]?.isNotEmpty ??
+                    false) ...[
+                  Text("منضم حديثاً", style: Styles.textStyle18SemiBold),
+                  Text(
+                    "تعرف على الأشخاص المنضمين حديثاً",
+                    style: Styles.textStyle14.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.secondary600,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Wrap(
+                    children: state.explorationData["منضم حديثاً"]!.map((item) {
+                      return RecentlyJoined(
+                        item: item,
+                        forceBlur: !state.isSubscribed,
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(height: 24.h),
+                ],
+
+                // ✅ 5. أرسل تحية (sentRegards)
+                if (state.explorationData["ارسل تحية"]?.isNotEmpty ?? false)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("أرسل تحية", style: Styles.textStyle18SemiBold),
+                      Text(
+                        "هؤلاء الأشخاص قد يكون الشخص المناسب لك منهم",
+                        style: Styles.textStyle14.copyWith(
+                          color: AppColors.secondary600,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 16.h),
-                    ListView.builder(
-                      scrollDirection: Axis.vertical,
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: state.explorationData["ارسل تحية"]!.length,
-                      itemBuilder: (context, index) {
-                        final item = state.explorationData["ارسل تحية"]![index];
-                        return Padding(
-                          padding: EdgeInsetsDirectional.only(bottom: 12.w),
-                          child: GreetingProfileCard(
-                            item: item,
-                            forceBlur: !state.isSubscribed,
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-            ],
+                      SizedBox(height: 16.h),
+                      ListView.builder(
+                        scrollDirection: Axis.vertical,
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: state.explorationData["ارسل تحية"]!.length,
+                        itemBuilder: (context, index) {
+                          final item =
+                              state.explorationData["ارسل تحية"]![index];
+                          return Padding(
+                            padding: EdgeInsetsDirectional.only(bottom: 12.w),
+                            child: GreetingProfileCard(
+                              item: item,
+                              forceBlur: !state.isSubscribed,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -249,6 +274,7 @@ class ExplorationState extends State<Exploration> {
   }) {
     bool hasMore = data.length > limit;
     List<InteractionUserModel> limitedData = data.take(limit).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -320,7 +346,7 @@ class RecentlyJoined extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    AppImage(item.image, fit: BoxFit.cover),
+                    AppImage(item.image, fit: BoxFit.cover,height: 100.h,),
                     if (shouldBlur)
                       BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
@@ -363,7 +389,11 @@ class RecentlyJoined extends StatelessWidget {
                   SizedBox(height: 8.h),
                   _buildBadge(text: "انضم للتو", icon: AssetsData.joinedIcon),
                   SizedBox(height: 8.h),
-                  _buildBadge(text: item.country, icon: AssetsData.EgyFlagIcon),
+                  if (item.country.isNotEmpty)
+                    _buildBadge(
+                      text: item.country,
+                      icon: AssetsData.EgyFlagIcon,
+                    ),
                 ],
               ),
             ),

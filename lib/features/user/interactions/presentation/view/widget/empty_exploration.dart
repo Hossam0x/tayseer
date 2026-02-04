@@ -47,7 +47,13 @@ class EmptyExploration extends StatelessWidget {
             
             useGradient: true,
             title: "استكمال",
-            onPressed: () {},
+            
+               onPressed: () {
+              // ⭐ الانتقال لتاب الملف الشخصي (Profile tab)
+              final layoutCubit = context.read<LayoutCubit>();
+              layoutCubit.changeIndex(4); // Profile tab index
+            
+            },
           ),
         ],
       ),

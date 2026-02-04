@@ -4,6 +4,7 @@ import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 // import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/empty_Exploration.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
@@ -107,10 +108,7 @@ class _UserProfileViewState extends State<UserProfileView> {
 
           // ⭐ المحتوى حسب التبويب (موجود دائماً)
           if (_selectedTabIndex == 0)
-            _buildGeneralContentSliver(context, state)
-          else
-            // ////////////////////////////////////////////////////////////////////
-            MarriageProfilePage(),
+            _buildGeneralContentSliver(context, state),
 
           // ⭐ زر تسجيل الخروج (موجود دائماً)
           _buildLogoutButtonSliver(context, state),
@@ -911,34 +909,43 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  void _openMarriageEditProfile(BuildContext context, UserProfileState state) {
-    if (state is! SettingsLoaded || state.userProfile == null) {
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          backgroundColor: Colors.white,
-          body: Stack(
-            children: [
-              // الخلفية الكاملة في الخلف
-              Positioned.fill(
-                child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
-              ),
-              AdvisorBackground(
-                child: MarriagefilePage(
-                  userProfile: state.userProfile, // ⭐ تمرير UserProfileModel
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+void _openMarriageEditProfile(BuildContext context, UserProfileState state) {
+  if (state is! SettingsLoaded || state.userProfile == null) {
+    return;
   }
 
+  // ⭐ التحقق من اكتمال البيانات
+  final isDataCompleted = state.userProfile!.dataCompleted ?? false;
+
+  if (!isDataCompleted) {
+    // ⭐ إذا البيانات غير مكتملة، نروح لتاب الزواج مباشرة
+    final layoutCubit = context.read<LayoutCubit>();
+    layoutCubit.changeIndex(1); // Marriage tab index
+    return;
+  }
+
+  // ⭐ إذا البيانات مكتملة، نفتح صفحة التعديل كاملة
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => Scaffold(
+        backgroundColor: Colors.white,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
+            ),
+            AdvisorBackground(
+              child: MarriagefilePage(
+                userProfile: state.userProfile,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
   void _submitAppRating(BuildContext context, int rating) {
     if (rating > 0) {
       debugPrint('التقييم المرسل: $rating نجوم');
