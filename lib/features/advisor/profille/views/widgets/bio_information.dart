@@ -228,46 +228,81 @@ class BioInformation extends StatelessWidget {
   }
 
   Widget _buildConsultationCard(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.pushNamed(context, AppRouter.kProfessionalInfoDashboardView);
-      },
-      borderRadius: BorderRadius.circular(10.r),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-        decoration: BoxDecoration(
-          color: AppColors.cBackground100,
+    return BlocBuilder<ProfileCubit, ProfileState>(
+      buildWhen: (previous, current) =>
+          previous.analyticsState != current.analyticsState ||
+          previous.analytics != current.analytics,
+      builder: (context, state) {
+        // استخراج إجمالي المشاهدات من الـ API
+        final totalViews = state.analytics?.overview.views ?? 0;
+
+        return InkWell(
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              AppRouter.kProfessionalInfoDashboardView,
+            );
+          },
           borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: AppColors.primary300),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "لوحة المعلومات الاحترافية",
-              style: Styles.textStyle16SemiBold.copyWith(
-                color: AppColors.blackColor,
-              ),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+            decoration: BoxDecoration(
+              color: AppColors.cBackground100,
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: AppColors.primary300),
             ),
-            Gap(12.h),
-            Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  CupertinoIcons.arrow_up_left,
-                  color: AppColors.secondary700,
-                  size: 24.w,
-                ),
-                Gap(8.w),
                 Text(
-                  "1350 ألف مشاهدة خلال 30 يوم.",
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.secondary700,
+                  "لوحة المعلومات الاحترافية",
+                  style: Styles.textStyle16SemiBold.copyWith(
+                    color: AppColors.blackColor,
                   ),
+                ),
+                Gap(12.h),
+                Row(
+                  children: [
+                    Icon(
+                      CupertinoIcons.arrow_up_left,
+                      color: AppColors.secondary700,
+                      size: 24.w,
+                    ),
+                    Gap(8.w),
+                    Expanded(
+                      child: state.analyticsState == CubitStates.loading
+                          ? _buildLoadingViews()
+                          : Text(
+                              // استخدام البيانات من الـ API
+                              "$totalViews مشاهدة خلال 30 يوم.",
+                              style: Styles.textStyle14.copyWith(
+                                color: AppColors.secondary700,
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingViews() {
+    return SizedBox(
+      height: 16.h,
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Container(
+          width: 120.w,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(4.r),
+          ),
         ),
       ),
     );

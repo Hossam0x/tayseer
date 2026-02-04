@@ -53,6 +53,7 @@ class ApiEndPoint {
 
   static const String hideComment = '/hidden/comment';
   static const String hideReply = '/hidden/reply';
+  static const String advisorStatistics = '/advisor/statistics';
 
   //  // ✅ Interactions (NEW)
   // static const String explorationUsers = '/interactions/exploration';
