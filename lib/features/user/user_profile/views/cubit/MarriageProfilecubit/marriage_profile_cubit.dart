@@ -437,7 +437,59 @@ Future<void> uploadAudio(File audioFile) async {
     },
   );
 }
+void loadDummyProfile() {
+  emit(state.copyWith(
+    state: CubitStates.loading,
+  ));
 
+  try {
+    // Create dummy profile based on InteractionUserModel structure
+    final dummyProfile = MarriageUserProfileModel(
+    
+      aboutMe: AboutMe(
+        socialStatus: 'أعزب',
+        weight: '75 كجم',
+        skinColor: 'سمراء',
+        healthStatus: 'جيدة',
+        religiousCommitment: 'ملتزم',
+        smoker: 'لا',
+      ),
+      professionalLife: ProfessionalLife(
+        educationLevel: 'بكالوريوس',
+        job: 'مهندس برمجيات',
+      ),
+      yourGoals: YourGoals(
+        travel: 'خلال 3 أشهر',
+        children: '50,000 ريال',
+        engagement: 'خلال سنة',
+        marry: 'خلال سنتين',
+      ),
+      hobbies: ['القراءة', 'السفر', 'الرياضة', 'الموسيقى'],
+      myDescription: 'شخص طموح يحب التطوير والتعلم المستمر، أبحث عن شريكة حياة تشاركني نفس القيم والاهتمامات.',
+      userMedia: UserMedia(
+        images: [
+          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+          'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
+          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
+        ],
+        video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        audio: '',
+      ),
+    );
+
+    emit(state.copyWith(
+      profile: dummyProfile,
+      state: CubitStates.success,
+    ));
+  } catch (e) {
+    emit(state.copyWith(
+      state: CubitStates.failure,
+      errorMessage: 'فشل في تحميل البيانات الوهمية',
+    ));
+  }
+}
 Future<void> deleteVideo() async {
   final currentVideoUrl = state.profile?.userMedia?.video;
   if (currentVideoUrl == null) return;

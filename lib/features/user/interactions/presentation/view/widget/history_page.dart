@@ -14,10 +14,10 @@ class Historypage extends StatefulWidget {
   const Historypage({super.key, this.selectedFilter = "نال إعجابك"});
 
   @override
-  State<Historypage> createState() => _HistorypageState();
+  State<Historypage> createState() => HistorypageState(); // ✅ جعل الكلاس عام
 }
 
-class _HistorypageState extends State<Historypage> {
+class HistorypageState extends State<Historypage> { // ✅ جعل الكلاس عام
   late ScrollController _scrollController;
   bool _isLoadingMore = false;
 
@@ -36,8 +36,14 @@ class _HistorypageState extends State<Historypage> {
   void didUpdateWidget(Historypage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedFilter != widget.selectedFilter) {
-      _scrollController.jumpTo(0);
       context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
+      
+      // ✅ scroll to top بعد تحميل الداتا بقليل
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) {
+          scrollToTop();
+        }
+      });
     }
   }
 
@@ -46,6 +52,30 @@ class _HistorypageState extends State<Historypage> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // ✅ دالة عامة للـ scroll to top
+  void scrollToTop() {
+    if (!mounted) return;
+    
+    if (_scrollController.hasClients) {
+      // ✅ التحقق من أن هناك محتوى للـ scroll
+      if (_scrollController.position.maxScrollExtent > 0 || 
+          _scrollController.position.pixels > 0) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    } else {
+      // ✅ إذا الـ controller مش متصل بعد، نحاول تاني بعد frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+        }
+      });
+    }
   }
 
   void _onScroll() {
@@ -167,6 +197,7 @@ class _HistorypageState extends State<Historypage> {
                       item: data[index],
                       showFavoriteIcon: widget.selectedFilter == "المفضلة",
                       forceBlur: !state.isSubscribed,
+                      showRibbon: widget.selectedFilter != "صادفتهم", // ✅ إخفاء الشعار في صفحة صادفتهم
                     );
                   },
                 ),

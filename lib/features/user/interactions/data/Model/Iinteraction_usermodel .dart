@@ -115,7 +115,7 @@ class InteractionUserModel extends Equatable {
       isFavorite: json['isFavorite'] ?? false,
       isImageBlurred: json['isImageBlurred'] ?? false,
       likedHim: json['likedHim'] ?? false,
-      likedMe: json['likedMe'] ?? false,
+      likedMe: json['isLikedMe'] ?? false,
       sentCompliment:
           json['sentCompliment'] ?? json['Sent_compliment'] ?? false,
       isRecentlyJoined:
@@ -137,7 +137,7 @@ class InteractionUserModel extends Equatable {
       'isFavorite': isFavorite,
       'isImageBlurred': isImageBlurred,
       'likedHim': likedHim,
-      'likedMe': likedMe,
+      'isLikedMe': likedMe,
       'sentCompliment': sentCompliment,
       'isRecentlyJoined': isRecentlyJoined,
     };
