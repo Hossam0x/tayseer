@@ -49,7 +49,7 @@ class BottomActionsSection extends StatelessWidget {
             Expanded(
               child: _buildActionItem(
                 Icons.ios_share_rounded,
-                context.tr("share_profile"),
+                context.tr("share_profile_marri"),
                 AppColors.kscandryTextColor,
                 onShare,
               ),

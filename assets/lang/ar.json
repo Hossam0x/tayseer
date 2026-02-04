@@ -733,10 +733,9 @@
   "video_size_limit_hint": "يجب أن يكون حجم الفيديو أقل من 4 MB",
   "select_specialization": "اختر التخصص",
   "select_position": "اختر المنصب",
-  "select_experience_years": "اختر سنوات الخبرة"
-  "cv": "السيرة الذاتية",
+  "select_experience_years": "اختر سنوات الخبرة",
   "compatibility_profile": " التوافق بينكم",
-  "share_profile": "مشاركة الملف",
+  "share_profile_marri": "مشاركة الملف",
   "report_profile": "ابلاغ",
   "block_profile": "حظر",
   "report_reason": "سبب الابلاغ",
