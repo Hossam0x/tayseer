@@ -6,14 +6,14 @@ import '../models/archive_models.dart';
 abstract class ArchiveRepository {
   Future<Either<Failure, ArchivedChatsResponseModel>> getArchivedChats({
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   });
 
   Future<Either<Failure, void>> unarchiveChat(String chatId);
 
   Future<Either<Failure, List<ArchiveStoryModel>>> getArchivedStories({
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   });
 
   Future<Either<Failure, List<PostModel>>> getArchivedPosts({
@@ -203,7 +203,7 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   @override
   Future<Either<Failure, List<ArchiveStoryModel>>> getArchivedStories({
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   }) async {
     try {
       final response = await _apiService.get(
@@ -211,39 +211,50 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         query: {'page': page, 'limit': limit},
       );
 
-      // Debug: طباعة الـ response
       print('📌 Stories Response: $response');
 
-      if (response['success'] == true) {
-        final List<dynamic> data = response['data'] ?? [];
-        print('📦 Stories count: ${data.length}');
-
-        // Debug: طباعة كل قصة
-        for (var i = 0; i < data.length; i++) {
-          print('   Story $i: ${data[i]}');
-        }
-
-        final stories = data
-            .map((story) => ArchiveStoryModel.fromJson(story))
-            .toList();
-
-        return Right(stories);
-      } else {
-        final errorMessage =
+      if (response['success'] != true) {
+        final errorMsg =
             response['message']?.toString() ?? 'فشل جلب القصص المؤرشفة';
-        print('❌ Stories Error: $errorMessage');
-        return Left(ServerFailure(errorMessage));
+        return Left(ServerFailure(errorMsg));
       }
+
+      // ────────────────────────────────────────────────
+      //           ✅ الحل الصحيح
+      // ────────────────────────────────────────────────
+      final dataObj = response['data'] as Map<String, dynamic>?;
+
+      if (dataObj == null) {
+        print('⚠️ "data" field is null or not a map');
+        return const Right([]);
+      }
+
+      // ✅ نستخرج الـ result من داخل data
+      final List<dynamic> resultList =
+          dataObj['result'] as List<dynamic>? ?? [];
+
+      print('📦 عدد القصص المُسترجعة: ${resultList.length}');
+
+      final stories = resultList
+          .map((item) {
+            try {
+              return ArchiveStoryModel.fromJson(item as Map<String, dynamic>);
+            } catch (e) {
+              print('❌ فشل تحليل قصة واحدة: $e');
+              print('   البيانات: $item');
+              return null;
+            }
+          })
+          .whereType<ArchiveStoryModel>()
+          .toList();
+
+      return Right(stories);
     } on DioException catch (e) {
-      print('❌ Stories Dio Error: ${e.message}');
-      if (e.response != null) {
-        print('❌ Response Data: ${e.response?.data}');
-        print('❌ Response Status: ${e.response?.statusCode}');
-      }
+      print('❌ DioException in getArchivedStories: ${e.message}');
       return Left(ServerFailure.fromDioError(e));
-    } catch (e, stackTrace) {
-      print('❌ Stories General Error: $e');
-      print('❌ Stack Trace: $stackTrace');
+    } catch (e, stack) {
+      print('❌ Unexpected error in getArchivedStories: $e');
+      print(stack);
       return Left(ServerFailure(e.toString()));
     }
   }
