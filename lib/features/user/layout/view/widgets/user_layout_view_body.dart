@@ -78,13 +78,12 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                     listener: (context, state) {
                       if (state.lastQuestionNumberState ==
                           CubitStates.success) {
-                        context.pop(); // Close loading dialog if open
+                        context.pop();
                         final lastQuestionNumber =
                             state
                                 .lastQuestionNumberResponse
                                 ?.lastQuestionNumber ??
                             0;
-                        debugPrint('Last Question Number: $lastQuestionNumber');
                         if (lastQuestionNumber == 0) {
                           context.pushNamed(AppRouter.kChooseGenderView);
                         } else if (lastQuestionNumber >= 1 &&

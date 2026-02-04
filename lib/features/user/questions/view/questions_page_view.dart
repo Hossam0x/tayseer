@@ -15,6 +15,7 @@ class QuestionsPageView extends StatelessWidget {
   final UserTypeEnum currentUserType;
   final Gender selectedGender;
   final int lastQuestionNumber;
+
   QuestionsPageView({
     super.key,
     required this.currentUserType,
@@ -24,6 +25,9 @@ class QuestionsPageView extends StatelessWidget {
 
   final PageController _pageController = PageController();
   final ValueNotifier<int> _currentPage = ValueNotifier<int>(0);
+
+  // ✅ متغير لتخزين الإجابات (key) للمنطق الشرطي
+  final Map<String, dynamic> _answers = {};
 
   /// ✅ خريطة الهوايات مع الأيقونات
   static final Map<String, String> _hobbiesWithIcons = {
@@ -189,7 +193,7 @@ class QuestionsPageView extends StatelessWidget {
         showSearch: false,
       ),
 
-      // 11. عدد الأطفال
+      // ✅ 11. عدد الأطفال (يظهر فقط إذا كان hasChildren = yes)
       QuestionPageConfig(
         titleKey: 'children_number',
         questionNumber: 12,
@@ -197,9 +201,11 @@ class QuestionsPageView extends StatelessWidget {
         items: const ['child_1', 'child_2', 'child_3', 'child_4', 'child_5'],
         type: QuestionType.selectableList,
         showSearch: false,
+        dependsOnQuestion: 'hasChildren',
+        requiredAnswer: 'yes',
       ),
 
-      // 12. حالة إقامة الأطفال
+      // ✅ 12. حالة إقامة الأطفال (يظهر فقط إذا كان hasChildren = yes)
       QuestionPageConfig(
         titleKey: 'children_living_status',
         questionNumber: 13,
@@ -212,6 +218,8 @@ class QuestionsPageView extends StatelessWidget {
         ],
         type: QuestionType.selectableList,
         showSearch: false,
+        dependsOnQuestion: 'hasChildren',
+        requiredAnswer: 'yes',
       ),
 
       // 13. المستوى التعليمي
@@ -329,19 +337,40 @@ class QuestionsPageView extends StatelessWidget {
     return questions;
   }
 
+  // ✅ دالة للتحقق هل السؤال يجب عرضه بناءً على الشروط
+  bool _shouldShowQuestion(QuestionPageConfig config) {
+    if (config.dependsOnQuestion == null) {
+      return true; // لا يوجد شرط، اعرض السؤال
+    }
+
+    final dependsOnAnswer = _answers[config.dependsOnQuestion];
+    return dependsOnAnswer == config.requiredAnswer;
+  }
+
+  // ✅ دالة للحصول على الصفحة التالية المتاحة
+  int _getNextAvailablePage(
+    List<QuestionPageConfig> questions,
+    int currentIndex,
+  ) {
+    for (int i = currentIndex + 1; i < questions.length; i++) {
+      if (_shouldShowQuestion(questions[i])) {
+        return i;
+      }
+    }
+    return -1; // لا توجد صفحات متاحة (انتهت الأسئلة)
+  }
+
   @override
   Widget build(BuildContext context) {
     final questions = _getQuestions(context);
     final totalPages = questions.length;
 
     // إذا تم تمرير آخر رقم سؤال من السيرفر، نحدد الصفحة التي تحتوي على السؤال التالي
-    // نبحث عن السؤال الذي رقمه = lastQuestionNumber + 1
     final targetQuestionNumber = lastQuestionNumber + 1;
     final startIndex = questions.indexWhere(
       (q) => q.questionNumber == targetQuestionNumber,
     );
 
-    // نقوم بالقفز إلى الصفحة المطلوبة بعد بناء الواجهة لتجنّب مشاكل السياق
     if (startIndex != -1 && _currentPage.value == 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_pageController.hasClients) {
@@ -358,7 +387,7 @@ class QuestionsPageView extends StatelessWidget {
               previous.answerQuestionsState != current.answerQuestionsState,
           listener: (context, state) {
             if (state.answerQuestionsState == CubitStates.success) {
-              _goToNextPage(totalPages, context);
+              _goToNextPage(questions, context);
             } else if (state.answerQuestionsState == CubitStates.failure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 CustomSnackBar(
@@ -419,16 +448,29 @@ class QuestionsPageView extends StatelessWidget {
     QuestionPageConfig config,
     dynamic answer,
   ) {
-    // ✅ تحويل الإجابة للـ format المطلوب
+    // ✅ استخراج الـ key والـ value
+    final dynamic answerKey;
+    final dynamic answerValue;
+
+    if (answer is Map) {
+      answerKey = answer['key'];
+      answerValue = answer['value'];
+    } else {
+      answerKey = answer;
+      answerValue = answer;
+    }
+
+    // ✅ حفظ الـ key في _answers للمنطق الشرطي
+    _answers[config.questionCategoryEnum] = answerKey;
+
+    // ✅ إرسال الـ value (النص المترجم) للـ Backend
     List<Map<String, dynamic>> answers;
 
-    if (answer is List<String>) {
-      // Multi-Select (Hobbies)
-      answers = answer.map((e) => {'answer': e}).toList();
+    if (answerValue is List<String>) {
+      answers = answerValue.map((e) => {'answer': e}).toList();
     } else {
-      // Single Select
       answers = [
-        {'answer': answer.toString()},
+        {'answer': answerValue.toString()},
       ];
     }
 
@@ -440,9 +482,13 @@ class QuestionsPageView extends StatelessWidget {
     );
   }
 
-  void _goToNextPage(int totalPages, BuildContext context) {
-    if (_currentPage.value < totalPages - 1) {
-      _pageController.nextPage(
+  // ✅ دالة الانتقال للصفحة التالية
+  void _goToNextPage(List<QuestionPageConfig> questions, BuildContext context) {
+    final nextPageIndex = _getNextAvailablePage(questions, _currentPage.value);
+
+    if (nextPageIndex != -1) {
+      _pageController.animateToPage(
+        nextPageIndex,
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );

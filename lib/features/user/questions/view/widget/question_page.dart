@@ -1,3 +1,5 @@
+// lib/features/user/questions/view/widget/question_page.dart
+
 import 'package:tayseer/features/user/questions/view/widget/custom_ios_picker.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_selectable_list.dart';
 import 'package:tayseer/features/user/questions/view/widget/multiselect_chips_widget.dart';
@@ -41,12 +43,14 @@ class QuestionPage extends StatelessWidget {
           searchHintKey: config.searchHintKey,
           primaryColor: AppColors.kprimaryColor,
           onChanged: (key, value) {
-            _selectedValue.value = value;
+            // ✅ تخزين كلاهما: key للمنطق الشرطي، value للإرسال للـ Backend
+            _selectedValue.value = {'key': key, 'value': value};
           },
         );
 
       case QuestionType.picker:
-        _selectedValue.value = (config.initialValue ?? 0).toString();
+        final initialVal = (config.initialValue ?? 0).toString();
+        _selectedValue.value = {'key': initialVal, 'value': initialVal};
         return Center(
           child: CustomIosPicker(
             initialValue: config.initialValue ?? 0,
@@ -55,7 +59,10 @@ class QuestionPage extends StatelessWidget {
             unit: config.unit != null ? context.tr(config.unit!) : null,
             primaryColor: AppColors.kprimaryColor,
             onSelectedItemChanged: (value) {
-              _selectedValue.value = value.toString();
+              _selectedValue.value = {
+                'key': value.toString(),
+                'value': value.toString(),
+              };
             },
           ),
         );
@@ -65,7 +72,10 @@ class QuestionPage extends StatelessWidget {
           itemsWithIcons: config.itemsWithIcons ?? {},
           primaryColor: AppColors.kprimaryColor,
           onChanged: (List<String> selectedValues) {
-            _selectedValue.value = selectedValues;
+            _selectedValue.value = {
+              'key': selectedValues,
+              'value': selectedValues,
+            };
           },
         );
 
@@ -76,7 +86,7 @@ class QuestionPage extends StatelessWidget {
           ),
           child: TextInputQuestion(
             onChanged: (value) {
-              _selectedValue.value = value;
+              _selectedValue.value = {'key': value, 'value': value};
             },
           ),
         );
@@ -92,10 +102,13 @@ class QuestionPage extends StatelessWidget {
             final isLoading = state.answerQuestionsState == CubitStates.loading;
 
             bool isEnabled = false;
-            if (selectedValue is String) {
-              isEnabled = selectedValue.trim().isNotEmpty;
-            } else if (selectedValue is List) {
-              isEnabled = selectedValue.isNotEmpty;
+            if (selectedValue is Map) {
+              final val = selectedValue['value'];
+              if (val is String) {
+                isEnabled = val.trim().isNotEmpty;
+              } else if (val is List) {
+                isEnabled = val.isNotEmpty;
+              }
             }
 
             return Padding(
