@@ -758,5 +758,10 @@
   "hide_profile_from_contacts": "اخفاء الملف الشخصي",
   "hide_profile_from_contacts_subtitle": "لن يرى أحد من جهات اتصالك ملفك الشخصي",
   "show_profile_from_contacts": "اظهار الملف الشخصي",
-  "show_profile_from_contacts_subtitle": "سيظهر ملفك الشخصي لجهات اتصالك"
+  "show_profile_from_contacts_subtitle": "سيظهر ملفك الشخصي لجهات اتصالك",
+  "unsaved_changes_title": "تنبيه",
+  "unsaved_changes_message": "هناك تعديلات غير محفوظة، هل تريد الحفظ قبل الخروج؟",
+  "save_and_exit": "حفظ",
+  "discard_and_exit": "تجاهل",
+  "keep_editing": "إلغاء"
 }

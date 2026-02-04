@@ -509,162 +509,184 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         builder: (context, state) {
           final cubit = context.read<EditPersonalDataCubit>();
 
-          return Scaffold(
-            body: AdvisorBackground(
-              child: SingleChildScrollView(
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 105.h,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage(
-                              AssetsData.homeBarBackgroundImage,
+          return PopScope(
+            canPop: !state.hasChanges || state.isSaving,
+            onPopInvokedWithResult: (didPop, result) async {
+              if (didPop) return;
+
+              final shouldPop = await _showUnsavedChangesDialog(context, cubit);
+              if (shouldPop && context.mounted) {
+                Navigator.pop(context);
+              }
+            },
+            child: Scaffold(
+              body: AdvisorBackground(
+                child: SingleChildScrollView(
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 105.h,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage(
+                                AssetsData.homeBarBackgroundImage,
+                              ),
+                              fit: BoxFit.fill,
                             ),
-                            fit: BoxFit.fill,
                           ),
                         ),
                       ),
-                    ),
-                    SafeArea(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20.w,
-                          vertical: 16.h,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SimpleAppBar(
-                              title: context.tr("edit_personal_data"),
-                              isLargeTitle: true,
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 25.0,
+                      SafeArea(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20.w,
+                            vertical: 16.h,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SimpleAppBar(
+                                title: context.tr("edit_personal_data"),
+                                isLargeTitle: true,
                               ),
-                              child: Column(
-                                children: [
-                                  Gap(32.h),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 25.0,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Gap(32.h),
 
-                                  if (state.state == CubitStates.loading)
-                                    _buildSkeletonLoading()
-                                  else if (state.state == CubitStates.failure)
-                                    Center(
-                                      child: Column(
+                                    if (state.state == CubitStates.loading)
+                                      _buildSkeletonLoading()
+                                    else if (state.state == CubitStates.failure)
+                                      Center(
+                                        child: Column(
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              color: AppColors.kRedColor,
+                                              size: 48.w,
+                                            ),
+                                            Gap(16.h),
+                                            Text(
+                                              state.errorMessage ??
+                                                  context.tr("data_load_error"),
+                                              textAlign: TextAlign.center,
+                                              style: Styles.textStyle14
+                                                  .copyWith(
+                                                    color:
+                                                        AppColors.secondary600,
+                                                  ),
+                                            ),
+                                            Gap(24.h),
+                                            CustomBotton(
+                                              width: context.width * 0.6,
+                                              title: context.tr("retry"),
+                                              onPressed: () =>
+                                                  cubit.loadProfileData(),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    else
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Icon(
-                                            Icons.error_outline,
-                                            color: AppColors.kRedColor,
-                                            size: 48.w,
-                                          ),
-                                          Gap(16.h),
-                                          Text(
-                                            state.errorMessage ??
-                                                context.tr("data_load_error"),
-                                            textAlign: TextAlign.center,
-                                            style: Styles.textStyle14.copyWith(
-                                              color: AppColors.secondary600,
+                                          // قسم الصورة الشخصية
+                                          Center(
+                                            child: _buildAvatarImageSection(
+                                              cubit,
+                                              state,
                                             ),
                                           ),
-                                          Gap(24.h),
-                                          CustomBotton(
-                                            width: context.width * 0.6,
-                                            title: context.tr("retry"),
-                                            onPressed: () =>
-                                                cubit.loadProfileData(),
+                                          Gap(20.h),
+
+                                          // حقل الاسم باستخدام ProfileTextField
+                                          ProfileTextField(
+                                            controller: _nameController,
+                                            onChanged: (value) =>
+                                                cubit.updateName(value),
+                                            hint: context.tr("enter_name"),
                                           ),
+                                          Gap(11.h),
+                                          ProfileTextField(
+                                            controller: _usernameController,
+                                            onChanged: (value) =>
+                                                cubit.updateUsername(value),
+                                            hint: context.tr("enter_username"),
+                                          ),
+                                          Gap(11.h),
+
+                                          // Dropdown للتخصص
+                                          _buildSpecializationDropdown(cubit),
+                                          Gap(11.h),
+
+                                          // Dropdown للمنصب
+                                          _buildPositionDropdown(cubit),
+                                          Gap(11.h),
+
+                                          // Dropdown للخبرة
+                                          _buildExperienceDropdown(cubit),
+                                          Gap(11.h),
+                                          // حقل السيرة الذاتية باستخدام ProfileTextField
+                                          ProfileTextField(
+                                            controller: _bioController,
+                                            onChanged: (value) =>
+                                                cubit.updateBio(value),
+                                            hint: context.tr("bio_hint"),
+                                            maxLines: 4,
+                                          ),
+                                          Gap(6.h),
+                                          Text(
+                                            '${_bioController.text.length}/250',
+                                            style: Styles.textStyle14.copyWith(
+                                              color:
+                                                  _bioController.text.length >
+                                                      250
+                                                  ? AppColors.kRedColor
+                                                  : AppColors.secondary400,
+                                            ),
+                                          ),
+                                          Gap(25.h),
+
+                                          // قسم رفع الفيديو
+                                          _buildVideoSection(cubit, state),
+                                          Gap(35.h),
+
+                                          // زر الحفظ
+                                          CustomBotton(
+                                            height: 54.h,
+                                            width: double.infinity,
+                                            useGradient: true,
+                                            title: state.isSaving
+                                                ? context.tr("saving")
+                                                : context.tr("save"),
+                                            onPressed:
+                                                state.isSaving ||
+                                                    !state.hasChanges
+                                                ? null
+                                                : () => cubit.saveChanges(
+                                                    context,
+                                                  ),
+                                          ),
+                                          Gap(40.h),
                                         ],
                                       ),
-                                    )
-                                  else
-                                    Column(
-                                      children: [
-                                        // قسم الصورة الشخصية
-                                        _buildAvatarImageSection(cubit, state),
-                                        Gap(20.h),
-
-                                        // حقل الاسم باستخدام ProfileTextField
-                                        ProfileTextField(
-                                          controller: _nameController,
-                                          onChanged: (value) =>
-                                              cubit.updateName(value),
-                                          hint: context.tr("enter_name"),
-                                        ),
-                                        Gap(11.h),
-                                        ProfileTextField(
-                                          controller: _usernameController,
-                                          onChanged: (value) =>
-                                              cubit.updateUsername(value),
-                                          hint: context.tr("enter_username"),
-                                        ),
-                                        Gap(11.h),
-
-                                        // Dropdown للتخصص
-                                        _buildSpecializationDropdown(cubit),
-                                        Gap(11.h),
-
-                                        // Dropdown للمنصب
-                                        _buildPositionDropdown(cubit),
-                                        Gap(11.h),
-
-                                        // Dropdown للخبرة
-                                        _buildExperienceDropdown(cubit),
-                                        Gap(11.h),
-                                        // حقل السيرة الذاتية باستخدام ProfileTextField
-                                        ProfileTextField(
-                                          controller: _bioController,
-                                          onChanged: (value) =>
-                                              cubit.updateBio(value),
-                                          hint: context.tr("bio_hint"),
-                                          maxLines: 4,
-                                        ),
-                                        Gap(6.h),
-                                        Text(
-                                          '${_bioController.text.length}/250',
-                                          style: Styles.textStyle14.copyWith(
-                                            color:
-                                                _bioController.text.length > 250
-                                                ? AppColors.kRedColor
-                                                : AppColors.secondary400,
-                                          ),
-                                        ),
-                                        Gap(25.h),
-
-                                        // قسم رفع الفيديو
-                                        _buildVideoSection(cubit, state),
-                                        Gap(35.h),
-
-                                        // زر الحفظ
-                                        CustomBotton(
-                                          height: 54.h,
-                                          width: double.infinity,
-                                          useGradient: true,
-                                          title: state.isSaving
-                                              ? context.tr("saving")
-                                              : context.tr("save"),
-                                          onPressed:
-                                              state.isSaving ||
-                                                  !state.hasChanges
-                                              ? null
-                                              : () =>
-                                                    cubit.saveChanges(context),
-                                        ),
-                                        Gap(40.h),
-                                      ],
-                                    ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -672,6 +694,87 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         },
       ),
     );
+  }
+
+  Future<bool> _showUnsavedChangesDialog(
+    BuildContext context,
+    EditPersonalDataCubit cubit,
+  ) async {
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        title: Text(
+          context.tr("unsaved_changes_title"),
+          textAlign: TextAlign.center,
+          style: Styles.textStyle18SemiBold.copyWith(
+            color: AppColors.primary800,
+          ),
+        ),
+        content: Text(
+          context.tr("unsaved_changes_message"),
+          textAlign: TextAlign.center,
+          style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CustomBotton(
+                  height: 48.h,
+                  width: double.infinity,
+                  useGradient: true,
+                  title: context.tr("save_and_exit"),
+                  onPressed: () => Navigator.pop(context, 'save'),
+                ),
+                Gap(12.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CustomBotton(
+                        height: 48.h,
+                        title: context.tr("discard_and_exit"),
+                        backGroundcolor: AppColors.secondary100,
+                        titleColor: AppColors.kRedColor,
+                        onPressed: () => Navigator.pop(context, 'discard'),
+                        elevation: 0,
+                      ),
+                    ),
+                    Gap(12.w),
+                    Expanded(
+                      child: CustomBotton(
+                        height: 48.h,
+                        title: context.tr("keep_editing"),
+                        backGroundcolor: AppColors.secondary100,
+                        titleColor: AppColors.secondary700,
+                        onPressed: () => Navigator.pop(context, 'keep'),
+                        elevation: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == 'save') {
+      if (context.mounted) {
+        await cubit.saveChanges(context);
+      }
+      return false; // saveChanges handles navigation or stays if error
+    } else if (result == 'discard') {
+      return true;
+    }
+    return false;
   }
 
   Widget _buildSkeletonLoading() {
