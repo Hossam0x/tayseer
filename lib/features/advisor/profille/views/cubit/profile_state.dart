@@ -25,6 +25,19 @@ class ProfileState extends Equatable {
   final AnalyticsModel? analytics;
   final String? analyticsErrorMessage;
 
+  // 🛡️ Post Actions Status (جديد)
+  final CubitStates saveActionState;
+  final String? saveMessage;
+
+  final CubitStates deletePostActionState;
+  final String? deletePostMessage;
+
+  final CubitStates blockUserActionState;
+  final String? blockUserMessage;
+
+  final CubitStates archivePostActionState;
+  final String? archivePostMessage;
+
   const ProfileState({
     this.profileState = CubitStates.initial,
     this.profile,
@@ -42,6 +55,14 @@ class ProfileState extends Equatable {
     this.analyticsState = CubitStates.initial,
     this.analytics,
     this.analyticsErrorMessage,
+    this.saveActionState = CubitStates.initial,
+    this.saveMessage,
+    this.deletePostActionState = CubitStates.initial,
+    this.deletePostMessage,
+    this.blockUserActionState = CubitStates.initial,
+    this.blockUserMessage,
+    this.archivePostActionState = CubitStates.initial,
+    this.archivePostMessage,
   });
 
   ProfileState copyWith({
@@ -61,6 +82,14 @@ class ProfileState extends Equatable {
     CubitStates? analyticsState,
     AnalyticsModel? analytics,
     String? analyticsErrorMessage,
+    CubitStates? saveActionState,
+    String? saveMessage,
+    CubitStates? deletePostActionState,
+    String? deletePostMessage,
+    CubitStates? blockUserActionState,
+    String? blockUserMessage,
+    CubitStates? archivePostActionState,
+    String? archivePostMessage,
   }) {
     return ProfileState(
       profileState: profileState ?? this.profileState,
@@ -80,6 +109,16 @@ class ProfileState extends Equatable {
       analytics: analytics ?? this.analytics,
       analyticsErrorMessage:
           analyticsErrorMessage ?? this.analyticsErrorMessage,
+      saveActionState: saveActionState ?? this.saveActionState,
+      saveMessage: saveMessage ?? this.saveMessage,
+      deletePostActionState:
+          deletePostActionState ?? this.deletePostActionState,
+      deletePostMessage: deletePostMessage ?? this.deletePostMessage,
+      blockUserActionState: blockUserActionState ?? this.blockUserActionState,
+      blockUserMessage: blockUserMessage ?? this.blockUserMessage,
+      archivePostActionState:
+          archivePostActionState ?? this.archivePostActionState,
+      archivePostMessage: archivePostMessage ?? this.archivePostMessage,
     );
   }
 
@@ -101,5 +140,13 @@ class ProfileState extends Equatable {
     analyticsState,
     analytics,
     analyticsErrorMessage,
+    saveActionState,
+    saveMessage,
+    deletePostActionState,
+    deletePostMessage,
+    blockUserActionState,
+    blockUserMessage,
+    archivePostActionState,
+    archivePostMessage,
   ];
 }

@@ -52,7 +52,8 @@ class PostImagesGrid extends StatelessWidget {
     return GestureDetector(
       onTap: () => _openGallery(context, 0),
       child: Hero(
-        tag: 'post_${postId}_img_${images[0]}',
+        tag:
+            '${isFromProfile ? 'profile' : 'home'}_post_${postId}_img_${images[0]}',
         placeholderBuilder: (_, __, child) => child,
         child: Container(
           width: double.infinity,
@@ -135,7 +136,8 @@ class PostImagesGrid extends StatelessWidget {
     String imagePath, {
     int moreCount = 0,
   }) {
-    final heroTag = 'post_${postId}_img_$imagePath';
+    final heroTag =
+        '${isFromProfile ? 'profile' : 'home'}_post_${postId}_img_$imagePath';
 
     return Expanded(
       child: GestureDetector(

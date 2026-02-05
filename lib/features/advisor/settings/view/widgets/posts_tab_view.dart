@@ -185,7 +185,7 @@ class PostsTabView extends StatelessWidget {
             child: RefreshIndicator(
               onRefresh: () => cubit.refresh(),
               child: ListView.builder(
-                padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
+                padding: EdgeInsets.symmetric(vertical: 10.h),
                 itemCount: state.posts.length + (state.hasMore ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == state.posts.length) {
@@ -193,24 +193,7 @@ class PostsTabView extends StatelessWidget {
                   }
 
                   final post = state.posts[index];
-                  return PostCard(
-                    isFromProfile: true,
-                    post: post,
-                    // onUnarchive: () =>
-                    //     _unarchivePost(context, post.postId, cubit),
-                    // onReactionChanged: (postId, reactionType) {
-                    //   cubit.reactToPost(
-                    //     postId: postId,
-                    //     reactionType: reactionType,
-                    //   );
-                    // },
-                    // onShareTap: (postId) {
-                    //   cubit.toggleSharePost(postId: postId);
-                    // },
-                    // onHashtagTap: (hashtag) {
-                    //   context.pushNamed(AppRouter.kAdvisorSearchView);
-                    // },
-                  );
+                  return PostCard(isFromProfile: true, post: post);
                 },
               ),
             ),
