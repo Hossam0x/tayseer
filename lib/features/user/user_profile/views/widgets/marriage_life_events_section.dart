@@ -48,13 +48,13 @@ class MarriageLifeEventsSection extends StatelessWidget {
             ),
           ),
           Gap(25.h),
-          _buildTimelineSection(),
+          _buildTimelineSection(context),
         ],
       ),
     );
   }
 
-  Widget _buildTimelineSection() {
+  Widget _buildTimelineSection(context) {
     return Column(
       children: [
         // 1. Time Labels (Top) - الفترة الزمنية
@@ -163,7 +163,7 @@ class MarriageLifeEventsSection extends StatelessWidget {
                       child: Center(
                         child: Text(
                           // ✅ عرض الهدف الفعلي (خطوبة/زواج/أطفال/سفر)
-                          _getGoalDisplayName(event['goalType']),
+                          _getGoalDisplayName(event['goalType'],context),
                           style: Styles.textStyle14Bold.copyWith(
                             color: const Color(0xFF9E1C36), // Deep red/pink text
                             height: 1.2,
@@ -185,24 +185,24 @@ class MarriageLifeEventsSection extends StatelessWidget {
   }
 
   // ✅ NEW: Convert goal type to display name
-  String _getGoalDisplayName(String? goalType) {
-    if (goalType == null) return '';
-    
-    switch (goalType.toLowerCase()) {
-      case 'engagement':
-      case 'engagment': // handling API typo
-        return 'خطوبة';
-      case 'marry':
-      case 'marriage':
-        return 'زواج';
-      case 'children':
-        return 'أطفال';
-      case 'travel':
-        return 'سفر';
-      default:
-        return goalType; // fallback to original value
-    }
+String _getGoalDisplayName(String? goalType, BuildContext context) {
+  if (goalType == null) return '';
+  
+  switch (goalType.toLowerCase()) {
+    case 'engagement':
+    case 'engagment':
+      return context.tr('engagement_profile');
+    case 'marry':
+    case 'marriage':
+      return context.tr('marriage_profile');
+    case 'children':
+      return context.tr('children_profile');
+    case 'travel':
+      return context.tr('travel_profile');
+    default:
+      return goalType;
   }
+}
 }
 
 class TrianglePainter extends CustomPainter {

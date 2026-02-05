@@ -1,3 +1,4 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
@@ -11,6 +12,7 @@ import 'package:tayseer/features/user/user_profile/views/widgets/voiceWidget.dar
 import 'package:tayseer/my_import.dart';
 import 'package:file_picker/file_picker.dart';
 
+
 class MarriageProfileEditView extends StatefulWidget {
   MarriageProfileEditView({
     super.key,
@@ -19,14 +21,15 @@ class MarriageProfileEditView extends StatefulWidget {
     required this.state,
     required this.selectedTabIndex,
     required this.maxImages,
-    this.onTabChanged, // ✅ Callback للتغيير
+    this.onTabChanged,
   });
+  
   final int maxImages;
   final MarriageProfileCubit cubit;
   final MarriageUserProfileModel profile;
   final MarriageProfileState state;
   late int selectedTabIndex;
-  final Function(int)? onTabChanged; // ✅ Callback للـ parent
+  final Function(int)? onTabChanged;
 
   @override
   State<MarriageProfileEditView> createState() =>
@@ -34,10 +37,7 @@ class MarriageProfileEditView extends StatefulWidget {
 }
 
 class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
-  // ✅ حالة التسجيل الصوتي
   bool _isRecordingInPlace = false;
-
-  // ✅ حالات التحميل
   bool _isUploadingVideo = false;
   bool _isUploadingAudio = false;
 
@@ -82,6 +82,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // IMAGES SECTION
+  // ════════════════════════════════════════════════════════════════
   Widget _buildImagesSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -103,7 +106,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'الصور ( ${displayImages.length} صور)',
+            '${context.tr('images_count')} ( ${displayImages.length} ${context.tr('images_count')})',
             style: Styles.textStyle18Meduim,
           ),
           Gap(12.h),
@@ -116,7 +119,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   CustomSnackBar(
                     context,
-                    text: 'الحد الأقصى للصور هو ${widget.maxImages}',
+                    text: '${context.tr('max_images')} ${widget.maxImages}',
                     isError: true,
                   ),
                 );
@@ -127,14 +130,14 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               final imagePath = allImages[realIndex];
               CustomshowDialogWithImage(
                 context,
-                title: 'حذف الصورة',
-                supTitle: 'هل أنت متأكد من حذف هذه الصورة؟',
+                title: context.tr('delete_image'),
+                supTitle: context.tr('delete_image_confirm'),
                 icon: Icons.delete_outline,
                 iconColor: Colors.red,
                 iconBackgroundColor: Colors.red.withOpacity(0.1),
-                bottonText: 'حذف',
+                bottonText: context.tr('delete'),
                 showCancelButton: true,
-                cancelText: 'إلغاء',
+                cancelText: context.tr('cancel'),
                 onPressed: () {
                   cubit.deleteImage(imagePath);
                 },
@@ -153,22 +156,27 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   ) async {
     final currentImageCount = profile.userMedia?.images.length ?? 0;
     final ImagePicker picker = ImagePicker();
+    
     if (currentImageCount >= widget.maxImages) {
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(
           context,
-          text: 'الحد الأقصى للصور هو ${widget.maxImages}',
+          text: '${context.tr('max_images')} ${widget.maxImages}',
           isError: true,
         ),
       );
       return;
     }
+    
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       cubit.uploadImage(File(image.path));
     }
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // PROFESSIONAL INFO SECTION
+  // ════════════════════════════════════════════════════════════════
   Widget _buildProfessionalInfoSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -184,11 +192,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('المعلومات المهنية', style: Styles.textStyle18Meduim),
+          Text(context.tr('professional_info'), style: Styles.textStyle18Meduim),
           Gap(12.h),
           _buildInfoRow(
-            'المؤهل',
-            profile.professionalLife?.educationLevel ?? 'اختر',
+            context.tr('qualification'),
+            profile.professionalLife?.educationLevel ?? context.tr('select'),
             () {
               _navigateToFieldSelection(
                 context,
@@ -199,18 +207,22 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             },
           ),
           Gap(12.h),
-          _buildInfoRow('الوظيفة', profile.professionalLife?.job ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'choose_job',
-              profile.professionalLife?.job,
-            );
-          }),
+          _buildInfoRow(
+            context.tr('job'),
+            profile.professionalLife?.job ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'choose_job',
+                profile.professionalLife?.job,
+              );
+            },
+          ),
           Gap(12.h),
           _buildInfoRow(
-            'الجهة الموظفة',
-            profile.professionalLife?.chooseEmployer ?? 'اختر',
+            context.tr('employer'),
+            profile.professionalLife?.chooseEmployer ?? context.tr('select'),
             () {
               _navigateToFieldSelection(
                 context,
@@ -225,12 +237,13 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // MEDIA SECTION
+  // ════════════════════════════════════════════════════════════════
   Widget _buildMediaSection(BuildContext context) {
-    final hasVideo =
-        widget.profile.userMedia?.video != null &&
+    final hasVideo = widget.profile.userMedia?.video != null &&
         widget.profile.userMedia!.video!.isNotEmpty;
-    final hasAudio =
-        widget.profile.userMedia?.audio != null &&
+    final hasAudio = widget.profile.userMedia?.audio != null &&
         widget.profile.userMedia!.audio!.isNotEmpty;
 
     return Container(
@@ -243,33 +256,28 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ════════════════════════════════════════════════════════════
           // VIDEO SECTION
-          // ════════════════════════════════════════════════════════════
-          Text('الفيديو التعريفي', style: Styles.textStyle18Meduim),
+          Text(context.tr('intro_video'), style: Styles.textStyle18Meduim),
           Gap(12.h),
 
-          // ✅ استخدام VideoSection مع callbacks
           if (_isUploadingVideo)
-            _buildLoadingWidget('جاري رفع الفيديو...')
+            _buildLoadingWidget(context.tr('uploading_video'))
           else
             VideoSection(
               videoUrl: widget.profile.userMedia?.video,
               onDelete: hasVideo ? () => _deleteVideo(context) : null,
-              onUpload: !hasVideo ? () => _pickVideo(context) : null,
+              onUpload: !hasVideo ? () => _showVideoOptions(context) : null,
               showControls: true,
             ),
 
           Gap(16.h),
 
-          // ════════════════════════════════════════════════════════════
           // AUDIO SECTION
-          // ════════════════════════════════════════════════════════════
-          Text('مقطع صوتي', style:  Styles.textStyle18Meduim),  
+          Text(context.tr('audio_clip'), style: Styles.textStyle18Meduim),
           Gap(12.h),
 
           if (_isUploadingAudio)
-            _buildLoadingWidget('جاري رفع التسجيل الصوتي...')
+            _buildLoadingWidget(context.tr('uploading_audio'))
           else if (_isRecordingInPlace)
             _buildRecordingWidget(context)
           else if (hasAudio)
@@ -282,7 +290,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // AUDIO PREVIEW - FULL PLAYER (زي صفحة العرض)
+  // AUDIO PREVIEW FULL
   // ════════════════════════════════════════════════════════════════
   Widget _buildAudioPreviewFull(BuildContext context) {
     return Container(
@@ -302,12 +310,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header مع زر الحذف
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'تسجيل صوتي',
+                context.tr('audio_recording'),
                 style: Styles.textStyle16.copyWith(fontWeight: FontWeight.w600),
               ),
               IconButton(
@@ -327,14 +334,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               ),
             ],
           ),
-
           Gap(12.h),
-
-          // Audio Player
           VoiceSection(
-        
             audioPath: widget.profile.userMedia?.audio ?? '',
-            // ⭐ هنضيف parameter جديد
           ),
         ],
       ),
@@ -342,7 +344,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ LOADING WIDGET
+  // LOADING WIDGET
   // ════════════════════════════════════════════════════════════════
   Widget _buildLoadingWidget(String message) {
     return Container(
@@ -374,95 +376,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // VIDEO UPLOAD BUTTON
-  // ════════════════════════════════════════════════════════════════
-  Widget _buildVideoUploadButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _pickVideo(context),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-        decoration: BoxDecoration(
-          color: AppColors.secondary50,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.primary200, width: 1.w),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('ارفاق فيديو تعريفي', style: Styles.textStyle16),
-                Gap(4.h),
-                Text(
-                  'الحد الأقصى 50 ميجا',
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-              ],
-            ),
-            Icon(
-              Icons.play_circle_outline,
-              color: AppColors.primary200,
-              size: 30.w,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ════════════════════════════════════════════════════════════════
-  // VIDEO PREVIEW
-  // ════════════════════════════════════════════════════════════════
-  Widget _buildVideoPreview(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: AppColors.secondary50,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.primary200, width: 1.w),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60.w,
-            height: 60.w,
-            decoration: BoxDecoration(
-              color: AppColors.primary200.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Icon(
-              Icons.videocam,
-              color: AppColors.primary200,
-              size: 30.w,
-            ),
-          ),
-          Gap(12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('فيديو تعريفي', style: Styles.textStyle16),
-                Gap(4.h),
-                Text(
-                  'تم الرفع',
-                  style: Styles.textStyle12.copyWith(color: Colors.green),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () {
-              _deleteVideo(context);
-            },
-            icon: Icon(Icons.delete_outline, color: Colors.red, size: 24.w),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ════════════════════════════════════════════════════════════════
   // AUDIO UPLOAD BUTTON
   // ════════════════════════════════════════════════════════════════
   Widget _buildAudioUploadButton(BuildContext context) {
@@ -481,10 +394,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('ارفاق تسجيل صوتي', style: Styles.textStyle16),
+                Text(context.tr('attach_audio'), style: Styles.textStyle16),
                 Gap(4.h),
                 Text(
-                  'تسجيل مباشر أو رفع ملف',
+                  context.tr('record_or_upload'),
                   style: Styles.textStyle12.copyWith(color: Colors.grey),
                 ),
               ],
@@ -532,59 +445,179 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // AUDIO PREVIEW
+  // SHOW VIDEO OPTIONS DIALOG
   // ════════════════════════════════════════════════════════════════
-  Widget _buildAudioPreview(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: AppColors.secondary50,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.primary200, width: 1.w),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60.w,
-            height: 60.w,
-            decoration: BoxDecoration(
-              color: AppColors.primary200.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Icon(
-              Icons.audiotrack,
-              color: AppColors.primary200,
-              size: 30.w,
-            ),
+  void _showVideoOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
           ),
-          Gap(12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('تسجيل صوتي', style: Styles.textStyle16),
-                Gap(4.h),
-                Text(
-                  'تم الرفع',
-                  style: Styles.textStyle12.copyWith(color: Colors.green),
+          title: Text(
+            context.tr('attach_video'),
+            style: Styles.textStyle18Meduim,
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Camera Option
+              ListTile(
+                leading: Icon(
+                  Icons.videocam,
+                  color: AppColors.primary200,
+                  size: 30.w,
                 ),
-              ],
-            ),
+                title: Text(
+                  context.tr('record_video_now'),
+                  style: Styles.textStyle16,
+                ),
+                subtitle: Text(
+                  context.tr('record_with_camera'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickVideoFromCamera(context);
+                },
+              ),
+              Divider(height: 1, color: AppColors.secondary100),
+              
+              // Gallery Option
+              ListTile(
+                leading: Icon(
+                  Icons.video_library,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text(
+                  context.tr('choose_from_gallery'),
+                  style: Styles.textStyle16,
+                ),
+                subtitle: Text(
+                  context.tr('choose_video_from_gallery'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickVideoFromGallery(context);
+                },
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: () => _deleteAudio(context),
-            icon: Icon(Icons.delete_outline, color: Colors.red, size: 24.w),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   // ════════════════════════════════════════════════════════════════
-  // PICK VIDEO
+  // PICK VIDEO FROM CAMERA
   // ════════════════════════════════════════════════════════════════
-  Future<void> _pickVideo(BuildContext context) async {
+  Future<void> _pickVideoFromCamera(BuildContext context) async {
     try {
+      final cameraStatus = await Permission.camera.request();
+      
+      if (cameraStatus.isDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('camera_permission_required'),
+              isError: true,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (cameraStatus.isPermanentlyDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('enable_camera_from_settings'),
+              isError: true,
+            ),
+          );
+          await openAppSettings();
+        }
+        return;
+      }
+
+      final ImagePicker picker = ImagePicker();
+      final XFile? video = await picker.pickVideo(
+        source: ImageSource.camera,
+        maxDuration: const Duration(minutes: 2),
+      );
+
+      if (video != null) {
+        await _processVideoFile(context, video);
+      }
+    } catch (e) {
+      debugPrint('❌ Error picking video from camera: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('error_recording_video'),
+            isError: true,
+          ),
+        );
+      }
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // PICK VIDEO FROM GALLERY
+  // ════════════════════════════════════════════════════════════════
+  Future<void> _pickVideoFromGallery(BuildContext context) async {
+    try {
+      PermissionStatus status;
+      
+      if (Platform.isIOS) {
+        status = await Permission.photos.request();
+      } else {
+        if (Platform.isAndroid) {
+          final androidInfo = await DeviceInfoPlugin().androidInfo;
+          if (androidInfo.version.sdkInt >= 33) {
+            status = await Permission.videos.request();
+          } else {
+            status = await Permission.storage.request();
+          }
+        } else {
+          status = await Permission.storage.request();
+        }
+      }
+
+      if (status.isDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('gallery_permission_required'),
+              isError: true,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (status.isPermanentlyDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('enable_gallery_from_settings'),
+              isError: true,
+            ),
+          );
+          await openAppSettings();
+        }
+        return;
+      }
+
       final ImagePicker picker = ImagePicker();
       final XFile? video = await picker.pickVideo(
         source: ImageSource.gallery,
@@ -592,46 +625,68 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       );
 
       if (video != null) {
-        final file = File(video.path);
-        final fileSize = await file.length();
-
-        if (fileSize > 50 * 1024 * 1024) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(
-                context,
-                text: 'حجم الفيديو كبير جداً (الحد الأقصى 50 ميجا)',
-                isError: true,
-              ),
-            );
-          }
-          return;
-        }
-
-        // ✅ تفعيل حالة التحميل
-        setState(() {
-          _isUploadingVideo = true;
-        });
-
-        await widget.cubit.uploadVideo(file);
-
-        // ✅ إيقاف حالة التحميل
-        if (mounted) {
-          setState(() {
-            _isUploadingVideo = false;
-          });
-        }
+        await _processVideoFile(context, video);
       }
     } catch (e) {
-      debugPrint('❌ Error picking video: $e');
+      debugPrint('❌ Error picking video from gallery: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('error_selecting_video'),
+            isError: true,
+          ),
+        );
+      }
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // PROCESS VIDEO FILE
+  // ════════════════════════════════════════════════════════════════
+  Future<void> _processVideoFile(BuildContext context, XFile video) async {
+    try {
+      final file = File(video.path);
+      final fileSize = await file.length();
+
+      if (fileSize > 50 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('video_size_too_large'),
+              isError: true,
+            ),
+          );
+        }
+        return;
+      }
+
+      setState(() {
+        _isUploadingVideo = true;
+      });
+
+      await widget.cubit.uploadVideo(file);
 
       if (mounted) {
         setState(() {
           _isUploadingVideo = false;
         });
-
+      }
+    } catch (e) {
+      debugPrint('❌ Error processing video file: $e');
+      
+      if (mounted) {
+        setState(() {
+          _isUploadingVideo = false;
+        });
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: 'خطأ في اختيار الفيديو', isError: true),
+          CustomSnackBar(
+            context,
+            text: context.tr('error_uploading_video'),
+            isError: true,
+          ),
         );
       }
     }
@@ -649,7 +704,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             borderRadius: BorderRadius.circular(16.r),
           ),
           title: Text(
-            'إرفاق تسجيل صوتي',
+            context.tr('attach_audio'),
             style: Styles.textStyle18Meduim,
             textAlign: TextAlign.center,
           ),
@@ -657,14 +712,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(
-                  Icons.mic,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text('تسجيل مباشر', style: Styles.textStyle16),
+                leading: Icon(Icons.mic, color: AppColors.primary200, size: 30.w),
+                title: Text(context.tr('record_now'), style: Styles.textStyle16),
                 subtitle: Text(
-                  'سجل صوتك الآن',
+                  context.tr('record_voice_now'),
                   style: Styles.textStyle12.copyWith(color: Colors.grey),
                 ),
                 onTap: () {
@@ -674,14 +725,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               ),
               Divider(height: 1, color: AppColors.secondary100),
               ListTile(
-                leading: Icon(
-                  Icons.upload_file,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text('رفع ملف', style: Styles.textStyle16),
+                leading: Icon(Icons.upload_file, color: AppColors.primary200, size: 30.w),
+                title: Text(context.tr('upload_file'), style: Styles.textStyle16),
                 subtitle: Text(
-                  'اختر ملف صوتي من جهازك',
+                  context.tr('choose_audio_file'),
                   style: Styles.textStyle12.copyWith(color: Colors.grey),
                 ),
                 onTap: () {
@@ -721,7 +768,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         scaffoldMessenger.showSnackBar(
           CustomSnackBar(
             context,
-            text: 'يرجى السماح بالوصول للملفات',
+            text: context.tr('allow_files_access'),
             isError: true,
           ),
         );
@@ -732,7 +779,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         scaffoldMessenger.showSnackBar(
           CustomSnackBar(
             context,
-            text: 'يرجى تفعيل الصلاحية من الإعدادات',
+            text: context.tr('enable_permission_settings'),
             isError: true,
           ),
         );
@@ -753,21 +800,19 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           scaffoldMessenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: 'حجم الملف كبير جداً (الحد الأقصى 10 ميجا)',
+              text: context.tr('file_too_large'),
               isError: true,
             ),
           );
           return;
         }
 
-        // ✅ تفعيل حالة التحميل
         setState(() {
           _isUploadingAudio = true;
         });
 
         await widget.cubit.uploadAudio(file);
 
-        // ✅ إيقاف حالة التحميل
         if (mounted) {
           setState(() {
             _isUploadingAudio = false;
@@ -785,7 +830,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         scaffoldMessenger.showSnackBar(
           CustomSnackBar(
             context,
-            text: 'خطأ في اختيار الملف الصوتي',
+            text: context.tr('error_picking_audio'),
             isError: true,
           ),
         );
@@ -794,63 +839,54 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // DELETE VIDEO - ✅ مع تحديث الـ State
+  // DELETE VIDEO
   // ════════════════════════════════════════════════════════════════
   void _deleteVideo(BuildContext context) {
     CustomshowDialogWithImage(
       context,
-      title: 'حذف الفيديو',
-      supTitle: 'هل أنت متأكد من حذف الفيديو التعريفي؟',
+      title: context.tr('delete_video'),
+      supTitle: context.tr('delete_video_confirm'),
       icon: Icons.close_outlined,
       iconColor: Colors.red,
       iconBackgroundColor: Colors.red.withOpacity(0.1),
-      bottonText: 'حذف',
+      bottonText: context.tr('delete'),
       showCancelButton: true,
-      cancelText: 'إلغاء',
+      cancelText: context.tr('cancel'),
       onPressed: () async {
-        // Navigator.pop(context); // ✅ أغلق الـ Dialog أولاً
-
         await widget.cubit.deleteVideo();
-
-        // ✅ تحديث الـ State بعد الحذف
         if (mounted) {
-          setState(() {
-            // Force rebuild to show the upload button
-          });
+          setState(() {});
         }
       },
     );
   }
 
   // ════════════════════════════════════════════════════════════════
-  // DELETE AUDIO - ✅ مع تحديث الـ State
+  // DELETE AUDIO
   // ════════════════════════════════════════════════════════════════
   void _deleteAudio(BuildContext context) {
     CustomshowDialogWithImage(
       context,
-      title: 'حذف التسجيل الصوتي',
-      supTitle: 'هل أنت متأكد من حذف التسجيل الصوتي؟',
+      title: context.tr('delete_audio'),
+      supTitle: context.tr('delete_audio_confirm'),
       icon: Icons.delete_outline,
       iconColor: Colors.red,
       iconBackgroundColor: Colors.red.withOpacity(0.1),
-      bottonText: 'حذف',
+      bottonText: context.tr('delete'),
       showCancelButton: true,
-      cancelText: 'إلغاء',
+      cancelText: context.tr('cancel'),
       onPressed: () async {
-        // Navigator.pop(context); // ✅ أغلق الـ Dialog أولاً
-
         await widget.cubit.deleteAudio();
-
-        // ✅ تحديث الـ State بعد الحذف
         if (mounted) {
-          setState(() {
-            // Force rebuild to show the upload button
-          });
+          setState(() {});
         }
       },
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // FAMILY AND PREFERENCES SECTION
+  // ════════════════════════════════════════════════════════════════
   Widget _buildFamilyAndPreferencesSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -866,11 +902,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('المعلومات العائلية', style: Styles.textStyle18Meduim),
+          Text(context.tr('family_info'), style: Styles.textStyle18Meduim),
           Gap(12.h),
           _buildInfoRow(
-            'الحالة الاجتماعية',
-            profile.aboutMe?.socialStatus ?? 'اختر',
+            context.tr('marital_status'),
+            profile.aboutMe?.socialStatus ?? context.tr('select'),
             () {
               _navigateToFieldSelection(
                 context,
@@ -881,8 +917,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             },
           ),
           _buildInfoRow(
-            'لديك أطفال',
-            profile.family?.hasChildren ?? 'اختر',
+            context.tr('has_children'),
+            profile.family?.hasChildren ?? context.tr('select'),
             () {
               _navigateToFieldSelection(
                 context,
@@ -893,8 +929,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             },
           ),
           _buildInfoRow(
-            'عدد الأطفال',
-            profile.family?.childrenNumber ?? 'اختر',
+            context.tr('children_count'),
+            profile.family?.childrenNumber ?? context.tr('select'),
             () {
               _navigateToFieldSelection(
                 context,
@@ -905,8 +941,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             },
           ),
           _buildInfoRow(
-            'يعيش الأطفال معك',
-            profile.family?.childrenLivingStatus ?? 'اختر',
+            context.tr('children_live_with_you'),
+            profile.family?.childrenLivingStatus ?? context.tr('select'),
             () {
               _navigateToFieldSelection(
                 context,
@@ -921,6 +957,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // GOALS SECTION
+  // ════════════════════════════════════════════════════════════════
   Widget _buildGoalsSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -936,45 +975,64 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('أهدافي', style: Styles.textStyle18Meduim),
+          Text(context.tr('my_goals'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-          _buildInfoRow('الخطوبة', profile.yourGoals?.engagement ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'engagement',
-              profile.yourGoals?.engagement,
-            );
-          }),
-          _buildInfoRow('الزواج', profile.yourGoals?.marry ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'marry',
-              profile.yourGoals?.marry,
-            );
-          }),
-          _buildInfoRow('الاسرة', profile.yourGoals?.children ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'children',
-              profile.yourGoals?.children,
-            );
-          }),
-          _buildInfoRow('السفر', profile.yourGoals?.travel ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'travel',
-              profile.yourGoals?.travel,
-            );
-          }),
+          _buildInfoRow(
+            context.tr('engagement'),
+            profile.yourGoals?.engagement ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'engagement',
+                profile.yourGoals?.engagement,
+              );
+            },
+          ),
+          _buildInfoRow(
+            context.tr('marriage'),
+            profile.yourGoals?.marry ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'marry',
+                profile.yourGoals?.marry,
+              );
+            },
+          ),
+          _buildInfoRow(
+            context.tr('family'),
+            profile.yourGoals?.children ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'children',
+                profile.yourGoals?.children,
+              );
+            },
+          ),
+          _buildInfoRow(
+            context.tr('travel'),
+            profile.yourGoals?.travel ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'travel',
+                profile.yourGoals?.travel,
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // KNOW ME MORE SECTION
+  // ════════════════════════════════════════════════════════════════
   Widget _buildKnowMeMoreSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -990,14 +1048,20 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('تعرف عليّ أكثر', style: Styles.textStyle18Meduim),
+          Text(context.tr('know_me_more'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-          _buildInfoRow('السيرة الذاتية', profile.myDescription ?? 'اختر', () {
-            _navigateToBioEdit(context, cubit, profile.myDescription);
-          }),
           _buildInfoRow(
-            'الاهتمامات',
-            profile.hobbies.isNotEmpty ? profile.hobbies.join(', ') : 'اختر',
+            context.tr('bio'),
+            profile.myDescription ?? context.tr('select'),
+            () {
+              _navigateToBioEdit(context, cubit, profile.myDescription);
+            },
+          ),
+          _buildInfoRow(
+            context.tr('interests'),
+            profile.hobbies.isNotEmpty
+                ? profile.hobbies.join(', ')
+                : context.tr('select'),
             () {
               _navigateToFieldSelection(
                 context,
@@ -1008,8 +1072,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             },
           ),
           _buildInfoRow(
-            'الهوايات',
-            profile.hobbies.isNotEmpty ? profile.hobbies.join(', ') : 'اختر',
+            context.tr('hobbies'),
+            profile.hobbies.isNotEmpty
+                ? profile.hobbies.join(', ')
+                : context.tr('select'),
             () {
               _navigateToFieldSelection(
                 context,
@@ -1024,20 +1090,23 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // SAVE BUTTON
+  // ════════════════════════════════════════════════════════════════
   Widget _buildSaveButton(
     BuildContext context,
     MarriageProfileCubit cubit,
     MarriageProfileState state,
   ) {
     return CustomBotton(
-      title: state.isUpdating ? 'جاري الحفظ...' : 'حفظ التغييرات',
+      title: state.isUpdating
+          ? context.tr('saving')
+          : context.tr('save_changes'),
       onPressed: state.isUpdating
           ? null
           : () async {
               await cubit.saveProfile();
-
               if (mounted && state.state == CubitStates.success) {
-                // ✅ استخدام الـ callback لتحديث الـ parent
                 widget.onTabChanged?.call(1);
               }
             },
@@ -1047,6 +1116,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // PERSONAL INFO SECTION
+  // ════════════════════════════════════════════════════════════════
   Widget _buildPersonalInfoSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -1062,51 +1134,71 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('معلومات عني', style: Styles.textStyle18Meduim),
+          Text(context.tr('personal_info'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-          _buildInfoRow('البلد', profile.aboutMe?.country ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'country',
-              profile.aboutMe?.country,
-            );
-          }),
-          _buildInfoRow('الجنسية', profile.aboutMe?.nationality ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'nationality',
-              profile.aboutMe?.nationality,
-            );
-          }),
-          _buildInfoRow('الطول', profile.aboutMe?.height ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'height',
-              profile.aboutMe?.height,
-            );
-          }),
-          _buildInfoRow('الوزن', profile.aboutMe?.weight ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'weight',
-              profile.aboutMe?.weight,
-            );
-          }),
-          _buildInfoRow('لون البشرة', profile.aboutMe?.skinColor ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'skinColor',
-              profile.aboutMe?.skinColor,
-            );
-          }),
           _buildInfoRow(
-            'الحالة الصحية',
-            profile.aboutMe?.healthStatus ?? 'اختر',
+            context.tr('country'),
+            profile.aboutMe?.country ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'country',
+                profile.aboutMe?.country,
+              );
+            },
+          ),
+          _buildInfoRow(
+            context.tr('nationality'),
+            profile.aboutMe?.nationality ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'nationality',
+                profile.aboutMe?.nationality,
+              );
+            },
+          ),
+          _buildInfoRow(
+            context.tr('height'),
+            profile.aboutMe?.height ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'height',
+                profile.aboutMe?.height,
+              );
+            },
+          ),
+          _buildInfoRow(
+            context.tr('weight'),
+            profile.aboutMe?.weight ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'weight',
+                profile.aboutMe?.weight,
+              );
+            },
+          ),
+          _buildInfoRow(
+            context.tr('skin_color'),
+            profile.aboutMe?.skinColor ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'skinColor',
+                profile.aboutMe?.skinColor,
+              );
+            },
+          ),
+          _buildInfoRow(
+            context.tr('health_status'),
+            profile.aboutMe?.healthStatus ?? context.tr('select'),
             () {
               _navigateToFieldSelection(
                 context,
@@ -1117,8 +1209,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             },
           ),
           _buildInfoRow(
-            'الالتزام الديني',
-            profile.aboutMe?.religiousCommitment ?? 'اختر',
+            context.tr('religious_commitment'),
+            profile.aboutMe?.religiousCommitment ?? context.tr('select'),
             () {
               _navigateToFieldSelection(
                 context,
@@ -1128,19 +1220,26 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               );
             },
           ),
-          _buildInfoRow('التدخين', profile.aboutMe?.smoker ?? 'اختر', () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'smoker',
-              profile.aboutMe?.smoker,
-            );
-          }),
+          _buildInfoRow(
+            context.tr('smoking'),
+            profile.aboutMe?.smoker ?? context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'smoker',
+                profile.aboutMe?.smoker,
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // INFO ROW
+  // ════════════════════════════════════════════════════════════════
   Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
     final isLongText = value.length > 30;
     return GestureDetector(
@@ -1242,12 +1341,12 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
     CustomSHowDetailsDialog(
       context,
-      title: 'تعديل السيرة الذاتية',
+      title: context.tr('edit_bio'),
       contantWidget: TextField(
         controller: controller,
         maxLines: 5,
         decoration: InputDecoration(
-          hintText: 'اكتب نبذة عنك...',
+          hintText: context.tr('write_about_yourself'),
           hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
           border: InputBorder.none,
         ),

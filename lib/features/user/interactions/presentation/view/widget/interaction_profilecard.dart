@@ -8,14 +8,14 @@ class InteractionProfileCard extends StatefulWidget {
   final InteractionUserModel item;
   final bool forceBlur;
   final bool showFavoriteIcon;
-  final bool showRibbon; // ✅ معامل جديد للتحكم في إظهار الشعار
+  final bool showRibbon;
   
   const InteractionProfileCard({
     super.key,
     required this.item,
     this.forceBlur = false,
     this.showFavoriteIcon = false,
-    this.showRibbon = true, // ✅ افتراضياً يظهر الشعار
+    this.showRibbon = true,
   });
 
   @override
@@ -50,12 +50,10 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
   @override
   Widget build(BuildContext context) {
     final shouldBlur = widget.forceBlur || widget.item.isImageBlurred;
-    
-    // ✅ تحديد إذا كان العنصر معلق للحذف (isFavorite = false في صفحة المفضلة)
     final isPendingRemoval = widget.showFavoriteIcon && !widget.item.isFavorite;
 
     return Opacity(
-      opacity: isPendingRemoval ? 0.5 : 1.0, // ✅ تقليل الشفافية للعناصر المعلقة
+      opacity: isPendingRemoval ? 0.5 : 1.0,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -64,7 +62,6 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
             decoration: BoxDecoration(
               color: const Color.fromRGBO(0, 0, 0, 0.08),
               borderRadius: BorderRadius.circular(20.r),
-              // ✅ إضافة border للعناصر المعلقة
               border: isPendingRemoval 
                   ? Border.all(color: Colors.grey.shade400, width: 2.w)
                   : null,
@@ -72,28 +69,36 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ════════════════════════════════════════════════════════════════
-                // ⭐⭐⭐ UPDATED: Responsive Image with AspectRatio
-                // ════════════════════════════════════════════════════════════════
                 AspectRatio(
-                  aspectRatio: 1.3, // النسبة: العرض / الارتفاع (مثلاً 190/147 ≈ 1.3)
+                  aspectRatio: 1.3,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16.r),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
                         GestureDetector(
-                          
                           onTap: () {
-                          
+                            context.pushNamed(
+                              AppRouter.kMarriageView,
+                              arguments: {'personId': widget.item.userId},
+                            );
                           },
-                          child: AppImage(widget.item.image, fit: BoxFit.cover)),
+                          child: AppImage(widget.item.image, fit: BoxFit.cover),
+                        ),
 
                         if (shouldBlur)
-                          BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                            child: Container(
-                              color: Colors.black.withOpacity(0.2),
+                        GestureDetector(
+                          onTap: () {
+                            context.pushNamed(
+                              AppRouter.kMarriageView,
+                              arguments: {'personId': widget.item.userId},
+                            );
+                          },
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                              child: Container(
+                                color: Colors.black.withOpacity(0.2),
+                              ),
                             ),
                           ),
 
@@ -107,18 +112,15 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                                 final currentStatus = widget.item.isFavorite;
 
                                 if (currentStatus) {
-                                  // حالة الحذف: يظهر الديالوج أولاً
                                   final shouldRemove =
                                       await showRemoveFavoriteDialog(context);
                                   if (shouldRemove != true || !mounted) return;
 
-                                  // تنفيذ الحذف (isAdd = false) مما سيجعل الـ action = 'remove' في الـ repo
                                   cubit.toggleFavorite(
                                     userId: widget.item.userId,
                                     isAdd: false,
                                   );
                                 } else {
-                                  // حالة الإضافة: تنفيذ مباشرة (isAdd = true) بدون action في الـ repo
                                   _animationController.forward().then(
                                     (_) => _animationController.reverse(),
                                   );
@@ -154,95 +156,97 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                   ),
                 ),
 
-                // ════════════════════════════════════════════════════════════════
-                // ⭐⭐⭐ UPDATED: Responsive Info Section with Flexible spacing
-                // ════════════════════════════════════════════════════════════════
                 Padding(
                   padding: EdgeInsets.only(top: 8.h, right: 4.w, left: 4.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min, // ⭐ Important for responsiveness
-                    children: [
-                      // ✅ الاسم + العمر + التوثيق
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              '${widget.item.name},',
-                              style: Styles.textStyle16SemiBold.copyWith(
-                                fontSize: 14.sp, // ⭐ Slightly smaller for better fit
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                          Text(
-                            ' ${widget.item.age} سنة',
-                            style: Styles.textStyle16.copyWith(
-                              fontWeight: FontWeight.w400,
-                              fontSize: 14.sp, // ⭐ Matching size
-                            ),
-                          ),
-                          if (widget.item.isverified) ...[
-                            SizedBox(width: 4.w),
-                            Icon(Icons.verified, color: Colors.blue, size: 14.sp),
-                          ],
-                        ],
-                      ),
-
-                      SizedBox(height: 6.h), // ⭐ Reduced spacing
-
-                      // ✅ اليوم + الدولة في نفس السطر مع التعامل مع overflow
-                      Row(
-                        children: [
-                          Flexible(
-                            flex: 0,
-                            child: _buildBadge(text: widget.item.day),
-                          ),
-                          if (widget.item.country.isNotEmpty) ...[
-                            SizedBox(width: 4.w),
+                  child: GestureDetector(
+                    onTap: () {
+                        context.pushNamed(
+                              AppRouter.kMarriageView,
+                              arguments: {'personId': widget.item.userId},
+                            );
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
                             Flexible(
-                              child: _buildBadge(
-                                text: widget.item.country,
-                                icon: AssetsData.EgyFlagIcon,
+                              child: Text(
+                                '${widget.item.name},',
+                                style: Styles.textStyle16SemiBold.copyWith(
+                                  fontSize: 14.sp,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                             ),
+                            Text(
+                              ' ${widget.item.age} ${context.tr("age")}', // ✅ ترجمة "سنة"
+                              style: Styles.textStyle16.copyWith(
+                                fontWeight: FontWeight.w400,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                            if (widget.item.isverified) ...[
+                              SizedBox(width: 4.w),
+                              Icon(Icons.verified, color: Colors.blue, size: 14.sp),
+                            ],
                           ],
-                        ],
-                      ),
-
-                      SizedBox(height: 6.h), // ⭐ Reduced spacing
-
-                      // ✅ الوظيفة
-                      if (widget.item.job.isNotEmpty)
-                        _buildBadge(
-                          text: widget.item.job,
-                          icon: AssetsData.workIcon,
                         ),
-                    ],
+                    
+                        SizedBox(height: 6.h),
+                    
+                        Row(
+                          children: [
+                            Flexible(
+                              flex: 0,
+                              child: _buildBadge(text: widget.item.day),
+                            ),
+                            if (widget.item.country.isNotEmpty) ...[
+                              SizedBox(width: 4.w),
+                              Flexible(
+                                child: _buildBadge(
+                                  text: widget.item.country,
+                                  icon: AssetsData.EgyFlagIcon,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                    
+                        SizedBox(height: 6.h),
+                    
+                        if (widget.item.job.isNotEmpty)
+                          _buildBadge(
+                            text: widget.item.job,
+                            icon: AssetsData.workIcon,
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          // ✅ الشعار (Ribbon) - يظهر فقط إذا كان showRibbon = true
+          // ✅ الشعار (Ribbon) مع الترجمة
           if (widget.showRibbon) ...[
             if (widget.item.likedHim)
               StatusRibbonwidget(
-                statusText: "نال أعجابك",
+                statusText: context.tr("you_liked"), // ✅ ترجمة
                 topTextPosition: 28.h,
                 rightTextPosition: 1.w,
               )
             else if (widget.item.sentCompliment)
               StatusRibbonwidget(
-                statusText: "أرسلت مجاملة",
+                statusText: context.tr("sent_compliment"), // ✅ ترجمة
                 topTextPosition: 26.h,
                 rightTextPosition: -2.w,
               )
             else if (widget.item.likedMe)
               StatusRibbonwidget(
-                statusText: "اُعجب بك",
+                statusText: context.tr("liked_Me"), // ✅ ترجمة
                 topTextPosition: 30.h,
                 rightTextPosition: 5.w,
               ),
@@ -272,7 +276,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
               text,
               style: Styles.textStyle14SemiBold.copyWith(
                 fontWeight: FontWeight.w400,
-                fontSize: 14.sp, // ⭐ Smaller font for badges
+                fontSize: 14.sp,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -303,7 +307,6 @@ class RemoveFavoriteDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // أيقونة
             Icon(
               Icons.favorite_border,
               color: AppColors.primary400,
@@ -312,25 +315,22 @@ class RemoveFavoriteDialog extends StatelessWidget {
 
             SizedBox(height: 16.h),
 
-            // العنوان
             Text(
-              'إزالة من المفضلة',
+              context.tr("remove_from_favorites"),
               style: Styles.textStyle18SemiBold,
               textAlign: TextAlign.center,
             ),
 
             SizedBox(height: 12.h),
 
-            // الرسالة
             Text(
-              'هل تريد إزالة هذا المستخدم من المفضلة؟',
+              context.tr("remove_favorite_confirm"),
               style: Styles.textStyle16.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
 
             SizedBox(height: 24.h),
 
-            // الأزرار
             Row(
               children: [
                 Expanded(
@@ -344,7 +344,7 @@ class RemoveFavoriteDialog extends StatelessWidget {
                       side: BorderSide(color: Colors.grey[300]!),
                     ),
                     child: Text(
-                      'إلغاء',
+                      context.tr("cancel"),
                       style: Styles.textStyle16SemiBold.copyWith(
                         color: Colors.grey[700],
                       ),
@@ -365,7 +365,7 @@ class RemoveFavoriteDialog extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'تأكيد',
+                      context.tr("confirm"),
                       style: Styles.textStyle16SemiBold.copyWith(
                         color: Colors.white,
                       ),
@@ -381,7 +381,6 @@ class RemoveFavoriteDialog extends StatelessWidget {
   }
 }
 
-// دالة مساعدة لعرض الـ Dialog
 Future<bool?> showRemoveFavoriteDialog(BuildContext context) {
   return showDialog<bool>(
     context: context,

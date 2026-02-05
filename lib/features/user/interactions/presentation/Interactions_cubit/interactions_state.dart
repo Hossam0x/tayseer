@@ -6,91 +6,96 @@ import '../../data/Model/history_response_model.dart';
 class InteractionsState extends Equatable {
   // Subscription
   final bool isSubscribed;
+  final bool answerCompleted; // ✅ NEW
 
   // Exploration
   final CubitStates explorationState;
   final Map<String, List<InteractionUserModel>> explorationData;
-  final String? explorationErrorMessage;
   final int explorationCurrentPage;
   final bool explorationHasMore;
+  final String? explorationErrorMessage;
 
   // History
   final CubitStates historyState;
   final Map<String, List<InteractionUserModel>> historyData;
+  final Map<String, int> historyCurrentPage;
+  final Map<String, bool> historyHasMore;
+  final Map<String, PaginationModel?> historyPagination;
   final String? historyErrorMessage;
-  final Map<String, int> historyCurrentPage; // ✅ صفحة لكل فلتر
-  final Map<String, bool> historyHasMore; // ✅ hasMore لكل فلتر
-  final Map<String, PaginationModel?> historyPagination; // ✅ بيانات pagination
 
   // Actions
   final CubitStates actionState;
   final String? actionMessage;
 
   const InteractionsState({
-    this.isSubscribed = true,
+    this.isSubscribed = false,
+    this.answerCompleted = false, // ✅ NEW
     this.explorationState = CubitStates.initial,
     this.explorationData = const {},
-    this.explorationErrorMessage,
     this.explorationCurrentPage = 1,
-    this.explorationHasMore = true,
+    this.explorationHasMore = false,
+    this.explorationErrorMessage,
     this.historyState = CubitStates.initial,
     this.historyData = const {},
+    this.historyCurrentPage = const {},
+    this.historyHasMore = const {},
+    this.historyPagination = const {},
     this.historyErrorMessage,
-    this.historyCurrentPage = const {}, // ✅ خريطة فارغة
-    this.historyHasMore = const {}, // ✅ خريطة فارغة
-    this.historyPagination = const {}, // ✅ خريطة فارغة
     this.actionState = CubitStates.initial,
     this.actionMessage,
   });
 
   InteractionsState copyWith({
     bool? isSubscribed,
+    bool? answerCompleted, // ✅ NEW
     CubitStates? explorationState,
     Map<String, List<InteractionUserModel>>? explorationData,
-    String? explorationErrorMessage,
     int? explorationCurrentPage,
     bool? explorationHasMore,
+    String? explorationErrorMessage,
     CubitStates? historyState,
     Map<String, List<InteractionUserModel>>? historyData,
+    Map<String, int>? historyCurrentPage,
+    Map<String, bool>? historyHasMore,
+    Map<String, PaginationModel?>? historyPagination,
     String? historyErrorMessage,
-    Map<String, int>? historyCurrentPage, // ✅ Map
-    Map<String, bool>? historyHasMore, // ✅ Map
-    Map<String, PaginationModel?>? historyPagination, // ✅ Map
     CubitStates? actionState,
     String? actionMessage,
   }) {
     return InteractionsState(
       isSubscribed: isSubscribed ?? this.isSubscribed,
+      answerCompleted: answerCompleted ?? this.answerCompleted, // ✅ NEW
       explorationState: explorationState ?? this.explorationState,
       explorationData: explorationData ?? this.explorationData,
-      explorationErrorMessage: explorationErrorMessage ?? this.explorationErrorMessage,
       explorationCurrentPage: explorationCurrentPage ?? this.explorationCurrentPage,
       explorationHasMore: explorationHasMore ?? this.explorationHasMore,
+      explorationErrorMessage: explorationErrorMessage ?? this.explorationErrorMessage,
       historyState: historyState ?? this.historyState,
       historyData: historyData ?? this.historyData,
-      historyErrorMessage: historyErrorMessage ?? this.historyErrorMessage,
       historyCurrentPage: historyCurrentPage ?? this.historyCurrentPage,
       historyHasMore: historyHasMore ?? this.historyHasMore,
       historyPagination: historyPagination ?? this.historyPagination,
+      historyErrorMessage: historyErrorMessage ?? this.historyErrorMessage,
       actionState: actionState ?? this.actionState,
-      actionMessage: actionMessage ?? this.actionMessage,
+      actionMessage: actionMessage,
     );
   }
 
   @override
   List<Object?> get props => [
         isSubscribed,
+        answerCompleted, // ✅ NEW
         explorationState,
         explorationData,
-        explorationErrorMessage,
         explorationCurrentPage,
         explorationHasMore,
+        explorationErrorMessage,
         historyState,
         historyData,
-        historyErrorMessage,
         historyCurrentPage,
         historyHasMore,
         historyPagination,
+        historyErrorMessage,
         actionState,
         actionMessage,
       ];

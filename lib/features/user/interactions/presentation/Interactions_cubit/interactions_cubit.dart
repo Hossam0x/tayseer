@@ -26,44 +26,43 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   // ═══════════════════════════════════════════════════════════════════
   // EXPLORATION - ✅ UPDATED TO FETCH ALL CATEGORIES AT ONCE
   // ═══════════════════════════════════════════════════════════════════
-
-  Future<void> fetchExploration({required String category}) async {
-    // If we've already loaded data, don't reload
-    if (state.explorationData.isNotEmpty && 
-        state.explorationState == CubitStates.success) {
-      return;
-    }
-
-    emit(state.copyWith(explorationState: CubitStates.loading));
-
-    final result = await repository.fetchExplorationUsers(
-      category: category, // Not used in API but kept for interface compatibility
-      page: 1,
-    );
-
-    result.fold(
-      (failure) => emit(state.copyWith(
-        explorationState: CubitStates.failure,
-        explorationErrorMessage: failure.message,
-      )),
-      (response) {
-        // ✅ Convert CategoryData to List<InteractionUserModel>
-        final Map<String, List<InteractionUserModel>> explorationData = {};
-        
-        response.categories.forEach((displayName, categoryData) {
-          explorationData[displayName] = categoryData.users;
-        });
-
-        emit(state.copyWith(
-          explorationState: CubitStates.success,
-          explorationData: explorationData,
-          explorationCurrentPage: 1,
-          explorationHasMore: false, // Single fetch for now
-        ));
-      },
-    );
+Future<void> fetchExploration({required String category}) async {
+  // If we've already loaded data, don't reload
+  if (state.explorationData.isNotEmpty && 
+      state.explorationState == CubitStates.success) {
+    return;
   }
 
+  emit(state.copyWith(explorationState: CubitStates.loading));
+
+  final result = await repository.fetchExplorationUsers(
+    category: category,
+    page: 1,
+  );
+
+  result.fold(
+    (failure) => emit(state.copyWith(
+      explorationState: CubitStates.failure,
+      explorationErrorMessage: failure.message,
+    )),
+    (response) {
+      // ✅ Convert CategoryData to List<InteractionUserModel>
+      final Map<String, List<InteractionUserModel>> explorationData = {};
+      
+      response.categories.forEach((displayName, categoryData) {
+        explorationData[displayName] = categoryData.users;
+      });
+
+      emit(state.copyWith(
+        explorationState: CubitStates.success,
+        answerCompleted: response.answerCompleted, // ✅ NEW
+        explorationData: explorationData,
+        explorationCurrentPage: 1,
+        explorationHasMore: false,
+      ));
+    },
+  );
+}
   // ═══════════════════════════════════════════════════════════════════
   // HISTORY - INITIAL FETCH
   // ═══════════════════════════════════════════════════════════════════

@@ -77,7 +77,7 @@ class RecentlyJoined extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: 8.h),
-                  _buildBadge(text: "انضم للتو", icon: AssetsData.joinedIcon),
+                  _buildBadge(text: context.tr("recently_joined"), icon: AssetsData.joinedIcon),
                   SizedBox(height: 8.h),
                   if (item.country.isNotEmpty)
                     _buildBadge(
