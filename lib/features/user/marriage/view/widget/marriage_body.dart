@@ -458,7 +458,7 @@ class _MarriageBodyState extends State<MarriageBody> {
       child: CustomBackground(
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: _shimmer(height: 250)),
+            SliverToBoxAdapter(child: _shimmer(height: context.height * 0.9)),
             SliverToBoxAdapter(child: SizedBox(height: 20)),
             SliverToBoxAdapter(child: _shimmer(height: 100)),
             SliverToBoxAdapter(child: SizedBox(height: 20)),

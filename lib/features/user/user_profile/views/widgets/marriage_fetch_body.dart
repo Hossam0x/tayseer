@@ -23,7 +23,7 @@ class MarriageFetchBody extends StatelessWidget {
     return BlocProvider(
       create: (context) =>
           MarriageProfileCubit(getIt<MarriageProfileRepository>())
-            ..loadProfile(),  // ⭐⭐⭐ استخدام method الصحيح للعرض
+            ..loadProfile(), // ⭐⭐⭐ استخدام method الصحيح للعرض
       child: const _MarriageBodyContent(),
     );
   }

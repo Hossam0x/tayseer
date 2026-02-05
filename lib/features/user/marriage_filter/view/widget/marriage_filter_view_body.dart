@@ -104,7 +104,11 @@ class MarriageFilterBody extends StatelessWidget {
 
     // منطق عرض القيمة
     String displayValue = "لا يوجد تفضيل";
-    if (value is String) displayValue = context.tr(value);
+    if (value is String) {
+      // if stored value looks like a key (contains underscore), translate it,
+      // otherwise assume it's already translated/display text and show it directly
+      displayValue = value.contains('_') ? context.tr(value) : value;
+    }
     if (value is List) displayValue = "${value.length} مختارة";
 
     return FilterItemModel(
@@ -232,7 +236,8 @@ class MarriageFilterBody extends StatelessWidget {
     // تحديد النص المعروض (قيمة مختارة أو قيمة افتراضية)
     String displayValue = "لا يوجد تفضيل";
     if (value != null) {
-      displayValue = context.tr(value.toString());
+      final s = value.toString();
+      displayValue = s.contains('_') ? context.tr(s) : s;
     } else {
       if (fieldKey == 'country') displayValue = "مصر";
       if (fieldKey == 'nationality') displayValue = "مصري";

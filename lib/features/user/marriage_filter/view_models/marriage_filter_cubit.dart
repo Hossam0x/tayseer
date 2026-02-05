@@ -14,4 +14,5 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
   }
 
   void resetFilters() => emit(const MarriageFilterState());
-}
+}  
+
