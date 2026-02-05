@@ -6,6 +6,7 @@ import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 
 class PostsTab extends StatelessWidget {
@@ -183,7 +184,7 @@ class PostsTab extends StatelessWidget {
     physics: const NeverScrollableScrollPhysics(),
     padding: EdgeInsets.symmetric(vertical: 16.h),
     itemCount: 3,
-    itemBuilder: (_, __) => const home_feed.PostCardShimmer(),
+    itemBuilder: (_, __) => const PostCardShimmer(),
   );
 
   Widget _buildError(String? error, ProfileCubit cubit) => Center(
@@ -224,19 +225,26 @@ class PostsTab extends StatelessWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         padding: EdgeInsets.symmetric(vertical: 16.h),
-        itemCount: state.posts.length + (state.isLoadingMore ? 1 : 0),
+        itemCount: state.posts.length + 1,
         itemBuilder: (context, index) {
-          if (index < state.posts.length) {
-            return _PostItem(
-              key: ValueKey(state.posts[index].postId),
-              postId: state.posts[index].postId,
-              profileCubit: cubit,
-              showGap: index < state.posts.length - 1,
-            );
+          if (index == state.posts.length) {
+            if (state.isLoadingMore) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: PostCardShimmer()),
+              );
+            }
+            if (!state.hasMore && state.posts.isNotEmpty) {
+              return const home_feed.EndOfFeedIndicator();
+            }
+            return const SizedBox.shrink();
           }
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(child: home_feed.PostCardShimmer()),
+
+          return _PostItem(
+            key: ValueKey(state.posts[index].postId),
+            postId: state.posts[index].postId,
+            profileCubit: cubit,
+            showGap: index < state.posts.length - 1,
           );
         },
       );

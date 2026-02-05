@@ -10,10 +10,23 @@ class SavedPostsState extends Equatable {
   final bool hasMore;
   final bool isLoadingMore;
 
-  // ⭐️ أضف Share State
+  // 🛡️ Post Actions Status
   final CubitStates shareActionState;
   final String? shareMessage;
   final bool? isShareAdded;
+  final String? sharePostId;
+
+  final CubitStates saveActionState;
+  final String? saveMessage;
+
+  final CubitStates deletePostActionState;
+  final String? deletePostMessage;
+
+  final CubitStates blockUserActionState;
+  final String? blockUserMessage;
+
+  final CubitStates archivePostActionState;
+  final String? archivePostMessage;
 
   const SavedPostsState({
     this.status = CubitStates.initial,
@@ -22,10 +35,23 @@ class SavedPostsState extends Equatable {
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
-    // ⭐️
+
     this.shareActionState = CubitStates.initial,
     this.shareMessage,
     this.isShareAdded,
+    this.sharePostId,
+
+    this.saveActionState = CubitStates.initial,
+    this.saveMessage,
+
+    this.deletePostActionState = CubitStates.initial,
+    this.deletePostMessage,
+
+    this.blockUserActionState = CubitStates.initial,
+    this.blockUserMessage,
+
+    this.archivePostActionState = CubitStates.initial,
+    this.archivePostMessage,
   });
 
   SavedPostsState copyWith({
@@ -35,10 +61,23 @@ class SavedPostsState extends Equatable {
     int? currentPage,
     bool? hasMore,
     bool? isLoadingMore,
-    // ⭐️
+
     CubitStates? shareActionState,
     String? shareMessage,
     bool? isShareAdded,
+    String? sharePostId,
+
+    CubitStates? saveActionState,
+    String? saveMessage,
+
+    CubitStates? deletePostActionState,
+    String? deletePostMessage,
+
+    CubitStates? blockUserActionState,
+    String? blockUserMessage,
+
+    CubitStates? archivePostActionState,
+    String? archivePostMessage,
   }) {
     return SavedPostsState(
       status: status ?? this.status,
@@ -47,10 +86,25 @@ class SavedPostsState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      // ⭐️
+
       shareActionState: shareActionState ?? this.shareActionState,
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
+      sharePostId: sharePostId ?? this.sharePostId,
+
+      saveActionState: saveActionState ?? this.saveActionState,
+      saveMessage: saveMessage ?? this.saveMessage,
+
+      deletePostActionState:
+          deletePostActionState ?? this.deletePostActionState,
+      deletePostMessage: deletePostMessage ?? this.deletePostMessage,
+
+      blockUserActionState: blockUserActionState ?? this.blockUserActionState,
+      blockUserMessage: blockUserMessage ?? this.blockUserMessage,
+
+      archivePostActionState:
+          archivePostActionState ?? this.archivePostActionState,
+      archivePostMessage: archivePostMessage ?? this.archivePostMessage,
     );
   }
 
@@ -62,8 +116,22 @@ class SavedPostsState extends Equatable {
     currentPage,
     hasMore,
     isLoadingMore,
+
     shareActionState,
     shareMessage,
     isShareAdded,
+    sharePostId,
+
+    saveActionState,
+    saveMessage,
+
+    deletePostActionState,
+    deletePostMessage,
+
+    blockUserActionState,
+    blockUserMessage,
+
+    archivePostActionState,
+    archivePostMessage,
   ];
 }
