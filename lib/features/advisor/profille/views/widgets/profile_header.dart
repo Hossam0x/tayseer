@@ -1,3 +1,4 @@
+import 'package:tayseer/core/utils/helper/picker_helper.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
@@ -133,12 +134,22 @@ class ProfileHeader extends StatelessWidget {
         children: [
           // Profile picture
           GestureDetector(
-            onTap: () {
-              // Navigator.pushNamed(
-              //   context,
-              //   AppRouter.kAddPostView,
-              //   arguments: AddPostEnum.story,
-              // );
+            onTap: () async {
+              final picker = MediaPickerController(
+                config: PickerConfig(
+                  allowMultiple: false,
+                  maxCount: 1,
+                  requestType: RequestType.image,
+                ),
+              );
+              final SelectedMedia? picked = await picker.pickFromCamera();
+              if (picked != null) {
+                if (picked.type == AssetType.image) {
+                  // cubit.addCapturedImage(picked.file);
+                } else if (picked.type == AssetType.video) {
+                  // cubit.addCapturedVideo(XFile(picked.file.path));
+                }
+              }
             },
             child: Stack(
               children: [

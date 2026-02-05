@@ -1,17 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/my_import.dart';
 
 class SimpleAppBar extends StatelessWidget {
   final String title;
   final bool? isLargeTitle;
   final IconData? icon; // خليناه nullable عشان نقدر نميّز
+  final VoidCallback? onBack;
 
   const SimpleAppBar({
     super.key,
     required this.title,
     this.isLargeTitle,
-    this.icon, // مش هنحدد قيمة افتراضية هنا
+    this.icon,
+    this.onBack,
   });
 
   @override
@@ -31,7 +31,7 @@ class SimpleAppBar extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => Navigator.pop(context),
+              onTap: onBack ?? () => Navigator.maybePop(context),
               borderRadius: BorderRadius.circular(24.r),
               child: Padding(
                 padding: EdgeInsets.all(12.w),
