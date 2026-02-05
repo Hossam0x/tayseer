@@ -63,7 +63,7 @@ class InteractionBodyState extends State<InteractionBody> {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: state.actionMessage ?? 'حدث خطأ ما',
+              text: state.actionMessage ?? context.tr("error_occurred"),
               isSuccess: false,
             ),
           );
@@ -103,7 +103,7 @@ Widget _buildExplorationWithHeader() {
               Padding(
                 padding: EdgeInsets.only(right: 10.w),
                 child: DefaultAppBar(
-                  title: "التفاعلات",
+                  title:context.tr("interactions"), // ✅ ترجمة
                   leadingWidget: GestureDetector(
                     onTap: () {
                       context.pushNamed(AppRouter.kMarriageFilterView);
@@ -155,7 +155,7 @@ Widget _buildExplorationWithHeader() {
         Padding(
           padding: EdgeInsets.only(right: 10.w),
           child: DefaultAppBar(
-            title: "التفاعلات",
+            title: context.tr("interactions"), 
             leadingWidget: GestureDetector(
               onTap: () {
               context.pushNamed(AppRouter.kMarriageFilterView);

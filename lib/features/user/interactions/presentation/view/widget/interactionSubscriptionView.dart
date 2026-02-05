@@ -10,14 +10,11 @@ class interactionSubscriptionView extends StatelessWidget {
     return BlocProvider(
       create: (context) => BoostAccountCubit(),
       child: Scaffold(
-        // Using a Stack to simulate the background image with pink overlay
         body: Stack(
           children: [
-            // 1. Background Image Placeholder
             Positioned.fill(
               child: Image.asset(AssetsData.boostBackground, fit: BoxFit.fill),
             ),
-            // 2. Pink Gradient Overlay
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -34,12 +31,9 @@ class interactionSubscriptionView extends StatelessWidget {
                 ),
               ),
             ),
-
-            // 3. Main Content
             SafeArea(
               child: Column(
                 children: [
-                  // Header: Close Button
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -67,7 +61,6 @@ class interactionSubscriptionView extends StatelessWidget {
                             ),
                           ),
                           Gap(30.h),
-                          // Logo
                           AppImage(
                             AssetsData.logoIcon,
                             width: 190.h,
@@ -75,9 +68,9 @@ class interactionSubscriptionView extends StatelessWidget {
                           ),
                           Gap(60.h),
 
-                          // Titles
+                          // ✅ ترجمة العناوين
                           Text(
-                            "اشترك حتي تتمكن من رؤية \nالمعجبين بك",
+                            context.tr("subscribe_to_see_admirers"),
                             style: Styles.textStyle24Bold.copyWith(
                               color: AppColors.secondary800,
                             ),
@@ -85,7 +78,7 @@ class interactionSubscriptionView extends StatelessWidget {
                           ),
                           Gap(8.h),
                           Text(
-                            'اشترك معنا وفرصة للحصول علي\nمميزات غير محدودة',
+                            context.tr("subscribe_unlimited_features"),
                             style: Styles.textStyle16.copyWith(
                               color: AppColors.secondary800,
                             ),
@@ -94,7 +87,7 @@ class interactionSubscriptionView extends StatelessWidget {
 
                           Gap(30.h),
 
-                          // Renewal Alert Box
+                          // ✅ ترجمة صندوق الفترة المجانية
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 30.0.w),
                             child: Container(
@@ -109,7 +102,7 @@ class interactionSubscriptionView extends StatelessWidget {
                               child: Row(
                                 children: [
                                   Text(
-                                    "لست متأكداً ؟ فعّل الفترة المجانية",
+                                    context.tr("not_sure_free_trial"),
                                     style: Styles.textStyle14.copyWith(
                                       color: AppColors.secondary800,
                                       fontWeight: FontWeight.bold,
@@ -134,7 +127,7 @@ class interactionSubscriptionView extends StatelessWidget {
 
                           Gap(30.h),
 
-                          // Packages List
+                          // ✅ ترجمة الباقات
                           BlocBuilder<BoostAccountCubit, BoostAccountState>(
                             builder: (context, state) {
                               final cubit = context.read<BoostAccountCubit>();
@@ -144,29 +137,24 @@ class interactionSubscriptionView extends StatelessWidget {
                                 ),
                                 child: Column(
                                   children: [
-                                    // Package 1 (Comprehensive)
                                     SubscriptionCard(
-                                      isSelected:
-                                          state.selectedPackageIndex == 0,
-                                      title: 'باقة شاملة , 2500 EGP',
-                                      subtitle:
-                                          'تقدر تحدد الخواص للمناسبه بحيث تظهر للى مهتم بتخصصك :-',
+                                      isSelected: state.selectedPackageIndex == 0,
+                                      title: context.tr("comprehensive_package"),
+                                      subtitle: context.tr("package_features_intro"),
                                       isBestValue: true,
-                                      features: const [
-                                        'تقدر تحدد الفئة العمرية الي تظهرلها اكثر',
-                                        'بامكانك تحدد الموقع اللي تحب انتشار منشوراتك فيه',
-                                        'تقدر تحدد الفئة اللي الافراد مهتمه بيها',
+                                      features: [
+                                        context.tr("feature_age_targeting"),
+                                        context.tr("feature_location_targeting"),
+                                        context.tr("feature_interest_targeting"),
                                       ],
                                       onTap: () => cubit.selectPackage(0),
                                     ),
 
                                     Gap(16.h),
 
-                                    // Package 2 (Basic)
                                     SubscriptionCard(
-                                      isSelected:
-                                          state.selectedPackageIndex == 1,
-                                      title: 'باقة التعزيز 590 EGP',
+                                      isSelected: state.selectedPackageIndex == 1,
+                                      title: context.tr("boost_package"),
                                       isBestValue: false,
                                       features: const [],
                                       onTap: () => cubit.selectPackage(1),
@@ -177,7 +165,6 @@ class interactionSubscriptionView extends StatelessWidget {
                             },
                           ),
                           Gap(30.h),
-                          // Bottom Button
                           Padding(
                             padding: EdgeInsets.only(
                               left: 20.w,
@@ -188,7 +175,7 @@ class interactionSubscriptionView extends StatelessWidget {
                             child: CustomBotton(
                               height: 54.h,
                               width: double.infinity,
-                              title: 'التالي',
+                              title: context.tr("next"), // ✅ ترجمة
                               onPressed: () {
                                 Navigator.pushNamed(
                                   context,

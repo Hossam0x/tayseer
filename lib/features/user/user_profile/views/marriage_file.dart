@@ -95,7 +95,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 return Column(
                   children: [
                     // Fixed header remains visible during loading
-                    _buildFixedHeader(context),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 10.h),
+                      child: _buildFixedHeader(context),
+                    ),
                     // Shimmer skeleton for content
                     const Expanded(child: MarriageProfileSkeleton()),
                   ],
@@ -115,7 +118,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               return Column(
                 children: [
                   // ⭐⭐⭐ FIXED HEADER - AppBar + Toggle
-                  _buildFixedHeader(context),
+                  Padding(
+                  padding:  EdgeInsets.symmetric(horizontal:  24.h,vertical: 10.h),
+                    child: _buildFixedHeader(context),
+                  ),
 
                   // ⭐⭐⭐ DYNAMIC CONTENT - Changes based on tab
                   Expanded(
@@ -469,7 +475,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                       children: [
                         // 2. النص الرئيسي (العنوان)
                         Text(
-                          "يجب إكمال البيانات بنسبة 100%.",
+                         context.tr('complete_profile_100_percent'), 
                           textAlign: TextAlign.start,
                           style: TextStyle(
                             fontSize: 16.sp,
@@ -484,7 +490,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10.w),
                           child: Text(
-                            "ادخل البيانات الشخصية كاملة حتى تتمكن من \nإيجاد شريكك المناسب",
+                            context.tr('complete_profile_description'),
                             textAlign: TextAlign.start,
                             style: TextStyle(
                               fontSize: 12.sp,
@@ -691,7 +697,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             ),
             alignment: Alignment.center,
             child: Text(
-              "إكمال البيانات",
+           context.tr('complete_your_profile_bott'), // بدلاً من "إكمال البيانات"
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 14.sp,
