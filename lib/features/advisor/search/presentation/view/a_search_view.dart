@@ -446,6 +446,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       isFollowing: advisor.isFollowing,
       isVerified: advisor.isVerified,
       userType: 'Advisor',
+      isMe: false,
     );
 
     return FollowerItem(

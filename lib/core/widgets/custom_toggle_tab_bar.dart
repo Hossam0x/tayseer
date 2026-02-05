@@ -30,6 +30,17 @@ class _CustomToggleTabBarState extends State<CustomToggleTabBar> {
     _selectedIndex = widget.initialIndex;
   }
 
+  // ده المهم: نحدث الـ selected index لما الـ initialIndex يتغير
+  @override
+  void didUpdateWidget(CustomToggleTabBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialIndex != oldWidget.initialIndex) {
+      setState(() {
+        _selectedIndex = widget.initialIndex;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(

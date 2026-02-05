@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/selection_item.dart';
@@ -12,9 +13,10 @@ class LanguageSelectionView extends StatefulWidget {
 
 class _LanguageSelectionViewState extends State<LanguageSelectionView> {
   AppLanguage? _selectedLanguage;
+  final _searchController = TextEditingController();
   String _searchQuery = '';
 
-  /// اللغات المدعومة الأصلية
+  /// اللغات المدعومة
   final List<AppLanguage> _allLanguages = const [
     AppLanguage(code: 'ar', title: 'العربية'),
     AppLanguage(code: 'en', title: 'الإنجليزية'),
@@ -34,7 +36,6 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
     AppLanguage(code: 'zh', title: 'الصينية'),
   ];
 
-  /// اللغات المصفاة حسب البحث
   List<AppLanguage> get _filteredLanguages {
     if (_searchQuery.isEmpty) {
       return _allLanguages;
@@ -51,30 +52,52 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
   void initState() {
     super.initState();
     _loadSavedLanguage();
+
+    // ربط البحث بـ listener بدل onChanged + setState مباشر
+    _searchController.addListener(() {
+      final newQuery = _searchController.text;
+      if (newQuery != _searchQuery) {
+        // نأجل الـ setState لما الفريم يخلّص عشان نتجنب الخطأ
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _searchQuery = newQuery;
+            });
+          }
+        });
+      }
+    });
   }
 
-  /// تحميل اللغة المحفوظة
   Future<void> _loadSavedLanguage() async {
     final prefs = await SharedPreferences.getInstance();
     final savedCode = prefs.getString('app_language') ?? 'ar';
 
-    setState(() {
-      _selectedLanguage = _allLanguages.firstWhere(
-        (lang) => lang.code == savedCode,
-        orElse: () => _allLanguages.first,
-      );
-    });
+    if (mounted) {
+      setState(() {
+        _selectedLanguage = _allLanguages.firstWhere(
+          (lang) => lang.code == savedCode,
+          orElse: () => _allLanguages.first,
+        );
+      });
+    }
   }
 
-  /// حفظ اللغة المختارة
   Future<void> _saveLanguage() async {
     if (_selectedLanguage == null) return;
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('app_language', _selectedLanguage!.code);
 
-    // إرجاع اسم اللغة وليس الكود
-    Navigator.pop(context, _selectedLanguage!.title);
+    if (mounted) {
+      Navigator.pop(context, _selectedLanguage!.title);
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -84,25 +107,21 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
         child: SafeArea(
           child: Column(
             children: [
-              /// Header
+              // Header
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
                 child: SimpleAppBar(title: 'اللغة', icon: Icons.close),
               ),
 
-              /// المحتوى
+              // المحتوى
               Expanded(
                 child: Column(
                   children: [
-                    /// حقل البحث
+                    // حقل البحث
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 30.w),
                       child: TextField(
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                          });
-                        },
+                        controller: _searchController,
                         textAlign: TextAlign.right,
                         decoration: InputDecoration(
                           hintText: 'ابحث عن لغة...',
@@ -130,14 +149,13 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
 
                     Gap(16.h),
 
-                    /// قائمة اللغات
+                    // قائمة اللغات
                     Expanded(
                       child: SingleChildScrollView(
                         padding: EdgeInsets.symmetric(horizontal: 30.w),
                         child: Column(
                           children: [
                             if (_filteredLanguages.isEmpty)
-                              /// رسالة عندما لا توجد نتائج
                               Padding(
                                 padding: EdgeInsets.symmetric(vertical: 40.h),
                                 child: Column(
@@ -178,7 +196,7 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                 ),
               ),
 
-              /// زر التأكيد
+              // زر التأكيد
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 30.w),
                 child: CustomBotton(

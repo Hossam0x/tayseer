@@ -3,39 +3,125 @@ import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_s
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
+import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
+    as home_feed;
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
+import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
+import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 
 class PostsTabView extends StatelessWidget {
   const PostsTabView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ArchivedPostsCubit, ArchivedPostsState>(
-      listener: (context, state) {
-        if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: AppColors.kRedColor,
-            ),
-          );
-          context.read<ArchivedPostsCubit>().clearError();
-        }
-      },
-      builder: (context, state) {
-        switch (state.state) {
-          case CubitStates.loading:
-            return _buildSkeletonPosts();
-          case CubitStates.failure:
-            return _buildErrorPosts(context, state.errorMessage);
-          case CubitStates.success:
-            if (state.posts.isEmpty) {
-              return const SharedEmptyState(title: "لا توجد منشورات مؤرشفة");
+    return BlocProvider.value(
+      value: context.read<ArchivedPostsCubit>(),
+      child: const _PostsTabBody(),
+    );
+  }
+}
+
+class _PostsTabBody extends StatelessWidget {
+  const _PostsTabBody();
+
+  @override
+  Widget build(BuildContext context) {
+    // final cubit = context.read<ArchivedPostsCubit>();
+
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
+          listenWhen: (p, c) =>
+              p.state != c.state && c.state == CubitStates.failure,
+          listener: (context, state) {
+            if (state.errorMessage != null) {
+              AppToast.error(context, state.errorMessage!);
             }
-            return _buildPostsContent(context, state);
-          default:
-            return const SizedBox.shrink();
-        }
-      },
+          },
+        ),
+        // 📢 SHARE FEEDBACK
+        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
+          listenWhen: (p, c) => p.shareActionState != c.shareActionState,
+          listener: (context, state) {
+            if (state.shareActionState == CubitStates.success) {
+              AppToast.success(context, state.shareMessage ?? 'تمت المشاركة');
+            } else if (state.shareActionState == CubitStates.failure) {
+              AppToast.error(context, state.shareMessage ?? 'فشل المشاركة');
+            }
+          },
+        ),
+        // 💾 SAVE FEEDBACK
+        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
+          listenWhen: (p, c) => p.saveActionState != c.saveActionState,
+          listener: (context, state) {
+            if (state.saveActionState == CubitStates.success) {
+              AppToast.success(context, state.saveMessage ?? 'تم الحفظ');
+            } else if (state.saveActionState == CubitStates.failure) {
+              AppToast.error(context, state.saveMessage ?? 'فشل الحفظ');
+            }
+          },
+        ),
+        // 🗑 DELETE FEEDBACK
+        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
+          listenWhen: (p, c) =>
+              p.deletePostActionState != c.deletePostActionState,
+          listener: (context, state) {
+            if (state.deletePostActionState == CubitStates.success) {
+              AppToast.success(context, state.deletePostMessage ?? 'تم الحذف');
+            } else if (state.deletePostActionState == CubitStates.failure) {
+              AppToast.error(context, state.deletePostMessage ?? 'فشل الحذف');
+            }
+          },
+        ),
+        // 📦 ARCHIVE FEEDBACK (Unarchive in this case)
+        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
+          listenWhen: (p, c) =>
+              p.archivePostActionState != c.archivePostActionState,
+          listener: (context, state) {
+            if (state.archivePostActionState == CubitStates.success) {
+              AppToast.success(
+                context,
+                state.archivePostMessage ?? 'تم إلغاء الأرشفة',
+              );
+            } else if (state.archivePostActionState == CubitStates.failure) {
+              AppToast.error(
+                context,
+                state.archivePostMessage ?? 'فشل إلغاء الأرشفة',
+              );
+            }
+          },
+        ),
+        // 🚫 BLOCK FEEDBACK
+        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
+          listenWhen: (p, c) =>
+              p.blockUserActionState != c.blockUserActionState,
+          listener: (context, state) {
+            if (state.blockUserActionState == CubitStates.success) {
+              AppToast.success(context, state.blockUserMessage ?? 'تم الحظر');
+            } else if (state.blockUserActionState == CubitStates.failure) {
+              AppToast.error(context, state.blockUserMessage ?? 'فشل الحظر');
+            }
+          },
+        ),
+      ],
+      child: BlocBuilder<ArchivedPostsCubit, ArchivedPostsState>(
+        builder: (context, state) {
+          switch (state.state) {
+            case CubitStates.loading:
+              return _buildSkeletonPosts();
+            case CubitStates.failure:
+              return _buildErrorPosts(context, state.errorMessage);
+            case CubitStates.success:
+              if (state.posts.isEmpty) {
+                return const SharedEmptyState(title: "لا توجد منشورات مؤرشفة");
+              }
+              return _buildPostsContent(context, state);
+            default:
+              return const SizedBox.shrink();
+          }
+        },
+      ),
     );
   }
 
@@ -43,93 +129,12 @@ class PostsTabView extends StatelessWidget {
     return ListView.builder(
       padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
       itemCount: 3,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: 16.h),
-          child: Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Shimmer.fromColors(
-              baseColor: Colors.grey[300]!,
-              highlightColor: Colors.grey[100]!,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSkeletonHeader(),
-                  Gap(15.h),
-                  _buildSkeletonTextLines(),
-                  Gap(12.h),
-                  _buildSkeletonImage(),
-                  Gap(15.h),
-                  _buildSkeletonStats(),
-                  Gap(12.h),
-                  _buildSkeletonActions(),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+      itemBuilder: (context, index) => Padding(
+        padding: EdgeInsets.only(bottom: 16.h),
+        child: const PostCardShimmer(),
+      ),
     );
   }
-
-  Widget _buildSkeletonHeader() => Row(
-    children: [
-      Container(
-        width: 48.w,
-        height: 48.w,
-        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-      ),
-      Gap(12.w),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(width: 120.w, height: 14.h, color: Colors.white),
-            Gap(6.h),
-            Container(width: 180.w, height: 12.h, color: Colors.white),
-          ],
-        ),
-      ),
-    ],
-  );
-
-  Widget _buildSkeletonTextLines() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(width: double.infinity, height: 14.h, color: Colors.white),
-      Gap(8.h),
-      Container(width: 250.w, height: 14.h, color: Colors.white),
-    ],
-  );
-
-  Widget _buildSkeletonImage() => Container(
-    width: double.infinity,
-    height: 206.h,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8.r),
-    ),
-  );
-
-  Widget _buildSkeletonStats() =>
-      Container(width: 150.w, height: 12.h, color: Colors.white);
-
-  Widget _buildSkeletonActions() => Row(
-    spacing: 6.w,
-    children: List.generate(
-      3,
-      (_) => Container(
-        width: 38.w,
-        height: 38.w,
-        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-      ),
-    ),
-  );
 
   Widget _buildErrorPosts(BuildContext context, String? errorMessage) {
     return Padding(
@@ -178,84 +183,78 @@ class PostsTabView extends StatelessWidget {
         }
         return false;
       },
-      child: Column(
-        children: [
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => cubit.refresh(),
-              child: ListView.builder(
-                padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
-                itemCount: state.posts.length + (state.hasMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == state.posts.length) {
-                    return _buildLoadMoreIndicator(state);
-                  }
+      child: RefreshIndicator(
+        onRefresh: () => cubit.refresh(),
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(vertical: 10.h),
+          itemCount: state.posts.length + 1,
+          itemBuilder: (context, index) {
+            if (index == state.posts.length) {
+              if (state.isLoadingMore) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16.0),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (!state.hasMore && state.posts.isNotEmpty) {
+                return const home_feed.EndOfFeedIndicator();
+              }
+              return const SizedBox.shrink();
+            }
 
-                  final post = state.posts[index];
-                  return PostCard(
-                    isFromProfile: true,
-                    post: post,
-                    // onUnarchive: () =>
-                    //     _unarchivePost(context, post.postId, cubit),
-                    // onReactionChanged: (postId, reactionType) {
-                    //   cubit.reactToPost(
-                    //     postId: postId,
-                    //     reactionType: reactionType,
-                    //   );
-                    // },
-                    // onShareTap: (postId) {
-                    //   cubit.toggleSharePost(postId: postId);
-                    // },
-                    // onHashtagTap: (hashtag) {
-                    //   context.pushNamed(AppRouter.kAdvisorSearchView);
-                    // },
-                  );
-                },
-              ),
+            return _PostItem(post: state.posts[index]);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _PostItem extends StatelessWidget {
+  final PostModel post;
+  const _PostItem({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.read<ArchivedPostsCubit>();
+
+    return BlocSelector<ArchivedPostsCubit, ArchivedPostsState, PostModel>(
+      selector: (state) => state.posts.firstWhere(
+        (p) => p.postId == post.postId,
+        orElse: () => post,
+      ),
+      builder: (context, currentPost) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: 8.h),
+          child: PostCard(
+            isFromProfile: true,
+            post: currentPost,
+            callbacks: PostCallbacks(
+              onReactionChanged: (postId, reaction) =>
+                  cubit.reactToPost(postId: postId, reactionType: reaction),
+              onShareTap: (postId) => cubit.toggleSharePost(postId: postId),
+              onSave: (postId) => cubit.toggleSavePost(postId: postId),
+              onDelete: (postId) => cubit.deletePost(postId: postId),
+              onArchive: (postId) => cubit.unarchivePost(postId),
+              onHide: (postId) => cubit.toggleHidePost(postId: postId),
+              onBlock: (postId, advisorId) =>
+                  cubit.blockUser(visiblePostId: postId, advisorId: advisorId),
             ),
+            onNavigateToDetails: (context, post, controller) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PostDetailsView(
+                    post: post,
+                    isFromProfile: true,
+                    cachedController: controller,
+                  ),
+                ),
+              );
+            },
           ),
-          if (state.isLoadingMore) _buildLoadingMore(),
-        ],
-      ),
+        );
+      },
     );
   }
-
-  Widget _buildLoadMoreIndicator(ArchivedPostsState state) {
-    if (!state.hasMore) return const SizedBox.shrink();
-
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.h),
-      child: Center(
-        child: state.isLoadingMore
-            ? CircularProgressIndicator(color: AppColors.kprimaryColor)
-            : Container(),
-      ),
-    );
-  }
-
-  Widget _buildLoadingMore() {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.h),
-      child: Center(
-        child: CircularProgressIndicator(color: AppColors.kprimaryColor),
-      ),
-    );
-  }
-
-  // Future<void> _unarchivePost(
-  //   BuildContext context,
-  //   String postId,
-  //   ArchivedPostsCubit cubit,
-  // ) async {
-  //   try {
-  //     await cubit.unarchivePost(postId);
-  //     if (context.mounted) {
-  //       AppToast.success(context, 'تم إلغاء أرشفة المنشور');
-  //     }
-  //   } catch (e) {
-  //     if (context.mounted) {
-  //       AppToast.error(context, 'حدث خطأ أثناء إلغاء الأرشفة');
-  //     }
-  //   }
-  // }
 }

@@ -149,8 +149,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   void removeImage() {
     emit(
       state.copyWith(
-        imageFile: null,
-        imagePreviewUrl: null,
+        clearImage: true,
         // ⭐ إضافة flag للحذف
         currentData: state.currentData.copyWith(image: ""),
       ),
@@ -160,8 +159,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   void removeVideo() {
     emit(
       state.copyWith(
-        videoFile: null,
-        videoPreviewUrl: null,
+        clearVideo: true,
         // ⭐ إضافة flag للحذف
         currentData: state.currentData.copyWith(video: ""),
       ),

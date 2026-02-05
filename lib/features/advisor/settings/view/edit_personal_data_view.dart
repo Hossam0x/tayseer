@@ -170,6 +170,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   ChewieController? _chewieController;
   String? _currentVideoUrl;
   bool _controllersInitialized = false;
+  bool _isVideoLoading = false;
+  double _uploadProgress = 0.0;
 
   @override
   void initState() {
@@ -190,40 +192,63 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     super.dispose();
   }
 
-  void _disposeVideoPlayer() async {
-    if (_chewieController != null) {
-      _chewieController!.dispose();
-      _chewieController = null;
+  Future<void> _disposeVideoPlayer() async {
+    try {
+      if (_chewieController != null) {
+        await _chewieController!.pause();
+        _chewieController!.dispose();
+        _chewieController = null;
+      }
+      if (_videoPlayerController != null) {
+        await _videoPlayerController!.pause();
+        await _videoPlayerController!.dispose();
+        _videoPlayerController = null;
+      }
+      _currentVideoUrl = null;
+    } catch (e) {
+      print('Error disposing video player: $e');
     }
-    if (_videoPlayerController != null) {
-      await _videoPlayerController!.dispose();
-      _videoPlayerController = null;
-    }
-    _currentVideoUrl = null;
   }
 
   Future<void> _initializeVideoPlayer(String videoUrl) async {
-    if (_currentVideoUrl == videoUrl && _videoPlayerController != null) {
+    if (_currentVideoUrl == videoUrl &&
+        _videoPlayerController != null &&
+        _videoPlayerController!.value.isInitialized) {
       return;
     }
 
-    _disposeVideoPlayer();
+    await _disposeVideoPlayer();
     _currentVideoUrl = videoUrl;
+
+    if (!mounted) return;
+
+    setState(() {
+      _isVideoLoading = true;
+      _uploadProgress = 0.0;
+    });
 
     try {
       _videoPlayerController = VideoPlayerController.networkUrl(
         Uri.parse(videoUrl),
       );
 
+      // محاكاة التقدم للفيديوهات من الشبكة
+      _simulateProgress();
+
       await _videoPlayerController!.initialize();
 
       if (mounted) {
         setState(() {
+          _isVideoLoading = false;
+          _uploadProgress = 1.0;
           _chewieController = ChewieController(
             videoPlayerController: _videoPlayerController!,
             autoPlay: false,
             looping: false,
             showControls: true,
+            allowFullScreen: true,
+            allowMuting: true,
+            showControlsOnInitialize: false,
             placeholder: Container(
               color: AppColors.secondary100,
               child: Center(
@@ -253,72 +278,114 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         setState(() {
           _chewieController = null;
           _videoPlayerController = null;
+          _isVideoLoading = false;
+          _uploadProgress = 0.0;
         });
       }
     }
   }
 
+  void _simulateProgress() {
+    _uploadProgress = 0.0;
+    const steps = 20;
+    const duration = Duration(milliseconds: 100);
+
+    for (int i = 1; i <= steps; i++) {
+      Future.delayed(duration * i, () {
+        if (mounted && _isVideoLoading) {
+          setState(() {
+            _uploadProgress = i / steps;
+          });
+        }
+      });
+    }
+  }
+
   Future<void> _pickVideo(EditPersonalDataCubit cubit) async {
+    final SnackBarService snackBarService = SnackBarService();
     final picker = ImagePicker();
     final pickedFile = await picker.pickVideo(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       final file = File(pickedFile.path);
-      final fileSizeInBytes = await file.length();
-      final fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+      final int fileSizeInBytes = await file.length();
+      final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
 
-      if (fileSizeInMB > 4) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.tr("video_size_error_4mb"),
-              textDirection: TextDirection.rtl,
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+      // ⭐ تغيير الحد الأقصى إلى 10MB
+      if (fileSizeInMB > 10) {
+        if (mounted) {
+          snackBarService.showSnackBar(
+            context: context,
+            text: context.tr("video_size_error_10mb"),
+            isError: true,
+          );
+        }
         return;
       }
 
-      _disposeVideoPlayer();
+      // ⭐ تحديث الـ cubit أولاً
+      cubit.updateVideoFile(file, previewUrl: pickedFile.path);
+
+      // ⭐ ثم نبدأ تحميل الفيديو
+      if (mounted) {
+        setState(() {
+          _isVideoLoading = true;
+          _uploadProgress = 0.0;
+        });
+      }
+
+      await _disposeVideoPlayer();
 
       try {
         _videoPlayerController = VideoPlayerController.file(file);
+
+        // محاكاة التقدم
+        _simulateProgress();
+
         await _videoPlayerController!.initialize();
 
         if (mounted) {
           setState(() {
+            _currentVideoUrl = pickedFile.path;
             _chewieController = ChewieController(
               videoPlayerController: _videoPlayerController!,
               autoPlay: false,
               looping: false,
               showControls: true,
+              allowFullScreen: true,
+              allowMuting: true,
+              showControlsOnInitialize: false,
               placeholder: Container(
                 color: AppColors.secondary100,
                 child: Center(
                   child: Icon(
                     Icons.video_library,
-                    size: 50,
+                    size: 50.w,
                     color: AppColors.primary300,
                   ),
                 ),
               ),
             );
+            // ⭐ إيقاف التحميل بعد النجاح
+            _isVideoLoading = false;
+            _uploadProgress = 1.0;
           });
         }
-
-        cubit.updateVideoFile(file, previewUrl: pickedFile.path);
       } catch (e) {
-        print('Error initializing local video player: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.tr("video_load_error"),
-              textDirection: TextDirection.rtl,
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+        print('Error loading video: $e');
+        if (mounted) {
+          setState(() {
+            _isVideoLoading = false;
+            _uploadProgress = 0.0;
+            _chewieController = null;
+            _videoPlayerController = null;
+          });
+          snackBarService.showSnackBar(
+            context: context,
+            text: context.tr("video_load_error"),
+            isError: true,
+          );
+        }
       }
     }
   }
@@ -333,11 +400,27 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   }
 
   void _removeVideo(EditPersonalDataCubit cubit) async {
-    _disposeVideoPlayer();
+    // ⭐ أولاً: تحديث الحالة في الـ Cubit لإخفاء الفيديو فوراً من الواجهة
     cubit.removeVideo();
-    setState(() {
-      _currentVideoUrl = null;
-    });
+
+    // ⭐ ثانياً: تحديث الحالة المحلية
+    if (mounted) {
+      setState(() {
+        _isVideoLoading = false;
+        _uploadProgress = 0.0;
+      });
+    }
+
+    // ⭐ ثالثاً: التخلص من الـ controllers في الخلفية
+    await _disposeVideoPlayer();
+
+    if (mounted) {
+      setState(() {
+        _currentVideoUrl = null;
+        _chewieController = null;
+        _videoPlayerController = null;
+      });
+    }
   }
 
   void _initializeControllers(EditPersonalDataState state) {
@@ -426,162 +509,184 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         builder: (context, state) {
           final cubit = context.read<EditPersonalDataCubit>();
 
-          return Scaffold(
-            body: AdvisorBackground(
-              child: SingleChildScrollView(
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 105.h,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage(
-                              AssetsData.homeBarBackgroundImage,
+          return PopScope(
+            canPop: !state.hasChanges || state.isSaving,
+            onPopInvokedWithResult: (didPop, result) async {
+              if (didPop) return;
+
+              final shouldPop = await _showUnsavedChangesDialog(context, cubit);
+              if (shouldPop && context.mounted) {
+                Navigator.pop(context);
+              }
+            },
+            child: Scaffold(
+              body: AdvisorBackground(
+                child: SingleChildScrollView(
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 105.h,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage(
+                                AssetsData.homeBarBackgroundImage,
+                              ),
+                              fit: BoxFit.fill,
                             ),
-                            fit: BoxFit.fill,
                           ),
                         ),
                       ),
-                    ),
-                    SafeArea(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20.w,
-                          vertical: 16.h,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SimpleAppBar(
-                              title: context.tr("edit_personal_data"),
-                              isLargeTitle: true,
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 25.0,
+                      SafeArea(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20.w,
+                            vertical: 16.h,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SimpleAppBar(
+                                title: context.tr("edit_personal_data"),
+                                isLargeTitle: true,
                               ),
-                              child: Column(
-                                children: [
-                                  Gap(32.h),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 25.0,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Gap(32.h),
 
-                                  if (state.state == CubitStates.loading)
-                                    _buildSkeletonLoading()
-                                  else if (state.state == CubitStates.failure)
-                                    Center(
-                                      child: Column(
+                                    if (state.state == CubitStates.loading)
+                                      _buildSkeletonLoading()
+                                    else if (state.state == CubitStates.failure)
+                                      Center(
+                                        child: Column(
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              color: AppColors.kRedColor,
+                                              size: 48.w,
+                                            ),
+                                            Gap(16.h),
+                                            Text(
+                                              state.errorMessage ??
+                                                  context.tr("data_load_error"),
+                                              textAlign: TextAlign.center,
+                                              style: Styles.textStyle14
+                                                  .copyWith(
+                                                    color:
+                                                        AppColors.secondary600,
+                                                  ),
+                                            ),
+                                            Gap(24.h),
+                                            CustomBotton(
+                                              width: context.width * 0.6,
+                                              title: context.tr("retry"),
+                                              onPressed: () =>
+                                                  cubit.loadProfileData(),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    else
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Icon(
-                                            Icons.error_outline,
-                                            color: AppColors.kRedColor,
-                                            size: 48.w,
-                                          ),
-                                          Gap(16.h),
-                                          Text(
-                                            state.errorMessage ??
-                                                context.tr("data_load_error"),
-                                            textAlign: TextAlign.center,
-                                            style: Styles.textStyle14.copyWith(
-                                              color: AppColors.secondary600,
+                                          // قسم الصورة الشخصية
+                                          Center(
+                                            child: _buildAvatarImageSection(
+                                              cubit,
+                                              state,
                                             ),
                                           ),
-                                          Gap(24.h),
-                                          CustomBotton(
-                                            width: context.width * 0.6,
-                                            title: context.tr("retry"),
-                                            onPressed: () =>
-                                                cubit.loadProfileData(),
+                                          Gap(20.h),
+
+                                          // حقل الاسم باستخدام ProfileTextField
+                                          ProfileTextField(
+                                            controller: _nameController,
+                                            onChanged: (value) =>
+                                                cubit.updateName(value),
+                                            hint: context.tr("enter_name"),
                                           ),
+                                          Gap(11.h),
+                                          ProfileTextField(
+                                            controller: _usernameController,
+                                            onChanged: (value) =>
+                                                cubit.updateUsername(value),
+                                            hint: context.tr("enter_username"),
+                                          ),
+                                          Gap(11.h),
+
+                                          // Dropdown للتخصص
+                                          _buildSpecializationDropdown(cubit),
+                                          Gap(11.h),
+
+                                          // Dropdown للمنصب
+                                          _buildPositionDropdown(cubit),
+                                          Gap(11.h),
+
+                                          // Dropdown للخبرة
+                                          _buildExperienceDropdown(cubit),
+                                          Gap(11.h),
+                                          // حقل السيرة الذاتية باستخدام ProfileTextField
+                                          ProfileTextField(
+                                            controller: _bioController,
+                                            onChanged: (value) =>
+                                                cubit.updateBio(value),
+                                            hint: context.tr("bio_hint"),
+                                            maxLines: 4,
+                                          ),
+                                          Gap(6.h),
+                                          Text(
+                                            '${_bioController.text.length}/250',
+                                            style: Styles.textStyle14.copyWith(
+                                              color:
+                                                  _bioController.text.length >
+                                                      250
+                                                  ? AppColors.kRedColor
+                                                  : AppColors.secondary400,
+                                            ),
+                                          ),
+                                          Gap(25.h),
+
+                                          // قسم رفع الفيديو
+                                          _buildVideoSection(cubit, state),
+                                          Gap(35.h),
+
+                                          // زر الحفظ
+                                          CustomBotton(
+                                            height: 54.h,
+                                            width: double.infinity,
+                                            useGradient: true,
+                                            title: state.isSaving
+                                                ? context.tr("saving")
+                                                : context.tr("save"),
+                                            onPressed:
+                                                state.isSaving ||
+                                                    !state.hasChanges
+                                                ? null
+                                                : () => cubit.saveChanges(
+                                                    context,
+                                                  ),
+                                          ),
+                                          Gap(40.h),
                                         ],
                                       ),
-                                    )
-                                  else
-                                    Column(
-                                      children: [
-                                        // قسم الصورة الشخصية
-                                        _buildAvatarImageSection(cubit, state),
-                                        Gap(20.h),
-
-                                        // حقل الاسم باستخدام ProfileTextField
-                                        ProfileTextField(
-                                          controller: _nameController,
-                                          onChanged: (value) =>
-                                              cubit.updateName(value),
-                                          hint: context.tr("enter_name"),
-                                        ),
-                                        Gap(11.h),
-                                        ProfileTextField(
-                                          controller: _usernameController,
-                                          onChanged: (value) =>
-                                              cubit.updateUsername(value),
-                                          hint: context.tr("enter_username"),
-                                        ),
-                                        Gap(11.h),
-
-                                        // Dropdown للتخصص
-                                        _buildSpecializationDropdown(cubit),
-                                        Gap(11.h),
-
-                                        // Dropdown للمنصب
-                                        _buildPositionDropdown(cubit),
-                                        Gap(11.h),
-
-                                        // Dropdown للخبرة
-                                        _buildExperienceDropdown(cubit),
-                                        Gap(11.h),
-                                        // حقل السيرة الذاتية باستخدام ProfileTextField
-                                        ProfileTextField(
-                                          controller: _bioController,
-                                          onChanged: (value) =>
-                                              cubit.updateBio(value),
-                                          hint: context.tr("bio_hint"),
-                                          maxLines: 4,
-                                        ),
-                                        Gap(6.h),
-                                        Text(
-                                          '${_bioController.text.length}/250',
-                                          style: Styles.textStyle14.copyWith(
-                                            color:
-                                                _bioController.text.length > 250
-                                                ? AppColors.kRedColor
-                                                : AppColors.secondary400,
-                                          ),
-                                        ),
-                                        Gap(25.h),
-
-                                        // قسم رفع الفيديو
-                                        _buildVideoSection(cubit, state),
-                                        Gap(35.h),
-
-                                        // زر الحفظ
-                                        CustomBotton(
-                                          height: 54.h,
-                                          width: double.infinity,
-                                          useGradient: true,
-                                          title: state.isSaving
-                                              ? context.tr("saving")
-                                              : context.tr("save"),
-                                          onPressed:
-                                              state.isSaving ||
-                                                  !state.hasChanges
-                                              ? null
-                                              : () =>
-                                                    cubit.saveChanges(context),
-                                        ),
-                                        Gap(40.h),
-                                      ],
-                                    ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -589,6 +694,87 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         },
       ),
     );
+  }
+
+  Future<bool> _showUnsavedChangesDialog(
+    BuildContext context,
+    EditPersonalDataCubit cubit,
+  ) async {
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        title: Text(
+          context.tr("unsaved_changes_title"),
+          textAlign: TextAlign.center,
+          style: Styles.textStyle18SemiBold.copyWith(
+            color: AppColors.primary800,
+          ),
+        ),
+        content: Text(
+          context.tr("unsaved_changes_message"),
+          textAlign: TextAlign.center,
+          style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CustomBotton(
+                  height: 48.h,
+                  width: double.infinity,
+                  useGradient: true,
+                  title: context.tr("save_and_exit"),
+                  onPressed: () => Navigator.pop(context, 'save'),
+                ),
+                Gap(12.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CustomBotton(
+                        height: 48.h,
+                        title: context.tr("discard_and_exit"),
+                        backGroundcolor: AppColors.secondary100,
+                        titleColor: AppColors.kRedColor,
+                        onPressed: () => Navigator.pop(context, 'discard'),
+                        elevation: 0,
+                      ),
+                    ),
+                    Gap(12.w),
+                    Expanded(
+                      child: CustomBotton(
+                        height: 48.h,
+                        title: context.tr("keep_editing"),
+                        backGroundcolor: AppColors.secondary100,
+                        titleColor: AppColors.secondary700,
+                        onPressed: () => Navigator.pop(context, 'keep'),
+                        elevation: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == 'save') {
+      if (context.mounted) {
+        await cubit.saveChanges(context);
+      }
+      return false; // saveChanges handles navigation or stays if error
+    } else if (result == 'discard') {
+      return true;
+    }
+    return false;
   }
 
   Widget _buildSkeletonLoading() {
@@ -735,7 +921,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 child: GestureDetector(
                   onTap: () => cubit.removeImage(),
                   child: Container(
-                    padding: EdgeInsets.all(4.w),
+                    padding: EdgeInsets.all(6.w),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppColors.kWhiteColor,
@@ -842,15 +1028,78 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     final videoPreviewUrl = state.videoPreviewUrl;
     // ⭐ تحقق إذا كان الفيديو محذوفاً
     final isVideoDeleted = state.currentData.video == "";
+
+    // ⭐ الفيديو موجود فقط إذا:
+    // 1. في ملف جديد محلي OR
+    // 2. في URL من السيرفر وليس محذوف
     final hasVideo =
-        !isVideoDeleted &&
-        (videoFile != null ||
-            (videoPreviewUrl != null && videoPreviewUrl.isNotEmpty));
+        videoFile != null ||
+        (!isVideoDeleted &&
+            videoPreviewUrl != null &&
+            videoPreviewUrl.isNotEmpty &&
+            _chewieController != null);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasVideo)
+        if (_isVideoLoading)
+          Container(
+            width: double.infinity,
+            height: 250.h,
+            decoration: BoxDecoration(
+              color: AppColors.kWhiteColor,
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: AppColors.primary100, width: 1.0),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 60.w,
+                    height: 60.w,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 60.w,
+                          height: 60.w,
+                          child: CircularProgressIndicator(
+                            value: _uploadProgress,
+                            color: AppColors.primary500,
+                            backgroundColor: AppColors.primary100,
+                            strokeWidth: 4,
+                          ),
+                        ),
+                        Text(
+                          '${(_uploadProgress * 100).toInt()}%',
+                          style: Styles.textStyle14.copyWith(
+                            color: AppColors.primary500,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Gap(16.h),
+                  Text(
+                    context.tr("loading_video"),
+                    style: Styles.textStyle14.copyWith(
+                      color: AppColors.secondary600,
+                    ),
+                  ),
+                  Gap(8.h),
+                  Text(
+                    '${(_uploadProgress * 100).toInt()}%',
+                    style: Styles.textStyle12.copyWith(
+                      color: AppColors.secondary400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else if (hasVideo)
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -961,21 +1210,20 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.video_camera_back_rounded,
-                    size: 40.w,
-                    color: AppColors.primary300,
-                  ),
+                  AppImage(AssetsData.kvideoIcon, width: 60.w, height: 60.h),
                   Gap(12.h),
-                  Text(
-                    isVideoDeleted
-                        ? context.tr("video_deleted_click_to_add")
-                        : context.tr("click_to_upload_intro_video"),
-                    style: Styles.textStyle16.copyWith(
-                      color: isVideoDeleted
-                          ? AppColors.kRedColor
-                          : AppColors.secondary600,
-                      fontWeight: FontWeight.w500,
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      textAlign: TextAlign.center,
+                      isVideoDeleted
+                          ? context.tr("video_deleted_click_to_add")
+                          : context.tr("click_to_upload_intro_video"),
+                      style: Styles.textStyle16.copyWith(
+                        color: isVideoDeleted
+                            ? AppColors.kRedColor
+                            : AppColors.secondary600,
+                      ),
                     ),
                   ),
                 ],
@@ -984,7 +1232,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           ),
         Gap(8.h),
         Text(
-          context.tr("video_size_limit_hint"),
+          context.tr("video_size_limit_10mb"),
           style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
         ),
       ],

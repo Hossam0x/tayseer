@@ -76,15 +76,13 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
     }
   }
 
-  // ⭐️⭐️⭐️ أضف وظائف Like و Share
+  // ❤️ REACT TO POST
   void reactToPost({required String postId, ReactionType? reactionType}) {
     final postIndex = state.posts.indexWhere((post) => post.postId == postId);
     if (postIndex == -1) return;
 
     final post = state.posts[postIndex];
-
     if (post.myReaction == reactionType) return;
-    if (post.myReaction == null && reactionType == null) return;
 
     final isRemoving = reactionType == null;
     final oldReaction = post.myReaction;
@@ -110,85 +108,217 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
       clearMyReaction: isRemoving,
     );
 
-    final updatedPosts = List<PostModel>.from(state.posts);
-    updatedPosts[postIndex] = updatedPost;
+    _updatePostInList(postId, updatedPost);
 
-    emit(state.copyWith(posts: updatedPosts));
-
-    // ⭐️ TODO: API call للـ Like (إذا كان الـ endpoint مختلف)
-    // _repository.reactToPost(postId: postId, reactionType: reactionType, isRemove: isRemoving);
+    _repository.reactToPost(
+      postId: postId,
+      reactionType: reactionType,
+      isRemove: isRemoving,
+    );
   }
 
+  // 📢 SHARE POST
   Future<void> toggleSharePost({required String postId}) async {
-    emit(state.copyWith(shareActionState: CubitStates.initial));
-
     final postIndex = state.posts.indexWhere((post) => post.postId == postId);
     if (postIndex == -1) return;
 
     final originalPost = state.posts[postIndex];
     final bool isRemoving = originalPost.isRepostedByMe;
 
-    final int newSharesCount = isRemoving
-        ? (originalPost.sharesCount - 1).clamp(0, originalPost.sharesCount)
-        : originalPost.sharesCount + 1;
-
     final updatedPost = originalPost.copyWith(
-      sharesCount: newSharesCount,
-      isRepostedByMe: !originalPost.isRepostedByMe,
+      sharesCount: isRemoving
+          ? (originalPost.sharesCount - 1).clamp(0, originalPost.sharesCount)
+          : originalPost.sharesCount + 1,
+      isRepostedByMe: !isRemoving,
     );
 
     _updatePostInList(postId, updatedPost);
 
-    // ⭐️ TODO: API call للـ Share (إذا كان الـ endpoint مختلف)
-    // final result = await _repository.sharePost(
-    //   postId: postId,
-    //   action: isRemoving ? "remove" : "add",
-    // );
+    final result = await _repository.sharePost(
+      postId: postId,
+      action: isRemoving ? "remove" : "add",
+    );
 
-    // محاكاة النجاح مؤقتاً
-    emit(
-      state.copyWith(
-        shareActionState: CubitStates.success,
-        shareMessage: isRemoving ? 'تم إلغاء المشاركة' : 'تمت المشاركة بنجاح',
-        isShareAdded: !isRemoving,
-      ),
+    result.fold(
+      (failure) {
+        _updatePostInList(postId, originalPost);
+        emit(
+          state.copyWith(
+            shareActionState: CubitStates.failure,
+            shareMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            shareActionState: CubitStates.success,
+            shareMessage: message,
+            isShareAdded: !isRemoving,
+            sharePostId: postId,
+          ),
+        );
+      },
     );
   }
 
-  Future<void> removeFromSaved(String postId) async {
-    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
+  // 💾 SAVE POST (Toggling it off removes it from this view)
+  Future<void> toggleSavePost({required String postId}) async {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
     if (postIndex == -1) return;
 
-    final removedPost = state.posts[postIndex];
-    final updatedPosts = List<PostModel>.from(state.posts);
-    updatedPosts.removeAt(postIndex);
+    final originalPost = state.posts[postIndex];
+    final isCurrentlySaved = originalPost.isSaved;
 
-    emit(state.copyWith(posts: updatedPosts));
-
-    try {
-      await _repository.removeFromSaved(postId: postId);
-    } catch (e) {
-      // Rollback
-      updatedPosts.insert(postIndex, removedPost);
+    // Optimistically remove if unsaving
+    if (isCurrentlySaved) {
+      final updatedPosts = state.posts
+          .where((p) => p.postId != postId)
+          .toList();
       emit(state.copyWith(posts: updatedPosts));
-      rethrow;
+    } else {
+      final updatedPost = originalPost.copyWith(isSaved: true);
+      _updatePostInList(postId, updatedPost);
     }
+
+    final result = await _repository.toggleSavePost(
+      postId: postId,
+      isRemove: isCurrentlySaved,
+    );
+
+    result.fold(
+      (failure) {
+        if (isCurrentlySaved) {
+          // Rollback remove
+          final updatedPosts = List<PostModel>.from(state.posts);
+          updatedPosts.insert(postIndex, originalPost);
+          emit(state.copyWith(posts: updatedPosts));
+        } else {
+          _updatePostInList(postId, originalPost);
+        }
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.failure,
+            saveMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.success,
+            saveMessage: message,
+          ),
+        );
+      },
+    );
   }
 
-  // ⭐️ أضف save/unsave toggle
-  void toggleSavePost({required String postId}) {
-    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
+  // 🗑 DELETE POST
+  void deletePost({required String postId}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
     if (postIndex == -1) return;
 
-    final post = state.posts[postIndex];
-    final updatedPost = post.copyWith(isSaved: !post.isSaved);
-
-    final updatedPosts = List<PostModel>.from(state.posts);
-    updatedPosts[postIndex] = updatedPost;
+    final originalPosts = List<PostModel>.from(state.posts);
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
 
     emit(state.copyWith(posts: updatedPosts));
 
-    // ⭐️ TODO: API call للـ Save/Unsave
+    _repository.deletePost(postId: postId).then((result) {
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              posts: originalPosts,
+              deletePostActionState: CubitStates.failure,
+              deletePostMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          emit(
+            state.copyWith(
+              deletePostActionState: CubitStates.success,
+              deletePostMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  // 📦 ARCHIVE POST
+  void archivePost({required String postId}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final originalPosts = List<PostModel>.from(state.posts);
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+
+    emit(state.copyWith(posts: updatedPosts));
+
+    _repository.archivePost(postId: postId).then((result) {
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              posts: originalPosts,
+              archivePostActionState: CubitStates.failure,
+              archivePostMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          emit(
+            state.copyWith(
+              archivePostActionState: CubitStates.success,
+              archivePostMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  // 🚫 BLOCK USER
+  void blockUser({required String visiblePostId, required String advisorId}) {
+    emit(state.copyWith(blockUserActionState: CubitStates.loading));
+
+    _repository.blockUser(userId: advisorId).then((result) {
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              blockUserActionState: CubitStates.failure,
+              blockUserMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          final updatedPosts = state.posts
+              .where((p) => p.advisorId != advisorId)
+              .toList();
+          emit(
+            state.copyWith(
+              posts: updatedPosts,
+              blockUserActionState: CubitStates.success,
+              blockUserMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  // 👁️ HIDE POST
+  void toggleHidePost({required String postId}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+    emit(state.copyWith(posts: updatedPosts));
+
+    _repository.toggleHidePost(postId: postId, isHide: true);
   }
 
   void _updatePostInList(String postId, PostModel updatedPost) {

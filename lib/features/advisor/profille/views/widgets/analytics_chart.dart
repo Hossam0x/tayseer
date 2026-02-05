@@ -136,7 +136,7 @@ class AnalyticsChart extends StatelessWidget {
                               color: AppColors.blackColor,
                             ),
                           ),
-                          Gap(5.w),
+                          Gap(3.w),
                           Text(
                             value.toInt().toString(),
                             style: Styles.textStyle12.copyWith(

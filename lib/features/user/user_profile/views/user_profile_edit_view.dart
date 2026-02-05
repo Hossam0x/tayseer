@@ -35,7 +35,7 @@ class UserProfileEditView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SimpleAppBar(
-                      title: 'تعديل البيانات الشخصية',
+                      title: context.tr('edit_profile'),
                       isLargeTitle: true,
                     ),
                     _UserProfileEditContent(onProfileUpdated: onProfileUpdated),
@@ -160,14 +160,14 @@ class _UserProfileEditContent extends StatelessWidget {
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(16.h),
           Text(
-            state.errorMessage ?? 'حدث خطأ في تحميل البيانات',
+            state.errorMessage ?? context.tr('error_occurred'),
             textAlign: TextAlign.center,
             style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
           ),
           Gap(24.h),
           CustomBotton(
             width: context.width * 0.6,
-            title: 'إعادة المحاولة',
+            title: context.tr('retry'),
             onPressed: () => cubit.refresh(),
             isLoading: false,
           ),
@@ -286,7 +286,7 @@ class _UserProfileEditContent extends StatelessWidget {
     BuildContext context,
   ) {
     return SelectionCard(
-      label: 'الاسم',
+      label: context.tr('name'),
       value: state.name.isNotEmpty ? state.name : '',
       onTap: () {
         _navigateToEditName(context, cubit, state);
@@ -300,7 +300,7 @@ class _UserProfileEditContent extends StatelessWidget {
     BuildContext context,
   ) {
     return SelectionCard(
-      label: 'اسم المستخدم',
+      label: context.tr('username'),
       value: state.username.isNotEmpty ? state.username : '',
       onTap: () {
         _navigateToEditUsername(context, cubit, state);
@@ -314,7 +314,7 @@ class _UserProfileEditContent extends StatelessWidget {
     BuildContext context,
   ) {
     return SelectionCard(
-      label: 'النبذة التعريفية',
+      label: context.tr('description'),
       value: state.description.isNotEmpty
           ? (state.description.length > 20
                 ? '${state.description.substring(0, 20)}...'

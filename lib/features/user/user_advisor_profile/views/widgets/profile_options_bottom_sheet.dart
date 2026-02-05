@@ -178,7 +178,7 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
         Navigator.pop(context); // dialog
         Navigator.pop(context); // sheet
 
-        await cubit.blockUser(advisorId);
+        await cubit.blockUser(advisorId: advisorId);
 
         final state = cubit.state;
 

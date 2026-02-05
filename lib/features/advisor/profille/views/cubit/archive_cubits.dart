@@ -124,7 +124,7 @@ class ArchivedChatsCubit extends Cubit<ArchivedChatsState> {
 
 class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
   final ArchiveRepository _archiveRepository;
-  final int _pageSize = 10; // قللت من 20 لـ 10 لأنه أحسن للتجربة
+  final int _pageSize = 10;
 
   ArchivedPostsCubit(this._archiveRepository)
     : super(const ArchivedPostsState()) {
@@ -134,7 +134,6 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
   Future<void> fetchArchivedPosts({bool loadMore = false}) async {
     if (loadMore) {
       if (state.isLoadingMore || !state.hasMore) return;
-
       emit(state.copyWith(isLoadingMore: true));
 
       final nextPage = state.currentPage + 1;
@@ -205,23 +204,19 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
     }
   }
 
+  // 📢 SHARE POST
   Future<void> toggleSharePost({required String postId}) async {
-    final postIndex = state.posts.indexWhere(
-      (post) => post.postId == postId,
-    ); // ⭐️ post.postId
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
     if (postIndex == -1) return;
 
     final originalPost = state.posts[postIndex];
-    final bool isRemoving =
-        originalPost.isRepostedByMe; // ⭐️ مباشرة من originalPost
-
-    final int newSharesCount = isRemoving
-        ? (originalPost.sharesCount - 1).clamp(0, originalPost.sharesCount)
-        : originalPost.sharesCount + 1;
+    final bool isRemoving = originalPost.isRepostedByMe;
 
     final updatedPost = originalPost.copyWith(
-      sharesCount: newSharesCount,
-      isRepostedByMe: !originalPost.isRepostedByMe,
+      sharesCount: isRemoving
+          ? (originalPost.sharesCount - 1).clamp(0, originalPost.sharesCount)
+          : originalPost.sharesCount + 1,
+      isRepostedByMe: !isRemoving,
     );
 
     _updatePostInList(postId, updatedPost);
@@ -233,60 +228,180 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
 
     result.fold(
       (failure) {
-        _updatePostInList(postId, originalPost); // Rollback
+        _updatePostInList(postId, originalPost);
+        emit(
+          state.copyWith(
+            shareActionState: CubitStates.failure,
+            shareMessage: failure.message,
+          ),
+        );
       },
       (message) {
-        // Success - لا حاجة لتحديث إضافي
+        emit(
+          state.copyWith(
+            shareActionState: CubitStates.success,
+            shareMessage: message,
+            isShareAdded: !isRemoving,
+            sharePostId: postId,
+          ),
+        );
       },
     );
   }
 
-  Future<void> unarchivePost(String postId) async {
-    final postIndex = state.posts.indexWhere(
-      (post) => post.postId == postId,
-    ); // ⭐️ post.postId
+  // 💾 SAVE POST
+  Future<void> toggleSavePost({required String postId}) async {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
     if (postIndex == -1) return;
 
-    final removedPost = state.posts[postIndex];
-    final updatedPosts = List<PostModel>.from(
-      state.posts,
-    ); // ⭐️ PostModel بدلاً من ArchivePostModel
-    updatedPosts.removeAt(postIndex);
+    final originalPost = state.posts[postIndex];
+    final isCurrentlySaved = originalPost.isSaved;
+
+    final updatedPost = originalPost.copyWith(isSaved: !isCurrentlySaved);
+    _updatePostInList(postId, updatedPost);
+
+    final result = await _archiveRepository.toggleSavePost(
+      postId: postId,
+      isRemove: isCurrentlySaved,
+    );
+
+    result.fold(
+      (failure) {
+        _updatePostInList(postId, originalPost);
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.failure,
+            saveMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.success,
+            saveMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  // 🗑 DELETE POST
+  void deletePost({required String postId}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final originalPosts = List<PostModel>.from(state.posts);
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
 
     emit(state.copyWith(posts: updatedPosts));
 
-    try {
-      await _archiveRepository.unarchivePost(postId: postId);
-    } catch (e) {
-      // Rollback
-      updatedPosts.insert(postIndex, removedPost);
-      emit(state.copyWith(posts: updatedPosts));
-      rethrow;
-    }
+    _archiveRepository.deletePost(postId: postId).then((result) {
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              posts: originalPosts,
+              deletePostActionState: CubitStates.failure,
+              deletePostMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          emit(
+            state.copyWith(
+              deletePostActionState: CubitStates.success,
+              deletePostMessage: message,
+            ),
+          );
+        },
+      );
+    });
   }
 
-  void _updatePostInList(String postId, PostModel updatedPost) {
-    // ⭐️ PostModel بدلاً من ArchivePostModel
-    final currentIndex = state.posts.indexWhere(
-      (p) => p.postId == postId,
-    ); // ⭐️ p.postId
-    if (currentIndex == -1) return;
+  // 📦 UNARCHIVE POST
+  Future<void> unarchivePost(String postId) async {
+    final postIndex = state.posts.indexWhere((post) => post.postId == postId);
+    if (postIndex == -1) return;
 
-    final updatedPosts = List<PostModel>.from(state.posts);
-    updatedPosts[currentIndex] = updatedPost;
+    final originalPosts = List<PostModel>.from(state.posts);
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
 
     emit(state.copyWith(posts: updatedPosts));
+
+    final result = await _archiveRepository.archivePost(
+      postId: postId,
+      isRemove: true,
+    );
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            posts: originalPosts,
+            archivePostActionState: CubitStates.failure,
+            archivePostMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            archivePostActionState: CubitStates.success,
+            archivePostMessage: message,
+          ),
+        );
+      },
+    );
   }
 
-  // ⭐️ أضف هذه الوظيفة إذا لم تكن موجودة
+  // 🚫 BLOCK USER
+  void blockUser({required String visiblePostId, required String advisorId}) {
+    emit(state.copyWith(blockUserActionState: CubitStates.loading));
+
+    _archiveRepository.blockUser(userId: advisorId).then((result) {
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              blockUserActionState: CubitStates.failure,
+              blockUserMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          final updatedPosts = state.posts
+              .where((p) => p.advisorId != advisorId)
+              .toList();
+          emit(
+            state.copyWith(
+              posts: updatedPosts,
+              blockUserActionState: CubitStates.success,
+              blockUserMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  // 👁️ HIDE POST
+  void toggleHidePost({required String postId}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+    emit(state.copyWith(posts: updatedPosts));
+
+    _archiveRepository.toggleHidePost(postId: postId, isHide: true);
+  }
+
+  // ❤️ REACT TO POST
   void reactToPost({required String postId, ReactionType? reactionType}) {
     final postIndex = state.posts.indexWhere((post) => post.postId == postId);
     if (postIndex == -1) return;
 
     final post = state.posts[postIndex];
-
     if (post.myReaction == reactionType) return;
-    if (post.myReaction == null && reactionType == null) return;
 
     final isRemoving = reactionType == null;
     final oldReaction = post.myReaction;
@@ -312,17 +427,23 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
       clearMyReaction: isRemoving,
     );
 
-    final updatedPosts = List<PostModel>.from(state.posts);
-    updatedPosts[postIndex] = updatedPost;
+    _updatePostInList(postId, updatedPost);
 
-    emit(state.copyWith(posts: updatedPosts));
-
-    // API Call
     _archiveRepository.reactToArchivedPost(
       postId: postId,
       reactionType: reactionType,
       isRemove: isRemoving,
     );
+  }
+
+  void _updatePostInList(String postId, PostModel updatedPost) {
+    final currentIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (currentIndex == -1) return;
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[currentIndex] = updatedPost;
+
+    emit(state.copyWith(posts: updatedPosts));
   }
 
   Future<void> refresh() async {

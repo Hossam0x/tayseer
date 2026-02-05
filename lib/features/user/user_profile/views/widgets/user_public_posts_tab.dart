@@ -1,8 +1,8 @@
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
+import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
@@ -15,9 +15,39 @@ class UserPublicPostsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<UserPublicProfileCubit>();
 
-    return BlocListener<UserPublicProfileCubit, UserPublicProfileState>(
-      listenWhen: _shouldListenToShare,
-      listener: _handleShareState,
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<UserPublicProfileCubit, UserPublicProfileState>(
+          listenWhen: (prev, curr) =>
+              prev.shareActionState != curr.shareActionState &&
+              curr.shareActionState != CubitStates.initial,
+          listener: _handleShareState,
+        ),
+        BlocListener<UserPublicProfileCubit, UserPublicProfileState>(
+          listenWhen: (prev, curr) =>
+              prev.saveActionState != curr.saveActionState &&
+              curr.saveActionState != CubitStates.initial,
+          listener: _handleSaveState,
+        ),
+        BlocListener<UserPublicProfileCubit, UserPublicProfileState>(
+          listenWhen: (prev, curr) =>
+              prev.deletePostActionState != curr.deletePostActionState &&
+              curr.deletePostActionState != CubitStates.initial,
+          listener: _handleDeleteState,
+        ),
+        BlocListener<UserPublicProfileCubit, UserPublicProfileState>(
+          listenWhen: (prev, curr) =>
+              prev.archivePostActionState != curr.archivePostActionState &&
+              curr.archivePostActionState != CubitStates.initial,
+          listener: _handleArchiveState,
+        ),
+        BlocListener<UserPublicProfileCubit, UserPublicProfileState>(
+          listenWhen: (prev, curr) =>
+              prev.blockUserActionState != curr.blockUserActionState &&
+              curr.blockUserActionState != CubitStates.initial,
+          listener: _handleBlockUserState,
+        ),
+      ],
       child: BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
         builder: (context, state) {
           if (state.postsState == CubitStates.loading && state.posts.isEmpty) {
@@ -44,23 +74,72 @@ class UserPublicPostsTab extends StatelessWidget {
     );
   }
 
-  bool _shouldListenToShare(
-    UserPublicProfileState prev,
-    UserPublicProfileState curr,
-  ) =>
-      prev.shareActionState != curr.shareActionState &&
-      curr.shareActionState != CubitStates.initial;
+  void _handleSaveState(BuildContext context, UserPublicProfileState state) {
+    if (state.saveActionState == CubitStates.success) {
+      AppToast.success(
+        context,
+        state.saveMessage ?? context.tr('saved_success'),
+      );
+    } else if (state.saveActionState == CubitStates.failure) {
+      AppToast.error(context, state.saveMessage ?? context.tr('save_error'));
+    }
+  }
+
+  void _handleDeleteState(BuildContext context, UserPublicProfileState state) {
+    if (state.deletePostActionState == CubitStates.success) {
+      AppToast.success(
+        context,
+        state.deletePostMessage ?? context.tr('delete_success'),
+      );
+    } else if (state.deletePostActionState == CubitStates.failure) {
+      AppToast.error(
+        context,
+        state.deletePostMessage ?? context.tr('delete_error'),
+      );
+    }
+  }
+
+  void _handleArchiveState(BuildContext context, UserPublicProfileState state) {
+    if (state.archivePostActionState == CubitStates.success) {
+      AppToast.success(
+        context,
+        state.archivePostMessage ?? context.tr('archive_success'),
+      );
+    } else if (state.archivePostActionState == CubitStates.failure) {
+      AppToast.error(
+        context,
+        state.archivePostMessage ?? context.tr('archive_error'),
+      );
+    }
+  }
+
+  void _handleBlockUserState(
+    BuildContext context,
+    UserPublicProfileState state,
+  ) {
+    if (state.blockUserActionState == CubitStates.success) {
+      AppToast.success(
+        context,
+        state.blockUserMessage ?? context.tr('blocked_successfully'),
+      );
+    } else if (state.blockUserActionState == CubitStates.failure) {
+      AppToast.error(
+        context,
+        state.blockUserMessage ?? context.tr('failed_to_block'),
+      );
+    }
+  }
 
   void _handleShareState(BuildContext context, UserPublicProfileState state) {
     final message = state.shareMessage;
     switch (state.shareActionState) {
       case CubitStates.success:
         state.isShareAdded == true
-            ? AppToast.success(context, message ?? 'تمت المشاركة بنجاح')
-            : AppToast.info(context, message ?? 'تم إلغاء المشاركة');
+            ? AppToast.success(context, message ?? context.tr('shared_success'))
+            : AppToast.info(context, message ?? context.tr('unshared_success'));
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء المشاركة');
+        AppToast.error(context, message ?? context.tr('shared_error'));
         break;
       default:
         break;
@@ -136,60 +215,153 @@ class UserPublicPostsTab extends StatelessWidget {
       itemBuilder: (context, index) {
         if (index < posts.length) {
           final post = posts[index];
-          return Column(
-            children: [
-              PostCard(
-                isFromProfile: true,
-                post: post,
-                // onReactionChanged: (postId, reactionType) {
-                //   cubit.reactToPost(postId: postId, reactionType: reactionType);
-                // },
-                // onShareTap: (postId) {
-                //   cubit.toggleSharePost(postId: postId);
-                // },
-                onNavigateToDetails: (ctx, post, controller) {
-                  Navigator.push(
-                    ctx,
-                    MaterialPageRoute(
-                      builder: (context) => PostDetailsView(
-                        isFromProfile: true,
-                        post: post,
-                        cachedController: controller,
-                        callbacks: PostCallbacks(
-                          postUpdatesStream: cubit.stream.map((state) {
-                            return state.posts.firstWhere(
-                              (p) => p.postId == post.postId,
-                              orElse: () => post,
-                            );
-                          }),
-                          onReactionChanged: (postId, reactionType) {
-                            cubit.reactToPost(
-                              postId: postId,
-                              reactionType: reactionType,
-                            );
-                          },
-                          onShareTap: (postId) {
-                            cubit.toggleSharePost(postId: postId);
-                          },
-                          onHashtagTap: (hashtag) {
-                            context.pushNamed(AppRouter.kAdvisorSearchView);
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                // onHashtagTap: (hashtag) {
-                //   context.pushNamed(AppRouter.kAdvisorSearchView);
-                // },
-              ),
-              if (index < posts.length - 1) Gap(16.h),
-            ],
+          return _PostItem(
+            postId: post.postId,
+            cubit: cubit,
+            showGap: index < posts.length - 1 || state.isLoadingMore,
           );
         } else {
           return const PostCardShimmer();
         }
       },
+    );
+  }
+}
+
+class _PostItem extends StatefulWidget {
+  const _PostItem({
+    required this.postId,
+    required this.cubit,
+    this.showGap = false,
+  });
+
+  final String postId;
+  final UserPublicProfileCubit cubit;
+  final bool showGap;
+
+  @override
+  State<_PostItem> createState() => _PostItemState();
+}
+
+class _PostItemState extends State<_PostItem> {
+  late final Stream<PostModel?> _postStream;
+  late final PostCallbacks _callbacks;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeStreamAndCallbacks();
+  }
+
+  void _initializeStreamAndCallbacks() {
+    _postStream = widget.cubit.stream
+        .map(
+          (state) =>
+              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+        )
+        .distinct();
+
+    _callbacks = PostCallbacks(
+      postUpdatesStream: _postStream,
+      onReactionChanged: _onReaction,
+      onShareTap: _onShare,
+      onHashtagTap: _onHashtagTap,
+      onSave: _onSave,
+      onDelete: _onDelete,
+      onHide: _hidePost,
+      onBlock: _blockUser,
+      onArchive: _archivePost,
+      onEdit: _editPost,
+    );
+  }
+
+  void _editPost(PostModel post) {
+    context.pushNamed(
+      AppRouter.kAddPostView,
+      arguments: {"post": post, "isEdit": true},
+    );
+  }
+
+  void _archivePost(String postId) {
+    widget.cubit.archivePost(postId: postId);
+  }
+
+  void _blockUser(String userId, String postId) {
+    widget.cubit.blockUser(visiblePostId: postId, userId: userId);
+  }
+
+  void _hidePost(String postId) {
+    widget.cubit.toggleHidePost(postId: postId);
+  }
+
+  void _onDelete(String postId) {
+    widget.cubit.deletePost(postId: postId);
+  }
+
+  void _onSave(String postId) {
+    widget.cubit.toggleSavePost(postId: postId);
+  }
+
+  void _onReaction(String id, ReactionType? type) {
+    widget.cubit.reactToPost(postId: id, reactionType: type);
+  }
+
+  void _onShare(String id) {
+    widget.cubit.toggleSharePost(postId: id);
+  }
+
+  void _onHashtagTap(String hashtag) {
+    final cleanHashtag = hashtag.startsWith('#')
+        ? hashtag.substring(1)
+        : hashtag;
+
+    context.pushNamed(
+      AppRouter.kAdvisorSearchView,
+      arguments: {'query': cleanHashtag, 'tab': 'posts'},
+    );
+  }
+
+  void _onNavigateToDetails(
+    BuildContext ctx,
+    PostModel post,
+    VideoPlayerController? controller,
+  ) {
+    Navigator.push(
+      ctx,
+      MaterialPageRoute(
+        builder: (_) => PostDetailsView(
+          isFromProfile: true,
+          post: post,
+          cachedController: controller,
+          callbacks: _callbacks,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        BlocSelector<
+          UserPublicProfileCubit,
+          UserPublicProfileState,
+          PostModel?
+        >(
+          selector: (state) =>
+              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+          builder: (context, post) {
+            if (post == null) return const SizedBox.shrink();
+            return PostCard(
+              isFromProfile: true,
+              post: post,
+              callbacks: _callbacks,
+              onNavigateToDetails: _onNavigateToDetails,
+            );
+          },
+        ),
+        if (widget.showGap) Gap(16.h),
+      ],
     );
   }
 }

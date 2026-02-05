@@ -43,17 +43,23 @@ class EditPersonalDataState extends Equatable {
     bool? isSaving,
     String? videoPreviewUrl,
     String? imagePreviewUrl,
+    bool clearVideo = false,
+    bool clearImage = false,
   }) {
     return EditPersonalDataState(
       state: state ?? this.state,
       profile: profile ?? this.profile,
       currentData: currentData ?? this.currentData,
-      imageFile: imageFile ?? this.imageFile,
-      videoFile: videoFile ?? this.videoFile,
+      imageFile: clearImage ? null : (imageFile ?? this.imageFile),
+      videoFile: clearVideo ? null : (videoFile ?? this.videoFile),
       errorMessage: errorMessage ?? this.errorMessage,
       isSaving: isSaving ?? this.isSaving,
-      videoPreviewUrl: videoPreviewUrl ?? this.videoPreviewUrl,
-      imagePreviewUrl: imagePreviewUrl ?? this.imagePreviewUrl,
+      videoPreviewUrl: clearVideo
+          ? null
+          : (videoPreviewUrl ?? this.videoPreviewUrl),
+      imagePreviewUrl: clearImage
+          ? null
+          : (imagePreviewUrl ?? this.imagePreviewUrl),
     );
   }
 

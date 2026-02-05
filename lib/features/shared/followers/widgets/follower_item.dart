@@ -103,7 +103,16 @@ class FollowerItem extends StatelessWidget {
                 SizedBox(width: 12.w),
 
                 // Follow Button
-                if (!isSkeleton && follower.isAdvisor) _buildFollowButton(),
+                if (!isSkeleton && follower.isAdvisor && !follower.isMe)
+                  _buildFollowButton(),
+                // if (!isSkeleton && follower.isMe)
+                //   Text(
+                //     'Me',
+                //     style: Styles.textStyle16.copyWith(
+                //       fontWeight: FontWeight.bold,
+                //       color: Colors.black87,
+                //     ),
+                //   ),
               ],
             ),
           ),
@@ -222,6 +231,7 @@ class FollowerItemSkeleton extends StatelessWidget {
         username: '@username',
         isFollowing: false,
         userType: 'User',
+        isMe: false,
       ),
       isSkeleton: true,
       onToggleFollow: () {},

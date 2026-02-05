@@ -3,13 +3,15 @@ import 'package:tayseer/my_import.dart';
 class SimpleAppBar extends StatelessWidget {
   final String title;
   final bool? isLargeTitle;
-  final IconData icon;
+  final IconData? icon; // خليناه nullable عشان نقدر نميّز
+  final VoidCallback? onBack;
 
   const SimpleAppBar({
     super.key,
     required this.title,
     this.isLargeTitle,
-    this.icon = Icons.arrow_back,
+    this.icon,
+    this.onBack,
   });
 
   @override
@@ -18,9 +20,7 @@ class SimpleAppBar extends StatelessWidget {
         ? Styles.textStyle24SemiBold.copyWith(color: AppColors.primary800)
         : Styles.textStyle20Meduim.copyWith(color: AppColors.secondary700);
 
-    final Color iconColor = icon == Icons.close
-        ? AppColors.secondary600
-        : AppColors.blackColor;
+    final bool useCustomBackIcon = icon == null;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -31,11 +31,19 @@ class SimpleAppBar extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => Navigator.pop(context),
+              onTap: onBack ?? () => Navigator.maybePop(context),
               borderRadius: BorderRadius.circular(24.r),
               child: Padding(
-                padding: EdgeInsets.all(10.w),
-                child: Icon(icon, color: iconColor, size: 24.w),
+                padding: EdgeInsets.all(12.w),
+                child: useCustomBackIcon
+                    ? AppImage(AssetsData.backArrow, width: 19.w)
+                    : Icon(
+                        icon,
+                        color: icon == Icons.close
+                            ? AppColors.secondary600
+                            : AppColors.blackColor,
+                        size: 24.w,
+                      ),
               ),
             ),
           ),

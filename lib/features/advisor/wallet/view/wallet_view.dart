@@ -1,4 +1,3 @@
-import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_state.dart';
@@ -15,6 +14,7 @@ class WalletView extends StatelessWidget {
       create: (context) => WalletCubit()..loadAllTransactions(),
       child: DefaultTabController(
         length: 2,
+        initialIndex: 0,
         child: Scaffold(
           backgroundColor: AppColors.kScaffoldColor,
           body: AdvisorBackground(
@@ -33,17 +33,61 @@ class WalletView extends StatelessWidget {
                 SafeArea(
                   child: Column(
                     children: [
+                      // Header
                       Gap(16.h),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.h),
+                        padding: EdgeInsets.symmetric(horizontal: 20.w),
                         child: SimpleAppBar(title: 'محفظتى'),
                       ),
-                      SizedBox(height: 20.h),
-                      const CustomToggleTabBar(
-                        firstTabText: 'محفظتي',
-                        secondTabText: 'سجل الدفع',
+
+                      // ── نفس ستايل الـ TabBar الموجود في ArchiveView ──
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Container(
+                          margin: EdgeInsets.symmetric(
+                            horizontal: 20.w,
+                            vertical: 10.h,
+                          ),
+                          padding: EdgeInsets.all(2.5.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.tabsBack,
+                            borderRadius: BorderRadius.circular(15.r),
+                            border: Border.all(color: AppColors.primary100),
+                          ),
+                          child: Builder(
+                            builder: (context) {
+                              final bool isTablet =
+                                  MediaQuery.of(context).size.width > 600;
+                              return TabBar(
+                                indicatorSize: TabBarIndicatorSize.tab,
+                                dividerColor: Colors.transparent,
+                                indicator: BoxDecoration(
+                                  color: AppColors.primary300,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                                labelStyle: isTablet
+                                    ? Styles.textStyle16
+                                    : Styles.textStyle20,
+                                labelPadding: isTablet
+                                    ? EdgeInsets.symmetric(
+                                        horizontal: 24.w,
+                                        vertical: 12.h,
+                                      )
+                                    : EdgeInsets.zero,
+                                labelColor: AppColors.secondary950,
+                                unselectedLabelColor: AppColors.blackColor,
+                                unselectedLabelStyle: Styles.textStyle16,
+                                tabs: const [
+                                  Tab(text: 'محفظتي'),
+                                  Tab(text: 'سجل الدفع'),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
                       ),
-                      SizedBox(height: 10.h),
+
+                      // المحتوى
                       Expanded(
                         child: BlocBuilder<WalletCubit, WalletState>(
                           builder: (context, state) {
@@ -79,6 +123,7 @@ class WalletView extends StatelessWidget {
             child: const BalanceCard(),
           ),
           SizedBox(height: 20.h),
+
           // Transactions Header
           Padding(
             padding: EdgeInsets.only(right: 25.w, left: 8.w),
@@ -108,11 +153,22 @@ class WalletView extends StatelessWidget {
               ],
             ),
           ),
+
           // Transactions List
           if (state.status == WalletStatus.loading)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 50.h),
-              child: const CircularProgressIndicator(),
+              child: const Center(child: CircularProgressIndicator()),
+            )
+          else if (transactions.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 40.h),
+              child: Text(
+                'لا توجد معاملات بعد',
+                style: Styles.textStyle16.copyWith(
+                  color: AppColors.secondary600,
+                ),
+              ),
             )
           else
             ListView.builder(
@@ -122,6 +178,7 @@ class WalletView extends StatelessWidget {
               itemBuilder: (context, index) =>
                   TransactionItem(transaction: transactions[index]),
             ),
+
           SizedBox(height: 20.h),
 
           // Withdrawal Button
@@ -137,6 +194,7 @@ class WalletView extends StatelessWidget {
               useGradient: true,
             ),
           ),
+          SizedBox(height: 20.h),
         ],
       ),
     );
@@ -148,7 +206,7 @@ class WalletView extends StatelessWidget {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Transactions Header
+          // Header
           Padding(
             padding: EdgeInsets.only(right: 25.w, left: 8.w),
             child: Row(
@@ -174,11 +232,22 @@ class WalletView extends StatelessWidget {
               ],
             ),
           ),
+
           // Transactions List
           if (state.status == WalletStatus.loading)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 50.h),
-              child: const CircularProgressIndicator(),
+              child: const Center(child: CircularProgressIndicator()),
+            )
+          else if (transactions.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 40.h),
+              child: Text(
+                'لا توجد حجوزات بعد',
+                style: Styles.textStyle16.copyWith(
+                  color: AppColors.secondary600,
+                ),
+              ),
             )
           else
             ListView.builder(
@@ -188,7 +257,8 @@ class WalletView extends StatelessWidget {
               itemBuilder: (context, index) =>
                   TransactionItem(transaction: transactions[index]),
             ),
-          SizedBox(height: 20.h),
+
+          SizedBox(height: 30.h),
         ],
       ),
     );
