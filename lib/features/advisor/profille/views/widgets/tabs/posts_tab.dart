@@ -65,21 +65,18 @@ class PostsTab extends StatelessWidget {
           return RefreshIndicator(
             color: AppColors.kprimaryColor,
             onRefresh: () => profileCubit.fetchPosts(),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                children: [
-                  _buildPostList(state, profileCubit),
+            child: Column(
+              children: [
+                _buildPostList(state, profileCubit),
 
-                  // زر تحميل المزيد أو إند فيد
-                  if (state.hasMore)
-                    _buildLoadMoreButton(context, state, profileCubit)
-                  else if (state.posts.isNotEmpty)
-                    const home_feed.EndOfFeedIndicator(),
+                // زر تحميل المزيد أو إند فيد
+                if (state.hasMore)
+                  _buildLoadMoreButton(context, state, profileCubit)
+                else if (state.posts.isNotEmpty)
+                  const home_feed.EndOfFeedIndicator(),
 
-                  Gap(40.h),
-                ],
-              ),
+                Gap(40.h),
+              ],
             ),
           );
         },
