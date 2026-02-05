@@ -141,12 +141,6 @@ class UserPublicPostsTab extends StatelessWidget {
               PostCard(
                 isFromProfile: true,
                 post: post,
-                // onReactionChanged: (postId, reactionType) {
-                //   cubit.reactToPost(postId: postId, reactionType: reactionType);
-                // },
-                // onShareTap: (postId) {
-                //   cubit.toggleSharePost(postId: postId);
-                // },
                 onNavigateToDetails: (ctx, post, controller) {
                   Navigator.push(
                     ctx,
@@ -179,9 +173,6 @@ class UserPublicPostsTab extends StatelessWidget {
                     ),
                   );
                 },
-                // onHashtagTap: (hashtag) {
-                //   context.pushNamed(AppRouter.kAdvisorSearchView);
-                // },
               ),
               if (index < posts.length - 1) Gap(16.h),
             ],
