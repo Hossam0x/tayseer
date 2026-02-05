@@ -1,3 +1,5 @@
+import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
+    as home_feed;
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
@@ -67,7 +69,19 @@ class UserPublicPostsTab extends StatelessWidget {
           return RefreshIndicator(
             color: AppColors.kprimaryColor,
             onRefresh: () => cubit.fetchPosts(),
-            child: _buildPostList(userPosts, state, context, cubit),
+            child: Column(
+              children: [
+                _buildPostList(userPosts, state, context, cubit),
+            
+                // زر تحميل المزيد أو إند فيد
+                if (state.hasMore)
+                  _buildLoadMoreButton(context, state, cubit)
+                else if (userPosts.isNotEmpty)
+                  const home_feed.EndOfFeedIndicator(),
+            
+                Gap(40.h),
+              ],
+            ),
           );
         },
       ),
@@ -146,11 +160,58 @@ class UserPublicPostsTab extends StatelessWidget {
     }
   }
 
+  Widget _buildLoadMoreButton(
+    BuildContext context,
+    UserPublicProfileState state,
+    UserPublicProfileCubit cubit,
+  ) {
+    return state.isLoadingMore
+        ? _buildShimmerListMore()
+        : Padding(
+            padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 24.w),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => cubit.fetchPosts(loadMore: true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.kWhiteColor,
+                  foregroundColor: AppColors.kprimaryColor,
+                  side: BorderSide(color: AppColors.kprimaryColor, width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  elevation: 0,
+                ),
+                child: Text(
+                  context.tr('load_more_posts'),
+                  style: Styles.textStyle14Meduim.copyWith(
+                    color: AppColors.kprimaryColor,
+                  ),
+                ),
+              ),
+            ),
+          );
+  }
+
   Widget _buildShimmerList() {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(vertical: 16.h),
+      itemCount: 3,
+      itemBuilder: (context, index) {
+        return Column(
+          children: [const PostCardShimmer(), if (index < 2) Gap(16.h)],
+        );
+      },
+    );
+  }
+
+  Widget _buildShimmerListMore() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: 3,
       itemBuilder: (context, index) {
         return Column(
@@ -211,18 +272,14 @@ class UserPublicPostsTab extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(vertical: 16.h),
-      itemCount: posts.length + (state.isLoadingMore ? 1 : 0),
+      itemCount: posts.length,
       itemBuilder: (context, index) {
-        if (index < posts.length) {
-          final post = posts[index];
-          return _PostItem(
-            postId: post.postId,
-            cubit: cubit,
-            showGap: index < posts.length - 1 || state.isLoadingMore,
-          );
-        } else {
-          return const PostCardShimmer();
-        }
+        final post = posts[index];
+        return _PostItem(
+          postId: post.postId,
+          cubit: cubit,
+          showGap: index < posts.length - 1,
+        );
       },
     );
   }

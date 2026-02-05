@@ -1,3 +1,5 @@
+import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
+    as home_feed;
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
@@ -86,10 +88,13 @@ class UserAdvisorPostsTab extends StatelessWidget {
                     );
                   },
                 ),
-
+            
                 // زر تحميل المزيد (يظهر فقط لو لسه فيه محتوى متبقي)
-                if (state.hasMore) _buildLoadMoreButton(context, state, cubit),
-
+                if (state.hasMore)
+                  _buildLoadMoreButton(context, state, cubit)
+                else if (userPosts.isNotEmpty)
+                  const home_feed.EndOfFeedIndicator(),
+            
                 // مسافة تحت عشان الـ scroll يبقى مريح
                 Gap(40.h),
               ],

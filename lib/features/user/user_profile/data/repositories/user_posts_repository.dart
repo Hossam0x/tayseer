@@ -40,7 +40,7 @@ class UserPostsRepositoryImpl implements UserPostsRepository {
     try {
       final response = await _apiService.get(
         endPoint: '/user/shared-posts',
-        query: {'page': page, 'userId': userId},
+        query: {'page': page, 'userId': userId, 'limit': 10},
       );
 
       if (response['success'] == true) {

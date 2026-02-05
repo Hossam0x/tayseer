@@ -75,7 +75,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       final response = await _apiService.get(
         endPoint: '/posts/all-for-advisor',
-        query: {'page': page},
+        query: {'page': page, 'limit': 10},
       );
 
       if (response['success'] == true) {
