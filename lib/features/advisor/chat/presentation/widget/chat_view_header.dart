@@ -70,7 +70,6 @@ class ChatViewHeader extends StatelessWidget {
                   children: [
                     SizedBox(height: spacing1),
 
-                    // ✅ عدّي الـ isChatsSelected هنا
                     HeaderTopRow(isChatsSelected: isChatsSelected),
 
                     SizedBox(height: spacing2),

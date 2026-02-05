@@ -76,7 +76,7 @@ class SessionDetailsHelper {
         return SessionStatusInfo(
           bgColor: const Color(0xFFFFFAF0),
           iconColor: const Color(0xFFEAA800),
-          text: "قيد المراجعة - بانتظار تأكيد الطبيب للموعد",
+          text: "قيد المراجعة - بانتظار تأكيد المستشار للموعد",
           icon: Icons.access_time_filled_outlined,
         );
       case SessionStatus.cancelled:

@@ -1,7 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/my_space/data/helper/rescheduleHelper.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/get_available_day.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
@@ -242,13 +238,10 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. الهيدر
               RescheduleHeader(
-                title: _isReschedule ? "إعادة جدولة" : "حجز استشارة",
+                title: _isReschedule ? "إعادة جدولة" : "حجز إستشارة",
               ),
               SizedBox(height: 20.h),
-
-              // 2. التقويم
               const SectionLabel(title: "التاريخ"),
               RescheduleCalendar(
                 selectedDay: _selectedDay,
@@ -266,7 +259,6 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
               ),
               SizedBox(height: 20.h),
 
-              // 3. المدة
               const SectionLabel(title: "مدة الجلسة"),
               RescheduleDurationSelector(
                 durations: state.availableDurations,
@@ -281,7 +273,6 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
               ),
               SizedBox(height: 20.h),
 
-              // 4. الوقت
               const SectionLabel(title: "الوقت"),
               RescheduleTimeSelector(
                 timeSlots: availableTimeSlots,
@@ -343,14 +334,12 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
     }
   }
 
-  /// التحقق من إمكانية الإرسال
   bool _canSubmit() {
     return _selectedDate != null &&
         _selectedDuration != null &&
         _selectedTimeSlot != null;
   }
 
-  /// معالجة الإرسال بناءً على نوع العملية
   void _handleSubmit(BuildContext context) {
     if (!_canSubmit()) {
       _showErrorSnackBar(context, 'يرجى إكمال جميع الحقول المطلوبة');
@@ -363,15 +352,12 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
     );
 
     if (_isReschedule) {
-      // إعادة جدولة
       _handleReschedule(context, dateTime);
     } else {
-      // حجز جديد
       _handleBooking(context, dateTime);
     }
   }
 
-  /// معالجة إعادة الجدولة
   void _handleReschedule(BuildContext context, String dateTime) {
     if (_oldSessionId == null) {
       _showErrorSnackBar(context, 'لا يمكن تحديد الجلسة');
@@ -386,7 +372,6 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
     );
   }
 
-  /// معالجة الحجز الجديد
   void _handleBooking(BuildContext context, String dateTime) {
     context.read<AvailableSlotsCubit>().createSession(
       date: dateTime,
