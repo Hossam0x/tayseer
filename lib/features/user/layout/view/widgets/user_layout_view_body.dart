@@ -70,7 +70,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
       case UserTypeEnum.user:
         return [
           HomeView(onScroll: cubit.onScroll),
-          CachNetwork.getBoolData(key: kIsCompletedQuestions) == true
+          CachNetwork.getBoolData(key: kIsCompletedQuestions) == false
               ? MarriageView()
               : BlocProvider.value(
                   value: getIt<QuestionsCubit>(),
