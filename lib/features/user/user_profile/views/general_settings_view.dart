@@ -3,7 +3,6 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/views/age_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/email_edit_view.dart';
-import 'package:tayseer/features/user/user_profile/views/gender_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/phone_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/privacy_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
@@ -246,27 +245,27 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
             value: userProfile?.age.toString() ?? '',
           ),
         ),
-        InkWell(
-          onTap: () async {
-            final currentGender = _getGenderDisplayText(userProfile?.gender);
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    GenderSelectionView(initialGender: currentGender),
-              ),
-            );
+        // InkWell(
+        //   onTap: () async {
+        //     final currentGender = _getGenderDisplayText(userProfile?.gender);
+        //     final result = await Navigator.push(
+        //       context,
+        //       MaterialPageRoute(
+        //         builder: (context) =>
+        //             GenderSelectionView(initialGender: currentGender),
+        //       ),
+        //     );
 
-            if (result != null && userProfile != null) {
-              final cubit = context.read<UserProfileCubit>();
-              await cubit.updateGender(result, context);
-            }
-          },
-          child: _buildSettingRow(
-            label: "النوع",
-            value: _getGenderDisplayText(userProfile?.gender),
-          ),
-        ),
+        //     if (result != null && userProfile != null) {
+        //       final cubit = context.read<UserProfileCubit>();
+        //       await cubit.updateGender(result, context);
+        //     }
+        //   },
+        //   child: _buildSettingRow(
+        //     label: "النوع",
+        //     value: _getGenderDisplayText(userProfile?.gender),
+        //   ),
+        // ),
         InkWell(
           onTap: () async {
             await Navigator.push(
@@ -535,10 +534,10 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
     );
   }
 
-  String _getGenderDisplayText(String? gender) {
-    if (gender == null) return '';
-    return gender == 'male' ? 'ذكر' : 'أنثى';
-  }
+  // String _getGenderDisplayText(String? gender) {
+  //   if (gender == null) return '';
+  //   return gender == 'male' ? 'ذكر' : 'أنثى';
+  // }
 
   String _getPrivacyStatus(bool? isAnonymous) {
     if (isAnonymous == null) return 'الجميع';

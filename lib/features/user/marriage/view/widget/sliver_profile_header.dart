@@ -65,6 +65,7 @@ class SliverProfileHeader extends StatelessWidget {
         ),
       ),
       flexibleSpace: FlexibleSpaceBar(
+        collapseMode: CollapseMode.pin,
         background: Stack(
           fit: StackFit.expand,
           children: [

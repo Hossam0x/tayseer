@@ -94,7 +94,7 @@ class ProfileHeader extends StatelessWidget {
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(10.h),
           Text(
-            errorMessage ?? 'حدث خطأ أثناء تحميل البيانات',
+            errorMessage ?? context.tr('error_loading_data'),
             style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
           ),
@@ -108,7 +108,7 @@ class ProfileHeader extends StatelessWidget {
             ),
             onPressed: () => context.read<ProfileCubit>().fetchProfile(),
             child: Text(
-              'إعادة المحاولة',
+              context.tr('retry'),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -172,7 +172,7 @@ class ProfileHeader extends StatelessWidget {
             child: Column(
               children: [
                 Text(following, style: Styles.textStyle16SemiBold),
-                Text("Following", style: Styles.textStyle14),
+                Text(context.tr('followings'), style: Styles.textStyle14),
               ],
             ),
           ),
@@ -181,7 +181,7 @@ class ProfileHeader extends StatelessWidget {
             child: Column(
               children: [
                 Text(followers, style: Styles.textStyle16SemiBold),
-                Text("Followers", style: Styles.textStyle14),
+                Text(context.tr('followers'), style: Styles.textStyle14),
               ],
             ),
           ),

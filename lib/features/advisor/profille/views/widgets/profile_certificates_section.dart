@@ -85,7 +85,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
                   elevation: 0,
                 ),
                 child: Text(
-                  'تحميل المزيد من الشهادات',
+                  context.tr('load_more_certificates'),
                   style: Styles.textStyle14Meduim.copyWith(
                     color: AppColors.kprimaryColor,
                   ),
@@ -112,7 +112,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "الشهادات",
+                  context.tr('certificates'),
                   style: Styles.textStyle18Bold.copyWith(
                     color: AppColors.secondary800,
                   ),
@@ -122,7 +122,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
                     _navigateToAddCertificate(context);
                   },
                   label: Text(
-                    'إضافة',
+                    context.tr('add'),
                     style: Styles.textStyle16Meduim.copyWith(
                       color: AppColors.secondary400,
                     ),
@@ -161,7 +161,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
                 onPressed: () {
                   Navigator.pushNamed(context, AppRouter.kBoostAccountView);
                 },
-                text: 'تعزيز',
+                text: context.tr('boost'),
               ),
             ),
         ],
@@ -265,7 +265,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(16.h),
           Text(
-            'حدث خطأ في تحميل الشهادات',
+            context.tr('error'),
             style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
           ),
           Gap(24.h),
@@ -280,7 +280,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
               ),
             ),
             child: Text(
-              'إعادة المحاولة',
+              context.tr('retry'),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -472,7 +472,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
           Icon(Icons.school_outlined, color: Colors.grey.shade400, size: 48.w),
           Gap(16.h),
           Text(
-            'لا توجد شهادات متاحة',
+            context.tr('no_certificates_yet'),
             style: Styles.textStyle16Meduim.copyWith(
               color: Colors.grey.shade600,
             ),

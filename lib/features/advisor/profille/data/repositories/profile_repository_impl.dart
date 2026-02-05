@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/advisor/profille/data/models/analytics_model.dart';
 import 'package:tayseer/my_import.dart';
 import 'profile_repository.dart';
 import '../models/profile_model.dart';
@@ -8,6 +9,27 @@ class ProfileRepositoryImpl implements ProfileRepository {
   final ApiService _apiService;
 
   ProfileRepositoryImpl(this._apiService);
+
+  @override
+  Future<Either<Failure, AnalyticsModel>> getAnalytics() async {
+    try {
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.advisorStatistics,
+      );
+
+      if (response['success'] == true) {
+        final data = response['data'] as Map<String, dynamic>;
+        final analytics = AnalyticsModel.fromJson(data);
+        return Right(analytics);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل جلب الإحصائيات'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, ProfileModel>> getAdvisorProfile() async {

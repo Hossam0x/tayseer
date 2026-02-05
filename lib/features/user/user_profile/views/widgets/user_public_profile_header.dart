@@ -84,7 +84,7 @@ class UserPublicProfileHeader extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 18.0.w),
             child: Text(
-              errorMessage ?? 'حدث خطأ أثناء تحميل البيانات',
+              errorMessage ?? context.tr("error_loading_data"),
               style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
               textAlign: TextAlign.center,
             ),
@@ -100,7 +100,7 @@ class UserPublicProfileHeader extends StatelessWidget {
             onPressed: () =>
                 context.read<UserPublicProfileCubit>().fetchProfile(),
             child: Text(
-              'إعادة المحاولة',
+              context.tr("retry"),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -135,7 +135,7 @@ class UserPublicProfileHeader extends StatelessWidget {
           // الإحصائيات
           _buildStatsItem(
             value: following,
-            label: 'متابَع',
+            label: context.tr("followed"),
             onTap: () {},
             userId: profile.id,
             context: context,

@@ -27,7 +27,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   late CertificatesCubit _certificatesCubit;
   late RatingsCubit _ratingsCubit;
 
-  final List<String> _tabs = ["المنشورات", "المؤهلات", "التقييمات"];
+  final List<String> _tabs = ['posts', 'certificates', 'ratings'];
   int _previousTabIndex = 0;
 
   @override
@@ -178,7 +178,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
                       height: 33.w,
                       child: Column(
                         children: [
-                          Text(tab),
+                          Text(context.tr(tab)),
                           Gap(4.h),
                           Container(width: 75.w, color: Colors.transparent),
                         ],

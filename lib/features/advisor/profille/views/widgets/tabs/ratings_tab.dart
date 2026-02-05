@@ -82,7 +82,7 @@ class _RatingsTabState extends State<RatingsTab>
             Icon(Icons.star, color: AppColors.kWhiteColor, size: 20.w),
             Gap(8.w),
             Text(
-              'إضافة تقييم',
+              context.tr('add_rating'),
               style: Styles.textStyle16Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -128,7 +128,7 @@ class _RatingsTabState extends State<RatingsTab>
                         child: Icon(Icons.close, size: 24.w),
                       ),
                       Text(
-                        'تقييم المستشار',
+                        context.tr('rate_advisor'),
                         style: Styles.textStyle20Meduim.copyWith(
                           color: AppColors.primary500,
                         ),
@@ -159,7 +159,7 @@ class _RatingsTabState extends State<RatingsTab>
                   if (_rating > 0) ...[
                     Gap(12.h),
                     Text(
-                      'تقييمك: $_rating / 5',
+                      '${context.tr('your_rating')}: $_rating / 5',
                       style: Styles.textStyle14.copyWith(
                         color: AppColors.primary500,
                       ),
@@ -170,7 +170,7 @@ class _RatingsTabState extends State<RatingsTab>
                     controller: _reviewController,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      labelText: 'اكتب مراجعتك',
+                      labelText: context.tr('write_your_review'),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.r),
                       ),
@@ -184,12 +184,12 @@ class _RatingsTabState extends State<RatingsTab>
                           ),
                         )
                       : CustomBotton(
-                          title: 'إرسال التقييم',
+                          title: context.tr('send_rating'),
                           onPressed: () async {
                             if (_rating == 0) {
                               AppToast.error(
-                                context, // ⭐ استخدم context الأصلي
-                                'الرجاء اختيار عدد النجوم',
+                                context,
+                                context.tr('please_select_number_of_stars'),
                               );
                               return;
                             }
@@ -243,7 +243,7 @@ class _RatingsTabState extends State<RatingsTab>
           // ⭐ إظهار رسالة النجاح
           AppToast.success(
             context,
-            response['message'] ?? 'تم إرسال التقييم بنجاح',
+            response['message'] ?? context.tr('rate_app_success'),
           );
 
           // ⭐ إغلاق الـ Dialog
@@ -264,12 +264,15 @@ class _RatingsTabState extends State<RatingsTab>
         }
       } else {
         if (mounted) {
-          AppToast.error(context, response['message'] ?? 'فشل إرسال التقييم');
+          AppToast.error(
+            context,
+            response['message'] ?? context.tr('rate_app_error'),
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-        AppToast.error(context, 'حدث خطأ أثناء إرسال التقييم');
+        AppToast.error(context, context.tr('rate_app_error'));
       }
     } finally {
       if (mounted && _isSubmitting) {
@@ -450,7 +453,7 @@ class _RatingsTabState extends State<RatingsTab>
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(16.h),
           Text(
-            'حدث خطأ في تحميل التقييمات',
+            context.tr('rate_app_error'),
             style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
           ),
           Gap(24.h),
@@ -465,7 +468,7 @@ class _RatingsTabState extends State<RatingsTab>
               ),
             ),
             child: Text(
-              'إعادة المحاولة',
+              context.tr('retry'),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -517,7 +520,7 @@ class _RatingsTabState extends State<RatingsTab>
                   ),
                   Gap(8.h),
                   Text(
-                    '${state.totalRatings} تقييم',
+                    '${state.totalRatings} ${context.tr('reviews')}',
                     style: Styles.textStyle14.copyWith(
                       color: AppColors.secondaryText,
                     ),
@@ -571,8 +574,8 @@ class _RatingsTabState extends State<RatingsTab>
                             Gap(12.w),
                             Text(
                               starsBreakdown[i] == 0
-                                  ? 'لا يوجد'
-                                  : '${starsBreakdown[i]} تقييم',
+                                  ? ''
+                                  : '${starsBreakdown[i]} ${context.tr('reviews')}',
                               style: Styles.textStyle12.copyWith(
                                 color: AppColors.primaryText,
                               ),
@@ -629,7 +632,7 @@ class _RatingsTabState extends State<RatingsTab>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          rating.user.name ?? 'مستخدم',
+                          rating.user.name ?? context.tr('user'),
                           style: Styles.textStyle16Bold.copyWith(
                             color: AppColors.primaryText,
                           ),
@@ -717,7 +720,7 @@ class _RatingsTabState extends State<RatingsTab>
                   elevation: 0,
                 ),
                 child: Text(
-                  'تحميل المزيد من التقييمات',
+                  context.tr('load_more'),
                   style: Styles.textStyle14Meduim.copyWith(
                     color: AppColors.kprimaryColor,
                   ),

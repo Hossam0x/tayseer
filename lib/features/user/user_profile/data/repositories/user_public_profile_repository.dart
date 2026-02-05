@@ -121,8 +121,8 @@ class UserPublicProfileRepositoryImpl implements UserPublicProfileRepository {
   }) async {
     try {
       final response = await _apiService.post(
-        endPoint: '/user/send-greeting',
-        data: {"receiverId": receiverId, "message": message},
+        endPoint: '/user/send-regards',
+        data: {"personInteractedWith": receiverId, "text": message},
       );
 
       if (response['success'] == true || response['status'] == 'success') {

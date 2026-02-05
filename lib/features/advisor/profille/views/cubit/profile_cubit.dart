@@ -12,12 +12,54 @@ class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit(this._profileRepository) : super(const ProfileState()) {
     _initializeProfile();
   }
-
   // ═══════════════════════════════════════════════════════════
   // 📌 INITIALIZE PROFILE
   // ═══════════════════════════════════════════════════════════
   Future<void> _initializeProfile() async {
-    await Future.wait([fetchProfile(), fetchPosts()]);
+    await Future.wait([
+      fetchProfile(),
+      fetchPosts(),
+      fetchAnalytics(), // ⭐ جديد: جلب الإحصائيات
+    ]);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 FETCH ANALYTICS
+  // ═══════════════════════════════════════════════════════════
+  Future<void> fetchAnalytics() async {
+    if (state.analyticsState == CubitStates.loading) return;
+
+    emit(state.copyWith(analyticsState: CubitStates.loading));
+
+    final result = await _profileRepository.getAnalytics();
+    if (isClosed) return;
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          analyticsState: CubitStates.failure,
+          analyticsErrorMessage: failure.message,
+        ),
+      ),
+      (analyticsModel) => emit(
+        state.copyWith(
+          analyticsState: CubitStates.success,
+          analytics: analyticsModel,
+          analyticsErrorMessage: null,
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 REFRESH ALL DATA
+  // ═══════════════════════════════════════════════════════════
+  Future<void> refresh() async {
+    await Future.wait([
+      fetchProfile(),
+      fetchPosts(loadMore: false),
+      fetchAnalytics(),
+    ]);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -129,9 +171,6 @@ class ProfileCubit extends Cubit<ProfileState> {
   // ═══════════════════════════════════════════════════════════
   // 📌 REFRESH ALL DATA
   // ═══════════════════════════════════════════════════════════
-  Future<void> refresh() async {
-    await Future.wait([fetchProfile(), fetchPosts(loadMore: false)]);
-  }
 
   // ═══════════════════════════════════════════════════════════
   // 📌 UPDATE PROFILE PICTURE (إذا كان مطلوباً)

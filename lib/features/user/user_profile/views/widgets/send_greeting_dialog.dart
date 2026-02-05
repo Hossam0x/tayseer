@@ -162,9 +162,10 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
     setState(() => _isSending = true);
 
     try {
+      // ⭐ استخدام الـ receiverId من الـ Model
       await widget.cubit.sendGreeting(
-        receiverId: widget.receiverId,
-        message: message,
+        receiverId: widget.receiverId, // ⭐ هذا هو الـ personInteractedWith
+        message: message, // ⭐ هذا هو الـ text
       );
 
       if (mounted) {

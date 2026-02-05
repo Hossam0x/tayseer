@@ -71,8 +71,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                   ),
                 ),
                 Text(
-                  'إبلاغ',
-                  // context.tr(AppStrings.reportUser),
+                  context.tr('report'),
                   style: Styles.textStyle18SemiBold.copyWith(
                     color: AppColors.secondary800,
                   ),
@@ -80,7 +79,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                 Gap(16.h),
                 DropdownButtonFormField<String>(
                   value: selectedReason,
-                  hint: Text('اختر السبب'),
+                  hint: Text(context.tr('select_reason')),
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.r),

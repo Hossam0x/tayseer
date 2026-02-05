@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
@@ -138,13 +139,19 @@ class _MarriageBodyState extends State<MarriageBody> {
                         ),
                         sliver: SliverToBoxAdapter(
                           child: CompatibilitySection(
-                            title: 'التشابه بينكم',
+                            title: context.tr('compatibility_profile'),
                             subtitle: user?.similarity != null
                                 ? '${user!.similarity}%'
                                 : '',
+                            // ✅ التعديل هنا فقط
                             tags:
                                 user?.matchingTags
-                                    ?.map<String>((t) => t.category ?? '')
+                                    ?.where(
+                                      (t) =>
+                                          t.value != null &&
+                                          t.value!.trim().isNotEmpty,
+                                    )
+                                    .map<String>((t) => t.value!)
                                     .toList() ??
                                 [],
                           ),
@@ -332,8 +339,23 @@ class _MarriageBodyState extends State<MarriageBody> {
                           horizontal: 16.w,
                           vertical: 20.h,
                         ),
-                        sliver: const SliverToBoxAdapter(
-                          child: BottomActionsSection(),
+                        sliver: SliverToBoxAdapter(
+                          child: BottomActionsSection(
+                            onBlock: () {
+                              CustomshowDialogWithImage(
+                                context,
+                                bottonText: context.tr("send_report"),
+                                imageUrl: AssetsData.kWoriningImage,
+                                title: context.tr("confirm_report"),
+                                supTitle: context.tr("sup_confirm_report"),
+                                onPressed: () {},
+                                showCancelButton: true,
+                              );
+                            },
+                            onReport: () {
+                              context.pushNamed(AppRouter.kReportReasonsScreen);
+                            },
+                          ),
                         ),
                       ),
 
