@@ -3,14 +3,14 @@ import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageView extends StatelessWidget {
-  const MarriageView({super.key});
-
+  const MarriageView({super.key, this.personId});
+  final String? personId;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocProvider(
         create: (context) => MarriageCubit(),
-        child: const MarriageBody(),
+        child: MarriageBody(personId: personId),
       ),
     );
   }

@@ -17,8 +17,8 @@ import 'package:tayseer/features/user/marriage/view/widget/life_event_section.da
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 
 class MarriageBody extends StatefulWidget {
-  const MarriageBody({super.key});
-
+  const MarriageBody({super.key, this.personId});
+  final String? personId;
   @override
   State<MarriageBody> createState() => _MarriageBodyState();
 }
@@ -81,7 +81,11 @@ class _MarriageBodyState extends State<MarriageBody> {
           );
         }
 
-        final users = state.profile?.data?.users ?? [];
+        final allUsers = state.profile?.data?.users ?? [];
+        // If a personId was passed to this widget, filter to that user only.
+        final users = widget.personId != null
+            ? allUsers.where((p) => p.user?.id == widget.personId).toList()
+            : allUsers;
         if (users.isEmpty) return Center(child: Text('لا توجد بيانات للعرض'));
 
         // Reset index when profile source changes
@@ -378,11 +382,15 @@ class _MarriageBodyState extends State<MarriageBody> {
                             personId: profile.user?.id ?? '',
                             interactionType: 'like',
                           );
-                          setState(() {
-                            _currentIndex = (_currentIndex + 1) >= users.length
-                                ? 0
-                                : (_currentIndex + 1);
-                          });
+                          // If viewing a specific person (personId passed), don't navigate the list
+                          if (widget.personId == null && users.length > 1) {
+                            setState(() {
+                              _currentIndex =
+                                  (_currentIndex + 1) >= users.length
+                                  ? 0
+                                  : (_currentIndex + 1);
+                            });
+                          }
                         },
                         Icons.favorite_outline,
                         AppColors.kprimaryTextColor,
@@ -404,11 +412,14 @@ class _MarriageBodyState extends State<MarriageBody> {
                             personId: profile.user?.id ?? '',
                             interactionType: 'dislike',
                           );
-                          setState(() {
-                            _currentIndex = (_currentIndex + 1) >= users.length
-                                ? 0
-                                : (_currentIndex + 1);
-                          });
+                          if (widget.personId == null && users.length > 1) {
+                            setState(() {
+                              _currentIndex =
+                                  (_currentIndex + 1) >= users.length
+                                  ? 0
+                                  : (_currentIndex + 1);
+                            });
+                          }
                         },
                         Icons.close,
                         Colors.white,

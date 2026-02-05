@@ -115,7 +115,12 @@ class UserPublicProfileBio extends StatelessWidget {
                       height: 40.h,
                       backGroundcolor: AppColors.primary400,
                       title: 'رؤية ملف الزواج',
-                      onPressed: () {},
+                      onPressed: () {
+                        context.pushNamed(
+                          AppRouter.kMarriageView,
+                          arguments: {'personId': profile.id},
+                        );
+                      },
                     ),
                   )
                 : Container(

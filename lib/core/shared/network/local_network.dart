@@ -31,7 +31,7 @@ class CachNetwork {
     if (userTypeString != null && userTypeString.isNotEmpty) {
       try {
         selectedUserType = UserTypeEnum.values.firstWhere(
-              (e) => e.name == userTypeString,
+          (e) => e.name == userTypeString,
         );
         debugPrint('selectedUserType === $selectedUserType');
       } catch (e) {
@@ -42,7 +42,6 @@ class CachNetwork {
       selectedUserType = UserTypeEnum.user;
     }
   }
-
 
   static Future<bool> setData({
     required String key,

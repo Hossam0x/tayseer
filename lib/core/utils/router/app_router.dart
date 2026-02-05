@@ -59,6 +59,7 @@ import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
+import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/marriage_filter/view/marriage_filter_view.dart';
 import 'package:tayseer/features/user/questions/view/add_phone_view.dart';
 import 'package:tayseer/features/user/questions/view/added_images_view.dart';
@@ -160,6 +161,7 @@ abstract class AppRouter {
   static const kOtpPhoneUserQuestion = '/OtpPhoneUserQuestion';
   static const kBlockedContactsSuccessScreen = '/BlockedContactsSuccessScreen';
   static const kMarriageFilterView = '/MarriageFilterView';
+  static const kMarriageView = '/MarriageView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -854,6 +856,13 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => MarriageFilterView(),
+        );
+      case kMarriageView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) =>
+              MarriageView(personId: args?['personId'] as String? ?? ''),
         );
       /////  report screens ///////
       case kReportReasonsScreen:
