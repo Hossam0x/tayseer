@@ -9,6 +9,7 @@ class FollowerModel extends Equatable {
   final bool isFollowing; // ← سنستخدم isFollowedByMe من الـ response
   final bool isVerified;
   final String userType; // ← Advisor أو User
+  final bool isMe;
 
   const FollowerModel({
     required this.id,
@@ -18,6 +19,7 @@ class FollowerModel extends Equatable {
     required this.isFollowing,
     this.isVerified = false,
     required this.userType,
+    required this.isMe,
   });
 
   factory FollowerModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class FollowerModel extends Equatable {
       isFollowing: json['isFollowedByMe'] ?? json['isFollowing'] ?? false,
       isVerified: json['isVerified'] ?? json['verified'] ?? false,
       userType: json['userType'] ?? 'User',
+      isMe: json['isMe'] ?? false,
     );
   }
 
@@ -40,6 +43,7 @@ class FollowerModel extends Equatable {
     bool? isFollowing,
     bool? isVerified,
     String? userType,
+    bool? isMe,
   }) {
     return FollowerModel(
       id: id ?? this.id,
@@ -49,6 +53,7 @@ class FollowerModel extends Equatable {
       isFollowing: isFollowing ?? this.isFollowing,
       isVerified: isVerified ?? this.isVerified,
       userType: userType ?? this.userType,
+      isMe: isMe ?? this.isMe,
     );
   }
 
@@ -64,5 +69,6 @@ class FollowerModel extends Equatable {
     isFollowing,
     isVerified,
     userType,
+    isMe,
   ];
 }
