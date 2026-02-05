@@ -1,17 +1,14 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
-// import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/empty_Exploration.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_file.dart';
-import 'package:tayseer/features/user/user_profile/views/marriage_profile_page.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';

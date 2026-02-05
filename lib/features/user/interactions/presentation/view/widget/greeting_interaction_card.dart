@@ -1,6 +1,4 @@
 import 'dart:ui';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
-import 'package:tayseer/features/user/marriage/view/widget/additional_image.dart';
 import 'package:tayseer/my_import.dart';
 
 import '../../../data/Model/Iinteraction_usermodel .dart';
