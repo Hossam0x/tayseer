@@ -49,13 +49,13 @@ class ExplorationState extends State<Exploration> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  state.explorationErrorMessage ?? 'حدث خطأ ما',
+                  state.explorationErrorMessage ?? context.tr("error_occurred"),
                   style: Styles.textStyle16,
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 16.h),
                 CustomBotton(
-                  title: 'إعادة المحاولة',
+                  title: context.tr("retry"),
                   onPressed: () {
                     context.read<InteractionsCubit>().fetchExploration(
                       category: "all",
@@ -128,29 +128,26 @@ class ExplorationState extends State<Exploration> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ✅ 1. من ضمن اختياراتك (favoritedMe)
-                if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ??
-                    false)
-                  _buildSection(
-                    title: "الإعجابات من ضمن اختياراتك",
-                    subtitle:
-                        "الأشخاص الذين تم اقتراحهم لك بناءً على اهتماماتك",
-                    data: state.explorationData["من ضمن اختياراتك"]!,
-                    isSubscribed: state.isSubscribed,
-                  ),
-
+              
+                if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ?? false)
+                _buildSection(
+                  title: context.tr("likes_from_your_choices"), // ✅
+                  subtitle: context.tr("suggested_based_on_interests"), // ✅
+                  data: state.explorationData["من ضمن اختياراتك"]!,
+                  isSubscribed: state.isSubscribed,
+                ),
                 if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ??
                     false)
                   SizedBox(height: 24.h),
 
                 // ✅ 2. من خارج اختياراتك (likesFromOutsideChoices)
-                if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ??
-                    false)
-                  _buildSection(
-                    title: "الإعجابات من خارج اختياراتك",
-                    subtitle: "أشخاص خارج نطاق تفضيلاتك المحددة",
-                    data: state.explorationData["من خارج اختياراتك"]!,
-                    isSubscribed: state.isSubscribed,
-                  ),
+if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ?? false)
+  _buildSection(
+    title: context.tr("likes_outside_choices"), // ✅
+    subtitle: context.tr("outside_preferences"), // ✅
+    data: state.explorationData["من خارج اختياراتك"]!,
+    isSubscribed: state.isSubscribed,
+  ),
 
                 if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ??
                     false)
@@ -162,17 +159,13 @@ class ExplorationState extends State<Exploration> {
                         ?.isNotEmpty ??
                     false)
                   _buildSection(
-                    title: "أشخاص يرغبون في التفاعل معك",
-                    subtitle: "مستخدمون أظهروا اهتماماً بملفك الشخصي",
+                    title: context.tr("want_to_interact"),
+                    subtitle: context.tr("showed_interest"),
                     data: state.explorationData["يرغبون في التفاعل معك"]!,
                     isSubscribed: state.isSubscribed,
                   ),
 
-                if (state
-                        .explorationData["يرغبون في التفاعل معك"]
-                        ?.isNotEmpty ??
-                    false)
-                  SizedBox(height: 24.h),
+              
 
                 if (state
                         .explorationData["يرغبون في التفاعل معك"]
@@ -183,9 +176,8 @@ class ExplorationState extends State<Exploration> {
                 if (state.explorationData['الزيارات المحفزة']?.isNotEmpty ??
                     false)
                   _buildSection(
-                    title: "الزيارات المحفزة",
-                    subtitle:
-                        "هؤلاء الأشخاص قاموا بزيارة ملفك الشخصي بعد تحديثه.",
+                    title: context.tr("motivated_visits"),
+                    subtitle: context.tr("visited_after_update"),
                     data: state.explorationData["الزيارات المحفزة"]!,
                     isSubscribed: state.isSubscribed,
                   ),
@@ -206,9 +198,9 @@ class ExplorationState extends State<Exploration> {
                 // ✅ 4. منضم حديثاً (recentlyJoined)
                 if (state.explorationData["منضم حديثاً"]?.isNotEmpty ??
                     false) ...[
-                  Text("منضم حديثاً", style: Styles.textStyle18SemiBold),
+                  Text(context.tr("recently_joined"), style: Styles.textStyle18SemiBold),
                   Text(
-                    "تعرف على الأشخاص المنضمين حديثاً",
+                    context.tr("meet_new_members"),
                     style: Styles.textStyle14.copyWith(
                       fontWeight: FontWeight.w400,
                       color: AppColors.secondary600,
@@ -231,9 +223,9 @@ class ExplorationState extends State<Exploration> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("أرسل تحية", style: Styles.textStyle18SemiBold),
+                      Text(context.tr("send_greeting"), style: Styles.textStyle18SemiBold),
                       Text(
-                        "هؤلاء الأشخاص قد يكون الشخص المناسب لك منهم",
+                        context.tr("might_be_suitable"),
                         style: Styles.textStyle14.copyWith(
                           color: AppColors.secondary600,
                         ),

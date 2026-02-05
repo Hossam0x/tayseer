@@ -135,13 +135,13 @@ class HistorypageState extends State<Historypage> { // ✅ جعل الكلاس �
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  state.historyErrorMessage ?? 'حدث خطأ ما',
+                  state.historyErrorMessage ?? context.tr("error_occurred"), // ✅ ترجمة
                   style: Styles.textStyle16,
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 16.h),
                 CustomBotton(
-                  title: 'إعادة المحاولة',
+                  title: context.tr("retry"),
                   onPressed: () {
                     context.read<InteractionsCubit>().fetchHistory(
                           filter: widget.selectedFilter,

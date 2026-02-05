@@ -743,6 +743,23 @@
   "confirm_report": "هل تريد ارسال الابلاغ ؟",
   "sup_confirm_report": "لابد من تحري الدقة علي بلاغك حتي لا تضر احد",
   "select_report_option": "حدد الاختيار المناسب اكثر لسبب ابلاغك",
-  "tell_us_more_about_the_reason": "اخبرنا اكثر عن السبب"
+  "tell_us_more_about_the_reason": "اخبرنا اكثر عن السبب",
+  "subscribe_to_see_marriage_history": "اشترك حتي تتمكن من رؤية سجلاتك في الزواج",
+  "subscribe_to_see_history_desc": "لن تتمكن من رؤيتهم الا عند الاشتراك بادر بالاشتراك الان .",
+   "greeting_sent_success": "تم إرسال التحية بنجاح",
+  "user_will_be_notified": "سيتم إشعار {} بتحيتك",
+  "error_occurred": "حدث خطأ ما",
+
+  "likes_from_your_choices": "الإعجابات من ضمن اختياراتك",
+  "suggested_based_on_interests": "الأشخاص الذين تم اقتراحهم لك بناءً على اهتماماتك",
+  "likes_outside_choices": "الإعجابات من خارج اختياراتك",
+  "outside_preferences": "أشخاص خارج نطاق تفضيلاتك المحددة",
+  "want_to_interact": "أشخاص يرغبون في التفاعل معك",
+  "showed_interest": "مستخدمون أظهروا اهتماماً بملفك الشخصي",
+  "motivated_visits": "الزيارات المحفزة",
+  "visited_after_update": "هؤلاء الأشخاص قاموا بزيارة ملفك الشخصي بعد تحديثه.",
+  "meet_new_members": "تعرف على الأشخاص المنضمين حديثاً",
+  "send_greeting": "أرسل تحية",
+  "might_be_suitable": "هؤلاء الأشخاص قد يكون الشخص المناسب لك منهم"
 
 }

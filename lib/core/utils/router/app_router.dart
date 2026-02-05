@@ -56,7 +56,6 @@ import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/marriage_filter/view/marriage_filter_view.dart';
@@ -227,11 +226,6 @@ abstract class AppRouter {
         );
       case kUserLayoutView:
         return SlideLeftRoute(page: UserLayoutView(), routeSettings: settings);
-      case kInteractionFilterView:
-        return SlideLeftRoute(
-          page: const InteractionFilterPage(),
-          routeSettings: settings,
-        );
       case kEditPersonalDataView:
         return SlideLeftRoute(
           page: const EditPersonalDataView(),

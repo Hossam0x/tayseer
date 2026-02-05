@@ -82,7 +82,12 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        AppImage(widget.item.image, fit: BoxFit.cover),
+                        GestureDetector(
+                          
+                          onTap: () {
+                          
+                          },
+                          child: AppImage(widget.item.image, fit: BoxFit.cover)),
 
                         if (shouldBlur)
                           BackdropFilter(

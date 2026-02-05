@@ -63,7 +63,7 @@ class InteractionBodyState extends State<InteractionBody> {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: state.actionMessage ?? 'حدث خطأ ما',
+              text: state.actionMessage ?? context.tr("error_occurred"),
               isSuccess: false,
             ),
           );

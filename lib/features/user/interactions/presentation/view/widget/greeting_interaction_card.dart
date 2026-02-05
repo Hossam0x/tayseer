@@ -34,7 +34,7 @@ class GreetingProfileCard extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: state.actionMessage ?? 'حدث خطأ ما',
+             text: state.actionMessage ?? context.tr('error_occurred'),
               isSuccess: false,
             ),
           );
@@ -175,68 +175,67 @@ class GreetingProfileCard extends StatelessWidget {
   }
 
   // ✅ Success Animation Dialog
-  void _showSuccessAnimation(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.7),
-      builder: (_) {
-        // Auto-dismiss after 3 seconds
-        Future.delayed(const Duration(seconds: 3), () {
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
-          }
-        });
+void _showSuccessAnimation(BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.black.withOpacity(0.7),
+    builder: (_) {
+      // Auto-dismiss after 3 seconds
+      Future.delayed(const Duration(seconds: 3), () {
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+      });
 
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: 300.w,
-              padding: EdgeInsets.all(24.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24.r),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Lottie Animation
-                  SizedBox(
-                    width: 200.w,
-                    height: 200.h,
-                    child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
+      return Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 300.w,
+            padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24.r),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Lottie Animation
+                SizedBox(
+                  width: 200.w,
+                  height: 200.h,
+                  child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
+                ),
+                
+                SizedBox(height: 16.h),
+                
+                // Success Text
+                Text(
+                  context.tr("greeting_sent_success"), // ✅ ترجمة
+                  style: Styles.textStyle18SemiBold.copyWith(
+                    color: AppColors.primary400,
                   ),
-                  
-                  SizedBox(height: 16.h),
-                  
-                  // Success Text
-                  Text(
-                    'تم إرسال التحية بنجاح',
-                    style: Styles.textStyle18SemiBold.copyWith(
-                      color: AppColors.primary400,
-                    ),
-                    textAlign: TextAlign.center,
+                  textAlign: TextAlign.center,
+                ),
+                
+                SizedBox(height: 8.h),
+                
+                Text(
+                  context.tr("user_will_be_notified").replaceAll('{}', item.name), // ✅ ترجمة ديناميكية
+                  style: Styles.textStyle14.copyWith(
+                    color: AppColors.secondary600,
                   ),
-                  
-                  SizedBox(height: 8.h),
-                  
-                  Text(
-                    'سيتم إشعار ${item.name} بتحيتك',
-                    style: Styles.textStyle14.copyWith(
-                      color: AppColors.secondary600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
-        );
-      },
-    );
-  }
-
+        ),
+      );
+    },
+  );
+}
   Widget _buildBadge({required String text, String? icon}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
