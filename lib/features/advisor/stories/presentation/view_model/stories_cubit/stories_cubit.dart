@@ -9,13 +9,25 @@ class StoriesCubit extends Cubit<StoriesState> {
 
   StoriesCubit(this.storiesRepository) : super(const StoriesState());
 
-  Future<void> fetchStories({bool loadMore = false}) async {
+  Future<void> fetchStories({
+    bool loadMore = false,
+    String? advisorId,
+    bool? isSpecial,
+  }) async {
+    // 1. Identify effective parameters
+    final effectiveAdvisorId = advisorId ?? state.advisorId;
+    final effectiveIsSpecial = isSpecial ?? state.isSpecial;
+
     if (loadMore) {
       if (state.isLoadingMore || !state.hasMore) return;
       emit(state.copyWith(isLoadingMore: true));
 
       final nextPage = state.currentPage + 1;
-      final result = await storiesRepository.fetchStories(page: nextPage);
+      final result = await storiesRepository.fetchStories(
+        page: nextPage,
+        advisorId: effectiveAdvisorId,
+        isSpecial: effectiveIsSpecial,
+      );
 
       result.fold(
         (failure) {
@@ -34,6 +46,8 @@ class StoriesCubit extends Cubit<StoriesState> {
               currentPage: nextPage,
               hasMore: newStories.length >= pageSize,
               isLoadingMore: false,
+              advisorId: effectiveAdvisorId,
+              isSpecial: effectiveIsSpecial,
             ),
           );
         },
@@ -44,9 +58,15 @@ class StoriesCubit extends Cubit<StoriesState> {
           storiesState: CubitStates.loading,
           currentPage: 1,
           hasMore: true,
+          advisorId: advisorId, // Overwrite if provided
+          isSpecial: isSpecial, // Overwrite if provided
         ),
       );
-      final result = await storiesRepository.fetchStories(page: 1);
+      final result = await storiesRepository.fetchStories(
+        page: 1,
+        advisorId: effectiveAdvisorId,
+        isSpecial: effectiveIsSpecial,
+      );
       result.fold(
         (failure) {
           emit(
@@ -63,6 +83,8 @@ class StoriesCubit extends Cubit<StoriesState> {
               storiesList: storiesList,
               currentPage: 1,
               hasMore: storiesList.length >= pageSize,
+              advisorId: effectiveAdvisorId,
+              isSpecial: effectiveIsSpecial,
             ),
           );
         },
@@ -145,8 +167,4 @@ class StoriesCubit extends Cubit<StoriesState> {
     // إرسال الطلب للـ backend
     storiesRepository.likeStory(storyId: storyId);
   }
-
-
-
-
 }

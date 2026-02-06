@@ -5,6 +5,8 @@ import 'package:tayseer/my_import.dart';
 abstract class StoriesRepository {
   Future<Either<Failure, List<UserStoriesModel>>> fetchStories({
     required int page,
+    String? advisorId,
+    bool isSpecial = false,
   });
   void markStoryAsViewed({required String storyId});
   void likeStory({required String storyId});

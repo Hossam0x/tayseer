@@ -4,8 +4,9 @@ import 'package:tayseer/my_import.dart' hide Direction;
 
 class StoryDetailsView extends StatefulWidget {
   final UserStoriesModel userStories;
+  final String? heroTag;
 
-  const StoryDetailsView({super.key, required this.userStories});
+  const StoryDetailsView({super.key, required this.userStories, this.heroTag});
 
   @override
   State<StoryDetailsView> createState() => _StoryDetailsViewState();
@@ -237,7 +238,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                 Gap(12.w),
                 // الصورة آخر حاجة (هتظهر في اليمين)
                 Hero(
-                  tag: widget.userStories.userId,
+                  tag: widget.heroTag ?? widget.userStories.userId,
                   child: Container(
                     width: 45.w,
                     height: 45.w,

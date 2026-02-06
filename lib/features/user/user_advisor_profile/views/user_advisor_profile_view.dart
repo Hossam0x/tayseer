@@ -4,6 +4,8 @@ import 'package:tayseer/features/user/user_advisor_profile/views/widgets/navigat
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_bio_information.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_profile_header.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_profile_tabs_section.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserAdvisorProfileView extends StatelessWidget {
@@ -20,15 +22,29 @@ class UserAdvisorProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: AdvisorBackground(
-        child: BlocProvider<UserAdvisorProfileCubit>(
-          create: (_) => UserAdvisorProfileCubit(
-            getIt<UserAdvisorProfileRepository>(),
-            advisorId,
-          ),
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<UserAdvisorProfileCubit>(
+              create: (_) => UserAdvisorProfileCubit(
+                getIt<UserAdvisorProfileRepository>(),
+                advisorId,
+              ),
+            ),
+            BlocProvider<StoriesCubit>(
+              create: (_) =>
+                  getIt<StoriesCubit>()
+                    ..fetchStories(isSpecial: true, advisorId: advisorId),
+            ),
+          ],
           child: Stack(
             children: [
               // Main scrollable content
-              SafeArea(child: _UserProfileContent(advisorName: advisorName)),
+              SafeArea(
+                child: _UserProfileContent(
+                  advisorName: advisorName,
+                  advisorId: advisorId,
+                ),
+              ),
 
               Positioned(
                 top: 40.h,
@@ -54,13 +70,20 @@ class UserAdvisorProfileView extends StatelessWidget {
 
 class _UserProfileContent extends StatelessWidget {
   final String? advisorName;
+  final String advisorId;
 
-  const _UserProfileContent({this.advisorName});
+  const _UserProfileContent({this.advisorName, required this.advisorId});
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator.adaptive(
-      onRefresh: () => context.read<UserAdvisorProfileCubit>().refresh(),
+      onRefresh: () => Future.wait([
+        context.read<UserAdvisorProfileCubit>().refresh(),
+        context.read<StoriesCubit>().fetchStories(
+          isSpecial: true,
+          advisorId: advisorId,
+        ),
+      ]),
       color: AppColors.kprimaryColor,
       backgroundColor: AppColors.kWhiteColor,
       displacement: 40.h,
@@ -76,13 +99,14 @@ class _UserProfileContent extends StatelessWidget {
           // Bio Information
           const UserAdvisorBioInformation(),
 
+          // Stories Section
+          ProfileStoriesSection(advisorId: advisorId),
+
           // Spacing
           SliverToBoxAdapter(child: Gap(20.h)),
 
           // Posts Tabs Section
-          UserAdvisorProfileTabsSection(
-            advisorId: context.read<UserAdvisorProfileCubit>().advisorId,
-          ),
+          UserAdvisorProfileTabsSection(advisorId: advisorId),
 
           // Bottom padding
           SliverToBoxAdapter(child: Gap(100.h)),

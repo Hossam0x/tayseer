@@ -59,16 +59,25 @@ class UserStoriesModel extends Equatable {
   });
 
   factory UserStoriesModel.fromJson(Map<String, dynamic> json) {
+    String userIdStr = "";
+    if (json['userId'] is String) {
+      userIdStr = json['userId'];
+    } else if (json['userId'] is Map) {
+      userIdStr = json['userId']['_id'] ?? "";
+    }
+
     return UserStoriesModel(
-      userId: json['userId'],
-      name: json['name'],
-      image: json['image'],
-      isFollowed: json['isFollowed'],
-      isViewedByMe: json['isViewedByMe'],
-      allViewed: json['allViewed'],
-      storiesCount: json['storiesCount'],
+      userId: userIdStr,
+      name: json['name'] ?? "",
+      image: json['image'] ?? "",
+      isFollowed: json['isFollowed'] ?? false,
+      isViewedByMe: json['isViewedByMe'] ?? false,
+      allViewed: json['allViewed'] ?? false,
+      storiesCount: json['storiesCount'] ?? 0,
       stories: List<StoryModel>.from(
-        json['stories'].map((x) => StoryModel.fromJson(x)),
+        (json['stories'] as List? ?? []).map(
+          (x) => StoryModel.fromJson(x as Map<String, dynamic>),
+        ),
       ),
     );
   }
@@ -110,6 +119,7 @@ class UserStoriesModel extends Equatable {
 
 class StoryModel extends Equatable {
   final String id;
+  final String userId;
   final String image;
   final bool isMine;
   final bool isSpecial;
@@ -121,6 +131,7 @@ class StoryModel extends Equatable {
 
   const StoryModel({
     required this.id,
+    required this.userId,
     required this.image,
     required this.isMine,
     required this.isSpecial,
@@ -132,23 +143,36 @@ class StoryModel extends Equatable {
   });
 
   factory StoryModel.fromJson(Map<String, dynamic> json) {
+    String userIdStr = "";
+    if (json['userId'] is String) {
+      userIdStr = json['userId'];
+    } else if (json['userId'] is Map) {
+      userIdStr = json['userId']['_id'] ?? "";
+    }
+
     return StoryModel(
-      id: json['id'],
+      id: json['id']?.toString() ?? "",
+      userId: userIdStr,
       image:
-          json['image'] ??
+          json['image']?.toString() ??
           "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80",
       isMine: json['isMine'] ?? false,
       isSpecial: json['isSpecial'] ?? false,
       viewsCount: json['viewsCount'] ?? 0,
       likesCount: json['likesCount'] ?? 0,
       isLiked: json['isLiked'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
     );
   }
 
   StoryModel copyWith({
     String? id,
+    String? userId,
     String? image,
     bool? isMine,
     bool? isSpecial,
@@ -160,6 +184,7 @@ class StoryModel extends Equatable {
   }) {
     return StoryModel(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       image: image ?? this.image,
       isMine: isMine ?? this.isMine,
       isSpecial: isSpecial ?? this.isSpecial,
@@ -174,6 +199,7 @@ class StoryModel extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    userId,
     image,
     isMine,
     isSpecial,
