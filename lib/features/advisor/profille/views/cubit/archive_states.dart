@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
+import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
 import 'package:tayseer/core/models/post_model.dart';
 
@@ -204,7 +205,7 @@ class ArchivedPostsState extends Equatable {
 // ============================================
 class ArchivedStoriesState extends Equatable {
   final CubitStates state;
-  final List<ArchiveStoryModel> stories;
+  final List<UserStoriesModel> stories;
   final String? errorMessage;
   final int currentPage;
   final bool hasMore;
@@ -223,7 +224,7 @@ class ArchivedStoriesState extends Equatable {
 
   ArchivedStoriesState copyWith({
     CubitStates? state,
-    List<ArchiveStoryModel>? stories,
+    List<UserStoriesModel>? stories,
     String? errorMessage,
     int? currentPage,
     bool? hasMore,

@@ -126,4 +126,66 @@ class StoriesRepositoryImpl implements StoriesRepository {
       return left(ServerFailure('حدث خطأ غير متوقع: $error'));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> toggleArchiveStory({
+    required String storyId,
+    required bool isArchive,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/stories/toggle-archive/$storyId',
+        query: {'action': isArchive ? 'add' : 'remove'},
+      );
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل أرشفة القصة'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteStory({required String storyId}) async {
+    try {
+      final response = await apiService.delete(
+        endPoint: '/stories/delete/$storyId',
+      );
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل حذف القصة'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> makeStorySpecial({
+    required String storyId,
+  }) async {
+    try {
+      final response = await apiService.patch(
+        endPoint: '/stories/make-special/$storyId',
+      );
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(
+          ServerFailure(response['message'] ?? 'فشل تمييز القصة كـ Special'),
+        );
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

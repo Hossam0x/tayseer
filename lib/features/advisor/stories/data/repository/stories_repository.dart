@@ -11,4 +11,10 @@ abstract class StoriesRepository {
   void markStoryAsViewed({required String storyId});
   void likeStory({required String storyId});
   Future<Either<Failure, void>> createStories({required XFile image});
+  Future<Either<Failure, void>> toggleArchiveStory({
+    required String storyId,
+    required bool isArchive,
+  });
+  Future<Either<Failure, void>> deleteStory({required String storyId});
+  Future<Either<Failure, void>> makeStorySpecial({required String storyId});
 }

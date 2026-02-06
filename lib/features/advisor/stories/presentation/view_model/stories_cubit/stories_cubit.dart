@@ -167,4 +167,121 @@ class StoriesCubit extends Cubit<StoriesState> {
     // إرسال الطلب للـ backend
     storiesRepository.likeStory(storyId: storyId);
   }
+
+  Future<void> deleteStory({
+    required String storyId,
+    required String userId,
+  }) async {
+    final result = await storiesRepository.deleteStory(storyId: storyId);
+
+    result.fold(
+      (failure) {
+        emit(state.copyWith(storiesMessage: failure.message));
+      },
+      (_) {
+        // إزالة القصة محلياً
+        final userStoryIndex = state.storiesList.indexWhere(
+          (us) => us.userId == userId,
+        );
+        if (userStoryIndex == -1) return;
+
+        final userStory = state.storiesList[userStoryIndex];
+        final updatedStories = userStory.stories
+            .where((s) => s.id != storyId)
+            .toList();
+
+        final updatedList = List<UserStoriesModel>.from(state.storiesList);
+        if (updatedStories.isEmpty) {
+          updatedList.removeAt(userStoryIndex);
+        } else {
+          updatedList[userStoryIndex] = userStory.copyWith(
+            stories: updatedStories,
+            storiesCount: updatedStories.length,
+          );
+        }
+
+        emit(state.copyWith(storiesList: updatedList));
+      },
+    );
+  }
+
+  Future<void> toggleArchiveStory({
+    required String storyId,
+    required String userId,
+    required bool isArchive,
+  }) async {
+    final result = await storiesRepository.toggleArchiveStory(
+      storyId: storyId,
+      isArchive: isArchive,
+    );
+
+    result.fold(
+      (failure) {
+        emit(state.copyWith(storiesMessage: failure.message));
+      },
+      (_) {
+        // في الـ Home/Profile غالباً بنشيلها لو اتعملها أرشفة (أو بنحدث حالتها)
+        // بس العميل طلب إننا نشيلها لو هي في الـ Archive (unarchive)
+        // هنا المنطق العام للهوم والبروفايل
+        if (isArchive) {
+          // لو اتعملها أرشفة من الهوم، ممكن نشيلها من القائمة المعروضة حالياً
+          final userStoryIndex = state.storiesList.indexWhere(
+            (us) => us.userId == userId,
+          );
+          if (userStoryIndex == -1) return;
+
+          final userStory = state.storiesList[userStoryIndex];
+          final updatedStories = userStory.stories
+              .where((s) => s.id != storyId)
+              .toList();
+
+          final updatedList = List<UserStoriesModel>.from(state.storiesList);
+          if (updatedStories.isEmpty) {
+            updatedList.removeAt(userStoryIndex);
+          } else {
+            updatedList[userStoryIndex] = userStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
+            );
+          }
+          emit(state.copyWith(storiesList: updatedList));
+        }
+      },
+    );
+  }
+
+  Future<void> makeStorySpecial({
+    required String storyId,
+    required String userId,
+  }) async {
+    final result = await storiesRepository.makeStorySpecial(storyId: storyId);
+
+    result.fold(
+      (failure) {
+        emit(state.copyWith(storiesMessage: failure.message));
+      },
+      (_) {
+        final userStoryIndex = state.storiesList.indexWhere(
+          (us) => us.userId == userId,
+        );
+        if (userStoryIndex == -1) return;
+
+        final userStory = state.storiesList[userStoryIndex];
+        final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
+        if (storyIndex == -1) return;
+
+        final updatedStories = List<StoryModel>.from(userStory.stories);
+        updatedStories[storyIndex] = updatedStories[storyIndex].copyWith(
+          isSpecial: true,
+        );
+
+        final updatedList = List<UserStoriesModel>.from(state.storiesList);
+        updatedList[userStoryIndex] = userStory.copyWith(
+          stories: updatedStories,
+        );
+
+        emit(state.copyWith(storiesList: updatedList));
+      },
+    );
+  }
 }
