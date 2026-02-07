@@ -286,10 +286,10 @@ class StoriesTabView extends StatelessWidget {
 
           // Date Badge
           Positioned(
-            top: 20.h,
-            right: 20.w,
+            top: 15.h,
+            right: 15.w,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14.r),
@@ -302,18 +302,18 @@ class StoriesTabView extends StatelessWidget {
                 ],
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     date.day.toString(),
                     style: Styles.textStyle16Meduim.copyWith(
-                      color: AppColors.secondary950,
+                      color: AppColors.blackColor,
                     ),
                   ),
-                  Gap(2.h),
                   Text(
                     _getMonthName(date.month),
-                    style: Styles.textStyle12.copyWith(color: AppColors.gray2),
+                    style: Styles.textStyle12.copyWith(
+                      color: AppColors.blackColor,
+                    ),
                   ),
                 ],
               ),
@@ -321,46 +321,46 @@ class StoriesTabView extends StatelessWidget {
           ),
 
           // Special Badge
-          if (story.isSpecial)
-            Positioned(
-              top: 20.h,
-              left: 20.w,
-              child: Container(
-                padding: EdgeInsets.all(6.w),
-                decoration: BoxDecoration(
-                  color: AppColors.kprimaryColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(Icons.star, color: Colors.white, size: 16.sp),
-              ),
-            ),
+          // if (story.isSpecial)
+          //   Positioned(
+          //     top: 20.h,
+          //     left: 20.w,
+          //     child: Container(
+          //       padding: EdgeInsets.all(6.w),
+          //       decoration: BoxDecoration(
+          //         color: AppColors.kprimaryColor,
+          //         shape: BoxShape.circle,
+          //         boxShadow: [
+          //           BoxShadow(
+          //             color: Colors.black.withOpacity(0.2),
+          //             blurRadius: 4,
+          //             offset: const Offset(0, 2),
+          //           ),
+          //         ],
+          //       ),
+          //       child: Icon(Icons.star, color: Colors.white, size: 16.sp),
+          //     ),
+          //   ),
 
           // Like Icon
-          Positioned(
-            bottom: 15.h,
-            left: 15.w,
-            child: Row(
-              children: [
-                Icon(
-                  story.isLiked ? Icons.favorite : Icons.favorite_border,
-                  color: story.isLiked ? Colors.red : Colors.white,
-                  size: 18.sp,
-                ),
-                Gap(4.w),
-                Text(
-                  '${story.likesCount}',
-                  style: Styles.textStyle12.copyWith(color: Colors.white),
-                ),
-              ],
-            ),
-          ),
+          // Positioned(
+          //   bottom: 15.h,
+          //   left: 15.w,
+          //   child: Row(
+          //     children: [
+          //       Icon(
+          //         story.isLiked ? Icons.favorite : Icons.favorite_border,
+          //         color: story.isLiked ? Colors.red : Colors.white,
+          //         size: 18.sp,
+          //       ),
+          //       Gap(4.w),
+          //       Text(
+          //         '${story.likesCount}',
+          //         style: Styles.textStyle12.copyWith(color: Colors.white),
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );

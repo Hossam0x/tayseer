@@ -53,14 +53,18 @@ class StoriesRepositoryImpl implements StoriesRepository {
 
           final List<UserStoriesModel> userStoriesList = [];
           grouped.forEach((userId, stories) {
+            // نحاول نأخذ الاسم والصورة من بيانات الـ Story لو متاحة
+            // أو سيعتمد التطبيق على الصور الافتراضية
             userStoriesList.add(
               UserStoriesModel(
                 userId: userId,
-                name: "", // الباك مش باعت الاسم في الـ list
-                image: "", // الباك مش باعت الصورة في الـ list
+                name: stories.isNotEmpty
+                    ? (stories.first.isMine ? "قصتي" : "")
+                    : "",
+                image: stories.isNotEmpty ? stories.first.image : "",
                 isFollowed: false,
-                isViewedByMe: stories.every((s) => s.viewsCount > 0),
-                allViewed: stories.every((s) => s.viewsCount > 0),
+                isViewedByMe: stories.any((s) => s.isViewed),
+                allViewed: stories.every((s) => s.isViewed),
                 storiesCount: stories.length,
                 stories: stories,
               ),
@@ -102,13 +106,44 @@ class StoriesRepositoryImpl implements StoriesRepository {
   }
 
   @override
-  Future<Either<Failure, void>> createStories({required XFile image}) async {
+  Future<Either<Failure, void>> createStories({
+    String? content,
+    List<File>? images,
+    List<XFile>? videos,
+  }) async {
     try {
+      final List<MultipartFile> uploadedImages = [];
+      if (images != null) {
+        for (final file in images) {
+          final filename = file.path.split(Platform.pathSeparator).isNotEmpty
+              ? file.path.split(Platform.pathSeparator).last
+              : (file.uri.pathSegments.isNotEmpty
+                    ? file.uri.pathSegments.last
+                    : 'file');
+          uploadedImages.add(
+            await MultipartFile.fromFile(file.path, filename: filename),
+          );
+        }
+      }
+
+      final List<MultipartFile> uploadedVideos = [];
+      if (videos != null) {
+        for (final video in videos) {
+          uploadedVideos.add(await uploadVideoToApi(video));
+        }
+      }
+
+      final data = <String, dynamic>{
+        if (content != null) 'content': content,
+        if (uploadedImages.isNotEmpty) 'images': uploadedImages,
+        if (uploadedVideos.isNotEmpty) 'videos': uploadedVideos,
+      };
+
       final response = await apiService.post(
         endPoint: '/stories/create',
         isFromData: true,
-
-        data: {'images': await uploadImageToApi(image)},
+        isAuth: true,
+        data: data,
       );
 
       final success = response['success'] ?? false;
@@ -116,7 +151,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
       if (success) {
         return right(null);
       } else {
-        return left(ServerFailure(response['message'] ?? 'فشل إنشاء المنشور'));
+        return left(ServerFailure(response['message'] ?? 'فشل إنشاء القصة'));
       }
     } on DioException catch (error) {
       final message =

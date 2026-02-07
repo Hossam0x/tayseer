@@ -150,15 +150,19 @@ class StoryModel extends Equatable {
       userIdStr = json['userId']['_id'] ?? "";
     }
 
+    // Try multiple ID fields because the backend might be inconsistent
+    final storyId = json['id']?.toString() ?? json['_id']?.toString() ?? "";
+
     return StoryModel(
-      id: json['id']?.toString() ?? "",
+      id: storyId,
       userId: userIdStr,
       image:
           json['image']?.toString() ??
           "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80",
       isMine: json['isMine'] ?? false,
       isSpecial: json['isSpecial'] ?? false,
-      viewsCount: json['viewsCount'] ?? 0,
+      // If backend doesn't send viewsCount, we might have an isViewed field
+      viewsCount: json['viewsCount'] ?? (json['isViewed'] == true ? 1 : 0),
       likesCount: json['likesCount'] ?? 0,
       isLiked: json['isLiked'] ?? false,
       createdAt: json['createdAt'] != null
@@ -169,6 +173,8 @@ class StoryModel extends Equatable {
           : DateTime.now(),
     );
   }
+
+  bool get isViewed => viewsCount > 0;
 
   StoryModel copyWith({
     String? id,

@@ -1,4 +1,3 @@
-import 'package:tayseer/core/utils/helper/picker_helper.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
@@ -8,6 +7,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/add_story_view.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key});
@@ -134,22 +134,11 @@ class ProfileHeader extends StatelessWidget {
         children: [
           // Profile picture
           GestureDetector(
-            onTap: () async {
-              final picker = MediaPickerController(
-                config: PickerConfig(
-                  allowMultiple: false,
-                  maxCount: 1,
-                  requestType: RequestType.image,
-                ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddStoryView()),
               );
-              final SelectedMedia? picked = await picker.pickFromCamera();
-              if (picked != null) {
-                if (picked.type == AssetType.image) {
-                  // cubit.addCapturedImage(picked.file);
-                } else if (picked.type == AssetType.video) {
-                  // cubit.addCapturedVideo(XFile(picked.file.path));
-                }
-              }
             },
             child: Stack(
               children: [

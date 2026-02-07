@@ -93,43 +93,63 @@ class StoriesCubit extends Cubit<StoriesState> {
   }
 
   void markStoryAsViewed({required String storyId, required String userId}) {
-    // إيجاد index بدلاً من map على القائمة كلها
-    final userStoryIndex = state.storiesList.indexWhere(
+    debugPrint(
+      "StoriesCubit: Attempting to mark story $storyId for user $userId as viewed",
+    );
+
+    final currentList = state.storiesList;
+    final userStoryIndex = currentList.indexWhere(
       (userStory) => userStory.userId == userId,
     );
 
-    if (userStoryIndex == -1) return;
+    if (userStoryIndex == -1) {
+      debugPrint(
+        "StoriesCubit: User $userId not found in storiesList. Available IDs: ${currentList.map((e) => e.userId).toList()}",
+      );
+      return;
+    }
 
-    final userStory = state.storiesList[userStoryIndex];
+    final userStory = currentList[userStoryIndex];
     final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
 
-    if (storyIndex == -1) return;
+    if (storyIndex == -1) {
+      debugPrint(
+        "StoriesCubit: Story $storyId not found for user $userId. Available story IDs: ${userStory.stories.map((e) => e.id).toList()}",
+      );
+      return;
+    }
 
     final story = userStory.stories[storyIndex];
 
-    // تحديث القصة المحددة فقط
-    final updatedStories = List<StoryModel>.from(userStory.stories);
+    // Check if this is the last story
+    bool isLastStory = storyIndex == userStory.stories.length - 1;
+
+    // Build updated stories
+    final List<StoryModel> updatedStories = List.from(userStory.stories);
     updatedStories[storyIndex] = story.copyWith(
-      viewsCount: story.viewsCount + 1,
+      viewsCount: (story.viewsCount + 1),
     );
 
-    // التحقق إذا تمت مشاهدة جميع القصص
-    final allViewed = updatedStories.every((s) => s.viewsCount > 0);
+    // Determine allViewed
+    final bool allViewedLocally =
+        isLastStory || updatedStories.every((s) => s.viewsCount > 0);
 
-    // تحديث userStory فقط
+    debugPrint(
+      "StoriesCubit: Mark Successful. isLastStory: $isLastStory, allViewed will be: $allViewedLocally",
+    );
+
     final updatedUserStory = userStory.copyWith(
       stories: updatedStories,
-      allViewed: allViewed,
+      allViewed: allViewedLocally,
       isViewedByMe: true,
     );
 
-    // تحديث القائمة الرئيسية - فقط العنصر المتغير
-    final updatedList = List<UserStoriesModel>.from(state.storiesList);
+    final List<UserStoriesModel> updatedList = List.from(currentList);
     updatedList[userStoryIndex] = updatedUserStory;
 
     emit(state.copyWith(storiesList: updatedList));
 
-    // إرسال الطلب للـ backend
+    // call API
     storiesRepository.markStoryAsViewed(storyId: storyId);
   }
 
@@ -281,6 +301,35 @@ class StoriesCubit extends Cubit<StoriesState> {
         );
 
         emit(state.copyWith(storiesList: updatedList));
+      },
+    );
+  }
+
+  Future<void> createStory({
+    String? content,
+    List<File>? images,
+    List<XFile>? videos,
+  }) async {
+    emit(state.copyWith(createStoryState: CubitStates.loading));
+    final result = await storiesRepository.createStories(
+      content: content,
+      images: images,
+      videos: videos,
+    );
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            createStoryState: CubitStates.failure,
+            createStoryMessage: failure.message,
+          ),
+        );
+      },
+      (_) {
+        emit(state.copyWith(createStoryState: CubitStates.success));
+        // Refresh stories
+        fetchStories();
       },
     );
   }

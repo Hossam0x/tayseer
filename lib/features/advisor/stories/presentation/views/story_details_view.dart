@@ -59,8 +59,10 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
   void _markCurrentStoryAsViewed() {
     if (_currentStoryIndex < widget.userStories.stories.length) {
       final currentStory = widget.userStories.stories[_currentStoryIndex];
-      // Only mark as viewed if it's not the owner viewing their own story
-      if (!currentStory.isMine) {
+      // Note: We removed the !isMine check so the user can see their own border update locally.
+      if (widget.isArchive) {
+        // Archived stories view marking logic if needed
+      } else {
         context.read<StoriesCubit>().markStoryAsViewed(
           storyId: currentStory.id,
           userId: widget.userStories.userId,
