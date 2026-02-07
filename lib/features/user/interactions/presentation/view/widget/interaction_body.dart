@@ -21,6 +21,7 @@ class InteractionBodyState extends State<InteractionBody> {
   String selectedFilter = "نال إعجابك";
 
   final GlobalKey<ExplorationState> _explorationKey = GlobalKey<ExplorationState>();
+  final GlobalKey<HistorypageState> _historyKey = GlobalKey<HistorypageState>(); // ✅ Key للـ History
   
   // ✅ ScrollController للصفحة بالكامل
   final ScrollController _mainScrollController = ScrollController();
@@ -62,7 +63,7 @@ class InteractionBodyState extends State<InteractionBody> {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: state.actionMessage ?? 'حدث خطأ ما',
+              text: state.actionMessage ?? context.tr("error_occurred"),
               isSuccess: false,
             ),
           );
@@ -91,66 +92,62 @@ class InteractionBodyState extends State<InteractionBody> {
     );
   }
 
-  Widget _buildExplorationWithHeader() {
-    return BlocBuilder<InteractionsCubit, InteractionsState>(
-      builder: (context, state) {
-        return Stack(
-          children: [
-            // ✅ الـ scroll الرئيسي للصفحة كلها
-            SingleChildScrollView(
-              controller: _mainScrollController,
-              padding: EdgeInsets.only(
-                bottom: state.isSubscribed ? 0 : 140.h,
-              ),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(right: 10.w),
-                    child: DefaultAppBar(
-                      title: "التفاعلات",
-                      leadingWidget: GestureDetector(
-                        onTap: () {
-                          context.pushNamed(AppRouter.kMarriageFilterView);
-                        },
-                        child: SvgPicture.asset(
-                          AssetsData.kfilterIcon,
-                          width: 22.w,
-                          height: 22.h,
-                          color: AppColors.secondary600,
-                        ),
-                      ),
+Widget _buildExplorationWithHeader() {
+  return BlocBuilder<InteractionsCubit, InteractionsState>(
+    builder: (context, state) {
+      return Stack(
+        children: [
+          Column(
+            children: [
+
+              Padding(
+                padding: EdgeInsets.only(right: 10.w),
+                child: DefaultAppBar(
+                  title:context.tr("interactions"), // ✅ ترجمة
+                  leadingWidget: GestureDetector(
+                    onTap: () {
+                      context.pushNamed(AppRouter.kMarriageFilterView);
+                    },
+                    child: SvgPicture.asset(
+                      AssetsData.kfilterIcon,
+                      width: 22.w,
+                      height: 22.h,
+                      color: AppColors.secondary600,
                     ),
                   ),
-                  SizedBox(height: 10.h),
-
-                  ContentSwitcher(
-                    selectedOption: selectedTab,
-                    options: const ["استكشاف  ", " السجل "],
-                    onOptionSelected: (String selectedOption) {
-                      setState(() {
-                        selectedTab = selectedOption.trim();
-                        _currentIndex = selectedTab == "استكشاف" ? 0 : 1;
-                      });
-
-                      if (selectedTab == "استكشاف") {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          handleTabReselect();
-                        });
-                      }
-                    },
-                  ),
-
-                  // ✅ الـ Exploration بدون ScrollController خاص بيه
-                  Exploration(key: _explorationKey),
-                ],
+                ),
               ),
-            ),
-            if (!state.isSubscribed) const SubscriptionPromptOverlay(),
-          ],
-        );
-      },
-    );
-  }
+
+              SizedBox(height: 10.h),
+
+              ContentSwitcher(
+                selectedOption: selectedTab,
+                options: const ["استكشاف  ", " السجل "],
+                onOptionSelected: (String selectedOption) {
+                  setState(() {
+                    selectedTab = selectedOption.trim();
+                    _currentIndex = selectedTab == "استكشاف" ? 0 : 1;
+                  });
+                },
+              ),
+              SizedBox(height: 10.h),
+
+              // ✅ هنا نخلي Exploration يتمدد وياخد باقي الشاشة
+              Expanded(
+                child: Exploration(
+                  key: _explorationKey,
+                  mainScrollController: _mainScrollController, // ✅ تمرير الـ ScrollController
+                ),
+              ),
+            ],
+          ),
+
+          if (!state.isSubscribed) const SubscriptionPromptOverlay(),
+        ],
+      );
+    },
+  );
+}
 
   Widget _buildHistoryWithHeader() {
     return Column(
@@ -158,7 +155,7 @@ class InteractionBodyState extends State<InteractionBody> {
         Padding(
           padding: EdgeInsets.only(right: 10.w),
           child: DefaultAppBar(
-            title: "التفاعلات",
+            title: context.tr("interactions"), 
             leadingWidget: GestureDetector(
               onTap: () {
               context.pushNamed(AppRouter.kMarriageFilterView);
@@ -196,12 +193,19 @@ class InteractionBodyState extends State<InteractionBody> {
             setState(() {
               selectedFilter = filter;
             });
+            
+            // ✅ scroll to top عند تغيير الفلتر - بعد بناء الـ widget بالكامل
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                _historyKey.currentState?.scrollToTop();
+              });
+            });
           },
         ),
 
         Expanded(
           child: Historypage(
-            key: ValueKey(selectedFilter),
+            key: _historyKey, // ✅ استخدام GlobalKey بدل ValueKey
             selectedFilter: selectedFilter,
           ),
         ),

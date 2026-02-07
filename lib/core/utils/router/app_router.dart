@@ -4,6 +4,7 @@ import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/screens/report_reasons_screen.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
@@ -55,9 +56,9 @@ import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/interaction_filter_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interactionSubscriptionView.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
+import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/marriage_filter/view/marriage_filter_view.dart';
 import 'package:tayseer/features/user/questions/view/add_phone_view.dart';
 import 'package:tayseer/features/user/questions/view/added_images_view.dart';
@@ -159,6 +160,7 @@ abstract class AppRouter {
   static const kOtpPhoneUserQuestion = '/OtpPhoneUserQuestion';
   static const kBlockedContactsSuccessScreen = '/BlockedContactsSuccessScreen';
   static const kMarriageFilterView = '/MarriageFilterView';
+  static const kMarriageView = '/MarriageView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -206,7 +208,8 @@ abstract class AppRouter {
   static const kinteractionSubscriptionView = '/interactionSubscriptionView';
   static const kUserArchiveChatsView = '/user-archive-chats';
   static const kUserFollowingsView = '/userFollowingsView';
-
+  ///// report screens /////
+  static const kReportReasonsScreen = '/ReportReasonsScreen';
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
   //     return kOnBoardingScreen;
@@ -225,11 +228,6 @@ abstract class AppRouter {
         );
       case kUserLayoutView:
         return SlideLeftRoute(page: UserLayoutView(), routeSettings: settings);
-      case kInteractionFilterView:
-        return SlideLeftRoute(
-          page: const InteractionFilterPage(),
-          routeSettings: settings,
-        );
       case kEditPersonalDataView:
         return SlideLeftRoute(
           page: const EditPersonalDataView(),
@@ -853,7 +851,19 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => MarriageFilterView(),
         );
-
+      case kMarriageView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) =>
+              MarriageView(personId: args?['personId'] as String? ?? ''),
+        );
+      /////  report screens ///////
+      case kReportReasonsScreen:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ReportReasonsScreen(),
+        );
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;
       //   return PageRouteBuilder(

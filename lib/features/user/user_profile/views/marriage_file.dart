@@ -1,6 +1,7 @@
-// marriage_profile_page.dart - UNIFIED PAGE
+// marriage_profile_page.dart - UNIFIED PAGE WITH SHIMMER LOADING
 // ════════════════════════════════════════════════════════════════
 // ✅ صفحة واحدة - Toggle بين العرض والتعديل
+// ⭐⭐⭐ تم إضافة Shimmer Loading باستخدام MarriageProfileSkeleton
 // ════════════════════════════════════════════════════════════════
 
 import 'dart:developer';
@@ -15,6 +16,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecu
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_life_events_section.dart';
+ // ⭐⭐⭐ Import skeleton
 import 'package:tayseer/my_import.dart';
 
 // ⭐⭐⭐ Import sections من صفحة العرض
@@ -22,8 +24,9 @@ import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
 import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/education.dart';
 import 'package:tayseer/features/user/marriage/view/widget/interests_section.dart';
-// import 'package:tayseer/features/user/marriage/view/widget/life_event_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
+
+import 'widgets/MarriageProfileSkeleton .dart';
 
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
@@ -85,9 +88,21 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             builder: (context, state) {
               final cubit = context.read<MarriageProfileCubit>();
 
-              // ✅ Loading
+              // ════════════════════════════════════════════════════════════════
+              // ⭐⭐⭐ UPDATED: Loading with Shimmer Skeleton
+              // ════════════════════════════════════════════════════════════════
               if (state.isLoading && state.profile == null) {
-                return const Center(child: CircularProgressIndicator());
+                return Column(
+                  children: [
+                    // Fixed header remains visible during loading
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 10.h),
+                      child: _buildFixedHeader(context),
+                    ),
+                    // Shimmer skeleton for content
+                    const Expanded(child: MarriageProfileSkeleton()),
+                  ],
+                );
               }
 
               // ✅ Error
@@ -103,7 +118,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               return Column(
                 children: [
                   // ⭐⭐⭐ FIXED HEADER - AppBar + Toggle
-                  _buildFixedHeader(context),
+                  Padding(
+                  padding:  EdgeInsets.symmetric(horizontal:  24.h,vertical: 10.h),
+                    child: _buildFixedHeader(context),
+                  ),
 
                   // ⭐⭐⭐ DYNAMIC CONTENT - Changes based on tab
                   Expanded(
@@ -234,6 +252,131 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 audioPath: profile.userMedia?.audio ?? "",
               ),
             ),
+    SliverToBoxAdapter(child: SizedBox(height: 50.h)),
+
+          SliverToBoxAdapter(
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 20.w),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+              height: 113.h,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16.r),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.kWhiteColor.withOpacity(0.7),
+                    AppColors.primary50,
+                    AppColors.primary100,
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.secondary300,
+                    blurRadius: 4,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              "هل تزوجت بواسطة",
+                              style: Styles.textStyle16.copyWith(
+                                color: AppColors.primary600,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            SizedBox(width: 5.w),
+                            Stack(
+                              children: [
+                                Text(
+                                  "تيسير",
+                                  style: Styles.textStyle26Bold.copyWith(
+                                    foreground: Paint()
+                                      ..style = PaintingStyle.stroke
+                                      ..strokeWidth = 3.w
+                                      ..color = Color(0xFFAC1A36),
+                                  ),
+                                ),
+                                Text(
+                                  "تيسير",
+                                  style: Styles.textStyle26Bold.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          "تواصل معنا واحصل علي مكافأة مالية",
+                          style: Styles.textStyle12.copyWith(
+                            color: AppColors.secondary700,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  GestureDetector(
+                    onTap: () {
+                      log("تواصل معنا button tapped");
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(color: Colors.white, width: 2.w),
+                      ),
+                      child: Container(
+                        width: 125.w,
+                        height: 36.h,
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary300,
+                              blurRadius: 11,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppColors.primary200,
+                              AppColors.primary200,
+                              AppColors.primary100,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "تواصل معنا",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
           SliverToBoxAdapter(child: SizedBox(height: 100.h)),
         ],
@@ -332,13 +475,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                       children: [
                         // 2. النص الرئيسي (العنوان)
                         Text(
-                          "يجب إكمال البيانات بنسبة 100%.",
+                         context.tr('complete_profile_100_percent'), 
                           textAlign: TextAlign.start,
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w500,
                             color: AppColors.primary600, // وردي غامق احترافي
-                            // letterSpacing: -0.5,
                           ),
                         ),
 
@@ -348,7 +490,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10.w),
                           child: Text(
-                            "ادخل البيانات الشخصية كاملة حتى تتمكن من \nإيجاد شريكك المناسب",
+                            context.tr('complete_profile_description'),
                             textAlign: TextAlign.start,
                             style: TextStyle(
                               fontSize: 12.sp,
@@ -367,9 +509,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   ],
                 ),
                 SizedBox(height: 20.h),
-
-                // // 4. زر الإكمال المطور بظلال متوهجة
-                // _buildGradientButton(),
               ],
             ),
           ),
@@ -395,7 +534,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             ),
 
             // 2. الخط الملون المتدرج (Progress Line)
-            // نستخدم Alignment.centerLeft لضمان البداية من اليسار دائماً
             Align(
               alignment: Alignment.centerLeft,
               child: FractionallySizedBox(
@@ -419,14 +557,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               ),
             ),
 
-            // 3. النقاط (الدروع) مرتبة من 0% (يسار) إلى 100% (يمين)
+            // 3. النقاط (الدروع)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: List.generate(5, (index) {
                 int badgeNumber = index + 1;
                 int totalSteps = 5;
                 int reversedNumber = totalSteps - badgeNumber + 1;
-                // حساب النسبة لكل نقطة (0, 0.25, 0.50, 0.75, 1.0)
                 final reversedIndex = 4 - index;
                 double pointProgress = reversedIndex / 4;
                 bool isReached = pointProgress <= progress;
@@ -437,7 +574,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                     children: [
                       SizedBox(height: 6.h),
 
-                      // ⭐⭐⭐ Number badge on top
+                      // Number badge on top
                       Center(
                         child: Container(
                           padding: EdgeInsets.symmetric(
@@ -446,7 +583,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                           ),
                           decoration: BoxDecoration(
                             color: isReached
-                                ? const Color(0xFFFFC107) // ذهبي
+                                ? const Color(0xFFFFC107)
                                 : Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(8.r),
                             boxShadow: isReached
@@ -460,10 +597,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                                 : [],
                           ),
                           child: Text(
-                            reversedNumber.toString().padLeft(
-                              2,
-                              '0',
-                            ), // 05, 04, 03...
+                            reversedNumber.toString().padLeft(2, '0'),
                             style: TextStyle(
                               fontSize: 9.sp,
                               fontWeight: FontWeight.bold,
@@ -508,7 +642,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                       ),
                       SizedBox(height: 6.h),
                       Text(
-                        "${(4 - index) * 25}%", // يطبع 0%, 25%, 50%, 75%, 100%
+                        "${(4 - index) * 25}%",
                         style: TextStyle(
                           fontSize: 10.sp,
                           fontWeight: isReached
@@ -532,8 +666,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     return Container(
       child: GestureDetector(
         onTap: () {
-          log("تواصل معنا button tapped");
-          // Handle button tap
+          log("إكمال البيانات button tapped");
         },
         child: Container(
           decoration: BoxDecoration(
@@ -546,9 +679,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             decoration: BoxDecoration(
               boxShadow: [
                 BoxShadow(
-                  color: AppColors
-                      .primary300, // Light pink at bottom (primary50/secondary200)
-
+                  color: AppColors.primary300,
                   blurRadius: 11,
                   spreadRadius: 0,
                 ),
@@ -557,16 +688,16 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.primary200, // Your primary color
-                  AppColors.primary200, // Your secondary color
-                  AppColors.primary100, // Your secondary color
+                  AppColors.primary200,
+                  AppColors.primary200,
+                  AppColors.primary100,
                 ],
               ),
               borderRadius: BorderRadius.circular(8.r),
             ),
             alignment: Alignment.center,
             child: Text(
-              "إكمال البيانات",
+           context.tr('complete_your_profile_bott'), // بدلاً من "إكمال البيانات"
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 14.sp,
@@ -624,41 +755,33 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     ];
   }
 
-  // ✅ Helper function to build timeline events from YourGoals
   List<Map<String, dynamic>> _buildTimelineEvents(YourGoals goals) {
     final List<Map<String, dynamic>> events = [];
 
-    // ترتيب الأهداف من اليمين لليسار (حسب الـ RTL)
-    // الترتيب: توافق ← تواصل ← خطوبة ← زواج
-
-    // 1. توافق (Compatibility) - usually happens first
     if (goals.travel != null && goals.travel!.isNotEmpty) {
       events.add({
-        'timeLabel': goals.travel, // مثلاً: "خلال 3 أشهر"
+        'timeLabel': goals.travel,
         'goalType': 'travel',
       });
     }
 
-    // 2. تواصل (Communication)
     if (goals.children != null && goals.children!.isNotEmpty) {
       events.add({
-        'timeLabel': goals.children, // مثلاً: "خلال 6 أشهر"
+        'timeLabel': goals.children,
         'goalType': 'المهر  ',
       });
     }
 
-    // 3. خطوبة (Engagement)
     if (goals.engagement != null && goals.engagement!.isNotEmpty) {
       events.add({
-        'timeLabel': goals.engagement, // مثلاً: "خلال سنة"
+        'timeLabel': goals.engagement,
         'goalType': 'engagement',
       });
     }
 
-    // 4. زواج (Marriage)
     if (goals.marry != null && goals.marry!.isNotEmpty) {
       events.add({
-        'timeLabel': goals.marry, // مثلاً: "خلال سنتين"
+        'timeLabel': goals.marry,
         'goalType': 'marry',
       });
     }
@@ -713,9 +836,9 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 }
-// updated_app_video.dart
+
 // ════════════════════════════════════════════════════════════════
-// ✅ AppVideo محسّن مع معالجة الأخطاء وحالات التحميل
+// Video Section Classes (same as before)
 // ════════════════════════════════════════════════════════════════
 
 class AppVideo extends StatefulWidget {
@@ -726,7 +849,7 @@ class AppVideo extends StatefulWidget {
   final bool showControls;
   final bool muted;
   final Function(VideoPlayerController)? onControllerReady;
-  final Function(String)? onError; // ⭐⭐⭐ NEW: callback للأخطاء
+  final Function(String)? onError;
 
   const AppVideo(
     this.url, {
@@ -737,7 +860,7 @@ class AppVideo extends StatefulWidget {
     this.showControls = false,
     this.muted = false,
     this.onControllerReady,
-    this.onError, // ⭐⭐⭐ NEW
+    this.onError,
   });
 
   @override
@@ -757,7 +880,6 @@ class _AppVideoState extends State<AppVideo> {
   }
 
   void _initializeVideo() {
-    // ⭐⭐⭐ التحقق من صحة الـ URL
     if (widget.url.isEmpty || !widget.url.startsWith('http')) {
       setState(() {
         _hasError = true;
@@ -782,14 +904,12 @@ class _AppVideoState extends State<AppVideo> {
                   _controller!.play();
                 }
 
-                // ⭐ إرسال الـ controller للـ parent
                 if (widget.onControllerReady != null) {
                   widget.onControllerReady!(_controller!);
                 }
               }
             })
             .catchError((error) {
-              // ⭐⭐⭐ معالجة أخطاء التحميل
               if (mounted) {
                 setState(() {
                   _hasError = true;
@@ -801,7 +921,6 @@ class _AppVideoState extends State<AppVideo> {
               }
             });
 
-      // ⭐⭐⭐ الاستماع لأخطاء التشغيل
       _controller?.addListener(() {
         if (_controller!.value.hasError && mounted) {
           setState(() {
@@ -816,7 +935,6 @@ class _AppVideoState extends State<AppVideo> {
         }
       });
     } catch (e) {
-      // ⭐⭐⭐ معالجة أخطاء إنشاء الـ controller
       if (mounted) {
         setState(() {
           _hasError = true;
@@ -837,7 +955,6 @@ class _AppVideoState extends State<AppVideo> {
 
   @override
   Widget build(BuildContext context) {
-    // ⭐⭐⭐ حالة الخطأ
     if (_hasError) {
       return Container(
         color: Colors.black,
@@ -861,7 +978,6 @@ class _AppVideoState extends State<AppVideo> {
       );
     }
 
-    // ⭐⭐⭐ حالة التحميل
     if (!_isInitialized) {
       return Container(
         color: Colors.black,
@@ -887,7 +1003,6 @@ class _AppVideoState extends State<AppVideo> {
       );
     }
 
-    // ⭐⭐⭐ عرض الفيديو
     return SizedBox.expand(
       child: FittedBox(
         fit: widget.fit,
@@ -900,13 +1015,6 @@ class _AppVideoState extends State<AppVideo> {
     );
   }
 }
-// fixed_video_section.dart
-// ════════════════════════════════════════════════════════════════
-// ✅ VideoSection محسّن مع معالجة حالات null والأخطاء
-// fixed_video_section.dart
-// ════════════════════════════════════════════════════════════════
-// ✅ VideoSection محسّن مع معالجة شاملة للأخطاء
-// ════════════════════════════════════════════════════════════════
 
 class VideoSection extends StatefulWidget {
   final String? videoUrl;
@@ -978,10 +1086,8 @@ class _VideoSectionState extends State<VideoSection> {
     }
 
     try {
-      // تنظيف أي controller سابق
       _disposeController();
 
-      // إنشاء controller جديد
       _controller = VideoPlayerController.networkUrl(
         Uri.parse(widget.videoUrl!),
         videoPlayerOptions: VideoPlayerOptions(
@@ -990,10 +1096,8 @@ class _VideoSectionState extends State<VideoSection> {
         ),
       );
 
-      // إضافة listener للأخطاء
       _controller!.addListener(_videoListener);
 
-      // تهيئة الفيديو
       await _controller!.initialize();
 
       if (mounted) {
@@ -1002,7 +1106,6 @@ class _VideoSectionState extends State<VideoSection> {
           hasError = false;
         });
 
-        // إعدادات الفيديو
         _controller!.setLooping(true);
         _controller!.setVolume(1.0);
       }
@@ -1032,7 +1135,6 @@ class _VideoSectionState extends State<VideoSection> {
       );
     }
 
-    // تحديث حالة التشغيل
     if (isPlaying != _controller!.value.isPlaying) {
       setState(() {
         isPlaying = _controller!.value.isPlaying;
@@ -1049,7 +1151,6 @@ class _VideoSectionState extends State<VideoSection> {
         showOverlay = true;
       } else {
         _controller!.play();
-        // إخفاء الأزرار بعد ثانيتين
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted && _controller!.value.isPlaying) {
             setState(() => showOverlay = false);
@@ -1088,28 +1189,21 @@ class _VideoSectionState extends State<VideoSection> {
 
   @override
   Widget build(BuildContext context) {
-    // حالة: لا يوجد فيديو
     if (!hasValidVideo) {
       return _buildEmptyState();
     }
 
-    // حالة: خطأ في التحميل
     if (hasError) {
       return _buildErrorState();
     }
 
-    // حالة: جاري التحميل
     if (isInitializing) {
       return _buildLoadingState();
     }
 
-    // حالة: عرض الفيديو
     return _buildVideoPlayer();
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ حالة عدم وجود فيديو
-  // ════════════════════════════════════════════════════════════════
   Widget _buildEmptyState() {
     return Container(
       height: 250.h,
@@ -1155,9 +1249,6 @@ class _VideoSectionState extends State<VideoSection> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ حالة الخطأ
-  // ════════════════════════════════════════════════════════════════
   Widget _buildErrorState() {
     return Container(
       height: 250.h,
@@ -1219,9 +1310,6 @@ class _VideoSectionState extends State<VideoSection> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ حالة التحميل
-  // ════════════════════════════════════════════════════════════════
   Widget _buildLoadingState() {
     return Container(
       height: 250.h,
@@ -1249,9 +1337,6 @@ class _VideoSectionState extends State<VideoSection> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ مشغل الفيديو
-  // ════════════════════════════════════════════════════════════════
   Widget _buildVideoPlayer() {
     return VisibilityDetector(
       key: Key(widget.videoUrl!),
@@ -1262,13 +1347,11 @@ class _VideoSectionState extends State<VideoSection> {
           return;
         }
 
-        // تشغيل تلقائي عند الظهور
         if (info.visibleFraction > 0.6) {
           if (!_controller!.value.isPlaying) {
             _controller!.play();
           }
         } else {
-          // إيقاف عند الاختفاء
           if (_controller!.value.isPlaying) {
             _controller!.pause();
             setState(() => showOverlay = true);
@@ -1287,7 +1370,6 @@ class _VideoSectionState extends State<VideoSection> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // الفيديو
               if (_controller != null && _controller!.value.isInitialized)
                 SizedBox.expand(
                   child: FittedBox(
@@ -1300,11 +1382,9 @@ class _VideoSectionState extends State<VideoSection> {
                   ),
                 ),
 
-              // زر الحذف
               if (widget.onDelete != null)
                 Positioned(top: 10.h, right: 10.w, child: _buildDeleteButton()),
 
-              // طبقة شفافة للتحكم
               GestureDetector(
                 onTap: () {
                   setState(() => showOverlay = !showOverlay);
@@ -1316,7 +1396,6 @@ class _VideoSectionState extends State<VideoSection> {
                 ),
               ),
 
-              // أزرار التحكم
               if (widget.showControls && (showOverlay || !isPlaying))
                 _buildControls(),
             ],
@@ -1326,9 +1405,6 @@ class _VideoSectionState extends State<VideoSection> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ زر الحذف
-  // ════════════════════════════════════════════════════════════════
   Widget _buildDeleteButton() {
     return Material(
       color: Colors.transparent,
@@ -1380,9 +1456,6 @@ class _VideoSectionState extends State<VideoSection> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ أزرار التحكم
-  // ════════════════════════════════════════════════════════════════
   Widget _buildControls() {
     return Container(
       decoration: BoxDecoration(

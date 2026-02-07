@@ -64,7 +64,11 @@
     <string>يحتاج التطبيق الوصول لموقعك لتقديم خدمات الموقع حتى عند عدم استخدام التطبيق</string>
     <key>NSLocationAlwaysUsageDescription</key>
     <string>يحتاج التطبيق الوصول لموقعك بشكل دائم لتحديثات الموقع</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>يحتاج التطبيق الوصول للميكروفون لتسجيل رسائلك الصوتية</string>
 
+    <key>NSAppleMusicUsageDescription</key>
+    <string>يحتاج التطبيق الوصول للمكتبة الموسيقية لمعالجة الملفات الصوتية</string>  
     <!-- Notifications -->
     <key>NSUserNotificationAlertStyle</key>
     <string>alert</string>

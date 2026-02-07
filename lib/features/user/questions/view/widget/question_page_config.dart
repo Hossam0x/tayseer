@@ -17,6 +17,10 @@ class QuestionPageConfig {
 
   final Map<String, String>? itemsWithIcons;
 
+  // ✅ إضافة خصائص الشرط
+  final String? dependsOnQuestion; // اسم السؤال الذي يعتمد عليه
+  final String? requiredAnswer; // الإجابة المطلوبة لعرض هذا السؤال
+
   const QuestionPageConfig({
     required this.titleKey,
     required this.questionNumber,
@@ -30,5 +34,7 @@ class QuestionPageConfig {
     this.initialValue,
     this.unit,
     this.itemsWithIcons,
+    this.dependsOnQuestion,
+    this.requiredAnswer,
   });
 }

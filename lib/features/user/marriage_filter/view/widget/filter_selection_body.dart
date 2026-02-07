@@ -62,6 +62,7 @@ class FilterSelectionScreen extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: CustomBotton(
+                        useGradient: true,
                         width: context.width,
                         title: context.tr('confirm'),
                         onPressed: () => Navigator.pop(context, tempValue),
@@ -88,11 +89,13 @@ class FilterSelectionScreen extends StatelessWidget {
           items: config.items ?? [],
           showSearch: config.showSearch,
           searchHintKey: config.searchHintKey,
+          // Return the translated/display value (not the key)
           onChanged: (key, value) => onChanged(value),
         );
       case QuestionType.multiSelectChips:
         return MultiSelectChipsWidget(
           itemsWithIcons: config.itemsWithIcons ?? {},
+          // MultiSelectChipsWidget returns translated values; forward them as-is
           onChanged: (List<String> values) => onChanged(values),
         );
       case QuestionType.picker:

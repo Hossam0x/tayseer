@@ -14,10 +14,10 @@ class Historypage extends StatefulWidget {
   const Historypage({super.key, this.selectedFilter = "نال إعجابك"});
 
   @override
-  State<Historypage> createState() => _HistorypageState();
+  State<Historypage> createState() => HistorypageState();
 }
 
-class _HistorypageState extends State<Historypage> {
+class HistorypageState extends State<Historypage> {
   late ScrollController _scrollController;
   bool _isLoadingMore = false;
 
@@ -36,8 +36,13 @@ class _HistorypageState extends State<Historypage> {
   void didUpdateWidget(Historypage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedFilter != widget.selectedFilter) {
-      _scrollController.jumpTo(0);
       context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
+      
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) {
+          scrollToTop();
+        }
+      });
     }
   }
 
@@ -46,6 +51,27 @@ class _HistorypageState extends State<Historypage> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void scrollToTop() {
+    if (!mounted) return;
+    
+    if (_scrollController.hasClients) {
+      if (_scrollController.position.maxScrollExtent > 0 || 
+          _scrollController.position.pixels > 0) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+        }
+      });
+    }
   }
 
   void _onScroll() {
@@ -77,15 +103,12 @@ class _HistorypageState extends State<Historypage> {
     }
   }
 
-  // ✅ دالة الـ Refresh
   Future<void> _onRefresh() async {
     final cubit = context.read<InteractionsCubit>();
     
     if (widget.selectedFilter == "المفضلة") {
-      // ✅ للمفضلة: نستخدم refreshFavorites اللي هيحذف المعلق ويعمل fetch
       await cubit.refreshFavorites();
     } else {
-      // ✅ باقي الفلاتر: refresh عادي
       await cubit.fetchHistory(filter: widget.selectedFilter);
     }
   }
@@ -105,17 +128,17 @@ class _HistorypageState extends State<Historypage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  state.historyErrorMessage ?? 'حدث خطأ ما',
+                  state.historyErrorMessage ?? context.tr("error_occurred"),
                   style: Styles.textStyle16,
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 16.h),
                 CustomBotton(
-                  title: 'إعادة المحاولة',
+                  title: context.tr("retry"),
                   onPressed: () {
                     context.read<InteractionsCubit>().fetchHistory(
-                          filter: widget.selectedFilter,
-                        );
+                      filter: widget.selectedFilter,
+                    );
                   },
                 ),
               ],
@@ -128,12 +151,14 @@ class _HistorypageState extends State<Historypage> {
         if (data.isEmpty) {
           return RefreshIndicator.adaptive(
             onRefresh: _onRefresh,
-            child: SingleChildScrollView(
+            child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.7,
-                child: EmptyHistory(selectedFilter: widget.selectedFilter),
-              ),
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: EmptyHistory(selectedFilter: widget.selectedFilter),
+                ),
+              ],
             ),
           );
         }
@@ -144,31 +169,49 @@ class _HistorypageState extends State<Historypage> {
               onRefresh: _onRefresh,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 22.w),
-                child: GridView.builder(
+                child: CustomScrollView(
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.only(
-                    top: 16.h,
-                    bottom: state.isSubscribed ? 80.h : 160.h,
-                  ),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12.w,
-                    mainAxisSpacing: 12.h,
-                    childAspectRatio: 0.7,
-                  ),
-                  itemCount: data.length + (_isLoadingMore ? 2 : 0),
-                  itemBuilder: (context, index) {
-                    if (index >= data.length) {
-                      return _buildLoadingCard();
-                    }
+                  slivers: [
+                    // ✅ Top Spacing
+                    SliverPadding(
+                      padding: EdgeInsets.only(top: 16.h),
+                      sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+                    ),
 
-                    return InteractionProfileCard(
-                      item: data[index],
-                      showFavoriteIcon: widget.selectedFilter == "المفضلة",
-                      forceBlur: !state.isSubscribed,
-                    );
-                  },
+                    // ✅ Grid Items
+                    SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12.w,
+                        mainAxisSpacing: 12.h,
+                        childAspectRatio: 0.7,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index >= data.length) {
+                            return _buildLoadingCard();
+                          }
+
+                          return InteractionProfileCard(
+                            item: data[index],
+                            showFavoriteIcon: widget.selectedFilter == "المفضلة",
+                            forceBlur: !state.isSubscribed,
+                            showRibbon: widget.selectedFilter != "صادفتهم",
+                          );
+                        },
+                        childCount: data.length + (_isLoadingMore ? 2 : 0),
+                      ),
+                    ),
+
+                    // ✅ Bottom Spacing
+                    SliverPadding(
+                      padding: EdgeInsets.only(
+                        bottom: state.isSubscribed ? 80.h : 160.h,
+                      ),
+                      sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -187,18 +230,31 @@ class _HistorypageState extends State<Historypage> {
       enabled: true,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 22.w),
-        child: GridView.builder(
-          padding: EdgeInsets.only(top: 16.h, bottom: 20.h),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12.w,
-            mainAxisSpacing: 12.h,
-            childAspectRatio: 0.7,
-          ),
-          itemCount: dummyData.length,
-          itemBuilder: (context, index) {
-            return InteractionProfileCard(item: dummyData[index]);
-          },
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.only(top: 16.h),
+              sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
+            SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12.w,
+                mainAxisSpacing: 12.h,
+                childAspectRatio: 0.7,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return InteractionProfileCard(item: dummyData[index]);
+                },
+                childCount: dummyData.length,
+              ),
+            ),
+            SliverPadding(
+              padding: EdgeInsets.only(bottom: 20.h),
+              sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
+          ],
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
@@ -16,8 +17,8 @@ import 'package:tayseer/features/user/marriage/view/widget/life_event_section.da
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 
 class MarriageBody extends StatefulWidget {
-  const MarriageBody({super.key});
-
+  const MarriageBody({super.key, this.personId});
+  final String? personId;
   @override
   State<MarriageBody> createState() => _MarriageBodyState();
 }
@@ -80,7 +81,11 @@ class _MarriageBodyState extends State<MarriageBody> {
           );
         }
 
-        final users = state.profile?.data?.users ?? [];
+        final allUsers = state.profile?.data?.users ?? [];
+        // If a personId was passed to this widget, filter to that user only.
+        final users = widget.personId != null
+            ? allUsers.where((p) => p.user?.id == widget.personId).toList()
+            : allUsers;
         if (users.isEmpty) return Center(child: Text('لا توجد بيانات للعرض'));
 
         // Reset index when profile source changes
@@ -138,13 +143,19 @@ class _MarriageBodyState extends State<MarriageBody> {
                         ),
                         sliver: SliverToBoxAdapter(
                           child: CompatibilitySection(
-                            title: 'التشابه بينكم',
+                            title: context.tr('compatibility_profile'),
                             subtitle: user?.similarity != null
                                 ? '${user!.similarity}%'
                                 : '',
+                            // ✅ التعديل هنا فقط
                             tags:
                                 user?.matchingTags
-                                    ?.map<String>((t) => t.category ?? '')
+                                    ?.where(
+                                      (t) =>
+                                          t.value != null &&
+                                          t.value!.trim().isNotEmpty,
+                                    )
+                                    .map<String>((t) => t.value!)
                                     .toList() ??
                                 [],
                           ),
@@ -332,8 +343,23 @@ class _MarriageBodyState extends State<MarriageBody> {
                           horizontal: 16.w,
                           vertical: 20.h,
                         ),
-                        sliver: const SliverToBoxAdapter(
-                          child: BottomActionsSection(),
+                        sliver: SliverToBoxAdapter(
+                          child: BottomActionsSection(
+                            onBlock: () {
+                              CustomshowDialogWithImage(
+                                context,
+                                bottonText: context.tr("send_report"),
+                                imageUrl: AssetsData.kWoriningImage,
+                                title: context.tr("confirm_report"),
+                                supTitle: context.tr("sup_confirm_report"),
+                                onPressed: () {},
+                                showCancelButton: true,
+                              );
+                            },
+                            onReport: () {
+                              context.pushNamed(AppRouter.kReportReasonsScreen);
+                            },
+                          ),
                         ),
                       ),
 
@@ -356,11 +382,15 @@ class _MarriageBodyState extends State<MarriageBody> {
                             personId: profile.user?.id ?? '',
                             interactionType: 'like',
                           );
-                          setState(() {
-                            _currentIndex = (_currentIndex + 1) >= users.length
-                                ? 0
-                                : (_currentIndex + 1);
-                          });
+                          // If viewing a specific person (personId passed), don't navigate the list
+                          if (widget.personId == null && users.length > 1) {
+                            setState(() {
+                              _currentIndex =
+                                  (_currentIndex + 1) >= users.length
+                                  ? 0
+                                  : (_currentIndex + 1);
+                            });
+                          }
                         },
                         Icons.favorite_outline,
                         AppColors.kprimaryTextColor,
@@ -382,11 +412,14 @@ class _MarriageBodyState extends State<MarriageBody> {
                             personId: profile.user?.id ?? '',
                             interactionType: 'dislike',
                           );
-                          setState(() {
-                            _currentIndex = (_currentIndex + 1) >= users.length
-                                ? 0
-                                : (_currentIndex + 1);
-                          });
+                          if (widget.personId == null && users.length > 1) {
+                            setState(() {
+                              _currentIndex =
+                                  (_currentIndex + 1) >= users.length
+                                  ? 0
+                                  : (_currentIndex + 1);
+                            });
+                          }
                         },
                         Icons.close,
                         Colors.white,
@@ -425,7 +458,7 @@ class _MarriageBodyState extends State<MarriageBody> {
       child: CustomBackground(
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: _shimmer(height: 250)),
+            SliverToBoxAdapter(child: _shimmer(height: context.height * 0.9)),
             SliverToBoxAdapter(child: SizedBox(height: 20)),
             SliverToBoxAdapter(child: _shimmer(height: 100)),
             SliverToBoxAdapter(child: SizedBox(height: 20)),

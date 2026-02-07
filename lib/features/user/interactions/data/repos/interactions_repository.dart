@@ -23,8 +23,9 @@ abstract class InteractionsRepository {
     required bool isAdd,
   });
 
-  Future<Either<Failure, String>> sendCompliment({
-    required String userId,
+    Future<Either<Failure, void>> sendCompliment({
+    required String personId,
+    String? text,
   });
 
   Future<Either<Failure, String>> likeUser({

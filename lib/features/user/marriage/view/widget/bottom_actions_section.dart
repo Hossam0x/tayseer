@@ -1,8 +1,15 @@
 import 'package:tayseer/my_import.dart';
 
 class BottomActionsSection extends StatelessWidget {
-  const BottomActionsSection({super.key});
-
+  const BottomActionsSection({
+    super.key,
+    this.onReport,
+    this.onBlock,
+    this.onShare,
+  });
+  final VoidCallback? onReport;
+  final VoidCallback? onBlock;
+  final VoidCallback? onShare;
   @override
   Widget build(BuildContext context) {
     final Color bgColor = const Color(0xFFFCE7EE);
@@ -20,8 +27,9 @@ class BottomActionsSection extends StatelessWidget {
             Expanded(
               child: _buildActionItem(
                 Icons.report_gmailerrorred_rounded,
-                "ابلاغ",
+                context.tr("report_profile"),
                 AppColors.kscandryTextColor,
+                onReport,
               ),
             ),
 
@@ -30,8 +38,9 @@ class BottomActionsSection extends StatelessWidget {
             Expanded(
               child: _buildActionItem(
                 Icons.block_flipped,
-                "حظر",
+                context.tr("block_profile"),
                 AppColors.kscandryTextColor,
+                onBlock,
               ),
             ),
 
@@ -40,8 +49,9 @@ class BottomActionsSection extends StatelessWidget {
             Expanded(
               child: _buildActionItem(
                 Icons.ios_share_rounded,
-                "مشاركة الملف",
+                context.tr("share_profile_marri"),
                 AppColors.kscandryTextColor,
+                onShare,
               ),
             ),
           ],
@@ -54,18 +64,26 @@ class BottomActionsSection extends StatelessWidget {
     return Container(width: 1, height: 40.h, color: Colors.white);
   }
 
-  Widget _buildActionItem(IconData icon, String label, Color color) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: color, size: 26.sp),
-        Gap(8.h),
-        Text(
-          label,
-          style: Styles.textStyle12SemiBold.copyWith(color: color, height: 1),
-          textAlign: TextAlign.center,
-        ),
-      ],
+  Widget _buildActionItem(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback? onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 26.sp),
+          Gap(8.h),
+          Text(
+            label,
+            style: Styles.textStyle12SemiBold.copyWith(color: color, height: 1),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }
