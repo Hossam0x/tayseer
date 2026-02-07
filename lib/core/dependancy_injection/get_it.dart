@@ -66,6 +66,7 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_profil
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
+import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
 
 import '../../my_import.dart';
 
@@ -347,5 +348,10 @@ Future<void> setupGetIt() async {
 
   getIt.registerLazySingleton<MarriageProfileRepository>(
     () => MarriageProfileRepository(getIt<ApiService>()),
+  );
+
+  /// Search Repository
+  getIt.registerLazySingleton<SearchRepository>(
+    () => SearchRepository(getIt<ApiService>()),
   );
 }

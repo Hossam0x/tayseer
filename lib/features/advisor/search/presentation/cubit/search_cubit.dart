@@ -1,37 +1,56 @@
 // features/shared/search/presentation/cubit/search_cubit.dart
 import 'dart:async';
+import 'dart:developer';
 
+import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_advisor_model.dart';
-import 'package:tayseer/features/advisor/search/data/models/search_event_model.dart';
-import 'package:tayseer/features/advisor/search/data/models/search_group_model.dart';
+import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
+import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
+import 'package:tayseer/features/shared/followers/data/repositories/user_followings_repository.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'search_state.dart';
 
 class SearchCubit extends Cubit<SearchState> {
+  final SearchRepository _searchRepository;
+  final HomeRepository _homeRepository;
+  final FollowersRepository _followersRepository;
+  final UserFollowingsRepository _userFollowingsRepository;
   Timer? _searchDebounce;
 
-  SearchCubit() : super(const SearchState());
+  SearchCubit(
+    this._searchRepository,
+    this._homeRepository,
+    this._followersRepository,
+    this._userFollowingsRepository,
+  ) : super(const SearchState());
 
-  Future<void> search({required String query, String category = 'all'}) async {
-    // إذا كان البحث فارغاً، نعرض البيانات الوهمية
+  Future<void> search({
+    required String query,
+    String type = 'all',
+    bool debounce = true,
+  }) async {
     if (query.isEmpty) {
-      final dummyData = _getDummySearchData("", category);
-
-      emit(
-        state.copyWith(
-          query: query,
-          searchStatus: CubitStates.success,
-          advisors: dummyData.advisors,
-          posts: dummyData.posts,
-          events: dummyData.events,
-          groups: dummyData.groups,
-          errorMessage: null,
-        ),
-      );
+      clearSearch();
       return;
     }
 
+    _searchDebounce?.cancel();
+
+    if (!debounce) {
+      _emitLoading(query);
+      await _executeSearch(query, type);
+      return;
+    }
+
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () async {
+      _emitLoading(query);
+      await _executeSearch(query, type);
+    });
+  }
+
+  void _emitLoading(String query) {
     emit(
       state.copyWith(
         query: query,
@@ -39,21 +58,19 @@ class SearchCubit extends Cubit<SearchState> {
         errorMessage: null,
       ),
     );
+  }
 
+  Future<void> _executeSearch(String query, String type) async {
     try {
-      // محاكاة API call
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      // بيانات وهمية للاختبار
-      final dummyData = _getDummySearchData(query, category);
+      final results = await _searchRepository.search(query: query, type: type);
 
       emit(
         state.copyWith(
           searchStatus: CubitStates.success,
-          advisors: dummyData.advisors,
-          posts: dummyData.posts,
-          events: dummyData.events,
-          groups: dummyData.groups,
+          advisors: results.advisors,
+          posts: results.posts,
+          users: results.users,
+          events: results.events,
           errorMessage: null,
         ),
       );
@@ -68,223 +85,364 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   void clearSearch() {
-    // عند مسح البحث، نعرض البيانات الوهمية أيضاً
-    final dummyData = _getDummySearchData("", 'all');
-
-    emit(
-      SearchState(
-        query: '',
-        searchStatus: CubitStates.success,
-        advisors: dummyData.advisors,
-        posts: dummyData.posts,
-        events: dummyData.events,
-        groups: dummyData.groups,
-      ),
-    );
+    emit(const SearchState(query: '', searchStatus: CubitStates.initial));
   }
 
   Future<void> loadInitialData() async {
-    // تحميل البيانات الأولية عند بدء التشغيل
-    final dummyData = _getDummySearchData("", 'all');
-
-    emit(
-      state.copyWith(
-        searchStatus: CubitStates.success,
-        advisors: dummyData.advisors,
-        posts: dummyData.posts,
-        events: dummyData.events,
-        groups: dummyData.groups,
-      ),
-    );
+    // We can load hot search or recent searches here if needed
+    emit(state.copyWith(searchStatus: CubitStates.initial));
   }
 
-  void toggleFollowAdvisor(String advisorId) {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 👥 FOLLOW LOGIC
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> toggleFollow({
+    required String id,
+    required String userType,
+  }) async {
+    if (userType == 'Advisor') {
+      await _toggleFollowAdvisor(id);
+    } else {
+      await _toggleFollowUser(id);
+    }
+  }
+
+  Future<void> _toggleFollowAdvisor(String advisorId) async {
     final currentAdvisors = List<SearchAdvisor>.from(state.advisors);
     final advisorIndex = currentAdvisors.indexWhere((a) => a.id == advisorId);
 
     if (advisorIndex >= 0) {
       final advisor = currentAdvisors[advisorIndex];
-      final updatedAdvisor = advisor.copyWith(
-        isFollowing: !advisor.isFollowing,
-        followersCount: advisor.isFollowing
-            ? advisor.followersCount - 1
-            : advisor.followersCount + 1,
-      );
+      final isCurrentlyFollowing = advisor.isFollowing;
 
+      // Optimistic Update for Advisors list
+      final updatedAdvisor = advisor.copyWith(
+        isFollowing: !isCurrentlyFollowing,
+        followersCount:
+            (advisor.followersCount ?? 0) + (isCurrentlyFollowing ? -1 : 1),
+      );
       currentAdvisors[advisorIndex] = updatedAdvisor;
 
-      emit(state.copyWith(advisors: currentAdvisors));
-    }
-  }
+      // Also update in posts if exists
+      final updatedPosts = state.posts.map((post) {
+        if (post.advisorId == advisorId) {
+          return post.copyWith(isFollowing: !isCurrentlyFollowing);
+        }
+        return post;
+      }).toList();
 
-  void toggleJoinGroup(String groupId) {
-    final currentGroups = List<SearchGroup>.from(state.groups);
-    final groupIndex = currentGroups.indexWhere((g) => g.id == groupId);
+      emit(state.copyWith(advisors: currentAdvisors, posts: updatedPosts));
 
-    if (groupIndex >= 0) {
-      final group = currentGroups[groupIndex];
-      final updatedGroup = group.copyWith(
-        isJoined: !group.isJoined,
-        membersCount: group.isJoined
-            ? group.membersCount - 1
-            : group.membersCount + 1,
+      final result = await _followersRepository.toggleFollow(advisorId);
+      result.fold(
+        (failure) {
+          // Rollback
+          final rollbackAdvisors = List<SearchAdvisor>.from(state.advisors);
+          rollbackAdvisors[advisorIndex] = advisor;
+          final rollbackPosts = state.posts.map((post) {
+            if (post.advisorId == advisorId) {
+              return post.copyWith(isFollowing: isCurrentlyFollowing);
+            }
+            return post;
+          }).toList();
+          emit(
+            state.copyWith(advisors: rollbackAdvisors, posts: rollbackPosts),
+          );
+        },
+        (message) {
+          // Success code if needed
+        },
       );
-
-      currentGroups[groupIndex] = updatedGroup;
-
-      emit(state.copyWith(groups: currentGroups));
     }
   }
 
-  _SearchData _getDummySearchData(String query, String category) {
-    // إضافة بيانات وهمية للمجموعات
-    final dummyGroups = category == 'all' || category == 'groups'
-        ? <SearchGroup>[
-            SearchGroup(
-              id: '1',
-              name: 'رواد الأعمال العرب',
-              imageUrl: 'https://randomuser.me/api/portraits/men/10.jpg',
-              description: 'مجتمع لرواد الأعمال والمستثمرين العرب',
-              membersCount: 1250,
-              postsCount: 320,
-              isJoined: false,
-            ),
-            SearchGroup(
-              id: '2',
-              name: 'متخصصو التسويق الرقمي',
-              imageUrl: 'https://randomuser.me/api/portraits/women/11.jpg',
-              description: 'نقاشات واستراتيجيات التسويق الرقمي',
-              membersCount: 890,
-              postsCount: 210,
-              isJoined: true,
-            ),
-          ]
-        : <SearchGroup>[];
+  Future<void> _toggleFollowUser(String userId) async {
+    // For now, let's just call the API.
 
-    // بيانات وهمية للبحث - نعرض نفس البيانات مع أو بدون query
-    final dummyAdvisors = category == 'all' || category == 'advisors'
-        ? <SearchAdvisor>[
-            SearchAdvisor(
-              id: '1',
-              name: 'أحمد محمد',
-              imageUrl: 'https://randomuser.me/api/portraits/men/1.jpg',
-              specialization: 'مستشار تطوير الأعمال',
-              followersCount: 1250,
-              isFollowing: false,
-              isVerified: true,
-            ),
-            SearchAdvisor(
-              id: '2',
-              name: 'سارة أحمد',
-              imageUrl: 'https://randomuser.me/api/portraits/women/2.jpg',
-              specialization: 'خبيرة تسويق إلكتروني',
-              followersCount: 890,
-              isFollowing: true,
-              isVerified: true,
-            ),
-            SearchAdvisor(
-              id: '3',
-              name: 'محمد علي',
-              imageUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
-              specialization: 'خبير استثمار',
-              followersCount: 3200,
-              isFollowing: false,
-              isVerified: false,
-            ),
-          ]
-        : <SearchAdvisor>[];
+    final result = await _userFollowingsRepository.toggleFollow(userId);
+    result.fold(
+      (failure) => log('Follow user failed: ${failure.message}'),
+      (message) => log('Follow user success: $message'),
+    );
+  }
 
-    final dummyPosts = category == 'all' || category == 'posts'
-        ? <PostModel>[
-            PostModel(
-              postId: '1',
-              name: 'أحمد محمد',
-              userName: '@ahmed_mohamed',
-              advisorId: '1',
-              isFollowing: true,
-              avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-              isVerified: true,
-              category: 'تطوير الأعمال',
-              timeAgo: 'منذ ساعتين',
-              content:
-                  'نصائح هامة لتطوير مشروعك الناشئ في عالم الأعمال الرقمي، لا تفوت هذه الفرصة #تطوير_أعمال #ريادة_أعمال',
-              images: [
-                'https://images.unsplash.com/photo-1498050108023-c5249f4df085',
-              ],
-              commentsCount: 25,
-              sharesCount: 12,
-              likesCount: 150,
-              topReactions: [],
-            ),
-            PostModel(
-              postId: '2',
-              name: 'سارة أحمد',
-              userName: '@sara_ahmed',
-              advisorId: '2',
-              isFollowing: true,
-              avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
-              isVerified: true,
-              category: 'تسويق',
-              timeAgo: 'منذ 5 ساعات',
-              content:
-                  'كيفية زيادة مبيعاتك عبر الإنترنت باستخدام استراتيجيات تسويق ذكية #تسويق_إلكتروني #مبيعات',
-              images: [
-                'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d',
-                'https://images.unsplash.com/photo-1460925895917-afdab827c52f',
-              ],
-              commentsCount: 42,
-              sharesCount: 18,
-              likesCount: 230,
-              topReactions: [],
-            ),
-          ]
-        : <PostModel>[];
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ❤️ POST REACTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
 
-    final dummyEvents = category == 'all' || category == 'events'
-        ? <SearchEvent>[
-            SearchEvent(
-              id: '1',
-              title: 'ورشة العمل: التسويق الرقمي 2024',
-              imageUrl:
-                  'https://images.unsplash.com/photo-1540575467063-178a50c2df87',
-              location: 'القاهرة، مصر',
-              advisorName: 'سارة أحمد',
-              dateTime: 'السبت 15 مارس - 6:00 مساءً',
-              price: '150 جنيه',
-              oldPrice: '200 جنيه',
-              attendeesCount: 45,
-              attendeesImages: [
-                'https://randomuser.me/api/portraits/men/3.jpg',
-                'https://randomuser.me/api/portraits/women/4.jpg',
-                'https://randomuser.me/api/portraits/men/5.jpg',
-              ],
-              isFeatured: true,
-            ),
-            SearchEvent(
-              id: '2',
-              title: 'ندوة الاستثمار في الأسواق الناشئة',
-              imageUrl:
-                  'https://images.unsplash.com/photo-1551288049-bebda4e38f71',
-              location: 'جدة، السعودية',
-              advisorName: 'محمد علي',
-              dateTime: 'الأحد 16 مارس - 8:00 مساءً',
-              price: 'مجاني',
-              oldPrice: '0',
-              attendeesCount: 120,
-              attendeesImages: [
-                'https://randomuser.me/api/portraits/women/6.jpg',
-                'https://randomuser.me/api/portraits/men/7.jpg',
-              ],
-              isFeatured: false,
-            ),
-          ]
-        : <SearchEvent>[];
+  void reactToPost({required String postId, ReactionType? reactionType}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
 
-    return _SearchData(
-      advisors: dummyAdvisors,
-      posts: dummyPosts,
-      events: dummyEvents,
-      groups: dummyGroups,
+    final post = state.posts[postIndex];
+    if (post.myReaction == reactionType && reactionType != null) return;
+
+    final isRemoving = reactionType == null;
+    final oldReaction = post.myReaction;
+
+    int newLikesCount = post.likesCount;
+    if (isRemoving) {
+      newLikesCount = (post.likesCount - 1).clamp(0, post.likesCount);
+    } else if (oldReaction == null) {
+      newLikesCount = post.likesCount + 1;
+    }
+
+    final newTopReactions = calculateTopReactions(
+      currentTopReactions: post.topReactions,
+      oldReaction: oldReaction,
+      newReaction: reactionType,
+      newLikesCount: newLikesCount,
+    );
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[postIndex] = post.copyWith(
+      likesCount: newLikesCount,
+      topReactions: newTopReactions,
+      myReaction: reactionType,
+      clearMyReaction: isRemoving,
+    );
+
+    emit(state.copyWith(posts: updatedPosts));
+
+    _homeRepository.reactToPost(
+      postId: postId,
+      reactionType: reactionType,
+      isRemove: isRemoving,
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 💾 SAVE POST
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> toggleSavePost({required String postId}) async {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+    final isCurrentlySaved = post.isSaved;
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[postIndex] = post.copyWith(isSaved: !isCurrentlySaved);
+
+    emit(
+      state.copyWith(posts: updatedPosts, actionStatus: CubitStates.initial),
+    );
+
+    final result = await _homeRepository.savedPost(
+      postId: postId,
+      isRemove: isCurrentlySaved,
+    );
+
+    result.fold(
+      (failure) {
+        final rollbackPosts = List<PostModel>.from(state.posts);
+        rollbackPosts[postIndex] = post;
+        emit(
+          state.copyWith(
+            posts: rollbackPosts,
+            actionStatus: CubitStates.failure,
+            actionMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            actionStatus: CubitStates.success,
+            actionMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🗑 DELETE & ARCHIVE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> deletePost({required String postId}) async {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+
+    emit(
+      state.copyWith(posts: updatedPosts, actionStatus: CubitStates.initial),
+    );
+
+    final result = await _homeRepository.deletePost(postId: postId);
+    result.fold(
+      (failure) {
+        final rollbackPosts = List<PostModel>.from(state.posts);
+        rollbackPosts.insert(postIndex, post);
+        emit(
+          state.copyWith(
+            posts: rollbackPosts,
+            actionStatus: CubitStates.failure,
+            actionMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            actionStatus: CubitStates.success,
+            actionMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> archivePost({required String postId}) async {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+
+    emit(
+      state.copyWith(posts: updatedPosts, actionStatus: CubitStates.initial),
+    );
+
+    final result = await _homeRepository.archivePost(postId: postId);
+    result.fold(
+      (failure) {
+        final rollbackPosts = List<PostModel>.from(state.posts);
+        rollbackPosts.insert(postIndex, post);
+        emit(
+          state.copyWith(
+            posts: rollbackPosts,
+            actionStatus: CubitStates.failure,
+            actionMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            actionStatus: CubitStates.success,
+            actionMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 👁️ HIDE & BLOCK
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  void toggleHidePost({required String postId}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+    final newHideState = !post.isHidden;
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[postIndex] = post.copyWith(isHidden: newHideState);
+
+    emit(state.copyWith(posts: updatedPosts));
+    _homeRepository.hidePost(postId: postId, isHide: newHideState);
+  }
+
+  Future<void> blockUser({
+    required String visiblePostId,
+    required String advisorId,
+  }) async {
+    emit(state.copyWith(actionStatus: CubitStates.loading));
+
+    final result = await _homeRepository.blockUser(userId: advisorId);
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            actionStatus: CubitStates.failure,
+            actionMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        final updatedPosts = state.posts
+            .map((post) {
+              if (post.postId == visiblePostId) {
+                return post.copyWith(isBlocked: true);
+              }
+              return post;
+            })
+            .where((p) => p.advisorId != advisorId || p.postId == visiblePostId)
+            .toList();
+
+        emit(
+          state.copyWith(
+            posts: updatedPosts,
+            actionStatus: CubitStates.success,
+            actionMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔄 SHARE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> toggleSharePost({required String postId}) async {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+    final isRemoving = post.isRepostedByMe;
+    final newSharesCount = isRemoving
+        ? (post.sharesCount - 1).clamp(0, post.sharesCount)
+        : post.sharesCount + 1;
+
+    final updatedPosts = List<PostModel>.from(state.posts);
+    updatedPosts[postIndex] = post.copyWith(
+      sharesCount: newSharesCount,
+      isRepostedByMe: !isRemoving,
+    );
+
+    emit(
+      state.copyWith(posts: updatedPosts, actionStatus: CubitStates.initial),
+    );
+
+    final result = await _homeRepository.sharePost(
+      postId: postId,
+      action: isRemoving ? "remove" : "add",
+    );
+
+    result.fold(
+      (failure) {
+        final rollbackPosts = List<PostModel>.from(state.posts);
+        rollbackPosts[postIndex] = post;
+        emit(
+          state.copyWith(
+            posts: rollbackPosts,
+            actionStatus: CubitStates.failure,
+            actionMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            actionStatus: CubitStates.success,
+            actionMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  void resetActionStatus() {
+    emit(
+      state.copyWith(actionStatus: CubitStates.initial, actionMessage: null),
     );
   }
 
@@ -293,18 +451,4 @@ class SearchCubit extends Cubit<SearchState> {
     _searchDebounce?.cancel();
     return super.close();
   }
-}
-
-class _SearchData {
-  final List<SearchAdvisor> advisors;
-  final List<PostModel> posts;
-  final List<SearchEvent> events;
-  final List<SearchGroup> groups;
-
-  const _SearchData({
-    required this.advisors,
-    required this.posts,
-    required this.events,
-    required this.groups,
-  });
 }

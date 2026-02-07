@@ -28,6 +28,26 @@ class SearchEvent extends Equatable {
     required this.isFeatured,
   });
 
+  factory SearchEvent.fromJson(Map<String, dynamic> json) {
+    return SearchEvent(
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      imageUrl: json['image'] ?? json['imageUrl'] ?? '',
+      location: json['location'] ?? '',
+      advisorName: json['advisorName'] ?? '',
+      dateTime: json['dateTime'] ?? '',
+      price: json['price']?.toString() ?? '0',
+      oldPrice: json['oldPrice']?.toString() ?? '0',
+      attendeesCount: json['attendeesCount'] ?? 0,
+      attendeesImages:
+          (json['attendeesImages'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      isFeatured: json['isFeatured'] ?? false,
+    );
+  }
+
   @override
   List<Object?> get props => [
     id,

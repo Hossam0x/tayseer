@@ -72,11 +72,17 @@ class FollowerItem extends StatelessWidget {
                                     color: Colors.grey.shade200,
                                   ),
                                 )
-                              : Text(
-                                  follower.name,
-                                  style: Styles.textStyle16.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                              // Fitted Text with width
+                              : ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: 170.w),
+                                  child: Text(
+                                    follower.name,
+                                    style: Styles.textStyle16.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: false,
                                   ),
                                 ),
                         ],
