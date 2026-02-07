@@ -25,26 +25,27 @@ class SearchResponseModel {
     if (type == 'all') {
       final data = json['data'] ?? {};
       posts =
-          (data['posts'] as List?)
-              ?.map(
-                (e) => PostModel(
-                  postId: e['id'] ?? '',
-                  content: e['content'] ?? '',
-                  images: e['image'] != null ? [e['image']] : [],
-                  name: e['advisor']?['name'] ?? '',
-                  avatar: e['advisor']?['image'] ?? '',
-                  advisorId: e['advisor']?['id'] ?? '',
-                  userName: '', // Not in the summary response
-                  isFollowing: false,
-                  category: '',
-                  timeAgo: '',
-                  commentsCount: 0,
-                  sharesCount: 0,
-                  likesCount: 0,
-                  topReactions: [],
-                ),
-              )
-              .toList() ??
+          (data['posts'] as List?)?.map((e) {
+            // إذا كان هناك userId استخدمه، وإلا استخدم advisorId
+            final authorId =
+                e['userId'] ?? e['advisor']?['id'] ?? e['advisorId'] ?? '';
+            return PostModel(
+              postId: e['id'] ?? '',
+              content: e['content'] ?? '',
+              images: e['image'] != null ? [e['image']] : [],
+              name: e['advisor']?['name'] ?? e['name'] ?? '',
+              avatar: e['advisor']?['image'] ?? e['avatar'] ?? '',
+              advisorId: authorId,
+              userName: '', // Not in the summary response
+              isFollowing: false,
+              category: '',
+              timeAgo: '',
+              commentsCount: 0,
+              sharesCount: 0,
+              likesCount: 0,
+              topReactions: [],
+            );
+          }).toList() ??
           [];
       advisors =
           (data['advisors'] as List?)

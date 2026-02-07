@@ -354,6 +354,16 @@ class SearchCubit extends Cubit<SearchState> {
     required String visiblePostId,
     required String advisorId,
   }) async {
+    if (advisorId.isEmpty) {
+      emit(
+        state.copyWith(
+          actionStatus: CubitStates.failure,
+          actionMessage: 'معرف المستخدم غير صحيح',
+        ),
+      );
+      return;
+    }
+
     emit(state.copyWith(actionStatus: CubitStates.loading));
 
     final result = await _homeRepository.blockUser(userId: advisorId);
