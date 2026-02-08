@@ -33,6 +33,7 @@ class AddStoryCubit extends Cubit<AddStoryState> {
       // 1. Request permissions
       final photosStatus = await Permission.photos.request();
       await Permission.camera.request();
+      await Permission.microphone.request(); // For video recording with audio
       final storageStatus = await Permission.storage.request();
 
       if (photosStatus.isDenied && storageStatus.isDenied) {
@@ -114,26 +115,48 @@ class AddStoryCubit extends Cubit<AddStoryState> {
   void selectAsset(AssetEntity asset) async {
     final file = await asset.file;
     if (file != null) {
-      emit(state.copyWith(selectedAsset: asset, previewFile: file));
+      // Check if it's a video
+      final isVideo = asset.type == AssetType.video;
+      emit(
+        state.copyWith(
+          selectedAsset: asset,
+          previewFile: file,
+          isVideoPreview: isVideo,
+        ),
+      );
     }
   }
 
   void resetSelection() {
-    emit(state.copyWith(selectedAsset: null, previewFile: null));
+    emit(
+      state.copyWith(
+        selectedAsset: null,
+        previewFile: null,
+        isVideoPreview: false,
+      ),
+    );
   }
 
-  void setPreviewFile(File file) {
-    emit(state.copyWith(previewFile: file));
+  void setPreviewFile(File file, {bool isVideo = false}) {
+    emit(state.copyWith(previewFile: file, isVideoPreview: isVideo));
   }
 
   Future<void> createStory() async {
+    if (isClosed) return;
     emit(state.copyWith(addStoryState: CubitStates.loading));
 
     final List<File> imageFiles = [];
+    final List<XFile> videoFiles = [];
 
     // Use previewFile if available (this covers both selected from gallery and captured)
     if (state.previewFile != null) {
-      imageFiles.add(state.previewFile!);
+      if (state.isVideoPreview) {
+        // It's a video from camera or gallery
+        videoFiles.add(XFile(state.previewFile!.path));
+      } else {
+        // It's an image
+        imageFiles.add(state.previewFile!);
+      }
     } else {
       // Fallback to old behavior if needed, but we aim for the new flow
       for (var asset in state.selectedImages) {
@@ -141,14 +164,13 @@ class AddStoryCubit extends Cubit<AddStoryState> {
         if (file != null) imageFiles.add(file);
       }
       imageFiles.addAll(state.capturedImages);
-    }
 
-    final List<XFile> videoFiles = [];
-    if (state.capturedVideo != null) {
-      videoFiles.add(state.capturedVideo!);
-    }
-    for (var video in state.selectedVideos) {
-      videoFiles.add(video);
+      if (state.capturedVideo != null) {
+        videoFiles.add(state.capturedVideo!);
+      }
+      for (var video in state.selectedVideos) {
+        videoFiles.add(video);
+      }
     }
 
     final result = await storiesRepository.createStories(
@@ -157,19 +179,25 @@ class AddStoryCubit extends Cubit<AddStoryState> {
       videos: videoFiles,
     );
 
+    if (isClosed) return;
+
     result.fold(
       (failure) {
-        emit(
-          state.copyWith(
-            addStoryState: CubitStates.failure,
-            errorMessage: failure.message,
-          ),
-        );
+        if (!isClosed) {
+          emit(
+            state.copyWith(
+              addStoryState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        }
       },
       (_) {
-        emit(state.copyWith(addStoryState: CubitStates.success));
-        contentController.clear();
-        resetSelection();
+        if (!isClosed) {
+          emit(state.copyWith(addStoryState: CubitStates.success));
+          contentController.clear();
+          resetSelection();
+        }
       },
     );
   }

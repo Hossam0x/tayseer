@@ -33,7 +33,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
         _cameraController = CameraController(
           _cameras[0],
           ResolutionPreset.high,
-          enableAudio: false,
+          enableAudio: true, // Enable audio for video recording
           imageFormatGroup: ImageFormatGroup.jpeg,
         );
         await _cameraController!.initialize();
@@ -65,25 +65,39 @@ class _AddStoryBodyState extends State<AddStoryBody> {
             builder: (context) => const CustomloadingApp(),
           );
         } else if (state.addStoryState == CubitStates.success) {
-          context.pop(); // Dismiss loading dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              isSuccess: true,
-              text: 'تم نشر القصة بنجاح',
-            ),
-          );
-          getIt<StoriesCubit>().fetchStories();
-          context.pop(); // Go back to profile
+          // Use post frame callback to avoid navigation during build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context); // Dismiss loading dialog
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(
+                context,
+                isSuccess: true,
+                text: 'تم نشر القصة بنجاح',
+              ),
+            );
+            getIt<StoriesCubit>().fetchStories();
+            // Navigate back to profile after a short delay
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            });
+          });
         } else if (state.addStoryState == CubitStates.failure) {
-          context.pop(); // Dismiss loading dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              isSuccess: false,
-              text: state.errorMessage ?? 'فشل نشر القصة',
-            ),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context); // Dismiss loading dialog
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(
+                context,
+                isSuccess: false,
+                text: state.errorMessage ?? 'فشل نشر القصة',
+              ),
+            );
+          });
         }
       },
       builder: (context, state) {

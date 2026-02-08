@@ -12,6 +12,7 @@ class AddStoryState extends Equatable {
   final int currentAssetsPage;
   final AssetEntity? selectedAsset;
   final File? previewFile;
+  final bool isVideoPreview;
 
   final List<AssetEntity> selectedImages;
   final List<File> capturedImages;
@@ -29,6 +30,7 @@ class AddStoryState extends Equatable {
     this.currentAssetsPage = 0,
     this.selectedAsset,
     this.previewFile,
+    this.isVideoPreview = false,
     this.addStoryState = CubitStates.initial,
     this.errorMessage,
     this.selectedImages = const [],
@@ -48,6 +50,7 @@ class AddStoryState extends Equatable {
     int? currentAssetsPage,
     AssetEntity? selectedAsset,
     File? previewFile,
+    bool? isVideoPreview,
     CubitStates? addStoryState,
     String? errorMessage,
     List<AssetEntity>? selectedImages,
@@ -66,6 +69,7 @@ class AddStoryState extends Equatable {
       currentAssetsPage: currentAssetsPage ?? this.currentAssetsPage,
       selectedAsset: selectedAsset ?? this.selectedAsset,
       previewFile: previewFile ?? this.previewFile,
+      isVideoPreview: isVideoPreview ?? this.isVideoPreview,
       addStoryState: addStoryState ?? this.addStoryState,
       errorMessage: errorMessage ?? this.errorMessage,
       selectedImages: selectedImages ?? this.selectedImages,
@@ -87,6 +91,7 @@ class AddStoryState extends Equatable {
     currentAssetsPage,
     selectedAsset,
     previewFile,
+    isVideoPreview,
     addStoryState,
     errorMessage,
     selectedImages,

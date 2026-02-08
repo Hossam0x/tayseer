@@ -112,17 +112,39 @@ class _GalleryItemState extends State<_GalleryItem> {
 
   @override
   Widget build(BuildContext context) {
+    final isVideo = widget.asset.type == AssetType.video;
+
     return GestureDetector(
       onTap: widget.onTap,
-      child: FutureBuilder<Uint8List?>(
-        future: _thumbnailFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done &&
-              snapshot.data != null) {
-            return Image.memory(snapshot.data!, fit: BoxFit.cover);
-          }
-          return Container(color: AppColors.kgreyColor.withOpacity(0.1));
-        },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          FutureBuilder<Uint8List?>(
+            future: _thumbnailFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done &&
+                  snapshot.data != null) {
+                return Image.memory(snapshot.data!, fit: BoxFit.cover);
+              }
+              return Container(color: AppColors.kgreyColor.withOpacity(0.1));
+            },
+          ),
+
+          // Video indicator
+          if (isVideo)
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: Container(
+                padding: EdgeInsets.all(4.r),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Icon(Icons.videocam, color: Colors.white, size: 16.sp),
+              ),
+            ),
+        ],
       ),
     );
   }
