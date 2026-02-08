@@ -180,7 +180,9 @@ class GreetingProfileCard extends StatelessWidget {
       context: context,
       barrierDismissible: false,
       builder: (_) {
-        return AppImage(AssetsData.kSuccessMarriageAnimationsLottie);
+        return Opacity(
+          opacity: 0.6,
+          child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie));
       },
     );
     Future.delayed(const Duration(seconds: 4), () {

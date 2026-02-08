@@ -4,7 +4,7 @@ import 'package:tayseer/features/user/interactions/presentation/Interactions_cub
 import 'package:tayseer/features/user/interactions/presentation/view/widget/Interaction_ProfileCard.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/default_appbar.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/greeting_interaction_card.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/recently_joined.dart'; // ✅ استيراد
+import 'package:tayseer/features/user/interactions/presentation/view/widget/recently_joined.dart';
 import 'package:tayseer/my_import.dart';
 import '../../../data/Model/Iinteraction_usermodel .dart';
 
@@ -23,24 +23,21 @@ class CategoryDetailPage extends StatelessWidget {
     required this.data,
     required this.isSubscribed,
     this.isGreetingCategory = false,
-    this.isRecentlyJoinedCategory = false, // ✅ تعديل القيمة الافتراضية
+    this.isRecentlyJoinedCategory = false,
   });
 
-  // ✅ دالة لتحديد عدد الأعمدة حسب نوع الجهاز
   int _getCrossAxisCount(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
     return isTablet ? 3 : 2;
   }
 
-  // ✅ دالة لتحديد childAspectRatio حسب عدد الأعمدة
   double _getChildAspectRatio(int crossAxisCount) {
     return crossAxisCount == 3 ? 0.65 : 0.68;
   }
 
-  // ✅ دالة لتحديد childAspectRatio للـ RecentlyJoined
   double _getRecentlyJoinedAspectRatio(int crossAxisCount) {
-    return crossAxisCount == 3 ? 0.52 : 0.55; // نسبة مختلفة للـ RecentlyJoined
+    return crossAxisCount == 3 ? 0.55 : 0.60;
   }
 
   @override
@@ -68,11 +65,13 @@ class CategoryDetailPage extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 11.h),
+            
+        
+            
             Expanded(
               child: isGreetingCategory
                   ? _buildGreetingList()
-                  : isRecentlyJoinedCategory // ✅ شرط جديد
+                  : isRecentlyJoinedCategory
                       ? _buildRecentlyJoinedGrid(context)
                       : _buildGridView(context),
             ),
@@ -98,7 +97,6 @@ class CategoryDetailPage extends StatelessWidget {
     );
   }
 
-  // ✅ دالة جديدة لعرض RecentlyJoined في Grid
   Widget _buildRecentlyJoinedGrid(BuildContext context) {
     final crossAxisCount = _getCrossAxisCount(context);
     final childAspectRatio = _getRecentlyJoinedAspectRatio(crossAxisCount);
@@ -106,8 +104,8 @@ class CategoryDetailPage extends StatelessWidget {
     return GridView.builder(
       padding: EdgeInsets.all(16.w),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount, // ✅ ديناميكي
-        childAspectRatio: childAspectRatio, // ✅ ديناميكي
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: childAspectRatio,
         crossAxisSpacing: 12.w,
         mainAxisSpacing: 12.h,
       ),
@@ -123,6 +121,7 @@ class CategoryDetailPage extends StatelessWidget {
           child: RecentlyJoined(
             item: data[index],
             forceBlur: !isSubscribed,
+            isCompact: true, // ✅ تفعيل الوضع المصغر
           ),
         );
       },
@@ -136,8 +135,8 @@ class CategoryDetailPage extends StatelessWidget {
     return GridView.builder(
       padding: EdgeInsets.all(16.w),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount, // ✅ ديناميكي
-        childAspectRatio: childAspectRatio, // ✅ ديناميكي
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: childAspectRatio,
         crossAxisSpacing: 12.w,
         mainAxisSpacing: 12.h,
       ),

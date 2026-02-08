@@ -89,18 +89,16 @@ class FilterSelectionScreen extends StatelessWidget {
           items: config.items ?? [],
           showSearch: config.showSearch,
           searchHintKey: config.searchHintKey,
-          // Return the translated/display value (not the key)
           onChanged: (key, value) => onChanged(value),
         );
       case QuestionType.multiSelectChips:
         return MultiSelectChipsWidget(
           itemsWithIcons: config.itemsWithIcons ?? {},
-          // MultiSelectChipsWidget returns translated values; forward them as-is
           onChanged: (List<String> values) => onChanged(values),
         );
       case QuestionType.picker:
         return CustomIosPicker(
-          initialValue: config.initialValue ?? 160,
+          initialValue: initialValue ?? config.initialValue ?? 160,
           minValue: config.minValue ?? 100,
           maxValue: config.maxValue ?? 220,
           unit: config.unit != null ? context.tr(config.unit!) : null,
@@ -111,10 +109,11 @@ class FilterSelectionScreen extends StatelessWidget {
     }
   }
 
-  // --- مخزن البيانات الشامل لجميع فلاتر التطبيق ---
   QuestionPageConfig _getConfig(BuildContext context) {
     switch (fieldKey) {
-      // --- 1. قسم العمر والبلد ---
+      // ============================================
+      // قسم العمر والبلد
+      // ============================================
       case 'country':
         return const QuestionPageConfig(
           titleKey: 'country',
@@ -124,6 +123,7 @@ class FilterSelectionScreen extends StatelessWidget {
           items: ['egypt', 'saudi_arabia', 'emirates', 'kuwait', 'jordan'],
           showSearch: true,
         );
+
       case 'nationality':
         return const QuestionPageConfig(
           titleKey: 'nationality',
@@ -138,40 +138,19 @@ class FilterSelectionScreen extends StatelessWidget {
           showSearch: true,
         );
 
-      // --- 2. بيانات وأنشطة ---
-      case 'cv':
-        return const QuestionPageConfig(
-          titleKey: 'cv_status',
-          questionNumber: 0,
-          questionCategoryEnum: 'activity',
-          type: QuestionType.selectableList,
-          items: ['no_preference', 'has_full_cv'],
-        );
-      case 'verified_id':
+      // ============================================
+      // بيانات وأنشطة 🔥
+      // ============================================
+      case 'isVerified':
         return const QuestionPageConfig(
           titleKey: 'verified_id',
           questionNumber: 0,
           questionCategoryEnum: 'activity',
           type: QuestionType.selectableList,
-          items: ['yes', 'no'],
+          items: ['yes', 'no', 'no_preference'],
         );
-      case 'recently_online':
-        return const QuestionPageConfig(
-          titleKey: 'recently_online',
-          questionNumber: 0,
-          questionCategoryEnum: 'activity',
-          type: QuestionType.selectableList,
-          items: ['active_recently', 'no_preference'],
-        );
-      case 'gold_account':
-        return const QuestionPageConfig(
-          titleKey: 'gold_account',
-          questionNumber: 0,
-          questionCategoryEnum: 'activity',
-          type: QuestionType.selectableList,
-          items: ['gold_members', 'no_preference'],
-        );
-      case 'new_member':
+
+      case 'isNew':
         return const QuestionPageConfig(
           titleKey: 'new_member',
           questionNumber: 0,
@@ -179,7 +158,8 @@ class FilterSelectionScreen extends StatelessWidget {
           type: QuestionType.selectableList,
           items: ['recently_joined', 'no_preference'],
         );
-      case 'photo_status':
+
+      case 'imageBlur':
         return const QuestionPageConfig(
           titleKey: 'photo_status',
           questionNumber: 0,
@@ -188,7 +168,18 @@ class FilterSelectionScreen extends StatelessWidget {
           items: ['visible_photo', 'hidden_photo', 'no_preference'],
         );
 
-      // --- 3. بيانات شخصية ---
+      case 'goalMarry':
+        return const QuestionPageConfig(
+          titleKey: 'gold_members',
+          questionNumber: 10,
+          questionCategoryEnum: 'goals',
+          type: QuestionType.selectableList,
+          items: ['gold_account', 'no_preference'],
+        );
+
+      // ============================================
+      // بيانات شخصية
+      // ============================================
       case 'height':
         return const QuestionPageConfig(
           titleKey: 'height',
@@ -200,14 +191,16 @@ class FilterSelectionScreen extends StatelessWidget {
           initialValue: 170,
           unit: 'cm',
         );
-      case 'marital_status':
+
+      case 'maritalStatus':
         return const QuestionPageConfig(
           titleKey: 'marital_status',
           questionNumber: 3,
           questionCategoryEnum: 'personal',
           type: QuestionType.selectableList,
-          items: ['single', 'married', 'divorced', 'no_preference'],
+          items: ['single', 'married', 'divorced', 'widowed', 'no_preference'],
         );
+
       case 'job':
         return const QuestionPageConfig(
           titleKey: 'job',
@@ -224,17 +217,19 @@ class FilterSelectionScreen extends StatelessWidget {
             'job_business',
             'job_unemployed',
             'job_other',
+            'no_preference',
           ],
           showSearch: true,
           searchHintKey: 'search_jobs',
         );
-      case 'education':
+
+      case 'educationLevel':
         return const QuestionPageConfig(
-          showSearch: true,
           titleKey: 'education_level',
           questionNumber: 5,
           questionCategoryEnum: 'personal',
           type: QuestionType.selectableList,
+          showSearch: true,
           items: [
             'education_primary',
             'education_secondary',
@@ -243,8 +238,10 @@ class FilterSelectionScreen extends StatelessWidget {
             'education_master',
             'education_phd',
             'education_none',
+            'no_preference',
           ],
         );
+
       case 'hobbies':
         return QuestionPageConfig(
           titleKey: 'hobbies',
@@ -261,16 +258,10 @@ class FilterSelectionScreen extends StatelessWidget {
           },
         );
 
-      // --- 4. الأهداف ---
-      case 'marriage_goal':
-        return const QuestionPageConfig(
-          titleKey: 'marriage',
-          questionNumber: 10,
-          questionCategoryEnum: 'goals',
-          type: QuestionType.selectableList,
-          items: ['year', '2_years', '3_years', 'no_preference'],
-        );
-      case 'engagement_goal':
+      // ============================================
+      // الأهداف
+      // ============================================
+      case 'goalEngagment':
         return const QuestionPageConfig(
           titleKey: 'engagement',
           questionNumber: 11,
@@ -278,15 +269,17 @@ class FilterSelectionScreen extends StatelessWidget {
           type: QuestionType.selectableList,
           items: ['year', '2_years', '3_years', 'no_preference'],
         );
-      case 'travel_goal':
+
+      case 'goalTravel':
         return const QuestionPageConfig(
           titleKey: 'travel',
           questionNumber: 12,
           questionCategoryEnum: 'goals',
           type: QuestionType.selectableList,
-          items: ['yes_travel', 'no_travel', '3_years', 'no_preference'],
+          items: ['yes_travel', 'no_travel', 'no_preference'],
         );
-      case 'family_goal':
+
+      case 'goalChildren':
         return const QuestionPageConfig(
           titleKey: 'family',
           questionNumber: 13,
@@ -295,8 +288,10 @@ class FilterSelectionScreen extends StatelessWidget {
           items: ['yes_children', 'no_children', 'no_preference'],
         );
 
-      // --- 5. الدين والعادات ---
-      case 'religious_commitment':
+      // ============================================
+      // الدين والعادات
+      // ============================================
+      case 'religiousCommitment':
         return const QuestionPageConfig(
           titleKey: 'religious_commitment',
           questionNumber: 15,
@@ -309,15 +304,8 @@ class FilterSelectionScreen extends StatelessWidget {
             'no_preference',
           ],
         );
-      case 'alcohol':
-        return const QuestionPageConfig(
-          titleKey: 'alcohol',
-          questionNumber: 16,
-          questionCategoryEnum: 'religion',
-          type: QuestionType.selectableList,
-          items: ['alcohol_yes', 'alcohol_no', 'no_preference'],
-        );
-      case 'smoking':
+
+      case 'smoker':
         return const QuestionPageConfig(
           titleKey: 'smoking',
           questionNumber: 17,
@@ -325,7 +313,8 @@ class FilterSelectionScreen extends StatelessWidget {
           type: QuestionType.selectableList,
           items: ['smoking_yes', 'smoking_no', 'no_preference'],
         );
-      case 'hijab':
+
+      case 'wearHijab':
         return const QuestionPageConfig(
           titleKey: 'hijab',
           questionNumber: 18,
@@ -334,6 +323,9 @@ class FilterSelectionScreen extends StatelessWidget {
           items: ['hijab_yes', 'hijab_no', 'no_preference'],
         );
 
+      // ============================================
+      // Default
+      // ============================================
       default:
         return const QuestionPageConfig(
           titleKey: 'select_option',

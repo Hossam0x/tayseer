@@ -9,6 +9,9 @@ class MarriageUserProfileModel {
   final YourGoals? yourGoals;
   final String? myDescription;
   final int? lastQuestionNumber;
+  
+  // ⭐⭐⭐ NEW: Progress percentage from API
+  final int? answerCompletedPercentage;
 
   // Additional fields for the "view" format from API
   final ProfileHeader? header;
@@ -25,6 +28,7 @@ class MarriageUserProfileModel {
     this.yourGoals,
     this.myDescription,
     this.lastQuestionNumber,
+    this.answerCompletedPercentage, // ⭐⭐⭐ NEW
     this.header,
     this.timeline,
     this.religious,
@@ -103,6 +107,7 @@ class MarriageUserProfileModel {
       yourGoals: yourGoals,
       hobbies: hobbies,
       myDescription: bioText,
+      answerCompletedPercentage: json['answerCompletedPercentage'] as int?, // ⭐⭐⭐ NEW
       header: header,
       timeline: timelineData
           .map((e) => TimelineGoal.fromJson(e as Map<String, dynamic>))
@@ -139,6 +144,7 @@ class MarriageUserProfileModel {
           : null,
       myDescription: json['myDescription'] as String?,
       lastQuestionNumber: json['lastQuestionNumber']?['questionNumber'] as int?,
+      answerCompletedPercentage: json['answerCompletedPercentage'] as int?, // ⭐⭐⭐ NEW
     );
   }
 
@@ -152,6 +158,7 @@ class MarriageUserProfileModel {
       'userMedia': userMedia?.toJson(),
       'yourGoals': yourGoals?.toJson(),
       'myDescription': myDescription,
+      'answerCompletedPercentage': answerCompletedPercentage, // ⭐⭐⭐ NEW
     };
   }
 
@@ -164,6 +171,7 @@ class MarriageUserProfileModel {
     YourGoals? yourGoals,
     String? myDescription,
     int? lastQuestionNumber,
+    int? answerCompletedPercentage, // ⭐⭐⭐ NEW
     ProfileHeader? header,
     List<TimelineGoal>? timeline,
     ReligiousInfo? religious,
@@ -178,6 +186,7 @@ class MarriageUserProfileModel {
       yourGoals: yourGoals ?? this.yourGoals,
       myDescription: myDescription ?? this.myDescription,
       lastQuestionNumber: lastQuestionNumber ?? this.lastQuestionNumber,
+      answerCompletedPercentage: answerCompletedPercentage ?? this.answerCompletedPercentage, // ⭐⭐⭐ NEW
       header: header ?? this.header,
       timeline: timeline ?? this.timeline,
       religious: religious ?? this.religious,

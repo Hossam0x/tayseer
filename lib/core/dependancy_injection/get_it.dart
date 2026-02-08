@@ -51,6 +51,8 @@ import 'package:tayseer/features/user/interactions/data/repos/interactions_repos
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/marriage/repositories/marriage_repository.dart';
 import 'package:tayseer/features/user/marriage/repositories/marriage_repository_impl.dart';
+import 'package:tayseer/features/user/marriage_filter/repo/marriage_filter_repo.dart';
+import 'package:tayseer/features/user/marriage_filter/repo/marriage_filter_repo_impl.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo_impl.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
@@ -353,5 +355,11 @@ Future<void> setupGetIt() async {
   /// Search Repository
   getIt.registerLazySingleton<SearchRepository>(
     () => SearchRepository(getIt<ApiService>()),
+  );
+
+  /// Marriage Filter Repo
+
+  getIt.registerLazySingleton<MarriageFilterRepo>(
+    () => MarriageFilterRepoImpl(getIt<ApiService>()),
   );
 }
