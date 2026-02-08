@@ -76,6 +76,7 @@ abstract class AppColors {
   static const Color kGreyColor = Colors.black38;
   static Color kRedColor = Colors.red;
   static Color kWhiteColor = Colors.white;
+  static Color kbinkColor = HexColor('f2a6b5');
   static Color kBlueButtonTextColor = HexColor(
     '0C5AF0',
   ); // لون النص الأزرق للأزرار

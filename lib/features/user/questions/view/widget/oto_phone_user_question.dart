@@ -128,7 +128,12 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
                   });
                 },
               ),
+              Gap(context.height * 0.02),
 
+              Text(
+                context.tr('otp_sup_title_phone'),
+                style: Styles.textStyle14.copyWith(color: AppColors.kgreyColor),
+              ),
               SizedBox(height: context.height * 0.06),
 
               // Submit button

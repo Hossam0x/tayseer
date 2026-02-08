@@ -201,6 +201,7 @@ class QuestionsRepoImpl implements QuestionsRepo {
 
       final success = response['success'] ?? false;
       if (success) {
+        CachNetwork.setBool(key: kIsCompletedQuestions, value: true);
         return right(null);
       } else {
         return left(

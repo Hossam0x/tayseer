@@ -9,111 +9,99 @@ class MarriageFilterBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => MarriageFilterCubit(),
-      child: CustomBackground(
-        child: BlocConsumer<MarriageFilterCubit, MarriageFilterState>(
-          listener: (context, state) {
-            if (state.marriageFilterStatus == CubitStates.success) {
-              context.pop();
-              context.pop(); // إغلاق شاشة الفلتر بعد النجاح
-            } else if (state.marriageFilterStatus == CubitStates.failure) {
-              context.pop(); // إغلاق أي حوار تحميل مفتوح
-              ScaffoldMessenger.of(context).showSnackBar(
-                CustomSnackBar(
-                  context,
-                  text: state.errorMessage ?? 'حدث خطأ',
-                  isError: true,
-                ),
-              );
-            } else if (state.marriageFilterStatus == CubitStates.loading) {
-              showDialog(
-                context: context,
-                builder: (context) => const CustomloadingApp(),
-              );
-            }
-          },
-          builder: (context, state) {
-            return CustomScrollView(
-              slivers: [
-                _buildSliverAppBar(context),
-
-                // 1. قسم العمر والبلد
-                SliverToBoxAdapter(
-                  child: _buildAgeAndCountrySection(context, state),
-                ),
-
-                // 2. قسم بيانات وأنشطة
-                SliverToBoxAdapter(
-                  child: CustomDataCard(
-                    sectionTitle: "بيانات وأنشطة 🔥",
-                    items: [
-                      _buildRow(context, "cv", "cv"),
-                      _buildRow(context, "verified_id", "verified_id"),
-                      _buildRow(context, "recently_online", "recently_online"),
-                      _buildRow(context, "gold_account", "gold_account"),
-                      _buildRow(context, "new_member", "new_member"),
-                      _buildRow(context, "photo_status", "photo_status"),
-                    ],
-                  ),
-                ),
-
-                // 3. قسم بيانات شخصية
-                SliverToBoxAdapter(
-                  child: CustomDataCard(
-                    sectionTitle: "بيانات شخصية",
-                    items: [
-                      _buildRow(context, "height", "height"),
-                      _buildRow(context, "marital_status", "marital_status"),
-                      _buildRow(context, "job", "job"),
-                      _buildRow(context, "education", "education"),
-                      _buildRow(context, "hobbies", "hobbies"),
-                    ],
-                  ),
-                ),
-
-                // 4. قسم الأهداف
-                SliverToBoxAdapter(
-                  child: CustomDataCard(
-                    sectionTitle: "الأهداف",
-                    items: [
-                      _buildRow(context, "marriage", "marriage"),
-                      _buildRow(context, "engagement", "engagement"),
-                      _buildRow(context, "travel", "travel"),
-                      _buildRow(context, "family", "family"),
-                    ],
-                  ),
-                ),
-                // 5. قسم الدين والعادات
-                SliverToBoxAdapter(
-                  child: CustomDataCard(
-                    sectionTitle: "الدين والعادات",
-                    items: [
-                      _buildRow(
-                        context,
-                        "religious_commitment",
-                        "religious_commitment",
-                      ),
-                      _buildRow(context, "alcohol", "alcohol"),
-                      _buildRow(context, "smoking", "smoking"),
-                      _buildRow(context, "hijab", "hijab"),
-                    ],
-                  ),
-                ),
-
-                const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
-
-                // زر التطبيق
-                _buildApplyButton(context, state),
-              ],
+    return CustomBackground(
+      child: BlocConsumer<MarriageFilterCubit, MarriageFilterState>(
+        listener: (context, state) {
+          if (state.marriageFilterStatus == CubitStates.success) {
+            context.pop();
+            context.pop();
+          } else if (state.marriageFilterStatus == CubitStates.failure) {
+            context.pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(
+                context,
+                text: state.errorMessage ?? 'حدث خطأ',
+                isError: true,
+              ),
             );
-          },
-        ),
+          } else if (state.marriageFilterStatus == CubitStates.loading) {
+            showDialog(
+              context: context,
+              builder: (context) => Center(child: const CustomloadingApp()),
+            );
+          }
+        },
+        builder: (context, state) {
+          return CustomScrollView(
+            slivers: [
+              _buildSliverAppBar(context),
+
+              SliverToBoxAdapter(
+                child: _buildAgeAndCountrySection(context, state),
+              ),
+
+              SliverToBoxAdapter(
+                child: CustomDataCard(
+                  sectionTitle: "بيانات وأنشطة 🔥",
+                  items: [
+                    _buildRow(context, "verified_id", "isVerified"),
+                    _buildRow(context, "new_member", "isNew"),
+                    _buildRow(context, "photo_status", "imageBlur"),
+                    _buildRow(context, "gold_account", "goalMarry"),
+                  ],
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: CustomDataCard(
+                  sectionTitle: "بيانات شخصية",
+                  items: [
+                    _buildRow(context, "height", "height"),
+                    _buildRow(context, "marital_status", "maritalStatus"),
+                    _buildRow(context, "job", "job"),
+                    _buildRow(context, "education", "educationLevel"),
+                    _buildRow(context, "hobbies", "hobbies"),
+                  ],
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: CustomDataCard(
+                  sectionTitle: "الأهداف",
+                  items: [
+                    _buildRow(context, "marriage", "goalMarry"),
+                    _buildRow(context, "engagement", "goalEngagment"),
+                    _buildRow(context, "travel", "goalTravel"),
+                    _buildRow(context, "family", "goalChildren"),
+                  ],
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: CustomDataCard(
+                  sectionTitle: "الدين والعادات",
+                  items: [
+                    _buildRow(
+                      context,
+                      "religious_commitment",
+                      "religiousCommitment",
+                    ),
+                    _buildRow(context, "smoking", "smoker"),
+                    _buildRow(context, "hijab", "wearHijab"),
+                  ],
+                ),
+              ),
+
+              const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
+
+              _buildApplyButton(context, state),
+            ],
+          );
+        },
       ),
     );
   }
 
-  // ميثود بناء السطر وربطه بشاشة الاختيار
   FilterItemModel _buildRow(
     BuildContext context,
     String title,
@@ -122,11 +110,8 @@ class MarriageFilterBody extends StatelessWidget {
     final state = context.read<MarriageFilterCubit>().state;
     final value = state.selectedFilters[fieldKey];
 
-    // منطق عرض القيمة
     String displayValue = "لا يوجد تفضيل";
     if (value is String) {
-      // if stored value looks like a key (contains underscore), translate it,
-      // otherwise assume it's already translated/display text and show it directly
       displayValue = value.contains('_') ? context.tr(value) : value;
     }
     if (value is List) displayValue = "${value.length} مختارة";
@@ -199,7 +184,6 @@ class MarriageFilterBody extends StatelessWidget {
           Text("العمر", style: Styles.textStyle16Bold),
           const SizedBox(height: 10),
 
-          // استخدام SliderTheme لتخصيص شكل الدوائر والـ Tooltip (نفس الديزاين الخاص بك)
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               rangeThumbShape: const RoundRangeSliderThumbShape(
@@ -210,7 +194,6 @@ class MarriageFilterBody extends StatelessWidget {
               thumbColor: Colors.white,
               activeTrackColor: const Color(0xFFE91E63),
               inactiveTrackColor: Colors.grey[200],
-
               showValueIndicator: ShowValueIndicator.always,
               valueIndicatorColor: Colors.pink[50],
               valueIndicatorTextStyle: const TextStyle(
@@ -229,7 +212,6 @@ class MarriageFilterBody extends StatelessWidget {
                 state.ageRange.end.round().toString(),
               ),
               onChanged: (values) {
-                // تحديث الـ Cubit مباشرة بدل الـ setState
                 context.read<MarriageFilterCubit>().updateAgeRange(values);
               },
             ),
@@ -244,7 +226,6 @@ class MarriageFilterBody extends StatelessWidget {
     );
   }
 
-  // ميثود مساعدة لربط الصفوف الداخلية (البلد والجنسية) بـ Cubit وشاشة الاختيار
   Widget _buildInternalRow(
     BuildContext context,
     String title,
@@ -253,7 +234,6 @@ class MarriageFilterBody extends StatelessWidget {
     final state = context.read<MarriageFilterCubit>().state;
     final value = state.selectedFilters[fieldKey];
 
-    // تحديد النص المعروض (قيمة مختارة أو قيمة افتراضية)
     String displayValue = "لا يوجد تفضيل";
     if (value != null) {
       final s = value.toString();
@@ -298,21 +278,21 @@ class MarriageFilterBody extends StatelessWidget {
   }
 
   Widget _buildApplyButton(BuildContext context, MarriageFilterState state) {
+    final hasFilters =
+        state.selectedFilters.isNotEmpty ||
+        state.ageRange != const RangeValues(22, 35);
+
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 20),
         child: Center(
           child: CustomBotton(
             backGroundcolor: AppColors.kgreyColor,
-            useGradient:
-                state.selectedFilters.isNotEmpty ||
-                state.ageRange != const RangeValues(22, 35),
+            useGradient: hasFilters,
             width: context.width * 0.9,
             title: context.tr('apply_filters'),
             onPressed: () {
-              // هنا الداتا كاملة جاهزة للإرسال للسيرفر
-              print("Age: ${state.ageRange}");
-              print("Filters: ${state.selectedFilters}");
+              context.read<MarriageFilterCubit>().sendMarriageFilter();
             },
           ),
         ),

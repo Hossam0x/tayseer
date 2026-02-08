@@ -26,7 +26,11 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
         errorMessage: null,
       ),
     );
-    final result = await _repo.marriageFilter(filters: state.selectedFilters);
+
+    final filtersToSend = _prepareFiltersForBackend();
+    debugPrint('🚀 Sending to backend: $filtersToSend');
+
+    final result = await _repo.marriageFilter(filters: filtersToSend);
     result.fold(
       (failure) {
         emit(
@@ -40,5 +44,27 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
         emit(state.copyWith(marriageFilterStatus: CubitStates.success));
       },
     );
+  }
+
+  Map<String, dynamic> _prepareFiltersForBackend() {
+    final Map<String, dynamic> filters = {};
+
+    // ✅ minAge و maxAge دايماً
+    filters['minAge'] = state.ageRange.start.round();
+    filters['maxAge'] = state.ageRange.end.round();
+
+    // ✅ باقي الفلاتر بس لو ليها قيمة فعلية
+    state.selectedFilters.forEach((key, value) {
+      // ❌ سيبها لو "لا يوجد تفضيل" أو null أو فاضية
+      if (value == null) return;
+      if (value == 'لا يوجد تفضيل') return;
+      if (value is String && value.trim().isEmpty) return;
+      if (value is List && value.isEmpty) return;
+
+      // ✅ ضفها لو قيمة حقيقية
+      filters[key] = value;
+    });
+
+    return filters;
   }
 }
