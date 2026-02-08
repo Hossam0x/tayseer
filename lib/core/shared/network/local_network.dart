@@ -41,6 +41,13 @@ class CachNetwork {
     } else {
       selectedUserType = UserTypeEnum.user;
     }
+
+    ///  is Completed  Data
+    if (kCurrentUserData?.completeData == true) {
+      CachNetwork.setBool(key: kIsCompletedQuestions, value: true);
+    } else {
+      CachNetwork.setBool(key: kIsCompletedQuestions, value: false);
+    }
   }
 
   static Future<bool> setData({

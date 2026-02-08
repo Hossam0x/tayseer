@@ -496,35 +496,197 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     emit(state.copyWith(posts: updatedPosts));
   }
 
-  Future<void> blockUser(String advisorId) async {
-    // لو الـ Cubit مقفول → متكملش
-    if (isClosed) return;
+  PostModel? _findPost(String postId) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    return index != -1 ? state.posts[index] : null;
+  }
 
-    emit(state.copyWith(blockActionState: CubitStates.loading));
+  Future<void> toggleSavePost({required String postId}) async {
+    final post = _findPost(postId);
+    if (post == null) return;
 
-    final result = await _repository.blockUser(advisorId);
+    final isCurrentlySaved = post.isSaved;
 
-    // بعد الـ await → تحقق تاني قبل الـ emit
-    if (isClosed) return;
+    emit(state.copyWith(saveActionState: CubitStates.initial));
+
+    // Optimistic Update
+    final updatedPost = post.copyWith(isSaved: !isCurrentlySaved);
+    _updatePostInList(postId, updatedPost);
+
+    final result = await _repository.savedPost(
+      postId: postId,
+      isRemove: isCurrentlySaved,
+    );
 
     result.fold(
       (failure) {
-        if (isClosed) return;
+        _updatePostInList(postId, post);
         emit(
           state.copyWith(
-            blockActionState: CubitStates.failure,
-            blockMessage: failure.message,
+            saveActionState: CubitStates.failure,
+            saveMessage: failure.message,
           ),
         );
       },
       (message) {
-        if (isClosed) return;
         emit(
           state.copyWith(
-            blockActionState: CubitStates.success,
-            blockMessage: message,
+            saveActionState: CubitStates.success,
+            saveMessage: message,
           ),
         );
+      },
+    );
+  }
+
+  Future<void> deletePost({required String postId}) async {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    final originalPosts = List<PostModel>.from(state.posts);
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+
+    emit(
+      state.copyWith(
+        posts: updatedPosts,
+        deletePostActionState: CubitStates.initial,
+      ),
+    );
+
+    final result = await _repository.deletePost(postId: postId);
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            posts: originalPosts,
+            deletePostActionState: CubitStates.failure,
+            deletePostMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            deletePostActionState: CubitStates.success,
+            deletePostMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> archivePost({required String postId}) async {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    final originalPosts = List<PostModel>.from(state.posts);
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+
+    emit(
+      state.copyWith(
+        posts: updatedPosts,
+        archivePostActionState: CubitStates.initial,
+      ),
+    );
+
+    final result = await _repository.archivePost(postId: postId);
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            posts: originalPosts,
+            archivePostActionState: CubitStates.failure,
+            archivePostMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            archivePostActionState: CubitStates.success,
+            archivePostMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  void toggleHidePost({required String postId}) {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    final newHideState = !post.isHidden;
+    final updatedPost = post.copyWith(isHidden: newHideState);
+    _updatePostInList(postId, updatedPost);
+
+    _repository.hidePost(postId: postId, isHide: newHideState);
+  }
+
+  Future<void> blockUser({
+    String? visiblePostId,
+    required String advisorId,
+  }) async {
+    if (isClosed) return;
+
+    emit(
+      state.copyWith(
+        blockActionState: visiblePostId == null ? CubitStates.loading : null,
+        blockUserActionState: visiblePostId != null
+            ? CubitStates.loading
+            : null,
+      ),
+    );
+
+    final result = await _repository.blockUser(advisorId);
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            blockActionState: visiblePostId == null
+                ? CubitStates.failure
+                : null,
+            blockMessage: visiblePostId == null ? failure.message : null,
+            blockUserActionState: visiblePostId != null
+                ? CubitStates.failure
+                : null,
+            blockUserMessage: visiblePostId != null ? failure.message : null,
+          ),
+        );
+      },
+      (message) {
+        if (visiblePostId != null) {
+          // التعامل مع الحظر من بوست
+          final updatedPosts = <PostModel>[];
+          for (final post in state.posts) {
+            if (post.postId == visiblePostId) {
+              updatedPosts.add(post.copyWith(isBlocked: true));
+            } else if (post.advisorId == advisorId) {
+              continue;
+            } else {
+              updatedPosts.add(post);
+            }
+          }
+          emit(
+            state.copyWith(
+              posts: updatedPosts,
+              blockUserActionState: CubitStates.success,
+              blockUserMessage: message,
+            ),
+          );
+        } else {
+          // التعامل مع الحظر من البروفايل
+          emit(
+            state.copyWith(
+              blockActionState: CubitStates.success,
+              blockMessage: message,
+            ),
+          );
+        }
       },
     );
   }

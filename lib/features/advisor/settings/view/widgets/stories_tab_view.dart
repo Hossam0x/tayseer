@@ -1,8 +1,10 @@
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
+import 'package:tayseer/features/advisor/stories/stories.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class StoriesTabView extends StatelessWidget {
@@ -10,14 +12,14 @@ class StoriesTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final SnackBarService snackBarService = SnackBarService();
     return BlocConsumer<ArchivedStoriesCubit, ArchivedStoriesState>(
       listener: (context, state) {
         if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: AppColors.kRedColor,
-            ),
+          snackBarService.showSnackBar(
+            context: context,
+            text: state.errorMessage!,
+            isError: true,
           );
           context.read<ArchivedStoriesCubit>().clearError();
         }
@@ -167,6 +169,14 @@ class StoriesTabView extends StatelessWidget {
     BuildContext context,
     ArchivedStoriesState state,
   ) {
+    // Flatten the stories list to display individual stories in the grid
+    final List<MapEntry<UserStoriesModel, StoryModel>> allStories = [];
+    for (var userStory in state.stories) {
+      for (var story in userStory.stories) {
+        allStories.add(MapEntry(userStory, story));
+      }
+    }
+
     return NotificationListener<ScrollNotification>(
       onNotification: (scrollInfo) {
         if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
@@ -192,13 +202,50 @@ class StoriesTabView extends StatelessWidget {
                   childAspectRatio: 0.8,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  if (index == state.stories.length) {
+                  if (index == allStories.length) {
                     return _buildLoadMoreIndicator(state);
                   }
 
-                  final story = state.stories[index];
-                  return _buildStoryItem(context, story);
-                }, childCount: state.stories.length + (state.hasMore ? 1 : 0)),
+                  final parentUserStory = allStories[index].key;
+                  final story = allStories[index].value;
+
+                  return GestureDetector(
+                    onTap: () {
+                      // Navigate to StoryDetailsView
+                      // Create a temporary UserStoriesModel starting from this story
+                      final storyIndex = parentUserStory.stories.indexOf(story);
+                      final reorderedStories = parentUserStory.stories.sublist(
+                        storyIndex,
+                      );
+                      final tempUserStory = parentUserStory.copyWith(
+                        stories: reorderedStories,
+                      );
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (newContext) => MultiBlocProvider(
+                            providers: [
+                              BlocProvider.value(value: getIt<StoriesCubit>()),
+                              BlocProvider.value(
+                                value: context.read<ArchivedStoriesCubit>(),
+                              ),
+                            ],
+                            child: StoryDetailsView(
+                              userStories: tempUserStory,
+                              heroTag: 'archive_${story.id}',
+                              isArchive: true,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: Hero(
+                      tag: 'archive_${story.id}',
+                      child: _buildStoryItem(context, story),
+                    ),
+                  );
+                }, childCount: allStories.length + (state.hasMore ? 1 : 0)),
               ),
             ),
           ],
@@ -207,8 +254,8 @@ class StoriesTabView extends StatelessWidget {
     );
   }
 
-  Widget _buildStoryItem(BuildContext context, ArchiveStoryModel story) {
-    final date = _parseDate(story.createdAt);
+  Widget _buildStoryItem(BuildContext context, StoryModel story) {
+    final date = story.createdAt;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(30.r),
@@ -216,12 +263,8 @@ class StoriesTabView extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // Story Media (Image/Video)
-          if (story.mediaType == 'image' && story.image != null)
-            _buildStoryImage(story.image!)
-          else if (story.mediaType == 'video' && story.video != null)
-            _buildStoryVideo(story.video!)
-          else
-            _buildPlaceholder(),
+          // Note: Current StoryModel mainly has image. If there's video, it might be in a different field or handled elsewhere.
+          _buildStoryImage(story.image),
 
           // Content Overlay
           Positioned.fill(
@@ -243,10 +286,10 @@ class StoriesTabView extends StatelessWidget {
 
           // Date Badge
           Positioned(
-            top: 20.h,
-            right: 20.w,
+            top: 15.h,
+            right: 15.w,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14.r),
@@ -259,18 +302,18 @@ class StoriesTabView extends StatelessWidget {
                 ],
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     date.day.toString(),
                     style: Styles.textStyle16Meduim.copyWith(
-                      color: AppColors.secondary950,
+                      color: AppColors.blackColor,
                     ),
                   ),
-                  Gap(2.h),
                   Text(
                     _getMonthName(date.month),
-                    style: Styles.textStyle12.copyWith(color: AppColors.gray2),
+                    style: Styles.textStyle12.copyWith(
+                      color: AppColors.blackColor,
+                    ),
                   ),
                 ],
               ),
@@ -278,64 +321,46 @@ class StoriesTabView extends StatelessWidget {
           ),
 
           // Special Badge
-          if (story.isSpecial)
-            Positioned(
-              top: 20.h,
-              left: 20.w,
-              child: Container(
-                padding: EdgeInsets.all(6.w),
-                decoration: BoxDecoration(
-                  color: AppColors.kprimaryColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(Icons.star, color: Colors.white, size: 16.sp),
-              ),
-            ),
-
-          // Content
-          if (story.content != null && story.content!.isNotEmpty)
-            Positioned(
-              bottom: 15.h,
-              right: 15.w,
-              left: 15.w,
-              child: Text(
-                story.content!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Styles.textStyle14.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
+          // if (story.isSpecial)
+          //   Positioned(
+          //     top: 20.h,
+          //     left: 20.w,
+          //     child: Container(
+          //       padding: EdgeInsets.all(6.w),
+          //       decoration: BoxDecoration(
+          //         color: AppColors.kprimaryColor,
+          //         shape: BoxShape.circle,
+          //         boxShadow: [
+          //           BoxShadow(
+          //             color: Colors.black.withOpacity(0.2),
+          //             blurRadius: 4,
+          //             offset: const Offset(0, 2),
+          //           ),
+          //         ],
+          //       ),
+          //       child: Icon(Icons.star, color: Colors.white, size: 16.sp),
+          //     ),
+          //   ),
 
           // Like Icon
-          Positioned(
-            bottom: 15.h,
-            left: 15.w,
-            child: Row(
-              children: [
-                Icon(
-                  story.isLiked ? Icons.favorite : Icons.favorite_border,
-                  color: story.isLiked ? Colors.red : Colors.white,
-                  size: 18.sp,
-                ),
-                Gap(4.w),
-                Text(
-                  '${story.likedBy.length}',
-                  style: Styles.textStyle12.copyWith(color: Colors.white),
-                ),
-              ],
-            ),
-          ),
+          // Positioned(
+          //   bottom: 15.h,
+          //   left: 15.w,
+          //   child: Row(
+          //     children: [
+          //       Icon(
+          //         story.isLiked ? Icons.favorite : Icons.favorite_border,
+          //         color: story.isLiked ? Colors.red : Colors.white,
+          //         size: 18.sp,
+          //       ),
+          //       Gap(4.w),
+          //       Text(
+          //         '${story.likesCount}',
+          //         style: Styles.textStyle12.copyWith(color: Colors.white),
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );
@@ -369,49 +394,6 @@ class StoriesTabView extends StatelessWidget {
     );
   }
 
-  Widget _buildStoryVideo(String videoUrl) {
-    // يمكنك استخدام video_player package هنا
-    return Stack(
-      children: [
-        Container(
-          color: Colors.grey.shade300,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.play_circle_filled,
-                  color: Colors.white,
-                  size: 40.sp,
-                ),
-                Gap(8.h),
-                Text(
-                  'فيديو',
-                  style: Styles.textStyle14.copyWith(color: Colors.white),
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Positioned(
-        //   bottom: 10.h,
-        //   right: 10.w,
-        //   child: Container(
-        //     padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-        //     decoration: BoxDecoration(
-        //       color: Colors.black.withOpacity(0.7),
-        //       borderRadius: BorderRadius.circular(8.r),
-        //     ),
-        //     child: Text(
-        //       _formatDuration(story.videoDuration),
-        //       style: Styles.textStyle12.copyWith(color: Colors.white),
-        //     ),
-        //   ),
-        // ),
-      ],
-    );
-  }
-
   Widget _buildPlaceholder() {
     return Container(
       color: AppColors.primary100,
@@ -437,10 +419,7 @@ class StoriesTabView extends StatelessWidget {
     }
 
     return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30.r),
-        color: Colors.transparent,
-      ),
+      color: Colors.transparent,
       child: Center(
         child: Icon(
           Icons.arrow_downward,
@@ -449,14 +428,6 @@ class StoriesTabView extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  DateTime _parseDate(String dateString) {
-    try {
-      return DateTime.parse(dateString).toLocal();
-    } catch (e) {
-      return DateTime.now();
-    }
   }
 
   String _getMonthName(int month) {

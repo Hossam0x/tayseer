@@ -72,11 +72,17 @@ class FollowerItem extends StatelessWidget {
                                     color: Colors.grey.shade200,
                                   ),
                                 )
-                              : Text(
-                                  follower.name,
-                                  style: Styles.textStyle16.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                              // Fitted Text with width
+                              : ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: 170.w),
+                                  child: Text(
+                                    follower.name,
+                                    style: Styles.textStyle16.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: false,
                                   ),
                                 ),
                         ],
@@ -103,7 +109,16 @@ class FollowerItem extends StatelessWidget {
                 SizedBox(width: 12.w),
 
                 // Follow Button
-                if (!isSkeleton && follower.isAdvisor) _buildFollowButton(),
+                if (!isSkeleton && follower.isAdvisor && !follower.isMe)
+                  _buildFollowButton(),
+                // if (!isSkeleton && follower.isMe)
+                //   Text(
+                //     'Me',
+                //     style: Styles.textStyle16.copyWith(
+                //       fontWeight: FontWeight.bold,
+                //       color: Colors.black87,
+                //     ),
+                //   ),
               ],
             ),
           ),
@@ -222,6 +237,7 @@ class FollowerItemSkeleton extends StatelessWidget {
         username: '@username',
         isFollowing: false,
         userType: 'User',
+        isMe: false,
       ),
       isSkeleton: true,
       onToggleFollow: () {},

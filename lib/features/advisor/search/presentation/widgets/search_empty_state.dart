@@ -14,18 +14,20 @@ class SearchEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          SizedBox(height: 150.h),
-          AppImage(iconPath),
-          SizedBox(height: 30.h),
-          Text(
-            message,
-            style: Styles.textStyle16.copyWith(color: AppColors.secondary400),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 12.h),
-        ],
+      child: Center(
+        child: Column(
+          children: [
+            SizedBox(height: 150.h),
+            AppImage(iconPath),
+            SizedBox(height: 30.h),
+            Text(
+              message,
+              style: Styles.textStyle16.copyWith(color: AppColors.secondary400),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 12.h),
+          ],
+        ),
       ),
     );
   }

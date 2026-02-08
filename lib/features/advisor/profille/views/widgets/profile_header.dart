@@ -7,6 +7,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/add_story_view.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key});
@@ -134,11 +135,10 @@ class ProfileHeader extends StatelessWidget {
           // Profile picture
           GestureDetector(
             onTap: () {
-              // Navigator.pushNamed(
-              //   context,
-              //   AppRouter.kAddPostView,
-              //   arguments: AddPostEnum.story,
-              // );
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddStoryView()),
+              );
             },
             child: Stack(
               children: [

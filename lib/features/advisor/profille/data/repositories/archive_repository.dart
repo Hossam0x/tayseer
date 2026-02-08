@@ -1,19 +1,20 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/advisor/stories/stories.dart';
 import '../models/archive_models.dart';
 
 abstract class ArchiveRepository {
   Future<Either<Failure, ArchivedChatsResponseModel>> getArchivedChats({
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   });
 
   Future<Either<Failure, void>> unarchiveChat(String chatId);
 
-  Future<Either<Failure, List<ArchiveStoryModel>>> getArchivedStories({
+  Future<Either<Failure, List<UserStoriesModel>>> getArchivedStories({
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   });
 
   Future<Either<Failure, List<PostModel>>> getArchivedPosts({
@@ -31,6 +32,22 @@ abstract class ArchiveRepository {
   Future<Either<Failure, String>> shareArchivedPost({
     required String postId,
     required String action,
+  });
+
+  Future<Either<Failure, String>> toggleSavePost({
+    required String postId,
+    required bool isRemove,
+  });
+
+  Future<Either<Failure, String>> deletePost({required String postId});
+
+  void toggleHidePost({required String postId, required bool isHide});
+
+  Future<Either<Failure, String>> blockUser({required String userId});
+
+  Future<Either<Failure, String>> archivePost({
+    required String postId,
+    required bool isRemove,
   });
 
   Future<void> unarchivePost({required String postId});
@@ -127,7 +144,7 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   }) async {
     try {
       final response = await _apiService.get(
-        endPoint: '/posts/archive',
+        endPoint: '/posts/archived',
         query: {'page': page, 'limit': limit},
       );
 
@@ -191,19 +208,101 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   }
 
   @override
-  Future<void> unarchivePost({required String postId}) async {
+  Future<Either<Failure, String>> archivePost({
+    required String postId,
+    required bool isRemove,
+  }) async {
     try {
-      await _apiService.post(endPoint: "/likes/$postId");
+      final response = await _apiService.post(
+        endPoint: "${ApiEndPoint.archivePost}$postId",
+        query: {'action': isRemove ? 'remove' : 'add'},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(
+          response['message'] ??
+              (isRemove ? 'تم إلغاء الأرشفة بنجاح' : 'تم أرشفة المنشور بنجاح'),
+        );
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      debugPrint('❌ Error unarchiving post: $e');
-      rethrow;
+      return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, List<ArchiveStoryModel>>> getArchivedStories({
+  Future<Either<Failure, String>> toggleSavePost({
+    required String postId,
+    required bool isRemove,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.savePost,
+        query: {'action': isRemove ? 'remove' : 'add'},
+        data: {"postId": postId},
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> deletePost({required String postId}) async {
+    try {
+      final response = await _apiService.delete(
+        endPoint: "${ApiEndPoint.deletePost}$postId",
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم حذف المنشور بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  void toggleHidePost({required String postId, required bool isHide}) {
+    _apiService.post(
+      endPoint: ApiEndPoint.hidePost,
+      query: {'action': isHide ? 'add' : 'remove'},
+      data: {"postId": postId},
+    );
+  }
+
+  @override
+  Future<Either<Failure, String>> blockUser({required String userId}) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.blockuser,
+        data: {"blockedId": userId},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<void> unarchivePost({required String postId}) async {
+    await archivePost(postId: postId, isRemove: true);
+  }
+
+  @override
+  Future<Either<Failure, List<UserStoriesModel>>> getArchivedStories({
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   }) async {
     try {
       final response = await _apiService.get(
@@ -211,39 +310,41 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         query: {'page': page, 'limit': limit},
       );
 
-      // Debug: طباعة الـ response
-      print('📌 Stories Response: $response');
+      print('📌 Archived Stories Response: $response');
 
-      if (response['success'] == true) {
-        final List<dynamic> data = response['data'] ?? [];
-        print('📦 Stories count: ${data.length}');
-
-        // Debug: طباعة كل قصة
-        for (var i = 0; i < data.length; i++) {
-          print('   Story $i: ${data[i]}');
-        }
-
-        final stories = data
-            .map((story) => ArchiveStoryModel.fromJson(story))
-            .toList();
-
-        return Right(stories);
-      } else {
-        final errorMessage =
+      if (response['success'] != true) {
+        final errorMsg =
             response['message']?.toString() ?? 'فشل جلب القصص المؤرشفة';
-        print('❌ Stories Error: $errorMessage');
-        return Left(ServerFailure(errorMessage));
+        return Left(ServerFailure(errorMsg));
       }
+
+      final dataObj = response['data'] as Map<String, dynamic>?;
+
+      if (dataObj == null) {
+        return const Right([]);
+      }
+
+      final List<dynamic> resultList =
+          dataObj['result'] as List<dynamic>? ?? [];
+
+      print('📦 عدد مجموعات القصص المؤرشفة: ${resultList.length}');
+
+      final userStories = resultList
+          .map((item) {
+            try {
+              return UserStoriesModel.fromJson(item as Map<String, dynamic>);
+            } catch (e) {
+              print('❌ فشل تحليل مجموعة قصص مؤرشفة: $e');
+              return null;
+            }
+          })
+          .whereType<UserStoriesModel>()
+          .toList();
+
+      return Right(userStories);
     } on DioException catch (e) {
-      print('❌ Stories Dio Error: ${e.message}');
-      if (e.response != null) {
-        print('❌ Response Data: ${e.response?.data}');
-        print('❌ Response Status: ${e.response?.statusCode}');
-      }
       return Left(ServerFailure.fromDioError(e));
-    } catch (e, stackTrace) {
-      print('❌ Stories General Error: $e');
-      print('❌ Stack Trace: $stackTrace');
+    } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }

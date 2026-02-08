@@ -5,7 +5,8 @@ import 'package:tayseer/features/advisor/stories/presentation/views/story_detail
 import 'package:tayseer/my_import.dart';
 
 class ProfileStoriesSection extends StatelessWidget {
-  const ProfileStoriesSection({super.key});
+  final String? advisorId;
+  const ProfileStoriesSection({super.key, this.advisorId});
 
   @override
   Widget build(BuildContext context) {
@@ -14,6 +15,15 @@ class ProfileStoriesSection extends StatelessWidget {
           previous.storiesState != current.storiesState ||
           previous.storiesList != current.storiesList,
       builder: (context, state) {
+        final isEmpty =
+            (state.storiesState == CubitStates.success ||
+                state.storiesState == CubitStates.initial) &&
+            state.storiesList.isEmpty;
+
+        if (isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
         return SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(
@@ -34,22 +44,29 @@ class ProfileStoriesSection extends StatelessWidget {
       case CubitStates.failure:
         return _StoriesErrorWidget(
           message: state.storiesMessage,
-          onRetry: () => context.read<StoriesCubit>().fetchStories(),
+          onRetry: () => context.read<StoriesCubit>().fetchStories(
+            isSpecial: true,
+            advisorId: advisorId,
+          ),
         );
       case CubitStates.success:
       case CubitStates.initial:
         if (state.storiesList.isEmpty) {
           return const SizedBox.shrink();
         }
-        return _StoriesListView(stories: state.storiesList);
+        return _StoriesListView(
+          stories: state.storiesList,
+          advisorId: advisorId,
+        );
     }
   }
 }
 
 class _StoriesListView extends StatefulWidget {
   final List<UserStoriesModel> stories;
+  final String? advisorId;
 
-  const _StoriesListView({required this.stories});
+  const _StoriesListView({required this.stories, this.advisorId});
 
   @override
   State<_StoriesListView> createState() => _StoriesListViewState();
@@ -73,7 +90,11 @@ class _StoriesListViewState extends State<_StoriesListView> {
 
   void _onScroll() {
     if (_isBottom) {
-      context.read<StoriesCubit>().fetchStories(loadMore: true);
+      context.read<StoriesCubit>().fetchStories(
+        loadMore: true,
+        isSpecial: true,
+        advisorId: widget.advisorId,
+      );
     }
   }
 
@@ -92,17 +113,15 @@ class _StoriesListViewState extends State<_StoriesListView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // تمت إزالة _AddStoryItem من هنا
-          Gap(context.responsiveWidth(14)),
           ...widget.stories.map(
             (userStory) => Padding(
-              key: ValueKey('story_profile${userStory.userId}'),
+              key: ValueKey('story_profile_${userStory.userId}'),
               padding: EdgeInsetsDirectional.only(
                 end: context.responsiveWidth(14),
               ),
               child: _UserStoryItem(
                 key: ValueKey(
-                  'story_profile${userStory.userId}_${userStory.allViewed}',
+                  'story_profile_${userStory.userId}_${userStory.allViewed}',
                 ),
                 userStoryModel: userStory,
               ),
@@ -117,7 +136,7 @@ class _StoriesListViewState extends State<_StoriesListView> {
                   padding: EdgeInsetsDirectional.only(
                     end: context.responsiveWidth(14),
                   ),
-                  child: _StoriesLoadingShimmer(count: 1),
+                  child: const _StoriesLoadingShimmer(count: 1),
                 );
               }
               return const SizedBox.shrink();
@@ -143,7 +162,10 @@ class _UserStoryItem extends StatelessWidget {
           MaterialPageRoute(
             builder: (newContext) => BlocProvider.value(
               value: context.read<StoriesCubit>(),
-              child: StoryDetailsView(userStories: userStoryModel),
+              child: StoryDetailsView(
+                userStories: userStoryModel,
+                heroTag: 'profile_story_${userStoryModel.userId}',
+              ),
             ),
           ),
         );
@@ -151,7 +173,7 @@ class _UserStoryItem extends StatelessWidget {
       child: Column(
         children: [
           Hero(
-            tag: userStoryModel.userId,
+            tag: 'profile_story_${userStoryModel.userId}',
             child: Container(
               width: context.responsiveWidth(76),
               height: context.responsiveWidth(76),
@@ -270,38 +292,3 @@ class _StoriesErrorWidget extends StatelessWidget {
     );
   }
 }
-
-// // Widget جديد لحالة عدم وجود استوريز
-// class _EmptyStoriesWidget extends StatelessWidget {
-//   const _EmptyStoriesWidget();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       width: double.infinity,
-//       height: context.responsiveWidth(110), // نفس ارتفاع الـ Stories
-//       decoration: BoxDecoration(
-//         color: Colors.grey.shade50,
-//         borderRadius: BorderRadius.circular(12.r),
-//         border: Border.all(color: Colors.grey.shade200, width: 1),
-//       ),
-//       child: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             Icon(
-//               Icons.photo_library_outlined,
-//               color: AppColors.cBackground100,
-//               size: 40.sp,
-//             ),
-//             Gap(context.responsiveHeight(8)),
-//             Text(
-//               "لا توجد استوريات حالياً",
-//               style: Styles.textStyle14.copyWith(color: Colors.grey.shade500),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }

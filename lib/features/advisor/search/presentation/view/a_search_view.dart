@@ -6,6 +6,8 @@ import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/event/view/widget/event_cart_item.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_advisor_model.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_event_model.dart';
+import 'package:tayseer/features/advisor/search/data/models/search_user_model.dart';
+import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
 import 'package:tayseer/features/advisor/search/presentation/cubit/search_cubit.dart';
 import 'package:tayseer/features/advisor/search/presentation/cubit/search_state.dart';
 import 'package:tayseer/features/advisor/search/presentation/widgets/search_empty_state.dart';
@@ -13,6 +15,10 @@ import 'package:tayseer/features/advisor/search/presentation/widgets/search_load
 import 'package:tayseer/features/advisor/search/presentation/widgets/search_error_state.dart';
 import 'package:tayseer/features/shared/followers/data/models/follower_model.dart';
 import 'package:tayseer/features/shared/followers/widgets/follower_item.dart';
+import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
+import 'package:tayseer/features/shared/followers/data/repositories/user_followings_repository.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class AdvisorSearchView extends StatefulWidget {
@@ -41,6 +47,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   final List<SearchTab> _tabs = [
     SearchTab(id: 'all', title: 'الكل'),
     SearchTab(id: 'advisors', title: 'المستشارين'),
+    SearchTab(id: 'users', title: 'المستخدمين'),
     SearchTab(id: 'posts', title: 'المنشورات'),
     SearchTab(id: 'events', title: 'الأحداث'),
   ];
@@ -48,7 +55,12 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   @override
   void initState() {
     super.initState();
-    _searchCubit = SearchCubit();
+    _searchCubit = SearchCubit(
+      getIt<SearchRepository>(),
+      getIt<HomeRepository>(),
+      getIt<FollowersRepository>(),
+      getIt<UserFollowingsRepository>(),
+    );
     _tabController = TabController(
       length: _tabs.length,
       vsync: this,
@@ -69,8 +81,12 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialQuery?.isNotEmpty == true) {
+        _performSearch(debounce: false);
+      } else {
+        _searchCubit.loadInitialData();
+      }
       _searchFocusNode.requestFocus();
-      _searchCubit.loadInitialData();
     });
   }
 
@@ -112,10 +128,10 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     });
   }
 
-  void _performSearch() {
+  void _performSearch({bool debounce = true}) {
     final query = _searchController.text.trim();
     final currentTab = _tabs[_tabController.index];
-    _searchCubit.search(query: query, category: currentTab.id);
+    _searchCubit.search(query: query, type: currentTab.id, debounce: debounce);
   }
 
   void _clearSearch() {
@@ -140,11 +156,29 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
 
               // محتوى البحث
               Expanded(
-                child: BlocBuilder<SearchCubit, SearchState>(
-                  bloc: _searchCubit, // ✅ تمرير الـ cubit مباشرة هنا
-                  builder: (context, state) {
-                    return _buildSearchContent(context, state);
+                child: BlocListener<SearchCubit, SearchState>(
+                  bloc: _searchCubit,
+                  listener: (context, state) {
+                    if (state.actionStatus == CubitStates.success) {
+                      AppToast.success(
+                        context,
+                        state.actionMessage ?? "تمت العملية بنجاح",
+                      );
+                      _searchCubit.resetActionStatus();
+                    } else if (state.actionStatus == CubitStates.failure) {
+                      AppToast.error(
+                        context,
+                        state.actionMessage ?? "فشلت العملية",
+                      );
+                      _searchCubit.resetActionStatus();
+                    }
                   },
+                  child: BlocBuilder<SearchCubit, SearchState>(
+                    bloc: _searchCubit, // ✅ تمرير الـ cubit مباشرة هنا
+                    builder: (context, state) {
+                      return _buildSearchContent(context, state);
+                    },
+                  ),
                 ),
               ),
             ],
@@ -314,6 +348,30 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   Widget _buildSearchContent(BuildContext context, SearchState state) {
     final currentTab = _tabs[_tabController.index];
 
+    if (state.query.isEmpty) {
+      String message;
+      switch (currentTab.id) {
+        case 'advisors':
+          message = 'ابحث عن مستشارين';
+          break;
+        case 'users':
+          message = 'ابحث عن مستخدمين';
+          break;
+        case 'posts':
+          message = 'ابحث عن منشورات';
+          break;
+        case 'events':
+          message = 'ابحث عن أحداث';
+          break;
+        default:
+          message = 'ابحث عن ما تريده';
+      }
+      return SearchEmptyState(
+        message: message,
+        iconPath: AssetsData.icSeachFor,
+      );
+    }
+
     if (state.isLoading) {
       return SearchLoadingState(tabType: currentTab.id);
     }
@@ -369,6 +427,8 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
         return _buildAllResults(context, state);
       case 'advisors':
         return _buildAdvisorsList(context, state.advisors);
+      case 'users':
+        return _buildUsersList(context, state.users);
       case 'posts':
         return _buildPostsList(context, state.posts);
       case 'events':
@@ -393,6 +453,18 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
               (advisor) => Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
                 child: _buildAdvisorItem(context, advisor),
+              ),
+            ),
+            SizedBox(height: 20.h),
+          ],
+
+          // المستخدمين
+          if (state.users.isNotEmpty) ...[
+            _buildSectionHeader(title: 'المستخدمين', count: state.users.length),
+            ...state.users.map(
+              (user) => Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                child: _buildUserItem(context, user),
               ),
             ),
             SizedBox(height: 20.h),
@@ -437,6 +509,39 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     );
   }
 
+  Widget _buildUsersList(BuildContext context, List<SearchUser> users) {
+    return ListView.builder(
+      padding: EdgeInsets.only(top: 12.h),
+      itemCount: users.length,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+          child: _buildUserItem(context, users[index]),
+        );
+      },
+    );
+  }
+
+  Widget _buildUserItem(BuildContext context, SearchUser user) {
+    final follower = FollowerModel(
+      id: user.id,
+      name: user.name,
+      username: '',
+      imageUrl: user.imageUrl,
+      isFollowing: false,
+      isVerified: false,
+      userType: 'User',
+      isMe: false,
+    );
+
+    return FollowerItem(
+      follower: follower,
+      onToggleFollow: () {
+        _searchCubit.toggleFollow(id: user.id, userType: 'User');
+      },
+    );
+  }
+
   Widget _buildAdvisorItem(BuildContext context, SearchAdvisor advisor) {
     final follower = FollowerModel(
       id: advisor.id,
@@ -446,12 +551,13 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       isFollowing: advisor.isFollowing,
       isVerified: advisor.isVerified,
       userType: 'Advisor',
+      isMe: false,
     );
 
     return FollowerItem(
       follower: follower,
       onToggleFollow: () {
-        _searchCubit.toggleFollowAdvisor(advisor.id);
+        _searchCubit.toggleFollow(id: advisor.id, userType: 'Advisor');
       },
     );
   }
@@ -466,6 +572,64 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     );
   }
 
+  void _onNavigateToDetails(
+    BuildContext ctx,
+    PostModel post,
+    VideoPlayerController? controller,
+  ) {
+    Navigator.push(
+      ctx,
+      MaterialPageRoute(
+        builder: (_) => PostDetailsView(
+          isFromProfile: false,
+          post: post,
+          cachedController: controller,
+          callbacks: PostCallbacks(
+            onReactionChanged: (postId, type) {
+              _searchCubit.reactToPost(postId: postId, reactionType: type);
+            },
+            onShareTap: (postId) {
+              _searchCubit.toggleSharePost(postId: postId);
+            },
+            onSave: (postId) {
+              _searchCubit.toggleSavePost(postId: postId);
+            },
+            onDelete: (postId) {
+              _searchCubit.deletePost(postId: postId);
+            },
+            onArchive: (postId) {
+              _searchCubit.archivePost(postId: postId);
+            },
+            onHide: (postId) {
+              _searchCubit.toggleHidePost(postId: postId);
+            },
+            onBlock: (postId, advisorId) {
+              _searchCubit.blockUser(
+                visiblePostId: postId,
+                advisorId: advisorId,
+              );
+            },
+            onHashtagTap: (hashtag) {
+              final cleanHashtag = hashtag.startsWith('#')
+                  ? hashtag.substring(1)
+                  : hashtag;
+
+              Navigator.push(
+                ctx,
+                MaterialPageRoute(
+                  builder: (_) => AdvisorSearchView(
+                    initialQuery: cleanHashtag,
+                    initialTab: 'posts',
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPostItem(BuildContext context, PostModel post) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 10.w),
@@ -473,6 +637,27 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
         post: post,
         isFromProfile: false,
         callbacks: PostCallbacks(
+          onReactionChanged: (postId, type) {
+            _searchCubit.reactToPost(postId: postId, reactionType: type);
+          },
+          onShareTap: (postId) {
+            _searchCubit.toggleSharePost(postId: postId);
+          },
+          onSave: (postId) {
+            _searchCubit.toggleSavePost(postId: postId);
+          },
+          onDelete: (postId) {
+            _searchCubit.deletePost(postId: postId);
+          },
+          onArchive: (postId) {
+            _searchCubit.archivePost(postId: postId);
+          },
+          onHide: (postId) {
+            _searchCubit.toggleHidePost(postId: postId);
+          },
+          onBlock: (postId, advisorId) {
+            _searchCubit.blockUser(visiblePostId: postId, advisorId: advisorId);
+          },
           onHashtagTap: (hashtag) {
             final cleanHashtag = hashtag.startsWith('#')
                 ? hashtag.substring(1)
@@ -489,9 +674,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
             );
           },
         ),
-        onNavigateToDetails: (ctx, postDetails, controller) {
-          // TODO: تنفيذ تفاصيل المنشور
-        },
+        onNavigateToDetails: _onNavigateToDetails,
       ),
     );
   }

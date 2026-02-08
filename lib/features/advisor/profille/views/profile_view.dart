@@ -1,7 +1,9 @@
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/bio_information.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_header.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_tabs_section.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileView extends StatelessWidget {
@@ -31,8 +33,17 @@ class ProfileView extends StatelessWidget {
 
             // Main scrollable content
             SafeArea(
-              child: BlocProvider<ProfileCubit>(
-                create: (_) => getIt<ProfileCubit>(),
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider<ProfileCubit>(
+                    create: (_) => getIt<ProfileCubit>(),
+                  ),
+                  BlocProvider<StoriesCubit>(
+                    create: (_) =>
+                        getIt<StoriesCubit>()
+                          ..fetchStories(isSpecial: true, advisorId: null),
+                  ),
+                ],
                 child: _ProfileContent(),
               ),
             ),
@@ -47,7 +58,13 @@ class _ProfileContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator.adaptive(
-      onRefresh: () => context.read<ProfileCubit>().refresh(),
+      onRefresh: () => Future.wait([
+        context.read<ProfileCubit>().refresh(),
+        context.read<StoriesCubit>().fetchStories(
+          isSpecial: true,
+          advisorId: null,
+        ),
+      ]),
       color: AppColors.kprimaryColor,
       backgroundColor: AppColors.kWhiteColor,
       displacement: 40.h,
@@ -62,6 +79,9 @@ class _ProfileContent extends StatelessWidget {
 
           // Bio Information
           const BioInformation(),
+
+          // Stories Section
+          const ProfileStoriesSection(advisorId: null),
 
           // Spacing
           SliverToBoxAdapter(child: Gap(20.h)),

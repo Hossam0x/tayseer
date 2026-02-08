@@ -1,11 +1,20 @@
 import 'package:story_view/story_view.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
 import 'package:tayseer/my_import.dart' hide Direction;
 
 class StoryDetailsView extends StatefulWidget {
   final UserStoriesModel userStories;
+  final String? heroTag;
+  final bool isArchive;
 
-  const StoryDetailsView({super.key, required this.userStories});
+  const StoryDetailsView({
+    super.key,
+    required this.userStories,
+    this.heroTag,
+    this.isArchive = false,
+  });
 
   @override
   State<StoryDetailsView> createState() => _StoryDetailsViewState();
@@ -50,10 +59,15 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
   void _markCurrentStoryAsViewed() {
     if (_currentStoryIndex < widget.userStories.stories.length) {
       final currentStory = widget.userStories.stories[_currentStoryIndex];
-      context.read<StoriesCubit>().markStoryAsViewed(
-        storyId: currentStory.id,
-        userId: widget.userStories.userId,
-      );
+      // Note: We removed the !isMine check so the user can see their own border update locally.
+      if (widget.isArchive) {
+        // Archived stories view marking logic if needed
+      } else {
+        context.read<StoriesCubit>().markStoryAsViewed(
+          storyId: currentStory.id,
+          userId: widget.userStories.userId,
+        );
+      }
     }
   }
 
@@ -104,34 +118,61 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
 
           Positioned(
             bottom: 30.h,
-            child: BlocBuilder<StoriesCubit, StoriesState>(
-              buildWhen: (previous, current) =>
-                  previous.storiesList != current.storiesList,
-              builder: (context, state) {
-                // البحث عن القصة الحالية في الـ state المحدث
-                final updatedUserStory = state.storiesList.firstWhere(
-                  (userStory) => userStory.userId == widget.userStories.userId,
-                  orElse: () => widget.userStories,
-                );
-
-                final currentStory =
-                    _currentStoryIndex < updatedUserStory.stories.length
-                    ? updatedUserStory.stories[_currentStoryIndex]
-                    : null;
-
-                return _LoveButton(
-                  isLiked: currentStory?.isLiked ?? false,
-                  onTap: () {
-                    if (currentStory != null) {
-                      context.read<StoriesCubit>().likeStory(
-                        storyId: currentStory.id,
-                        userId: widget.userStories.userId,
+            child: widget.isArchive
+                ? BlocBuilder<ArchivedStoriesCubit, ArchivedStoriesState>(
+                    builder: (context, state) {
+                      final updatedUserStory = state.stories.firstWhere(
+                        (userStory) =>
+                            userStory.userId == widget.userStories.userId,
+                        orElse: () => widget.userStories,
                       );
-                    }
-                  },
-                );
-              },
-            ),
+
+                      final currentStory =
+                          _currentStoryIndex < updatedUserStory.stories.length
+                          ? updatedUserStory.stories[_currentStoryIndex]
+                          : null;
+
+                      return _LoveButton(
+                        isLiked: currentStory?.isLiked ?? false,
+                        onTap: () {
+                          if (currentStory != null) {
+                            context.read<ArchivedStoriesCubit>().likeStory(
+                              storyId: currentStory.id,
+                              userId: widget.userStories.userId,
+                            );
+                          }
+                        },
+                      );
+                    },
+                  )
+                : BlocBuilder<StoriesCubit, StoriesState>(
+                    buildWhen: (previous, current) =>
+                        previous.storiesList != current.storiesList,
+                    builder: (context, state) {
+                      final updatedUserStory = state.storiesList.firstWhere(
+                        (userStory) =>
+                            userStory.userId == widget.userStories.userId,
+                        orElse: () => widget.userStories,
+                      );
+
+                      final currentStory =
+                          _currentStoryIndex < updatedUserStory.stories.length
+                          ? updatedUserStory.stories[_currentStoryIndex]
+                          : null;
+
+                      return _LoveButton(
+                        isLiked: currentStory?.isLiked ?? false,
+                        onTap: () {
+                          if (currentStory != null) {
+                            context.read<StoriesCubit>().likeStory(
+                              storyId: currentStory.id,
+                              userId: widget.userStories.userId,
+                            );
+                          }
+                        },
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -139,6 +180,12 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
   }
 
   Widget _buildCustomHeader() {
+    final currentStory = _currentStoryIndex < widget.userStories.stories.length
+        ? widget.userStories.stories[_currentStoryIndex]
+        : null;
+
+    final bool isMine = currentStory?.isMine ?? false;
+
     return SafeArea(
       bottom: false,
       right: false,
@@ -152,58 +199,92 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
               borderRadius: BorderRadius.circular(12.r),
             ),
             icon: Icon(Icons.more_vert, color: Colors.white, size: 32.sp),
-            onOpened: () {
-              _storyController.pause();
-            },
-            onCanceled: () {
+            onOpened: () => _storyController.pause(),
+            onCanceled: () => _storyController.play(),
+            onSelected: (value) async {
               _storyController.play();
-            },
-            onSelected: (value) {
-              _storyController.play();
-              if (value == 'report') {
-                // TODO: تنفيذ الإبلاغ
-              } else if (value == 'hide') {
-                // TODO: تنفيذ الإخفاء
+              if (currentStory == null) return;
+
+              if (widget.isArchive) {
+                final cubit = context.read<ArchivedStoriesCubit>();
+                if (value == 'delete') {
+                  await cubit.deleteStory(
+                    storyId: currentStory.id,
+                    userId: widget.userStories.userId,
+                  );
+                  if (mounted) Navigator.pop(context);
+                } else if (value == 'unarchive') {
+                  await cubit.unarchiveStory(
+                    storyId: currentStory.id,
+                    userId: widget.userStories.userId,
+                  );
+                  if (mounted) Navigator.pop(context);
+                }
+              } else {
+                final cubit = context.read<StoriesCubit>();
+                if (value == 'delete') {
+                  await cubit.deleteStory(
+                    storyId: currentStory.id,
+                    userId: widget.userStories.userId,
+                  );
+                  if (mounted) Navigator.pop(context);
+                } else if (value == 'archive') {
+                  await cubit.toggleArchiveStory(
+                    storyId: currentStory.id,
+                    userId: widget.userStories.userId,
+                    isArchive: true,
+                  );
+                  if (mounted) Navigator.pop(context);
+                } else if (value == 'special') {
+                  await cubit.makeStorySpecial(
+                    storyId: currentStory.id,
+                    userId: widget.userStories.userId,
+                  );
+                }
               }
             },
-            itemBuilder: (BuildContext context) => [
-              PopupMenuItem<String>(
-                value: 'report',
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      context.tr(AppStrings.report),
-                      style: Styles.textStyle14.copyWith(color: Colors.black),
+            itemBuilder: (context) {
+              if (isMine) {
+                return [
+                  PopupMenuItem(
+                    value: widget.isArchive ? 'unarchive' : 'archive',
+                    child: _buildPopupItem(
+                      widget.isArchive ? 'إلغاء الأرشفة' : 'أرشفة القصة',
+                      widget.isArchive ? Icons.unarchive : Icons.archive,
                     ),
-                    Gap(8.w),
-                    Icon(
-                      Icons.report_outlined,
-                      size: 20.sp,
-                      color: Colors.black,
+                  ),
+                  if (!widget.isArchive)
+                    PopupMenuItem(
+                      value: 'special',
+                      child: _buildPopupItem('قصة مميزة', Icons.star_outline),
                     ),
-                  ],
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: _buildPopupItem(
+                      'حذف القصة',
+                      Icons.delete_outline,
+                      color: Colors.red,
+                    ),
+                  ),
+                ];
+              }
+              return [
+                PopupMenuItem(
+                  value: 'report',
+                  child: _buildPopupItem(
+                    context.tr(AppStrings.report),
+                    Icons.report_outlined,
+                  ),
                 ),
-              ),
-              PopupMenuItem<String>(
-                value: 'hide',
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      context.tr(AppStrings.hide),
-                      style: Styles.textStyle14.copyWith(color: Colors.black),
-                    ),
-                    Gap(8.w),
-                    Icon(
-                      Icons.hide_image_outlined,
-                      size: 20.sp,
-                      color: Colors.black,
-                    ),
-                  ],
+                PopupMenuItem(
+                  value: 'hide',
+                  child: _buildPopupItem(
+                    context.tr(AppStrings.hide),
+                    Icons.hide_image_outlined,
+                  ),
                 ),
-              ),
-            ],
+              ];
+            },
           ),
           Expanded(
             child: Row(
@@ -237,7 +318,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                 Gap(12.w),
                 // الصورة آخر حاجة (هتظهر في اليمين)
                 Hero(
-                  tag: widget.userStories.userId,
+                  tag: widget.heroTag ?? widget.userStories.userId,
                   child: Container(
                     width: 45.w,
                     height: 45.w,
@@ -258,6 +339,20 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPopupItem(String title, IconData icon, {Color? color}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Text(
+          title,
+          style: Styles.textStyle14.copyWith(color: color ?? Colors.black),
+        ),
+        Gap(8.w),
+        Icon(icon, size: 20.sp, color: color ?? Colors.black),
+      ],
     );
   }
 }

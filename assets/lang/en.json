@@ -288,8 +288,7 @@
   "write_comment": "Write a comment...",
   "search": "Search...",
   "reply": "Reply",
-  "edit": "Edit"
-  ,
+  "edit": "Edit",
   "event_description_title": "Event Description",
   "event_description_text": "Detailed information about the event.",
   "event_duration": "Duration",
@@ -307,7 +306,7 @@
   "session_price_value": "150 SAR",
   "boost_button": "Boost",
   "edit_button": "Edit",
-   "select_country_title": "Select Your Country",
+  "select_country_title": "Select Your Country",
   "select_nationality_title": "Select Your Nationality",
   "select_religion_title": "Select Religion",
   "select_age_title": "Select Your Age",
@@ -352,7 +351,7 @@
   "marital_divorced": "Divorced",
   "marital_widowed": "Widowed",
   "not_applicable": "Not Applicable",
-    "select_communication_timeline_title": "Communication",
+  "select_communication_timeline_title": "Communication",
   "select_engagement_timeline_title": "Engagement",
   "select_marriage_timeline_title": "Marriage",
   "select_dowry_title": "Dowry",
@@ -372,7 +371,7 @@
   "travel_not_willing": "I don't want to travel",
   "travel_maybe": "Under certain circumstances",
   "travel_after_marriage": "After marriage",
- "select_bio_title": "Biography",
+  "select_bio_title": "Biography",
   "select_interests_title": "Interests",
   "select_hobbies_title": "Your Hobbies",
   "interest_reading": "Reading",
@@ -382,6 +381,10 @@
   "interest_art": "Art",
   "interest_music": "Music",
   "interest_technology": "Technology",
-  "interest_nature": "Nature"
-  
+  "interest_nature": "Nature",
+  "unsaved_changes_title": "Alert",
+  "unsaved_changes_message": "There are unsaved changes. Do you want to save before exiting?",
+  "save_and_exit": "Save",
+  "discard_and_exit": "Discard",
+  "keep_editing": "Cancel"
 }

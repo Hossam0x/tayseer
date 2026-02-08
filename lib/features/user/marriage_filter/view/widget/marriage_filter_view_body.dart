@@ -12,7 +12,27 @@ class MarriageFilterBody extends StatelessWidget {
     return BlocProvider(
       create: (context) => MarriageFilterCubit(),
       child: CustomBackground(
-        child: BlocBuilder<MarriageFilterCubit, MarriageFilterState>(
+        child: BlocConsumer<MarriageFilterCubit, MarriageFilterState>(
+          listener: (context, state) {
+            if (state.marriageFilterStatus == CubitStates.success) {
+              context.pop();
+              context.pop(); // إغلاق شاشة الفلتر بعد النجاح
+            } else if (state.marriageFilterStatus == CubitStates.failure) {
+              context.pop(); // إغلاق أي حوار تحميل مفتوح
+              ScaffoldMessenger.of(context).showSnackBar(
+                CustomSnackBar(
+                  context,
+                  text: state.errorMessage ?? 'حدث خطأ',
+                  isError: true,
+                ),
+              );
+            } else if (state.marriageFilterStatus == CubitStates.loading) {
+              showDialog(
+                context: context,
+                builder: (context) => const CustomloadingApp(),
+              );
+            }
+          },
           builder: (context, state) {
             return CustomScrollView(
               slivers: [
@@ -104,7 +124,11 @@ class MarriageFilterBody extends StatelessWidget {
 
     // منطق عرض القيمة
     String displayValue = "لا يوجد تفضيل";
-    if (value is String) displayValue = context.tr(value);
+    if (value is String) {
+      // if stored value looks like a key (contains underscore), translate it,
+      // otherwise assume it's already translated/display text and show it directly
+      displayValue = value.contains('_') ? context.tr(value) : value;
+    }
     if (value is List) displayValue = "${value.length} مختارة";
 
     return FilterItemModel(
@@ -232,7 +256,8 @@ class MarriageFilterBody extends StatelessWidget {
     // تحديد النص المعروض (قيمة مختارة أو قيمة افتراضية)
     String displayValue = "لا يوجد تفضيل";
     if (value != null) {
-      displayValue = context.tr(value.toString());
+      final s = value.toString();
+      displayValue = s.contains('_') ? context.tr(s) : s;
     } else {
       if (fieldKey == 'country') displayValue = "مصر";
       if (fieldKey == 'nationality') displayValue = "مصري";
@@ -279,6 +304,9 @@ class MarriageFilterBody extends StatelessWidget {
         child: Center(
           child: CustomBotton(
             backGroundcolor: AppColors.kgreyColor,
+            useGradient:
+                state.selectedFilters.isNotEmpty ||
+                state.ageRange != const RangeValues(22, 35),
             width: context.width * 0.9,
             title: context.tr('apply_filters'),
             onPressed: () {

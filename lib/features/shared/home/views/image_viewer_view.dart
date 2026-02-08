@@ -276,6 +276,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
 
         // ✅ استخدام الويدجت الجديد المخصص للزوم
         return _ZoomableImage(
+          isFromProfile: widget.isFromProfile,
           imageUrl: imageUrl,
           postId: widget.postId,
           onTap: _onImageTap,
@@ -377,6 +378,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _ZoomableImage extends StatefulWidget {
+  final bool isFromProfile;
   final String imageUrl;
   final String postId;
   final VoidCallback onTap;
@@ -384,6 +386,7 @@ class _ZoomableImage extends StatefulWidget {
   final Function(Offset) onDoubleTapReaction;
 
   const _ZoomableImage({
+    required this.isFromProfile,
     required this.imageUrl,
     required this.postId,
     required this.onTap,
@@ -471,7 +474,8 @@ class _ZoomableImageState extends State<_ZoomableImage>
         onInteractionEnd: (_) => _checkZoomStatus(),
         child: Center(
           child: Hero(
-            tag: 'post_${widget.postId}_img_${widget.imageUrl}',
+            tag:
+                '${widget.isFromProfile ? 'profile' : 'home'}_post_${widget.postId}_img_${widget.imageUrl}',
             child: AppImage(
               widget.imageUrl,
               fit: BoxFit.contain,

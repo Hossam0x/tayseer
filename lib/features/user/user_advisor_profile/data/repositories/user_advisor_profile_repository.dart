@@ -22,6 +22,13 @@ abstract class UserAdvisorProfileRepository {
     required String action,
   });
   Future<Either<Failure, String>> blockUser(String advisorId);
+  Future<Either<Failure, String>> savedPost({
+    required String postId,
+    required bool isRemove,
+  });
+  Future<Either<Failure, String>> deletePost({required String postId});
+  void hidePost({required String postId, required bool isHide});
+  Future<Either<Failure, String>> archivePost({required String postId});
   Future<Either<Failure, String>> reportUser({
     required String reportedId,
     required String reason,
@@ -182,6 +189,61 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
       }
       return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> savedPost({
+    required String postId,
+    required bool isRemove,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.savePost,
+        data: {"postId": postId, "action": isRemove ? "remove" : "add"},
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> deletePost({required String postId}) async {
+    try {
+      final response = await _apiService.delete(
+        endPoint: "/posts/delete/$postId",
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  void hidePost({required String postId, required bool isHide}) async {
+    final String action = isHide ? "add" : "remove";
+    await _apiService.post(
+      endPoint: '/posts/toggle-hide-post?postId=$postId&action=$action',
+    );
+  }
+
+  @override
+  Future<Either<Failure, String>> archivePost({required String postId}) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: "/posts/toggle-archive-post",
+        data: {"postId": postId},
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {

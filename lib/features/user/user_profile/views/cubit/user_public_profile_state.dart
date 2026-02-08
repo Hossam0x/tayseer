@@ -22,6 +22,17 @@ class UserPublicProfileState extends Equatable {
   final bool? isShareAdded;
 
   final bool isLoadingDelete;
+  final CubitStates saveActionState;
+  final String? saveMessage;
+
+  final CubitStates deletePostActionState;
+  final String? deletePostMessage;
+
+  final CubitStates archivePostActionState;
+  final String? archivePostMessage;
+
+  final CubitStates blockUserActionState;
+  final String? blockUserMessage;
 
   final CubitStates blockActionState;
   final String? blockMessage;
@@ -47,6 +58,14 @@ class UserPublicProfileState extends Equatable {
     this.shareMessage,
     this.isShareAdded,
     this.isLoadingDelete = false,
+    this.saveActionState = CubitStates.initial,
+    this.saveMessage,
+    this.deletePostActionState = CubitStates.initial,
+    this.deletePostMessage,
+    this.archivePostActionState = CubitStates.initial,
+    this.archivePostMessage,
+    this.blockUserActionState = CubitStates.initial,
+    this.blockUserMessage,
     this.blockActionState = CubitStates.initial,
     this.blockMessage,
     this.reportActionState = CubitStates.initial,
@@ -71,6 +90,14 @@ class UserPublicProfileState extends Equatable {
     String? shareMessage,
     bool? isShareAdded,
     bool? isLoadingDelete,
+    CubitStates? saveActionState,
+    String? saveMessage,
+    CubitStates? deletePostActionState,
+    String? deletePostMessage,
+    CubitStates? archivePostActionState,
+    String? archivePostMessage,
+    CubitStates? blockUserActionState,
+    String? blockUserMessage,
     CubitStates? blockActionState,
     String? blockMessage,
     CubitStates? reportActionState,
@@ -94,6 +121,16 @@ class UserPublicProfileState extends Equatable {
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
       isLoadingDelete: isLoadingDelete ?? this.isLoadingDelete,
+      saveActionState: saveActionState ?? this.saveActionState,
+      saveMessage: saveMessage ?? this.saveMessage,
+      deletePostActionState:
+          deletePostActionState ?? this.deletePostActionState,
+      deletePostMessage: deletePostMessage ?? this.deletePostMessage,
+      archivePostActionState:
+          archivePostActionState ?? this.archivePostActionState,
+      archivePostMessage: archivePostMessage ?? this.archivePostMessage,
+      blockUserActionState: blockUserActionState ?? this.blockUserActionState,
+      blockUserMessage: blockUserMessage ?? this.blockUserMessage,
       blockActionState: blockActionState ?? this.blockActionState,
       blockMessage: blockMessage ?? this.blockMessage,
       reportActionState: reportActionState ?? this.reportActionState,
@@ -120,6 +157,14 @@ class UserPublicProfileState extends Equatable {
     shareMessage,
     isShareAdded,
     isLoadingDelete,
+    saveActionState,
+    saveMessage,
+    deletePostActionState,
+    deletePostMessage,
+    archivePostActionState,
+    archivePostMessage,
+    blockUserActionState,
+    blockUserMessage,
     blockActionState,
     blockMessage,
     reportActionState,
