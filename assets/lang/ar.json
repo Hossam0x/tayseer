@@ -838,5 +838,6 @@
   "enable_gallery_from_settings": "يرجى تفعيل المعرض من الإعدادات",
   "error_recording_video": "خطأ في تسجيل الفيديو",
   "error_selecting_video": "خطأ في اختيار الفيديو",
-  "error_uploading_video": "خطأ في رفع الفيديو"
+  "error_uploading_video": "خطأ في رفع الفيديو",
+  "no_job": "لا توجد وظيفة"
 }

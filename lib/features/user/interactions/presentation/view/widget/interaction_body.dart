@@ -108,11 +108,15 @@ Widget _buildExplorationWithHeader() {
                     onTap: () {
                       context.pushNamed(AppRouter.kMarriageFilterView);
                     },
-                    child: SvgPicture.asset(
-                      AssetsData.kfilterIcon,
-                      width: 22.w,
-                      height: 22.h,
-                      color: AppColors.secondary600,
+                    child: Container(
+                      padding: EdgeInsets.all( 10.w),
+                  color: Colors.transparent,
+                      child: SvgPicture.asset(
+                        AssetsData.kfilterIcon,
+                        width: 22.w,
+                        height: 22.h,
+                        color: AppColors.secondary600,
+                      ),
                     ),
                   ),
                 ),
@@ -160,11 +164,15 @@ Widget _buildExplorationWithHeader() {
               onTap: () {
               context.pushNamed(AppRouter.kMarriageFilterView);
               },
-              child: SvgPicture.asset(
-                AssetsData.kfilterIcon,
-                width: 22.w,
-                height: 22.h,
-                color: AppColors.secondary600,
+              child: Container(
+                  padding: EdgeInsets.all( 10.w),
+                  color: Colors.transparent,
+                child: SvgPicture.asset(
+                  AssetsData.kfilterIcon,
+                  width: 22.w,
+                  height: 22.h,
+                  color: AppColors.secondary600,
+                ),
               ),
             ),
           ),
