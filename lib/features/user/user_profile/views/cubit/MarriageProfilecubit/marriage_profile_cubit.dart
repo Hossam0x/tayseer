@@ -46,6 +46,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       },
       (marriageProfile) {
         debugPrint('✅ [CUBIT] Profile loaded - Progress: ${marriageProfile.answerCompletedPercentage}%');
+        
         emit(state.copyWith(
           state: CubitStates.success,
           profile: marriageProfile,
@@ -439,6 +440,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         debugPrint('✅ [CUBIT] Audio uploaded, reloading profile...');
         // ⭐⭐⭐ Repository already reloaded, just refresh state
         await loadProfile();
+        
       },
     );
   }
