@@ -78,6 +78,7 @@ dependencies:
   flutter_local_notifications: ^19.5.0
   zego_uikit_prebuilt_call: ^4.22.2
   zego_uikit_signaling_plugin: ^2.8.20
+  image: ^4.7.2
 dev_dependencies:
   build_runner: ^2.4.6
   flutter_lints: ^6.0.0

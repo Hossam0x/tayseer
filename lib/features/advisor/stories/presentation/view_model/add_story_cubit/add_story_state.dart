@@ -4,6 +4,15 @@ import 'package:tayseer/my_import.dart';
 class AddStoryState extends Equatable {
   final CubitStates addStoryState;
   final String? errorMessage;
+  final List<AssetPathEntity> albums;
+  final AssetPathEntity? selectedAlbum;
+  final List<AssetEntity> galleryAssets;
+  final bool isLoadingAssets;
+  final bool hasMoreAssets;
+  final int currentAssetsPage;
+  final AssetEntity? selectedAsset;
+  final File? previewFile;
+
   final List<AssetEntity> selectedImages;
   final List<File> capturedImages;
   final List<XFile> selectedVideos;
@@ -12,6 +21,14 @@ class AddStoryState extends Equatable {
   final bool isAiLoading;
 
   const AddStoryState({
+    this.albums = const [],
+    this.selectedAlbum,
+    this.galleryAssets = const [],
+    this.isLoadingAssets = false,
+    this.hasMoreAssets = true,
+    this.currentAssetsPage = 0,
+    this.selectedAsset,
+    this.previewFile,
     this.addStoryState = CubitStates.initial,
     this.errorMessage,
     this.selectedImages = const [],
@@ -23,6 +40,14 @@ class AddStoryState extends Equatable {
   });
 
   AddStoryState copyWith({
+    List<AssetPathEntity>? albums,
+    AssetPathEntity? selectedAlbum,
+    List<AssetEntity>? galleryAssets,
+    bool? isLoadingAssets,
+    bool? hasMoreAssets,
+    int? currentAssetsPage,
+    AssetEntity? selectedAsset,
+    File? previewFile,
     CubitStates? addStoryState,
     String? errorMessage,
     List<AssetEntity>? selectedImages,
@@ -33,6 +58,14 @@ class AddStoryState extends Equatable {
     bool? isAiLoading,
   }) {
     return AddStoryState(
+      albums: albums ?? this.albums,
+      selectedAlbum: selectedAlbum ?? this.selectedAlbum,
+      galleryAssets: galleryAssets ?? this.galleryAssets,
+      isLoadingAssets: isLoadingAssets ?? this.isLoadingAssets,
+      hasMoreAssets: hasMoreAssets ?? this.hasMoreAssets,
+      currentAssetsPage: currentAssetsPage ?? this.currentAssetsPage,
+      selectedAsset: selectedAsset ?? this.selectedAsset,
+      previewFile: previewFile ?? this.previewFile,
       addStoryState: addStoryState ?? this.addStoryState,
       errorMessage: errorMessage ?? this.errorMessage,
       selectedImages: selectedImages ?? this.selectedImages,
@@ -46,6 +79,14 @@ class AddStoryState extends Equatable {
 
   @override
   List<Object?> get props => [
+    albums,
+    selectedAlbum,
+    galleryAssets,
+    isLoadingAssets,
+    hasMoreAssets,
+    currentAssetsPage,
+    selectedAsset,
+    previewFile,
     addStoryState,
     errorMessage,
     selectedImages,

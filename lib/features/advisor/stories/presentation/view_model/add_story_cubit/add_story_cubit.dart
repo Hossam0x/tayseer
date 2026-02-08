@@ -7,18 +7,141 @@ class AddStoryCubit extends Cubit<AddStoryState> {
   final StoriesRepository storiesRepository;
   final contentController = TextEditingController();
 
-  AddStoryCubit(this.storiesRepository) : super(const AddStoryState());
+  AddStoryCubit(this.storiesRepository) : super(const AddStoryState()) {
+    loadGalleryAssets();
+  }
+
+  final int _pageSize = 60;
+
+  Future<void> loadGalleryAssets({bool refresh = false}) async {
+    if (state.isLoadingAssets || (!refresh && !state.hasMoreAssets)) return;
+
+    if (refresh) {
+      emit(
+        state.copyWith(
+          isLoadingAssets: true,
+          galleryAssets: [],
+          currentAssetsPage: 0,
+          hasMoreAssets: true,
+        ),
+      );
+    } else {
+      emit(state.copyWith(isLoadingAssets: true));
+    }
+
+    try {
+      // 1. Request permissions
+      final photosStatus = await Permission.photos.request();
+      await Permission.camera.request();
+      final storageStatus = await Permission.storage.request();
+
+      if (photosStatus.isDenied && storageStatus.isDenied) {
+        emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));
+        return;
+      }
+
+      await PhotoManager.clearFileCache();
+      final PermissionState ps = await PhotoManager.requestPermissionExtend();
+      if (!ps.isAuth && !ps.hasAccess) {
+        emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));
+        return;
+      }
+
+      // 2. Load albums if not already loaded
+      if (state.albums.isEmpty) {
+        final FilterOptionGroup filterOption = FilterOptionGroup(
+          orders: [
+            const OrderOption(type: OrderOptionType.createDate, asc: false),
+          ],
+        );
+
+        // Try common first, then fallback to image if empty
+        List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
+          type: RequestType.common,
+          filterOption: filterOption,
+        );
+
+        if (albums.isEmpty) {
+          albums = await PhotoManager.getAssetPathList(
+            type: RequestType.image,
+            filterOption: filterOption,
+          );
+        }
+
+        if (albums.isNotEmpty) {
+          emit(state.copyWith(albums: albums, selectedAlbum: albums[0]));
+        } else {
+          emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));
+          return;
+        }
+      }
+
+      // 3. Load assets from selected album
+      final album = state.selectedAlbum;
+      if (album != null) {
+        final newItems = await album.getAssetListPaged(
+          page: state.currentAssetsPage,
+          size: _pageSize,
+        );
+
+        if (newItems.isEmpty) {
+          emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));
+        } else {
+          final updatedAssets = List<AssetEntity>.from(state.galleryAssets)
+            ..addAll(newItems);
+          emit(
+            state.copyWith(
+              galleryAssets: updatedAssets,
+              currentAssetsPage: state.currentAssetsPage + 1,
+              isLoadingAssets: false,
+            ),
+          );
+        }
+      } else {
+        emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));
+      }
+    } catch (e) {
+      debugPrint("Error loading gallery: $e");
+      emit(state.copyWith(isLoadingAssets: false));
+    }
+  }
+
+  void changeAlbum(AssetPathEntity album) {
+    emit(state.copyWith(selectedAlbum: album));
+    loadGalleryAssets(refresh: true);
+  }
+
+  void selectAsset(AssetEntity asset) async {
+    final file = await asset.file;
+    if (file != null) {
+      emit(state.copyWith(selectedAsset: asset, previewFile: file));
+    }
+  }
+
+  void resetSelection() {
+    emit(state.copyWith(selectedAsset: null, previewFile: null));
+  }
+
+  void setPreviewFile(File file) {
+    emit(state.copyWith(previewFile: file));
+  }
 
   Future<void> createStory() async {
     emit(state.copyWith(addStoryState: CubitStates.loading));
 
     final List<File> imageFiles = [];
-    // Convert AssetEntity to File
-    for (var asset in state.selectedImages) {
-      final file = await asset.file;
-      if (file != null) imageFiles.add(file);
+
+    // Use previewFile if available (this covers both selected from gallery and captured)
+    if (state.previewFile != null) {
+      imageFiles.add(state.previewFile!);
+    } else {
+      // Fallback to old behavior if needed, but we aim for the new flow
+      for (var asset in state.selectedImages) {
+        final file = await asset.file;
+        if (file != null) imageFiles.add(file);
+      }
+      imageFiles.addAll(state.capturedImages);
     }
-    imageFiles.addAll(state.capturedImages);
 
     final List<XFile> videoFiles = [];
     if (state.capturedVideo != null) {
@@ -46,6 +169,7 @@ class AddStoryCubit extends Cubit<AddStoryState> {
       (_) {
         emit(state.copyWith(addStoryState: CubitStates.success));
         contentController.clear();
+        resetSelection();
       },
     );
   }

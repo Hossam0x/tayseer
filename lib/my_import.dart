@@ -49,4 +49,5 @@ export 'package:visibility_detector/visibility_detector.dart';
 export 'package:photo_manager/photo_manager.dart';
 export 'package:tayseer/core/functions/get_time_ago.dart';
 //eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDdlOThkZjlmOGJjZTNiZjM1NWZjMCIsImVtYWlsIjoiYWJkZWxmYXRhaG1vaGFyZW1AZ21haWwuY29tIiwidHlwZSI6ImFkdmlzb3IiLCJpYXQiOjE3Njc1MjkzODl9.9j5sQNsBnfWbRG1RD09SjSOc3eijZXanfHVC3aJdSxo
+export 'package:permission_handler/permission_handler.dart';
 export 'dart:io';

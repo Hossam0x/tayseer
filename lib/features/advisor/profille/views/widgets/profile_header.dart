@@ -1,4 +1,5 @@
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
@@ -134,11 +135,28 @@ class ProfileHeader extends StatelessWidget {
         children: [
           // Profile picture
           GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddStoryView()),
-              );
+            onTap: () async {
+              // Request permissions before entering
+              final photos = await Permission.photos.request();
+              final camera = await Permission.camera.request();
+
+              if (context.mounted) {
+                if (photos.isGranted && camera.isGranted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddStoryView(),
+                    ),
+                  );
+                } else {
+                  SnackBarService().showSnackBar(
+                    context: context,
+                    text:
+                        'يرجى منح صلاحية الكاميرا والمعرض لتتمكن من إضافة قصة',
+                    isError: true,
+                  );
+                }
+              }
             },
             child: Stack(
               children: [
