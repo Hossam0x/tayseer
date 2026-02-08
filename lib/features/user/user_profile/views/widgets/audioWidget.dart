@@ -1,11 +1,11 @@
+
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
-// Import your existing message model and services
-// import 'your_message_model.dart';
-// import 'your_supabase_service.dart';
+import 'package:tayseer/my_import.dart';
+
 
 class VoiceRecordingWidget extends StatefulWidget {
   final Function(File audioFile) onAudioRecorded;
@@ -222,7 +222,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
   Widget build(BuildContext context) {
     if (!_isInitialized) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        // padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: const Row(
           children: [
             SizedBox(
@@ -238,7 +238,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      // padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(25),
@@ -262,114 +262,134 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
           ] else ...[
             // Recording controls
             Expanded(
-              child: Row(
+              child: Column(
                 children: [
-                  // Cancel button
-                  GestureDetector(
-                    onTap: _cancelRecording,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.red[400],
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Pause/Resume button
-                  GestureDetector(
-                    onTap: _isPaused ? _resumeRecording : _pauseRecording,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.orange[400],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _isPaused ? Icons.play_arrow : Icons.pause,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Recording indicator with animation
-                  AnimatedBuilder(
-                    animation: _scaleAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _isPaused ? 1.0 : _scaleAnimation.value,
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: _isPaused ? Colors.orange : Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Duration
-                  Text(
-                    _formatDuration(_recordingDuration),
-                    style: TextStyle(
-                      color: Colors.grey[700],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  // Recording bars animation
                   Row(
-                    children: List.generate(5, (index) {
-                      return AnimatedBuilder(
-                        animation: _animationController,
+                    children: [
+                      // Duration
+                      Text(
+                        _formatDuration(_recordingDuration),
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      // Recording indicator with animation
+                      AnimatedBuilder(
+                        animation: _scaleAnimation,
                         builder: (context, child) {
-                          return Container(
-                            width: 3,
-                            height: 8 + (index * 4) * _scaleAnimation.value,
-                            margin: const EdgeInsets.symmetric(horizontal: 1),
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(1),
+                          return Transform.scale(
+                            scale: _isPaused ? 1.0 : _scaleAnimation.value,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: _isPaused ? Colors.orange : Colors.red,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           );
                         },
-                      );
-                    }),
+                      ),
+
+                      const Spacer(),
+
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(40, (index) {
+                        // Pattern heights to mimic your image (highs and lows)
+                        final heights = [2, 4, 8, 12, 10, 6, 4, 2, 2, 6, 14, 18, 12, ];
+                        double baseHeight = heights[index % heights.length].toDouble();
+
+                        return AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            // Only animate if not paused
+                            double animatedHeight = _isPaused 
+                                ? baseHeight 
+                                : baseHeight * (0.8 + (0.4 * _animationController.value));
+                            
+                            return Container(
+                              width: 2.5,
+                              height: animatedHeight,
+                              margin: const EdgeInsets.symmetric(horizontal: 1),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[500],
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            );
+                          },
+                        );
+                      }),
+                  )],
+                  ),
+                  SizedBox(height: 5.h,),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Cancel button
+                      GestureDetector(
+                        onTap: _cancelRecording,
+                        child: Container(
+                          width: 35.w,
+                          height: 35.h,
+                          decoration: BoxDecoration(
+                            color: Colors.red[400],
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.delete,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      // const SizedBox(width: 12),
+
+                      // Pause/Resume button
+                      GestureDetector(
+                        onTap: _isPaused ? _resumeRecording : _pauseRecording,
+                        child: Container(
+                          width: 35.w,
+                          height: 35.h,
+                          decoration: BoxDecoration(
+                            color: Colors.orange[400],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _isPaused ? Icons.play_arrow : Icons.pause,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      // const Spacer(),
+
+                      // Send button
+                      GestureDetector(
+                        onTap: _stopRecording,
+                        child: Container(
+                          width: 40.w,
+                          height: 40.h,
+                          decoration: const BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.send,
+                            color: Colors.white,
+                            size: 20.w,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
 
             const SizedBox(width: 12),
-
-            // Send button
-            GestureDetector(
-              onTap: _stopRecording,
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.send, color: Colors.white, size: 24),
-              ),
-            ),
           ],
         ],
       ),
