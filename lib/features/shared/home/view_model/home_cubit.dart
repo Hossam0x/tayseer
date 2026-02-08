@@ -739,7 +739,153 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 🔧 HELPERS
+  // �️ POLL VOTE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  void voteInPoll({required String postId, required String choiceText}) {
+    final post = _findPost(postId);
+    if (post == null || post.pollModel == null) return;
+
+    final oldPoll = post.pollModel!;
+    final choices = oldPoll.pollChoices;
+
+    // البحث عن الاختيار اللي اليوزر ضغط عليه
+    final tappedIndex = choices.indexWhere((c) => c.choice == choiceText);
+    if (tappedIndex == -1) return;
+
+    final tappedChoice = choices[tappedIndex];
+
+    // البحث عن الاختيار اللي كان مختاره قبل كده (لو في)
+    final previouslySelectedIndex = choices.indexWhere((c) => c.isSelected);
+    final hadPreviousVote = previouslySelectedIndex != -1;
+
+    // لو ضغط على نفس الاختيار المحدد => حذف التصويت (toggle)
+    final isRemovingVote = tappedChoice.isSelected;
+
+    // حساب الـ totalVotes الجديد
+    int newTotalVotes = oldPoll.totalPollVotes;
+    if (isRemovingVote) {
+      // بيشيل التصويت
+      newTotalVotes = (newTotalVotes - 1).clamp(0, newTotalVotes);
+    } else if (!hadPreviousVote) {
+      // أول مرة يصوت
+      newTotalVotes = newTotalVotes + 1;
+    }
+    // لو كان مختار حاجة قبل كده وغيّرها => العدد الكلي ما يتغيرش
+
+    // صورة اليوزر الحالي
+    final myAvatar = kCurrentUserData?.image ?? '';
+
+    // بناء الاختيارات الجديدة
+    final newChoices = <PollChoice>[];
+    for (int i = 0; i < choices.length; i++) {
+      final choice = choices[i];
+
+      if (isRemovingVote) {
+        // بيشيل التصويت: شيل الـ selected و الصورة من الاختيار ده بس
+        if (i == tappedIndex) {
+          final newVotes = (choice.votes - 1).clamp(0, choice.votes);
+          final newVoters = List<String>.from(choice.votersAvatars)
+            ..remove(myAvatar);
+          newChoices.add(
+            choice.copyWith(
+              isSelected: false,
+              votes: newVotes,
+              votersAvatars: newVoters,
+            ),
+          );
+        } else {
+          newChoices.add(choice);
+        }
+      } else {
+        // بيصوت (جديد أو بيغير اختياره)
+        if (i == tappedIndex) {
+          // الاختيار الجديد: زود الأصوات و selected = true و ضيف الصورة
+          final newVotes = choice.votes + 1;
+          final newVoters = List<String>.from(choice.votersAvatars);
+          if (myAvatar.isNotEmpty && !newVoters.contains(myAvatar)) {
+            newVoters.insert(0, myAvatar);
+          }
+          newChoices.add(
+            choice.copyWith(
+              isSelected: true,
+              votes: newVotes,
+              votersAvatars: newVoters,
+            ),
+          );
+        } else if (hadPreviousVote && i == previouslySelectedIndex) {
+          // الاختيار القديم: نقص الأصوات و selected = false و شيل الصورة
+          final newVotes = (choice.votes - 1).clamp(0, choice.votes);
+          final newVoters = List<String>.from(choice.votersAvatars)
+            ..remove(myAvatar);
+          newChoices.add(
+            choice.copyWith(
+              isSelected: false,
+              votes: newVotes,
+              votersAvatars: newVoters,
+            ),
+          );
+        } else {
+          newChoices.add(choice);
+        }
+      }
+    }
+
+    // إعادة حساب النسب لكل الاختيارات بعد التعديل
+    final updatedChoices = newChoices.map((c) {
+      final pct = newTotalVotes > 0
+          ? ((c.votes / newTotalVotes) * 100).round()
+          : 0;
+      return c.copyWith(percentage: pct);
+    }).toList();
+
+    final newPoll = oldPoll.copyWith(
+      pollChoices: updatedChoices,
+      totalPollVotes: newTotalVotes,
+    );
+
+    // Optimistic Update في كل الكاتيجوريز
+    emit(
+      state
+          .updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(pollModel: newPoll),
+          )
+          .copyWith(pollVoteActionState: CubitStates.initial),
+    );
+
+    // حساب الـ choiceIndex للريكوست (index as string)
+    final choiceIndex = tappedIndex.toString();
+
+    // API Call
+    homeRepository.voteInPoll(postId: postId, choiceIndex: choiceIndex).then((
+      result,
+    ) {
+      result.fold(
+        (failure) {
+          log('>>>>>>>>>>>>>>>>> Vote In Poll Failed: ${failure.message}');
+          // Rollback: رجّع الـ Poll القديم
+          emit(
+            state
+                .updatePostInAllCategories(
+                  postId,
+                  (p) => p.copyWith(pollModel: oldPoll),
+                )
+                .copyWith(
+                  pollVoteActionState: CubitStates.failure,
+                  pollVoteMessage: failure.message,
+                ),
+          );
+        },
+        (_) {
+          log('>>>>>>>>>>>>>>>>> Vote In Poll Success');
+        },
+      );
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // �🔧 HELPERS
   // ═══════════════════════════════════════════════════════════════════════════
 
   PostModel? _findPost(String postId) {

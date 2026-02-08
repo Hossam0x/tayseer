@@ -53,6 +53,12 @@ class HomePostFeed extends StatelessWidget {
             listenWhen: _shouldListenToArchive, // دالة الشرط
             listener: _handleArchiveFeedback, // دالة التنفيذ
           ),
+
+          // 6. poll vote Listener
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: _shouldListenToPollVote,
+            listener: _handlePollVoteFeedback,
+          ),
         ],
         child: BlocSelector<HomeCubit, HomeState, _FeedState>(
           selector: _selectFeedState,
@@ -89,6 +95,12 @@ class HomePostFeed extends StatelessWidget {
   bool _shouldListenToArchive(HomeState prev, HomeState curr) {
     return prev.archivePostActionState != curr.archivePostActionState &&
         curr.archivePostActionState != CubitStates.initial;
+  }
+
+  /// هل فشل التصويت في الاستطلاع؟
+  bool _shouldListenToPollVote(HomeState prev, HomeState curr) {
+    return prev.pollVoteActionState != curr.pollVoteActionState &&
+        curr.pollVoteActionState == CubitStates.failure;
   }
   // ═══════════════════════════════════════════════════════════════════════════
   // 🎮 Action Handlers (دوال تنفيذ التوست)
@@ -191,6 +203,10 @@ class HomePostFeed extends StatelessWidget {
       default:
         break;
     }
+  }
+
+  void _handlePollVoteFeedback(BuildContext context, HomeState state) {
+    AppToast.error(context, state.pollVoteMessage ?? 'حدث خطأ أثناء التصويت');
   }
 
   Widget _buildContent(BuildContext context, _FeedState state) {
@@ -343,6 +359,7 @@ class _PostItemState extends State<_PostItem> {
       onBlock: _blockUser,
       onArchive: _archivePost,
       onEdit: _editPost,
+      onPollVote: _onPollVote,
     );
   }
 
@@ -371,6 +388,10 @@ class _PostItemState extends State<_PostItem> {
 
   void _onSave(String postId) {
     widget.homeCubit.toggleSavePost(postId: postId);
+  }
+
+  void _onPollVote(String postId, String choiceText) {
+    widget.homeCubit.voteInPoll(postId: postId, choiceText: choiceText);
   }
 
   void _onReaction(String id, ReactionType? type) {

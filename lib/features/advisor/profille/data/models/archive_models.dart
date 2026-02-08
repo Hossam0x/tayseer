@@ -446,8 +446,11 @@ class ArchivePostModel extends Equatable {
       PostContentType? parsedContentType;
       if (json['contentType'] != null) {
         switch (json['contentType'].toString().toLowerCase()) {
-          case 'video':
-            parsedContentType = PostContentType.video;
+          case 'poll':
+            parsedContentType = PostContentType.poll;
+            break;
+          case 'event':
+            parsedContentType = PostContentType.event;
             break;
           case 'reel':
             parsedContentType = PostContentType.reel;

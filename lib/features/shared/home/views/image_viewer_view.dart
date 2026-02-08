@@ -480,7 +480,7 @@ class _ZoomableImageState extends State<_ZoomableImage>
               widget.imageUrl,
               fit: BoxFit.contain,
               width: double.infinity,
-              height: double.infinity,
+              height: double.infinity,     
             ),
           ),
         ),

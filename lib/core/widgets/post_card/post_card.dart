@@ -2,13 +2,14 @@ import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
+import 'package:tayseer/core/widgets/post_card/post_images_grid.dart';
 import 'package:tayseer/core/widgets/post_card/post_options_bottom_sheet.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/core/widgets/post_card/real_video_player.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
-import 'package:tayseer/core/widgets/post_card/post_images_grid.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
+import 'package:tayseer/core/widgets/post_card/post_poll_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostCard extends StatefulWidget {
@@ -529,17 +530,14 @@ class _PostMediaState extends State<_PostMedia> {
                 callbacks: widget.callbacks,
               )
             : const SizedBox.shrink();
+      case PostContentType.event:
+        return const SizedBox.shrink();
 
-      case PostContentType.video:
-        return RealVideoPlayer(
-          postId: widget.post.postId,
-          videoUrl: widget.post.videoUrl ?? '',
-          isReel: false,
-          videoController: _activeController,
-          onControllerCreated: (controller) {
-            _activeController = controller;
-            widget.onControllerCreated(controller);
-          },
+      case PostContentType.poll:
+        return PostPollView(
+          post: widget.post,
+          onVote: (choiceText) =>
+              widget.callbacks.onPollVote?.call(widget.post.postId, choiceText),
         );
 
       case PostContentType.reel:
