@@ -869,8 +869,7 @@
   "error_recording_video": "خطأ في تسجيل الفيديو",
   "error_selecting_video": "خطأ في اختيار الفيديو",
   "error_uploading_video": "خطأ في رفع الفيديو",
+  "otp_sup_title_phone": "يرجي ادخال كود التحقق المرسل الي رقم هاتفك",
   "no_job": "لا توجد وظيفة",
-  "otp_sup_title_phone": "يرجي ادخال كود التحقق المرسل الي رقم هاتفك"
-  "no_job": "لا توجد وظيفة",
-  "votes" : "الأصوات"
+  "votes": "الأصوات"
 }
