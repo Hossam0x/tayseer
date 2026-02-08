@@ -9,7 +9,7 @@ class InteractionProfileCard extends StatefulWidget {
   final bool forceBlur;
   final bool showFavoriteIcon;
   final bool showRibbon;
-  
+
   const InteractionProfileCard({
     super.key,
     required this.item,
@@ -62,12 +62,13 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
             decoration: BoxDecoration(
               color: const Color.fromRGBO(0, 0, 0, 0.08),
               borderRadius: BorderRadius.circular(20.r),
-              border: isPendingRemoval 
+              border: isPendingRemoval
                   ? Border.all(color: Colors.grey.shade400, width: 2.w)
                   : null,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 AspectRatio(
                   aspectRatio: 1.3,
@@ -87,13 +88,13 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                         ),
 
                         if (shouldBlur)
-                        GestureDetector(
-                          onTap: () {
-                            context.pushNamed(
-                              AppRouter.kMarriageView,
-                              arguments: {'personId': widget.item.userId},
-                            );
-                          },
+                          GestureDetector(
+                            onTap: () {
+                              context.pushNamed(
+                                AppRouter.kMarriageView,
+                                arguments: {'personId': widget.item.userId},
+                              );
+                            },
                             child: BackdropFilter(
                               filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                               child: Container(
@@ -142,10 +143,11 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                                     widget.item.isFavorite
                                         ? Icons.favorite
                                         : Icons.favorite_border,
+
                                     color: widget.item.isFavorite
                                         ? AppColors.primary400
                                         : Colors.white,
-                                    size: 24.sp,
+                                    size: 26.w,
                                   ),
                                 ),
                               ),
@@ -156,15 +158,20 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                   ),
                 ),
 
-                Padding(
-                  padding: EdgeInsets.only(top: 8.h, right: 4.w, left: 4.w),
-                  child: GestureDetector(
-                    onTap: () {
-                        context.pushNamed(
-                              AppRouter.kMarriageView,
-                              arguments: {'personId': widget.item.userId},
-                            );
-                    },
+                GestureDetector(
+                  onTap: () {
+                    context.pushNamed(
+                      AppRouter.kMarriageView,
+                      arguments: {'personId': widget.item.userId},
+                    );
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: 8.h,
+                      right: 4.w,
+                      left: 4.w,
+                      bottom: 4.h,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -190,13 +197,17 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                             ),
                             if (widget.item.isverified) ...[
                               SizedBox(width: 4.w),
-                              Icon(Icons.verified, color: Colors.blue, size: 14.sp),
+                              Icon(
+                                Icons.verified,
+                                color: Colors.blue,
+                                size: 14.sp,
+                              ),
                             ],
                           ],
                         ),
-                    
+
                         SizedBox(height: 6.h),
-                    
+
                         Row(
                           children: [
                             Flexible(
@@ -214,14 +225,26 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                             ],
                           ],
                         ),
-                    
-                        SizedBox(height: 6.h),
-                    
-                        if (widget.item.job.isNotEmpty)
+
+                        if (widget.item.job.isNotEmpty) ...[
+                          SizedBox(height: 6.h),
                           _buildBadge(
                             text: widget.item.job,
                             icon: AssetsData.workIcon,
                           ),
+                          SizedBox(height: 6.h),
+
+                        ] else ...[
+                          SizedBox(height: 6.h),
+                          _buildBadge(
+                            text: context.tr(
+                              "no_job",
+                            ), // ✅ ترجمة "لا توجد وظيفة"
+                            icon: AssetsData.workIcon,
+                          ),
+                          SizedBox(height: 6.h),
+
+                        ],
                       ],
                     ),
                   ),
@@ -267,10 +290,10 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            AppImage(icon, width: 12.w, height: 12.h),
-            SizedBox(width: 3.w),
-          ],
+          // if (icon != null) ...[
+          //   AppImage(icon, width: 12.w, height: 12.h),
+          //   SizedBox(width: 3.w),
+          // ],
           Flexible(
             child: Text(
               text,
@@ -310,7 +333,7 @@ class RemoveFavoriteDialog extends StatelessWidget {
             Icon(
               Icons.favorite_border,
               color: AppColors.primary400,
-              size: 48.sp,
+              size: 48.w,
             ),
 
             SizedBox(height: 16.h),

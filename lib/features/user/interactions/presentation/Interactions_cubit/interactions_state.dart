@@ -29,7 +29,7 @@ class InteractionsState extends Equatable {
 
   const InteractionsState({
     this.isSubscribed = false,
-    this.answerCompleted = false, // ✅ NEW
+    this.answerCompleted = true, // ✅ Default true to show content
     this.explorationState = CubitStates.initial,
     this.explorationData = const {},
     this.explorationCurrentPage = 1,
@@ -69,13 +69,13 @@ class InteractionsState extends Equatable {
       explorationData: explorationData ?? this.explorationData,
       explorationCurrentPage: explorationCurrentPage ?? this.explorationCurrentPage,
       explorationHasMore: explorationHasMore ?? this.explorationHasMore,
-      explorationErrorMessage: explorationErrorMessage ?? this.explorationErrorMessage,
+      explorationErrorMessage: explorationErrorMessage,
       historyState: historyState ?? this.historyState,
       historyData: historyData ?? this.historyData,
       historyCurrentPage: historyCurrentPage ?? this.historyCurrentPage,
       historyHasMore: historyHasMore ?? this.historyHasMore,
       historyPagination: historyPagination ?? this.historyPagination,
-      historyErrorMessage: historyErrorMessage ?? this.historyErrorMessage,
+      historyErrorMessage: historyErrorMessage,
       actionState: actionState ?? this.actionState,
       actionMessage: actionMessage,
     );

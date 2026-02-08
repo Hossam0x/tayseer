@@ -1,9 +1,7 @@
 import 'package:tayseer/my_import.dart';
 
 class EmptyExploration extends StatelessWidget {
-  const EmptyExploration({
-    super.key,
-  });
+  const EmptyExploration({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +44,9 @@ class EmptyExploration extends StatelessWidget {
             useGradient: true,
             title: context.tr("complete_your_profile_bott"), // ✅ ترجمة
             onPressed: () {
-              // ⭐ الانتقال لتاب الملف الشخصي (Profile tab)
               final layoutCubit = context.read<LayoutCubit>();
-              layoutCubit.changeIndex(4); // Profile tab index
+              layoutCubit.changeIndex(1); // Marriage tab index
+              return;
             },
           ),
         ],

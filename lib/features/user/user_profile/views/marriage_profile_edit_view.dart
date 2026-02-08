@@ -1251,7 +1251,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (isLongText) ...[
-              Text(label, style: Styles.textStyle18),
+              Text(label, style: Styles.textStyle18,),
               Gap(8.h),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1259,7 +1259,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                   Expanded(
                     child: Text(
                       value,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.left,
                       maxLines: 4,
                       overflow: TextOverflow.ellipsis,
                       style: Styles.textStyle16,
