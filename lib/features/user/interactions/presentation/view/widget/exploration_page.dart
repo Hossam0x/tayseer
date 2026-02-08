@@ -225,17 +225,21 @@ class ExplorationState extends State<Exploration> {
                               subtitle: context.tr("meet_new_members"),
                               data: state.explorationData["منضم حديثاً"]!,
                               isSubscribed: state.isSubscribed,
-                              isRecentlyJoinedCategory: true, // ✅ TRUE for recently joined
+                              isRecentlyJoinedCategory:
+                                  true, // ✅ TRUE for recently joined
                             ),
                           ),
                         );
                       },
                       child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 4.h,
+                          horizontal: 8.w,
+                        ),
                         child: Text(
                           "المزيد",
                           style: Styles.textStyle18SemiBold.copyWith(
-                              color: AppColors.secondary800,
+                            color: AppColors.secondary800,
                           ),
                         ),
                       ),
@@ -244,9 +248,9 @@ class ExplorationState extends State<Exploration> {
                 ),
                 SizedBox(height: 4.h),
                 Wrap(
-                  children: state.explorationData["منضم حديثاً"]!
-                      .take(6)
-                      .map((item) {
+                  children: state.explorationData["منضم حديثاً"]!.take(6).map((
+                    item,
+                  ) {
                     return RecentlyJoined(
                       item: item,
                       forceBlur: !state.isSubscribed,
@@ -283,19 +287,27 @@ class ExplorationState extends State<Exploration> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => CategoryDetailPage(
-                              title: context.tr("send_greeting"),
-                              subtitle: context.tr("might_be_suitable"),
-                              data: state.explorationData["ارسل تحية"]!,
-                              isSubscribed: state.isSubscribed,
-                              isGreetingCategory: true, // ✅ Greeting category
-                              isRecentlyJoinedCategory: false, // ✅ FALSE for greetings
+                            builder: (newContext) => BlocProvider.value(
+                              value: context
+                                  .read<
+                                    InteractionsCubit
+                                  >(), // ✅ تمرير الـ Cubit
+                              child: CategoryDetailPage(
+                                title: context.tr("send_greeting"),
+                                subtitle: context.tr("might_be_suitable"),
+                                data: state.explorationData["ارسل تحية"]!,
+                                isSubscribed: state.isSubscribed,
+                                isGreetingCategory: true,
+                              ),
                             ),
                           ),
                         );
                       },
                       child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 4.h,
+                          horizontal: 8.w,
+                        ),
                         child: Text(
                           "المزيد",
                           style: Styles.textStyle16SemiBold.copyWith(
@@ -311,9 +323,7 @@ class ExplorationState extends State<Exploration> {
                   scrollDirection: Axis.vertical,
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
-                  itemCount: state.explorationData["ارسل تحية"]!
-                      .take(3)
-                      .length,
+                  itemCount: state.explorationData["ارسل تحية"]!.take(3).length,
                   itemBuilder: (context, index) {
                     final item = state.explorationData["ارسل تحية"]![index];
                     return Padding(
@@ -374,7 +384,8 @@ class ExplorationState extends State<Exploration> {
                         subtitle: subtitle,
                         data: data,
                         isSubscribed: isSubscribed,
-                        isRecentlyJoinedCategory: false, // ✅ FALSE for regular sections
+                        isRecentlyJoinedCategory:
+                            false, // ✅ FALSE for regular sections
                       ),
                     ),
                   );

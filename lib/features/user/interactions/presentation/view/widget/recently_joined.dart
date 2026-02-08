@@ -1,4 +1,3 @@
-
 // ═══════════════════════════════════════════════════════════════════
 // Recently Joined Widget
 // ═══════════════════════════════════════════════════════════════════
@@ -10,8 +9,14 @@ import 'package:tayseer/my_import.dart';
 class RecentlyJoined extends StatelessWidget {
   final InteractionUserModel item;
   final bool forceBlur;
+  final bool isCompact; // ✅ معامل جديد للعرض المصغر
 
-  const RecentlyJoined({super.key, required this.item, this.forceBlur = false});
+  const RecentlyJoined({
+    super.key,
+    required this.item,
+    this.forceBlur = false,
+    this.isCompact = false, // ✅ القيمة الافتراضية
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +30,8 @@ class RecentlyJoined extends StatelessWidget {
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: SizedBox(
-        height: 190.h,
-        width: 110.w,
+        height: isCompact ? 170.h : 190.h, // ✅ ارتفاع مصغر
+        width: isCompact ? 100.w : 110.w, // ✅ عرض مصغر
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -36,7 +41,11 @@ class RecentlyJoined extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    AppImage(item.image, fit: BoxFit.cover,height: 100.h,),
+                    AppImage(
+                      item.image,
+                      fit: BoxFit.cover,
+                      height: isCompact ? 80.h : 100.h, // ✅ ارتفاع الصورة
+                    ),
                     if (shouldBlur)
                       BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
@@ -48,7 +57,11 @@ class RecentlyJoined extends StatelessWidget {
             ),
 
             Padding(
-              padding: EdgeInsets.only(top: 10.h, right: 4.w, left: 4.w),
+              padding: EdgeInsets.only(
+                top: isCompact ? 6.h : 10.h, // ✅ مسافة مصغرة
+                right: 4.w,
+                left: 4.w,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -60,30 +73,43 @@ class RecentlyJoined extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 item.name,
-                                style: Styles.textStyle14SemiBold,
+                                style: Styles.textStyle14SemiBold.copyWith(
+                                  fontSize: isCompact ? 12.sp : 14.sp, // ✅ حجم خط مصغر
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            SizedBox(width: 5.w),
+                            SizedBox(width: 4.w),
                             if (item.isverified)
                               Icon(
                                 Icons.verified,
                                 color: Colors.blue,
-                                size: 16.sp,
+                                size: isCompact ? 13.sp : 16.sp, // ✅ حجم أيقونة مصغر
                               ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 8.h),
-                  _buildBadge(text: context.tr("recently_joined"), icon: AssetsData.joinedIcon),
-                  SizedBox(height: 8.h),
-                  if (item.country.isNotEmpty)
-                    _buildBadge(
+                  SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
+                  _buildBadge(
+                    text: context.tr("recently_joined"),
+                    icon: AssetsData.joinedIcon,
+                    isCompact: isCompact,
+                  ),
+                  SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
+                  if (item.country.isNotEmpty)...[  _buildBadge(
                       text: item.country,
                       icon: AssetsData.EgyFlagIcon,
-                    ),
+                      isCompact: isCompact,
+                    ),]else...[
+                      _buildBadge(
+                        text: "",
+                        icon: "",
+                        isCompact: isCompact,
+                      ),
+                    ]
+                  
                 ],
               ),
             ),
@@ -93,9 +119,16 @@ class RecentlyJoined extends StatelessWidget {
     );
   }
 
-  Widget _buildBadge({required String text, String? icon}) {
+  Widget _buildBadge({
+    required String text,
+    String? icon,
+    bool isCompact = false,
+  }) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 6.w : 10.w, // ✅ padding مصغر
+        vertical: isCompact ? 3.h : 4.h,
+      ),
       decoration: BoxDecoration(
         color: const Color.fromRGBO(186, 186, 186, 0.24),
         borderRadius: BorderRadius.circular(15.r),
@@ -105,13 +138,22 @@ class RecentlyJoined extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            AppImage(icon, width: 14.w, height: 15.h),
-            SizedBox(width: 4.w),
+            AppImage(
+              icon,
+              width: isCompact ? 11.w : 14.w, // ✅ حجم أيقونة مصغر
+              height: isCompact ? 12.h : 15.h,
+            ),
+            SizedBox(width: 3.w),
           ],
-          Text(
-            text,
-            style: Styles.textStyle14SemiBold.copyWith(
-              fontWeight: FontWeight.w400,
+          Flexible(
+            child: Text(
+              text,
+              style: Styles.textStyle14SemiBold.copyWith(
+                fontWeight: FontWeight.w400,
+                fontSize: isCompact ? 11.sp : 14.sp, // ✅ حجم خط مصغر
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
