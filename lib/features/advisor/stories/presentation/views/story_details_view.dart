@@ -44,15 +44,31 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
     }
 
     for (var story in widget.userStories.stories) {
-      _storyItems.add(
-        StoryItem.pageImage(
-          url: story.image,
-          controller: _storyController,
-          imageFit: BoxFit.contain,
-          duration: const Duration(seconds: 5),
-          key: Key(story.id),
-        ),
-      );
+      // Check if the story has a video URL
+      final hasVideo = story.video != null && story.video!.isNotEmpty;
+
+      if (hasVideo) {
+        // Add video story
+        _storyItems.add(
+          StoryItem.pageVideo(
+            story.video!,
+            controller: _storyController,
+            duration: const Duration(seconds: 15),
+            key: Key(story.id),
+          ),
+        );
+      } else {
+        // Add image story
+        _storyItems.add(
+          StoryItem.pageImage(
+            url: story.image,
+            controller: _storyController,
+            imageFit: BoxFit.contain,
+            duration: const Duration(seconds: 5),
+            key: Key(story.id),
+          ),
+        );
+      }
     }
   }
 

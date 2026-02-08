@@ -1,15 +1,58 @@
-import 'package:tayseer/core/utils/helper/picker_helper.dart';
-import 'package:tayseer/core/widgets/pick_image_bottom_sheet.dart';
-import 'package:tayseer/features/advisor/add_post/view/widget/ai_assistant_banner.dart';
-import 'package:tayseer/features/advisor/add_post/view/widget/custom_profile_header.dart';
-import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
+import 'package:camera/camera.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_state.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stories_gallery_grid.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/widgets/story_camera_widget.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/widgets/story_preview_view.dart';
 import 'package:tayseer/my_import.dart';
 
-class AddStoryBody extends StatelessWidget {
+class AddStoryBody extends StatefulWidget {
   const AddStoryBody({super.key});
+
+  @override
+  State<AddStoryBody> createState() => _AddStoryBodyState();
+}
+
+class _AddStoryBodyState extends State<AddStoryBody> {
+  bool _isCameraActive = false;
+  CameraController? _cameraController;
+  bool _isCameraInitialized = false;
+  List<CameraDescription> _cameras = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+  }
+
+  Future<void> _initCamera() async {
+    try {
+      _cameras = await availableCameras();
+      if (_cameras.isNotEmpty) {
+        _cameraController = CameraController(
+          _cameras[0],
+          ResolutionPreset.high,
+          enableAudio: true, // Enable audio for video recording
+          imageFormatGroup: ImageFormatGroup.jpeg,
+        );
+        await _cameraController!.initialize();
+        if (mounted) {
+          setState(() {
+            _isCameraInitialized = true;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error initializing camera in body: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _cameraController?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,228 +65,121 @@ class AddStoryBody extends StatelessWidget {
             builder: (context) => const CustomloadingApp(),
           );
         } else if (state.addStoryState == CubitStates.success) {
-          context.pop(); // Dismiss loading dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              isSuccess: true,
-              text: 'تم نشر القصة بنجاح',
-            ),
-          );
-          // Refresh stories in the home
-          getIt<StoriesCubit>().fetchStories();
-          context.pop(); // Go back to profile
+          // Use post frame callback to avoid navigation during build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context); // Dismiss loading dialog
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(
+                context,
+                isSuccess: true,
+                text: 'تم نشر القصة بنجاح',
+              ),
+            );
+            getIt<StoriesCubit>().fetchStories();
+            // Navigate back to profile after a short delay
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            });
+          });
         } else if (state.addStoryState == CubitStates.failure) {
-          context.pop(); // Dismiss loading dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              isSuccess: false,
-              text: state.errorMessage ?? 'فشل نشر القصة',
-            ),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context); // Dismiss loading dialog
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(
+                context,
+                isSuccess: false,
+                text: state.errorMessage ?? 'فشل نشر القصة',
+              ),
+            );
+          });
         }
       },
       builder: (context, state) {
-        final cubit = context.read<AddStoryCubit>();
-        final bool hasMedia =
-            state.selectedImages.isNotEmpty ||
-            state.capturedImages.isNotEmpty ||
-            state.capturedVideo != null ||
-            state.selectedVideos.isNotEmpty;
-        final bool hasText = state.draftText.trim().isNotEmpty;
-        final bool isActive = hasMedia || hasText;
-
-        return CustomBackground(
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-                onPressed: () => context.pop(),
-              ),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: CustomBotton(
-                    backGroundcolor: AppColors.kgreyColor,
-                    useGradient: isActive,
-                    height: 40,
-                    width: context.responsiveWidth(100),
-                    title: context.tr('to_publish'),
-                    onPressed: isActive ? () => cubit.createStory() : null,
-                  ),
-                ),
-              ],
-            ),
-            body: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CustomProfileHeader(
-                    name: kCurrentUserData?.name ?? '',
-                    initialSubtitle:
-                        'قصة جديدة', // Stories don't have categories
-                    isVerified: true,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: cubit.contentController,
-                      onChanged: cubit.updateText,
-                      maxLines: null,
-                      decoration: InputDecoration(
-                        hintText: context.tr('you_like_to_share'),
-                        border: InputBorder.none,
-                        hintStyle: Styles.textStyle16.copyWith(
-                          color: AppColors.kgreyColor,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Captured Images
-                  if (state.capturedImages.isNotEmpty)
-                    _buildCapturedImages(context, state.capturedImages, cubit),
-
-                  // Captured Video
-                  if (state.capturedVideo != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: CustomUploadedVideoPreview(
-                        height: 0.3,
-                        width: 0.9,
-                        key: ValueKey(state.capturedVideo!.path),
-                        video: state.capturedVideo!,
-                        onInitialized: () {},
-                        onRemove: () => cubit.removeCapturedVideo(),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            bottomNavigationBar: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AiAssistantBanner(
-                    isLoading: state.isAiLoading,
-                    onTap: () => cubit.enhanceTextWithGemini(context),
-                  ),
-                  Divider(color: Colors.grey, thickness: 0.5),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.camera_alt_outlined,
-                          color: HexColor('4d4d4d'),
-                          size: 28,
-                        ),
-                        onPressed: () async {
-                          final picker = MediaPickerController(
-                            config: PickerConfig(
-                              allowMultiple: false,
-                              maxCount: 1,
-                              requestType: RequestType.common,
-                            ),
-                          );
-                          final SelectedMedia? picked = await picker
-                              .pickFromCamera();
-                          if (picked != null) {
-                            if (picked.type == AssetType.image) {
-                              cubit.addCapturedImage(picked.file);
-                            } else if (picked.type == AssetType.video) {
-                              cubit.addCapturedVideo(XFile(picked.file.path));
-                            }
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.photo_library_outlined,
-                          color: HexColor('4d4d4d'),
-                          size: 28,
-                        ),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => CustomGallerySheet(
-                              config: PickerConfig(
-                                allowMultiple: true,
-                                maxCount: 10,
-                                requestType: RequestType.common,
-                              ),
-                              onMediaSelected: (list) {
-                                if (list.isEmpty) return;
-                                for (var item in list) {
-                                  if (item.type == AssetType.image) {
-                                    cubit.addCapturedImage(item.file);
-                                  } else if (item.type == AssetType.video) {
-                                    cubit.addCapturedVideo(
-                                      XFile(item.file.path),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _buildCurrentMode(state),
         );
       },
     );
   }
 
-  Widget _buildCapturedImages(
-    BuildContext context,
-    List<File> images,
-    AddStoryCubit cubit,
-  ) {
-    return SizedBox(
-      height: context.height * 0.25,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        itemCount: images.length,
-        itemBuilder: (_, index) {
-          final file = images[index];
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.file(file, fit: BoxFit.cover),
+  Widget _buildCurrentMode(AddStoryState state) {
+    // 1. Preview Mode
+    if (state.previewFile != null) {
+      return StoryPreviewView(
+        file: state.previewFile!,
+        onClose: () {
+          context.read<AddStoryCubit>().resetSelection();
+          setState(() {
+            _isCameraActive = false; // Ensure we go back to grid
+          });
+        },
+      );
+    }
+
+    // 2. Camera Mode
+    if (_isCameraActive && _isCameraInitialized && _cameraController != null) {
+      return StoryCameraWidget(
+        controller: _cameraController!,
+        cameras: _cameras,
+        onBack: () {
+          setState(() {
+            _isCameraActive = false;
+          });
+        },
+      );
+    }
+
+    // 3. Grid Mode (Main)
+    return Scaffold(
+      backgroundColor: AppColors.kWhiteColor,
+      appBar: AppBar(
+        backgroundColor: AppColors.kWhiteColor,
+        elevation: 0,
+        centerTitle: true,
+        title: state.albums.isEmpty
+            ? Text(context.tr('new_story'), style: Styles.textStyle18SemiBold)
+            : DropdownButtonHideUnderline(
+                child: DropdownButton<AssetPathEntity>(
+                  value: state.selectedAlbum,
+                  items: state.albums.map((album) {
+                    return DropdownMenuItem(
+                      value: album,
+                      child: Text(
+                        album.name,
+                        style: Styles.textStyle18SemiBold,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (album) {
+                    if (album != null) {
+                      context.read<AddStoryCubit>().changeAlbum(album);
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.black,
                   ),
                 ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: GestureDetector(
-                    onTap: () => cubit.removeCapturedImage(file),
-                    child: const CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.black54,
-                      child: Icon(Icons.close, size: 14, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
+              ),
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.black),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: StoriesGalleryGrid(
+        controller: _cameraController,
+        isInitialized: _isCameraInitialized,
+        onCameraTap: () {
+          setState(() {
+            _isCameraActive = true;
+          });
         },
       ),
     );

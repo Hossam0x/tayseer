@@ -121,6 +121,7 @@ class StoryModel extends Equatable {
   final String id;
   final String userId;
   final String image;
+  final String? video;
   final bool isMine;
   final bool isSpecial;
   final int viewsCount;
@@ -133,6 +134,7 @@ class StoryModel extends Equatable {
     required this.id,
     required this.userId,
     required this.image,
+    this.video,
     required this.isMine,
     required this.isSpecial,
     required this.viewsCount,
@@ -159,6 +161,7 @@ class StoryModel extends Equatable {
       image:
           json['image']?.toString() ??
           "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80",
+      video: json['video']?.toString(),
       isMine: json['isMine'] ?? false,
       isSpecial: json['isSpecial'] ?? false,
       // If backend doesn't send viewsCount, we might have an isViewed field
@@ -180,6 +183,7 @@ class StoryModel extends Equatable {
     String? id,
     String? userId,
     String? image,
+    String? video,
     bool? isMine,
     bool? isSpecial,
     int? viewsCount,
@@ -192,6 +196,7 @@ class StoryModel extends Equatable {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       image: image ?? this.image,
+      video: video ?? this.video,
       isMine: isMine ?? this.isMine,
       isSpecial: isSpecial ?? this.isSpecial,
       viewsCount: viewsCount ?? this.viewsCount,
@@ -207,6 +212,7 @@ class StoryModel extends Equatable {
     id,
     userId,
     image,
+    video,
     isMine,
     isSpecial,
     viewsCount,
