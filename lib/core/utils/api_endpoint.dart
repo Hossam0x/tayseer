@@ -56,7 +56,7 @@ class ApiEndPoint {
   static const String hideComment = '/hidden/comment';
   static const String hideReply = '/hidden/reply';
   static const String advisorStatistics = '/advisor/statistics';
-
+  static const String vote = '/votes';
   //  // ✅ Interactions (NEW)
   // static const String explorationUsers = '/interactions/exploration';
   // static const String historyUsers = '/interactions/history';

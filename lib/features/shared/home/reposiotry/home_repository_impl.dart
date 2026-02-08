@@ -359,4 +359,23 @@ class HomeRepositoryImpl implements HomeRepository {
       return Left(ServerFailure.fromDioError(e));
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> voteInPoll({
+    required String postId,
+    required String choiceIndex,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.vote,
+        data: {"postId": postId, "choiceIndex": choiceIndex},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(true);
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
 }

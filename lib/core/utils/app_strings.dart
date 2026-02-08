@@ -46,4 +46,7 @@ class AppStrings {
   static const String showMoreReplies = "show_more_replies";
     static const String showNReplies = "show_n_replies"; 
 
+
+  static const String votes = "votes";
+
 }

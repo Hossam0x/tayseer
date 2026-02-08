@@ -3,7 +3,7 @@ import 'package:tayseer/core/utils/assets.dart';
 // --- Enums ---
 enum ReactionType { love, care, dislike }
 
-enum PostContentType { post, video, reel }
+enum PostContentType { post, event, reel, poll }
 
 // --- Helper Functions ---
 String getReactionAsset(ReactionType type) {
@@ -35,11 +35,14 @@ ReactionType? _parseReactionType(String? value) {
 // ✅ تحويل String إلى PostContentType
 PostContentType _parseContentType(String? value) {
   switch (value?.toLowerCase()) {
-    case 'video':
-      return PostContentType.video;
+    case 'poll':
+      return PostContentType.poll;
     case 'reel':
       return PostContentType.reel;
     case 'post':
+      return PostContentType.post;
+    case 'event':
+      return PostContentType.event;
     default:
       return PostContentType.post;
   }
@@ -60,10 +63,11 @@ class PostModel {
   final String timeAgo;
   final String content;
 
+  final PostContentType contentType;
   // Media Fields
   final List<String> images;
-  final PostContentType contentType;
   final String? videoUrl;
+  final PollModel? pollModel;
 
   // Stats
   final int commentsCount;
@@ -76,14 +80,10 @@ class PostModel {
   final bool isRepostedByMe;
   final String? repostedBy;
 
-
-
-  // local 
+  // local
   final bool isSaved;
   final bool isMine;
-    final bool isBlocked; 
-
-  
+  final bool isBlocked;
 
   PostModel({
     required this.postId,
@@ -99,6 +99,7 @@ class PostModel {
     this.images = const [],
     this.contentType = PostContentType.post,
     this.videoUrl,
+    this.pollModel,
     required this.commentsCount,
     required this.sharesCount,
     required this.likesCount,
@@ -108,8 +109,8 @@ class PostModel {
     this.isRepostedByMe = false,
     this.isSaved = false,
     this.isMine = false,
-    this.isHidden = false, 
-    this.isBlocked = false
+    this.isHidden = false,
+    this.isBlocked = false,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -124,16 +125,24 @@ class PostModel {
       category: json['category'] ?? '',
       timeAgo: json['timeAgo'] ?? '',
       content: json['content'] ?? '',
-      images: (json['images'] as List<dynamic>?)
+      images:
+          (json['images'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
       contentType: _parseContentType(json['contentType']),
       videoUrl: json['videoUrl'],
+      pollModel: json["pollModel"] != null
+          ? PollModel.fromJson(
+              json["pollModel"],
+              totalPollVotes: json["totalPollVotes"] ?? 0,
+            )
+          : null,
       commentsCount: json['commentsCount'] ?? 0,
       sharesCount: json['sharesCount'] ?? 0,
       likesCount: json['likesCount'] ?? 0,
-      topReactions: (json['topReactions'] as List<dynamic>?)
+      topReactions:
+          (json['topReactions'] as List<dynamic>?)
               ?.map((e) => _parseReactionType(e.toString()))
               .whereType<ReactionType>()
               .toList() ??
@@ -166,6 +175,7 @@ class PostModel {
     List<String>? images,
     PostContentType? contentType,
     String? videoUrl,
+    PollModel? pollModel,
     int? commentsCount,
     int? sharesCount,
     int? likesCount,
@@ -176,9 +186,9 @@ class PostModel {
     String? repostedBy,
     bool? isSaved,
     String? userName,
-    bool? isMine, 
-    bool? isHidden, 
-    bool? isBlocked, 
+    bool? isMine,
+    bool? isHidden,
+    bool? isBlocked,
   }) {
     return PostModel(
       postId: postId ?? this.postId,
@@ -193,6 +203,7 @@ class PostModel {
       images: images ?? this.images,
       contentType: contentType ?? this.contentType,
       videoUrl: videoUrl ?? this.videoUrl,
+      pollModel: pollModel ?? this.pollModel,
       commentsCount: commentsCount ?? this.commentsCount,
       sharesCount: sharesCount ?? this.sharesCount,
       likesCount: likesCount ?? this.likesCount,
@@ -202,9 +213,91 @@ class PostModel {
       repostedBy: repostedBy ?? this.repostedBy,
       isSaved: isSaved ?? this.isSaved,
       userName: userName ?? this.userName,
-      isMine: isMine ?? this.isMine,     
-      isHidden: isHidden ?? this.isHidden, 
-      isBlocked: isBlocked ?? this.isBlocked
+      isMine: isMine ?? this.isMine,
+      isHidden: isHidden ?? this.isHidden,
+      isBlocked: isBlocked ?? this.isBlocked,
+    );
+  }
+}
+
+class PollModel {
+  final List<PollChoice> pollChoices;
+  final int totalPollVotes;
+
+  PollModel({this.pollChoices = const [], this.totalPollVotes = 0});
+
+  factory PollModel.fromJson(
+    Map<String, dynamic> json, {
+    int totalPollVotes = 0,
+  }) {
+    final choices =
+        (json['pollChoices'] as List<dynamic>?)
+            ?.map((e) => PollChoice.fromJson(e))
+            .toList() ??
+        [];
+    // totalPollVotes بييجي من الـ post level مش من جوه pollModel
+    final serverTotal = totalPollVotes > 0
+        ? totalPollVotes
+        : (json['totalPollVotes'] ?? 0);
+    // لو لسه 0، نحسبه من مجموع الأصوات
+    final calculatedTotal = serverTotal > 0
+        ? serverTotal
+        : choices.fold<int>(0, (sum, c) => sum + c.votes);
+
+    return PollModel(pollChoices: choices, totalPollVotes: calculatedTotal);
+  }
+
+  PollModel copyWith({List<PollChoice>? pollChoices, int? totalPollVotes}) {
+    return PollModel(
+      pollChoices: pollChoices ?? this.pollChoices,
+      totalPollVotes: totalPollVotes ?? this.totalPollVotes,
+    );
+  }
+}
+
+class PollChoice {
+  final String choice;
+  final int votes;
+  final int percentage;
+  final bool isSelected;
+  final List<String> votersAvatars;
+
+  PollChoice({
+    required this.choice,
+    required this.votes,
+    required this.percentage,
+    this.votersAvatars = const [],
+
+    this.isSelected = false,
+  });
+
+  factory PollChoice.fromJson(Map<String, dynamic> json) {
+    return PollChoice(
+      choice: json['choice'] ?? '',
+      percentage: json['percentage'] ?? 0,
+      votes: json['votes'] ?? 0,
+      votersAvatars:
+          (json['voters'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      isSelected: json['isSelectedByMe'] ?? false,
+    );
+  }
+
+  PollChoice copyWith({
+    String? choice,
+    int? votes,
+    int? percentage,
+    bool? isSelected,
+    List<String>? votersAvatars,
+  }) {
+    return PollChoice(
+      choice: choice ?? this.choice,
+      votes: votes ?? this.votes,
+      percentage: percentage ?? this.percentage,
+      isSelected: isSelected ?? this.isSelected,
+      votersAvatars: votersAvatars ?? this.votersAvatars,
     );
   }
 }

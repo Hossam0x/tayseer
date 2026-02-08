@@ -84,4 +84,9 @@ abstract class HomeRepository {
   void hidePost({required String postId, required bool isHide});
   Future<Either<Failure, String>> blockUser({required String userId});
   Future<Either<Failure, String>> archivePost({required String postId});
+
+  Future<Either<Failure, bool>> voteInPoll({
+    required String postId,
+    required String choiceIndex,
+  });
 }

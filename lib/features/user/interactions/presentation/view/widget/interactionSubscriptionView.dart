@@ -113,7 +113,6 @@ class interactionSubscriptionView extends StatelessWidget {
                                     scale: 0.9.r,
                                     child: Switch(
                                       value: true,
-                                      activeThumbColor: Colors.white,
                                       activeTrackColor: Color(0xFFE9728B),
                                       inactiveThumbColor: Colors.white,
                                       inactiveTrackColor: Colors.grey[300],
