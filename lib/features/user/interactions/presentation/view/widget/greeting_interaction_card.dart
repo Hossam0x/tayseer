@@ -24,7 +24,7 @@ class GreetingProfileCard extends StatelessWidget {
         // ✅ Show success animation when sendCompliment succeeds
         if (state.actionState == CubitStates.success) {
           _showSuccessAnimation(context);
-          
+
           // Reset action state after showing dialog
           Future.delayed(const Duration(milliseconds: 100), () {
             context.read<InteractionsCubit>().resetActionState();
@@ -34,7 +34,7 @@ class GreetingProfileCard extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-             text: state.actionMessage ?? context.tr('error_occurred'),
+              text: state.actionMessage ?? context.tr('error_occurred'),
               isSuccess: false,
             ),
           );
@@ -68,7 +68,9 @@ class GreetingProfileCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16.r),
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                          child: Container(color: Colors.black.withOpacity(0.2)),
+                          child: Container(
+                            color: Colors.black.withOpacity(0.2),
+                          ),
                         ),
                       ),
                     ),
@@ -140,11 +142,9 @@ class GreetingProfileCard extends StatelessWidget {
             // Star Button
             GestureDetector(
               onTap: () {
-                  context.read<InteractionsCubit>().sendCompliment(
-                      userId: item.userId,
-                    );
-
-            
+                context.read<InteractionsCubit>().sendCompliment(
+                  userId: item.userId,
+                );
               },
               child: Container(
                 width: 55.w,
@@ -175,67 +175,19 @@ class GreetingProfileCard extends StatelessWidget {
   }
 
   // ✅ Success Animation Dialog
-void _showSuccessAnimation(BuildContext context) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.black.withOpacity(0.7),
-    builder: (_) {
-      // Auto-dismiss after 3 seconds
-      Future.delayed(const Duration(seconds: 3), () {
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
-      });
+  void _showSuccessAnimation(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return AppImage(AssetsData.kSuccessMarriageAnimationsLottie);
+      },
+    );
+    Future.delayed(const Duration(seconds: 4), () {
+      context.pop();
+    });
+  }
 
-      return Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: 300.w,
-            padding: EdgeInsets.all(24.w),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24.r),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Lottie Animation
-                SizedBox(
-                  width: 200.w,
-                  height: 200.h,
-                  child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
-                ),
-                
-                SizedBox(height: 16.h),
-                
-                // Success Text
-                Text(
-                  context.tr("greeting_sent_success"), // ✅ ترجمة
-                  style: Styles.textStyle18SemiBold.copyWith(
-                    color: AppColors.primary400,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                
-                SizedBox(height: 8.h),
-                
-                Text(
-                  context.tr("user_will_be_notified").replaceAll('{}', item.name), // ✅ ترجمة ديناميكية
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.secondary600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
-}
   Widget _buildBadge({required String text, String? icon}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),

@@ -66,6 +66,11 @@ class ExplorationState extends State<Exploration> {
           );
         }
 
+        // ✅ Check if answerCompleted is false
+        if (!state.answerCompleted) {
+          return const EmptyExploration();
+        }
+
         final hasData = state.explorationData.values.any(
           (list) => list.isNotEmpty,
         );
@@ -100,6 +105,7 @@ class ExplorationState extends State<Exploration> {
                   subtitle: "الأشخاص الذين تم اقتراحهم لك بناءً على اهتماماتك",
                   data: dummyData["من ضمن اختياراتك"]!,
                   isSubscribed: true,
+                  showMoreButton: false,
                 ),
                 SizedBox(height: 24.h),
                 _buildSection(
@@ -107,6 +113,7 @@ class ExplorationState extends State<Exploration> {
                   subtitle: "أشخاص أرسلوا مرتبطة بتفاعلاتك السابقة",
                   data: dummyData["من خارج اختياراتك"]!,
                   isSubscribed: true,
+                  showMoreButton: false,
                 ),
               ]),
             ),
@@ -140,6 +147,7 @@ class ExplorationState extends State<Exploration> {
                   subtitle: context.tr("suggested_based_on_interests"),
                   data: state.explorationData["من ضمن اختياراتك"]!,
                   isSubscribed: state.isSubscribed,
+                  limit: 5,
                 ),
                 SizedBox(height: 24.h),
               ],
@@ -152,6 +160,7 @@ class ExplorationState extends State<Exploration> {
                   subtitle: context.tr("outside_preferences"),
                   data: state.explorationData["من خارج اختياراتك"]!,
                   isSubscribed: state.isSubscribed,
+                  limit: 5,
                 ),
                 SizedBox(height: 24.h),
               ],
@@ -164,6 +173,7 @@ class ExplorationState extends State<Exploration> {
                   subtitle: context.tr("showed_interest"),
                   data: state.explorationData["يرغبون في التفاعل معك"]!,
                   isSubscribed: state.isSubscribed,
+                  limit: 5,
                 ),
                 SizedBox(height: 24.h),
               ],
@@ -176,6 +186,7 @@ class ExplorationState extends State<Exploration> {
                   subtitle: context.tr("visited_after_update"),
                   data: state.explorationData["الزيارات المحفزة"]!,
                   isSubscribed: state.isSubscribed,
+                  limit: 5,
                 ),
                 SizedBox(height: 24.h),
               ],
@@ -183,20 +194,59 @@ class ExplorationState extends State<Exploration> {
               // ✅ 5. منضم حديثاً
               if (state.explorationData["منضم حديثاً"]?.isNotEmpty ??
                   false) ...[
-                Text(
-                  context.tr("recently_joined"),
-                  style: Styles.textStyle18SemiBold,
-                ),
-                Text(
-                  context.tr("meet_new_members"),
-                  style: Styles.textStyle14.copyWith(
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.secondary600,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.tr("recently_joined"),
+                            style: Styles.textStyle18SemiBold,
+                          ),
+                          Text(
+                            context.tr("meet_new_members"),
+                            style: Styles.textStyle14.copyWith(
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.secondary600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CategoryDetailPage(
+                              title: context.tr("recently_joined"),
+                              subtitle: context.tr("meet_new_members"),
+                              data: state.explorationData["منضم حديثاً"]!,
+                              isSubscribed: state.isSubscribed,
+                              isRecentlyJoinedCategory: true, // ✅ TRUE for recently joined
+                            ),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
+                        child: Text(
+                          "المزيد",
+                          style: Styles.textStyle18SemiBold.copyWith(
+                              color: AppColors.secondary800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 4.h),
                 Wrap(
-                  children: state.explorationData["منضم حديثاً"]!.map((item) {
+                  children: state.explorationData["منضم حديثاً"]!
+                      .take(6)
+                      .map((item) {
                     return RecentlyJoined(
                       item: item,
                       forceBlur: !state.isSubscribed,
@@ -207,51 +257,53 @@ class ExplorationState extends State<Exploration> {
               ],
 
               // ✅ 6. أرسل تحية
-
-              // ✅ 6. أرسل تحية
               if (state.explorationData["ارسل تحية"]?.isNotEmpty ?? false) ...[
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.tr("send_greeting"),
-                          style: Styles.textStyle18SemiBold,
-                        ),
-                        Text(
-                          context.tr("might_be_suitable"),
-                          style: Styles.textStyle14.copyWith(
-                            color: AppColors.secondary600,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.tr("send_greeting"),
+                            style: Styles.textStyle18SemiBold,
                           ),
-                        ),
-                      ],
-                    ),
-                    if (state.explorationData["ارسل تحية"]!.length >
-                        3) // عرض 3 فقط في القائمة الرئيسية
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CategoryDetailPage(
-                                title: context.tr("send_greeting"),
-                                subtitle: context.tr("might_be_suitable"),
-                                data: state.explorationData["ارسل تحية"]!,
-                                isSubscribed: state.isSubscribed,
-                                isGreetingCategory: true,
-                              ),
+                          Text(
+                            context.tr("might_be_suitable"),
+                            style: Styles.textStyle14.copyWith(
+                              color: AppColors.secondary600,
                             ),
-                          );
-                        },
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CategoryDetailPage(
+                              title: context.tr("send_greeting"),
+                              subtitle: context.tr("might_be_suitable"),
+                              data: state.explorationData["ارسل تحية"]!,
+                              isSubscribed: state.isSubscribed,
+                              isGreetingCategory: true, // ✅ Greeting category
+                              isRecentlyJoinedCategory: false, // ✅ FALSE for greetings
+                            ),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
                         child: Text(
                           "المزيد",
-                          style: Styles.textStyle18SemiBold.copyWith(
+                          style: Styles.textStyle16SemiBold.copyWith(
                             color: AppColors.secondary800,
                           ),
                         ),
                       ),
+                    ),
                   ],
                 ),
                 SizedBox(height: 16.h),
@@ -261,7 +313,7 @@ class ExplorationState extends State<Exploration> {
                   shrinkWrap: true,
                   itemCount: state.explorationData["ارسل تحية"]!
                       .take(3)
-                      .length, // عرض 3 فقط
+                      .length,
                   itemBuilder: (context, index) {
                     final item = state.explorationData["ارسل تحية"]![index];
                     return Padding(
@@ -288,86 +340,88 @@ class ExplorationState extends State<Exploration> {
   }
 
   Widget _buildSection({
-  required String title,
-  required String subtitle,
-  required List<InteractionUserModel> data,
-  required bool isSubscribed,
-  int limit = 5,
-}) {
-  List<InteractionUserModel> limitedData = data.take(limit).toList();
+    required String title,
+    required String subtitle,
+    required List<InteractionUserModel> data,
+    required bool isSubscribed,
+    int limit = 5,
+    bool showMoreButton = true,
+  }) {
+    List<InteractionUserModel> limitedData = data.take(limit).toList();
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // ✅ Wrap title in Expanded with flex
-          Expanded(
-            flex: 3, // Give title more space
-            child: Text(
-              title,
-              style: Styles.textStyle18SemiBold,
-              maxLines: 1, // ✅ Limit to 1 line
-              overflow: TextOverflow.ellipsis, // ✅ Add ellipsis if too long
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: Styles.textStyle18SemiBold,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-          SizedBox(width: 8.w), // ✅ Add spacing
-          // ✅ "المزيد" button
-          if (data.length > limit)
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CategoryDetailPage(
-                      title: title,
-                      subtitle: subtitle,
-                      data: data,
-                      isSubscribed: isSubscribed,
+            if (showMoreButton) ...[
+              SizedBox(width: 12.w),
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CategoryDetailPage(
+                        title: title,
+                        subtitle: subtitle,
+                        data: data,
+                        isSubscribed: isSubscribed,
+                        isRecentlyJoinedCategory: false, // ✅ FALSE for regular sections
+                      ),
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
+                  child: Text(
+                    "المزيد",
+                    style: Styles.textStyle16SemiBold.copyWith(
+                      color: AppColors.secondary800,
                     ),
                   ),
-                );
-              },
-              child: Text(
-                "المزيد",
-                style: Styles.textStyle18SemiBold.copyWith(
-                  color: AppColors.secondary800,
                 ),
               ),
-            ),
-        ],
-      ),
-      SizedBox(height: 4.h),
-      Text(
-        subtitle,
-        style: Styles.textStyle14.copyWith(
-          fontWeight: FontWeight.w400,
-          color: AppColors.secondary600,
+            ],
+          ],
         ),
-      ),
-      SizedBox(height: 16.h),
-      SizedBox(
-        height: 280.h,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: limitedData.length,
-          clipBehavior: Clip.none,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: EdgeInsetsDirectional.only(end: 12.w),
-              child: SizedBox(
-                width: 190.w,
-                child: InteractionProfileCard(
-                  item: limitedData[index],
-                  forceBlur: !isSubscribed,
+        SizedBox(height: 4.h),
+        Text(
+          subtitle,
+          style: Styles.textStyle14.copyWith(
+            fontWeight: FontWeight.w400,
+            color: AppColors.secondary600,
+          ),
+        ),
+        SizedBox(height: 16.h),
+        SizedBox(
+          height: 280.h,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: limitedData.length,
+            clipBehavior: Clip.none,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: EdgeInsetsDirectional.only(end: 12.w),
+                child: SizedBox(
+                  width: 190.w,
+                  child: InteractionProfileCard(
+                    item: limitedData[index],
+                    forceBlur: !isSubscribed,
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 }
