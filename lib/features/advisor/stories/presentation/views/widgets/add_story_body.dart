@@ -114,6 +114,8 @@ class _AddStoryBodyState extends State<AddStoryBody> {
     if (state.previewFile != null) {
       return StoryPreviewView(
         file: state.previewFile!,
+        isVideo: state.isVideoPreview,
+        isFrontCamera: state.isFrontCamera,
         onClose: () {
           context.read<AddStoryCubit>().resetSelection();
           setState(() {

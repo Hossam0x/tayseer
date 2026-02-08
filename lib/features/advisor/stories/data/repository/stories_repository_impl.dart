@@ -110,6 +110,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
     String? content,
     List<File>? images,
     List<XFile>? videos,
+    Function(int sent, int total)? onSendProgress,
   }) async {
     try {
       final List<MultipartFile> uploadedImages = [];
@@ -144,6 +145,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
         isFromData: true,
         isAuth: true,
         data: data,
+        onSendProgress: onSendProgress,
       );
 
       final success = response['success'] ?? false;

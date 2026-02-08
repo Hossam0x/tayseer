@@ -133,12 +133,55 @@ class AddStoryCubit extends Cubit<AddStoryState> {
         selectedAsset: null,
         previewFile: null,
         isVideoPreview: false,
+        isFrontCamera: false,
       ),
     );
   }
 
-  void setPreviewFile(File file, {bool isVideo = false}) {
-    emit(state.copyWith(previewFile: file, isVideoPreview: isVideo));
+  void setPreviewFile(
+    File file, {
+    bool isVideo = false,
+    bool isFrontCamera = false,
+  }) {
+    emit(
+      state.copyWith(
+        previewFile: file,
+        isVideoPreview: isVideo,
+        isFrontCamera: isFrontCamera,
+      ),
+    );
+  }
+
+  Future<({List<File> images, List<XFile> videos})> getMediaToUpload() async {
+    final List<File> imageFiles = [];
+    final List<XFile> videoFiles = [];
+
+    // Use previewFile if available (this covers both selected from gallery and captured)
+    if (state.previewFile != null) {
+      if (state.isVideoPreview) {
+        // It's a video from camera or gallery
+        videoFiles.add(XFile(state.previewFile!.path));
+      } else {
+        // It's an image
+        imageFiles.add(state.previewFile!);
+      }
+    } else {
+      // Fallback to old behavior if needed, but we aim for the new flow
+      for (var asset in state.selectedImages) {
+        final file = await asset.file;
+        if (file != null) imageFiles.add(file);
+      }
+      imageFiles.addAll(state.capturedImages);
+
+      if (state.capturedVideo != null) {
+        videoFiles.add(state.capturedVideo!);
+      }
+      for (var video in state.selectedVideos) {
+        videoFiles.add(video);
+      }
+    }
+
+    return (images: imageFiles, videos: videoFiles);
   }
 
   Future<void> createStory() async {

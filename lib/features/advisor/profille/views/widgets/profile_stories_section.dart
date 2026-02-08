@@ -4,13 +4,34 @@ import 'package:tayseer/features/advisor/stories/presentation/view_model/stories
 import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
 import 'package:tayseer/my_import.dart';
 
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
+
 class ProfileStoriesSection extends StatelessWidget {
   final String? advisorId;
   const ProfileStoriesSection({super.key, this.advisorId});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<StoriesCubit, StoriesState>(
+    return BlocConsumer<StoriesCubit, StoriesState>(
+      listenWhen: (previous, current) =>
+          previous.createStoryState != current.createStoryState,
+      listener: (context, state) {
+        if (state.createStoryState == CubitStates.success) {
+          showSafeSnackBar(
+            context: context,
+            text: state.createStoryMessage.isNotEmpty
+                ? state.createStoryMessage
+                : context.tr('story_published_success'),
+            isSuccess: true,
+          );
+        } else if (state.createStoryState == CubitStates.failure) {
+          showSafeSnackBar(
+            context: context,
+            text: state.createStoryMessage,
+            isError: true,
+          );
+        }
+      },
       buildWhen: (previous, current) =>
           previous.storiesState != current.storiesState ||
           previous.storiesList != current.storiesList,

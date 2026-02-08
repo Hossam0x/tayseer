@@ -310,11 +310,31 @@ class StoriesCubit extends Cubit<StoriesState> {
     List<File>? images,
     List<XFile>? videos,
   }) async {
-    emit(state.copyWith(createStoryState: CubitStates.loading));
+    emit(
+      state.copyWith(
+        createStoryState: CubitStates.loading,
+        uploadProgress: 0.0,
+      ),
+    );
     final result = await storiesRepository.createStories(
       content: content,
       images: images,
       videos: videos,
+      onSendProgress: (sent, total) {
+        if (total > 0) {
+          final progress = sent / total;
+          // Emit only if progress changed significantly to avoid too many emits
+          if ((progress - state.uploadProgress).abs() > 0.01 ||
+              progress == 1.0) {
+            emit(
+              state.copyWith(
+                uploadProgress: progress,
+                createStoryState: CubitStates.loading,
+              ),
+            );
+          }
+        }
+      },
     );
 
     result.fold(
