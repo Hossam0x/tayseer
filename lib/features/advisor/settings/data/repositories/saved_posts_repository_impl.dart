@@ -15,7 +15,7 @@ class SavedPostsRepositoryImpl implements SavedPostsRepository {
     try {
       final response = await _apiService.get(
         endPoint: '/saved-posts',
-        query: {'page': page},
+        query: {'page': page, 'limit': 10},
       );
 
       if (response['success'] == true) {

@@ -41,52 +41,78 @@ class _SavedPostsBody extends StatelessWidget {
         ),
         // 📢 SHARE FEEDBACK
         BlocListener<SavedPostsCubit, SavedPostsState>(
-          listenWhen: (p, c) => p.shareActionState != c.shareActionState,
+          listenWhen: (p, c) =>
+              p.shareActionState != c.shareActionState &&
+              c.shareActionState != CubitStates.initial,
           listener: (context, state) {
             if (state.shareActionState == CubitStates.success) {
-              AppToast.success(context, state.shareMessage ?? 'تمت المشاركة');
+              AppToast.success(
+                context,
+                state.isShareAdded == true
+                    ? (state.shareMessage ?? context.tr('shared_success'))
+                    : (state.shareMessage ?? context.tr('unshared_success')),
+              );
             } else if (state.shareActionState == CubitStates.failure) {
-              AppToast.error(context, state.shareMessage ?? 'فشل المشاركة');
+              AppToast.error(
+                context,
+                state.shareMessage ?? context.tr('shared_error'),
+              );
             }
           },
         ),
         // 💾 SAVE FEEDBACK
         BlocListener<SavedPostsCubit, SavedPostsState>(
-          listenWhen: (p, c) => p.saveActionState != c.saveActionState,
+          listenWhen: (p, c) =>
+              p.saveActionState != c.saveActionState &&
+              c.saveActionState != CubitStates.initial,
           listener: (context, state) {
             if (state.saveActionState == CubitStates.success) {
-              AppToast.success(context, state.saveMessage ?? 'تم تحديث الحفظ');
+              AppToast.success(
+                context,
+                state.saveMessage ?? context.tr('saved_success'),
+              );
             } else if (state.saveActionState == CubitStates.failure) {
-              AppToast.error(context, state.saveMessage ?? 'فشل تحديث الحفظ');
+              AppToast.error(
+                context,
+                state.saveMessage ?? context.tr('save_error'),
+              );
             }
           },
         ),
         // 🗑 DELETE FEEDBACK
         BlocListener<SavedPostsCubit, SavedPostsState>(
           listenWhen: (p, c) =>
-              p.deletePostActionState != c.deletePostActionState,
+              p.deletePostActionState != c.deletePostActionState &&
+              c.deletePostActionState != CubitStates.initial,
           listener: (context, state) {
             if (state.deletePostActionState == CubitStates.success) {
-              AppToast.success(context, state.deletePostMessage ?? 'تم الحذف');
+              AppToast.success(
+                context,
+                state.deletePostMessage ?? context.tr('delete_success'),
+              );
             } else if (state.deletePostActionState == CubitStates.failure) {
-              AppToast.error(context, state.deletePostMessage ?? 'فشل الحذف');
+              AppToast.error(
+                context,
+                state.deletePostMessage ?? context.tr('delete_error'),
+              );
             }
           },
         ),
         // 📦 ARCHIVE FEEDBACK
         BlocListener<SavedPostsCubit, SavedPostsState>(
           listenWhen: (p, c) =>
-              p.archivePostActionState != c.archivePostActionState,
+              p.archivePostActionState != c.archivePostActionState &&
+              c.archivePostActionState != CubitStates.initial,
           listener: (context, state) {
             if (state.archivePostActionState == CubitStates.success) {
               AppToast.success(
                 context,
-                state.archivePostMessage ?? 'تم الأرشفة',
+                state.archivePostMessage ?? context.tr('archive_success'),
               );
             } else if (state.archivePostActionState == CubitStates.failure) {
               AppToast.error(
                 context,
-                state.archivePostMessage ?? 'فشل الأرشفة',
+                state.archivePostMessage ?? context.tr('archive_error'),
               );
             }
           },
@@ -94,12 +120,19 @@ class _SavedPostsBody extends StatelessWidget {
         // 🚫 BLOCK FEEDBACK
         BlocListener<SavedPostsCubit, SavedPostsState>(
           listenWhen: (p, c) =>
-              p.blockUserActionState != c.blockUserActionState,
+              p.blockUserActionState != c.blockUserActionState &&
+              c.blockUserActionState != CubitStates.initial,
           listener: (context, state) {
             if (state.blockUserActionState == CubitStates.success) {
-              AppToast.success(context, state.blockUserMessage ?? 'تم الحظر');
+              AppToast.success(
+                context,
+                state.blockUserMessage ?? context.tr('blocked_successfully'),
+              );
             } else if (state.blockUserActionState == CubitStates.failure) {
-              AppToast.error(context, state.blockUserMessage ?? 'فشل الحظر');
+              AppToast.error(
+                context,
+                state.blockUserMessage ?? context.tr('failed_to_block'),
+              );
             }
           },
         ),
@@ -130,7 +163,7 @@ class _SavedPostsBody extends StatelessWidget {
                       horizontal: 20.w,
                       vertical: 15.h,
                     ),
-                    child: SimpleAppBar(title: 'المنشورات المحفوظة'),
+                    child: SimpleAppBar(title: context.tr('saved_posts')),
                   ),
                   Expanded(child: _buildBody()),
                 ],
@@ -164,7 +197,7 @@ class _SavedPostsBody extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'حدث خطأ في تحميل المنشورات',
+                  context.tr('error_loading_posts'),
                   style: Styles.textStyle16.copyWith(color: AppColors.kGreyB3),
                 ),
                 Gap(12.h),
@@ -181,7 +214,7 @@ class _SavedPostsBody extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'إعادة المحاولة',
+                    context.tr('retry'),
                     style: Styles.textStyle14.copyWith(color: Colors.white),
                   ),
                 ),
@@ -198,14 +231,14 @@ class _SavedPostsBody extends StatelessWidget {
                 AppImage(AssetsData.postsEndIcon, height: 200.h, width: 200.w),
                 Gap(16.h),
                 Text(
-                  'لا توجد منشورات محفوظة',
+                  context.tr('no_saved_posts'),
                   style: Styles.textStyle16.copyWith(
                     color: AppColors.secondary400,
                   ),
                 ),
                 Gap(8.h),
                 Text(
-                  'عند حفظ منشور سيظهر هنا',
+                  context.tr('saved_posts_empty_hint'),
                   style: Styles.textStyle14.copyWith(
                     color: AppColors.secondary300,
                   ),
@@ -217,8 +250,9 @@ class _SavedPostsBody extends StatelessWidget {
 
         return NotificationListener<ScrollNotification>(
           onNotification: (scrollInfo) {
-            if (scrollInfo.metrics.pixels ==
-                scrollInfo.metrics.maxScrollExtent) {
+            // Trigger load more when user is near the end
+            if (scrollInfo.metrics.pixels >=
+                scrollInfo.metrics.maxScrollExtent - 400) {
               if (state.hasMore && !state.isLoadingMore) {
                 cubit.fetchSavedPosts(loadMore: true);
               }
@@ -229,13 +263,14 @@ class _SavedPostsBody extends StatelessWidget {
             color: AppColors.kprimaryColor,
             onRefresh: () => cubit.refresh(),
             child: ListView.builder(
+              padding: EdgeInsets.symmetric(vertical: 16.h),
               itemCount: state.posts.length + 1,
               itemBuilder: (context, index) {
                 if (index == state.posts.length) {
                   if (state.isLoadingMore) {
                     return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16.0),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: PostCardShimmer(),
                     );
                   }
                   if (!state.hasMore && state.posts.isNotEmpty) {
@@ -244,7 +279,10 @@ class _SavedPostsBody extends StatelessWidget {
                   return const SizedBox.shrink();
                 }
 
-                return _PostItem(post: state.posts[index]);
+                return _PostItem(
+                  postId: state.posts[index].postId,
+                  cubit: cubit,
+                );
               },
             ),
           ),
@@ -254,36 +292,61 @@ class _SavedPostsBody extends StatelessWidget {
   }
 }
 
-class _PostItem extends StatelessWidget {
-  final PostModel post;
-  const _PostItem({required this.post});
+class _PostItem extends StatefulWidget {
+  final String postId;
+  final SavedPostsCubit cubit;
+  const _PostItem({required this.postId, required this.cubit});
+
+  @override
+  State<_PostItem> createState() => _PostItemState();
+}
+
+class _PostItemState extends State<_PostItem> {
+  late final Stream<PostModel?> _postStream;
+  late final PostCallbacks _callbacks;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeStreamAndCallbacks();
+  }
+
+  void _initializeStreamAndCallbacks() {
+    _postStream = widget.cubit.stream
+        .map(
+          (state) =>
+              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+        )
+        .distinct();
+
+    _callbacks = PostCallbacks(
+      postUpdatesStream: _postStream,
+      onReactionChanged: (postId, reaction) =>
+          widget.cubit.reactToPost(postId: postId, reactionType: reaction),
+      onShareTap: (postId) => widget.cubit.toggleSharePost(postId: postId),
+      onSave: (postId) => widget.cubit.toggleSavePost(postId: postId),
+      onDelete: (postId) => widget.cubit.deletePost(postId: postId),
+      onArchive: (postId) => widget.cubit.archivePost(postId: postId),
+      onHide: (postId) => widget.cubit.toggleHidePost(postId: postId),
+      onBlock: (postId, advisorId) =>
+          widget.cubit.blockUser(visiblePostId: postId, advisorId: advisorId),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<SavedPostsCubit>();
+    return BlocSelector<SavedPostsCubit, SavedPostsState, PostModel?>(
+      selector: (state) =>
+          state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+      builder: (context, post) {
+        if (post == null) return const SizedBox.shrink();
 
-    return BlocSelector<SavedPostsCubit, SavedPostsState, PostModel>(
-      selector: (state) => state.posts.firstWhere(
-        (p) => p.postId == post.postId,
-        orElse: () => post,
-      ),
-      builder: (context, currentPost) {
         return Padding(
-          padding: EdgeInsets.only(bottom: 8.h),
+          padding: EdgeInsets.only(bottom: 16.h),
           child: PostCard(
             isFromProfile: false,
-            post: currentPost,
-            callbacks: PostCallbacks(
-              onReactionChanged: (postId, reaction) =>
-                  cubit.reactToPost(postId: postId, reactionType: reaction),
-              onShareTap: (postId) => cubit.toggleSharePost(postId: postId),
-              onSave: (postId) => cubit.toggleSavePost(postId: postId),
-              onDelete: (postId) => cubit.deletePost(postId: postId),
-              onArchive: (postId) => cubit.archivePost(postId: postId),
-              onHide: (postId) => cubit.toggleHidePost(postId: postId),
-              onBlock: (postId, advisorId) =>
-                  cubit.blockUser(visiblePostId: postId, advisorId: advisorId),
-            ),
+            post: post,
+            callbacks: _callbacks,
             onNavigateToDetails: (context, post, controller) {
               Navigator.push(
                 context,
@@ -292,6 +355,7 @@ class _PostItem extends StatelessWidget {
                     post: post,
                     isFromProfile: false,
                     cachedController: controller,
+                    callbacks: _callbacks,
                   ),
                 ),
               );

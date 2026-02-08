@@ -1,24 +1,20 @@
-// // features/shared/search/data/repositories/search_repository.dart
-// class SearchRepository {
-//   // TODO: سيتم تنفيذ الـ API الحقيقي هنا
-//   Future<Map<String, dynamic>> search({
-//     required String query,
-//     String category = 'all',
-//     int page = 1,
-//     int limit = 20,
-//   }) async {
-//     // محاكاة API
-//     await Future.delayed(const Duration(seconds: 1));
+import 'package:tayseer/core/utils/api_service.dart';
+import 'package:tayseer/features/advisor/search/data/models/search_response_model.dart';
 
-//     return {
-//       'success': true,
-//       'data': {
-//         'advisors': [],
-//         'posts': [],
-//         'events': [],
-//         'groups': [],
-//         'hasMore': false,
-//       },
-//     };
-//   }
-// }
+class SearchRepository {
+  final ApiService _apiService;
+
+  SearchRepository(this._apiService);
+
+  Future<SearchResponseModel> search({
+    required String query,
+    String type = 'all',
+  }) async {
+    final response = await _apiService.get(
+      endPoint: '/search',
+      query: {'words': query, 'type': type},
+    );
+
+    return SearchResponseModel.fromJson(response, type);
+  }
+}

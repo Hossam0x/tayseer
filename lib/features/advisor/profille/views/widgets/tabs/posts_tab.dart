@@ -62,7 +62,23 @@ class PostsTab extends StatelessWidget {
             return _buildEmptyState(context);
           }
 
-          return _buildPostList(state, profileCubit);
+          return RefreshIndicator(
+            color: AppColors.kprimaryColor,
+            onRefresh: () => profileCubit.fetchPosts(),
+            child: Column(
+              children: [
+                _buildPostList(state, profileCubit),
+
+                // زر تحميل المزيد أو إند فيد
+                if (state.hasMore)
+                  _buildLoadMoreButton(context, state, profileCubit)
+                else if (state.posts.isNotEmpty)
+                  const home_feed.EndOfFeedIndicator(),
+
+                Gap(40.h),
+              ],
+            ),
+          );
         },
       ),
     );
@@ -187,6 +203,13 @@ class PostsTab extends StatelessWidget {
     itemBuilder: (_, __) => const PostCardShimmer(),
   );
 
+  Widget _buildShimmerListMore() => ListView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    itemCount: 3,
+    itemBuilder: (_, __) => const PostCardShimmer(),
+  );
+
   Widget _buildError(String? error, ProfileCubit cubit) => Center(
     child: Padding(
       padding: EdgeInsets.all(24.w),
@@ -220,26 +243,47 @@ class PostsTab extends StatelessWidget {
     ),
   );
 
+  Widget _buildLoadMoreButton(
+    BuildContext context,
+    ProfileState state,
+    ProfileCubit cubit,
+  ) {
+    return state.isLoadingMore
+        ? _buildShimmerListMore()
+        : Padding(
+            padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 24.w),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => cubit.fetchPosts(loadMore: true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.kWhiteColor,
+                  foregroundColor: AppColors.kprimaryColor,
+                  side: BorderSide(color: AppColors.kprimaryColor, width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  elevation: 0,
+                ),
+                child: Text(
+                  context.tr('load_more_posts'),
+                  style: Styles.textStyle14Meduim.copyWith(
+                    color: AppColors.kprimaryColor,
+                  ),
+                ),
+              ),
+            ),
+          );
+  }
+
   Widget _buildPostList(ProfileState state, ProfileCubit cubit) =>
       ListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         padding: EdgeInsets.symmetric(vertical: 16.h),
-        itemCount: state.posts.length + 1,
+        itemCount: state.posts.length,
         itemBuilder: (context, index) {
-          if (index == state.posts.length) {
-            if (state.isLoadingMore) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(child: PostCardShimmer()),
-              );
-            }
-            if (!state.hasMore && state.posts.isNotEmpty) {
-              return const home_feed.EndOfFeedIndicator();
-            }
-            return const SizedBox.shrink();
-          }
-
           return _PostItem(
             key: ValueKey(state.posts[index].postId),
             postId: state.posts[index].postId,

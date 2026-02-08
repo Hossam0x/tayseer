@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/advisor/stories/stories.dart';
 import '../models/archive_models.dart';
 
 abstract class ArchiveRepository {
@@ -11,7 +12,7 @@ abstract class ArchiveRepository {
 
   Future<Either<Failure, void>> unarchiveChat(String chatId);
 
-  Future<Either<Failure, List<ArchiveStoryModel>>> getArchivedStories({
+  Future<Either<Failure, List<UserStoriesModel>>> getArchivedStories({
     int page = 1,
     int limit = 10,
   });
@@ -299,7 +300,7 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   }
 
   @override
-  Future<Either<Failure, List<ArchiveStoryModel>>> getArchivedStories({
+  Future<Either<Failure, List<UserStoriesModel>>> getArchivedStories({
     int page = 1,
     int limit = 10,
   }) async {
@@ -309,7 +310,7 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         query: {'page': page, 'limit': limit},
       );
 
-      print('📌 Stories Response: $response');
+      print('📌 Archived Stories Response: $response');
 
       if (response['success'] != true) {
         final errorMsg =
@@ -317,42 +318,33 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         return Left(ServerFailure(errorMsg));
       }
 
-      // ────────────────────────────────────────────────
-      //           ✅ الحل الصحيح
-      // ────────────────────────────────────────────────
       final dataObj = response['data'] as Map<String, dynamic>?;
 
       if (dataObj == null) {
-        print('⚠️ "data" field is null or not a map');
         return const Right([]);
       }
 
-      // ✅ نستخرج الـ result من داخل data
       final List<dynamic> resultList =
           dataObj['result'] as List<dynamic>? ?? [];
 
-      print('📦 عدد القصص المُسترجعة: ${resultList.length}');
+      print('📦 عدد مجموعات القصص المؤرشفة: ${resultList.length}');
 
-      final stories = resultList
+      final userStories = resultList
           .map((item) {
             try {
-              return ArchiveStoryModel.fromJson(item as Map<String, dynamic>);
+              return UserStoriesModel.fromJson(item as Map<String, dynamic>);
             } catch (e) {
-              print('❌ فشل تحليل قصة واحدة: $e');
-              print('   البيانات: $item');
+              print('❌ فشل تحليل مجموعة قصص مؤرشفة: $e');
               return null;
             }
           })
-          .whereType<ArchiveStoryModel>()
+          .whereType<UserStoriesModel>()
           .toList();
 
-      return Right(stories);
+      return Right(userStories);
     } on DioException catch (e) {
-      print('❌ DioException in getArchivedStories: ${e.message}');
       return Left(ServerFailure.fromDioError(e));
-    } catch (e, stack) {
-      print('❌ Unexpected error in getArchivedStories: $e');
-      print(stack);
+    } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }

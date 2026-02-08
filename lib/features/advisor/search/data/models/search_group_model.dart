@@ -20,6 +20,18 @@ class SearchGroup extends Equatable {
     required this.isJoined,
   });
 
+  factory SearchGroup.fromJson(Map<String, dynamic> json) {
+    return SearchGroup(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      imageUrl: json['image'] ?? json['imageUrl'] ?? '',
+      description: json['description'] ?? '',
+      membersCount: json['membersCount'] ?? 0,
+      postsCount: json['postsCount'] ?? 0,
+      isJoined: json['isJoined'] ?? false,
+    );
+  }
+
   SearchGroup copyWith({
     String? id,
     String? name,

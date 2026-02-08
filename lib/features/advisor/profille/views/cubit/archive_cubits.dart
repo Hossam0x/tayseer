@@ -1,6 +1,7 @@
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/my_import.dart';
 import 'archive_states.dart';
 
@@ -460,11 +461,105 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
 // ============================================
 class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
   final ArchiveRepository _archiveRepository;
+  final StoriesRepository _storiesRepository;
   final int _pageSize = 20;
 
-  ArchivedStoriesCubit(this._archiveRepository)
+  ArchivedStoriesCubit(this._archiveRepository, this._storiesRepository)
     : super(const ArchivedStoriesState()) {
     fetchArchivedStories();
+  }
+
+  void likeStory({required String storyId, required String userId}) {
+    final userStoryIndex = state.stories.indexWhere(
+      (us) => us.userId == userId,
+    );
+    if (userStoryIndex == -1) return;
+
+    final userStory = state.stories[userStoryIndex];
+    final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
+    if (storyIndex == -1) return;
+
+    final story = userStory.stories[storyIndex];
+    final updatedStories = List<StoryModel>.from(userStory.stories);
+    updatedStories[storyIndex] = story.copyWith(
+      isLiked: !story.isLiked,
+      likesCount: story.isLiked ? story.likesCount - 1 : story.likesCount + 1,
+    );
+
+    final updatedList = List<UserStoriesModel>.from(state.stories);
+    updatedList[userStoryIndex] = userStory.copyWith(stories: updatedStories);
+
+    emit(state.copyWith(stories: updatedList));
+    _storiesRepository.likeStory(storyId: storyId);
+  }
+
+  Future<void> deleteStory({
+    required String storyId,
+    required String userId,
+  }) async {
+    final result = await _storiesRepository.deleteStory(storyId: storyId);
+
+    result.fold(
+      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (_) {
+        final userStoryIndex = state.stories.indexWhere(
+          (us) => us.userId == userId,
+        );
+        if (userStoryIndex == -1) return;
+
+        final userStory = state.stories[userStoryIndex];
+        final updatedStories = userStory.stories
+            .where((s) => s.id != storyId)
+            .toList();
+
+        final updatedList = List<UserStoriesModel>.from(state.stories);
+        if (updatedStories.isEmpty) {
+          updatedList.removeAt(userStoryIndex);
+        } else {
+          updatedList[userStoryIndex] = userStory.copyWith(
+            stories: updatedStories,
+            storiesCount: updatedStories.length,
+          );
+        }
+        emit(state.copyWith(stories: updatedList));
+      },
+    );
+  }
+
+  Future<void> unarchiveStory({
+    required String storyId,
+    required String userId,
+  }) async {
+    final result = await _storiesRepository.toggleArchiveStory(
+      storyId: storyId,
+      isArchive: false,
+    );
+
+    result.fold(
+      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (_) {
+        final userStoryIndex = state.stories.indexWhere(
+          (us) => us.userId == userId,
+        );
+        if (userStoryIndex == -1) return;
+
+        final userStory = state.stories[userStoryIndex];
+        final updatedStories = userStory.stories
+            .where((s) => s.id != storyId)
+            .toList();
+
+        final updatedList = List<UserStoriesModel>.from(state.stories);
+        if (updatedStories.isEmpty) {
+          updatedList.removeAt(userStoryIndex);
+        } else {
+          updatedList[userStoryIndex] = userStory.copyWith(
+            stories: updatedStories,
+            storiesCount: updatedStories.length,
+          );
+        }
+        emit(state.copyWith(stories: updatedList));
+      },
+    );
   }
 
   // archive_cubits.dart

@@ -113,8 +113,8 @@ class _PostCardState extends State<PostCard> {
               onHide: () => widget.callbacks.onHide?.call(widget.post.postId),
               onSave: () => widget.callbacks.onSave?.call(widget.post.postId),
               onBlock: () => widget.callbacks.onBlock?.call(
-                widget.post.advisorId,
                 widget.post.postId,
+                widget.post.advisorId,
               ),
             ),
           ),
