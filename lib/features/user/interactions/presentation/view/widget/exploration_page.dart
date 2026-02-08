@@ -350,89 +350,94 @@ class ExplorationState extends State<Exploration> {
   }
 
   Widget _buildSection({
-    required String title,
-    required String subtitle,
-    required List<InteractionUserModel> data,
-    required bool isSubscribed,
-    int limit = 5,
-    bool showMoreButton = true,
-  }) {
-    List<InteractionUserModel> limitedData = data.take(limit).toList();
+  required String title,
+  required String subtitle,
+  required List<InteractionUserModel> data,
+  required bool isSubscribed,
+  int limit = 5,
+  bool showMoreButton = true,
+}) {
+  List<InteractionUserModel> limitedData = data.take(limit).toList();
+  
+  // ✅ تحديد حجم الكارد حسب نوع الجهاز
+  final screenWidth = MediaQuery.of(context).size.width;
+  final isTablet = screenWidth >= 600;
+  final cardWidth = isTablet ? 220.w : 190.w; // ✅ عرض أكبر للتابلت
+  final cardHeight = isTablet ? 320.h : 280.h; // ✅ ارتفاع أكبر للتابلت
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: Styles.textStyle18SemiBold,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: Styles.textStyle18SemiBold,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (showMoreButton) ...[
+            SizedBox(width: 12.w),
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CategoryDetailPage(
+                      title: title,
+                      subtitle: subtitle,
+                      data: data,
+                      isSubscribed: isSubscribed,
+                      isRecentlyJoinedCategory: false,
+                    ),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
+                child: Text(
+                  "المزيد",
+                  style: Styles.textStyle16SemiBold.copyWith(
+                    color: AppColors.secondary800,
+                  ),
+                ),
               ),
             ),
-            if (showMoreButton) ...[
-              SizedBox(width: 12.w),
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CategoryDetailPage(
-                        title: title,
-                        subtitle: subtitle,
-                        data: data,
-                        isSubscribed: isSubscribed,
-                        isRecentlyJoinedCategory:
-                            false, // ✅ FALSE for regular sections
-                      ),
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
-                  child: Text(
-                    "المزيد",
-                    style: Styles.textStyle16SemiBold.copyWith(
-                      color: AppColors.secondary800,
-                    ),
-                  ),
+          ],
+        ],
+      ),
+      SizedBox(height: 4.h),
+      Text(
+        subtitle,
+        style: Styles.textStyle14.copyWith(
+          fontWeight: FontWeight.w400,
+          color: AppColors.secondary600,
+        ),
+      ),
+      SizedBox(height: 16.h),
+      SizedBox(
+        height: cardHeight, // ✅ ارتفاع ديناميكي
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: limitedData.length,
+          clipBehavior: Clip.none,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: EdgeInsetsDirectional.only(end: 12.w),
+              child: SizedBox(
+                width: cardWidth, // ✅ عرض ديناميكي
+                child: InteractionProfileCard(
+                  item: limitedData[index],
+                  forceBlur: !isSubscribed,
                 ),
               ),
-            ],
-          ],
+            );
+          },
         ),
-        SizedBox(height: 4.h),
-        Text(
-          subtitle,
-          style: Styles.textStyle14.copyWith(
-            fontWeight: FontWeight.w400,
-            color: AppColors.secondary600,
-          ),
-        ),
-        SizedBox(height: 16.h),
-        SizedBox(
-          height: 280.h,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: limitedData.length,
-            clipBehavior: Clip.none,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: EdgeInsetsDirectional.only(end: 12.w),
-                child: SizedBox(
-                  width: 190.w,
-                  child: InteractionProfileCard(
-                    item: limitedData[index],
-                    forceBlur: !isSubscribed,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 }

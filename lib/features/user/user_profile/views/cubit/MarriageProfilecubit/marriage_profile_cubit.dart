@@ -1,7 +1,10 @@
-// marriage_profile_cubit.dart - FIXED DELETE IMAGE
+// marriage_profile_cubit.dart - COMPLETE FIXED VERSION
 // ════════════════════════════════════════════════════════════════
-// ✅ استخدام deleteMarriageImage بدلاً من saveProfile للحذف
+// ✅ FIX: إزالة حساب النسبة من الـ Cubit
+// ✅ الاعتماد على النسبة اللي بيرجعها السيرفر
+// ✅ استخدام البروفايل المحدث بعد كل عملية
 // ════════════════════════════════════════════════════════════════
+
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
@@ -19,6 +22,9 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     this.initialUserProfile,
   }) : super(const MarriageProfileState());
 
+  // ════════════════════════════════════════════════════════════════
+  // ⭐ LOAD PROFILE
+  // ════════════════════════════════════════════════════════════════
   Future<void> loadProfile() async {
     emit(state.copyWith(
       state: CubitStates.loading,
@@ -26,12 +32,12 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       clearMessages: true,
     ));
 
-    debugPrint('🔄 Loading profile...');
+    debugPrint('🔄 [CUBIT] Loading profile...');
     final result = await _repository.getMarriageProfile();
 
     result.fold(
       (failure) {
-        debugPrint('❌ Failed to load profile: ${failure.message}');
+        debugPrint('❌ [CUBIT] Load failed: ${failure.message}');
         emit(state.copyWith(
           state: CubitStates.failure,
           errorMessage: failure.message,
@@ -39,7 +45,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         ));
       },
       (marriageProfile) {
-        debugPrint('✅ Profile loaded successfully');
+        debugPrint('✅ [CUBIT] Profile loaded - Progress: ${marriageProfile.answerCompletedPercentage}%');
         emit(state.copyWith(
           state: CubitStates.success,
           profile: marriageProfile,
@@ -49,9 +55,12 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ SAVE PROFILE - USES UPDATED PROFILE FROM SERVER
+  // ════════════════════════════════════════════════════════════════
   Future<void> saveProfile() async {
     if (state.profile == null) {
-      debugPrint('⚠️ No profile to save');
+      debugPrint('⚠️ [CUBIT] No profile to save');
       return;
     }
 
@@ -61,12 +70,14 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       clearMessages: true,
     ));
 
-    debugPrint('💾 Saving profile...');
+    debugPrint('💾 [CUBIT] Saving profile...');
+
+    // ⭐⭐⭐ FIX: Repository هيرجع البروفايل المحدث من السيرفر
     final result = await _repository.updateMarriageProfile(state.profile!);
 
     result.fold(
       (failure) {
-        debugPrint('❌ Failed to save profile: ${failure.message}');
+        debugPrint('❌ [CUBIT] Save failed: ${failure.message}');
         emit(state.copyWith(
           state: CubitStates.failure,
           errorMessage: failure.message,
@@ -74,7 +85,8 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         ));
       },
       (updatedProfile) {
-        debugPrint('✅ Profile saved and refreshed successfully');
+        // ⭐⭐⭐ FIX: البروفايل المحدث فيه النسبة الصحيحة من السيرفر
+        debugPrint('✅ [CUBIT] Saved - New progress: ${updatedProfile.answerCompletedPercentage}%');
         emit(state.copyWith(
           state: CubitStates.success,
           profile: updatedProfile,
@@ -85,13 +97,16 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ⭐ UPDATE FIELD (LOCAL STATE)
+  // ════════════════════════════════════════════════════════════════
   void updateField(String fieldKey, dynamic value) {
     if (state.profile == null) {
-      debugPrint('⚠️ No profile to update');
+      debugPrint('⚠️ [CUBIT] No profile to update');
       return;
     }
 
-    debugPrint('🔄 Updating field: $fieldKey = $value');
+    debugPrint('🔄 [CUBIT] Updating field: $fieldKey = $value');
 
     final profile = state.profile!;
     MarriageUserProfileModel updatedProfile;
@@ -224,364 +239,338 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
           break;
         case 'interests':
         case 'hobbies':
-          final hobbiesList = value is String 
+          final hobbiesList = value is String
               ? value.split(', ').where((s) => s.isNotEmpty).toList()
               : (value as List<String>);
           updatedProfile = profile.copyWith(hobbies: hobbiesList);
           break;
         default:
-          debugPrint('⚠️ Unknown field: $fieldKey');
+          debugPrint('⚠️ [CUBIT] Unknown field: $fieldKey');
           updatedProfile = profile;
       }
     }
 
     emit(state.copyWith(profile: updatedProfile));
-    debugPrint('✅ Field updated successfully');
+    debugPrint('✅ [CUBIT] Field updated successfully');
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ⭐ FIELD TYPE CHECKERS
+  // ════════════════════════════════════════════════════════════════
   bool _isAboutMeField(String fieldKey) {
     return [
-      'country', 'nationality', 'height', 'weight', 'skinColor',
-      'ethnicity', 'healthStatus', 'religiousCommitment', 'religiosity',
-      'smoker', 'smoking', 'maritalStatus', 'socialStatus',
-      'previouslyMarried', 'age',
+      'country',
+      'nationality',
+      'height',
+      'weight',
+      'skinColor',
+      'ethnicity',
+      'healthStatus',
+      'religiousCommitment',
+      'religiosity',
+      'smoker',
+      'smoking',
+      'maritalStatus',
+      'socialStatus',
+      'previouslyMarried',
+      'age',
     ].contains(fieldKey);
   }
 
   bool _isProfessionalLifeField(String fieldKey) {
     return [
-      'job', 'occupation', 'choose_job', 'jobTitle', 'professionalLevel',
-      'educationLevel', 'education_level', 'employer', 'chooseEmployer',
+      'job',
+      'occupation',
+      'choose_job',
+      'jobTitle',
+      'professionalLevel',
+      'educationLevel',
+      'education_level',
+      'employer',
+      'chooseEmployer',
       'choose_employer',
     ].contains(fieldKey);
   }
 
   bool _isFamilyField(String fieldKey) {
     return [
-      'hasChildren', 'childrenNumber', 'childrenLiveWithYou',
+      'hasChildren',
+      'childrenNumber',
+      'childrenLiveWithYou',
       'childrenLivingStatus',
     ].contains(fieldKey);
   }
 
   bool _isYourGoalsField(String fieldKey) {
     return [
-      'communicationTimeline', 'engagementTimeline', 'marriageTimeline',
-      'dowry', 'travelPreference', 'travel', 'marry', 'engagement', 'children',
+      'communicationTimeline',
+      'engagementTimeline',
+      'marriageTimeline',
+      'dowry',
+      'travelPreference',
+      'travel',
+      'marry',
+      'engagement',
+      'children',
     ].contains(fieldKey);
   }
 
-
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ UPLOAD IMAGE - RELOADS PROFILE AUTOMATICALLY
+  // ════════════════════════════════════════════════════════════════
   Future<void> uploadImage(File imageFile) async {
-    if (state.profile == null) return;
+    if (state.profile == null) {
+      debugPrint('⚠️ [CUBIT] No profile for image upload');
+      return;
+    }
 
     emit(state.copyWith(isLoading: true, clearMessages: true));
-    
+
+    debugPrint('📤 [CUBIT] Uploading image...');
+
     final result = await _repository.uploadMarriageImage(imageFile);
 
     result.fold(
-      (failure) => emit(state.copyWith(
-        state: CubitStates.failure,
-        errorMessage: failure.message,
-        isLoading: false,
-      )),
-      (_) async {
-        // ⭐⭐⭐ السيرفر ضاف الصورة بنجاح، دلوقتي نعمل reload للبروفايل
-        debugPrint('✅ Image uploaded, reloading profile...');
-        await loadProfile();
-      },
-    );
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // ⭐⭐⭐ DELETE IMAGE - FIXED
-  Future<void> deleteImage(String imageUrl) async {
-    if (state.profile == null) return;
-
-    emit(state.copyWith(isLoading: true, clearMessages: true));
-
-    debugPrint('🗑️ Deleting image from profile: $imageUrl');
-
-    // ⭐⭐⭐ استخدام الـ endpoint الصحيح
-    final result = await _repository.deleteMarriageImage(imageUrl);
-
-    result.fold(
       (failure) {
-        debugPrint('❌ Delete failed: ${failure.message}');
+        debugPrint('❌ [CUBIT] Image upload failed: ${failure.message}');
         emit(state.copyWith(
           state: CubitStates.failure,
           errorMessage: failure.message,
           isLoading: false,
         ));
       },
-      (_) {
-        debugPrint('✅ Image deleted from server, updating local state');
-        
-        // Update local state
-        final currentMedia = state.profile!.userMedia ?? UserMedia(images: []);
-        final updatedImages = List<String>.from(currentMedia.images)..remove(imageUrl);
-
-        final updatedProfile = state.profile!.copyWith(
-          userMedia: currentMedia.copyWith(images: updatedImages),
-        );
-
-        emit(state.copyWith(
-          profile: updatedProfile,
-          isLoading: false,
-          successMessage: 'تم حذف الصورة بنجاح',
-        ));
+      (_) async {
+        debugPrint('✅ [CUBIT] Image uploaded, reloading profile...');
+        // ⭐⭐⭐ Repository already reloaded, just refresh state
+        await loadProfile();
       },
     );
   }
 
-  Future<void> uploadVideo(File videoFile) async {
-  if (state.profile == null) return;
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ DELETE IMAGE - RELOADS PROFILE AUTOMATICALLY
+  // ════════════════════════════════════════════════════════════════
+  Future<void> deleteImage(String imageUrl) async {
+    if (state.profile == null) {
+      debugPrint('⚠️ [CUBIT] No profile for image deletion');
+      return;
+    }
 
-  emit(state.copyWith(
-    isLoading: true,
-    clearMessages: true,
-  ));
+    emit(state.copyWith(isLoading: true, clearMessages: true));
 
-  debugPrint('📤 Uploading video...');
-  
-  final result = await _repository.uploadVideoAndAudio(
-    videoFile: videoFile,
-  );
+    debugPrint('🗑️ [CUBIT] Deleting image: $imageUrl');
 
-  result.fold(
-    (failure) {
-      debugPrint('❌ Video upload failed: ${failure.message}');
-      emit(state.copyWith(
-        state: CubitStates.failure,
-        errorMessage: failure.message,
-        isLoading: false,
-      ));
-    },
-    (urls) {
-      // ⭐⭐⭐ تحقق من وجود الرابط
-      final videoUrl = urls['video'];
-      
-      if (videoUrl == null || videoUrl.isEmpty) {
-        debugPrint('⚠️ Video uploaded but no URL returned, reloading profile...');
-        // ⭐ اعمل reload للبروفايل كامل
-        loadProfile();
-        return;
-      }
-      
-      debugPrint('✅ Video uploaded: $videoUrl');
-      
-      final currentImages = state.profile!.userMedia?.images ?? [];
-      final currentAudio = state.profile!.userMedia?.audio;
-      
-      final updatedMedia = UserMedia(
-        images: currentImages,
-        video: videoUrl, // ⭐ استخدم الرابط الصحيح
-        audio: currentAudio,
-      );
+    final result = await _repository.deleteMarriageImage(imageUrl);
 
-      final updatedProfile = state.profile!.copyWith(
-        userMedia: updatedMedia,
-      );
-
-      emit(MarriageProfileState(
-        state: CubitStates.success,
-        profile: updatedProfile,
-        isLoading: false,
-        successMessage: 'تم رفع الفيديو بنجاح',
-      ));
-    },
-  );
-}
-Future<void> uploadAudio(File audioFile) async {
-  if (state.profile == null) return;
-
-  emit(state.copyWith(isLoading: true, clearMessages: true));
-
-  debugPrint('📤 Uploading audio...');
-  
-  final result = await _repository.uploadVideoAndAudio(
-    audioFile: audioFile,
-  );
-
-  result.fold(
-    (failure) {
-      debugPrint('❌ Audio upload failed: ${failure.message}');
-      emit(state.copyWith(
-        state: CubitStates.failure,
-        errorMessage: failure.message,
-        isLoading: false,
-      ));
-    },
-    (_) async {
-      // ⭐⭐⭐ السيرفر ضاف الصوت بنجاح، اعمل reload
-      debugPrint('✅ Audio uploaded, reloading profile...');
-      await loadProfile();
-    },
-  );
-}
-void loadDummyProfile() {
-  emit(state.copyWith(
-    state: CubitStates.loading,
-  ));
-
-  try {
-    // Create dummy profile based on InteractionUserModel structure
-    final dummyProfile = MarriageUserProfileModel(
-    
-      aboutMe: AboutMe(
-        socialStatus: 'أعزب',
-        weight: '75 كجم',
-        skinColor: 'سمراء',
-        healthStatus: 'جيدة',
-        religiousCommitment: 'ملتزم',
-        smoker: 'لا',
-      ),
-      professionalLife: ProfessionalLife(
-        educationLevel: 'بكالوريوس',
-        job: 'مهندس برمجيات',
-      ),
-      yourGoals: YourGoals(
-        travel: 'خلال 3 أشهر',
-        children: '50,000 ريال',
-        engagement: 'خلال سنة',
-        marry: 'خلال سنتين',
-      ),
-      hobbies: ['القراءة', 'السفر', 'الرياضة', 'الموسيقى'],
-      myDescription: 'شخص طموح يحب التطوير والتعلم المستمر، أبحث عن شريكة حياة تشاركني نفس القيم والاهتمامات.',
-      userMedia: UserMedia(
-        images: [
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
-          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
-          'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
-          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
-        ],
-        video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        audio: '',
-      ),
+    result.fold(
+      (failure) {
+        debugPrint('❌ [CUBIT] Delete failed: ${failure.message}');
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (_) async {
+        debugPrint('✅ [CUBIT] Image deleted, reloading profile...');
+        // ⭐⭐⭐ Repository already reloaded, just refresh state
+        await loadProfile();
+      },
     );
-
-    emit(state.copyWith(
-      profile: dummyProfile,
-      state: CubitStates.success,
-    ));
-  } catch (e) {
-    emit(state.copyWith(
-      state: CubitStates.failure,
-      errorMessage: 'فشل في تحميل البيانات الوهمية',
-    ));
   }
-}
-Future<void> deleteVideo() async {
-  final currentVideoUrl = state.profile?.userMedia?.video;
-  if (currentVideoUrl == null) return;
 
-  emit(state.copyWith(isLoading: true, clearMessages: true));
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ UPLOAD VIDEO - RELOADS PROFILE AUTOMATICALLY
+  // ════════════════════════════════════════════════════════════════
+  Future<void> uploadVideo(File videoFile) async {
+    if (state.profile == null) {
+      debugPrint('⚠️ [CUBIT] No profile for video upload');
+      return;
+    }
 
-  debugPrint('🗑️ Deleting video from server...');
-  
-  final result = await _repository.deleteVideo(currentVideoUrl);
+    emit(state.copyWith(isLoading: true, clearMessages: true));
 
-  result.fold(
-    (failure) {
-      emit(state.copyWith(
-        state: CubitStates.failure,
-        errorMessage: failure.message,
-        isLoading: false,
-      ));
-    },
-    (_) {
-      debugPrint('✅ Video deleted from server, updating local state');
-      
-      // ⭐ أعمل نسخة جديدة تماماً
-      final currentImages = state.profile!.userMedia?.images ?? [];
-      final currentAudio = state.profile!.userMedia?.audio;
-      
-      final updatedMedia = UserMedia(
-        images: currentImages,
-        video: null, // ⭐ الفيديو = null
-        audio: currentAudio,
-      );
+    debugPrint('📤 [CUBIT] Uploading video...');
 
-      final updatedProfile = state.profile!.copyWith(
-        userMedia: updatedMedia,
-      );
+    final result = await _repository.uploadVideoAndAudio(videoFile: videoFile);
 
-      // ⭐ أعمل emit للـ state كامل جديد
-      emit(MarriageProfileState(
-        state: CubitStates.success,
-        profile: updatedProfile,
-        isLoading: false,
-        successMessage: 'تم حذف الفيديو بنجاح',
-      ));
-    },
-  );
-}
+    result.fold(
+      (failure) {
+        debugPrint('❌ [CUBIT] Video upload failed: ${failure.message}');
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (_) async {
+        debugPrint('✅ [CUBIT] Video uploaded, reloading profile...');
+        // ⭐⭐⭐ Repository already reloaded, just refresh state
+        await loadProfile();
+      },
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ UPLOAD AUDIO - RELOADS PROFILE AUTOMATICALLY
+  // ════════════════════════════════════════════════════════════════
+  Future<void> uploadAudio(File audioFile) async {
+    if (state.profile == null) {
+      debugPrint('⚠️ [CUBIT] No profile for audio upload');
+      return;
+    }
+
+    emit(state.copyWith(isLoading: true, clearMessages: true));
+
+    debugPrint('📤 [CUBIT] Uploading audio...');
+
+    final result = await _repository.uploadVideoAndAudio(audioFile: audioFile);
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ [CUBIT] Audio upload failed: ${failure.message}');
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (_) async {
+        debugPrint('✅ [CUBIT] Audio uploaded, reloading profile...');
+        // ⭐⭐⭐ Repository already reloaded, just refresh state
+        await loadProfile();
+      },
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ DELETE VIDEO - RELOADS PROFILE AUTOMATICALLY
+  // ════════════════════════════════════════════════════════════════
+  Future<void> deleteVideo() async {
+    final currentVideoUrl = state.profile?.userMedia?.video;
+    if (currentVideoUrl == null) {
+      debugPrint('⚠️ [CUBIT] No video to delete');
+      return;
+    }
+
+    emit(state.copyWith(isLoading: true, clearMessages: true));
+
+    debugPrint('🗑️ [CUBIT] Deleting video...');
+
+    final result = await _repository.deleteVideo(currentVideoUrl);
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ [CUBIT] Delete video failed: ${failure.message}');
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (_) async {
+        debugPrint('✅ [CUBIT] Video deleted, reloading profile...');
+        // ⭐⭐⭐ Repository already reloaded, just refresh state
+        await loadProfile();
+      },
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ DELETE AUDIO - RELOADS PROFILE AUTOMATICALLY
+  // ════════════════════════════════════════════════════════════════
   Future<void> deleteAudio() async {
-  final currentAudioUrl = state.profile?.userMedia?.audio;
-  if (currentAudioUrl == null) return;
+    final currentAudioUrl = state.profile?.userMedia?.audio;
+    if (currentAudioUrl == null) {
+      debugPrint('⚠️ [CUBIT] No audio to delete');
+      return;
+    }
 
-  emit(state.copyWith(isLoading: true, clearMessages: true));
+    emit(state.copyWith(isLoading: true, clearMessages: true));
 
-  debugPrint('🗑️ Deleting audio from server...');
+    debugPrint('🗑️ [CUBIT] Deleting audio...');
 
-  final result = await _repository.deleteAudio(currentAudioUrl);
+    final result = await _repository.deleteAudio(currentAudioUrl);
 
-  result.fold(
-    (failure) {
+    result.fold(
+      (failure) {
+        debugPrint('❌ [CUBIT] Delete audio failed: ${failure.message}');
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (_) async {
+        debugPrint('✅ [CUBIT] Audio deleted, reloading profile...');
+        // ⭐⭐⭐ Repository already reloaded, just refresh state
+        await loadProfile();
+      },
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⭐ DUMMY PROFILE (FOR TESTING)
+  // ════════════════════════════════════════════════════════════════
+  void loadDummyProfile() {
+    emit(state.copyWith(state: CubitStates.loading));
+
+    try {
+      final dummyProfile = MarriageUserProfileModel(
+        aboutMe: AboutMe(
+          socialStatus: 'أعزب',
+          weight: '75 كجم',
+          skinColor: 'سمراء',
+          healthStatus: 'جيدة',
+          religiousCommitment: 'ملتزم',
+          smoker: 'لا',
+        ),
+        professionalLife: ProfessionalLife(
+          educationLevel: 'بكالوريوس',
+          job: 'مهندس برمجيات',
+        ),
+        yourGoals: YourGoals(
+          travel: 'خلال 3 أشهر',
+          children: '50,000 ريال',
+          engagement: 'خلال سنة',
+          marry: 'خلال سنتين',
+        ),
+        hobbies: ['القراءة', 'السفر', 'الرياضة', 'الموسيقى'],
+        myDescription: 'شخص طموح يحب التطوير والتعلم المستمر',
+        userMedia: UserMedia(
+          images: [
+            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+          ],
+          video:
+              'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          audio: '',
+        ),
+        answerCompletedPercentage: 75,
+      );
+
+      emit(state.copyWith(
+        profile: dummyProfile,
+        state: CubitStates.success,
+      ));
+
+      debugPrint('✅ [CUBIT] Dummy profile loaded');
+    } catch (e) {
+      debugPrint('❌ [CUBIT] Dummy profile failed: $e');
       emit(state.copyWith(
         state: CubitStates.failure,
-        errorMessage: failure.message,
-        isLoading: false,
+        errorMessage: 'فشل في تحميل البيانات الوهمية',
       ));
-    },
-    (_) {
-      debugPrint('✅ Audio deleted from server, updating local state');
-      
-      // ⭐ أعمل نسخة جديدة تماماً
-      final currentImages = state.profile!.userMedia?.images ?? [];
-      final currentVideo = state.profile!.userMedia?.video;
-      
-      final updatedMedia = UserMedia(
-        images: currentImages,
-        video: currentVideo,
-        audio: null, // ⭐ الصوت = null
-      );
+    }
+  }
 
-      final updatedProfile = state.profile!.copyWith(
-        userMedia: updatedMedia,
-      );
-
-      // ⭐ أعمل emit للـ state كامل جديد
-      emit(MarriageProfileState(
-        state: CubitStates.success,
-        profile: updatedProfile,
-        isLoading: false,
-        successMessage: 'تم حذف التسجيل الصوتي بنجاح',
-      ));
-    },
-  );
-}
+  // ════════════════════════════════════════════════════════════════
+  // ⭐ CLEAR ALL DATA
+  // ════════════════════════════════════════════════════════════════
   Future<void> clearAllData() async {
+    debugPrint('🗑️ [CUBIT] Clearing all data...');
     await _repository.clearLocalStorage();
     emit(const MarriageProfileState());
+    debugPrint('✅ [CUBIT] All data cleared');
   }
 }

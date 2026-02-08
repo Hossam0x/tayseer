@@ -1,7 +1,7 @@
-// marriage_profile_page.dart - UNIFIED PAGE WITH SHIMMER LOADING
+// marriage_profile_page.dart - UPDATED WITH DYNAMIC PERCENTAGE
 // ════════════════════════════════════════════════════════════════
-// ✅ صفحة واحدة - Toggle بين العرض والتعديل
-// ⭐⭐⭐ تم إضافة Shimmer Loading باستخدام MarriageProfileSkeleton
+// ✅ استخدام answerCompletedPercentage من API
+// ✅ إضافة 5% لكل عنصر إضافي (فيديو، صوت، أهداف)
 // ════════════════════════════════════════════════════════════════
 
 import 'dart:developer';
@@ -16,10 +16,9 @@ import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecu
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_life_events_section.dart';
- // ⭐⭐⭐ Import skeleton
 import 'package:tayseer/my_import.dart';
 
-// ⭐⭐⭐ Import sections من صفحة العرض
+// ⭐⭐⭐ Import sections
 import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
 import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/education.dart';
@@ -30,12 +29,12 @@ import 'widgets/MarriageProfileSkeleton .dart';
 
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
-  final int initialTabIndex; // 0 = عرض, 1 = تعديل
+  final int initialTabIndex;
 
   const MarriagefilePage({
     super.key,
     this.userProfile,
-    this.initialTabIndex = 1, // Default to عرض
+    this.initialTabIndex = 1,
   });
 
   @override
@@ -51,6 +50,56 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   void initState() {
     super.initState();
     _selectedTabIndex = widget.initialTabIndex;
+  }
+
+  double _calculateTotalProgress(MarriageUserProfileModel profile) {
+    // ⭐ النسبة من السيرفر
+    double serverProgress = (profile.answerCompletedPercentage ?? 0).toDouble();
+
+    // 🐛 DEBUG: طباعة النسبة من السيرفر
+    debugPrint(
+      '📊 [_calculateTotalProgress] Server Progress: $serverProgress%',
+    );
+
+    // ⭐⭐⭐ حساب الميديا
+    int mediaCompleted = 0;
+
+    // فيديو
+    bool hasVideo =
+        profile.userMedia?.video != null &&
+        profile.userMedia!.video!.isNotEmpty;
+    if (hasVideo) {
+      mediaCompleted++;
+      debugPrint(
+        '📊 [_calculateTotalProgress] ✅ Has Video: ${profile.userMedia!.video}',
+      );
+    } else {
+      debugPrint('📊 [_calculateTotalProgress] ❌ No Video');
+    }
+
+    // صوت
+    bool hasAudio =
+        profile.userMedia?.audio != null &&
+        profile.userMedia!.audio!.isNotEmpty;
+    if (hasAudio) {
+      mediaCompleted++;
+      debugPrint(
+        '📊 [_calculateTotalProgress] ✅ Has Audio: ${profile.userMedia!.audio}',
+      );
+    } else {
+      debugPrint('📊 [_calculateTotalProgress] ❌ No Audio');
+    }
+
+    // ⭐ الحساب النهائي
+    double mediaProgress = mediaCompleted * 25.0;
+    double totalProgress = serverProgress + mediaProgress;
+
+    // 🐛 DEBUG: طباعة النتائج
+    debugPrint('📊 [_calculateTotalProgress] Media Items: $mediaCompleted');
+    debugPrint('📊 [_calculateTotalProgress] Media Progress: $mediaProgress%');
+    debugPrint('📊 [_calculateTotalProgress] Total Progress: $totalProgress%');
+
+    return totalProgress > 100 ? 100 : totalProgress;
   }
 
   @override
@@ -88,24 +137,21 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             builder: (context, state) {
               final cubit = context.read<MarriageProfileCubit>();
 
-              // ════════════════════════════════════════════════════════════════
-              // ⭐⭐⭐ UPDATED: Loading with Shimmer Skeleton
-              // ════════════════════════════════════════════════════════════════
               if (state.isLoading && state.profile == null) {
                 return Column(
                   children: [
-                    // Fixed header remains visible during loading
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 10.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.h,
+                        vertical: 10.h,
+                      ),
                       child: _buildFixedHeader(context),
                     ),
-                    // Shimmer skeleton for content
                     const Expanded(child: MarriageProfileSkeleton()),
                   ],
                 );
               }
 
-              // ✅ Error
               if (state.state == CubitStates.failure && state.profile == null) {
                 return _buildError(context, state.errorMessage);
               }
@@ -117,13 +163,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
 
               return Column(
                 children: [
-                  // ⭐⭐⭐ FIXED HEADER - AppBar + Toggle
                   Padding(
-                  padding:  EdgeInsets.symmetric(horizontal:  24.h,vertical: 10.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 24.h,
+                      vertical: 10.h,
+                    ),
                     child: _buildFixedHeader(context),
                   ),
-
-                  // ⭐⭐⭐ DYNAMIC CONTENT - Changes based on tab
                   Expanded(
                     child: _selectedTabIndex == 1
                         ? _buildViewContent(profile)
@@ -144,23 +190,17 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ FIXED HEADER - يبقى ثابت دايماً
-  // ════════════════════════════════════════════════════════════════
-
   Widget _buildFixedHeader(BuildContext context) {
     return Container(
       color: Colors.white,
       child: Column(
         children: [
-          // AppBar
           SimpleAppBar(title: "الملف الشخصى", isLargeTitle: true),
           SizedBox(height: 5.h),
-          // Toggle Tabs
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 5.h),
             child: CustomToggleTabBar(
-              firstTabText:"تعديل" ,
+              firstTabText: "تعديل",
               secondTabText: "عرض",
               initialIndex: _selectedTabIndex,
               onTabChanged: (index) {
@@ -175,10 +215,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ VIEW CONTENT - المحتوى في وضع العرض
-  // ════════════════════════════════════════════════════════════════
-
   Widget _buildViewContent(MarriageUserProfileModel profile) {
     final images = profile.userMedia?.images ?? [];
     final displayImages = images.length > 5 ? images.sublist(0, 5) : images;
@@ -188,20 +224,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // Header with images
           _buildViewHeader(profile),
-
-          // About Me
           _buildSliverPadding(
             child: AboutMeSection(items: _buildAboutMeItems(profile)),
           ),
-
-          // Education
           _buildSliverPadding(
             child: EducationSection(items: _buildEducationItems(profile)),
           ),
-
-          // Goals
           if (profile.yourGoals != null)
             _buildSliverPadding(
               child: MarriageLifeEventsSection(
@@ -209,7 +238,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 events: _buildTimelineEvents(profile.yourGoals!),
               ),
             ),
-          // ===== 6. Additional Image =====
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
             sliver: SliverToBoxAdapter(
@@ -219,31 +247,22 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                           ? displayImages[1]
                           : displayImages[0],
                     )
-                  : const SizedBox.shrink(), // في حال كانت القائمة فارغة تماماً
+                  : const SizedBox.shrink(),
             ),
           ),
-
-          // Religious
           _buildSliverPadding(
             child: ReligiousSection(tags: _buildReligiousTags(profile)),
           ),
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
             sliver: SliverToBoxAdapter(
-              child: VideoSection(
-                videoUrl: profile.userMedia?.video,
-
-              ),
+              child: VideoSection(videoUrl: profile.userMedia?.video),
             ),
           ),
-
-          // Interests
           if (profile.hobbies.isNotEmpty)
             _buildSliverPadding(
               child: InterestsSection(interests: _buildInterestsItems(profile)),
             ),
-
-          // Bio
           if (profile.myDescription != null &&
               profile.myDescription!.isNotEmpty)
             _buildSliverPadding(
@@ -252,8 +271,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 audioPath: profile.userMedia?.audio ?? "",
               ),
             ),
-    SliverToBoxAdapter(child: SizedBox(height: 50.h)),
-
+          SliverToBoxAdapter(child: SizedBox(height: 50.h)),
           SliverToBoxAdapter(
             child: Container(
               margin: EdgeInsets.symmetric(horizontal: 20.w),
@@ -377,25 +395,26 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               ),
             ),
           ),
-
           SliverToBoxAdapter(child: SizedBox(height: 100.h)),
         ],
       ),
     );
   }
 
-
   // ════════════════════════════════════════════════════════════════
-  // VIEW CONTENT HELPERS
+  // ⭐⭐⭐ UPDATED: استخدام النسبة المحسوبة
   // ════════════════════════════════════════════════════════════════
   Widget _buildViewHeader(MarriageUserProfileModel profile) {
     final images = profile.userMedia?.images ?? [];
     final displayImages = images.length > 5 ? images.sublist(0, 5) : images;
 
+    // حساب النسبة الكاملة
+    final totalProgress = _calculateTotalProgress(profile);
+    final progressFraction = totalProgress / 100;
+
     return SliverToBoxAdapter(
       child: Column(
         children: [
-          // Main image area with Stack for the progress card
           Stack(
             alignment: Alignment.bottomCenter,
             children: [
@@ -416,9 +435,8 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   ),
                 ),
               ),
-
-              // ✅ قسم إكمال البيانات المضاف (Progress Section)
-              _buildCompletionCard(),
+              // ⭐⭐⭐ تمرير النسبة المحسوبة
+              _buildCompletionCard(progressFraction),
             ],
           ),
         ],
@@ -426,21 +444,19 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  Widget _buildCompletionCard() {
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ UPDATED: استقبال النسبة كـ parameter
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildCompletionCard(double progress) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 24.h),
-      // استخدام ClipRRect لتطبيق تأثير الفلتر داخل الحدود فقط
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24.r),
         child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: 10,
-            sigmaY: 10,
-          ), // تأثير التغبيش الزجاجي
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             padding: EdgeInsets.all(5.r),
             decoration: BoxDecoration(
-              // تدرج لوني أبيض شفاف ليعطي إحساس الزجاج
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -465,28 +481,23 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 1. الخط الزمني المطور
-                _buildEnhancedTimeline(progress: 0.2),
-
+                // ⭐⭐⭐ تمرير النسبة للـ timeline
+                _buildEnhancedTimeline(progress: progress),
                 SizedBox(height: 20.h),
                 Row(
                   children: [
                     Column(
                       children: [
-                        // 2. النص الرئيسي (العنوان)
                         Text(
-                         context.tr('complete_profile_100_percent'), 
+                          context.tr('complete_profile_100_percent'),
                           textAlign: TextAlign.start,
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w500,
-                            color: AppColors.primary600, // وردي غامق احترافي
+                            color: AppColors.primary600,
                           ),
                         ),
-
                         SizedBox(height: 8.h),
-
-                        // 3. النص الوصفي
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10.w),
                           child: Text(
@@ -502,9 +513,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                         ),
                       ],
                     ),
-
                     Spacer(),
-                    // 4. زر الإكمال المطور بظلال متوهجة
                     _buildGradientButton(),
                   ],
                 ),
@@ -523,7 +532,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
         Stack(
           alignment: Alignment.center,
           children: [
-            // 1. الخط الخلفي الباهت (Base Line)
+            // 1. الخط الخلفي
             Container(
               height: 6.h,
               width: double.infinity,
@@ -533,7 +542,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               ),
             ),
 
-            // 2. الخط الملون المتدرج (Progress Line)
+            // 2. الخط الملون بالنسبة الفعلية
             Align(
               alignment: Alignment.centerLeft,
               child: FractionallySizedBox(
@@ -567,14 +576,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 final reversedIndex = 4 - index;
                 double pointProgress = reversedIndex / 4;
                 bool isReached = pointProgress <= progress;
+
                 return Align(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-
                     children: [
                       SizedBox(height: 6.h),
-
-                      // Number badge on top
                       Center(
                         child: Container(
                           padding: EdgeInsets.symmetric(
@@ -663,46 +670,51 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   }
 
   Widget _buildGradientButton() {
-    return Container(
-      child: GestureDetector(
-        onTap: () {
-          log("إكمال البيانات button tapped");
-        },
+    return GestureDetector(
+      onTap: () {
+        // ⭐⭐⭐ التنقل إلى تبويب التعديل
+        setState(() {
+          _selectedTabIndex = 1; // 0 = تعديل, 1 = عرض
+        });
+
+        // ⭐ اختياري: scroll للأعلى بعد التبديل
+        // يمكنك إضافة ScrollController إذا أردت
+        debugPrint('✅ Navigated to Edit tab');
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(color: Colors.white, width: 2.w),
+        ),
         child: Container(
+          width: 125.w,
+          height: 36.h,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8.r),
-            border: Border.all(color: Colors.white, width: 2.w),
-          ),
-          child: Container(
-            width: 125.w,
-            height: 36.h,
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary300,
-                  blurRadius: 11,
-                  spreadRadius: 0,
-                ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary300,
+                blurRadius: 11,
+                spreadRadius: 0,
+              ),
+            ],
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.primary200,
+                AppColors.primary200,
+                AppColors.primary100,
               ],
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.primary200,
-                  AppColors.primary200,
-                  AppColors.primary100,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(8.r),
             ),
-            alignment: Alignment.center,
-            child: Text(
-           context.tr('complete_your_profile_bott'), // بدلاً من "إكمال البيانات"
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-              ),
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            context.tr('complete_your_profile_bott'),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -731,7 +743,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           'icon': AssetsData.kdrawingIcon,
           'label': "البشرة ${profile.aboutMe!.skinColor}",
         },
-
       if (profile.aboutMe?.healthStatus != null)
         {
           'icon': AssetsData.kwritingIcon,
@@ -759,31 +770,19 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     final List<Map<String, dynamic>> events = [];
 
     if (goals.travel != null && goals.travel!.isNotEmpty) {
-      events.add({
-        'timeLabel': goals.travel,
-        'goalType': 'travel',
-      });
+      events.add({'timeLabel': goals.travel, 'goalType': 'travel'});
     }
 
     if (goals.children != null && goals.children!.isNotEmpty) {
-      events.add({
-        'timeLabel': goals.children,
-        'goalType': 'المهر  ',
-      });
+      events.add({'timeLabel': goals.children, 'goalType': 'المهر  '});
     }
 
     if (goals.engagement != null && goals.engagement!.isNotEmpty) {
-      events.add({
-        'timeLabel': goals.engagement,
-        'goalType': 'engagement',
-      });
+      events.add({'timeLabel': goals.engagement, 'goalType': 'engagement'});
     }
 
     if (goals.marry != null && goals.marry!.isNotEmpty) {
-      events.add({
-        'timeLabel': goals.marry,
-        'goalType': 'marry',
-      });
+      events.add({'timeLabel': goals.marry, 'goalType': 'marry'});
     }
 
     return events;
@@ -838,7 +837,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
 }
 
 // ════════════════════════════════════════════════════════════════
-// Video Section Classes (same as before)
+// Video Section Classes (same as before - no changes needed)
 // ════════════════════════════════════════════════════════════════
 
 class AppVideo extends StatefulWidget {
