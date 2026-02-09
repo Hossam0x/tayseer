@@ -74,7 +74,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
               CustomSnackBar(
                 context,
                 isSuccess: true,
-                text: 'تم نشر القصة بنجاح',
+                text: context.tr('story_published_success'),
               ),
             );
             getIt<StoriesCubit>().fetchStories(context: context);

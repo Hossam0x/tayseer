@@ -225,7 +225,7 @@ class SettingsView extends StatelessWidget {
                     ),
                   )
                 else
-                  _buildTrailingWidget(setting),
+                  _buildTrailingWidget(context, setting),
               ],
             ),
           ),
@@ -234,7 +234,7 @@ class SettingsView extends StatelessWidget {
     );
   }
 
-  Widget _buildTrailingWidget(SettingItemModel setting) {
+  Widget _buildTrailingWidget(BuildContext context, SettingItemModel setting) {
     if (setting.id == 'invite' || setting.id == 'account_management') {
       return const SizedBox(width: 0);
     }
@@ -243,7 +243,7 @@ class SettingsView extends StatelessWidget {
         ? Row(
             children: [
               Text(
-                setting.subtitle!,
+                context.tr(setting.subtitle!),
                 style: Styles.textStyle16.copyWith(color: AppColors.secondary),
               ),
               Gap(4.w),

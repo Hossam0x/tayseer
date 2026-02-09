@@ -51,7 +51,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
   Future<List<SettingItemModel>> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedLanguage = prefs.getString('app_language') ?? 'العربية';
+    final savedLanguage = prefs.getString('app_language') ?? 'ar';
     final notificationStatus = await _getNotificationStatus();
 
     return [
@@ -90,7 +90,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       SettingItemModel(
         id: 'language',
         title: 'app_language',
-        subtitle: getLanguageName(savedLanguage),
+        subtitle: getLanguageKey(savedLanguage),
         iconAsset: AssetsData.icLanguageSettings,
         routeName: AppRouter.kLanguageSelectionView,
       ),
@@ -350,11 +350,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
   }
 
   // وظائف موجودة مسبقاً (بدون تغيير)
-  Future<void> updateLanguage(String languageName, BuildContext context) async {
+  Future<void> updateLanguage(String languageCode, BuildContext context) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
-
-    final languageCode = getLanguageCode(languageName);
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -362,7 +360,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       final updatedSettings = currentState.settings.map((item) {
         if (item.id == 'language') {
-          return item.copyWith(subtitle: languageName);
+          return item.copyWith(subtitle: getLanguageKey(languageCode));
         }
         return item;
       }).toList();
@@ -371,7 +369,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       showSafeSnackBar(
         context: context,
-        text: '${context.tr("update_language_success")} $languageName',
+        text: context.tr("update_language_success"),
         isSuccess: true,
       );
     } catch (e) {

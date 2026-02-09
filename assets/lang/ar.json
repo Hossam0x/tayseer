@@ -876,5 +876,20 @@
   "who_viewed_your_profile": "من زار ملفك الشخصي",
   "show": "عرض",
   "no_visitors_yet": "لا يوجد زوار حتى الآن",
-  "show_more": "عرض المزيد"
+  "show_more": "عرض المزيد",
+  "search_language_hint": "ابحث عن لغة...",
+  "no_matching_languages": "لا توجد لغات مطابقة",
+  "all": "الكل",
+  "search_for_advisors": "ابحث عن مستشارين",
+  "search_for_users": "ابحث عن مستخدمين",
+  "search_for_posts": "ابحث عن منشورات",
+  "search_for_events": "ابحث عن أحداث",
+  "search_for_what_you_want": "ابحث عن ما تريده",
+  "no_matching_advisors": "لا يوجد مستشار بهذا الاسم",
+  "no_matching_posts": "لا توجد منشورات مطابقة",
+  "no_matching_events": "لا توجد أحداث مطابقة",
+  "no_matching_results": "لا توجد نتائج للبحث",
+  "advisors": "المستشارين",
+  "users": "المستخدمين",
+  "events": "الأحداث"
 }

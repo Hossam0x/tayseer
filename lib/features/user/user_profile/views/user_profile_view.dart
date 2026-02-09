@@ -575,7 +575,18 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
             );
           } else if (setting.routeName.isNotEmpty) {
-            Navigator.pushNamed(context, setting.routeName);
+            if (setting.id == 'language') {
+              Navigator.pushNamed(context, setting.routeName).then((result) {
+                if (result != null && result is String) {
+                  context.read<UserProfileCubit>().updateLanguage(
+                    result,
+                    context,
+                  );
+                }
+              });
+            } else {
+              Navigator.pushNamed(context, setting.routeName);
+            }
           } else {
             _openEditProfile(context);
           }
@@ -677,7 +688,7 @@ class _UserProfileViewState extends State<UserProfileView> {
         ? Row(
             children: [
               Text(
-                setting.subtitle!,
+                context.tr(setting.subtitle!),
                 style: Styles.textStyle16.copyWith(color: AppColors.secondary),
               ),
               Gap(4.w),
@@ -896,10 +907,10 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-void _openMarriageEditProfile(BuildContext context, UserProfileState state) {
-  if (state is! SettingsLoaded || state.userProfile == null) {
-    return;
-  }
+  void _openMarriageEditProfile(BuildContext context, UserProfileState state) {
+    if (state is! SettingsLoaded || state.userProfile == null) {
+      return;
+    }
 
     // ⭐ التحقق من اكتمال البيانات
     final isDataCompleted = state.userProfile!.dataCompleted ?? false;
