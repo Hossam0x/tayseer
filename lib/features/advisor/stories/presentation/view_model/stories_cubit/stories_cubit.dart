@@ -13,6 +13,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     bool loadMore = false,
     String? advisorId,
     bool? isSpecial,
+    required BuildContext context,
   }) async {
     // 1. Identify effective parameters
     final effectiveAdvisorId = advisorId ?? state.advisorId;
@@ -27,6 +28,7 @@ class StoriesCubit extends Cubit<StoriesState> {
         page: nextPage,
         advisorId: effectiveAdvisorId,
         isSpecial: effectiveIsSpecial,
+        context: context,
       );
 
       result.fold(
@@ -66,6 +68,7 @@ class StoriesCubit extends Cubit<StoriesState> {
         page: 1,
         advisorId: effectiveAdvisorId,
         isSpecial: effectiveIsSpecial,
+        context: context,
       );
       result.fold(
         (failure) {
@@ -309,6 +312,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     String? content,
     List<File>? images,
     List<XFile>? videos,
+     required BuildContext context,
   }) async {
     emit(
       state.copyWith(
@@ -349,7 +353,7 @@ class StoriesCubit extends Cubit<StoriesState> {
       (_) {
         emit(state.copyWith(createStoryState: CubitStates.success));
         // Refresh stories
-        fetchStories();
+        fetchStories(context: context);
       },
     );
   }

@@ -35,8 +35,12 @@ class SimpleAppBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(24.r),
               child: Padding(
                 padding: EdgeInsets.all(12.w),
+
                 child: useCustomBackIcon
-                    ? AppImage(AssetsData.backArrow, width: 19.w)
+                    ? Transform.flip(
+                        flipX: Directionality.of(context) == TextDirection.ltr,
+                        child: AppImage(AssetsData.backArrow, width: 19.w),
+                      )
                     : Icon(
                         icon,
                         color: icon == Icons.close

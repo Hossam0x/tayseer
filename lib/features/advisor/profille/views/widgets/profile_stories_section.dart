@@ -68,6 +68,7 @@ class ProfileStoriesSection extends StatelessWidget {
           onRetry: () => context.read<StoriesCubit>().fetchStories(
             isSpecial: true,
             advisorId: advisorId,
+            context: context,
           ),
         );
       case CubitStates.success:
@@ -115,6 +116,7 @@ class _StoriesListViewState extends State<_StoriesListView> {
         loadMore: true,
         isSpecial: true,
         advisorId: widget.advisorId,
+        context: context,
       );
     }
   }

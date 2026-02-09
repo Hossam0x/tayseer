@@ -37,7 +37,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
     super.initState();
     _scrollController = ScrollController()..addListener(_scrollListener);
     _filterScrollController = ScrollController();
-    storiesCubit.fetchStories();
+    storiesCubit.fetchStories(context: context);
     homeCubit.initHome();
     homeCubit.sessionStart();
   }
@@ -106,7 +106,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
         onRefresh: () async {
           VideoManager.instance.stopAll();
           await Future.wait([
-            storiesCubit.fetchStories(),
+            storiesCubit.fetchStories(context: context),
             homeCubit.refreshHome(),
           ]);
         },

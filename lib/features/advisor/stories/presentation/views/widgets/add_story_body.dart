@@ -77,7 +77,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
                 text: 'تم نشر القصة بنجاح',
               ),
             );
-            getIt<StoriesCubit>().fetchStories();
+            getIt<StoriesCubit>().fetchStories(context: context);
             // Navigate back to profile after a short delay
             Future.delayed(const Duration(milliseconds: 500), () {
               if (Navigator.canPop(context)) {

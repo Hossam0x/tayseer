@@ -38,7 +38,7 @@ class StoriesSection extends StatelessWidget {
       case CubitStates.failure:
         return _StoriesErrorWidget(
           message: state.storiesMessage,
-          onRetry: () => context.read<StoriesCubit>().fetchStories(),
+          onRetry: () => context.read<StoriesCubit>().fetchStories(context: context),
         );
       case CubitStates.success:
       case CubitStates.initial:
@@ -74,7 +74,7 @@ class _StoriesListViewState extends State<_StoriesListView> {
 
   void _onScroll() {
     if (_isBottom) {
-      context.read<StoriesCubit>().fetchStories(loadMore: true);
+      context.read<StoriesCubit>().fetchStories(loadMore: true, context: context);
     }
   }
 

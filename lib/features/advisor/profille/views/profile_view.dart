@@ -41,7 +41,7 @@ class ProfileView extends StatelessWidget {
                   BlocProvider<StoriesCubit>(
                     create: (_) =>
                         getIt<StoriesCubit>()
-                          ..fetchStories(isSpecial: true, advisorId: null),
+                          ..fetchStories(isSpecial: true, advisorId: null, context: context),
                   ),
                 ],
                 child: _ProfileContent(),
@@ -63,6 +63,7 @@ class _ProfileContent extends StatelessWidget {
         context.read<StoriesCubit>().fetchStories(
           isSpecial: true,
           advisorId: null,
+          context: context,
         ),
       ]),
       color: AppColors.kprimaryColor,

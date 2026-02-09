@@ -128,6 +128,7 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
                   content: content,
                   images: media.images,
                   videos: media.videos,
+                  context: context,
                 );
               }
             },

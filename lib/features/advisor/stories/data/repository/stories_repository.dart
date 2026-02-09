@@ -7,6 +7,7 @@ abstract class StoriesRepository {
     required int page,
     String? advisorId,
     bool isSpecial = false,
+    required BuildContext context,
   });
   void markStoryAsViewed({required String storyId});
   void likeStory({required String storyId});
