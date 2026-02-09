@@ -1,3 +1,4 @@
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/navigate_to_chat_listener.dart';
@@ -20,6 +21,8 @@ class UserAdvisorProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isArabic =
+        context.read<LanguageCubit>().state.languageCode == 'ar';
     return Scaffold(
       body: AdvisorBackground(
         child: MultiBlocProvider(
@@ -31,9 +34,12 @@ class UserAdvisorProfileView extends StatelessWidget {
               ),
             ),
             BlocProvider<StoriesCubit>(
-              create: (_) =>
-                  getIt<StoriesCubit>()
-                    ..fetchStories(isSpecial: true, advisorId: advisorId, context: context),
+              create: (_) => getIt<StoriesCubit>()
+                ..fetchStories(
+                  isSpecial: true,
+                  advisorId: advisorId,
+                  context: context,
+                ),
             ),
           ],
           child: Stack(
@@ -48,7 +54,8 @@ class UserAdvisorProfileView extends StatelessWidget {
 
               Positioned(
                 top: 40.h,
-                right: 5.w,
+                right: isArabic ? 8.w : null,
+                left: !isArabic ? 8.w : null,
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(

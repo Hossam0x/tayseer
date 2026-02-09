@@ -891,5 +891,8 @@
   "no_matching_results": "لا توجد نتائج للبحث",
   "advisors": "المستشارين",
   "users": "المستخدمين",
-  "events": "الأحداث"
+  "events": "الأحداث",
+  "profile_picture_visibility": "رؤية صورة الملف الشخصي",
+  "contacts": "جهات الاتصال",
+  "anonymous": "مجهول الهوية"
 }

@@ -211,7 +211,11 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.only(top: 16.h, right: 16.w, bottom: 8.h),
+            padding: EdgeInsetsDirectional.only(
+              top: 16.h,
+              start: 16.w,
+              bottom: 8.h,
+            ),
             child: Text(title, style: Styles.textStyle16Meduim),
           ),
           Gap(16.h),
@@ -387,7 +391,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
             }
           },
           child: _buildSettingRow(
-            label: "رؤية صورة الملف الشخصي",
+            label: context.tr('profile_picture_visibility'),
             value: _getProfilePicStatus(userProfile?.isAnonymous),
           ),
         ),
@@ -426,12 +430,12 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
             }
           },
           child: _buildSettingRow(
-            label: "جهات الاتصال",
+            label: context.tr('contacts'),
             value: _getContactsStatus(userProfile?.isAnonymous),
           ),
         ),
         _buildSwitchRow(
-          label: "مجهول الهوية",
+          label: context.tr('anonymous'),
           value: userProfile?.isAnonymous ?? false,
           onChanged: (value) async {
             final cubit = context.read<UserProfileCubit>();

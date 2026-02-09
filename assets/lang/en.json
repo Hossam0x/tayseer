@@ -896,5 +896,8 @@
   "no_matching_results": "No matching results",
   "advisors": "Advisors",
   "users": "Users",
-  "events": "Events"
+  "events": "Events",
+  "profile_picture_visibility": "Profile Picture Visibility",
+  "contacts": "Contacts",
+  "anonymous": "Anonymous"
 }
