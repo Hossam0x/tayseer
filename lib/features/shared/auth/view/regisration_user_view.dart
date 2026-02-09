@@ -326,9 +326,9 @@ class _RegisrationViewState extends State<RegisrationView> {
                                             ),
                                             child: LastLoginBubble(
                                               onTap: () {
-                                                authCubit.logInUser(
-                                                  email: state.lastLoginEmail,
-                                                );
+                                                // authCubit.logInUser(
+                                                //   email: state.lastLoginEmail,
+                                                // );
                                               },
                                               text: state.lastLoginEmail!,
                                             ),
