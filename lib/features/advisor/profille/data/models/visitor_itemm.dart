@@ -106,7 +106,7 @@ class VisitorItem extends StatelessWidget {
             // Show arrow/action only if subscribed
             if (isSubscribed)
               CustomBotton(
-                title: 'عرض',
+                title: context.tr('show'),
                 onPressed: () {
                   if (visitor.userType == 'User') {
                     Navigator.push(
@@ -133,7 +133,7 @@ class VisitorItem extends StatelessWidget {
               )
             else
               CustomBotton(
-                title: 'عرض',
+                title: context.tr('show'),
                 onPressed: () {},
                 backGroundcolor: AppColors.secondary300,
                 width: 85.w,

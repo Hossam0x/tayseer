@@ -876,5 +876,9 @@
   "emirates": "UAE",
   "kuwait": "Kuwait",
   "jordan": "Jordan",
-  "selected": "selected"
+  "selected": "selected",
+  "who_viewed_your_profile": "Who viewed your profile",
+  "show": "Show",
+  "no_visitors_yet": "No visitors yet",
+  "show_more": "Show More"
 }

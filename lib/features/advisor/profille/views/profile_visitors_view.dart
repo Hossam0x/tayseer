@@ -42,8 +42,8 @@ class ProfileVisitorsView extends StatelessWidget {
                     Gap(10.h),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 24.w),
-                      child: const SimpleAppBar(
-                        title: 'من زار ملفك الشخصي',
+                      child: SimpleAppBar(
+                        title: context.tr('who_viewed_your_profile'),
                         isLargeTitle: true,
                       ),
                     ),
@@ -71,7 +71,7 @@ class ProfileVisitorsView extends StatelessWidget {
                                         onPressed: () => context
                                             .read<ProfileVisitorsCubit>()
                                             .fetchVisitors(),
-                                        child: const Text('إعادة المحاولة'),
+                                        child: Text(context.tr('retry')),
                                       ),
                                     ],
                                   ),
@@ -107,7 +107,7 @@ class ProfileVisitorsView extends StatelessWidget {
                                   visitors.isEmpty) {
                                 return Center(
                                   child: Text(
-                                    'لا يوجد زوار حتى الآن',
+                                    context.tr('no_visitors_yet'),
                                     style: Styles.textStyle16.copyWith(
                                       color: AppColors.secondary600,
                                     ),
@@ -139,7 +139,7 @@ class ProfileVisitorsView extends StatelessWidget {
                                               right: 50.w,
                                             ),
                                             child: BoostButton(
-                                              text: 'عرض المزيد',
+                                              text: context.tr('show_more'),
                                               onPressed: () {},
                                             ),
                                           ),

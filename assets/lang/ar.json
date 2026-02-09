@@ -872,5 +872,9 @@
   "otp_sup_title_phone": "يرجي ادخال كود التحقق المرسل الي رقم هاتفك",
   "no_job": "لا توجد وظيفة",
   "votes": "الأصوات",
-  "story_published_success": "تم نشر القصة بنجاح"
+  "story_published_success": "تم نشر القصة بنجاح",
+  "who_viewed_your_profile": "من زار ملفك الشخصي",
+  "show": "عرض",
+  "no_visitors_yet": "لا يوجد زوار حتى الآن",
+  "show_more": "عرض المزيد"
 }
