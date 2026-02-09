@@ -1,0 +1,71 @@
+class ProfileVisitorsResponse {
+  final bool success;
+  final String message;
+  final ProfileVisitorsData? data;
+
+  ProfileVisitorsResponse({
+    required this.success,
+    required this.message,
+    this.data,
+  });
+
+  factory ProfileVisitorsResponse.fromJson(Map<String, dynamic> json) {
+    return ProfileVisitorsResponse(
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
+      data: json['data'] != null
+          ? ProfileVisitorsData.fromJson(json['data'])
+          : null,
+    );
+  }
+}
+
+class ProfileVisitorsData {
+  final List<ProfileVisitorModel> visitors;
+  final bool isSubscribed;
+
+  ProfileVisitorsData({required this.visitors, required this.isSubscribed});
+
+  factory ProfileVisitorsData.fromJson(Map<String, dynamic> json) {
+    return ProfileVisitorsData(
+      visitors:
+          (json['visitors'] as List?)
+              ?.map((e) => ProfileVisitorModel.fromJson(e))
+              .toList() ??
+          [],
+      isSubscribed: json['isSubscribed'] ?? false,
+    );
+  }
+}
+
+class ProfileVisitorModel {
+  final String id;
+  final String name;
+  final String? email;
+  final String userType;
+  final String? username;
+  final String? image;
+  final String lastVisitedAt;
+
+  ProfileVisitorModel({
+    required this.id,
+    required this.name,
+    this.email,
+    required this.userType,
+    this.username,
+    this.image,
+    required this.lastVisitedAt,
+  });
+
+  factory ProfileVisitorModel.fromJson(Map<String, dynamic> json) {
+    return ProfileVisitorModel(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'],
+      userType: json['userType'] ?? 'User',
+      username: json['username'],
+      image: json['image'],
+      lastVisitedAt: json['lastVisitedAt'] ?? '',
+    );
+  }
+}
