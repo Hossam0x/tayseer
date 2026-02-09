@@ -71,19 +71,19 @@ class WeeklyAvailabilityModel extends Equatable {
   String get dayName {
     switch (dayOfWeek) {
       case 0:
-        return 'السبت';
+        return 'saturday';
       case 1:
-        return 'الأحد';
+        return 'sunday';
       case 2:
-        return 'الاثنين';
+        return 'monday';
       case 3:
-        return 'الثلاثاء';
+        return 'tuesday';
       case 4:
-        return 'الأربعاء';
+        return 'wednesday';
       case 5:
-        return 'الخميس';
+        return 'thursday';
       case 6:
-        return 'الجمعة';
+        return 'friday';
       default:
         return '';
     }
@@ -129,9 +129,9 @@ class SessionTypeModel extends Equatable {
 
   // الحصول على المدة بشكل نصي
   String get durationText {
-    if (duration == 30) return '30 دقيقة';
-    if (duration == 60) return '60 دقيقة';
-    return '$duration دقيقة';
+    if (duration == 30) return 'thirtyMinutes';
+    if (duration == 60) return 'sixtyMinutes';
+    return '$duration';
   }
 
   @override

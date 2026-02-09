@@ -59,7 +59,7 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              widget.duration,
+              context.tr(widget.duration),
               style: Styles.textStyle20.copyWith(color: AppColors.primaryText),
             ),
             Transform.scale(
@@ -91,7 +91,7 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
         Row(
           children: [
             Text(
-              'سعر الجلسة',
+              context.tr('session_price'),
               style: Styles.textStyle16.copyWith(
                 color: AppColors.secondaryText,
               ),
@@ -140,7 +140,7 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
                     ),
                     const Spacer(),
                     Text(
-                      'ر.س',
+                      context.tr('currency_rs'),
                       style: Styles.textStyle16.copyWith(
                         color: AppColors.inactiveColor,
                       ),

@@ -135,7 +135,7 @@ class _TimeSlotItemState extends State<TimeSlotItem>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              widget.name,
+              context.tr(widget.name),
               style: Styles.textStyle20.copyWith(color: AppColors.primaryText),
             ),
             Transform.scale(
@@ -176,22 +176,22 @@ class _TimeSlotItemState extends State<TimeSlotItem>
                     Row(
                       children: [
                         Text(
-                          'من',
-                          style: Styles.textStyle16.copyWith(
-                            color: AppColors.secondaryText,
-                          ),
-                        ),
-                        Gap(8.w),
-                        Expanded(child: _buildTimeField(toController, false)),
-                        Gap(8.w),
-                        Text(
-                          'إلى',
+                          context.tr('from'),
                           style: Styles.textStyle16.copyWith(
                             color: AppColors.secondaryText,
                           ),
                         ),
                         Gap(8.w),
                         Expanded(child: _buildTimeField(fromController, true)),
+                        Gap(8.w),
+                        Text(
+                          context.tr('to'),
+                          style: Styles.textStyle16.copyWith(
+                            color: AppColors.secondaryText,
+                          ),
+                        ),
+                        Gap(8.w),
+                        Expanded(child: _buildTimeField(toController, false)),
                       ],
                     ),
                   ],

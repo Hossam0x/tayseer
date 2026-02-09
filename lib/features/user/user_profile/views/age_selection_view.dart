@@ -72,7 +72,10 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
             children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                child: SimpleAppBar(title: 'السن', isLargeTitle: true),
+                child: SimpleAppBar(
+                  title: context.tr('age_title'),
+                  isLargeTitle: true,
+                ),
               ),
 
               Expanded(
@@ -141,7 +144,7 @@ class _AgeSelectionViewState extends State<AgeSelectionView> {
                 child: CustomBotton(
                   height: 53.h,
                   width: double.infinity,
-                  title: 'تأكيد',
+                  title: context.tr('confirm'),
                   useGradient: true,
                   onPressed: () {
                     HapticFeedback.selectionClick();

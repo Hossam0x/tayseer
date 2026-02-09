@@ -66,7 +66,7 @@ class AppointmentsView extends StatelessWidget {
                       child: Column(
                         children: [
                           Gap(16.h),
-                          SimpleAppBar(title: 'المواعيد'),
+                          SimpleAppBar(title: context.tr('appointments_title')),
                           Gap(30.h),
 
                           // Loading State with Skeletonizer
@@ -87,7 +87,7 @@ class AppointmentsView extends StatelessWidget {
                                     Gap(16.h),
                                     Text(
                                       state.errorMessage ??
-                                          'حدث خطأ في تحميل البيانات',
+                                          context.tr('error_loading_data'),
                                       textAlign: TextAlign.center,
                                       style: Styles.textStyle16.copyWith(
                                         color: AppColors.kRedColor,
@@ -97,7 +97,7 @@ class AppointmentsView extends StatelessWidget {
                                     ElevatedButton(
                                       onPressed: () =>
                                           cubit.loadServiceProvider(),
-                                      child: Text('إعادة المحاولة'),
+                                      child: Text(context.tr('retry')),
                                     ),
                                   ],
                                 ),
@@ -263,10 +263,10 @@ class AppointmentsView extends StatelessWidget {
       width: double.infinity,
       useGradient: true,
       title: state.isSaving
-          ? 'جاري الحفظ...'
+          ? context.tr('saving_status')
           : state.hasChanges
-          ? 'حفظ التغييرات'
-          : 'لا توجد تغييرات',
+          ? context.tr('save_changes')
+          : context.tr('no_changes'),
       onPressed: state.isSaving || !state.hasChanges
           ? null
           : () => cubit.saveChanges(context),

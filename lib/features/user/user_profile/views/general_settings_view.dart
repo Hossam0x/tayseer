@@ -336,12 +336,12 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
                     {
                       "title": context.tr('show_to_all'),
                       "subtitle": context.tr('show_to_all_subtitle'),
-                      "value": "الجميع",
+                      "value": "everyone",
                     },
                     {
                       "title": context.tr('hide_from_all'),
                       "subtitle": context.tr('hide_from_all_subtitle'),
-                      "value": "مخفي",
+                      "value": "hidden",
                     },
                   ],
                 ),
@@ -350,12 +350,12 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
 
             if (result != null && userProfile != null) {
               final cubit = context.read<UserProfileCubit>();
-              await cubit.toggleAnonymousStatus(result == "مخفي", context);
+              await cubit.toggleAnonymousStatus(result == "hidden", context);
             }
           },
           child: _buildSettingRow(
             label: context.tr('who_can_see_my_profile'),
-            value: _getPrivacyStatus(userProfile?.isAnonymous),
+            value: context.tr(_getPrivacyStatus(userProfile?.isAnonymous)),
           ),
         ),
         InkWell(
@@ -373,12 +373,12 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
                     {
                       "title": context.tr('show_profile_picture'),
                       "subtitle": context.tr('show_profile_picture_subtitle'),
-                      "value": "عرض",
+                      "value": "show_val",
                     },
                     {
                       "title": context.tr('hide_profile_picture'),
                       "subtitle": context.tr('hide_profile_picture_subtitle'),
-                      "value": "تمويه",
+                      "value": "blur_val",
                     },
                   ],
                 ),
@@ -387,12 +387,12 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
 
             if (result != null) {
               final cubit = context.read<UserProfileCubit>();
-              await cubit.updateImageBlur(result == "تمويه", context);
+              await cubit.updateImageBlur(result == "blur_val", context);
             }
           },
           child: _buildSettingRow(
             label: context.tr('profile_picture_visibility'),
-            value: _getProfilePicStatus(userProfile?.isAnonymous),
+            value: context.tr(_getProfilePicStatus(userProfile?.isAnonymous)),
           ),
         ),
         InkWell(
@@ -410,14 +410,14 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
                       "subtitle": context.tr(
                         'hide_profile_from_contacts_subtitle',
                       ),
-                      "value": "إخفاء",
+                      "value": "hide_val",
                     },
                     {
                       "title": context.tr('show_profile_from_contacts'),
                       "subtitle": context.tr(
                         'show_profile_from_contacts_subtitle',
                       ),
-                      "value": "إظهار",
+                      "value": "appear_val",
                     },
                   ],
                 ),
@@ -426,12 +426,12 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
 
             if (result != null && userProfile != null) {
               final cubit = context.read<UserProfileCubit>();
-              await cubit.toggleAnonymousStatus(result == "إخفاء", context);
+              await cubit.toggleAnonymousStatus(result == "hide_val", context);
             }
           },
           child: _buildSettingRow(
             label: context.tr('contacts'),
-            value: _getContactsStatus(userProfile?.isAnonymous),
+            value: context.tr(_getContactsStatus(userProfile?.isAnonymous)),
           ),
         ),
         _buildSwitchRow(
@@ -549,17 +549,17 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
   // }
 
   String _getPrivacyStatus(bool? isAnonymous) {
-    if (isAnonymous == null) return 'الجميع';
-    return isAnonymous ? 'مخفي' : 'الجميع';
+    if (isAnonymous == null) return 'everyone';
+    return isAnonymous ? 'hidden' : 'everyone';
   }
 
   String _getProfilePicStatus(bool? isAnonymous) {
-    if (isAnonymous == null) return 'الجميع';
-    return isAnonymous ? 'تمويه' : 'عرض';
+    if (isAnonymous == null) return 'everyone';
+    return isAnonymous ? 'blur_val' : 'show_val';
   }
 
   String _getContactsStatus(bool? isAnonymous) {
-    if (isAnonymous == null) return 'إخفاء';
-    return isAnonymous ? 'إخفاء' : 'إظهار';
+    if (isAnonymous == null) return 'hide_val';
+    return isAnonymous ? 'hide_val' : 'appear_val';
   }
 }
