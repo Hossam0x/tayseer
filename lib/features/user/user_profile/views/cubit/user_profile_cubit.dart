@@ -10,6 +10,7 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_profil
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 
 class UserProfileCubit extends Cubit<UserProfileState> {
   final LocalNotification _notificationService = LocalNotification();
@@ -365,7 +366,17 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         return item;
       }).toList();
 
-      emit(SettingsLoaded(settings: updatedSettings));
+      emit(
+        SettingsLoaded(
+          settings: updatedSettings,
+          userProfile: currentState.userProfile,
+        ),
+      );
+
+      // تحديث اللغة عالمياً لتغيير الواجهة فوراً (بعد تحديث الحالة المحلية)
+      if (context.mounted) {
+        context.read<LanguageCubit>().setLanguage(languageCode);
+      }
 
       showSafeSnackBar(
         context: context,

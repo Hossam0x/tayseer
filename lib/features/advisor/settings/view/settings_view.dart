@@ -8,13 +8,32 @@ import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class SettingsView extends StatelessWidget {
+class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
 
   @override
+  State<SettingsView> createState() => _SettingsViewState();
+}
+
+class _SettingsViewState extends State<SettingsView> {
+  late SettingsCubit _settingsCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _settingsCubit = SettingsCubit();
+  }
+
+  @override
+  void dispose() {
+    _settingsCubit.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SettingsCubit(),
+    return BlocProvider.value(
+      value: _settingsCubit,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: AdvisorBackground(child: _buildBody(context)),

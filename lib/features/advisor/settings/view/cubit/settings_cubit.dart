@@ -6,6 +6,7 @@ import 'package:tayseer/features/advisor/settings/data/models/setting_item_model
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 
 class SettingsCubit extends Cubit<SettingsState> {
   final LocalNotification _notificationService = LocalNotification();
@@ -148,6 +149,11 @@ class SettingsCubit extends Cubit<SettingsState> {
       }).toList();
 
       emit(SettingsLoaded(settings: updatedSettings));
+
+      // تحديث اللغة عالمياً لتغيير الواجهة فوراً (بعد تحديث الحالة المحلية)
+      if (context.mounted) {
+        context.read<LanguageCubit>().setLanguage(languageCode);
+      }
 
       // عرض رسالة نجاح
       showSafeSnackBar(
