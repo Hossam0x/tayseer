@@ -1,8 +1,7 @@
-// marriage_profile_cubit.dart - COMPLETE FIXED VERSION
+// marriage_profile_cubit.dart - COMPLETE UPDATED VERSION
 // ════════════════════════════════════════════════════════════════
-// ✅ FIX: إزالة حساب النسبة من الـ Cubit
-// ✅ الاعتماد على النسبة اللي بيرجعها السيرفر
-// ✅ استخدام البروفايل المحدث بعد كل عملية
+// ✅ FIX: تحديث النسبة محليًا بعد كل عملية رفع/حذف
+// ✅ الاعتماد على النسبة من السيرفر + إضافة نسبة الميديا محليًا
 // ════════════════════════════════════════════════════════════════
 
 import 'dart:io';
@@ -47,9 +46,12 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       (marriageProfile) {
         debugPrint('✅ [CUBIT] Profile loaded - Progress: ${marriageProfile.answerCompletedPercentage}%');
         
+        // ⭐⭐⭐ حساب النسبة الكاملة مع الميديا
+        final updatedProfile = _calculateProgressWithMedia(marriageProfile);
+        
         emit(state.copyWith(
           state: CubitStates.success,
-          profile: marriageProfile,
+          profile: updatedProfile,
           isLoading: false,
         ));
       },
@@ -57,47 +59,80 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ SAVE PROFILE - USES UPDATED PROFILE FROM SERVER
+  // ⭐⭐⭐ CALCULATE PROGRESS WITH MEDIA
   // ════════════════════════════════════════════════════════════════
-  Future<void> saveProfile() async {
-    if (state.profile == null) {
-      debugPrint('⚠️ [CUBIT] No profile to save');
-      return;
+  MarriageUserProfileModel _calculateProgressWithMedia(MarriageUserProfileModel profile) {
+    final serverProgress = profile.answerCompletedPercentage ?? 0;
+    int mediaBonus = 0;
+
+    // حساب عدد الصور (كل صورة = 5%)
+    final images = profile.userMedia?.images ?? [];
+    if (images.isNotEmpty) {
+      final imageCount = images.length > 5 ? 5 : images.length; // max 5 images
+      mediaBonus += imageCount * 5; // 5% لكل صورة
+      debugPrint('📸 [CUBIT] Images: $imageCount × 5% = ${imageCount * 5}%');
     }
 
-    emit(state.copyWith(
-      state: CubitStates.loading,
-      isUpdating: true,
-      clearMessages: true,
-    ));
+    // فيديو = 25%
+    final hasVideo = profile.userMedia?.video != null && 
+                     profile.userMedia!.video!.isNotEmpty;
+    if (hasVideo) {
+      mediaBonus += 25;
+      debugPrint('🎥 [CUBIT] Video: +25%');
+    }
 
-    debugPrint('💾 [CUBIT] Saving profile...');
+    // صوت = 25%
+    final hasAudio = profile.userMedia?.audio != null && 
+                     profile.userMedia!.audio!.isNotEmpty;
+    if (hasAudio) {
+      mediaBonus += 25;
+      debugPrint('🎤 [CUBIT] Audio: +25%');
+    }
 
-    // ⭐⭐⭐ FIX: Repository هيرجع البروفايل المحدث من السيرفر
-    final result = await _repository.updateMarriageProfile(state.profile!);
+    final totalProgress = serverProgress + mediaBonus;
+    final finalProgress = totalProgress > 100 ? 100 : totalProgress;
 
-    result.fold(
-      (failure) {
-        debugPrint('❌ [CUBIT] Save failed: ${failure.message}');
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isUpdating: false,
-        ));
-      },
-      (updatedProfile) {
-        // ⭐⭐⭐ FIX: البروفايل المحدث فيه النسبة الصحيحة من السيرفر
-        debugPrint('✅ [CUBIT] Saved - New progress: ${updatedProfile.answerCompletedPercentage}%');
-        emit(state.copyWith(
-          state: CubitStates.success,
-          profile: updatedProfile,
-          successMessage: 'تم حفظ البيانات بنجاح',
-          isUpdating: false,
-        ));
-      },
-    );
+    debugPrint('📊 [CUBIT] Server: $serverProgress% + Media: $mediaBonus% = $finalProgress%');
+
+    return profile.copyWith(answerCompletedPercentage: finalProgress);
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ SAVE PROFILE
+  // ════════════════════════════════════════════════════════════════
+Future<void> saveProfile() async {
+  if (state.profile == null) return;
+
+  emit(state.copyWith(
+    state: CubitStates.loading,
+    isUpdating: true,
+    clearMessages: true,
+  ));
+
+  final result = await _repository.updateMarriageProfile(state.profile!);
+
+  result.fold(
+    (failure) {
+      emit(state.copyWith(
+        state: CubitStates.failure,
+        errorMessage: failure.message,
+        isUpdating: false,
+      ));
+    },
+    (_) {
+      // ⭐ امسح السطر ده: await loadProfile();
+      // ⭐ خلي الـ state الحالي بالـ 100% زي ما هو!
+      
+      debugPrint('✅ Saved - Keeping progress: ${state.profile!.answerCompletedPercentage}%');
+      
+      emit(state.copyWith(
+        state: CubitStates.success,
+        successMessage: 'تم حفظ البيانات بنجاح',
+        isUpdating: false,
+      ));
+    },
+  );
+}
   // ════════════════════════════════════════════════════════════════
   // ⭐ UPDATE FIELD (LOCAL STATE)
   // ════════════════════════════════════════════════════════════════
@@ -317,7 +352,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ UPLOAD IMAGE - RELOADS PROFILE AUTOMATICALLY
+  // ⭐⭐⭐ UPLOAD IMAGE - WITH LOCAL PROGRESS UPDATE
   // ════════════════════════════════════════════════════════════════
   Future<void> uploadImage(File imageFile) async {
     if (state.profile == null) {
@@ -342,14 +377,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       },
       (_) async {
         debugPrint('✅ [CUBIT] Image uploaded, reloading profile...');
-        // ⭐⭐⭐ Repository already reloaded, just refresh state
-        await loadProfile();
+        await loadProfile(); // هيحسب النسبة تلقائيًا
       },
     );
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ DELETE IMAGE - RELOADS PROFILE AUTOMATICALLY
+  // ⭐⭐⭐ DELETE IMAGE - WITH LOCAL PROGRESS UPDATE
   // ════════════════════════════════════════════════════════════════
   Future<void> deleteImage(String imageUrl) async {
     if (state.profile == null) {
@@ -374,14 +408,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       },
       (_) async {
         debugPrint('✅ [CUBIT] Image deleted, reloading profile...');
-        // ⭐⭐⭐ Repository already reloaded, just refresh state
-        await loadProfile();
+        await loadProfile(); // هيحسب النسبة تلقائيًا
       },
     );
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ UPLOAD VIDEO - RELOADS PROFILE AUTOMATICALLY
+  // ⭐⭐⭐ UPLOAD VIDEO - WITH LOCAL PROGRESS UPDATE
   // ════════════════════════════════════════════════════════════════
   Future<void> uploadVideo(File videoFile) async {
     if (state.profile == null) {
@@ -406,14 +439,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       },
       (_) async {
         debugPrint('✅ [CUBIT] Video uploaded, reloading profile...');
-        // ⭐⭐⭐ Repository already reloaded, just refresh state
-        await loadProfile();
+        await loadProfile(); // هيحسب النسبة تلقائيًا
       },
     );
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ UPLOAD AUDIO - RELOADS PROFILE AUTOMATICALLY
+  // ⭐⭐⭐ UPLOAD AUDIO - WITH LOCAL PROGRESS UPDATE
   // ════════════════════════════════════════════════════════════════
   Future<void> uploadAudio(File audioFile) async {
     if (state.profile == null) {
@@ -438,15 +470,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       },
       (_) async {
         debugPrint('✅ [CUBIT] Audio uploaded, reloading profile...');
-        // ⭐⭐⭐ Repository already reloaded, just refresh state
-        await loadProfile();
-        
+        await loadProfile(); // هيحسب النسبة تلقائيًا
       },
     );
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ DELETE VIDEO - RELOADS PROFILE AUTOMATICALLY
+  // ⭐⭐⭐ DELETE VIDEO - WITH LOCAL PROGRESS UPDATE
   // ════════════════════════════════════════════════════════════════
   Future<void> deleteVideo() async {
     final currentVideoUrl = state.profile?.userMedia?.video;
@@ -472,14 +502,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       },
       (_) async {
         debugPrint('✅ [CUBIT] Video deleted, reloading profile...');
-        // ⭐⭐⭐ Repository already reloaded, just refresh state
-        await loadProfile();
+        await loadProfile(); // هيحسب النسبة تلقائيًا
       },
     );
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ DELETE AUDIO - RELOADS PROFILE AUTOMATICALLY
+  // ⭐⭐⭐ DELETE AUDIO - WITH LOCAL PROGRESS UPDATE
   // ════════════════════════════════════════════════════════════════
   Future<void> deleteAudio() async {
     final currentAudioUrl = state.profile?.userMedia?.audio;
@@ -505,8 +534,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       },
       (_) async {
         debugPrint('✅ [CUBIT] Audio deleted, reloading profile...');
-        // ⭐⭐⭐ Repository already reloaded, just refresh state
-        await loadProfile();
+        await loadProfile(); // هيحسب النسبة تلقائيًا
       },
     );
   }
@@ -548,15 +576,18 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
               'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
           audio: '',
         ),
-        answerCompletedPercentage: 75,
+        answerCompletedPercentage: 40, // النسبة من السيرفر
       );
 
+      // ⭐⭐⭐ حساب النسبة مع الميديا
+      final profileWithMedia = _calculateProgressWithMedia(dummyProfile);
+
       emit(state.copyWith(
-        profile: dummyProfile,
+        profile: profileWithMedia,
         state: CubitStates.success,
       ));
 
-      debugPrint('✅ [CUBIT] Dummy profile loaded');
+      debugPrint('✅ [CUBIT] Dummy profile loaded with progress: ${profileWithMedia.answerCompletedPercentage}%');
     } catch (e) {
       debugPrint('❌ [CUBIT] Dummy profile failed: $e');
       emit(state.copyWith(
