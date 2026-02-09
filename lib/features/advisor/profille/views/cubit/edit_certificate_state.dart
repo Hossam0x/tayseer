@@ -11,6 +11,8 @@ class EditCertificateState {
   final TextEditingController? nameCertificateController;
   final TextEditingController? fromWhereController;
 
+  final bool isImageRemoved;
+
   const EditCertificateState({
     this.nameCertificate = '',
     this.fromWhere = '',
@@ -21,6 +23,7 @@ class EditCertificateState {
     this.selectedCertificateId,
     this.nameCertificateController,
     this.fromWhereController,
+    this.isImageRemoved = false,
   });
 
   EditCertificateState copyWith({
@@ -33,19 +36,27 @@ class EditCertificateState {
     String? selectedCertificateId,
     TextEditingController? nameCertificateController,
     TextEditingController? fromWhereController,
+    bool clearImageFile = false,
+    bool clearImageUrl = false,
+    bool? isImageRemoved,
   }) {
     return EditCertificateState(
       nameCertificate: nameCertificate ?? this.nameCertificate,
       fromWhere: fromWhere ?? this.fromWhere,
       date: date ?? this.date,
-      certificateImageFile: certificateImageFile ?? this.certificateImageFile,
-      certificateImageUrl: certificateImageUrl ?? this.certificateImageUrl,
+      certificateImageFile: clearImageFile
+          ? null
+          : (certificateImageFile ?? this.certificateImageFile),
+      certificateImageUrl: clearImageUrl
+          ? null
+          : (certificateImageUrl ?? this.certificateImageUrl),
       isLoading: isLoading ?? this.isLoading,
       selectedCertificateId:
           selectedCertificateId ?? this.selectedCertificateId,
       nameCertificateController:
           nameCertificateController ?? this.nameCertificateController,
       fromWhereController: fromWhereController ?? this.fromWhereController,
+      isImageRemoved: isImageRemoved ?? this.isImageRemoved,
     );
   }
 }

@@ -102,7 +102,7 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
         final response = await _apiService.post(
           endPoint: '/advisor/addCertificate',
           data: data,
-          isFromData: true,
+          isFromData: false,
         );
 
         if (response['success'] == true) {
@@ -126,7 +126,8 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
     required String nameCertificate,
     required String fromWhere,
     required DateTime date,
-    File? image, // Keep as nullable File
+    File? image,
+    bool? removeImage,
   }) async {
     try {
       final Map<String, dynamic> data = {
@@ -134,6 +135,10 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
         'fromWhere': fromWhere,
         'date': date.toIso8601String(),
       };
+
+      if (removeImage == true) {
+        data['image'] = ""; // أو حسب ما يتوقعه الباك لحذف الصورة
+      }
 
       if (image != null && image.existsSync()) {
         final String fileName = image.path.split('/').last;
@@ -145,9 +150,13 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
           MapEntry('date', date.toIso8601String()),
         ]);
 
+        if (removeImage == true) {
+          formData.fields.add(const MapEntry('image', ""));
+        }
+
         formData.files.add(
           MapEntry(
-            'image', // Changed from 'certificateImage' to 'image'
+            'image',
             await MultipartFile.fromFile(image.path, filename: fileName),
           ),
         );
@@ -177,7 +186,7 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
         final response = await _apiService.patch(
           endPoint: '/advisor/updateCertificate/$certificateId',
           data: data,
-          isFromData: true,
+          isFromData: false,
         );
 
         if (response['success'] == true) {

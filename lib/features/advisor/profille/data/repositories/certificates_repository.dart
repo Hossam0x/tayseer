@@ -19,5 +19,6 @@ abstract class CertificatesRepository {
     required String fromWhere,
     required DateTime date,
     File? image,
+    bool? removeImage,
   });
 }
