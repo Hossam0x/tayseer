@@ -89,15 +89,18 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
 
       print('🔍 ====== REQUEST VALIDATION ======');
 
-      // ⭐ 1. تحقق من username وتأكد أنه يبدأ بـ @
+      // ⭐ 1. تحقق من username
       String? username = request.username;
       if (username != null && username.isNotEmpty) {
-        if (!username.startsWith('@')) {
-          print('⚠️ Adding @ to username: $username → @$username');
-          username = '@$username';
-        }
-        formData.fields.add(MapEntry('username', username));
-        print('📤 username: $username');
+        // إذا كان اليوزرنيم يبدأ بـ @، نمسحها قبل الإرسال لأن بعض السيرفرات ترفضها
+        final cleanedUsername = username.startsWith('@')
+            ? username.substring(1)
+            : username;
+
+        formData.fields.add(MapEntry('username', cleanedUsername));
+        // للاحتياط إذا كان السيرفر يتوقع N كبيرة كما في الموديل
+        formData.fields.add(MapEntry('userName', cleanedUsername));
+        print('📤 username: $cleanedUsername');
       }
 
       // ⭐ 2. تحقق من name
@@ -198,7 +201,7 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
 
       print('🔍 ====== END VALIDATION ======');
 
-      print('📤 Sending PATCH request to /advisor/editPersonalData');
+      print('📤 Sending PATCH request to advisor/editPersonalData');
       print(
         '📤 FormData has ${formData.fields.length} fields and ${formData.files.length} files',
       );
@@ -206,7 +209,6 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       final response = await dio.patch<Map<String, dynamic>>(
         '/advisor/editPersonalData',
         data: formData,
-        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
       );
 
       print('📥 Response Status Code: ${response.statusCode}');

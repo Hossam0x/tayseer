@@ -69,6 +69,8 @@ class EditPersonalDataState extends Equatable {
     // تحقق من التغييرات في الحقول النصية
     final currentTextChanged =
         (currentData.name != null && currentData.name != profile!.name) ||
+        (currentData.username != null &&
+            currentData.username != profile!.userName) || // ⭐ أضف هذا
         (currentData.professionalSpecialization != null &&
             currentData.professionalSpecialization !=
                 profile!.professionalSpecialization) ||
