@@ -962,5 +962,13 @@
   "blocks": "المحظورات",
   "no_blocked_users": "لا يوجد مستخدمون محظورون",
   "unblock": "إلغاء الحظر",
-  "are_you_sure_unblock": "هل أنت متأكد من إلغاء الحظر"
+  "account_management": "ادارة الحساب",
+  "are_you_sure_unblock": "هل أنت متأكد من إلغاء الحظر",
+  "permanent_delete": "حذف الحساب نهائياً",
+  "are_you_sure_permanent_delete": "هل أنت متأكد من حذف الحساب نهائياً",
+  "temporary_disable": "إيقاف حسابي بشكل مؤقت",
+  "are_you_sure_temporary_disable": "هل أنت متأكد من إيقاف حسابي بشكل مؤقت",
+  "account_suspended_successfully": "تم إيقاف حسابك مؤقتاً بنجاح",
+  "account_deleted_successfully": "تم حذف حسابك بنجاح"
+
 }

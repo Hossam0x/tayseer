@@ -959,5 +959,12 @@
   "blocks": "Blocks",
   "no_blocked_users": "No blocked users",
   "unblock": "Unblock",
-  "are_you_sure_unblock": "Are you sure you want to unblock"
+  "account_management": "Account Management",
+  "are_you_sure_unblock": "Are you sure you want to unblock",
+  "permanent_delete": "Permanent Delete",
+  "are_you_sure_permanent_delete": "Are you sure you want to permanent delete",
+  "temporary_disable": "Temporary Disable",
+  "are_you_sure_temporary_disable": "Are you sure you want to temporary disable",
+  "account_suspended_successfully": "Account suspended successfully",
+  "account_deleted_successfully": "Account deleted successfully"
 }

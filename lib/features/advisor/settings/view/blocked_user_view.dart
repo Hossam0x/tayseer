@@ -175,7 +175,7 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(AssetsData.emptyChatImage, width: 120.w, height: 120.w),
+            AppImage(AssetsData.icNoContentSeach),
             SizedBox(height: 16.h),
             Text(
               context.tr('no_blocked_users'),
@@ -221,7 +221,8 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
     CustomshowDialogWithImage(
       context,
       title: context.tr('unblock'),
-      supTitle: '${context.tr('are_you_sure_unblock')} ${blockedUser.blockedUser.name}؟',
+      supTitle:
+          '${context.tr('are_you_sure_unblock')} ${blockedUser.blockedUser.name}؟',
       icon: Icons.block,
       iconColor: AppColors.kprimaryColor,
       iconBackgroundColor: AppColors.primary100,
