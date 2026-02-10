@@ -870,8 +870,7 @@
   "error_uploading_video": "خطأ في رفع الفيديو",
   "otp_sup_title_phone": "يرجي ادخال كود التحقق المرسل الي رقم هاتفك",
   "no_job": "لا توجد وظيفة",
-  "votes": "الأصوات"
-  "no_job": "لا توجد وظيفة",
+  "votes": "الأصوات",
   "add_minimum_images":"أضف 5 صور على الأقل",
 "add_more_images_description": "أضف صور أخرى حتى تتمكن من الظهور أكثر",
 "add_intro_video":"أضف فيديو تعريفي",
@@ -879,9 +878,8 @@
 "add_audio_clip": "أضف مقطع صوتي",
 "add_audio_description":"سجل مقطع صوتي يعبر عن شخصيتك",
 "file_not_found":"لم يتم العثور على الملف",
-"error_uploading_audio":"فشل في رفع الملف الصوتي"
+"error_uploading_audio":"فشل في رفع الملف الصوتي",
   
-  "votes": "الأصوات",
   "story_published_success": "تم نشر القصة بنجاح",
   "who_viewed_your_profile": "من زار ملفك الشخصي",
   "show": "عرض",
