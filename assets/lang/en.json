@@ -989,7 +989,6 @@
   "are_you_want_to_unarchive": "Are you want to unarchive",
   "user_not_found": "User not found",
   "no_stories": "No stories",
-  "failed_to_publish_story": "Failed to publish story",
   "choose_faith": "Faith",
   "faith_subtitle": "You can choose up to 8 that describe you best",
   "faith_dua": "Supplication",
@@ -1131,8 +1130,7 @@
   "ai_generated_photo": "AI generated photo",
   "face_covered": "Face covered",
   "too_far": "Too far",
-  "age_range": "Age Range"
-  "failed_to_publish_story": "Failed to publish story",
+  "age_range": "Age Range",
   "unfollow": "Unfollow",
   "followerss": "Followers",
   "search_by_name": "Search by name...",
@@ -1165,16 +1163,15 @@
   "unarchive_story": "Unarchive Story",
   "special_story": "Special Story",
   "delete_story": "Delete Story",
-  "permissions_required": "Please grant camera and gallery access so you can add a story."
+  "permissions_required": "Please grant camera and gallery access so you can add a story.",
   "failed_to_publish_story": "Failed to publish story",
-    "exploration": "Exploration",
+  "exploration": "Exploration",
   "history": "History",
   "subscribe_to_see_likes": "Subscribe to see your likes",
-  "Skin":"skin",
-  "back":"back",
+  "Skin": "skin",
+  "back": "back",
   "error_play_video": "Error playing video",
-"did_you_marry_by": "Did you get married by",
+  "did_you_marry_by": "Did you get married by",
   "app_name": "Tayseer",
   "contact_us_reward_msg": "Contact us and get a financial reward"
-
 }
