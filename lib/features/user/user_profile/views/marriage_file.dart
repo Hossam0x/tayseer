@@ -1,9 +1,3 @@
-// marriage_profile_page.dart - UPDATED WITH DYNAMIC PERCENTAGE
-// ════════════════════════════════════════════════════════════════
-// ✅ استخدام answerCompletedPercentage من API
-// ✅ إضافة 5% لكل عنصر إضافي (فيديو، صوت، أهداف)
-// ════════════════════════════════════════════════════════════════
-
 import 'dart:developer';
 import 'dart:ui';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
@@ -15,6 +9,7 @@ import 'package:tayseer/features/user/user_profile/data/repositories/marriage_pr
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_profile_edit_view.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/complete_marriage_file.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_life_events_section.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -45,6 +40,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   late int _selectedTabIndex;
   final ImagePicker _picker = ImagePicker();
   final int _maxImages = 5;
+  String? _scrollToSection;
 
   @override
   void initState() {
@@ -52,54 +48,44 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     _selectedTabIndex = widget.initialTabIndex;
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ CALCULATE TOTAL PROGRESS (Server + Media)
+  // ════════════════════════════════════════════════════════════════
   double _calculateTotalProgress(MarriageUserProfileModel profile) {
-    // ⭐ النسبة من السيرفر
-    double serverProgress = (profile.answerCompletedPercentage ?? 0).toDouble();
+    // Questions contribute 20% max
+    double questionProgress = (profile.answerCompletedPercentage ?? 0)
+        .toDouble();
+    questionProgress = questionProgress > 20 ? 20 : questionProgress;
 
-    // 🐛 DEBUG: طباعة النسبة من السيرفر
-    debugPrint(
-      '📊 [_calculateTotalProgress] Server Progress: $serverProgress%',
-    );
+    // Media contributes 80% max
+    int mediaBonus = 0;
 
-    // ⭐⭐⭐ حساب الميديا
-    int mediaCompleted = 0;
+    final images = profile.userMedia?.images ?? [];
+    if (images.isNotEmpty) {
+      final imageCount = images.length > 5 ? 5 : images.length;
+      mediaBonus += imageCount * 5; // Max 25%
+    }
 
-    // فيديو
     bool hasVideo =
         profile.userMedia?.video != null &&
         profile.userMedia!.video!.isNotEmpty;
-    if (hasVideo) {
-      mediaCompleted++;
-      debugPrint(
-        '📊 [_calculateTotalProgress] ✅ Has Video: ${profile.userMedia!.video}',
-      );
-    } else {
-      debugPrint('📊 [_calculateTotalProgress] ❌ No Video');
-    }
+    if (hasVideo) mediaBonus += 30; // 30%
 
-    // صوت
     bool hasAudio =
         profile.userMedia?.audio != null &&
         profile.userMedia!.audio!.isNotEmpty;
-    if (hasAudio) {
-      mediaCompleted++;
-      debugPrint(
-        '📊 [_calculateTotalProgress] ✅ Has Audio: ${profile.userMedia!.audio}',
-      );
-    } else {
-      debugPrint('📊 [_calculateTotalProgress] ❌ No Audio');
-    }
+    if (hasAudio) mediaBonus += 30; // 25%
 
-    // ⭐ الحساب النهائي
-    double mediaProgress = mediaCompleted * 25.0;
-    double totalProgress = serverProgress + mediaProgress;
+    // Cap media at 80%
+    mediaBonus = mediaBonus > 80 ? 80 : mediaBonus;
 
-    // 🐛 DEBUG: طباعة النتائج
-    debugPrint('📊 [_calculateTotalProgress] Media Items: $mediaCompleted');
-    debugPrint('📊 [_calculateTotalProgress] Media Progress: $mediaProgress%');
-    debugPrint('📊 [_calculateTotalProgress] Total Progress: $totalProgress%');
+    double totalProgress = questionProgress + mediaBonus;
 
-    return totalProgress > 100 ? 100 : totalProgress;
+    debugPrint('📊 Question Progress: $questionProgress%');
+    debugPrint('📊 Media Bonus: $mediaBonus%');
+    debugPrint('📊 Total: $totalProgress%');
+
+    return totalProgress;
   }
 
   @override
@@ -179,6 +165,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                             cubit: cubit,
                             maxImages: _maxImages,
                             selectedTabIndex: _selectedTabIndex,
+                            scrollToSection: _scrollToSection,
                           ),
                   ),
                 ],
@@ -218,197 +205,217 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   Widget _buildViewContent(MarriageUserProfileModel profile) {
     final images = profile.userMedia?.images ?? [];
     final displayImages = images.length > 5 ? images.sublist(0, 5) : images;
+    final totalProgress = _calculateTotalProgress(profile);
+    final progressFraction = totalProgress / 100;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 14.0.w),
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          _buildViewHeader(profile),
-          _buildSliverPadding(
-            child: AboutMeSection(items: _buildAboutMeItems(profile)),
-          ),
-          _buildSliverPadding(
-            child: EducationSection(items: _buildEducationItems(profile)),
-          ),
-          if (profile.yourGoals != null)
-            _buildSliverPadding(
-              child: MarriageLifeEventsSection(
-                titleName: "أهدافي",
-                events: _buildTimelineEvents(profile.yourGoals!),
+    return Stack(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14.0.w),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildViewHeader(profile),
+              _buildSliverPadding(
+                child: AboutMeSection(items: _buildAboutMeItems(profile)),
               ),
-            ),
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-            sliver: SliverToBoxAdapter(
-              child: displayImages.isNotEmpty
-                  ? AdditionalImageSection(
-                      imageUrl: displayImages.length > 1
-                          ? displayImages[1]
-                          : displayImages[0],
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ),
-          _buildSliverPadding(
-            child: ReligiousSection(tags: _buildReligiousTags(profile)),
-          ),
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-            sliver: SliverToBoxAdapter(
-              child: VideoSection(videoUrl: profile.userMedia?.video),
-            ),
-          ),
-          if (profile.hobbies.isNotEmpty)
-            _buildSliverPadding(
-              child: InterestsSection(interests: _buildInterestsItems(profile)),
-            ),
-          if (profile.myDescription != null &&
-              profile.myDescription!.isNotEmpty)
-            _buildSliverPadding(
-              child: BioVoiceSection(
-                bioText: profile.myDescription!,
-                audioPath: profile.userMedia?.audio ?? "",
+              _buildSliverPadding(
+                child: EducationSection(items: _buildEducationItems(profile)),
               ),
-            ),
-          SliverToBoxAdapter(child: SizedBox(height: 50.h)),
-          SliverToBoxAdapter(
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: 20.w),
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-              height: 113.h,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16.r),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.kWhiteColor.withOpacity(0.7),
-                    AppColors.primary50,
-                    AppColors.primary100,
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.secondary300,
-                    blurRadius: 4,
-                    spreadRadius: 0,
+              if (profile.yourGoals != null)
+                _buildSliverPadding(
+                  child: MarriageLifeEventsSection(
+                    titleName: "أهدافي",
+                    events: _buildTimelineEvents(profile.yourGoals!),
                   ),
-                ],
+                ),
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                sliver: SliverToBoxAdapter(
+                  child: displayImages.isNotEmpty
+                      ? AdditionalImageSection(
+                          imageUrl: displayImages.length > 1
+                              ? displayImages[1]
+                              : displayImages[0],
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
+              _buildSliverPadding(
+                child: ReligiousSection(tags: _buildReligiousTags(profile)),
+              ),
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                sliver: SliverToBoxAdapter(
+                  child: VideoSection(videoUrl: profile.userMedia?.video),
+                ),
+              ),
+              if (profile.hobbies.isNotEmpty)
+                _buildSliverPadding(
+                  child: InterestsSection(
+                    interests: _buildInterestsItems(profile),
+                  ),
+                ),
+              if (profile.myDescription != null &&
+                  profile.myDescription!.isNotEmpty)
+                _buildSliverPadding(
+                  child: BioVoiceSection(
+                    bioText: profile.myDescription!,
+                    audioPath: profile.userMedia?.audio ?? "",
+                  ),
+                ),
+              SliverToBoxAdapter(child: SizedBox(height: 50.h)),
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 20.w),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 16.h,
+                  ),
+                  height: 113.h,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16.r),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        AppColors.kWhiteColor.withOpacity(0.7),
+                        AppColors.primary50,
+                        AppColors.primary100,
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.secondary300,
+                        blurRadius: 4,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              "هل تزوجت بواسطة",
-                              style: Styles.textStyle16.copyWith(
-                                color: AppColors.primary600,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            SizedBox(width: 5.w),
-                            Stack(
+                            Row(
                               children: [
                                 Text(
-                                  "تيسير",
-                                  style: Styles.textStyle26Bold.copyWith(
-                                    foreground: Paint()
-                                      ..style = PaintingStyle.stroke
-                                      ..strokeWidth = 3.w
-                                      ..color = Color(0xFFAC1A36),
+                                  "هل تزوجت بواسطة",
+                                  style: Styles.textStyle16.copyWith(
+                                    color: AppColors.primary600,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                                Text(
-                                  "تيسير",
-                                  style: Styles.textStyle26Bold.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                SizedBox(width: 5.w),
+                                Stack(
+                                  children: [
+                                    Text(
+                                      "تيسير",
+                                      style: Styles.textStyle26Bold.copyWith(
+                                        foreground: Paint()
+                                          ..style = PaintingStyle.stroke
+                                          ..strokeWidth = 3.w
+                                          ..color = Color(0xFFAC1A36),
+                                      ),
+                                    ),
+                                    Text(
+                                      "تيسير",
+                                      style: Styles.textStyle26Bold.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 8.h),
-                        Text(
-                          "تواصل معنا واحصل علي مكافأة مالية",
-                          style: Styles.textStyle12.copyWith(
-                            color: AppColors.secondary700,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  GestureDetector(
-                    onTap: () {
-                      log("تواصل معنا button tapped");
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(color: Colors.white, width: 2.w),
-                      ),
-                      child: Container(
-                        width: 125.w,
-                        height: 36.h,
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary300,
-                              blurRadius: 11,
-                              spreadRadius: 0,
+                            SizedBox(height: 8.h),
+                            Text(
+                              "تواصل معنا واحصل علي مكافأة مالية",
+                              style: Styles.textStyle12.copyWith(
+                                color: AppColors.secondary700,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
                           ],
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              AppColors.primary200,
-                              AppColors.primary200,
-                              AppColors.primary100,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(8.r),
                         ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          "تواصل معنا",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
+                      ),
+                      SizedBox(width: 10.w),
+                      GestureDetector(
+                        onTap: () {
+                          log("تواصل معنا button tapped");
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8.r),
+                            border: Border.all(color: Colors.white, width: 2.w),
+                          ),
+                          child: Container(
+                            width: 125.w,
+                            height: 36.h,
+                            decoration: BoxDecoration(
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary300,
+                                  blurRadius: 11,
+                                  spreadRadius: 0,
+                                ),
+                              ],
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  AppColors.primary200,
+                                  AppColors.primary200,
+                                  AppColors.primary100,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              "تواصل معنا",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
+              SliverToBoxAdapter(child: SizedBox(height: 100.h)),
+            ],
+          ),
+        ),
+        // 2. الكارد الثابت (يظهر فقط إذا لم تكن النسبة 100%)
+        if (totalProgress < 100)
+          Align(
+            alignment: Alignment.bottomCenter, // يضعه في نص الشاشة بالضبط
+            child: IgnorePointer(
+              ignoring: false, // تأكد من أنه يستقبل الضغطات
+              child: _buildCompletionCard(progressFraction, profile: profile),
             ),
           ),
-          SliverToBoxAdapter(child: SizedBox(height: 100.h)),
-        ],
-      ),
+      ],
     );
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ UPDATED: استخدام النسبة المحسوبة
+  // ⭐⭐⭐ UPDATED: استخدم _calculateTotalProgress بدل النسبة من السيرفر
   // ════════════════════════════════════════════════════════════════
   Widget _buildViewHeader(MarriageUserProfileModel profile) {
     final images = profile.userMedia?.images ?? [];
     final displayImages = images.length > 5 ? images.sublist(0, 5) : images;
 
-    // حساب النسبة الكاملة
+    // ⭐⭐⭐ احسب النسبة الكاملة (سيرفر + ميديا)
     final totalProgress = _calculateTotalProgress(profile);
     final progressFraction = totalProgress / 100;
 
@@ -435,8 +442,9 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   ),
                 ),
               ),
-              // ⭐⭐⭐ تمرير النسبة المحسوبة
-              _buildCompletionCard(progressFraction),
+              // totalProgress == 100
+              //     ? SizedBox.shrink()
+              //     : _buildCompletionCard(progressFraction, profile: profile),
             ],
           ),
         ],
@@ -445,9 +453,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ UPDATED: استقبال النسبة كـ parameter
+  // Rest of the file remains the same...
   // ════════════════════════════════════════════════════════════════
-  Widget _buildCompletionCard(double progress) {
+
+  Widget _buildCompletionCard(
+    double progress, {
+    required MarriageUserProfileModel profile,
+  }) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 24.h),
       child: ClipRRect(
@@ -481,8 +493,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ⭐⭐⭐ تمرير النسبة للـ timeline
-                _buildEnhancedTimeline(progress: progress),
+                //  _buildEnhancedTimeline(progress: progress),
                 SizedBox(height: 20.h),
                 Row(
                   children: [
@@ -514,7 +525,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                       ],
                     ),
                     Spacer(),
-                    _buildGradientButton(),
+                    _buildGradientButton(profile, progress: progress),
                   ],
                 ),
                 SizedBox(height: 20.h),
@@ -527,201 +538,171 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   }
 
   Widget _buildEnhancedTimeline({required double progress}) {
+    // التأكد من أن القيمة بين 0 و 1
+    final double safeProgress = progress.clamp(0.0, 1.0);
+    final String percentageText = "${(safeProgress * 100).toInt()}%";
+
     return Column(
       children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            // 1. الخط الخلفي
-            Container(
-              height: 6.h,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10.r),
+        SizedBox(
+          height: 30.h, // ارتفاع مناسب لاستيعاب الكبسولة والشريط
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 1. الشريط الخلفي (الرمادي)
+              Container(
+                height: 4.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(
+                    0.2,
+                  ), // أو لون رمادي داكن حسب الخلفية
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
               ),
-            ),
 
-            // 2. الخط الملون بالنسبة الفعلية
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FractionallySizedBox(
-                widthFactor: progress,
-                child: Container(
-                  height: 6.h,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFE91E63), Color(0xFFFFC107)],
+              // 2. شريط التقدم الملون
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: safeProgress,
+                  child: Container(
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: const Color(
+                        0xFFFD375F,
+                      ), // اللون الوردي المحمر من الصورة
+                      borderRadius: BorderRadius.circular(10.r),
                     ),
-                    borderRadius: BorderRadius.circular(10.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFE91E63).withOpacity(0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                 ),
               ),
-            ),
 
-            // 3. النقاط (الدروع)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(5, (index) {
-                int badgeNumber = index + 1;
-                int totalSteps = 5;
-                int reversedNumber = totalSteps - badgeNumber + 1;
-                final reversedIndex = 4 - index;
-                double pointProgress = reversedIndex / 4;
-                bool isReached = pointProgress <= progress;
+              // 3. الكبسولة (النسبة المئوية) التي تتحرك مع التقدم
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // حساب الإزاحة لجعل الكبسولة تتمركز عند نهاية شريط التقدم
+                  double position = safeProgress * constraints.maxWidth;
 
-                return Align(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                  return Stack(
                     children: [
-                      SizedBox(height: 6.h),
-                      Center(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 7.w,
-                            vertical: 4.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isReached
-                                ? const Color(0xFFFFC107)
-                                : Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(8.r),
-                            boxShadow: isReached
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 3,
-                                      offset: Offset(0, 1),
-                                    ),
-                                  ]
-                                : [],
-                          ),
-                          child: Text(
-                            reversedNumber.toString().padLeft(2, '0'),
-                            style: TextStyle(
-                              fontSize: 9.sp,
-                              fontWeight: FontWeight.bold,
-                              color: isReached
-                                  ? Colors.white
-                                  : Colors.grey.shade600,
+                      Positioned(
+                        left:
+                            position -
+                            20.w, // طرح نصف عرض الكبسولة لتتوسط النهاية
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 2.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFD375F),
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Text(
+                              percentageText,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                      SizedBox(height: 6.h),
-                      Container(
-                        width: 26.r,
-                        height: 26.r,
-                        decoration: BoxDecoration(
-                          color: isReached
-                              ? const Color(0xFFFFD54F)
-                              : Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isReached
-                                ? Colors.orange
-                                : Colors.grey.shade300,
-                            width: 2,
-                          ),
-                          boxShadow: isReached
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.orange.withOpacity(0.4),
-                                    blurRadius: 6,
-                                  ),
-                                ]
-                              : [],
-                        ),
-                        child: Icon(
-                          Icons.shield,
-                          size: 14.r,
-                          color: isReached
-                              ? Colors.white
-                              : Colors.grey.shade400,
-                        ),
-                      ),
-                      SizedBox(height: 6.h),
-                      Text(
-                        "${(4 - index) * 25}%",
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: isReached
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: isReached ? Colors.black87 : Colors.grey,
-                        ),
-                      ),
                     ],
-                  ),
-                );
-              }),
-            ),
-          ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
-
-  Widget _buildGradientButton() {
-    return GestureDetector(
-      onTap: () {
-        // ⭐⭐⭐ التنقل إلى تبويب التعديل
-        setState(() {
-          _selectedTabIndex = 1; // 0 = تعديل, 1 = عرض
-        });
-
-        // ⭐ اختياري: scroll للأعلى بعد التبديل
-        // يمكنك إضافة ScrollController إذا أردت
-        debugPrint('✅ Navigated to Edit tab');
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(color: Colors.white, width: 2.w),
-        ),
-        child: Container(
-          width: 125.w,
-          height: 36.h,
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary300,
-                blurRadius: 11,
-                spreadRadius: 0,
-              ),
-            ],
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                AppColors.primary200,
-                AppColors.primary200,
-                AppColors.primary100,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(8.r),
+Widget _buildGradientButton(
+  MarriageUserProfileModel profile, {
+  required double progress,
+}) {
+  return GestureDetector(
+    onTap: () async {
+      String? selectedSection;
+      
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CompleteMarriageFile(
+            profile: profile,
+            progress: progress,
+            onNavigateToEdit: (section) {
+              // ⭐ احفظ القسم بس، متعملش pop هنا
+              selectedSection = section;
+              Navigator.pop(context); // pop من CompleteMarriageFile
+            },
           ),
-          alignment: Alignment.center,
-          child: Text(
-            context.tr('complete_your_profile_bott'),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
+        ),
+      );
+      
+      // ⭐ لما نرجع من الصفحة، نغير التاب ونعمل scroll
+      if (mounted && selectedSection != null) {
+        setState(() {
+          _selectedTabIndex = 0;
+          _scrollToSection = selectedSection;
+        });
+        
+        // امسح بعد كده
+        Future.delayed(Duration(milliseconds: 500), () {
+          if (mounted) {
+            setState(() {
+              _scrollToSection = null;
+            });
+          }
+        });
+      }
+    },
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(color: Colors.white, width: 2.w),
+      ),
+      child: Container(
+        width: 125.w,
+        height: 36.h,
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary300,
+              blurRadius: 11,
+              spreadRadius: 0,
             ),
+          ],
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary200,
+              AppColors.primary200,
+              AppColors.primary100,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          context.tr('complete_your_profile_bott'),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildSliverPadding({required Widget child}) {
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
