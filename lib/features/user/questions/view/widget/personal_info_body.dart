@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -104,7 +105,38 @@ class _PersonalInfoBodyState extends State<PersonalInfoBody> {
                       }
 
                       if (index == 5) {
-                        return const SizedBox();
+                        return GestureDetector(
+                          onTap: () {
+                            ImageGuidelinesBottomSheet.show(
+                              context,
+                              onNext: () {
+                                context.pop(); // Close the bottom sheet
+                              },
+                            );
+                          },
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              top: context.height * 0.06,
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  size: 28,
+                                  color: AppColors.kscandryTextColor,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  context.tr('photo_guidelines'),
+                                  textAlign: TextAlign.center,
+                                  style: Styles.textStyle16.copyWith(
+                                    color: AppColors.kscandryTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
                       }
 
                       int listIndex = index - 1;

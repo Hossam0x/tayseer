@@ -49,6 +49,12 @@ abstract class AssetsData {
   static const String kmapImage = "assets/images/map_image.png";
   static const String ksuccessTrueImage =
       "assets/images/success_true_image.png";
+  static const String kCorrectImage1 = "assets/images/kCorrectImage1.jpg";
+  static const String kWrongImageAI = "assets/images/kWrongImageAI.jpg";
+  static const String kWrongImageCovered = "assets/images/kWrongImageCovered.jpg";
+  static const String kWrongImageFar = "assets/images/kWrongImageFar.png";
+  static const String kWrongImageNotPerson = "assets/images/kWrongImageNotPerson.jpg";
+
 
   //////////////////////icons//////////////////////
   static const String kArroBackIcon = "assets/icons/arro_back.svg";
