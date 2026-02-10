@@ -938,5 +938,11 @@
   "are_you_want_to_unarchive": "Are you want to unarchive",
   "user_not_found": "User not found",
   "no_stories": "No stories",
-  "failed_to_publish_story": "Failed to publish story"
+  "failed_to_publish_story": "Failed to publish story",
+  "unfollow": "Unfollow",
+  "followerss": "Followers",
+  "search_by_name": "Search by name...",
+  "result": "result",
+  "searching": "Searching...",
+  "no_followers": "No followers"
 }

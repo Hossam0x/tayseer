@@ -87,7 +87,7 @@ class _FollowersViewState extends State<FollowersView> {
                     horizontal: 20.w,
                     vertical: 10.h,
                   ),
-                  child: SimpleAppBar(title: 'المتابعين'),
+                  child: SimpleAppBar(title: context.tr('followerss')),
                 ),
 
                 // Search Field
@@ -149,7 +149,7 @@ class _FollowersViewState extends State<FollowersView> {
                         focusNode: _searchFocusNode,
                         textAlign: TextAlign.right,
                         decoration: InputDecoration(
-                          hintText: 'ابحث بالاسم...',
+                          hintText: context.tr('search_by_name'),
                           hintStyle: Styles.textStyle14.copyWith(
                             color: Colors.grey,
                           ),
@@ -181,7 +181,7 @@ class _FollowersViewState extends State<FollowersView> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
-                        '${state.followers.length} نتيجة',
+                        '${state.followers.length} ${context.tr('result')}',
                         style: Styles.textStyle12.copyWith(color: Colors.grey),
                       ),
                     ],
@@ -248,7 +248,7 @@ class _FollowersViewState extends State<FollowersView> {
           CircularProgressIndicator(color: AppColors.primary500),
           SizedBox(height: 16.h),
           Text(
-            'جاري البحث...',
+            context.tr('searching'),
             style: Styles.textStyle16.copyWith(color: Colors.grey),
           ),
         ],
@@ -265,7 +265,7 @@ class _FollowersViewState extends State<FollowersView> {
           Icon(Icons.search_off, size: 60.w, color: Colors.grey),
           SizedBox(height: 16.h),
           Text(
-            'لا توجد نتائج للبحث',
+            context.tr('no_results'),
             style: Styles.textStyle18.copyWith(color: Colors.grey),
           ),
           SizedBox(height: 8.h),
@@ -303,7 +303,7 @@ class _FollowersViewState extends State<FollowersView> {
           SizedBox(height: 16.h),
           ElevatedButton(
             onPressed: () => _cubit.fetchFollowers(),
-            child: const Text('إعادة المحاولة'),
+            child: Text(context.tr('retry')),
           ),
         ],
       ),
@@ -318,7 +318,7 @@ class _FollowersViewState extends State<FollowersView> {
           Icon(Icons.group, size: 60.w, color: Colors.grey),
           SizedBox(height: 16.h),
           Text(
-            'لا يوجد متابعين بعد',
+            context.tr('no_followers'),
             style: Styles.textStyle18.copyWith(color: Colors.grey),
           ),
         ],

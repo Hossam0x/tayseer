@@ -110,7 +110,7 @@ class FollowerItem extends StatelessWidget {
 
                 // Follow Button
                 if (!isSkeleton && follower.isAdvisor && !follower.isMe)
-                  _buildFollowButton(),
+                  _buildFollowButton(context),
                 // if (!isSkeleton && follower.isMe)
                 //   Text(
                 //     'Me',
@@ -181,7 +181,7 @@ class FollowerItem extends StatelessWidget {
           );
   }
 
-  Widget _buildFollowButton() {
+  Widget _buildFollowButton(BuildContext context) {
     if (follower.isFollowing) {
       return Container(
         width: 115.w,
@@ -200,7 +200,7 @@ class FollowerItem extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 10.w),
               child: Center(
                 child: Text(
-                  'إلغاء المتابعة',
+                  context.tr('unfollow'),
                   style: Styles.textStyle16SemiBold.copyWith(
                     color: AppColors.primary400,
                   ),
@@ -213,7 +213,7 @@ class FollowerItem extends StatelessWidget {
       );
     } else {
       return CustomBotton(
-        title: 'متابعة',
+        title: context.tr('follow'),
         onPressed: onToggleFollow,
         width: 110.w,
         height: 45.h,
