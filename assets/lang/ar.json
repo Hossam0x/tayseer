@@ -932,5 +932,6 @@
   "message": "رسالة",
   "are_you_want_to_unarchive": "هل تريد إلغاء الأرشفة",
   "user_not_found": "لا يمكن فتح المحادثة: بيانات المستخدم غير متوفرة",
-  "no_stories": "لا توجد قصص مؤرشفة"
+  "no_stories": "لا توجد قصص مؤرشفة",
+  "failed_to_publish_story": "فشل نشر القصة"
 }

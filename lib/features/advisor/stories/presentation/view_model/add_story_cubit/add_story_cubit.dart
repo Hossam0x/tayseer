@@ -31,12 +31,20 @@ class AddStoryCubit extends Cubit<AddStoryState> {
 
     try {
       // 1. Request permissions
-      final photosStatus = await Permission.photos.request();
+      bool canAccessGallery = false;
+      if (Platform.isIOS) {
+        final photosStatus = await Permission.photos.request();
+        canAccessGallery = photosStatus.isGranted || photosStatus.isLimited;
+      } else {
+        final photosStatus = await Permission.photos.request();
+        final storageStatus = await Permission.storage.request();
+        canAccessGallery = !photosStatus.isDenied || !storageStatus.isDenied;
+      }
+
       await Permission.camera.request();
       await Permission.microphone.request(); // For video recording with audio
-      final storageStatus = await Permission.storage.request();
 
-      if (photosStatus.isDenied && storageStatus.isDenied) {
+      if (!canAccessGallery) {
         emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));
         return;
       }

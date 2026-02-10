@@ -94,7 +94,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
               CustomSnackBar(
                 context,
                 isSuccess: false,
-                text: state.errorMessage ?? 'فشل نشر القصة',
+                text: state.errorMessage ?? context.tr('failed_to_publish_story'),
               ),
             );
           });

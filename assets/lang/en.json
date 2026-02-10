@@ -937,5 +937,6 @@
   "message": "Message",
   "are_you_want_to_unarchive": "Are you want to unarchive",
   "user_not_found": "User not found",
-  "no_stories": "No stories"
+  "no_stories": "No stories",
+  "failed_to_publish_story": "Failed to publish story"
 }
