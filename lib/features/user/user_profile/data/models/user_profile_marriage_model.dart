@@ -11,7 +11,7 @@ class MarriageUserProfileModel {
   final int? lastQuestionNumber;
   
   // ⭐⭐⭐ NEW: Progress percentage from API
-  final int? answerCompletedPercentage;
+  final num? answerCompletedPercentage;
 
   // Additional fields for the "view" format from API
   final ProfileHeader? header;
@@ -144,7 +144,7 @@ class MarriageUserProfileModel {
           : null,
       myDescription: json['myDescription'] as String?,
       lastQuestionNumber: json['lastQuestionNumber']?['questionNumber'] as int?,
-      answerCompletedPercentage: json['answerCompletedPercentage'] as int?, // ⭐⭐⭐ NEW
+      answerCompletedPercentage: json['answerCompletedPercentage'] as num?, // ⭐⭐⭐ NEW
     );
   }
 
@@ -171,7 +171,7 @@ class MarriageUserProfileModel {
     YourGoals? yourGoals,
     String? myDescription,
     int? lastQuestionNumber,
-    int? answerCompletedPercentage, // ⭐⭐⭐ NEW
+    num? answerCompletedPercentage, // ⭐⭐⭐ NEW
     ProfileHeader? header,
     List<TimelineGoal>? timeline,
     ReligiousInfo? religious,

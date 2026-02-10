@@ -21,43 +21,44 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     this.initialUserProfile,
   }) : super(const MarriageProfileState());
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ LOAD PROFILE
-  // ════════════════════════════════════════════════════════════════
-  Future<void> loadProfile() async {
-    emit(state.copyWith(
-      state: CubitStates.loading,
-      isLoading: true,
-      clearMessages: true,
-    ));
+// ════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ SIMPLIFIED: استخدم النسبة من السيرفر مباشرة
+// ════════════════════════════════════════════════════════════════
+Future<void> loadProfile() async {
+  emit(state.copyWith(
+    state: CubitStates.loading,
+    isLoading: true,
+    clearMessages: true,
+  ));
 
-    debugPrint('🔄 [CUBIT] Loading profile...');
-    final result = await _repository.getMarriageProfile();
+  debugPrint('🔄 [CUBIT] Loading profile...');
+  final result = await _repository.getMarriageProfile();
 
-    result.fold(
-      (failure) {
-        debugPrint('❌ [CUBIT] Load failed: ${failure.message}');
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isLoading: false,
-        ));
-      },
-      (marriageProfile) {
-        debugPrint('✅ [CUBIT] Profile loaded - Progress: ${marriageProfile.answerCompletedPercentage}%');
-        
-        // ⭐⭐⭐ حساب النسبة الكاملة مع الميديا
-        final updatedProfile = _calculateProgressWithMedia(marriageProfile);
-        
-        emit(state.copyWith(
-          state: CubitStates.success,
-          profile: updatedProfile,
-          isLoading: false,
-        ));
-      },
-    );
-  }
-
+  result.fold(
+    (failure) {
+      debugPrint('❌ [CUBIT] Load failed: ${failure.message}');
+      emit(state.copyWith(
+        state: CubitStates.failure,
+        errorMessage: failure.message,
+        isLoading: false,
+      ));
+    },
+    (marriageProfile) {
+      // ⭐⭐⭐ احسب النسبة مع الميديا
+      final profileWithMedia = _calculateProgressWithMedia(marriageProfile);
+      
+      debugPrint('✅ [CUBIT] Profile loaded');
+      debugPrint('📊 Server Progress: ${marriageProfile.answerCompletedPercentage}%');
+      debugPrint('📊 Final Progress (with media): ${profileWithMedia.answerCompletedPercentage}%');
+      
+      emit(state.copyWith(
+        state: CubitStates.success,
+        profile: profileWithMedia,
+        isLoading: false,
+      ));
+    },
+  );
+}
   // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ CALCULATE PROGRESS WITH MEDIA
   // ════════════════════════════════════════════════════════════════
@@ -77,7 +78,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     final hasVideo = profile.userMedia?.video != null && 
                      profile.userMedia!.video!.isNotEmpty;
     if (hasVideo) {
-      mediaBonus += 25;
+      mediaBonus += 30;
       debugPrint('🎥 [CUBIT] Video: +25%');
     }
 
@@ -85,7 +86,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     final hasAudio = profile.userMedia?.audio != null && 
                      profile.userMedia!.audio!.isNotEmpty;
     if (hasAudio) {
-      mediaBonus += 25;
+      mediaBonus += 30;
       debugPrint('🎤 [CUBIT] Audio: +25%');
     }
 
@@ -97,9 +98,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     return profile.copyWith(answerCompletedPercentage: finalProgress);
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ SAVE PROFILE
-  // ════════════════════════════════════════════════════════════════
 Future<void> saveProfile() async {
   if (state.profile == null) return;
 
@@ -119,21 +117,19 @@ Future<void> saveProfile() async {
         isUpdating: false,
       ));
     },
-    (_) {
-      // ⭐ امسح السطر ده: await loadProfile();
-      // ⭐ خلي الـ state الحالي بالـ 100% زي ما هو!
-      
-      debugPrint('✅ Saved - Keeping progress: ${state.profile!.answerCompletedPercentage}%');
+    (updatedProfile) {
+      // ⭐⭐⭐ استخدم الـ profile اللي جاي من السيرفر مباشرة
+      debugPrint('✅ Saved - New progress: ${updatedProfile.answerCompletedPercentage}%');
       
       emit(state.copyWith(
         state: CubitStates.success,
+        profile: updatedProfile, // ⭐ هنا البروفايل الجديد بالنسبة المحدثة
         successMessage: 'تم حفظ البيانات بنجاح',
         isUpdating: false,
       ));
     },
   );
-}
-  // ════════════════════════════════════════════════════════════════
+}  // ════════════════════════════════════════════════════════════════
   // ⭐ UPDATE FIELD (LOCAL STATE)
   // ════════════════════════════════════════════════════════════════
   void updateField(String fieldKey, dynamic value) {

@@ -1,5 +1,3 @@
-
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:dartz/dartz.dart';
@@ -59,224 +57,201 @@ Future<Either<Failure, MarriageUserProfileModel>> getMarriageProfile() async {
     return Left(ServerFailure('حدث خطأ: $e'));
   }
 }
-  // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ UPDATE PROFILE - FIXED WITH RELOAD
-  // ════════════════════════════════════════════════════════════════
 Future<Either<Failure, MarriageUserProfileModel>> updateMarriageProfile(
   MarriageUserProfileModel profile,
 ) async {
   try {
     debugPrint('💾 [UPDATE] Updating profile...');
 
-    // ⭐⭐⭐ FIX: لا نرسل answerCompletedPercentage
     final requestData = _convertToServerFormat(profile);
-
-    // 🐛🐛🐛 DEBUG: طباعة الـ request بالكامل
-    debugPrint('═══════════════════════════════════════════');
-    debugPrint('📤 [UPDATE] Full Request Body:');
-    debugPrint(JsonEncoder.withIndent('  ').convert(requestData));
-    debugPrint('═══════════════════════════════════════════');
-
     final response = await _apiService.patch(
       endPoint: '/user/update-marry-profile',
       data: requestData,
     );
 
-    // 🐛🐛🐛 DEBUG: طباعة الـ response بالكامل
-    debugPrint('═══════════════════════════════════════════');
-    debugPrint('📥 [UPDATE] Full Response:');
-    debugPrint(JsonEncoder.withIndent('  ').convert(response));
-    debugPrint('═══════════════════════════════════════════');
-
     if (response['success'] == true) {
       debugPrint('✅ [UPDATE] Profile updated successfully');
 
-      // ⭐⭐⭐ نجيب البروفايل المحدث
-      debugPrint('🔄 [UPDATE] Fetching updated profile from server...');
+      // ⭐⭐⭐ جيب البروفايل المحدث من السيرفر
       final fetchResult = await getMarriageProfile();
 
       return fetchResult.fold(
-        (failure) {
-          debugPrint('⚠️ [UPDATE] Failed to fetch after save: ${failure.message}');
-          return Left(failure);
-        },
+        (failure) => Left(failure),
         (updatedProfile) {
-          // 🐛🐛🐛 DEBUG: طباعة النسبة الجديدة
-          debugPrint('═══════════════════════════════════════════');
-          debugPrint('✅ [UPDATE] Got fresh profile from server:');
-          debugPrint('   Old Progress (sent): ${profile.answerCompletedPercentage}%');
-          debugPrint('   New Progress (received): ${updatedProfile.answerCompletedPercentage}%');
-          debugPrint('═══════════════════════════════════════════');
+          debugPrint('✅ [UPDATE] New Progress: ${updatedProfile.answerCompletedPercentage}%');
           return Right(updatedProfile);
         },
       );
     }
 
     return Left(ServerFailure(response['message'] ?? 'فشل التحديث'));
-  } on DioException catch (e) {
-    debugPrint('❌ [UPDATE] DioException: ${e.response?.data}');
-    return Left(ServerFailure.fromDioError(e));
   } catch (e) {
-    debugPrint('❌ [UPDATE] Error: $e');
     return Left(ServerFailure('خطأ: $e'));
   }
-}
-  // ════════════════════════════════════════════════════════════════
+}  // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ CONVERT TO SERVER FORMAT (WITHOUT PERCENTAGE)
   // ════════════════════════════════════════════════════════════════
-  Map<String, dynamic> _convertToServerFormat(
-    MarriageUserProfileModel profile,
-  ) {
-    final List<Map<String, dynamic>> answers = [];
+Map<String, dynamic> _convertToServerFormat(
+  MarriageUserProfileModel profile,
+) {
+  final List<Map<String, dynamic>> answers = [];
 
-    String? _cleanValue(String? value) {
-      if (value == null) return null;
-      final cleaned = value.trim();
-      return cleaned.isEmpty ? null : cleaned;
-    }
-
-    // ⭐ About Me
-    if (profile.aboutMe != null) {
-      final aboutMe = profile.aboutMe!;
-
-      if (aboutMe.weight != null) {
-        final cleaned = _cleanValue(aboutMe.weight);
-        if (cleaned != null) answers.add({'category': 'weight', 'answer': cleaned});
-      }
-      if (aboutMe.height != null) {
-        final cleaned = _cleanValue(aboutMe.height);
-        if (cleaned != null) answers.add({'category': 'height', 'answer': cleaned});
-      }
-      if (aboutMe.age != null) {
-        final cleaned = _cleanValue(aboutMe.age);
-        if (cleaned != null) answers.add({'category': 'age', 'answer': cleaned});
-      }
-      if (aboutMe.socialStatus != null) {
-        final cleaned = _cleanValue(aboutMe.socialStatus);
-        if (cleaned != null) answers.add({'category': 'socialStatus', 'answer': cleaned});
-      }
-      if (aboutMe.nationality != null) {
-        final cleaned = _cleanValue(aboutMe.nationality);
-        if (cleaned != null) answers.add({'category': 'nationality', 'answer': cleaned});
-      }
-      if (aboutMe.country != null) {
-        final cleaned = _cleanValue(aboutMe.country);
-        if (cleaned != null) answers.add({'category': 'country', 'answer': cleaned});
-      }
-      if (aboutMe.skinColor != null) {
-        final cleaned = _cleanValue(aboutMe.skinColor);
-        if (cleaned != null) answers.add({'category': 'skinColor', 'answer': cleaned});
-      }
-      if (aboutMe.healthStatus != null) {
-        final cleaned = _cleanValue(aboutMe.healthStatus);
-        if (cleaned != null) answers.add({'category': 'healthStatus', 'answer': cleaned});
-      }
-      if (aboutMe.smoker != null) {
-        final cleaned = _cleanValue(aboutMe.smoker);
-        if (cleaned != null) answers.add({'category': 'smoker', 'answer': cleaned});
-      }
-      if (aboutMe.religiousCommitment != null) {
-        final cleaned = _cleanValue(aboutMe.religiousCommitment);
-        if (cleaned != null) answers.add({'category': 'religiousCommitment', 'answer': cleaned});
-      }
-    }
-
-    // ⭐ Professional Life
-    if (profile.professionalLife != null) {
-      final pro = profile.professionalLife!;
-
-      if (pro.job != null) {
-        final cleaned = _cleanValue(pro.job);
-        if (cleaned != null) answers.add({'category': 'job', 'answer': cleaned});
-      }
-      if (pro.educationLevel != null) {
-        final cleaned = _cleanValue(pro.educationLevel);
-        if (cleaned != null) answers.add({'category': 'educationLevel', 'answer': cleaned});
-      }
-      if (pro.chooseEmployer != null) {
-        final cleaned = _cleanValue(pro.chooseEmployer);
-        if (cleaned != null) answers.add({'category': 'chooseEmployer', 'answer': cleaned});
-      }
-    }
-
-    // ⭐ Family
-    if (profile.family != null) {
-      final family = profile.family!;
-
-      if (family.hasChildren != null) {
-        final cleaned = _cleanValue(family.hasChildren);
-        if (cleaned != null) answers.add({'category': 'hasChildren', 'answer': cleaned});
-      }
-      if (family.childrenNumber != null) {
-        final cleaned = _cleanValue(family.childrenNumber);
-        if (cleaned != null) answers.add({'category': 'childrenNumber', 'answer': cleaned});
-      }
-      if (family.childrenLivingStatus != null) {
-        final cleaned = _cleanValue(family.childrenLivingStatus);
-        if (cleaned != null) answers.add({'category': 'childrenLivingStatus', 'answer': cleaned});
-      }
-    }
-
-    // ⭐ Hobbies
-    if (profile.hobbies.isNotEmpty) {
-      final cleanedHobbies = profile.hobbies
-          .map((h) => h.trim())
-          .where((h) => h.isNotEmpty)
-          .join(', ');
-      if (cleanedHobbies.isNotEmpty) {
-        answers.add({'category': 'hobbies', 'answer': cleanedHobbies});
-      }
-    }
-
-    // ⭐ Build Request Body
-    final Map<String, dynamic> requestBody = {'answers': answers};
-
-    // ⭐ My Description
-    if (profile.myDescription != null) {
-      final cleanedBio = _cleanValue(profile.myDescription);
-      if (cleanedBio != null) {
-        requestBody['mydescription'] = cleanedBio;
-      }
-    }
-
-    // ⭐ Age (separate field)
-    if (profile.aboutMe?.age != null) {
-      requestBody['age'] = int.tryParse(profile.aboutMe!.age!.trim()) ?? 25;
-    }
-
-    // ⭐ Your Goals
-    if (profile.yourGoals != null) {
-      final goalsMap = <String, String>{};
-
-      if (profile.yourGoals!.travel != null) {
-        final cleaned = _cleanValue(profile.yourGoals!.travel);
-        if (cleaned != null) goalsMap['travel'] = cleaned;
-      }
-      if (profile.yourGoals!.children != null) {
-        final cleaned = _cleanValue(profile.yourGoals!.children);
-        if (cleaned != null) goalsMap['children'] = cleaned;
-      }
-      if (profile.yourGoals!.marry != null) {
-        final cleaned = _cleanValue(profile.yourGoals!.marry);
-        if (cleaned != null) goalsMap['marry'] = cleaned;
-      }
-      if (profile.yourGoals!.engagement != null) {
-        final cleaned = _cleanValue(profile.yourGoals!.engagement);
-        if (cleaned != null) goalsMap['engagment'] = cleaned; // API typo
-      }
-
-      if (goalsMap.isNotEmpty) {
-        requestBody['yourGoals'] = goalsMap;
-      }
-    }
-
-    // ⭐⭐⭐ FIX: DON'T SEND answerCompletedPercentage
-    // ❌ requestBody['answerCompletedPercentage'] = ...;
-
-    debugPrint('✅ [CONVERT] Prepared ${answers.length} answers');
-    return requestBody;
+  String? _cleanValue(String? value) {
+    if (value == null) return null;
+    final cleaned = value.trim();
+    return cleaned.isEmpty ? null : cleaned;
   }
 
+  // ⭐ About Me
+  if (profile.aboutMe != null) {
+    final aboutMe = profile.aboutMe!;
+    
+    if (aboutMe.weight != null) {
+      final cleaned = _cleanValue(aboutMe.weight);
+      if (cleaned != null) answers.add({'category': 'weight', 'answer': cleaned});
+    }
+    if (aboutMe.height != null) {
+      final cleaned = _cleanValue(aboutMe.height);
+      if (cleaned != null) answers.add({'category': 'height', 'answer': cleaned});
+    }
+    if (aboutMe.age != null) {
+      final cleaned = _cleanValue(aboutMe.age);
+      if (cleaned != null) answers.add({'category': 'age', 'answer': cleaned});
+    }
+    if (aboutMe.socialStatus != null) {
+      final cleaned = _cleanValue(aboutMe.socialStatus);
+      if (cleaned != null) answers.add({'category': 'socialStatus', 'answer': cleaned});
+    }
+    if (aboutMe.nationality != null) {
+      final cleaned = _cleanValue(aboutMe.nationality);
+      if (cleaned != null) answers.add({'category': 'nationality', 'answer': cleaned});
+    }
+    if (aboutMe.country != null) {
+      final cleaned = _cleanValue(aboutMe.country);
+      if (cleaned != null) answers.add({'category': 'country', 'answer': cleaned});
+    }
+    if (aboutMe.skinColor != null) {
+      final cleaned = _cleanValue(aboutMe.skinColor);
+      if (cleaned != null) answers.add({'category': 'skinColor', 'answer': cleaned});
+    }
+    if (aboutMe.healthStatus != null) {
+      final cleaned = _cleanValue(aboutMe.healthStatus);
+      if (cleaned != null) answers.add({'category': 'healthStatus', 'answer': cleaned});
+    }
+    if (aboutMe.smoker != null) {
+      final cleaned = _cleanValue(aboutMe.smoker);
+      if (cleaned != null) answers.add({'category': 'smoker', 'answer': cleaned});
+    }
+    if (aboutMe.religiousCommitment != null) {
+      final cleaned = _cleanValue(aboutMe.religiousCommitment);
+      if (cleaned != null) answers.add({'category': 'religiousCommitment', 'answer': cleaned});
+    }
+  }
+
+  // ⭐ Professional Life
+  if (profile.professionalLife != null) {
+    final pro = profile.professionalLife!;
+    
+    if (pro.job != null) {
+      final cleaned = _cleanValue(pro.job);
+      if (cleaned != null) answers.add({'category': 'job', 'answer': cleaned});
+    }
+    if (pro.educationLevel != null) {
+      final cleaned = _cleanValue(pro.educationLevel);
+      if (cleaned != null) answers.add({'category': 'educationLevel', 'answer': cleaned});
+    }
+    if (pro.chooseEmployer != null) {
+      final cleaned = _cleanValue(pro.chooseEmployer);
+      if (cleaned != null) answers.add({'category': 'chooseEmployer', 'answer': cleaned});
+    }
+  }
+
+  // ⭐ Family
+  if (profile.family != null) {
+    final family = profile.family!;
+    
+    if (family.hasChildren != null) {
+      final cleaned = _cleanValue(family.hasChildren);
+      if (cleaned != null) answers.add({'category': 'hasChildren', 'answer': cleaned});
+    }
+    if (family.childrenNumber != null) {
+      final cleaned = _cleanValue(family.childrenNumber);
+      if (cleaned != null) answers.add({'category': 'childrenNumber', 'answer': cleaned});
+    }
+    if (family.childrenLivingStatus != null) {
+      final cleaned = _cleanValue(family.childrenLivingStatus);
+      if (cleaned != null) answers.add({'category': 'childrenLivingStatus', 'answer': cleaned});
+    }
+  }
+
+  // ⭐ Hobbies
+  if (profile.hobbies.isNotEmpty) {
+    final cleanedHobbies = profile.hobbies
+        .map((h) => h.trim())
+        .where((h) => h.isNotEmpty)
+        .join(', ');
+    if (cleanedHobbies.isNotEmpty) {
+      answers.add({'category': 'hobbies', 'answer': cleanedHobbies});
+    }
+  }
+
+  // ⭐ Build Request Body
+  final Map<String, dynamic> requestBody = {'answers': answers};
+
+  // ⭐ My Description
+  if (profile.myDescription != null) {
+    final cleanedBio = _cleanValue(profile.myDescription);
+    if (cleanedBio != null) {
+      requestBody['mydescription'] = cleanedBio;
+    }
+  }
+
+  // ⭐ Age
+  if (profile.aboutMe?.age != null) {
+    requestBody['age'] = int.tryParse(profile.aboutMe!.age!.trim()) ?? 25;
+  }
+
+  // ⭐ Your Goals
+  if (profile.yourGoals != null) {
+    final goalsMap = <String, String>{};
+    
+    if (profile.yourGoals!.travel != null) {
+      final cleaned = _cleanValue(profile.yourGoals!.travel);
+      if (cleaned != null) goalsMap['travel'] = cleaned;
+    }
+    if (profile.yourGoals!.children != null) {
+      final cleaned = _cleanValue(profile.yourGoals!.children);
+      if (cleaned != null) goalsMap['children'] = cleaned;
+    }
+    if (profile.yourGoals!.marry != null) {
+      final cleaned = _cleanValue(profile.yourGoals!.marry);
+      if (cleaned != null) goalsMap['marry'] = cleaned;
+    }
+    if (profile.yourGoals!.engagement != null) {
+      final cleaned = _cleanValue(profile.yourGoals!.engagement);
+      if (cleaned != null) goalsMap['engagment'] = cleaned;
+    }
+    
+    if (goalsMap.isNotEmpty) {
+      requestBody['yourGoals'] = goalsMap;
+    }
+  }
+
+  // ⭐⭐⭐ CRITICAL: إرسال النسبة للسيرفر
+
+//   if (profile.answerCompletedPercentage != null) {
+//   requestBody['answerCompletedPercentage'] = profile.answerCompletedPercentage;
+//   debugPrint('📊 [CONVERT] Sending progress: ${profile.answerCompletedPercentage}%');
+// }
+ if (profile.answerCompletedPercentage != null) {
+    requestBody['answerCompletedPercentage'] = profile.answerCompletedPercentage;
+    debugPrint('📊 [CONVERT] Sending progress: ${profile.answerCompletedPercentage}%');
+  }
+  debugPrint('✅ [CONVERT] Prepared ${answers.length} answers');
+  debugPrint('📤 [CONVERT] Full request body keys: ${requestBody.keys.toList()}');
+  
+  return requestBody;
+}
   // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ UPLOAD IMAGE - WITH RELOAD
   // ════════════════════════════════════════════════════════════════
