@@ -554,6 +554,39 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     }
   }
 
+  Future<void> rateApp(int rating, BuildContext context) async {
+    try {
+      final result = await _userProfileRepository.rateApp(rating);
+
+      if (context.mounted) {
+        result.fold(
+          (failure) {
+            showSafeSnackBar(
+              context: context,
+              text: '${context.tr("rate_app_failed")}: ${failure.message}',
+              isError: true,
+            );
+          },
+          (_) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr("rate_app_success"),
+              isSuccess: true,
+            );
+          },
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showSafeSnackBar(
+          context: context,
+          text: context.tr("rate_app_error"),
+          isError: true,
+        );
+      }
+    }
+  }
+
   Future<void> refresh() async {
     await _loadInitialData();
   }
