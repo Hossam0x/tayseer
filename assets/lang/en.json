@@ -944,5 +944,16 @@
   "search_by_name": "Search by name...",
   "result": "result",
   "searching": "Searching...",
-  "no_followers": "No followers"
+  "no_followers": "No followers",
+  "chats": "Chats",
+  "select_all": "Select All",
+  "unselect_all": "Unselect All",
+  "unrestricting": "Unrestricting...",
+  "unrestricting_for": "Unrestricting",
+  "error_loading_users": "Error loading users",
+  "no_hidden_users": "No hidden users",
+  "no_results_for_search": "No results for search",
+  "clear_search": "Clear Search",
+  "confirmation": "Cancel confirmation",
+  "want_to_unhide_from": "Do you want to unhide from"
 }

@@ -17,7 +17,7 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_onSearchChanged);
+    // _searchController.addListener(_onSearchChanged);
   }
 
   @override
@@ -26,10 +26,10 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
     super.dispose();
   }
 
-  void _onSearchChanged() {
-    final cubit = context.read<StoryVisibilityCubit>();
-    cubit.updateSearchQuery(_searchController.text);
-  }
+  // void _onSearchChanged() {
+  //   final cubit = context.read<StoryVisibilityCubit>();
+  //   cubit.updateSearchQuery(_searchController.text);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +77,7 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                       vertical: 10.h,
                     ),
                     child: SimpleAppBar(
-                      title: 'إخفاء القصة من',
+                      title: context.tr('hide_story_from'),
                       icon: Icons.close,
                     ),
                   ),
@@ -87,9 +87,14 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                     padding: EdgeInsets.symmetric(horizontal: 30.w),
                     child: TextField(
                       controller: _searchController,
-                      textAlign: TextAlign.right,
+                      textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                      onChanged: (value) {
+                        context.read<StoryVisibilityCubit>().updateSearchQuery(
+                          value,
+                        );
+                      },
                       decoration: InputDecoration(
-                        hintText: 'بحث عن مستخدم...',
+                        hintText: context.tr('search_by_name'),
                         hintStyle: Styles.textStyle16.copyWith(
                           color: AppColors.gray2,
                         ),
@@ -142,8 +147,8 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                               state.hasSelections &&
                                       state.selectedUsers.length ==
                                           state.users.length
-                                  ? 'إلغاء اختيار الكل'
-                                  : 'اختيار الكل',
+                                  ? context.tr('unselect_all')
+                                  : context.tr('select_all'),
                               style: Styles.textStyle14.copyWith(
                                 color: AppColors.primary400,
                                 fontWeight: FontWeight.w600,
@@ -168,8 +173,8 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                       ),
                       child: CustomBotton(
                         title: state.isUnrestricting
-                            ? 'جاري الإلغاء...'
-                            : 'إلغاء الإخفاء عن ${state.selectedUsers.length} مستخدم',
+                            ? context.tr('unrestricting')
+                            : '${context.tr('unrestricting_for')} ${state.selectedUsers.length} ${context.tr('user')}',
                         onPressed: state.isUnrestricting
                             ? null
                             : () => _showConfirmationDialog(
@@ -206,14 +211,14 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
             Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
             Gap(16.h),
             Text(
-              state.errorMessage ?? 'حدث خطأ في تحميل المستخدمين',
+              state.errorMessage ?? context.tr('error_loading_users'),
               textAlign: TextAlign.center,
               style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
             ),
             Gap(24.h),
             ElevatedButton(
               onPressed: () => cubit.loadRestrictedUsers(),
-              child: Text('إعادة المحاولة'),
+              child: Text(context.tr('retry')),
             ),
           ],
         ),
@@ -225,21 +230,22 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.people_outline, size: 64.w, color: AppColors.gray2),
+            AppImage(AssetsData.icNoContentSeach),
             Gap(16.h),
             Text(
               state.searchQuery.isEmpty
-                  ? 'لا يوجد مستخدمين مخفيين'
-                  : 'لا توجد نتائج للبحث',
-              style: Styles.textStyle16.copyWith(color: AppColors.gray2),
+                  ? context.tr('no_hidden_users')
+                  : context.tr('no_results_for_search'),
+              style: Styles.textStyle16.copyWith(color: Colors.grey.shade600),
             ),
+            Gap(50.h),
             if (state.searchQuery.isNotEmpty)
               TextButton(
                 onPressed: () {
                   _searchController.clear();
                   cubit.updateSearchQuery('');
                 },
-                child: Text('مسح البحث'),
+                child: Text(context.tr('clear_search')),
               ),
           ],
         ),
@@ -431,7 +437,7 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
             borderRadius: BorderRadius.circular(16.r),
           ),
           title: Text(
-            'تأكيد الإلغاء',
+            context.tr('confirmation'),
             style: Styles.textStyle18Bold.copyWith(
               color: AppColors.secondary800,
             ),
@@ -441,7 +447,7 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'هل تريد إلغاء إخفاء القصة عن ${state.selectedUsers.length} مستخدم؟',
+                '${context.tr('want_to_unhide_from')} ${state.selectedUsers.length} ${context.tr('user')}',
                 style: Styles.textStyle14.copyWith(
                   color: AppColors.secondary600,
                 ),
@@ -480,7 +486,7 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                     ),
                     onPressed: () => Navigator.pop(context),
                     child: Text(
-                      'إلغاء',
+                      context.tr('cancel'),
                       style: Styles.textStyle14.copyWith(
                         color: Colors.grey.shade700,
                       ),
@@ -501,7 +507,7 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                       await cubit.unrestrictSelectedUsers(context);
                     },
                     child: Text(
-                      'تأكيد',
+                      context.tr('confirm'),
                       style: Styles.textStyle14Bold.copyWith(
                         color: Colors.white,
                       ),
