@@ -265,19 +265,24 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                   PopupMenuItem(
                     value: widget.isArchive ? 'unarchive' : 'archive',
                     child: _buildPopupItem(
-                      widget.isArchive ? 'إلغاء الأرشفة' : 'أرشفة القصة',
+                      widget.isArchive
+                          ? context.tr("unarchive_story")
+                          : context.tr("archive_story"),
                       widget.isArchive ? Icons.unarchive : Icons.archive,
                     ),
                   ),
                   if (!widget.isArchive)
                     PopupMenuItem(
                       value: 'special',
-                      child: _buildPopupItem('قصة مميزة', Icons.star_outline),
+                      child: _buildPopupItem(
+                        context.tr("special_story"),
+                        Icons.star_outline,
+                      ),
                     ),
                   PopupMenuItem(
                     value: 'delete',
                     child: _buildPopupItem(
-                      'حذف القصة',
+                      context.tr("delete_story"),
                       Icons.delete_outline,
                       color: Colors.red,
                     ),
@@ -360,14 +365,14 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
 
   Widget _buildPopupItem(String title, IconData icon, {Color? color}) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
+        Icon(icon, size: 20.sp, color: color ?? Colors.black),
+        Gap(8.w),
         Text(
           title,
           style: Styles.textStyle14.copyWith(color: color ?? Colors.black),
         ),
-        Gap(8.w),
-        Icon(icon, size: 20.sp, color: color ?? Colors.black),
       ],
     );
   }

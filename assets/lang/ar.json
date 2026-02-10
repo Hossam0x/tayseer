@@ -1019,5 +1019,9 @@
   "temporary_disable": "إيقاف حسابي بشكل مؤقت",
   "are_you_sure_temporary_disable": "هل أنت متأكد من إيقاف حسابي بشكل مؤقت",
   "account_suspended_successfully": "تم إيقاف حسابك مؤقتاً بنجاح",
-  "account_deleted_successfully": "تم حذف حسابك بنجاح"
+  "account_deleted_successfully": "تم حذف حسابك بنجاح",
+  "archive_story": "أرشفة القصة",
+  "unarchive_story": "إلغاء أرشفة القصة",
+  "special_story": "قصة مميزة",
+  "delete_story": "حذف القصة"
 }

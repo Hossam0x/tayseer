@@ -1016,5 +1016,9 @@
   "temporary_disable": "Temporary Disable",
   "are_you_sure_temporary_disable": "Are you sure you want to temporary disable",
   "account_suspended_successfully": "Account suspended successfully",
-  "account_deleted_successfully": "Account deleted successfully"
+  "account_deleted_successfully": "Account deleted successfully",
+  "archive_story": "Archive Story",
+  "unarchive_story": "Unarchive Story",
+  "special_story": "Special Story",
+  "delete_story": "Delete Story"
 }
