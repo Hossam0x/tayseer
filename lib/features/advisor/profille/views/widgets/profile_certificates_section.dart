@@ -105,8 +105,10 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (state.hasVideo) _buildVideoSection(context, state.videoUrl!),
-          Gap(24.h),
+          if (state.hasVideo) ...[
+            _buildVideoSection(context, state.videoUrl!),
+            Gap(24.h),
+          ],
           if (isMe)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

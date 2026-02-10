@@ -154,6 +154,7 @@ class AdvisorProfileModel extends Equatable {
   UpdatePersonalDataRequest toRequest() {
     return UpdatePersonalDataRequest(
       name: name,
+      username: userName, // ⭐ أضف هذا لضمان عدم فقدان اليوزرنيم
       dateOfBirth: dateOfBirth,
       gender: gender,
       professionalSpecialization: professionalSpecialization,

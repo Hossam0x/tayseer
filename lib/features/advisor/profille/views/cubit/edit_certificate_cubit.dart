@@ -51,7 +51,8 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
         date: certificate.date,
         certificateImageUrl: certificate.image,
         selectedCertificateId: certificate.id,
-        certificateImageFile: null,
+        clearImageFile: true,
+        isImageRemoved: false,
       ),
     );
   }
@@ -92,12 +93,23 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
     final XFile? xFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (xFile != null) {
-      emit(state.copyWith(certificateImageFile: File(xFile.path)));
+      emit(
+        state.copyWith(
+          certificateImageFile: File(xFile.path),
+          isImageRemoved: false,
+        ),
+      );
     }
   }
 
   void removeCertificateImage() {
-    emit(state.copyWith(certificateImageFile: null, certificateImageUrl: null));
+    emit(
+      state.copyWith(
+        clearImageFile: true,
+        clearImageUrl: true,
+        isImageRemoved: true,
+      ),
+    );
   }
 
   Future<void> addCertificate(BuildContext context) async {
@@ -163,7 +175,8 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
         date: cert.date,
         certificateImageUrl: cert.image,
         selectedCertificateId: cert.id,
-        certificateImageFile: null,
+        clearImageFile: true,
+        isImageRemoved: false,
       ),
     );
   }
@@ -239,6 +252,7 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
       fromWhere: state.fromWhere,
       date: state.date!,
       image: state.certificateImageFile,
+      removeImage: state.isImageRemoved,
     );
 
     if (isClosed) return;

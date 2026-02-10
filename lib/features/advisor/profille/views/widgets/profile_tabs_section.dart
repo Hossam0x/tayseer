@@ -9,6 +9,7 @@ import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileTabsSection extends StatefulWidget {
@@ -144,6 +145,8 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   }
 
   Widget _buildTabsHeader() {
+    final bool isArabic =
+        context.read<LanguageCubit>().state.languageCode == 'ar';
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
@@ -152,7 +155,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Transform.translate(
-                offset: Offset(110.w, 0),
+                offset: Offset(isArabic ? 110.w : -110.w, 0),
                 child: TabBar(
                   controller: _tabController,
                   isScrollable: true,

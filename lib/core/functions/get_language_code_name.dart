@@ -45,6 +45,46 @@ String getLanguageName(String code) {
   }
 }
 
+// دالة للحصول على مفتاح الترجمة من الكود
+String getLanguageKey(String code) {
+  switch (code) {
+    case 'ar':
+      return 'arabic';
+    case 'en':
+      return 'english';
+    case 'fa':
+      return 'persian';
+    case 'ru':
+      return 'russian';
+    case 'fr':
+      return 'french';
+    case 'es':
+      return 'spanish';
+    case 'de':
+      return 'german';
+    case 'tr':
+      return 'turkish';
+    case 'ur':
+      return 'urdu';
+    case 'hi':
+      return 'hindi';
+    case 'bn':
+      return 'bengali';
+    case 'pt':
+      return 'portuguese';
+    case 'it':
+      return 'italian';
+    case 'ja':
+      return 'japanese';
+    case 'ko':
+      return 'korean';
+    case 'zh':
+      return 'chinese';
+    default:
+      return 'arabic';
+  }
+}
+
 // دالة للحصول على كود اللغة من اسمها
 String getLanguageCode(String languageName) {
   switch (languageName) {

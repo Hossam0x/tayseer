@@ -74,10 +74,10 @@ class _AddStoryBodyState extends State<AddStoryBody> {
               CustomSnackBar(
                 context,
                 isSuccess: true,
-                text: 'تم نشر القصة بنجاح',
+                text: context.tr('story_published_success'),
               ),
             );
-            getIt<StoriesCubit>().fetchStories();
+            getIt<StoriesCubit>().fetchStories(context: context);
             // Navigate back to profile after a short delay
             Future.delayed(const Duration(milliseconds: 500), () {
               if (Navigator.canPop(context)) {
@@ -94,7 +94,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
               CustomSnackBar(
                 context,
                 isSuccess: false,
-                text: state.errorMessage ?? 'فشل نشر القصة',
+                text: state.errorMessage ?? context.tr('failed_to_publish_story'),
               ),
             );
           });
@@ -114,6 +114,8 @@ class _AddStoryBodyState extends State<AddStoryBody> {
     if (state.previewFile != null) {
       return StoryPreviewView(
         file: state.previewFile!,
+        isVideo: state.isVideoPreview,
+        isFrontCamera: state.isFrontCamera,
         onClose: () {
           context.read<AddStoryCubit>().resetSelection();
           setState(() {

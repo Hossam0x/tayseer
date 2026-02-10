@@ -99,7 +99,11 @@ class _StoryCameraWidgetState extends State<StoryCameraWidget> {
 
       if (mounted) {
         final cubit = context.read<AddStoryCubit>();
-        cubit.setPreviewFile(File(video.path), isVideo: true);
+        cubit.setPreviewFile(
+          File(video.path),
+          isVideo: true,
+          isFrontCamera: _isFrontCamera(),
+        );
       }
     } catch (e) {
       debugPrint("Error stopping video recording: $e");

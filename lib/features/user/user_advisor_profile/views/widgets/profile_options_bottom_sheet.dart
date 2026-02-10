@@ -36,27 +36,30 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMe = cubit.state.profile?.isMe ?? false;
+
     final List<OptionItem> options = [
       OptionItem(
-        // text: context.tr(AppStrings.shareProfile),
         text: context.tr('share_profile'),
         icon: Icons.ios_share_rounded,
         onTap: () => _handleShare(context),
       ),
-      OptionItem(
-        text: context.tr('block'),
-        icon: Icons.block_outlined,
-        onTap: () => _showBlockConfirmation(context),
-        isDestructive: true,
-        isBlock: true,
-      ),
-      OptionItem(
-        text: context.tr('report'),
-        icon: Icons.error_outline_rounded,
-        onTap: () => _showReportConfirmation(context),
-        isDestructive: true,
-        isReport: true,
-      ),
+      if (!isMe) ...[
+        OptionItem(
+          text: context.tr('block'),
+          icon: Icons.block_outlined,
+          onTap: () => _showBlockConfirmation(context),
+          isDestructive: true,
+          isBlock: true,
+        ),
+        OptionItem(
+          text: context.tr('report'),
+          icon: Icons.error_outline_rounded,
+          onTap: () => _showReportConfirmation(context),
+          isDestructive: true,
+          isReport: true,
+        ),
+      ],
     ];
 
     return Container(

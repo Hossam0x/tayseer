@@ -41,7 +41,7 @@
     <key>NSCameraUsageDescription</key>
     <string>يحتاج التطبيق الوصول للكاميرا لالتقاط الصور والفيديوهات</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>يحتاج التطبيق الوصول للميكروفون لتسجيل الصوت</string>
+    <string>يحتاج التطبيق الوصول للميكروفون لتسجيل الصوت والرسائل الصوتية</string>
 
     <!-- Photos -->
     <key>NSPhotoLibraryUsageDescription</key>
@@ -49,14 +49,10 @@
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>يحتاج التطبيق إضافة الصور والفيديوهات إلى مكتبة الصور</string>
 
-    <!-- ✅✅✅ أضف ده للـ Audio Files (مهم جداً لـ file_picker على iOS) -->
+    <!-- Media & Files -->
     <key>NSAppleMusicUsageDescription</key>
-    <string>يحتاج التطبيق الوصول للملفات الصوتية لرفعها</string>
+    <string>يحتاج التطبيق الوصول للمكتبة الموسيقية والملفات الصوتية</string>
     
-    <!-- ✅✅✅ أضف ده كمان للـ Media Library (iOS 14+) -->
-    <key>kTCCServiceMediaLibrary</key>
-    <string>يحتاج التطبيق الوصول لمكتبة الوسائط لاختيار الملفات الصوتية</string>
-
     <!-- Location -->
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>يحتاج التطبيق الوصول لموقعك لتقديم خدمات الموقع داخل التطبيق</string>
@@ -64,11 +60,21 @@
     <string>يحتاج التطبيق الوصول لموقعك لتقديم خدمات الموقع حتى عند عدم استخدام التطبيق</string>
     <key>NSLocationAlwaysUsageDescription</key>
     <string>يحتاج التطبيق الوصول لموقعك بشكل دائم لتحديثات الموقع</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>يحتاج التطبيق الوصول للميكروفون لتسجيل رسائلك الصوتية</string>
 
-    <key>NSAppleMusicUsageDescription</key>
-    <string>يحتاج التطبيق الوصول للمكتبة الموسيقية لمعالجة الملفات الصوتية</string>  
+    <!-- Bluetooth (Required by ZEGO UIKit) -->
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>يحتاج التطبيق الوصول للبلوتوث للتواصل مع الأجهزة الصوتية</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>يحتاج التطبيق الوصول للبلوتوث للتواصل مع الأجهزة الصوتية</string>
+
+    <!-- Motion (Optional but recommended for some Camera features) -->
+    <key>NSMotionUsageDescription</key>
+    <string>يحتاج التطبيق الوصول للحساسات لتحسين جودة التصوير</string>
+
+    <!-- Photo Library Limited Access (iOS 14+) -->
+    <key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
+    <true/>
+
     <!-- Notifications -->
     <key>NSUserNotificationAlertStyle</key>
     <string>alert</string>
@@ -76,6 +82,8 @@
     <array>
         <string>fetch</string>
         <string>remote-notification</string>
+        <string>audio</string>
+        <string>voip</string>
     </array>
 
     <!-- Firebase -->

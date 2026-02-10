@@ -119,36 +119,16 @@ class EditCertificateView extends StatelessWidget {
                               Gap(24.h),
 
                               // Update Button
-                              SizedBox(
+                              CustomBotton(
+                                height: 54.h,
                                 width: context.width * 0.8,
-                                height: 56.h,
-                                child: GestureDetector(
-                                  onTap: state.isLoading
-                                      ? null
-                                      : () => cubit.updateCertificate(context),
-                                  child: Container(
-                                    width: context.width * 0.8,
-                                    height: 56.h,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.secondary400,
-                                      borderRadius: BorderRadius.circular(16.r),
-                                    ),
-                                    child: Center(
-                                      child: state.isLoading
-                                          ? const CircularProgressIndicator(
-                                              color: Colors.white,
-                                            )
-                                          : Text(
-                                              'تحديث',
-                                              style: Styles.textStyle18SemiBold
-                                                  .copyWith(
-                                                    color:
-                                                        AppColors.kWhiteColor,
-                                                  ),
-                                            ),
-                                    ),
-                                  ),
-                                ),
+                                useGradient: true,
+                                title: state.isLoading
+                                    ? 'جارٍ التحديث...'
+                                    : 'تحديث',
+                                onPressed: state.isLoading
+                                    ? null
+                                    : () => cubit.updateCertificate(context),
                               ),
                               Gap(20.h),
 
@@ -219,12 +199,23 @@ class EditCertificateView extends StatelessWidget {
                                                                   color: Colors
                                                                       .grey
                                                                       .shade200,
-                                                                  child: Center(
-                                                                    child: CircularProgressIndicator(
-                                                                      color: AppColors
-                                                                          .kprimaryColor,
-                                                                      strokeWidth:
-                                                                          2,
+                                                                  child: Shimmer.fromColors(
+                                                                    baseColor:
+                                                                        AppColors
+                                                                            .kprimaryColor,
+                                                                    highlightColor: AppColors
+                                                                        .kprimaryColor
+                                                                        .withOpacity(
+                                                                          0.5,
+                                                                        ),
+                                                                    child: Container(
+                                                                      width: double
+                                                                          .infinity,
+                                                                      height: double
+                                                                          .infinity,
+                                                                      color: Colors
+                                                                          .grey
+                                                                          .shade200,
                                                                     ),
                                                                   ),
                                                                 ),
@@ -373,19 +364,6 @@ class EditCertificateView extends StatelessWidget {
                                 ),
                                 Gap(20.h),
                               ],
-
-                              // Save Button (يمكنك الاحتفاظ به أو حذفه حسب التصميم)
-                              CustomBotton(
-                                height: 54.h,
-                                width: context.width * 0.8,
-                                useGradient: true,
-                                title: state.isLoading
-                                    ? 'جارٍ الحفظ...'
-                                    : 'حفظ',
-                                onPressed: state.isLoading
-                                    ? null
-                                    : () => cubit.updateCertificate(context),
-                              ),
                               Gap(20.h),
                             ],
                           ),

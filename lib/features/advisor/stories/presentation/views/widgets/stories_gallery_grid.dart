@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_state.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:shimmer/shimmer.dart';
 
 import 'package:camera/camera.dart';
 
@@ -26,7 +27,7 @@ class _StoriesGalleryGridState extends State<StoriesGalleryGrid> {
     return BlocBuilder<AddStoryCubit, AddStoryState>(
       builder: (context, state) {
         if (state.galleryAssets.isEmpty && state.isLoadingAssets) {
-          return const Center(child: CircularProgressIndicator());
+          return _buildShimmerGrid();
         }
 
         // Handle case where no assets are found (permission or generic failure)
@@ -65,6 +66,26 @@ class _StoriesGalleryGridState extends State<StoriesGalleryGrid> {
               );
             },
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildShimmerGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.all(2),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 2,
+        mainAxisSpacing: 2,
+        childAspectRatio: 0.65,
+      ),
+      itemCount: 15,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(color: Colors.white),
         );
       },
     );

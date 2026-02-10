@@ -14,6 +14,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
     required int page,
     String? advisorId,
     bool isSpecial = false,
+    required BuildContext context,
   }) async {
     try {
       var response = await apiService.get(
@@ -59,7 +60,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
               UserStoriesModel(
                 userId: userId,
                 name: stories.isNotEmpty
-                    ? (stories.first.isMine ? "قصتي" : "")
+                    ? (stories.first.isMine ? context.tr("your_story") : "")
                     : "",
                 image: stories.isNotEmpty ? stories.first.image : "",
                 isFollowed: false,
@@ -110,6 +111,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
     String? content,
     List<File>? images,
     List<XFile>? videos,
+    Function(int sent, int total)? onSendProgress,
   }) async {
     try {
       final List<MultipartFile> uploadedImages = [];
@@ -144,6 +146,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
         isFromData: true,
         isAuth: true,
         data: data,
+        onSendProgress: onSendProgress,
       );
 
       final success = response['success'] ?? false;

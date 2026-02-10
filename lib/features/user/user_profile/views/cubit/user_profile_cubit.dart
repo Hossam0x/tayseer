@@ -10,6 +10,7 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_profil
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 
 class UserProfileCubit extends Cubit<UserProfileState> {
   final LocalNotification _notificationService = LocalNotification();
@@ -51,7 +52,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
   Future<List<SettingItemModel>> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedLanguage = prefs.getString('app_language') ?? 'العربية';
+    final savedLanguage = prefs.getString('app_language') ?? 'ar';
     final notificationStatus = await _getNotificationStatus();
 
     return [
@@ -90,7 +91,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       SettingItemModel(
         id: 'language',
         title: 'app_language',
-        subtitle: getLanguageName(savedLanguage),
+        subtitle: getLanguageKey(savedLanguage),
         iconAsset: AssetsData.icLanguageSettings,
         routeName: AppRouter.kLanguageSelectionView,
       ),
@@ -350,11 +351,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
   }
 
   // وظائف موجودة مسبقاً (بدون تغيير)
-  Future<void> updateLanguage(String languageName, BuildContext context) async {
+  Future<void> updateLanguage(String languageCode, BuildContext context) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
-
-    final languageCode = getLanguageCode(languageName);
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -362,16 +361,26 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       final updatedSettings = currentState.settings.map((item) {
         if (item.id == 'language') {
-          return item.copyWith(subtitle: languageName);
+          return item.copyWith(subtitle: getLanguageKey(languageCode));
         }
         return item;
       }).toList();
 
-      emit(SettingsLoaded(settings: updatedSettings));
+      emit(
+        SettingsLoaded(
+          settings: updatedSettings,
+          userProfile: currentState.userProfile,
+        ),
+      );
+
+      // تحديث اللغة عالمياً لتغيير الواجهة فوراً (بعد تحديث الحالة المحلية)
+      if (context.mounted) {
+        context.read<LanguageCubit>().setLanguage(languageCode);
+      }
 
       showSafeSnackBar(
         context: context,
-        text: '${context.tr("update_language_success")} $languageName',
+        text: context.tr("update_language_success"),
         isSuccess: true,
       );
     } catch (e) {

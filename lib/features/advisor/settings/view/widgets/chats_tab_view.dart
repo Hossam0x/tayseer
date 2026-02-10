@@ -138,7 +138,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
             Icon(Icons.error_outline, color: AppColors.kRedColor, size: 64.w),
             Gap(16.h),
             Text(
-              errorMessage ?? 'حدث خطأ في تحميل المحادثات المؤرشفة',
+              errorMessage ?? context.tr('error_loading_chats'),
               style: Styles.textStyle16.copyWith(color: AppColors.secondary700),
               textAlign: TextAlign.center,
             ),
@@ -153,7 +153,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                 padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 14.h),
               ),
               child: Text(
-                'إعادة المحاولة',
+                context.tr('retry'),
                 style: Styles.textStyle16Meduim.copyWith(
                   color: AppColors.kWhiteColor,
                 ),
@@ -173,12 +173,12 @@ class _ChatsTabViewState extends State<ChatsTabView> {
           Image.asset(AssetsData.emptyChatImage, width: 150.w, height: 150.w),
           Gap(20.h),
           Text(
-            'لا توجد محادثات مؤرشفة',
+            context.tr('no_archived_chats'),
             style: Styles.textStyle18.copyWith(color: AppColors.secondary600),
           ),
           Gap(8.h),
           Text(
-            'سيتم عرض المحادثات المؤرشفة هنا',
+            context.tr('no_archived_chats_message'),
             style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
           ),
         ],
@@ -230,14 +230,14 @@ class _ChatsTabViewState extends State<ChatsTabView> {
   Widget _buildChatItem(BuildContext context, ArchiveChatRoomModel chatRoom) {
     // الحصول على المستخدم الآخر
     final otherUser = _getOtherUser(chatRoom);
-    final displayName = otherUser?.name ?? 'مستخدم غير معروف';
+    final displayName = otherUser?.name ?? context.tr('unknown_user');
     final displayImage = otherUser?.image;
 
     // الحصول على محتوى آخر رسالة
     final lastMessageContent = _getLastMessageContent(chatRoom);
     final lastMessageText = lastMessageContent.isNotEmpty
         ? lastMessageContent
-        : 'لا توجد رسائل';
+        : context.tr('no_messages');
 
     // الحصول على الوقت
     // final messageTime = _formatTime(chatRoom.lastMessageAt ?? '');
@@ -263,7 +263,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
             ),
             Gap(8.w),
             Text(
-              'إلغاء الأرشفة',
+              context.tr('unarchive'),
               style: Styles.textStyle14.copyWith(
                 color: AppColors.kprimaryColor,
                 fontWeight: FontWeight.w500,
@@ -282,7 +282,10 @@ class _ChatsTabViewState extends State<ChatsTabView> {
       onDismissed: (direction) {
         context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
 
-        AppToast.success(context, 'تم إلغاء أرشفة محادثة $displayName');
+        AppToast.success(
+          context,
+          '${context.tr('unarchived_chat')} $displayName',
+        );
       },
       child: Material(
         color: Colors.transparent,
@@ -412,22 +415,22 @@ class _ChatsTabViewState extends State<ChatsTabView> {
   String _getLastMessageContent(ArchiveChatRoomModel chatRoom) {
     final lastMessage = chatRoom.lastMessage;
     if (lastMessage == null) {
-      return 'بدء محادثة جديدة';
+      return context.tr('new_chat');
     }
 
     switch (lastMessage.messageType.toLowerCase()) {
       case 'text':
         return lastMessage.content;
       case 'image':
-        return '📷 صورة';
+        return context.tr('image');
       case 'video':
-        return '🎥 فيديو';
+        return context.tr('video');
       case 'audio':
-        return '🎵 رسالة صوتية';
+        return context.tr('audio');
       case 'file':
-        return '📄 ملف';
+        return context.tr('file');
       default:
-        return 'رسالة';
+        return context.tr('message');
     }
   }
 
@@ -614,7 +617,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
 
                         // العنوان
                         Text(
-                          'إلغاء الأرشفة',
+                          context.tr('unarchive'),
                           style: Styles.textStyle16.copyWith(
                             color: const Color(0xFF2D2D2D),
                             fontWeight: FontWeight.bold,
@@ -626,7 +629,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
 
                         // النص
                         Text(
-                          'هل تريد إلغاء أرشفة محادثة $userName؟',
+                          '${context.tr('are_you_want_to_unarchive')} $userName؟',
                           style: Styles.textStyle12.copyWith(
                             color: const Color(0xFF6B6B6B),
                             height: 1.5,
@@ -640,7 +643,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                           children: [
                             Expanded(
                               child: _buildDialogButton(
-                                text: 'نعم',
+                                text: context.tr('yes'),
                                 backgroundColor: Colors.green,
                                 textColor: Colors.white,
                                 onPressed: () {
@@ -652,7 +655,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                             Gap(12.w),
                             Expanded(
                               child: _buildDialogButton(
-                                text: 'لا',
+                                text: context.tr('no'),
                                 backgroundColor: AppColors.kprimaryColor,
                                 textColor: Colors.white,
                                 onPressed: () {
@@ -725,7 +728,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     if (otherUser == null) {
       AppToast.error(
         context,
-        'لا يمكن فتح المحادثة: بيانات المستخدم غير متوفرة',
+        context.tr('user_not_found'),
       );
       return;
     }

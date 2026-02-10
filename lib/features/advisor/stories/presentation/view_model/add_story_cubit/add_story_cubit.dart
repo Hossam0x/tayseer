@@ -31,12 +31,20 @@ class AddStoryCubit extends Cubit<AddStoryState> {
 
     try {
       // 1. Request permissions
-      final photosStatus = await Permission.photos.request();
+      bool canAccessGallery = false;
+      if (Platform.isIOS) {
+        final photosStatus = await Permission.photos.request();
+        canAccessGallery = photosStatus.isGranted || photosStatus.isLimited;
+      } else {
+        final photosStatus = await Permission.photos.request();
+        final storageStatus = await Permission.storage.request();
+        canAccessGallery = !photosStatus.isDenied || !storageStatus.isDenied;
+      }
+
       await Permission.camera.request();
       await Permission.microphone.request(); // For video recording with audio
-      final storageStatus = await Permission.storage.request();
 
-      if (photosStatus.isDenied && storageStatus.isDenied) {
+      if (!canAccessGallery) {
         emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));
         return;
       }
@@ -133,12 +141,55 @@ class AddStoryCubit extends Cubit<AddStoryState> {
         selectedAsset: null,
         previewFile: null,
         isVideoPreview: false,
+        isFrontCamera: false,
       ),
     );
   }
 
-  void setPreviewFile(File file, {bool isVideo = false}) {
-    emit(state.copyWith(previewFile: file, isVideoPreview: isVideo));
+  void setPreviewFile(
+    File file, {
+    bool isVideo = false,
+    bool isFrontCamera = false,
+  }) {
+    emit(
+      state.copyWith(
+        previewFile: file,
+        isVideoPreview: isVideo,
+        isFrontCamera: isFrontCamera,
+      ),
+    );
+  }
+
+  Future<({List<File> images, List<XFile> videos})> getMediaToUpload() async {
+    final List<File> imageFiles = [];
+    final List<XFile> videoFiles = [];
+
+    // Use previewFile if available (this covers both selected from gallery and captured)
+    if (state.previewFile != null) {
+      if (state.isVideoPreview) {
+        // It's a video from camera or gallery
+        videoFiles.add(XFile(state.previewFile!.path));
+      } else {
+        // It's an image
+        imageFiles.add(state.previewFile!);
+      }
+    } else {
+      // Fallback to old behavior if needed, but we aim for the new flow
+      for (var asset in state.selectedImages) {
+        final file = await asset.file;
+        if (file != null) imageFiles.add(file);
+      }
+      imageFiles.addAll(state.capturedImages);
+
+      if (state.capturedVideo != null) {
+        videoFiles.add(state.capturedVideo!);
+      }
+      for (var video in state.selectedVideos) {
+        videoFiles.add(video);
+      }
+    }
+
+    return (images: imageFiles, videos: videoFiles);
   }
 
   Future<void> createStory() async {

@@ -45,11 +45,11 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   late final SearchCubit _searchCubit;
 
   final List<SearchTab> _tabs = [
-    SearchTab(id: 'all', title: 'الكل'),
-    SearchTab(id: 'advisors', title: 'المستشارين'),
-    SearchTab(id: 'users', title: 'المستخدمين'),
-    SearchTab(id: 'posts', title: 'المنشورات'),
-    SearchTab(id: 'events', title: 'الأحداث'),
+    const SearchTab(id: 'all', title: 'all'),
+    const SearchTab(id: 'advisors', title: 'advisors'),
+    const SearchTab(id: 'users', title: 'users'),
+    const SearchTab(id: 'posts', title: 'posts'),
+    const SearchTab(id: 'events', title: 'events'),
   ];
 
   @override
@@ -194,7 +194,11 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       child: Material(
         color: Colors.transparent,
         child: Padding(
-          padding: EdgeInsets.only(left: 20.w, top: 12.h, bottom: 12.h),
+          padding: EdgeInsetsDirectional.only(
+            end: 20.w,
+            top: 12.h,
+            bottom: 12.h,
+          ),
           child: Row(
             children: [
               // زر الرجوع
@@ -243,14 +247,14 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                               controller: _searchController,
                               focusNode: _searchFocusNode,
                               autofocus: true,
-                              textAlign: TextAlign.right,
+                              textAlign: TextAlign.start,
                               style: Styles.textStyle14SemiBold,
                               onChanged: (_) => _onSearchChanged(),
                               decoration: InputDecoration(
                                 hintText:
                                     widget.initialQuery?.isNotEmpty == true
                                     ? widget.initialQuery
-                                    : "ابحث عن ما تريده",
+                                    : context.tr("search_hint"),
                                 hintStyle: Styles.textStyle14.copyWith(
                                   color: AppColors.kGreyB3,
                                 ),
@@ -291,7 +295,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Container(
-        padding: EdgeInsets.only(bottom: 10.h, right: 20.w),
+        padding: EdgeInsetsDirectional.only(bottom: 10.h, start: 20.w),
         child: Row(
           children: [
             // جميع التبويبات
@@ -320,7 +324,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                       borderRadius: BorderRadius.circular(6.r),
                     ),
                     child: Text(
-                      tab.title,
+                      context.tr(tab.title),
                       style: isSelected
                           ? Styles.textStyle14Meduim.copyWith(
                               color: AppColors.secondary800,
@@ -352,19 +356,19 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       String message;
       switch (currentTab.id) {
         case 'advisors':
-          message = 'ابحث عن مستشارين';
+          message = context.tr("search_for_advisors");
           break;
         case 'users':
-          message = 'ابحث عن مستخدمين';
+          message = context.tr("search_for_users");
           break;
         case 'posts':
-          message = 'ابحث عن منشورات';
+          message = context.tr("search_for_posts");
           break;
         case 'events':
-          message = 'ابحث عن أحداث';
+          message = context.tr("search_for_events");
           break;
         default:
-          message = 'ابحث عن ما تريده';
+          message = context.tr("search_for_what_you_want");
       }
       return SearchEmptyState(
         message: message,
@@ -389,19 +393,19 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
 
       switch (currentTab.id) {
         case 'advisors':
-          message = 'لا يوجد مستشار بهذا الاسم';
+          message = context.tr("no_matching_advisors");
           iconPath = AssetsData.icNoContentSeach;
           break;
         case 'posts':
-          message = 'لا توجد منشورات مطابقة';
+          message = context.tr("no_matching_posts");
           iconPath = AssetsData.icNoContentSeach;
           break;
         case 'events':
-          message = 'لا توجد أحداث مطابقة';
+          message = context.tr("no_matching_events");
           iconPath = AssetsData.icNoContentSeach;
           break;
         default:
-          message = 'لا توجد نتائج للبحث';
+          message = context.tr("no_matching_results");
           iconPath = AssetsData.icNoContentSeach;
       }
 
@@ -446,7 +450,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
           // المستشارين
           if (state.advisors.isNotEmpty) ...[
             _buildSectionHeader(
-              title: 'المستشارين',
+              title: context.tr("advisors"),
               count: state.advisors.length,
             ),
             ...state.advisors.map(
@@ -460,7 +464,10 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
 
           // المستخدمين
           if (state.users.isNotEmpty) ...[
-            _buildSectionHeader(title: 'المستخدمين', count: state.users.length),
+            _buildSectionHeader(
+              title: context.tr("users"),
+              count: state.users.length,
+            ),
             ...state.users.map(
               (user) => Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
@@ -472,14 +479,20 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
 
           // المنشورات
           if (state.posts.isNotEmpty) ...[
-            _buildSectionHeader(title: 'المنشورات', count: state.posts.length),
+            _buildSectionHeader(
+              title: context.tr("posts"),
+              count: state.posts.length,
+            ),
             ...state.posts.map((post) => _buildPostItem(context, post)),
             SizedBox(height: 20.h),
           ],
 
           // الأحداث
           if (state.events.isNotEmpty) ...[
-            _buildSectionHeader(title: 'الأحداث', count: state.events.length),
+            _buildSectionHeader(
+              title: context.tr("events"),
+              count: state.events.length,
+            ),
             ...state.events.map(
               (event) => Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),

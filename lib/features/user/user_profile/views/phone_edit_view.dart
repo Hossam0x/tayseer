@@ -83,7 +83,7 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 24.w),
                       child: SimpleAppBar(
-                        title: 'رقم الهاتف',
+                        title: context.tr('phone_title'),
                         isLargeTitle: true,
                       ),
                     ),
@@ -91,7 +91,7 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 24.w),
                       child: Text(
-                        'سنرسل لك رمز تحقق علي رقم هاتفك لتأكيد رقمك الجديد',
+                        context.tr('phone_verification_hint'),
                         textAlign: TextAlign.center,
                         style: Styles.textStyle14.copyWith(
                           color: AppColors.primary800,
@@ -135,7 +135,9 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                       child: CustomBotton(
                         height: 53.h,
                         width: double.infinity,
-                        title: state.isLoading ? 'جاري الإرسال...' : 'التالي',
+                        title: state.isLoading
+                            ? context.tr('sending_status')
+                            : context.tr('next'),
                         useGradient: true,
                         backGroundcolor: state.canProceed && !state.isLoading
                             ? Colors.transparent
@@ -192,7 +194,7 @@ class _PhoneEditViewState extends State<PhoneEditView> {
               ),
               decoration: InputDecoration(
                 hintTextDirection: TextDirection.rtl,
-                hintText: 'أدخل رقم الهاتف',
+                hintText: context.tr('phone_hint'),
                 hintStyle: Styles.textStyle14.copyWith(
                   color: AppColors.primary200,
                 ),
@@ -285,7 +287,7 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                     child: TextField(
                       textDirection: TextDirection.rtl,
                       decoration: InputDecoration(
-                        hintText: 'ابحث عن الدولة...',
+                        hintText: context.tr('search_country_hint'),
                         hintTextDirection: TextDirection.rtl,
                         prefixIcon: Icon(
                           Icons.search,
@@ -305,12 +307,15 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                     ),
                   ),
                   Gap(16.h),
-                  Text("اختر الدولة", style: Styles.textStyle18Meduim),
+                  Text(
+                    context.tr('choose_country_val'),
+                    style: Styles.textStyle18Meduim,
+                  ),
                   Gap(10.h),
                   const Divider(),
                   Expanded(
                     child: filtered.isEmpty
-                        ? Center(child: Text('لا توجد نتائج'))
+                        ? Center(child: Text(context.tr('no_results')))
                         : ListView.builder(
                             itemCount: filtered.length,
                             itemBuilder: (context, index) {

@@ -68,7 +68,7 @@ class _EmailEditViewState extends State<EmailEditView> {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 24.w),
                       child: SimpleAppBar(
-                        title: 'البريد الإلكتروني',
+                        title: context.tr('emailtitle'),
                         isLargeTitle: true,
                       ),
                     ),
@@ -76,7 +76,7 @@ class _EmailEditViewState extends State<EmailEditView> {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 24.w),
                       child: Text(
-                        'سنرسل لك رمز تحقق على البريد الإلكتروني لتأكيد بريدك الجديد',
+                        context.tr('email_verification_hint'),
                         textAlign: TextAlign.center,
                         style: Styles.textStyle14.copyWith(
                           color: AppColors.primary800,
@@ -111,7 +111,7 @@ class _EmailEditViewState extends State<EmailEditView> {
                                 fontWeight: FontWeight.w500,
                               ),
                               decoration: InputDecoration(
-                                hintText: 'أدخل البريد الإلكتروني',
+                                hintText: context.tr('email_hint'),
                                 hintStyle: Styles.textStyle14.copyWith(
                                   color: AppColors.primary200,
                                 ),
@@ -151,7 +151,9 @@ class _EmailEditViewState extends State<EmailEditView> {
                       child: CustomBotton(
                         height: 53.h,
                         width: double.infinity,
-                        title: state.isLoading ? 'جاري الإرسال...' : 'التالي',
+                        title: state.isLoading
+                            ? context.tr('sending_status')
+                            : context.tr('next'),
                         useGradient: true,
                         backGroundcolor: state.canProceed && !state.isLoading
                             ? Colors.transparent

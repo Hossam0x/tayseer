@@ -9,6 +9,8 @@ import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/add_story_view.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key});
@@ -133,55 +135,110 @@ class ProfileHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Profile picture
-          GestureDetector(
-            onTap: () async {
-              // Request permissions before entering
-              final photos = await Permission.photos.request();
-              final camera = await Permission.camera.request();
+          // Profile picture with Upload Indicator
+          BlocBuilder<StoriesCubit, StoriesState>(
+            buildWhen: (previous, current) =>
+                previous.createStoryState != current.createStoryState ||
+                previous.uploadProgress != current.uploadProgress,
+            builder: (context, storyState) {
+              final isUploading =
+                  storyState.createStoryState == CubitStates.loading;
 
-              if (context.mounted) {
-                if (photos.isGranted && camera.isGranted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddStoryView(),
-                    ),
-                  );
-                } else {
-                  SnackBarService().showSnackBar(
-                    context: context,
-                    text:
-                        'يرجى منح صلاحية الكاميرا والمعرض لتتمكن من إضافة قصة',
-                    isError: true,
-                  );
-                }
-              }
-            },
-            child: Stack(
-              children: [
-                MyProfileImage(width: 85.w, imageUrl: imageUrl),
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: Container(
-                    width: 22.w,
-                    height: 22.w,
-                    decoration: BoxDecoration(
-                      color: AppColors.kprimaryColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: AppImage(
-                        width: 12.w,
-                        AssetsData.icAdd,
-                        color: AppColors.kWhiteColor,
+              return GestureDetector(
+                onTap: isUploading
+                    ? null
+                    : () async {
+                        // Request permissions before entering
+                        final photos = await Permission.photos.request();
+                        final camera = await Permission.camera.request();
+
+                        if (context.mounted) {
+                          if (photos.isGranted && camera.isGranted) {
+                            final storiesCubit = context.read<StoriesCubit>();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BlocProvider.value(
+                                  value: storiesCubit,
+                                  child: const AddStoryView(),
+                                ),
+                              ),
+                            );
+                          } else {
+                            SnackBarService().showSnackBar(
+                              context: context,
+                              text:
+                                  'يرجى منح صلاحية الكاميرا والمعرض لتتمكن من إضافة قصة',
+                              isError: true,
+                            );
+                          }
+                        }
+                      },
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Upload Progress Ring
+                    if (isUploading)
+                      SizedBox(
+                        width: 92.w,
+                        height: 92.w,
+                        child: CircularProgressIndicator(
+                          value: storyState.uploadProgress > 0
+                              ? storyState.uploadProgress
+                              : null,
+                          strokeWidth: 4,
+                          color: AppColors.kprimaryColor,
+                          backgroundColor: AppColors.secondary200,
+                        ),
                       ),
-                    ),
-                  ),
+
+                    MyProfileImage(width: 85.w, imageUrl: imageUrl),
+
+                    // Add Icon (Hidden when uploading)
+                    if (!isUploading)
+                      Positioned(
+                        bottom: 2,
+                        right: 2,
+                        child: Container(
+                          width: 22.w,
+                          height: 22.w,
+                          decoration: BoxDecoration(
+                            color: AppColors.kprimaryColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: AppImage(
+                              width: 12.w,
+                              AssetsData.icAdd,
+                              color: AppColors.kWhiteColor,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Percentage Text Overlay
+                    if (isUploading)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6.w,
+                          vertical: 2.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Text(
+                          '${(storyState.uploadProgress * 100).toInt()}%',
+                          style: Styles.textStyle12.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
 
           // Top bar with followers/following

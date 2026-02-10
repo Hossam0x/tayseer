@@ -52,7 +52,7 @@ class ArchiveView extends StatelessWidget {
                           horizontal: 20.w,
                           vertical: 15.h,
                         ),
-                        child: SimpleAppBar(title: 'الأرشيف'),
+                        child: SimpleAppBar(title: context.tr('archive')),
                       ),
 
                       // Three-Tab Bar Container (Matches your Packages style)
@@ -92,10 +92,10 @@ class ArchiveView extends StatelessWidget {
                                 labelColor: AppColors.secondary950,
                                 unselectedLabelColor: AppColors.blackColor,
                                 unselectedLabelStyle: Styles.textStyle16,
-                                tabs: const [
-                                  Tab(text: 'المحادثات'),
-                                  Tab(text: 'المنشورات'),
-                                  Tab(text: 'القصص'),
+                                tabs: [
+                                  Tab(text: context.tr('chats')),
+                                  Tab(text: context.tr('posts')),
+                                  Tab(text: context.tr('stories')),
                                 ],
                               );
                             },

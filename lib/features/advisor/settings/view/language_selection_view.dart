@@ -2,6 +2,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/selection_item.dart';
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class LanguageSelectionView extends StatefulWidget {
@@ -36,6 +37,25 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
     AppLanguage(code: 'zh', title: 'الصينية'),
   ];
 
+  final Map<String, String> _languageKeys = const {
+    'ar': 'arabic',
+    'en': 'english',
+    'fa': 'persian',
+    'ru': 'russian',
+    'fr': 'french',
+    'es': 'spanish',
+    'de': 'german',
+    'tr': 'turkish',
+    'ur': 'urdu',
+    'hi': 'hindi',
+    'bn': 'bengali',
+    'pt': 'portuguese',
+    'it': 'italian',
+    'ja': 'japanese',
+    'ko': 'korean',
+    'zh': 'chinese',
+  };
+
   List<AppLanguage> get _filteredLanguages {
     if (_searchQuery.isEmpty) {
       return _allLanguages;
@@ -43,7 +63,10 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
 
     final query = _searchQuery.toLowerCase();
     return _allLanguages.where((lang) {
-      return lang.title.toLowerCase().contains(query) ||
+      final localizedTitle = context
+          .tr(_languageKeys[lang.code] ?? lang.title)
+          .toLowerCase();
+      return localizedTitle.contains(query) ||
           lang.code.toLowerCase().contains(query);
     }).toList();
   }
@@ -90,7 +113,7 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
     await prefs.setString('app_language', _selectedLanguage!.code);
 
     if (mounted) {
-      Navigator.pop(context, _selectedLanguage!.title);
+      Navigator.pop(context, _selectedLanguage!.code);
     }
   }
 
@@ -110,7 +133,10 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
               // Header
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-                child: SimpleAppBar(title: 'اللغة', icon: Icons.close),
+                child: SimpleAppBar(
+                  title: context.tr('app_language'),
+                  icon: Icons.close,
+                ),
               ),
 
               // المحتوى
@@ -122,9 +148,13 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                       padding: EdgeInsets.symmetric(horizontal: 30.w),
                       child: TextField(
                         controller: _searchController,
-                        textAlign: TextAlign.right,
+                        textAlign:
+                            context.read<LanguageCubit>().state.languageCode ==
+                                'en'
+                            ? TextAlign.left
+                            : TextAlign.right,
                         decoration: InputDecoration(
-                          hintText: 'ابحث عن لغة...',
+                          hintText: context.tr('search_language_hint'),
                           hintStyle: Styles.textStyle16.copyWith(
                             color: AppColors.gray2,
                           ),
@@ -167,7 +197,7 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                                     ),
                                     Gap(12.h),
                                     Text(
-                                      'لا توجد لغات مطابقة',
+                                      context.tr('no_matching_languages'),
                                       style: Styles.textStyle16.copyWith(
                                         color: Colors.grey.shade400,
                                       ),
@@ -178,7 +208,9 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                             else
                               ..._filteredLanguages.map(
                                 (lang) => SelectionItem(
-                                  title: lang.title,
+                                  title: context.tr(
+                                    _languageKeys[lang.code] ?? lang.title,
+                                  ),
                                   isSelected:
                                       _selectedLanguage?.code == lang.code,
                                   onTap: () {
@@ -202,7 +234,7 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                 child: CustomBotton(
                   height: 54.h,
                   width: double.infinity,
-                  title: 'تأكيد',
+                  title: context.tr('confirm'),
                   useGradient: true,
                   onPressed: _saveLanguage,
                 ),

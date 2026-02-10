@@ -145,7 +145,7 @@ class _ProfessionalInfoDashboardViewState
   // Loading للتحليلات السفلية
   Widget _buildAnalysisLoading() {
     return Column(
-      children: List.generate(4, (index) {
+      children: List.generate(5, (index) {
         return Padding(
           padding: EdgeInsets.only(bottom: 16.h),
           child: Container(

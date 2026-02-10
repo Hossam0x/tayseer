@@ -33,6 +33,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
 
           final initialRequest = UpdatePersonalDataRequest(
             name: profile.name,
+            username: profile.userName, // ⭐ أضف هذا
             dateOfBirth: profile.dateOfBirth,
             gender: profile.gender,
             professionalSpecialization: profile.professionalSpecialization,
@@ -199,6 +200,9 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
           // تحديث البروفايل بعد الحفظ الناجح
           final updatedProfile = state.profile?.copyWith(
             name: state.currentData.name ?? state.profile!.name,
+            userName:
+                state.currentData.username ??
+                state.profile!.userName, // ⭐ أضف هذا
             professionalSpecialization:
                 state.currentData.professionalSpecialization ??
                 state.profile!.professionalSpecialization,

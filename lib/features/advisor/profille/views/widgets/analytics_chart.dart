@@ -128,24 +128,14 @@ class AnalyticsChart extends StatelessWidget {
                     showTitles: true,
                     interval: _calculateMaxValue(weeklyData) / 4,
                     getTitlesWidget: (value, meta) {
-                      return Row(
-                        children: [
-                          Text(
-                            '-',
-                            style: Styles.textStyle12.copyWith(
-                              color: AppColors.blackColor,
-                            ),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: Text(
+                          value.toInt().toString(),
+                          style: Styles.textStyle12.copyWith(
+                            color: AppColors.blackColor,
                           ),
-                          Gap(3.w),
-                          Text(
-                            value.toInt().toString(),
-                            style: Styles.textStyle12.copyWith(
-                              color: AppColors.blackColor,
-                            ),
-                          ),
-
-                          // Dash icon from flutter
-                        ],
+                        ),
                       );
                     },
                   ),

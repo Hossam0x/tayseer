@@ -32,7 +32,7 @@ class StoriesTabView extends StatelessWidget {
             return _buildErrorStories(context, state.errorMessage);
           case CubitStates.success:
             if (state.stories.isEmpty) {
-              return const SharedEmptyState(title: "لا توجد قصص مؤرشفة");
+              return SharedEmptyState(title: context.tr('no_stories'));
             }
             return _buildStoriesContent(context, state);
           default:
@@ -139,7 +139,7 @@ class StoriesTabView extends StatelessWidget {
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(16.h),
           Text(
-            errorMessage ?? 'حدث خطأ في تحميل القصص المؤرشفة',
+            errorMessage ?? context.tr('error_loading_stories'),
             style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
           ),
@@ -154,7 +154,7 @@ class StoriesTabView extends StatelessWidget {
             ),
             onPressed: () => context.read<ArchivedStoriesCubit>().refresh(),
             child: Text(
-              'إعادة المحاولة',
+              context.tr('retry'),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),

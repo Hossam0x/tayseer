@@ -150,17 +150,22 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
 
   // ⭐ دالة لاستخراج القيمة الرقمية من نص الخبرة
   String _getValueFromExperience(String displayValue) {
-    if (displayValue == "exp_2_years" || displayValue.contains("سنتين"))
+    if (displayValue == "exp_2_years" || displayValue.contains("سنتين")) {
       return "2";
-    if (displayValue == "exp_3_years" || displayValue.contains("3 سنوات"))
+    }
+    if (displayValue == "exp_3_years" || displayValue.contains("3 سنوات")) {
       return "3";
-    if (displayValue == "exp_5_years" || displayValue.contains("5 سنوات"))
+    }
+    if (displayValue == "exp_5_years" || displayValue.contains("5 سنوات")) {
       return "5";
-    if (displayValue == "exp_10_years" || displayValue.contains("10 سنوات"))
+    }
+    if (displayValue == "exp_10_years" || displayValue.contains("10 سنوات")) {
       return "10";
+    }
     if (displayValue == "exp_more_than_10_years" ||
-        displayValue.contains("أكثر من"))
+        displayValue.contains("أكثر من")) {
       return "11";
+    }
 
     final match = RegExp(r'(\d+)').firstMatch(displayValue);
     return match?.group(1) ?? displayValue;
@@ -206,7 +211,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
       }
       _currentVideoUrl = null;
     } catch (e) {
-      print('Error disposing video player: $e');
+      debugPrint('Error disposing video player: $e');
     }
   }
 
@@ -273,7 +278,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         });
       }
     } catch (e) {
-      print('Error initializing video player: $e');
       if (mounted) {
         setState(() {
           _chewieController = null;
@@ -372,7 +376,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           });
         }
       } catch (e) {
-        print('Error loading video: $e');
         if (mounted) {
           setState(() {
             _isVideoLoading = false;
@@ -429,7 +432,11 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _nameController.text = state.profile!.name;
     _idController.text = state.profile!.userName;
     _bioController.text = state.profile!.aboutYou ?? '';
-    _usernameController.text = state.profile!.userName;
+    // Strip @ from username for display
+    final username = state.profile!.userName;
+    _usernameController.text = username.startsWith('@')
+        ? username.substring(1)
+        : username;
 
     // ⭐ معالجة jobGrade بعناية
     final jobGrade = state.currentData.jobGrade;
@@ -610,17 +617,13 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           // حقل الاسم باستخدام ProfileTextField
                                           ProfileTextField(
                                             controller: _nameController,
+                                            maxLength: 24,
                                             onChanged: (value) =>
                                                 cubit.updateName(value),
                                             hint: context.tr("enter_name"),
                                           ),
                                           Gap(11.h),
-                                          ProfileTextField(
-                                            controller: _usernameController,
-                                            onChanged: (value) =>
-                                                cubit.updateUsername(value),
-                                            hint: context.tr("enter_username"),
-                                          ),
+                                          _buildUsernameField(cubit),
                                           Gap(11.h),
 
                                           // Dropdown للتخصص
@@ -775,6 +778,62 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
       return true;
     }
     return false;
+  }
+
+  Widget _buildUsernameField(EditPersonalDataCubit cubit) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.kWhiteColor,
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(color: AppColors.primary100),
+      ),
+      child: Row(
+        textDirection: TextDirection.rtl,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Text(
+              '@',
+              style: Styles.textStyle14.copyWith(
+                color: AppColors.primary200,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Expanded(
+            child: TextFormField(
+              controller: _usernameController,
+              textAlign: TextAlign.right,
+              maxLength: 20,
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: context.tr("enter_username"),
+                hintStyle: Styles.textStyle14.copyWith(
+                  color: AppColors.primary200,
+                ),
+                counterText: "",
+                contentPadding: EdgeInsets.symmetric(vertical: 14.h),
+              ),
+              onChanged: (value) {
+                if (value.contains('@')) {
+                  final cleaned = value.replaceAll('@', '');
+                  _usernameController.value = _usernameController.value
+                      .copyWith(
+                        text: cleaned,
+                        selection: TextSelection.collapsed(
+                          offset: cleaned.length,
+                        ),
+                      );
+                  value = cleaned;
+                }
+                cubit.updateUsername('@$value');
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSkeletonLoading() {

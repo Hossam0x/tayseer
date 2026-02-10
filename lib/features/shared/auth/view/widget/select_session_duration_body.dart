@@ -76,7 +76,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
                       children: [
                         // --- خيار 30 دقيقة ---
                         _SessionDurationItem(
-                          title: context.tr('30_minutes'),
+                          title: context.tr('thirtyMinutes'),
                           isActive: state.isThirtyMinutesSelected,
                           priceController: _price30Controller,
                           onSwitchChanged: (value) {
@@ -92,7 +92,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
 
                         // --- خيار 60 دقيقة ---
                         _SessionDurationItem(
-                          title: context.tr('60_minutes'),
+                          title: context.tr('sixtyMinutes'),
                           isActive: state.isSixtyMinutesSelected,
                           priceController: _price60Controller,
                           onSwitchChanged: (value) {
