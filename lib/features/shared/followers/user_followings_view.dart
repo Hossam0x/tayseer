@@ -147,7 +147,7 @@ class _UserFollowingsViewState extends State<UserFollowingsView> {
                       child: TextField(
                         controller: _searchController,
                         focusNode: _searchFocusNode,
-                        textAlign: TextAlign.right,
+                        textAlign: isArabic ? TextAlign.right : TextAlign.left,
                         decoration: InputDecoration(
                           hintText: context.tr('search_by_name'),
                           hintStyle: Styles.textStyle14.copyWith(
