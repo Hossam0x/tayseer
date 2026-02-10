@@ -958,5 +958,9 @@
   "no_results_for_search": "لا توجد نتائج للبحث",
   "clear_search": "مسح البحث",
   "confirmation": "تأكيد الإلغاء",
-  "want_to_unhide_from": "هل تريد إلغاء إخفاء القصة عن"
+  "want_to_unhide_from": "هل تريد إلغاء إخفاء القصة عن",
+  "blocks": "المحظورات",
+  "no_blocked_users": "لا يوجد مستخدمون محظورون",
+  "unblock": "إلغاء الحظر",
+  "are_you_sure_unblock": "هل أنت متأكد من إلغاء الحظر"
 }
