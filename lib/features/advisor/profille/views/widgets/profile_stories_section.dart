@@ -180,13 +180,18 @@ class _UserStoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        // Reverse stories to chronological order (oldest first) before opening
+        final chronologicalUserStory = userStoryModel.copyWith(
+          stories: userStoryModel.stories.reversed.toList(),
+        );
+
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (newContext) => BlocProvider.value(
               value: context.read<StoriesCubit>(),
               child: StoryDetailsView(
-                userStories: userStoryModel,
+                userStories: chronologicalUserStory,
                 heroTag: 'profile_story_${userStoryModel.userId}',
               ),
             ),

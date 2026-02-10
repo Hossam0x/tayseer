@@ -167,8 +167,7 @@ class ProfileHeader extends StatelessWidget {
                           } else {
                             SnackBarService().showSnackBar(
                               context: context,
-                              text:
-                                  'يرجى منح صلاحية الكاميرا والمعرض لتتمكن من إضافة قصة',
+                              text: context.tr('permissions_required'),
                               isError: true,
                             );
                           }

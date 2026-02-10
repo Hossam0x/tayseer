@@ -211,12 +211,28 @@ class StoriesTabView extends StatelessWidget {
 
                   return GestureDetector(
                     onTap: () {
-                      // Navigate to StoryDetailsView
-                      // Create a temporary UserStoriesModel starting from this story
-                      final storyIndex = parentUserStory.stories.indexOf(story);
-                      final reorderedStories = parentUserStory.stories.sublist(
-                        storyIndex,
+                      // Reverse stories to chronological order (oldest first)
+                      final chronologicalStories = parentUserStory
+                          .stories
+                          .reversed
+                          .toList();
+
+                      // Find the clicked story in the chronological list
+                      final clickedStoryIndex = chronologicalStories.indexWhere(
+                        (s) => s.id == story.id,
                       );
+
+                      // Reorder to start from the clicked story
+                      final List<StoryModel> reorderedStories;
+                      if (clickedStoryIndex > 0) {
+                        reorderedStories = [
+                          ...chronologicalStories.sublist(clickedStoryIndex),
+                          ...chronologicalStories.sublist(0, clickedStoryIndex),
+                        ];
+                      } else {
+                        reorderedStories = chronologicalStories;
+                      }
+
                       final tempUserStory = parentUserStory.copyWith(
                         stories: reorderedStories,
                       );

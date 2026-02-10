@@ -124,13 +124,19 @@ class StoriesCubit extends Cubit<StoriesState> {
 
     final story = userStory.stories[storyIndex];
 
+    // Only mark as viewed if not already viewed
+    if (story.viewsCount > 0) {
+      debugPrint("StoriesCubit: Story $storyId already viewed, skipping");
+      return;
+    }
+
     // Check if this is the last story
     bool isLastStory = storyIndex == userStory.stories.length - 1;
 
     // Build updated stories
     final List<StoryModel> updatedStories = List.from(userStory.stories);
     updatedStories[storyIndex] = story.copyWith(
-      viewsCount: (story.viewsCount + 1),
+      viewsCount: 1, // Set to 1 instead of incrementing
     );
 
     // Determine allViewed
@@ -312,7 +318,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     String? content,
     List<File>? images,
     List<XFile>? videos,
-     required BuildContext context,
+    BuildContext? context,
   }) async {
     emit(
       state.copyWith(
@@ -352,8 +358,10 @@ class StoriesCubit extends Cubit<StoriesState> {
       },
       (_) {
         emit(state.copyWith(createStoryState: CubitStates.success));
-        // Refresh stories
-        fetchStories(context: context);
+        // Refresh stories only if context is still valid
+        if (context != null && context.mounted) {
+          fetchStories(context: context);
+        }
       },
     );
   }

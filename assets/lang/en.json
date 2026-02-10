@@ -1020,5 +1020,6 @@
   "archive_story": "Archive Story",
   "unarchive_story": "Unarchive Story",
   "special_story": "Special Story",
-  "delete_story": "Delete Story"
+  "delete_story": "Delete Story",
+  "permissions_required": "Please grant camera and gallery access so you can add a story."
 }
