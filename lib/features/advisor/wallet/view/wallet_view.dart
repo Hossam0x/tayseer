@@ -37,7 +37,7 @@ class WalletView extends StatelessWidget {
                       Gap(16.h),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.w),
-                        child: SimpleAppBar(title: 'محفظتى'),
+                        child: SimpleAppBar(title: context.tr('my_wallet')),
                       ),
 
                       // ── نفس ستايل الـ TabBar الموجود في ArchiveView ──
@@ -77,9 +77,9 @@ class WalletView extends StatelessWidget {
                                 labelColor: AppColors.secondary950,
                                 unselectedLabelColor: AppColors.blackColor,
                                 unselectedLabelStyle: Styles.textStyle16,
-                                tabs: const [
-                                  Tab(text: 'محفظتي'),
-                                  Tab(text: 'سجل الدفع'),
+                                tabs: [
+                                  Tab(text: context.tr('my_wallet')),
+                                  Tab(text: context.tr('payment_record')),
                                 ],
                               );
                             },
@@ -131,7 +131,7 @@ class WalletView extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'سجل المعاملات',
+                  context.tr('transactions_log'),
                   style: Styles.textStyle20Bold.copyWith(
                     color: AppColors.primaryText,
                   ),
@@ -144,7 +144,7 @@ class WalletView extends StatelessWidget {
                     );
                   },
                   child: Text(
-                    'عرض الكل',
+                    context.tr('view_all'),
                     style: Styles.textStyle14.copyWith(
                       color: AppColors.primary400,
                     ),
@@ -164,7 +164,7 @@ class WalletView extends StatelessWidget {
             Padding(
               padding: EdgeInsets.symmetric(vertical: 40.h),
               child: Text(
-                'لا توجد معاملات بعد',
+                context.tr('no_transactions'),
                 style: Styles.textStyle16.copyWith(
                   color: AppColors.secondary600,
                 ),
@@ -187,7 +187,7 @@ class WalletView extends StatelessWidget {
             child: CustomBotton(
               height: 54.h,
               width: double.infinity,
-              title: 'سحب',
+              title: context.tr('withdraw'),
               onPressed: () {
                 Navigator.pushNamed(context, AppRouter.kWithdrawalView);
               },
@@ -213,7 +213,7 @@ class WalletView extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'سجل الحجوزات',
+                  context.tr('bookings_log'),
                   style: Styles.textStyle20Bold.copyWith(
                     color: AppColors.primaryText,
                   ),
@@ -223,7 +223,7 @@ class WalletView extends StatelessWidget {
                     Navigator.pushNamed(context, AppRouter.kBookingsLogView);
                   },
                   child: Text(
-                    'عرض الكل',
+                    context.tr('view_all'),
                     style: Styles.textStyle14.copyWith(
                       color: AppColors.primary400,
                     ),
@@ -243,7 +243,7 @@ class WalletView extends StatelessWidget {
             Padding(
               padding: EdgeInsets.symmetric(vertical: 40.h),
               child: Text(
-                'لا توجد حجوزات بعد',
+                context.tr('no_bookings'),
                 style: Styles.textStyle16.copyWith(
                   color: AppColors.secondary600,
                 ),

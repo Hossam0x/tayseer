@@ -127,9 +127,8 @@ class TransactionItem extends StatelessWidget {
               ],
             ),
           ),
-          // المبلغ
           Text(
-            '${transaction.isPositive ? '+' : '-'}${transaction.amount.toStringAsFixed(0)} ر.س',
+            '${transaction.isPositive ? '+' : '-'}${transaction.amount.toStringAsFixed(0)} ${context.tr('sar')}',
             style: Styles.textStyle16Bold.copyWith(
               color: transaction.pending == true
                   ? AppColors.pendingColor

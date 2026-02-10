@@ -35,11 +35,19 @@ extension MediaQueryExtensions on BuildContext {
 }
 
 extension LocalizationExtension on BuildContext {
-  String tr(String key) {
-    return AppLocalizations.of(this)!.translate(key);
+  String tr(String key, {List<String>? args}) {
+    String value = AppLocalizations.of(this)!.translate(key);
+    if (args != null && args.isNotEmpty) {
+      for (var arg in args) {
+        value = value.replaceFirst('{}', arg);
+      }
+    }
+    return value;
   }
 
   AppLocalizations get loc => AppLocalizations.of(this)!;
+  bool get isArabicLang =>
+      AppLocalizations.of(this)!.locale!.languageCode == 'ar';
 }
 
 extension Navigation on BuildContext {
