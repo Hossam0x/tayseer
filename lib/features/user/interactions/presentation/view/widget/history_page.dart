@@ -9,7 +9,7 @@ import '../../Interactions_cubit/interactions_cubit.dart';
 
 class Historypage extends StatefulWidget {
   final String selectedFilter;
-  const Historypage({super.key, this.selectedFilter = "نال إعجابك"});
+  const Historypage({super.key, this.selectedFilter = ""});
 
   @override
   State<Historypage> createState() => HistorypageState();
@@ -24,23 +24,26 @@ class HistorypageState extends State<Historypage> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
+    // });
+  }
+ @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
+      if (mounted) {
+        // ✅ استخدام المفتاح مباشرة أو القيمة الافتراضية
+        final filterKey = widget.selectedFilter.isEmpty 
+            ? "liked_you" 
+            : widget.selectedFilter;
+        
+        context.read<InteractionsCubit>().fetchHistory(filter: filterKey);
+      }
     });
   }
 
-  @override
-  void didUpdateWidget(Historypage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedFilter != widget.selectedFilter) {
-      context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
-      Future.delayed(const Duration(milliseconds: 150), () {
-        if (mounted) {
-          scrollToTop();
-        }
-      });
-    }
-  }
 
   @override
   void dispose() {
@@ -92,9 +95,10 @@ class HistorypageState extends State<Historypage> {
     }
   }
 
-  Future<void> _onRefresh() async {
+Future<void> _onRefresh() async {
     final cubit = context.read<InteractionsCubit>();
-    if (widget.selectedFilter == "المفضلة") {
+    // ✅ مقارنة بالمفتاح
+    if (widget.selectedFilter == "favorites") {
       await cubit.refreshFavorites();
     } else {
       await cubit.fetchHistory(filter: widget.selectedFilter);
@@ -197,9 +201,9 @@ class HistorypageState extends State<Historypage> {
                           }
                           return InteractionProfileCard(
                             item: data[index],
-                            showFavoriteIcon: widget.selectedFilter == "المفضلة",
+                            showFavoriteIcon: widget.selectedFilter == "favorites",
                             forceBlur: !state.isSubscribed,
-                            showRibbon: widget.selectedFilter != "صادفتهم",
+                            showRibbon: widget.selectedFilter != "met_them",
                           );
                         },
                         childCount: data.length + (_isLoadingMore ? 2 : 0),

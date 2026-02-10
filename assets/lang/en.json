@@ -615,6 +615,7 @@
   "send_rating": "Send Rating",
   "rate_app_success": "Thank you for rating the app!",
   "edit_my_profile": "Edit My Profile",
+  "my_profile": "My Profile",
   "complete_marriage_profile": "Complete Marriage Profile",
   "general_settings": "General Settings",
   "notifications_settings": "Notifications",
@@ -792,7 +793,7 @@
   "favorites": "Favorites",
   "liked_you": "You liked",
   "met_them": "Met them",
-  "sent_compliment": "Sent compliment",
+  "sent_compliment": "compliment",
   "subscribe_to_see_admirers": "Subscribe to see\nyour admirers",
   "subscribe_unlimited_features": "Subscribe with us for a chance to get\nunlimited features",
   "not_sure_free_trial": "Not sure? Activate free trial",
@@ -938,5 +939,15 @@
   "are_you_want_to_unarchive": "Are you want to unarchive",
   "user_not_found": "User not found",
   "no_stories": "No stories",
-  "failed_to_publish_story": "Failed to publish story"
+  "failed_to_publish_story": "Failed to publish story",
+    "exploration": "Exploration",
+  "history": "History",
+  "subscribe_to_see_likes": "Subscribe to see your likes",
+  "Skin":"skin",
+  "back":"back",
+  "error_play_video": "Error playing video",
+"did_you_marry_by": "Did you get married by",
+  "app_name": "Tayseer",
+  "contact_us_reward_msg": "Contact us and get a financial reward"
+
 }

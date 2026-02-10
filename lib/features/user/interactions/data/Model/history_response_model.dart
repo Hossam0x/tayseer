@@ -21,11 +21,12 @@ class HistoryResponseModel {
       message: json['message'] ?? '',
       userSubscription: data['userSubscription'] ?? false,
       sections: {
-        'المفضلة': HistoryDataSection.fromJson(data['userIamFavorites'] ?? {}),
-        'نال إعجابك': HistoryDataSection.fromJson(data['userIamLikes'] ?? {}),
-        'صادفتهم': HistoryDataSection.fromJson(data['userIamEncounteredThem'] ?? {}),
-        'أرسلت مجاملة': HistoryDataSection.fromJson(data['userIamRegards'] ?? {}),
-        'اُعجب بك': HistoryDataSection.fromJson(data['userIamLiked'] ?? {}),
+        // ✅ استخدام مفاتيح ثابتة بدلاً من النصوص المترجمة
+        'favorites': HistoryDataSection.fromJson(data['userIamFavorites'] ?? {}),
+        'liked_you': HistoryDataSection.fromJson(data['userIamLikes'] ?? {}),
+        'met_them': HistoryDataSection.fromJson(data['userIamEncounteredThem'] ?? {}),
+        'sent_compliment': HistoryDataSection.fromJson(data['userIamRegards'] ?? {}),
+        'liked_me': HistoryDataSection.fromJson(data['userIamLiked'] ?? {}),
       },
     );
   }

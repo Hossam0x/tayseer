@@ -4,7 +4,7 @@ class EmptyHistory extends StatelessWidget {
   final String selectedFilter;
   
   const EmptyHistory({
-    this.selectedFilter = "نال إعجابك",
+    this.selectedFilter = "",
     super.key,
   });
 

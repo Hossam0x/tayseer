@@ -1,13 +1,8 @@
-
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tayseer/my_import.dart';
-
 
 class VoiceRecordingWidget extends StatefulWidget {
   final Function(File audioFile) onAudioRecorded;
@@ -34,8 +29,12 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
   bool _isInitialized = false;
   
   // ⭐ للموجات الديناميكية
-  List<double> _waveHeights = List.generate(40, (_) => 0.0); // ⭐ ابدأ من صفر
+  List<double> _waveHeights = List.generate(40, (_) => 3.0);
   StreamSubscription? _recorderSubscription;
+  
+  // ✅ Timer بديل لضمان تحديث العداد
+  Timer? _durationTimer;
+  DateTime? _startTime;
 
   @override
   void initState() {
@@ -49,16 +48,27 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
   Future<void> _initializeRecorder() async {
     _recorder = FlutterSoundRecorder();
+    
+    // ✅ IMPORTANT: افتح الـ recorder مع logger
     await _recorder!.openRecorder();
+    
+    // ✅ تأكد من تفعيل setSubscriptionDuration
+    await _recorder!.setSubscriptionDuration(
+      const Duration(milliseconds: 100), // ✅ كل 100ms تحديث
+    );
+    
     setState(() {
       _isInitialized = true;
     });
+    
+    debugPrint('✅ Recorder initialized successfully');
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _recorderSubscription?.cancel();
+    _durationTimer?.cancel();
     _recorder?.closeRecorder();
     _recorder = null;
     super.dispose();
@@ -99,6 +109,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
           'voice_message_${DateTime.now().millisecondsSinceEpoch}.m4a';
       _recordingPath = '${directory.path}/$fileName';
 
+      // ✅ ابدأ التسجيل
       await _recorder!.startRecorder(
         toFile: _recordingPath,
         codec: Codec.aacMP4,
@@ -106,15 +117,23 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         sampleRate: 44100,
       );
 
+      debugPrint('✅ Recording started at: $_recordingPath');
+
       setState(() {
         _isRecording = true;
         _recordingDuration = Duration.zero;
-        _waveHeights = List.generate(40, (_) => 0.0); // ⭐ ابدأ من صفر
+        _waveHeights = List.generate(40, (_) => 3.0);
+        _startTime = DateTime.now();
       });
 
+      // ✅ ابدأ الاستماع للـ recorder
       _startListeningToRecorder();
+      
+      // ✅ ابدأ Timer احتياطي لضمان تحديث العداد
+      _startDurationTimer();
+      
     } catch (e) {
-      debugPrint('Error starting recording: $e');
+      debugPrint('❌ Error starting recording: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to start recording: $e')),
@@ -123,30 +142,65 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     }
   }
 
-  // ⭐⭐⭐ الدالة المحدثة: الموجات تظهر تدريجياً
-  void _startListeningToRecorder() {
-    _recorderSubscription = _recorder!.onProgress!.listen((event) {
-      if (!mounted || _isPaused) return;
-
-      // ⭐ نجيب الـ decibels (شدة الصوت)
-      final decibels = event.decibels ?? 0.0;
+  // ✅✅✅ دالة جديدة: Timer احتياطي لضمان تحديث العداد
+  void _startDurationTimer() {
+    _durationTimer?.cancel();
+    _durationTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (!mounted || !_isRecording || _isPaused) return;
       
-      // ⭐ نحول الـ decibels لارتفاع (من 3 لـ 25)
-      // decibels عادة من -160 إلى 0 (كلما قل الرقم = صوت أعلى)
-      double normalizedHeight = ((decibels + 160) / 160 * 22).clamp(3.0, 25.0);
-
       setState(() {
-        // ⭐ نزحزح الموجات لليسار ونضيف قيمة جديدة
-        _waveHeights.removeAt(0);
-        _waveHeights.add(normalizedHeight);
-        
-        // ⭐ تحديث الوقت
-        _recordingDuration = event.duration;
+        _recordingDuration = DateTime.now().difference(_startTime!);
       });
-
-      // ⭐ أنيميشن خفيف
-      _animationController.forward(from: 0.0);
     });
+  }
+
+  // ✅✅✅ الدالة المحدثة: استمع للـ onProgress
+  void _startListeningToRecorder() {
+    _recorderSubscription?.cancel();
+    
+    _recorderSubscription = _recorder!.onProgress!.listen(
+      (event) {
+        if (!mounted || _isPaused) return;
+
+        debugPrint('📊 Progress event: duration=${event.duration}, decibels=${event.decibels}');
+
+        // ✅ تحديث المدة من الـ event
+        if (event.duration.inMilliseconds > 0) {
+          _recordingDuration = event.duration;
+        }
+
+        // ✅ تحديث الموجات من الـ decibels
+        final decibels = event.decibels ?? -160.0;
+        
+        // ✅ تحويل الـ decibels لارتفاع (من 3 إلى 30)
+        // decibels عادة من -160 (صامت) إلى 0 (عالي جداً)
+        double normalizedHeight;
+        
+        if (decibels < -100) {
+          // صوت ضعيف جداً
+          normalizedHeight = 3.0;
+        } else if (decibels < -60) {
+          // صوت متوسط
+          normalizedHeight = ((decibels + 160) / 160 * 15).clamp(3.0, 15.0);
+        } else {
+          // صوت عالي
+          normalizedHeight = ((decibels + 160) / 160 * 30).clamp(15.0, 30.0);
+        }
+
+        setState(() {
+          // ✅ زحزح الموجات وأضف قيمة جديدة
+          _waveHeights.removeAt(0);
+          _waveHeights.add(normalizedHeight);
+        });
+
+        // ✅ أنيميشن خفيف
+        _animationController.forward(from: 0.0);
+      },
+      onError: (error) {
+        debugPrint('❌ Recorder stream error: $error');
+      },
+      cancelOnError: false,
+    );
   }
 
   Future<void> _pauseRecording() async {
@@ -154,11 +208,13 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
     try {
       await _recorder!.pauseRecorder();
+      _durationTimer?.cancel();
       setState(() {
         _isPaused = true;
       });
+      debugPrint('⏸️ Recording paused');
     } catch (e) {
-      debugPrint('Error pausing recording: $e');
+      debugPrint('❌ Error pausing recording: $e');
     }
   }
 
@@ -167,11 +223,13 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
     try {
       await _recorder!.resumeRecorder();
+      _startDurationTimer();
       setState(() {
         _isPaused = false;
       });
+      debugPrint('▶️ Recording resumed');
     } catch (e) {
-      debugPrint('Error resuming recording: $e');
+      debugPrint('❌ Error resuming recording: $e');
     }
   }
 
@@ -181,20 +239,26 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     try {
       await _recorder!.stopRecorder();
       _recorderSubscription?.cancel();
+      _durationTimer?.cancel();
       
       setState(() {
         _isRecording = false;
         _isPaused = false;
       });
 
+      debugPrint('⏹️ Recording stopped');
+
       if (_recordingPath != null) {
         final audioFile = File(_recordingPath!);
         if (await audioFile.exists()) {
+          debugPrint('✅ Audio file exists: $_recordingPath');
           widget.onAudioRecorded(audioFile);
+        } else {
+          debugPrint('❌ Audio file does not exist!');
         }
       }
     } catch (e) {
-      debugPrint('Error stopping recording: $e');
+      debugPrint('❌ Error stopping recording: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to stop recording: $e')),
@@ -209,24 +273,26 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     try {
       await _recorder!.stopRecorder();
       _recorderSubscription?.cancel();
+      _durationTimer?.cancel();
       
       setState(() {
         _isRecording = false;
         _isPaused = false;
         _recordingDuration = Duration.zero;
-        _waveHeights = List.generate(40, (_) => 0.0); // ⭐ ارجع لصفر
+        _waveHeights = List.generate(40, (_) => 3.0);
       });
 
       if (_recordingPath != null) {
         final file = File(_recordingPath!);
         if (await file.exists()) {
           await file.delete();
+          debugPrint('🗑️ Recording file deleted');
         }
       }
 
       widget.onCancel?.call();
     } catch (e) {
-      debugPrint('Error canceling recording: $e');
+      debugPrint('❌ Error canceling recording: $e');
     }
   }
 
@@ -281,7 +347,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 child: Column(
                   children: [
-                    // ⭐⭐⭐ الصف الأول: الوقت + النقطة + الموجات
+                    // الصف الأول: الوقت + النقطة + الموجات
                     Row(
                       children: [
                         // الوقت
@@ -315,7 +381,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
                         SizedBox(width: 12.w),
 
-                        // ⭐⭐⭐ الموجات الديناميكية
+                        // الموجات الديناميكية
                         Expanded(
                           child: SizedBox(
                             height: 35,
@@ -323,11 +389,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: List.generate(40, (index) {
-                                // ⭐ لو pause، خليها ثابتة عند آخر قيمة
-                                // لو مش pause، اعرض القيمة الديناميكية
-                                final height = _isPaused 
-                                    ? _waveHeights[index] 
-                                    : _waveHeights[index];
+                                final height = _waveHeights[index];
                                 
                                 return AnimatedContainer(
                                   duration: Duration(milliseconds: 100),
@@ -336,7 +398,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                                   height: height,
                                   margin: EdgeInsets.symmetric(horizontal: 1),
                                   decoration: BoxDecoration(
-                                    // ⭐ لون متدرج من الأزرق للوردي
                                     gradient: LinearGradient(
                                       begin: Alignment.bottomCenter,
                                       end: Alignment.topCenter,
@@ -357,7 +418,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                     
                     SizedBox(height: 12.h),
                     
-                    // ⭐⭐⭐ الصف الثاني: الأزرار
+                    // الصف الثاني: الأزرار
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

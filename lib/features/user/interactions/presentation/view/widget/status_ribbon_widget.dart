@@ -13,12 +13,13 @@ class StatusRibbonwidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
-      alignment: Alignment.topLeft,
       children: [
         // المثلث الصغير (Vector 4) الذي يظهر الالتفاف الخلفي
         Positioned(
           // top: 3.h,
-          left: 0, // المسافة تعتمد على طول الشريط
+          left: 0,
+          // left: isArabic ? null : 0, // المسافة تعتمد على طول الشريط
+          // right: isArabic ? 0 : null,
           child: AppImage(AssetsData.vector4, width: 10.w, height: 9.h),
         ),
 
