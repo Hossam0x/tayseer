@@ -53,13 +53,13 @@ class WithdrawSuccessView extends StatelessWidget {
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: 'تم ',
+                          text: context.tr('withdraw_request_sent_part1'),
                           style: Styles.textStyle28Bold.copyWith(
                             color: AppColors.kprimaryColor,
                           ),
                         ),
                         TextSpan(
-                          text: 'إرسال طلب السحب!',
+                          text: context.tr('withdraw_request_sent_part2'),
                           style: Styles.textStyle28Bold.copyWith(
                             color: AppColors.primaryText,
                           ),
@@ -76,7 +76,7 @@ class WithdrawSuccessView extends StatelessWidget {
 
                   // نص الوصف
                   Text(
-                    'تم إرسال طلب السحب بنجاح، وهو قيد المعالجة. سيتم تحويل الأموال خلال 2-7 أيام عمل. يمكنك متابعة حالة السحب من خلال سجل المعاملات. ستتلقى إشعاراً عند اكتمال العملية. شكراً لثقتك بنا',
+                    context.tr('withdraw_success_message'),
                     textAlign: TextAlign.center,
                     style: Styles.textStyle16.copyWith(
                       color: AppColors.secondaryText,
@@ -92,7 +92,7 @@ class WithdrawSuccessView extends StatelessWidget {
                     child: CustomBotton(
                       height: 54.h,
                       width: double.infinity,
-                      title: 'تم',
+                      title: context.tr('done'),
                       onPressed: () {
                         Navigator.pop(context);
                       },

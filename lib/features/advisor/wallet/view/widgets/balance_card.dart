@@ -19,11 +19,11 @@ class BalanceCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'الرصيد الحالي',
+            context.tr('current_balance'),
             style: Styles.textStyle20.copyWith(color: AppColors.secondaryText),
           ),
           Text(
-            '3250 ر.س',
+            '3250 ${context.tr('sar')}',
             style: Styles.textStyle32Bold.copyWith(color: AppColors.primary400),
           ),
         ],

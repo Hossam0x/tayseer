@@ -31,7 +31,7 @@ class BookingsLogView extends StatelessWidget {
                     Gap(16.h),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: SimpleAppBar(title: 'سجل الحجوزات'),
+                      child: SimpleAppBar(title: context.tr('bookings_log')),
                     ),
                     Gap(16.h),
                     BlocBuilder<WalletCubit, WalletState>(

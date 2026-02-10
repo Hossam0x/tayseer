@@ -64,7 +64,10 @@ class PackageCard extends StatelessWidget {
 
                 Gap(12.h),
 
-                GradientText(text: '$price EGP', style: Styles.textStyle20Bold),
+                GradientText(
+                  text: '$price ${context.tr('egp')}',
+                  style: Styles.textStyle20Bold,
+                ),
 
                 Gap(8.h),
 
@@ -75,7 +78,7 @@ class PackageCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Text(
-                    'وفر $savings Egp',
+                    context.tr('save_amount_egp', args: [savings]),
                     style: Styles.textStyle14Meduim.copyWith(
                       color: AppColors.titleCard,
                     ),
@@ -88,7 +91,7 @@ class PackageCard extends StatelessWidget {
           Gap(16.w),
 
           CustomBotton(
-            title: 'اشتراك',
+            title: context.tr('subscribe'),
             onPressed: onSubscribe,
             width: 95.w,
             height: 45.h,

@@ -107,7 +107,11 @@ class _HelpSupportViewState extends State<HelpSupportView> {
 
   Widget _buildFaqs() {
     return Container(
-      padding: EdgeInsets.only(right: 16.w, top: 16.h),
+      padding: EdgeInsetsDirectional.only(
+        start: 16.w,
+        end: 16.w,
+        top: 16.h,
+      ),
       decoration: BoxDecoration(
         color: AppColors.whiteCard2Back,
         borderRadius: BorderRadius.circular(16.r),

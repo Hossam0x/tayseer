@@ -1,19 +1,19 @@
-
 // ignore_for_file: must_be_immutable
 
 import '../../my_import.dart';
 
 class CustomTextButton extends StatelessWidget {
-  CustomTextButton(
-      {super.key,
-      this.normalText,
-      required this.textButton,
-      required this.onPressed,
-      this.spaceBetween = false,
-      this.normalTextstyle,
-      this.textButtonstyle,
-      this.underLineTextButton = false,
-      this.mainAxisAlignment = MainAxisAlignment.center});
+  CustomTextButton({
+    super.key,
+    this.normalText,
+    required this.textButton,
+    required this.onPressed,
+    this.spaceBetween = false,
+    this.normalTextstyle,
+    this.textButtonstyle,
+    this.underLineTextButton = false,
+    this.mainAxisAlignment = MainAxisAlignment.center,
+  });
 
   String? normalText;
   final String textButton;
@@ -27,16 +27,15 @@ class CustomTextButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Row(
         mainAxisAlignment: mainAxisAlignment,
         children: [
           Text(
             normalText ?? "",
-            style: normalTextstyle ??
-                Styles.textStyle14.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+            style:
+                normalTextstyle ??
+                Styles.textStyle14.copyWith(fontWeight: FontWeight.w500),
           ),
           if (spaceBetween == true) const Spacer(),
           TextButton(
@@ -44,7 +43,8 @@ class CustomTextButton extends StatelessWidget {
             child: underLineTextButton
                 ? Text(
                     textButton,
-                    style: textButtonstyle ??
+                    style:
+                        textButtonstyle ??
                         Styles.textStyle14.copyWith(
                           color: AppColors.kBlueColor,
                           fontWeight: FontWeight.w500,
@@ -53,7 +53,8 @@ class CustomTextButton extends StatelessWidget {
                   )
                 : Text(
                     textButton,
-                    style: textButtonstyle ??
+                    style:
+                        textButtonstyle ??
                         Styles.textStyle14.copyWith(
                           // color: AppColors.kBlueButtonTextColor,
                           fontWeight: FontWeight.bold,

@@ -39,7 +39,7 @@ class PackagesTabView extends StatelessWidget {
                         horizontal: 20.w,
                         vertical: 15.h,
                       ),
-                      child: SimpleAppBar(title: 'الباقات'),
+                      child: SimpleAppBar(title: context.tr('packages')),
                     ),
 
                     // ── نفس الـ TabBar الموجود في الأرشيف ──
@@ -79,9 +79,9 @@ class PackagesTabView extends StatelessWidget {
                               labelColor: AppColors.secondary950,
                               unselectedLabelColor: AppColors.blackColor,
                               unselectedLabelStyle: Styles.textStyle16,
-                              tabs: const [
-                                Tab(text: 'الباقات'),
-                                Tab(text: 'الاشتراكات'),
+                              tabs: [
+                                Tab(text: context.tr('packages')),
+                                Tab(text: context.tr('subscriptions')),
                               ],
                             );
                           },
@@ -118,19 +118,25 @@ class _PackagesTabContent extends StatefulWidget {
 }
 
 class _PackagesTabContentState extends State<_PackagesTabContent> {
-  String _selectedPackageType = 'الشاملة';
-
-  final List<PackageCard> _comprehensivePackages = [
+  List<PackageCard> get _comprehensivePackages => [
     PackageCard(
-      title: 'باقة شاملة اولي',
-      features: ['3 محادثات', 'تعزيز البوستات', 'تثبيت في الاعلي لمدة يوم'],
+      title: context.tr('comprehensive_package_one'),
+      features: [
+        context.tr('conversations_count', args: ['3']),
+        context.tr('boost_posts'),
+        context.tr('pin_top_one_day'),
+      ],
       price: '170',
       savings: '150',
       onSubscribe: () {},
     ),
     PackageCard(
-      title: 'باقة شاملة مميزة',
-      features: ['3 محادثات', 'تعزيز البوستات', 'تثبيت في الاعلي لمدة يوم'],
+      title: context.tr('premium_comprehensive_package'),
+      features: [
+        context.tr('conversations_count', args: ['3']),
+        context.tr('boost_posts'),
+        context.tr('pin_top_one_day'),
+      ],
       price: '170',
       savings: '150',
       isFeatured: true,
@@ -138,16 +144,16 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
     ),
   ];
 
-  final List<PackageCard> _detailedPackages = [
+  List<PackageCard> get _detailedPackages => [
     PackageCard(
-      title: 'باقة مفصلة اولي',
+      title: context.tr('detailed_package_one'),
       features: null,
       price: '100',
       savings: '80',
       onSubscribe: () {},
     ),
     PackageCard(
-      title: 'باقة مفصلة مميزة',
+      title: context.tr('premium_detailed_package'),
       features: null,
       price: '120',
       savings: '90',
@@ -157,8 +163,17 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _selectedPackageType = 'comprehensive';
+  }
+
+  late String _selectedPackageType;
+
+  @override
   Widget build(BuildContext context) {
-    final List<PackageCard> currentPackages = _selectedPackageType == 'الشاملة'
+    final List<PackageCard> currentPackages =
+        _selectedPackageType == 'comprehensive'
         ? _comprehensivePackages
         : _detailedPackages;
 
@@ -178,7 +193,10 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
               child: Row(
                 children: [
                   Text(
-                    'الباقات $_selectedPackageType',
+                    context.tr(
+                      'packages_of_type',
+                      args: [context.tr(_selectedPackageType)],
+                    ),
                     style: Styles.textStyle14.copyWith(
                       color: AppColors.secondary600,
                     ),
@@ -254,7 +272,7 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
                     ),
                     Expanded(
                       child: Text(
-                        'اختر نوع الباقات',
+                        context.tr('select_package_type'),
                         style: Styles.textStyle16SemiBold,
                         textAlign: TextAlign.center,
                       ),
@@ -264,21 +282,21 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
               ),
 
               _buildPackageTypeOption(
-                title: 'الباقات الشاملة',
-                subtitle: 'باقات متكاملة مع جميع المميزات',
-                isSelected: _selectedPackageType == 'الشاملة',
+                title: context.tr('comprehensive_packages'),
+                subtitle: context.tr('comprehensive_packages_desc'),
+                isSelected: _selectedPackageType == 'comprehensive',
                 onTap: () {
-                  setState(() => _selectedPackageType = 'الشاملة');
+                  setState(() => _selectedPackageType = 'comprehensive');
                   Navigator.pop(context);
                 },
               ),
               Gap(12.h),
               _buildPackageTypeOption(
-                title: 'الباقات المفصلة',
-                subtitle: 'اختر المميزات التي تحتاجها فقط',
-                isSelected: _selectedPackageType == 'المفصلة',
+                title: context.tr('detailed_packages'),
+                subtitle: context.tr('detailed_packages_desc'),
+                isSelected: _selectedPackageType == 'detailed',
                 onTap: () {
-                  setState(() => _selectedPackageType = 'المفصلة');
+                  setState(() => _selectedPackageType = 'detailed');
                   Navigator.pop(context);
                 },
               ),
@@ -353,20 +371,20 @@ class _SubscriptionsTabContent extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
       children: [
         SubscriptionCard(
-          title: 'باقة شاملة اولي',
+          title: context.tr('comprehensive_package_one'),
           dateStart: '12/10/2020',
           dateEnd: '13/11/2020',
           isExpiring: true,
         ),
         Gap(10.h),
         SubscriptionCard(
-          title: 'باقة شاملة اولي',
+          title: context.tr('comprehensive_package_one'),
           dateStart: '12/10/2020',
           dateEnd: '13/11/2020',
         ),
         Gap(10.h),
         SubscriptionCard(
-          title: 'باقة شاملة اولي',
+          title: context.tr('comprehensive_package_one'),
           dateStart: '12/10/2020',
           dateEnd: '13/11/2020',
           canRenew: false,

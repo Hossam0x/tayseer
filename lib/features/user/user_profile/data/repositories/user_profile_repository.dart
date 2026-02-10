@@ -17,6 +17,7 @@ abstract class UserProfileRepository {
   Future<Either<Failure, void>> toggleAnonymousStatus(bool isAnonymous);
   Future<Either<Failure, void>> toggleMarriageStatus(bool enable);
   Future<Either<Failure, void>> updateImageBlur(bool blurEnabled);
+  Future<Either<Failure, void>> rateApp(int rating);
 }
 
 class UserProfileRepositoryImpl implements UserProfileRepository {
@@ -168,6 +169,26 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         return Left(
           ServerFailure(response['message'] ?? 'فشل تحديث إعدادات الصورة'),
         );
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> rateApp(int rating) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.rateApp,
+        data: {'rating': rating.toString()},
+      );
+
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل تقييم التطبيق'));
       }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));

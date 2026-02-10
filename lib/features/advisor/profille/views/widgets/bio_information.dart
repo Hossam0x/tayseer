@@ -270,7 +270,9 @@ class BioInformation extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      CupertinoIcons.arrow_up_left,
+                      isArabic
+                          ? CupertinoIcons.arrow_up_left
+                          : CupertinoIcons.arrow_up_right,
                       color: AppColors.secondary700,
                       size: 24.w,
                     ),
