@@ -229,7 +229,7 @@ Future<void> fetchExploration({required String category}) async {
     _pendingRemovalFavorites.clear();
     _pendingAddFavorites.clear();
 
-    await fetchHistory(filter: "المفضلة");
+    await fetchHistory(filter: "favorites");
   }
   
   // ═══════════════════════════════════════════════════════════════════

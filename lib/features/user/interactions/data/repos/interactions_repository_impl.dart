@@ -73,23 +73,22 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
     }
   }
 
-  String _mapFilterToApiType(String filter) {
-    switch (filter) {
-      case 'المفضلة':
-        return 'favorites';
-      case 'نال إعجابك':
-        return 'likes';
-      case 'صادفتهم':
-        return 'encountered';
-      case 'أرسلت مجاملة':
-        return 'regards';
-      case 'اُعجب بك':
-        return 'likedMe';
-      default:
-        return 'likes';
-    }
+  String _mapFilterToApiType(String filterKey) {
+  switch (filterKey) {
+    case 'favorites':
+      return 'favorites';
+    case 'liked_you':
+      return 'likes';
+    case 'met_them':
+      return 'encountered';
+    case 'sent_compliment':
+      return 'regards';
+    case 'liked_me':
+      return 'likedMe';
+    default:
+      return 'likes';
   }
-
+}
   // ═══════════════════════════════════════════════════════════════════
   // ACTIONS
   // ═══════════════════════════════════════════════════════════════════

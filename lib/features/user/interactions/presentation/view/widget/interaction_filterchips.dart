@@ -9,20 +9,28 @@ class FilterChips extends StatefulWidget {
 }
 
 class _FilterChipsState extends State<FilterChips> {
-  // ✅ استخدام مفاتيح الترجمة بدلاً من النصوص المباشرة
   late final List<FilterItem> _filters;
-  String _selectedFilterKey = "liked_you"; // Default selected key
+  String _selectedFilterKey = "liked_you"; // ✅ نستخدم المفتاح بدلاً من النص
 
   @override
   void initState() {
     super.initState();
-    // ✅ تعريف الفلاتر مع مفاتيح الترجمة
     _filters = [
       FilterItem(key: "favorites", labelKey: "favorites"),
       FilterItem(key: "liked_you", labelKey: "liked_you"),
       FilterItem(key: "met_them", labelKey: "met_them"),
       FilterItem(key: "sent_compliment", labelKey: "sent_compliment"),
     ];
+  }
+
+  // ✅ إضافة didChangeDependencies لإرسال الفلتر الافتراضي عند تغيير اللغة
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ✅ إرسال الفلتر الافتراضي المترجم
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onFilterChanged?.call(_selectedFilterKey);
+    });
   }
 
   @override
@@ -48,7 +56,7 @@ class _FilterChipsState extends State<FilterChips> {
                   _selectedFilterKey = filter.key;
                 });
                 // ✅ إرجاع النص المترجم
-                widget.onFilterChanged?.call(context.tr(filter.labelKey));
+                 widget.onFilterChanged?.call(filter.key);
               },
               child: AnimatedContainer(
                 duration: Duration(milliseconds: 300),
@@ -60,7 +68,7 @@ class _FilterChipsState extends State<FilterChips> {
                 padding: EdgeInsets.symmetric(vertical: 15.0.h),
                 alignment: Alignment.center,
                 child: Text(
-                  context.tr(filter.labelKey), // ✅ ترجمة
+                  context.tr(filter.labelKey), // ✅ ترجمة ديناميكية
                   textAlign: TextAlign.center,
                   style: isSelected
                       ? Styles.textStyle14.copyWith(
@@ -81,7 +89,6 @@ class _FilterChipsState extends State<FilterChips> {
   }
 }
 
-// ✅ Model للفلتر
 class FilterItem {
   final String key;
   final String labelKey;

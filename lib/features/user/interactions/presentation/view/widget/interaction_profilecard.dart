@@ -258,26 +258,38 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
           ),
 
           // ✅ الشعار (Ribbon) مع الترجمة
-          if (widget.showRibbon) ...[
-            if (widget.item.likedHim)
-              StatusRibbonwidget(
-                statusText: context.tr("you_liked"), // ✅ ترجمة
-                topTextPosition: 28.h,
-                rightTextPosition: 1.w,
-              )
-            else if (widget.item.sentCompliment)
-              StatusRibbonwidget(
-                statusText: context.tr("sent_compliment"), // ✅ ترجمة
-                topTextPosition: 26.h,
-                rightTextPosition: -2.w,
-              )
-            else if (widget.item.likedMe)
-              StatusRibbonwidget(
-                statusText: context.tr("liked_Me"), // ✅ ترجمة
-                topTextPosition: 30.h,
-                rightTextPosition: 5.w,
-              ),
-          ],
+        if (widget.showRibbon) ...[
+  if (widget.item.likedHim)
+    Positioned(
+      right: 0, // ✅ دائمًا من اليمين، الـ StatusRibbon يتعامل مع الاتجاه داخليًا
+      top: 0,
+      child: StatusRibbonwidget(
+        statusText: context.tr("you_liked"),
+        topTextPosition: 28.h,
+        rightTextPosition: 1.w,
+      ),
+    )
+  else if (widget.item.sentCompliment)
+    Positioned(
+      right: 0,
+      top: 0,
+      child: StatusRibbonwidget(
+        statusText: context.tr("sent_compliment"),
+        topTextPosition: 26.h,
+        rightTextPosition: -2.w,
+      ),
+    )
+  else if (widget.item.likedMe)
+    Positioned(
+      right: 0,
+      top: 0,
+      child: StatusRibbonwidget(
+        statusText: context.tr("liked_Me"),
+        topTextPosition: 30.h,
+        rightTextPosition: 5.w,
+      ),
+    ),
+],
         ],
       ),
     );

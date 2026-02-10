@@ -17,15 +17,33 @@ class InteractionBody extends StatefulWidget {
 
 class InteractionBodyState extends State<InteractionBody> {
   int _currentIndex = 0;
-  String selectedTab = "استكشاف";
-  String selectedFilter = "نال إعجابك";
+  String selectedTab = "";
+  String selectedFilter = "";
 
-  final GlobalKey<ExplorationState> _explorationKey = GlobalKey<ExplorationState>();
-  final GlobalKey<HistorypageState> _historyKey = GlobalKey<HistorypageState>(); // ✅ Key للـ History
-  
+  final GlobalKey<ExplorationState> _explorationKey =
+      GlobalKey<ExplorationState>();
+  final GlobalKey<HistorypageState> _historyKey =
+      GlobalKey<HistorypageState>(); // ✅ Key للـ History
+
   // ✅ ScrollController للصفحة بالكامل
   final ScrollController _mainScrollController = ScrollController();
+ @override
+  void initState() {
+    super.initState();
+    // ✅ Initialize with empty strings, will be set in first build
+  }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ✅ Set initial values when context is available
+    if (selectedTab.isEmpty) {
+      selectedTab = context.tr("exploration");
+    }
+    if (selectedFilter.isEmpty) {
+      selectedFilter = context.tr("liked_you");
+    }
+  }
   @override
   void dispose() {
     _mainScrollController.dispose();
@@ -34,7 +52,7 @@ class InteractionBodyState extends State<InteractionBody> {
 
   // ✅ دالة للتعامل مع إعادة الضغط على التاب
   void handleTabReselect() {
-    if (_currentIndex == 0 && selectedTab == "استكشاف") {
+    if (_currentIndex == 0 && selectedTab == context.tr("exploration")) {
       // Scroll to top الصفحة كلها
       if (_mainScrollController.hasClients) {
         _mainScrollController.animateTo(
@@ -54,7 +72,7 @@ class InteractionBodyState extends State<InteractionBody> {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: state.actionMessage ?? 'تمت العملية بنجاح',
+              text: state.actionMessage ?? context.tr("follow_success"),
               isSuccess: true,
             ),
           );
@@ -92,132 +110,177 @@ class InteractionBodyState extends State<InteractionBody> {
     );
   }
 
-Widget _buildExplorationWithHeader() {
-  return BlocBuilder<InteractionsCubit, InteractionsState>(
-    builder: (context, state) {
-      return Stack(
-        children: [
-          Column(
-            children: [
+  Widget _buildExplorationWithHeader() {
+    return BlocBuilder<InteractionsCubit, InteractionsState>(
+      builder: (context, state) {
+        // ✅ Check if we should show the overlay
+        final bool shouldShowOverlay = _shouldShowSubscriptionOverlay(state);
 
-              Padding(
-                padding: EdgeInsets.only(right: 10.w),
-                child: DefaultAppBar(
-                  title:context.tr("interactions"), // ✅ ترجمة
-                  leadingWidget: GestureDetector(
-                    onTap: () {
-                      context.pushNamed(AppRouter.kMarriageFilterView);
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all( 10.w),
-                  color: Colors.transparent,
-                      child: SvgPicture.asset(
-                        AssetsData.kfilterIcon,
-                        width: 22.w,
-                        height: 22.h,
-                        color: AppColors.secondary600,
+        return Stack(
+          children: [
+            Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(right: 10.w),
+                  child: DefaultAppBar(
+                    title: context.tr("interactions"),
+                    leadingWidget: GestureDetector(
+                      onTap: () {
+                        context.pushNamed(AppRouter.kMarriageFilterView);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(10.w),
+                        color: Colors.transparent,
+                        child: SvgPicture.asset(
+                          AssetsData.kfilterIcon,
+                          width: 22.w,
+                          height: 22.h,
+                          color: AppColors.secondary600,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-
-              SizedBox(height: 10.h),
-
-              ContentSwitcher(
-                selectedOption: selectedTab,
-                options: const ["استكشاف  ", " السجل "],
-                onOptionSelected: (String selectedOption) {
-                  setState(() {
-                    selectedTab = selectedOption.trim();
-                    _currentIndex = selectedTab == "استكشاف" ? 0 : 1;
-                  });
-                },
-              ),
-              SizedBox(height: 10.h),
-
-              // ✅ هنا نخلي Exploration يتمدد وياخد باقي الشاشة
-              Expanded(
-                child: Exploration(
-                  key: _explorationKey,
-                  mainScrollController: _mainScrollController, // ✅ تمرير الـ ScrollController
+                SizedBox(height: 10.h),
+                ContentSwitcher(
+                 selectedOption: context.tr(selectedTab),
+                  options: [
+                    context.tr("exploration"), // ✅ "استكشاف" or "Exploration"
+                    context.tr("history"),
+                  ],
+                  onOptionSelected: (String selectedOption) {
+                    setState(() {
+                      if (selectedOption.trim() == context.tr("exploration")) {
+                        selectedTab = "exploration";
+                        _currentIndex = 0;
+                      } else {
+                        selectedTab = "history";
+                        _currentIndex = 1;
+                      }
+                    
+                    });
+                  },
                 ),
-              ),
-            ],
-          ),
+                SizedBox(height: 10.h),
+                Expanded(
+                  child: Exploration(
+                    key: _explorationKey,
+                    mainScrollController: _mainScrollController,
+                  ),
+                ),
+              ],
+            ),
 
-          if (!state.isSubscribed) const SubscriptionPromptOverlay(),
-        ],
-      );
-    },
-  );
-}
+            // ✅ Only show overlay when conditions are met
+            if (shouldShowOverlay) const SubscriptionPromptOverlay(),
+          ],
+        );
+      },
+    );
+  }
 
-  Widget _buildHistoryWithHeader() {
-    return Column(
-      children: [
-        Padding(
-          padding: EdgeInsets.only(right: 10.w),
-          child: DefaultAppBar(
-            title: context.tr("interactions"), 
-            leadingWidget: GestureDetector(
-              onTap: () {
+  // ✅ Helper method to determine if overlay should be shown
+  bool _shouldShowSubscriptionOverlay(InteractionsState state) {
+    // Don't show if user is subscribed
+    if (state.isSubscribed) return false;
+
+    // Don't show if profile is incomplete (answerCompleted = false)
+    if (!state.answerCompleted) return false;
+
+    // Don't show if loading
+    if (state.explorationState == CubitStates.loading &&
+        state.explorationData.isEmpty) {
+      return false;
+    }
+
+    // Don't show if there's an error
+    if (state.explorationState == CubitStates.failure &&
+        state.explorationData.isEmpty) {
+      return false;
+    }
+
+    // Don't show if there's no data
+    final hasData = state.explorationData.values.any((list) => list.isNotEmpty);
+    if (!hasData) return false;
+
+    // Show overlay: user is not subscribed AND has valid data to display
+    return true;
+  }
+Widget _buildHistoryWithHeader() {
+  return Column(
+    children: [
+      Padding(
+        padding: EdgeInsets.only(right: 10.w),
+        child: DefaultAppBar(
+          title: context.tr("interactions"),
+          leadingWidget: GestureDetector(
+            onTap: () {
               context.pushNamed(AppRouter.kMarriageFilterView);
-              },
-              child: Container(
-                  padding: EdgeInsets.all( 10.w),
-                  color: Colors.transparent,
-                child: SvgPicture.asset(
-                  AssetsData.kfilterIcon,
-                  width: 22.w,
-                  height: 22.h,
-                  color: AppColors.secondary600,
-                ),
+            },
+            child: Container(
+              padding: EdgeInsets.all(10.w),
+              color: Colors.transparent,
+              child: SvgPicture.asset(
+                AssetsData.kfilterIcon,
+                width: 22.w,
+                height: 22.h,
+                color: AppColors.secondary600,
               ),
             ),
           ),
         ),
-        SizedBox(height: 10.h),
+      ),
+      SizedBox(height: 10.h),
 
-        ContentSwitcher(
-          selectedOption: selectedTab,
-          options: const ["استكشاف  ", " السجل "],
-          onOptionSelected: (String selectedOption) {
-            setState(() {
-              selectedTab = selectedOption.trim();
-              _currentIndex = selectedTab == "استكشاف" ? 0 : 1;
-            });
+      // ✅ FIX: Use translated strings here too!
+      ContentSwitcher(
+       selectedOption: context.tr(selectedTab),
+        options: [
+          context.tr("exploration"),  // ✅ NOT "استكشاف  "
+          context.tr("history"),       // ✅ NOT " السجل "
+        ],
+        onOptionSelected: (String selectedOption) {
+          setState(() {
+            // ✅ تحويل الترجمة إلى مفتاح
+              if (selectedOption.trim() == context.tr("exploration")) {
+                selectedTab = "exploration";
+                _currentIndex = 0;
+              } else {
+                selectedTab = "history";
+                _currentIndex = 1;
+              }
+          });
 
-            if (selectedTab == "استكشاف") {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                handleTabReselect();
-              });
-            }
-          },
-        ),
-
-        FilterChips(
-          onFilterChanged: (filter) {
-            setState(() {
-              selectedFilter = filter;
-            });
-            
-            // ✅ scroll to top عند تغيير الفلتر - بعد بناء الـ widget بالكامل
+          if (selectedTab == context.tr("exploration")) {  // ✅ Use translated
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Future.delayed(const Duration(milliseconds: 100), () {
-                _historyKey.currentState?.scrollToTop();
-              });
+              handleTabReselect();
             });
-          },
-        ),
+          }
+        },
+      ),
 
-        Expanded(
-          child: Historypage(
-            key: _historyKey, // ✅ استخدام GlobalKey بدل ValueKey
-            selectedFilter: selectedFilter,
-          ),
+     FilterChips(
+          onFilterChanged: (filterKey) { // ✅ استقبال المفتاح
+            setState(() {
+              selectedFilter = filterKey;
+            });
+
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Future.delayed(const Duration(milliseconds: 100), () {
+              _historyKey.currentState?.scrollToTop();
+            });
+          });
+        },
+      ),
+
+      Expanded(
+        child: Historypage(
+          key: _historyKey,
+          selectedFilter: selectedFilter,
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 }
