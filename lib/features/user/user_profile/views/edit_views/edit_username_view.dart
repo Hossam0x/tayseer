@@ -64,10 +64,10 @@ class _EditUsernameViewState extends State<EditUsernameView> {
     setState(() {
       if (cleaned.isEmpty) {
         _errorMessage = 'اسم المستخدم مطلوب';
-      } else if (cleaned.length < 5) {
-        _errorMessage = 'يجب أن يكون اسم المستخدم 5 أحرف على الأقل';
-      } else if (cleaned.length > 19) {
-        _errorMessage = 'لا يمكن أن يزيد اسم المستخدم عن 19 حرف';
+      } else if (cleaned.length < 4) {
+        _errorMessage = 'يجب أن يكون اسم المستخدم 4 أحرف على الأقل';
+      } else if (cleaned.length > 24) {
+        _errorMessage = 'لا يمكن أن يزيد اسم المستخدم عن 24 حرف';
       } else if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(cleaned)) {
         _errorMessage =
             'يمكن استخدام الحروف الإنجليزية والأرقام والشرطة السفلية (_) فقط';
@@ -199,7 +199,7 @@ class _EditUsernameViewState extends State<EditUsernameView> {
               ),
               autofocus: true,
               textInputAction: TextInputAction.done,
-              maxLength: 19, // 19 حرف بدون الـ @
+              maxLength: 24, // 24 حرف بدون الـ @
               onChanged: (value) {
                 // منع كتابة @ في الحقل
                 if (value.contains('@')) {

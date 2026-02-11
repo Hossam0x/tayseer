@@ -66,16 +66,16 @@ class _EditNameViewState extends State<EditNameView> {
       // تحقق من الاسم الأول
       if (firstName.isEmpty) {
         _firstNameError = 'الاسم الأول مطلوب';
-      } else if (firstName.length > 12) {
-        _firstNameError = 'الاسم الأول لا يمكن أن يزيد عن 12 حرف';
+      } else if (firstName.length < 4 || firstName.length > 12) {
+        _firstNameError = 'الاسم الأول يجب أن يكون بين 4 و 12 حرف';
       } else if (!RegExp(r'^[a-zA-Zء-ي\s]+$').hasMatch(firstName)) {
         _firstNameError = 'الاسم الأول يمكن أن يحتوي على حروف فقط';
       }
 
       // تحقق من الاسم الثاني
       if (lastName.isNotEmpty) {
-        if (lastName.length > 12) {
-          _lastNameError = 'الاسم الثاني لا يمكن أن يزيد عن 12 حرف';
+        if (lastName.length < 4 || lastName.length > 12) {
+          _lastNameError = 'الاسم الثاني يجب أن يكون بين 4 و 12 حرف';
         } else if (!RegExp(r'^[a-zA-Zء-ي\s]+$').hasMatch(lastName)) {
           _lastNameError = 'الاسم الثاني يمكن أن يحتوي على حروف فقط';
         }
