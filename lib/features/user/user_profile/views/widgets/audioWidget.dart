@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
@@ -29,39 +30,44 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
   bool _isInitialized = false;
   
   // ⭐ للموجات الديناميكية
-  List<double> _waveHeights = List.generate(40, (_) => 3.0);
+  List<double> _waveHeights = List.generate(40, (_) => 4.0);
   StreamSubscription? _recorderSubscription;
   
-  // ✅ Timer بديل لضمان تحديث العداد
   Timer? _durationTimer;
   DateTime? _startTime;
+  
+  // ✅ للأنيميشن السلس
+  double _currentAmplitude = 0.0;
 
   @override
   void initState() {
     super.initState();
     _initializeRecorder();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 100),
       vsync: this,
-    );
+    )..repeat(reverse: true);
   }
 
   Future<void> _initializeRecorder() async {
     _recorder = FlutterSoundRecorder();
     
-    // ✅ IMPORTANT: افتح الـ recorder مع logger
-    await _recorder!.openRecorder();
-    
-    // ✅ تأكد من تفعيل setSubscriptionDuration
-    await _recorder!.setSubscriptionDuration(
-      const Duration(milliseconds: 100), // ✅ كل 100ms تحديث
-    );
-    
-    setState(() {
-      _isInitialized = true;
-    });
-    
-    debugPrint('✅ Recorder initialized successfully');
+    try {
+      await _recorder!.openRecorder();
+      
+      // ✅ CRITICAL: Enable subscription with short interval
+      await _recorder!.setSubscriptionDuration(
+        const Duration(milliseconds: 200), // ✅ تحديث كل 50ms لسلاسة أكثر
+      );
+      
+      setState(() {
+        _isInitialized = true;
+      });
+      
+      debugPrint('✅ Recorder initialized successfully');
+    } catch (e) {
+      debugPrint('❌ Error initializing recorder: $e');
+    }
   }
 
   @override
@@ -109,7 +115,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
           'voice_message_${DateTime.now().millisecondsSinceEpoch}.m4a';
       _recordingPath = '${directory.path}/$fileName';
 
-      // ✅ ابدأ التسجيل
       await _recorder!.startRecorder(
         toFile: _recordingPath,
         codec: Codec.aacMP4,
@@ -122,14 +127,12 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       setState(() {
         _isRecording = true;
         _recordingDuration = Duration.zero;
-        _waveHeights = List.generate(40, (_) => 3.0);
+        _waveHeights = List.generate(40, (_) => 4.0);
+        _currentAmplitude = 0.0;
         _startTime = DateTime.now();
       });
 
-      // ✅ ابدأ الاستماع للـ recorder
       _startListeningToRecorder();
-      
-      // ✅ ابدأ Timer احتياطي لضمان تحديث العداد
       _startDurationTimer();
       
     } catch (e) {
@@ -142,19 +145,20 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     }
   }
 
-  // ✅✅✅ دالة جديدة: Timer احتياطي لضمان تحديث العداد
   void _startDurationTimer() {
     _durationTimer?.cancel();
     _durationTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (!mounted || !_isRecording || _isPaused) return;
       
-      setState(() {
-        _recordingDuration = DateTime.now().difference(_startTime!);
-      });
+      if (mounted) {
+        setState(() {
+          _recordingDuration = DateTime.now().difference(_startTime!);
+        });
+      }
     });
   }
 
-  // ✅✅✅ الدالة المحدثة: استمع للـ onProgress
+  // ✅✅✅ الدالة المحسّنة للاستماع للصوت
   void _startListeningToRecorder() {
     _recorderSubscription?.cancel();
     
@@ -162,45 +166,59 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       (event) {
         if (!mounted || _isPaused) return;
 
-        debugPrint('📊 Progress event: duration=${event.duration}, decibels=${event.decibels}');
-
-        // ✅ تحديث المدة من الـ event
-        if (event.duration.inMilliseconds > 0) {
-          _recordingDuration = event.duration;
-        }
-
-        // ✅ تحديث الموجات من الـ decibels
         final decibels = event.decibels ?? -160.0;
         
-        // ✅ تحويل الـ decibels لارتفاع (من 3 إلى 30)
-        // decibels عادة من -160 (صامت) إلى 0 (عالي جداً)
-        double normalizedHeight;
+        debugPrint('📊 Decibels: $decibels');
+
+        // ✅ تحويل الـ decibels لـ amplitude (من 0 إلى 1)
+        // Decibels عادة من -160 (صامت تماماً) إلى 0 (أقصى صوت)
+        double amplitude;
         
-        if (decibels < -100) {
-          // صوت ضعيف جداً
-          normalizedHeight = 3.0;
-        } else if (decibels < -60) {
+        if (decibels <= -80) {
+          // صوت ضعيف جداً أو صمت
+          amplitude = 0.1;
+        } else if (decibels <= -40) {
           // صوت متوسط
-          normalizedHeight = ((decibels + 160) / 160 * 15).clamp(3.0, 15.0);
+          amplitude = ((decibels + 80) / 40).clamp(0.1, 0.6);
         } else {
           // صوت عالي
-          normalizedHeight = ((decibels + 160) / 160 * 30).clamp(15.0, 30.0);
+          amplitude = ((decibels + 80) / 80).clamp(0.6, 1.0);
         }
 
-        setState(() {
-          // ✅ زحزح الموجات وأضف قيمة جديدة
-          _waveHeights.removeAt(0);
-          _waveHeights.add(normalizedHeight);
-        });
+        // ✅ تنعيم التغييرات (Smoothing)
+        _currentAmplitude = (_currentAmplitude * 0.7) + (amplitude * 0.3);
 
-        // ✅ أنيميشن خفيف
-        _animationController.forward(from: 0.0);
+        if (mounted) {
+          setState(() {
+            // ✅ إنشاء موجة جديدة بناءً على الـ amplitude
+            _addNewWave(_currentAmplitude);
+          });
+        }
       },
       onError: (error) {
         debugPrint('❌ Recorder stream error: $error');
       },
       cancelOnError: false,
     );
+  }
+
+  // ✅✅✅ دالة لإضافة موجة جديدة
+  void _addNewWave(double amplitude) {
+    // ✅ إنشاء 3-5 bars جديدة بارتفاعات متنوعة
+    final random = math.Random();
+    
+    // الارتفاع الأساسي من الـ amplitude
+    final baseHeight = 5.0 + (amplitude * 30.0); // من 5 إلى 35
+    
+    // إزالة أول 3 bars وإضافة 3 جديدة
+    _waveHeights.removeRange(0, 3);
+    
+    for (int i = 0; i < 3; i++) {
+      // إضافة تنويع عشوائي صغير (±30%)
+      final variation = 0.7 + (random.nextDouble() * 0.6); // 0.7 to 1.3
+      final height = (baseHeight * variation).clamp(4.0, 35.0);
+      _waveHeights.add(height);
+    }
   }
 
   Future<void> _pauseRecording() async {
@@ -279,7 +297,8 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         _isRecording = false;
         _isPaused = false;
         _recordingDuration = Duration.zero;
-        _waveHeights = List.generate(40, (_) => 3.0);
+        _waveHeights = List.generate(40, (_) => 4.0);
+        _currentAmplitude = 0.0;
       });
 
       if (_recordingPath != null) {
@@ -347,10 +366,8 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 child: Column(
                   children: [
-                    // الصف الأول: الوقت + النقطة + الموجات
                     Row(
                       children: [
-                        // الوقت
                         Text(
                           _formatDuration(_recordingDuration),
                           style: TextStyle(
@@ -361,52 +378,65 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                         ),
                         SizedBox(width: 8.w),
                         
-                        // النقطة الحمراء/البرتقالية
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: _isPaused ? Colors.orange : Colors.red,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: (_isPaused ? Colors.orange : Colors.red)
-                                    .withOpacity(0.5),
-                                blurRadius: 4,
-                                spreadRadius: 1,
+                        // النقطة النابضة
+                        AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            return Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: _isPaused ? Colors.orange : Colors.red,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (_isPaused ? Colors.orange : Colors.red)
+                                        .withOpacity(0.3 + (_animationController.value * 0.4)),
+                                    blurRadius: 4 + (_animationController.value * 4),
+                                    spreadRadius: 1,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
 
                         SizedBox(width: 12.w),
 
-                        // الموجات الديناميكية
+                        // ✅✅✅ الموجات المحسّنة
                         Expanded(
                           child: SizedBox(
-                            height: 35,
+                            height: 40,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
-                              children: List.generate(40, (index) {
+                              children: List.generate(_waveHeights.length, (index) {
                                 final height = _waveHeights[index];
                                 
+                                // ✅ تدرج لوني من الأزرق للأخضر حسب الارتفاع
+                                final color = Color.lerp(
+                                  AppColors.primary200.withOpacity(0.5),
+                                  AppColors.primary400,
+                                  (height / 35.0).clamp(0.0, 1.0),
+                                )!;
+                                
                                 return AnimatedContainer(
-                                  duration: Duration(milliseconds: 100),
+                                  duration: Duration(milliseconds: 80),
                                   curve: Curves.easeOut,
-                                  width: 3,
+                                  width: 2.5,
                                   height: height,
-                                  margin: EdgeInsets.symmetric(horizontal: 1),
+                                  margin: EdgeInsets.symmetric(horizontal: 0.8),
                                   decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.bottomCenter,
-                                      end: Alignment.topCenter,
-                                      colors: [
-                                        AppColors.primary200.withOpacity(0.6),
-                                        AppColors.primary200,
-                                      ],
-                                    ),
+                                    color: color,
                                     borderRadius: BorderRadius.circular(2),
+                                    boxShadow: height > 20
+                                        ? [
+                                            BoxShadow(
+                                              color: color.withOpacity(0.3),
+                                              blurRadius: 2,
+                                            ),
+                                          ]
+                                        : null,
                                   ),
                                 );
                               }),
@@ -418,11 +448,9 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                     
                     SizedBox(height: 12.h),
                     
-                    // الصف الثاني: الأزرار
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // زر الحذف
                         GestureDetector(
                           onTap: _cancelRecording,
                           child: Container(
@@ -447,7 +475,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                           ),
                         ),
 
-                        // زر Pause/Resume
                         GestureDetector(
                           onTap: _isPaused ? _resumeRecording : _pauseRecording,
                           child: Container(
@@ -472,7 +499,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                           ),
                         ),
 
-                        // زر الإرسال
                         GestureDetector(
                           onTap: _stopRecording,
                           child: Container(
