@@ -15,7 +15,7 @@ class MarriageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final completed =
-        CachNetwork.getBoolData(key: kIsCompletedQuestions) == true;
+        CachNetwork.getBoolData(key: kIsCompletedQuestions) == false;
 
     return Scaffold(
       body: completed
@@ -30,7 +30,7 @@ class MarriageView extends StatelessWidget {
                   if (state.lastQuestionNumberState == CubitStates.success) {
                     context.pop();
                     final lastQuestionNumber =
-                        state.lastQuestionNumberResponse?.lastQuestionNumber ??
+                        // state.lastQuestionNumberResponse?.lastQuestionNumber ??
                         0;
 
                     // ✅ الترتيب الصحيح: من الأكبر للأصغر
