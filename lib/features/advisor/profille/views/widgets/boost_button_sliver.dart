@@ -11,7 +11,7 @@ class BoostButtonSliver extends StatelessWidget {
   const BoostButtonSliver({
     super.key,
     required this.onPressed,
-    this.text = "تعزيز",
+    this.text = "boost_button",
     this.margin,
     this.width,
     this.height,
@@ -25,7 +25,7 @@ class BoostButtonSliver extends StatelessWidget {
         padding: margin ?? EdgeInsets.symmetric(horizontal: 50.w),
         child: BoostButton(
           onPressed: onPressed,
-          text: text,
+          text: context.tr(text),
           width: width,
           height: height,
           padding: padding,

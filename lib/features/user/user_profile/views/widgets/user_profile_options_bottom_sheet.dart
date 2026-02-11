@@ -39,7 +39,7 @@ class UserProfileOptionsBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<OptionItem> options = [
       OptionItem(
-        text: 'مشاركة الملف الشخصي',
+        text: context.tr('share_profile'),
         icon: Icons.ios_share_rounded,
         onTap: () => _handleShare(context),
       ),

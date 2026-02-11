@@ -139,8 +139,13 @@ class ProfileVisitorsView extends StatelessWidget {
                                               right: 50.w,
                                             ),
                                             child: BoostButton(
-                                              text: context.tr('show_more'),
-                                              onPressed: () {},
+                                              text: context.tr('boost_button'),
+                                              onPressed: () {
+                                                Navigator.pushNamed(
+                                                  context,
+                                                  AppRouter.kBoostAccountView,
+                                                );
+                                              },
                                             ),
                                           ),
                                         ],

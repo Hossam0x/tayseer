@@ -1,3 +1,4 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_state.dart';
@@ -32,19 +33,53 @@ class AddStoryCubit extends Cubit<AddStoryState> {
     try {
       // 1. Request permissions
       bool canAccessGallery = false;
+
       if (Platform.isIOS) {
+        // iOS: Request photos permission
         final photosStatus = await Permission.photos.request();
         canAccessGallery = photosStatus.isGranted || photosStatus.isLimited;
+
+        // If denied, try to open settings
+        if (!canAccessGallery && photosStatus.isPermanentlyDenied) {
+          await openAppSettings();
+        }
       } else {
-        final photosStatus = await Permission.photos.request();
-        final storageStatus = await Permission.storage.request();
-        canAccessGallery = !photosStatus.isDenied || !storageStatus.isDenied;
+        // Android: Different logic for Android 13+ vs older versions
+        if (Platform.isAndroid) {
+          final androidInfo = await DeviceInfoPlugin().androidInfo;
+
+          if (androidInfo.version.sdkInt >= 33) {
+            // Android 13+ (API 33+): Use granular media permissions
+            final imagesStatus = await Permission.photos.request();
+            final videosStatus = await Permission.videos.request();
+
+            canAccessGallery = imagesStatus.isGranted || videosStatus.isGranted;
+
+            // If denied, try to open settings
+            if (!canAccessGallery &&
+                (imagesStatus.isPermanentlyDenied ||
+                    videosStatus.isPermanentlyDenied)) {
+              await openAppSettings();
+            }
+          } else {
+            // Android 12 and below: Use storage permission
+            final storageStatus = await Permission.storage.request();
+            canAccessGallery = storageStatus.isGranted;
+
+            // If denied, try to open settings
+            if (!canAccessGallery && storageStatus.isPermanentlyDenied) {
+              await openAppSettings();
+            }
+          }
+        }
       }
 
+      // Request camera and microphone permissions
       await Permission.camera.request();
       await Permission.microphone.request(); // For video recording with audio
 
       if (!canAccessGallery) {
+        debugPrint('Gallery access denied');
         emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));
         return;
       }

@@ -163,7 +163,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
                 onPressed: () {
                   Navigator.pushNamed(context, AppRouter.kBoostAccountView);
                 },
-                text: context.tr('boost'),
+                text: context.tr('boost_button'),
               ),
             ),
         ],

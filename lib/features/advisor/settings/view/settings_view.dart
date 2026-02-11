@@ -1,9 +1,12 @@
+import 'dart:developer';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
@@ -43,112 +46,127 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   Widget _buildBody(BuildContext context) {
-    return BlocBuilder<SettingsCubit, SettingsState>(
-      builder: (context, state) {
-        return _buildContent(context, state);
-      },
-    );
-  }
-
-  Widget _buildContent(BuildContext context, SettingsState state) {
-    if (state is SettingsError) {
-      return Center(
-        child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Gap(20.h),
-              Text(
-                state
-                    .message, // Ensure this key is translated if possible or display as is
-                style: Styles.textStyle16.copyWith(
-                  color: AppColors.kWhiteColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              Gap(20.h),
-              ElevatedButton(
-                onPressed: () => context.read<SettingsCubit>().refresh(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary100,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 24.w,
-                    vertical: 12.h,
-                  ),
-                ),
-                child: Text(
-                  context.tr("retry"),
-                  style: Styles.textStyle16Meduim.copyWith(
-                    color: AppColors.kWhiteColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (state is SettingsLoaded) {
-      return Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 105.h,
-            child: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(AssetsData.homeBarBackgroundImage),
-                  fit: BoxFit.fill,
-                ),
+    return Stack(
+      children: [
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 105.h,
+          child: Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage(AssetsData.homeBarBackgroundImage),
+                fit: BoxFit.fill,
               ),
             ),
           ),
-          Column(
-            children: [
-              // الخلفية فقط للجزء العلوي
-              SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Column(
-                    children: [
-                      Gap(16.h),
-                      SimpleAppBar(title: context.tr("settings_title")),
-                    ],
-                  ),
-                ),
-              ),
-
-              // القائمة الرئيسية
-              Expanded(
-                child: CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 20.w,
-                        vertical: 16.h,
-                      ),
-                      sliver: _buildSettingsSliverList(context, state.settings),
-                    ),
-                    SliverToBoxAdapter(child: _buildLogoutButton(context)),
-                    SliverToBoxAdapter(child: Gap(30.h)),
+        ),
+        Column(
+          children: [
+            // Static Header (Does not rebuild on settings toggle)
+            SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Column(
+                  children: [
+                    Gap(16.h),
+                    SimpleAppBar(title: context.tr("settings_title")),
                   ],
                 ),
               ),
-            ],
-          ),
-        ],
-      );
-    }
+            ),
 
-    return const SizedBox();
+            // Dynamic Content
+            Expanded(
+              child: BlocBuilder<SettingsCubit, SettingsState>(
+                buildWhen: (previous, current) {
+                  if (previous is SettingsLoaded && current is SettingsLoaded) {
+                    return previous.settings != current.settings;
+                  }
+                  return true;
+                },
+                builder: (context, state) {
+                  log('jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj');
+                  if (state is SettingsError) {
+                    return Center(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Gap(20.h),
+                            Text(
+                              state.message,
+                              style: Styles.textStyle16.copyWith(
+                                color: AppColors.kWhiteColor,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            Gap(20.h),
+                            ElevatedButton(
+                              onPressed: () =>
+                                  context.read<SettingsCubit>().refresh(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary100,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 24.w,
+                                  vertical: 12.h,
+                                ),
+                              ),
+                              child: Text(
+                                context.tr("retry"),
+                                style: Styles.textStyle16Meduim.copyWith(
+                                  color: AppColors.kWhiteColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (state is SettingsLoaded) {
+                    return CustomScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        SliverPadding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20.w,
+                            vertical: 16.h,
+                          ),
+                          sliver: _buildSettingsSliverList(
+                            context,
+                            state.settings,
+                          ),
+                        ),
+
+                        SliverToBoxAdapter(child: _buildLogoutButton(context)),
+                        SliverToBoxAdapter(child: Gap(30.h)),
+                      ],
+                    );
+                  }
+
+                  // Loading State
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.kprimaryColor,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
+
+  // Helper method moved/removed as it's now integrated
+  // Widget _buildContent(BuildContext context, SettingsState state) { ... }
 
   Widget _buildSettingsSliverList(
     BuildContext context,
@@ -218,31 +236,51 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
 
                 if (setting.hasSwitch)
-                  IgnorePointer(
-                    ignoring: false,
-                    child: Transform.scale(
-                      scaleX: -1,
-                      scaleY: 1,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final screenWidth = MediaQuery.of(context).size.width;
-                          final scaleFactor = screenWidth > 600 ? 1.5 : 1.0;
+                  BlocBuilder<SettingsCubit, SettingsState>(
+                    buildWhen: (previous, current) {
+                      if (previous is SettingsLoaded &&
+                          current is SettingsLoaded) {
+                        return previous.isNotificationEnabled !=
+                            current.isNotificationEnabled;
+                      }
+                      return false;
+                    },
+                    builder: (context, state) {
+                      final isEnabled = state is SettingsLoaded
+                          ? state.isNotificationEnabled
+                          : false;
+                      return IgnorePointer(
+                        ignoring: false,
+                        child: Transform.scale(
+                          scaleX: -1,
+                          scaleY: 1,
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final screenWidth = MediaQuery.of(
+                                context,
+                              ).size.width;
+                              final scaleFactor = screenWidth > 600 ? 1.5 : 1.0;
 
-                          return Transform.scale(
-                            scale: scaleFactor,
-                            child: CupertinoSwitch(
-                              value: setting.switchValue,
-                              activeColor: const Color(0xFFF06C88),
-                              trackColor: AppColors.dropDownArrow,
-                              onChanged: (value) {
-                                final cubit = context.read<SettingsCubit>();
-                                cubit.updateSwitch(setting.id, value, context);
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                              return Transform.scale(
+                                scale: scaleFactor,
+                                child: CupertinoSwitch(
+                                  value: isEnabled,
+                                  activeColor: const Color(0xFFF06C88),
+                                  trackColor: AppColors.dropDownArrow,
+                                  onChanged: (value) {
+                                    context.read<SettingsCubit>().updateSwitch(
+                                      setting.id,
+                                      value,
+                                      context,
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   )
                 else
                   _buildTrailingWidget(context, setting),
@@ -420,6 +458,26 @@ class _SettingsViewState extends State<SettingsView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // العنوان
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Icon(Icons.close, size: 24.w),
+                      ),
+                      Text(
+                        context.tr("rate_app"),
+                        style: Styles.textStyle20Meduim.copyWith(
+                          color: AppColors.primary500,
+                        ),
+                      ),
+                      Gap(24.w),
+                    ],
+                  ),
+
+                  Gap(25.h),
+
                   // النجوم للتقييم (قابلة للاختيار)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -431,7 +489,10 @@ class _SettingsViewState extends State<SettingsView> {
                           });
                         },
                         child: Icon(
-                          Icons.star_rounded,
+                          // اختيار الأيقونة بناءً على التقييم
+                          index < _rating
+                              ? Icons.star_rounded
+                              : Icons.star_rounded,
                           color: index < _rating
                               ? AppColors.kprimaryColor
                               : AppColors.secondary100,
@@ -441,7 +502,29 @@ class _SettingsViewState extends State<SettingsView> {
                     }),
                   ),
 
+                  // عرض قيمة التقييم (اختياري)
+                  if (_rating > 0) ...[
+                    Gap(12.h),
+                    Text(
+                      '${context.tr("rating")}: $_rating / 5',
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.primary500,
+                      ),
+                    ),
+                  ],
+
                   Gap(24.h),
+
+                  // الرسالة
+                  Text(
+                    context.tr("rate_app_message"),
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondary700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  Gap(32.h),
 
                   // زر الإرسال
                   CustomBotton(

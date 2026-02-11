@@ -63,19 +63,18 @@ class _EditUsernameViewState extends State<EditUsernameView> {
 
     setState(() {
       if (cleaned.isEmpty) {
-        _errorMessage = 'اسم المستخدم مطلوب';
-      } else if (cleaned.length < 5) {
-        _errorMessage = 'يجب أن يكون اسم المستخدم 5 أحرف على الأقل';
-      } else if (cleaned.length > 19) {
-        _errorMessage = 'لا يمكن أن يزيد اسم المستخدم عن 19 حرف';
+        _errorMessage = context.tr('username_required');
+      } else if (cleaned.length < 4) {
+        _errorMessage = context.tr('username_length_min_error');
+      } else if (cleaned.length > 24) {
+        _errorMessage = context.tr('username_length_max_error');
       } else if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(cleaned)) {
-        _errorMessage =
-            'يمكن استخدام الحروف الإنجليزية والأرقام والشرطة السفلية (_) فقط';
+        _errorMessage = context.tr('username_chars_error');
       } else if (RegExp(r'^[0-9]+$').hasMatch(cleaned)) {
-        _errorMessage = 'لا يمكن أن يكون اسم المستخدم أرقاماً فقط';
+        _errorMessage = context.tr('username_numeric_error');
       } else if (cleaned.toLowerCase() ==
           _initialUsernameWithoutAt.toLowerCase()) {
-        _errorMessage = 'اسم المستخدم نفسه الحالي';
+        _errorMessage = context.tr('username_same_error');
       } else {
         _errorMessage = null;
       }
@@ -134,16 +133,16 @@ class _EditUsernameViewState extends State<EditUsernameView> {
 
         widget.onProfileUpdated(updatedProfile);
 
-        AppToast.success(context, 'تم تحديث اسم المستخدم بنجاح');
+        AppToast.success(context, context.tr('username_updated_success'));
         Navigator.pop(context);
       } else {
         AppToast.error(
           context,
-          response['message'] ?? 'فشل تحديث اسم المستخدم',
+          response['message'] ?? context.tr('username_update_failed'),
         );
       }
     } catch (e) {
-      AppToast.error(context, 'حدث خطأ: $e');
+      AppToast.error(context, '${context.tr('error_occurred')}: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -164,7 +163,7 @@ class _EditUsernameViewState extends State<EditUsernameView> {
         children: [
           // أيقونة الـ @ الثابتة
           Padding(
-            padding: EdgeInsets.only(right: 16.w),
+            padding: EdgeInsetsDirectional.only(start: 16.w),
             child: Text(
               '@',
               style: Styles.textStyle20.copyWith(
@@ -180,7 +179,7 @@ class _EditUsernameViewState extends State<EditUsernameView> {
               style: Styles.textStyle16.copyWith(color: AppColors.secondary800),
               decoration: InputDecoration(
                 border: InputBorder.none,
-                hintText: 'اسم المستخدم',
+                hintText: context.tr('username'),
                 hintStyle: Styles.textStyle14.copyWith(
                   color: AppColors.primary200,
                 ),
@@ -252,7 +251,7 @@ class _EditUsernameViewState extends State<EditUsernameView> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
                 child: SimpleAppBar(
-                  title: 'تعديل اسم المستخدم',
+                  title: context.tr('edit_username'),
                   isLargeTitle: true,
                 ),
               ),
@@ -270,7 +269,7 @@ class _EditUsernameViewState extends State<EditUsernameView> {
 
                       // عنوان الحقل
                       Text(
-                        'اسم المستخدم',
+                        context.tr('username'),
                         style: Styles.textStyle14.copyWith(
                           color: AppColors.secondary700,
                           fontWeight: FontWeight.w500,
@@ -388,7 +387,7 @@ class _EditUsernameViewState extends State<EditUsernameView> {
                         child: CustomBotton(
                           height: 52.h,
                           width: double.infinity,
-                          title: 'تأكيد',
+                          title: context.tr('confirm'),
                           onPressed: _isFormValid && !_isLoading
                               ? _updateUsername
                               : null,

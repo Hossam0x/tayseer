@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:intl/intl.dart';
 import 'package:tayseer/core/functions/formate_time.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chatView/chat_item_model.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_list_cubit.dart';
@@ -300,7 +299,7 @@ class ChatListItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      formatTime(chatRoom.lastMessageAt!),
+                      formatTime(chatRoom.lastMessageAt ?? chatRoom.createdAt!),
                       style: TextStyle(
                         color: Colors.grey.shade400,
                         fontSize: timeFontSize,
@@ -335,8 +334,6 @@ class ChatListItem extends StatelessWidget {
       ),
     );
   }
-
-  
 
   Widget _buildActionButton(
     BuildContext context, {

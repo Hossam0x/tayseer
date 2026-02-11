@@ -12,6 +12,7 @@ import 'package:tayseer/features/user/user_profile/views/marriage_file.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
+import 'dart:io';
 
 class UserProfileView extends StatefulWidget {
   const UserProfileView({super.key});
@@ -25,6 +26,7 @@ class _UserProfileViewState extends State<UserProfileView> {
   final ScrollController _scrollController = ScrollController();
   int _rating = 0;
   late UserProfileCubit _userProfileCubit; // ⭐ إضافة late للـ Cubit
+  File? _localImageFile;
 
   @override
   void initState() {
@@ -95,19 +97,42 @@ class _UserProfileViewState extends State<UserProfileView> {
                 children: [
                   Gap(18.h),
 
-                  // ⭐ جزء البروفايل فقط يتغير حسب الحالة
+                  // ⭐ جزء البروفايل (نطاق تحديث خاص)
                   if (_selectedTabIndex == 0)
-                    _buildProfileSection(context, state),
+                    BlocBuilder<UserProfileCubit, UserProfileState>(
+                      buildWhen: (previous, current) {
+                        if (previous is SettingsLoaded &&
+                            current is SettingsLoaded) {
+                          return previous.userProfile != current.userProfile;
+                        }
+                        return true;
+                      },
+                      builder: (context, state) {
+                        return _buildProfileSection(context, state);
+                      },
+                    ),
                 ],
               ),
             ),
           ),
 
-          // ⭐ المحتوى حسب التبويب (موجود دائماً)
+          // ⭐ المحتوى حسب التبويب (نطاق تحديث خاص للإعدادات)
           if (_selectedTabIndex == 0)
-            _buildGeneralContentSliver(context, state),
-          // ⭐ زر تسجيل الخروج (موجود دائماً)
-          _buildLogoutButtonSliver(context, state),
+            BlocBuilder<UserProfileCubit, UserProfileState>(
+              buildWhen: (previous, current) {
+                if (previous is SettingsLoaded && current is SettingsLoaded) {
+                  return previous.settings != current.settings;
+                }
+                return true;
+              },
+              builder: (context, state) {
+                // Ensure we return a Sliver here
+                return _buildGeneralContentSliver(context, state);
+              },
+            ),
+
+          // ⭐ زر تسجيل الخروج (ثابت)
+          SliverToBoxAdapter(child: _buildLogoutButton(context)),
 
           // مساحة في الأسفل
           SliverToBoxAdapter(child: Gap(100.h)),
@@ -116,7 +141,7 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  // ⭐ دالة جديدة لعرض قسم البروفايل فقط حسب الحالة
+  // ⭐ تعديل دالة بناء قسم البروفايل
   Widget _buildProfileSection(BuildContext context, UserProfileState state) {
     if (state is SettingsInitial || state is SettingsLoading) {
       return _buildProfileSkeleton();
@@ -276,7 +301,31 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   // ⭐ تحديث الدوال المساعدة للبروفايل
   Widget _buildProfileImage(UserProfileModel? userProfile) {
-    final imageUrl = kCurrentUserData?.image ?? userProfile?.image;
+    // ⭐ استخدام الصورة المحلية إذا وجدت لتفادي التحميل
+    if (_localImageFile != null) {
+      return SizedBox(
+        width: 120.w,
+        height: 120.w,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.secondary100,
+          ),
+          child: ClipOval(
+            child: Image.file(
+              _localImageFile!,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final imageUrl = userProfile?.image ?? kCurrentUserData?.image;
 
     return SizedBox(
       width: 120.w,
@@ -295,11 +344,10 @@ class _UserProfileViewState extends State<UserProfileView> {
                     child: CachedNetworkImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary100,
-                          strokeWidth: 2,
-                        ),
+                      placeholder: (context, url) => Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        color: AppColors.secondary200,
                       ),
                       errorWidget: (context, url, error) {
                         return Center(
@@ -450,13 +498,6 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   // ⭐ تحديث زر تسجيل الخروج ليكون دائماً
-
-  SliverToBoxAdapter _buildLogoutButtonSliver(
-    BuildContext context,
-    UserProfileState state,
-  ) {
-    return SliverToBoxAdapter(child: _buildLogoutButton(context));
-  }
 
   Widget _buildSettingsList(
     BuildContext context,
@@ -632,22 +673,59 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
 
               if (setting.hasSwitch)
-                IgnorePointer(
-                  ignoring: false,
-                  child: Transform.scale(
-                    scaleX: -0.9,
-                    scaleY: 0.9,
-                    child: CupertinoSwitch(
-                      value: setting.switchValue,
-                      activeColor: const Color(0xFFF06C88),
-                      trackColor: AppColors.dropDownArrow,
-                      onChanged: (value) {
-                        final cubit = context.read<UserProfileCubit>();
-                        cubit.updateSwitch(setting.id, value, context);
-                      },
+                if (setting.id == 'notifications')
+                  BlocBuilder<UserProfileCubit, UserProfileState>(
+                    buildWhen: (previous, current) {
+                      if (previous is SettingsLoaded &&
+                          current is SettingsLoaded) {
+                        return previous.isNotificationEnabled !=
+                            current.isNotificationEnabled;
+                      }
+                      return false;
+                    },
+                    builder: (context, state) {
+                      final isEnabled = state is SettingsLoaded
+                          ? state.isNotificationEnabled
+                          : false;
+
+                      return IgnorePointer(
+                        ignoring: false,
+                        child: Transform.scale(
+                          scaleX: -0.9,
+                          scaleY: 0.9,
+                          child: CupertinoSwitch(
+                            value: isEnabled,
+                            activeColor: const Color(0xFFF06C88),
+                            trackColor: AppColors.dropDownArrow,
+                            onChanged: (value) {
+                              context.read<UserProfileCubit>().updateSwitch(
+                                setting.id,
+                                value,
+                                context,
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                else
+                  IgnorePointer(
+                    ignoring: false,
+                    child: Transform.scale(
+                      scaleX: -0.9,
+                      scaleY: 0.9,
+                      child: CupertinoSwitch(
+                        value: setting.switchValue,
+                        activeColor: const Color(0xFFF06C88),
+                        trackColor: AppColors.dropDownArrow,
+                        onChanged: (value) {
+                          final cubit = context.read<UserProfileCubit>();
+                          cubit.updateSwitch(setting.id, value, context);
+                        },
+                      ),
                     ),
-                  ),
-                )
+                  )
               else
                 _buildTrailingWidget(setting),
             ],
@@ -669,7 +747,16 @@ class _UserProfileViewState extends State<UserProfileView> {
       MaterialPageRoute(
         builder: (context) => UserProfileEditView(
           initialProfile: currentState.userProfile!,
-          onProfileUpdated: (updatedProfile) {
+          localImageFile: _localImageFile,
+          onProfileUpdated: (updatedProfile, imageFile) {
+            setState(() {
+              if (imageFile != null) {
+                _localImageFile = imageFile;
+              } else if (updatedProfile.image == null ||
+                  updatedProfile.image!.isEmpty) {
+                _localImageFile = null;
+              }
+            });
             cubit.updateUserProfile(updatedProfile);
           },
         ),
@@ -888,7 +975,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                     title: context.tr("send_rating"),
                     onPressed: () {
                       Navigator.pop(context);
-                      _submitAppRating(context, _rating);
+                      _submitAppRating(_rating);
                       // إعادة تعيين التقييم بعد الإرسال
                       setState(() {
                         _rating = 0;
@@ -943,14 +1030,9 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  void _submitAppRating(BuildContext context, int rating) {
+  void _submitAppRating(int rating) {
     if (rating > 0) {
-      debugPrint('التقييم المرسل: $rating نجوم');
+      _userProfileCubit.rateApp(rating, context);
     }
-    showSafeSnackBar(
-        context: context,
-        text: context.tr("rate_app_success"),
-        isSuccess: true,
-      );
   }
 }

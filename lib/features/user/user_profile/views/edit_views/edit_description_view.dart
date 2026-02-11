@@ -74,16 +74,16 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
 
         widget.onProfileUpdated(updatedProfile);
 
-        AppToast.success(context, 'تم تحديث النبذة التعريفية بنجاح');
+        AppToast.success(context, context.tr('bio_updated_success'));
         Navigator.pop(context);
       } else {
         AppToast.error(
           context,
-          response['message'] ?? 'فشل تحديث النبذة التعريفية',
+          response['message'] ?? context.tr('bio_update_failed'),
         );
       }
     } catch (e) {
-      AppToast.error(context, 'حدث خطأ: $e');
+      AppToast.error(context, '${context.tr('error_occurred')}: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -92,7 +92,7 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
   Future<void> _generateWithAI() async {
     // هنا يمكنك إضافة منطق توليد النص بالذكاء الاصطناعي
     setState(() {
-      _descriptionController.text = 'نبذة تعريفية مولد بالذكاء الاصطناعي';
+      _descriptionController.text = context.tr('ai_generated_bio');
       _isAiGenerated = true;
     });
   }
@@ -108,7 +108,7 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
                 child: SimpleAppBar(
-                  title: 'تعديل النبذة التعريفية',
+                  title: context.tr('edit_bio'),
                   isLargeTitle: true,
                 ),
               ),
@@ -141,7 +141,7 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
                             decoration: InputDecoration(
                               contentPadding: EdgeInsets.all(16.w),
                               border: InputBorder.none,
-                              hintText: 'أخبرنا عن نفسك...',
+                              hintText: context.tr('tell_us_about_yourself'),
                               hintStyle: Styles.textStyle14.copyWith(
                                 color: AppColors.primary200,
                               ),
@@ -178,8 +178,8 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
                             ),
                             width: double.infinity,
                             child: Text(
+                              context.tr('write_with_ai'),
                               textAlign: TextAlign.center,
-                              'كتابة بواسطة الذكاء الاصطناعي',
                               style: Styles.textStyle16.copyWith(
                                 color: AppColors.primary600,
                               ),
@@ -195,7 +195,7 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
                         child: CustomBotton(
                           height: 52.h,
                           width: double.infinity,
-                          title: 'تأكيد',
+                          title: context.tr('confirm'),
                           onPressed: _isLoading ? null : _updateDescription,
                           isLoading: _isLoading,
                           backGroundcolor: AppColors.kprimaryColor,

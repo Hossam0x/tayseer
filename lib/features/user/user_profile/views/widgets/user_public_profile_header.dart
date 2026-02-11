@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
@@ -127,7 +128,27 @@ class UserPublicProfileHeader extends StatelessWidget {
             width: 90.w,
             height: 90.w,
             child: Stack(
-              children: [MyProfileImage(width: 90.w, imageUrl: imageUrl)],
+              children: [
+                MyProfileImage(
+                  width: 90.w,
+                  imageUrl: imageUrl,
+                  heroTag: 'profile_image_${profile.id}',
+                  onTap: imageUrl.isNotEmpty
+                      ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FullScreenImageView(
+                                imageUrl: imageUrl,
+                                heroTag: 'profile_image_${profile.id}',
+                                userName: profile.name,
+                              ),
+                            ),
+                          );
+                        }
+                      : null,
+                ),
+              ],
             ),
           ),
           Gap(55.w),

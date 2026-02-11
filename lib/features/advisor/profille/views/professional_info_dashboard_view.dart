@@ -91,7 +91,7 @@ class _ProfessionalInfoDashboardViewState
                                   AppRouter.kBoostAccountView,
                                 );
                               },
-                              text: context.tr('boost'),
+                              text: context.tr('boost_button'),
                             ),
                           ),
                         ],

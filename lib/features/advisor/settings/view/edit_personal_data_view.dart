@@ -1,4 +1,5 @@
 import 'package:chewie/chewie.dart';
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
@@ -177,6 +178,35 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   bool _controllersInitialized = false;
   bool _isVideoLoading = false;
   double _uploadProgress = 0.0;
+  String? _nameError;
+  String? _usernameError;
+
+  bool get _isFormValid => _nameError == null && _usernameError == null;
+
+  void _validateName(String value) {
+    setState(() {
+      if (value.trim().length < 4 || value.trim().length > 24) {
+        _nameError = 'الاسم يجب أن يكون بين 4 و 24 حرف';
+      } else {
+        _nameError = null;
+      }
+    });
+  }
+
+  void _validateUsername(String value) {
+    // إزالة الـ @ من بداية النص
+    final cleaned = value.startsWith('@') ? value.substring(1) : value;
+    // تنظيف المسافات الزائدة
+    final trimmed = cleaned.trim();
+
+    setState(() {
+      if (trimmed.length < 4 || trimmed.length > 24) {
+        _usernameError = 'اسم المستخدم يجب أن يكون بين 4 و 24 حرف';
+      } else {
+        _usernameError = null;
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -615,12 +645,35 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           Gap(20.h),
 
                                           // حقل الاسم باستخدام ProfileTextField
-                                          ProfileTextField(
-                                            controller: _nameController,
-                                            maxLength: 24,
-                                            onChanged: (value) =>
-                                                cubit.updateName(value),
-                                            hint: context.tr("enter_name"),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              ProfileTextField(
+                                                controller: _nameController,
+                                                maxLength: 24,
+                                                onChanged: (value) {
+                                                  _validateName(value);
+                                                  cubit.updateName(value);
+                                                },
+                                                hint: context.tr("enter_name"),
+                                              ),
+                                              if (_nameError != null)
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                    top: 4.h,
+                                                    right: 8.w,
+                                                  ),
+                                                  child: Text(
+                                                    _nameError!,
+                                                    style: Styles.textStyle12
+                                                        .copyWith(
+                                                          color: AppColors
+                                                              .kRedColor,
+                                                        ),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                           Gap(11.h),
                                           _buildUsernameField(cubit),
@@ -672,7 +725,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                                 : context.tr("save"),
                                             onPressed:
                                                 state.isSaving ||
-                                                    !state.hasChanges
+                                                    !state.hasChanges ||
+                                                    !_isFormValid
                                                 ? null
                                                 : () => cubit.saveChanges(
                                                     context,
@@ -781,58 +835,78 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   }
 
   Widget _buildUsernameField(EditPersonalDataCubit cubit) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: AppColors.primary100),
-      ),
-      child: Row(
-        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: Text(
-              '@',
-              style: Styles.textStyle14.copyWith(
-                color: AppColors.primary200,
-                fontWeight: FontWeight.bold,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.kWhiteColor,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(
+              color: _usernameError != null
+                  ? AppColors.kRedColor
+                  : AppColors.primary100,
             ),
           ),
-          Expanded(
-            child: TextFormField(
-              controller: _usernameController,
-              textAlign: isArabic ? TextAlign.right : TextAlign.left,
-              maxLength: 20,
-              style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                hintText: context.tr("enter_username"),
-                hintStyle: Styles.textStyle14.copyWith(
-                  color: AppColors.primary200,
+          child: Row(
+            textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: Text(
+                  '@',
+                  style: Styles.textStyle14.copyWith(
+                    color: AppColors.primary200,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                counterText: "",
-                contentPadding: EdgeInsets.symmetric(vertical: 14.h),
               ),
-              onChanged: (value) {
-                if (value.contains('@')) {
-                  final cleaned = value.replaceAll('@', '');
-                  _usernameController.value = _usernameController.value
-                      .copyWith(
-                        text: cleaned,
-                        selection: TextSelection.collapsed(
-                          offset: cleaned.length,
-                        ),
-                      );
-                  value = cleaned;
-                }
-                cubit.updateUsername('@$value');
-              },
+              Expanded(
+                child: TextFormField(
+                  controller: _usernameController,
+                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                  maxLength: 24,
+                  style: Styles.textStyle14.copyWith(
+                    color: AppColors.secondary800,
+                  ),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: context.tr("enter_username"),
+                    hintStyle: Styles.textStyle14.copyWith(
+                      color: AppColors.primary200,
+                    ),
+                    counterText: "",
+                    contentPadding: EdgeInsets.symmetric(vertical: 14.h),
+                  ),
+                  onChanged: (value) {
+                    if (value.contains('@')) {
+                      final cleaned = value.replaceAll('@', '');
+                      _usernameController.value = _usernameController.value
+                          .copyWith(
+                            text: cleaned,
+                            selection: TextSelection.collapsed(
+                              offset: cleaned.length,
+                            ),
+                          );
+                      value = cleaned;
+                    }
+                    _validateUsername(value);
+                    cubit.updateUsername('@$value');
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_usernameError != null)
+          Padding(
+            padding: EdgeInsets.only(top: 4.h, right: 8.w),
+            child: Text(
+              _usernameError!,
+              style: Styles.textStyle12.copyWith(color: AppColors.kRedColor),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -928,40 +1002,63 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
       children: [
         Stack(
           children: [
-            Container(
-              height: 150.h,
-              width: 155.w,
-              decoration: BoxDecoration(
-                color: AppColors.hintText,
-                borderRadius: BorderRadius.circular(32.r),
+            GestureDetector(
+              onTap:
+                  !isImageDeleted &&
+                      (imageFile != null ||
+                          (imageUrl != null && imageUrl.isNotEmpty))
+                  ? () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FullScreenImageView(
+                            imageUrl: imageUrl,
+                            imageFile: imageFile,
+                            heroTag: 'advisor_edit_profile_avatar',
+                            userName: state.profile?.name,
+                          ),
+                        ),
+                      );
+                    }
+                  : null,
+              child: Hero(
+                tag: 'advisor_edit_profile_avatar',
+                child: Container(
+                  height: 150.h,
+                  width: 155.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.hintText,
+                    borderRadius: BorderRadius.circular(32.r),
+                  ),
+                  child: isImageDeleted
+                      ? _buildDefaultAvatar() // ⭐ عرض الصورة الافتراضية إذا تم الحذف
+                      : imageFile != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(32.r),
+                          child: Image.file(
+                            imageFile,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildDefaultAvatar();
+                            },
+                          ),
+                        )
+                      : imageUrl != null && imageUrl.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(32.r),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildDefaultAvatar();
+                            },
+                          ),
+                        )
+                      : _buildDefaultAvatar(),
+                ),
               ),
-              child: isImageDeleted
-                  ? _buildDefaultAvatar() // ⭐ عرض الصورة الافتراضية إذا تم الحذف
-                  : imageFile != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(32.r),
-                      child: Image.file(
-                        imageFile,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildDefaultAvatar();
-                        },
-                      ),
-                    )
-                  : imageUrl != null && imageUrl.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(32.r),
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildDefaultAvatar();
-                        },
-                      ),
-                    )
-                  : _buildDefaultAvatar(),
             ),
             Positioned(
               bottom: 8,

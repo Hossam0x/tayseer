@@ -217,24 +217,8 @@ class StoriesTabView extends StatelessWidget {
                           .reversed
                           .toList();
 
-                      // Find the clicked story in the chronological list
-                      final clickedStoryIndex = chronologicalStories.indexWhere(
-                        (s) => s.id == story.id,
-                      );
-
-                      // Reorder to start from the clicked story
-                      final List<StoryModel> reorderedStories;
-                      if (clickedStoryIndex > 0) {
-                        reorderedStories = [
-                          ...chronologicalStories.sublist(clickedStoryIndex),
-                          ...chronologicalStories.sublist(0, clickedStoryIndex),
-                        ];
-                      } else {
-                        reorderedStories = chronologicalStories;
-                      }
-
                       final tempUserStory = parentUserStory.copyWith(
-                        stories: reorderedStories,
+                        stories: chronologicalStories,
                       );
 
                       Navigator.push(
@@ -251,6 +235,7 @@ class StoriesTabView extends StatelessWidget {
                               userStories: tempUserStory,
                               heroTag: 'archive_${story.id}',
                               isArchive: true,
+                              initialStoryId: story.id,
                             ),
                           ),
                         ),

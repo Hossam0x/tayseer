@@ -10,12 +10,14 @@ import 'package:tayseer/my_import.dart';
 
 class UserProfileEditView extends StatelessWidget {
   final UserProfileModel? initialProfile;
-  final Function(UserProfileModel)? onProfileUpdated;
+  final Function(UserProfileModel, File?)? onProfileUpdated;
+  final File? localImageFile;
 
   const UserProfileEditView({
     super.key,
     this.initialProfile,
     this.onProfileUpdated,
+    this.localImageFile,
   });
 
   @override
@@ -38,7 +40,10 @@ class UserProfileEditView extends StatelessWidget {
                       title: context.tr('edit_profile'),
                       isLargeTitle: true,
                     ),
-                    _UserProfileEditContent(onProfileUpdated: onProfileUpdated),
+                    _UserProfileEditContent(
+                      onProfileUpdated: onProfileUpdated,
+                      localImageFile: localImageFile,
+                    ),
                   ],
                 ),
               ),
@@ -51,9 +56,10 @@ class UserProfileEditView extends StatelessWidget {
 }
 
 class _UserProfileEditContent extends StatelessWidget {
-  final Function(UserProfileModel)? onProfileUpdated;
+  final Function(UserProfileModel, File?)? onProfileUpdated;
+  final File? localImageFile;
 
-  const _UserProfileEditContent({this.onProfileUpdated});
+  const _UserProfileEditContent({this.onProfileUpdated, this.localImageFile});
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +67,7 @@ class _UserProfileEditContent extends StatelessWidget {
       listener: (context, state) {
         // الاستماع لأي تحديثات في البيانات
         if (state.profile != null && onProfileUpdated != null) {
-          onProfileUpdated!(state.profile!);
+          onProfileUpdated!(state.profile!, state.imageFile);
         }
       },
       builder: (context, state) {
@@ -79,7 +85,12 @@ class _UserProfileEditContent extends StatelessWidget {
               Column(
                 children: [
                   // قسم الصورة الشخصية
-                  _buildAvatarImageSection(cubit, state, context),
+                  _buildAvatarImageSection(
+                    cubit,
+                    state,
+                    context,
+                    localImageFile,
+                  ),
                   Gap(30.h),
 
                   // حقل الاسم
@@ -180,9 +191,11 @@ class _UserProfileEditContent extends StatelessWidget {
     UserProfileEditCubit cubit,
     UserProfileEditState state,
     BuildContext context,
+    File? localImageFile,
   ) {
-    final imageUrl = kCurrentUserData?.image ?? state.imagePreviewUrl;
+    // ⭐ أولوية العرض: imageFile (محلي جديد) > localImageFile (من الـ parent) > imagePreviewUrl (من الباك)
     final imageFile = state.imageFile;
+    final imageUrl = state.imagePreviewUrl ?? kCurrentUserData?.image;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -206,16 +219,21 @@ class _UserProfileEditContent extends StatelessWidget {
                           fit: BoxFit.cover,
                           width: double.infinity,
                         )
+                      : localImageFile != null
+                      ? Image.file(
+                          localImageFile,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        )
                       : (imageUrl != null && imageUrl.isNotEmpty)
                       ? CachedNetworkImage(
                           imageUrl: imageUrl,
                           fit: BoxFit.cover,
                           width: double.infinity,
-                          placeholder: (context, url) => Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary100,
-                              strokeWidth: 2,
-                            ),
+                          placeholder: (context, url) => Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            color: AppColors.secondary200,
                           ),
                           errorWidget: (context, error, stackTrace) {
                             debugPrint('❌ خطأ في تحميل الصورة: $imageUrl');
@@ -234,33 +252,34 @@ class _UserProfileEditContent extends StatelessWidget {
                 child: AppImage(AssetsData.addCertificateImage, width: 30.w),
               ),
             ),
-            if (imageUrl != null && imageUrl.isNotEmpty)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: GestureDetector(
-                  onTap: () => cubit.removeImage(),
-                  child: Container(
-                    padding: EdgeInsets.all(4.w),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.kWhiteColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.close,
-                      color: AppColors.primary500,
-                      size: 18.w,
-                    ),
-                  ),
-                ),
-              ),
+
+            // if (imageUrl != null && imageUrl.isNotEmpty)
+            //   Positioned(
+            //     top: 10,
+            //     right: 10,
+            //     child: GestureDetector(
+            //       onTap: () => cubit.removeImage(),
+            //       child: Container(
+            //         padding: EdgeInsets.all(4.w),
+            //         decoration: BoxDecoration(
+            //           shape: BoxShape.circle,
+            //           color: AppColors.kWhiteColor,
+            //           boxShadow: [
+            //             BoxShadow(
+            //               color: Colors.black.withOpacity(0.1),
+            //               blurRadius: 4,
+            //               offset: const Offset(0, 2),
+            //             ),
+            //           ],
+            //         ),
+            //         child: Icon(
+            //           Icons.close,
+            //           color: AppColors.primary500,
+            //           size: 18.w,
+            //         ),
+            //       ),
+            //     ),
+            //   ),
           ],
         ),
         Gap(20.h),
@@ -353,7 +372,7 @@ class _UserProfileEditContent extends StatelessWidget {
           onProfileUpdated: (updatedProfile) {
             cubit.updateName(updatedProfile.name);
             if (onProfileUpdated != null) {
-              onProfileUpdated!(updatedProfile);
+              onProfileUpdated!(updatedProfile, state.imageFile);
             }
             Navigator.pop(context);
           },
@@ -389,7 +408,7 @@ class _UserProfileEditContent extends StatelessWidget {
           onProfileUpdated: (updatedProfile) {
             cubit.updateUsername(updatedProfile.username);
             if (onProfileUpdated != null) {
-              onProfileUpdated!(updatedProfile);
+              onProfileUpdated!(updatedProfile, state.imageFile);
             }
             Navigator.pop(context);
           },
@@ -425,7 +444,7 @@ class _UserProfileEditContent extends StatelessWidget {
           onProfileUpdated: (updatedProfile) {
             cubit.updateDescription(updatedProfile.description ?? '');
             if (onProfileUpdated != null) {
-              onProfileUpdated!(updatedProfile);
+              onProfileUpdated!(updatedProfile, state.imageFile);
             }
             Navigator.pop(context);
           },

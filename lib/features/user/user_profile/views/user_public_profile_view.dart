@@ -8,6 +8,7 @@ import 'package:tayseer/features/user/user_profile/views/widgets/send_greeting_d
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_bio.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_header.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_tabs.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_skeletonizer.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserPublicProfileView extends StatelessWidget {
@@ -133,7 +134,7 @@ class _UserPublicProfileContent extends StatelessWidget {
       builder: (context, state) {
         // ⭐ التحقق من حالة التحميل العامة
         if (state.state == CubitStates.loading) {
-          return _buildLoadingSkeleton();
+          return const UserPublicProfileViewSkeletonizer();
         }
 
         return RefreshIndicator.adaptive(
@@ -165,101 +166,6 @@ class _UserPublicProfileContent extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  // ⭐ دالة جديدة لعرض Skeleton أثناء التحميل
-  Widget _buildLoadingSkeleton() {
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            child: Column(
-              children: [
-                // Skeleton للهيدر
-                Row(
-                  children: [
-                    Gap(20.w),
-                    Container(
-                      width: 90.w,
-                      height: 90.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary200,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    Gap(55.w),
-                    Container(
-                      width: 60.w,
-                      height: 60.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary200,
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      width: 28.w,
-                      height: 28.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary200,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                ),
-                Gap(24.h),
-
-                // Skeleton للبيو
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 150.w,
-                        height: 24.h,
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary200,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                      ),
-                      Gap(8.h),
-                      Container(
-                        width: 100.w,
-                        height: 16.h,
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary200,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                      ),
-                      Gap(12.h),
-                      Container(
-                        width: 80.w,
-                        height: 30.h,
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary200,
-                          borderRadius: BorderRadius.circular(34.r),
-                        ),
-                      ),
-                      Gap(16.h),
-                      Container(
-                        width: double.infinity,
-                        height: 60.h,
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary200,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

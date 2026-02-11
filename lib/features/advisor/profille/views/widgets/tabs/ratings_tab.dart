@@ -169,6 +169,7 @@ class _RatingsTabState extends State<RatingsTab>
                   TextFormField(
                     controller: _reviewController,
                     maxLines: 4,
+                    maxLength: 400,
                     decoration: InputDecoration(
                       labelText: context.tr('write_your_review'),
                       border: OutlineInputBorder(
@@ -185,29 +186,25 @@ class _RatingsTabState extends State<RatingsTab>
                         )
                       : CustomBotton(
                           title: context.tr('send_rating'),
-                          onPressed: () async {
-                            if (_rating == 0) {
-                              AppToast.error(
-                                context,
-                                context.tr('please_select_number_of_stars'),
-                              );
-                              return;
-                            }
+                          onPressed: _rating == 0
+                              ? null
+                              : () async {
+                                  setDialogState(() {
+                                    _isSubmitting = true;
+                                  });
 
-                            setDialogState(() {
-                              _isSubmitting = true;
-                            });
-
-                            // ⭐ تمرير context الأصلي (من build method) وليس dialogContext
-                            await _submitRating(
-                              context, // ⭐ هنا context الأصلي
-                              _rating,
-                              _reviewController.text,
-                            );
-                          },
+                                  await _submitRating(
+                                    context,
+                                    _rating,
+                                    _reviewController.text,
+                                  );
+                                },
                           width: double.infinity,
                           height: 54.h,
-                          useGradient: true,
+                          backGroundcolor: _rating < 0
+                              ? Colors.transparent
+                              : AppColors.secondary100,
+                          useGradient: _rating > 0,
                         ),
                 ],
               ),
@@ -664,14 +661,7 @@ class _RatingsTabState extends State<RatingsTab>
                       ),
                     ),
                     Gap(12.h),
-                    Text(
-                      rating.review,
-                      textAlign: TextAlign.right,
-                      style: Styles.textStyle14.copyWith(
-                        color: AppColors.secondaryText,
-                        height: 1.6,
-                      ),
-                    ),
+                    _ExpandableReviewText(text: rating.review),
                   ],
                 ),
               ),
@@ -727,6 +717,80 @@ class _RatingsTabState extends State<RatingsTab>
                 ),
               ),
             ),
+    );
+  }
+}
+
+class _ExpandableReviewText extends StatefulWidget {
+  final String text;
+  const _ExpandableReviewText({required this.text});
+
+  @override
+  State<_ExpandableReviewText> createState() => _ExpandableReviewTextState();
+}
+
+class _ExpandableReviewTextState extends State<_ExpandableReviewText> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final style = Styles.textStyle14.copyWith(
+          color: AppColors.secondaryText,
+          height: 1.6,
+        );
+
+        final span = TextSpan(text: widget.text, style: style);
+        final tp = TextPainter(
+          text: span,
+          maxLines: 3,
+          textDirection: Directionality.of(context),
+        );
+        tp.layout(maxWidth: constraints.maxWidth);
+
+        if (!tp.didExceedMaxLines) {
+          return Text(
+            widget.text,
+            style: style,
+            textAlign: TextAlign.right,
+            textDirection: Directionality.of(context),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.text,
+              textAlign: TextAlign.right,
+              textDirection: Directionality.of(context),
+              style: style,
+              maxLines: _isExpanded ? null : 3,
+              overflow: _isExpanded
+                  ? TextOverflow.visible
+                  : TextOverflow.ellipsis,
+            ),
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _isExpanded = !_isExpanded;
+                });
+              },
+              child: Padding(
+                padding: EdgeInsets.only(top: 4.h),
+                child: Text(
+                  _isExpanded ? context.tr('see_less') : context.tr('see_more'),
+                  style: Styles.textStyle12.copyWith(
+                    color: AppColors.kprimaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
