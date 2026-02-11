@@ -65,19 +65,19 @@ class _EditNameViewState extends State<EditNameView> {
 
       // تحقق من الاسم الأول
       if (firstName.isEmpty) {
-        _firstNameError = 'الاسم الأول مطلوب';
+        _firstNameError = context.tr('first_name_required');
       } else if (firstName.length < 4 || firstName.length > 12) {
-        _firstNameError = 'الاسم الأول يجب أن يكون بين 4 و 12 حرف';
+        _firstNameError = context.tr('first_name_length_error');
       } else if (!RegExp(r'^[a-zA-Zء-ي\s]+$').hasMatch(firstName)) {
-        _firstNameError = 'الاسم الأول يمكن أن يحتوي على حروف فقط';
+        _firstNameError = context.tr('first_name_letters_only');
       }
 
       // تحقق من الاسم الثاني
       if (lastName.isNotEmpty) {
         if (lastName.length < 4 || lastName.length > 12) {
-          _lastNameError = 'الاسم الثاني يجب أن يكون بين 4 و 12 حرف';
+          _lastNameError = context.tr('second_name_length_error');
         } else if (!RegExp(r'^[a-zA-Zء-ي\s]+$').hasMatch(lastName)) {
-          _lastNameError = 'الاسم الثاني يمكن أن يحتوي على حروف فقط';
+          _lastNameError = context.tr('second_name_letters_only');
         }
       }
     });
@@ -133,13 +133,16 @@ class _EditNameViewState extends State<EditNameView> {
         }
 
         widget.onProfileUpdated(updatedProfile);
-        AppToast.success(context, 'تم تحديث الاسم بنجاح');
+        AppToast.success(context, context.tr('name_updated_success'));
         Navigator.pop(context);
       } else {
-        AppToast.error(context, response['message'] ?? 'فشل تحديث الاسم');
+        AppToast.error(
+          context,
+          response['message'] ?? context.tr('name_update_failed'),
+        );
       }
     } catch (e) {
-      AppToast.error(context, 'حدث خطأ: $e');
+      AppToast.error(context, '${context.tr('error_occurred')}: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -256,8 +259,12 @@ class _EditNameViewState extends State<EditNameView> {
               Gap(16.h),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: SimpleAppBar(title: 'الاسم', isLargeTitle: true),
+                child: SimpleAppBar(
+                  title: context.tr('name'),
+                  isLargeTitle: true,
+                ),
               ),
+
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.symmetric(
@@ -271,7 +278,7 @@ class _EditNameViewState extends State<EditNameView> {
 
                       // حقل الاسم الأول
                       Text(
-                        'الاسم الأول',
+                        context.tr('first_name'),
                         style: Styles.textStyle14.copyWith(
                           color: AppColors.secondary700,
                           fontWeight: FontWeight.w500,
@@ -280,7 +287,7 @@ class _EditNameViewState extends State<EditNameView> {
                       Gap(8.h),
                       _buildNameField(
                         controller: _firstNameController,
-                        hintText: 'أدخل الاسم الأول',
+                        hintText: context.tr('enter_first_name'),
                         errorText: _firstNameError,
                         onChanged: (_) {},
                       ),
@@ -288,7 +295,7 @@ class _EditNameViewState extends State<EditNameView> {
 
                       // حقل الاسم الثاني
                       Text(
-                        'الاسم الثاني (اختياري)',
+                        context.tr('second_name_optional'),
                         style: Styles.textStyle14.copyWith(
                           color: AppColors.secondary700,
                           fontWeight: FontWeight.w500,
@@ -297,7 +304,7 @@ class _EditNameViewState extends State<EditNameView> {
                       Gap(8.h),
                       _buildNameField(
                         controller: _lastNameController,
-                        hintText: 'أدخل الاسم الثاني',
+                        hintText: context.tr('enter_second_name'),
                         errorText: _lastNameError,
                         onChanged: (_) {},
                         isLastName: true,
@@ -310,7 +317,7 @@ class _EditNameViewState extends State<EditNameView> {
                         child: CustomBotton(
                           height: 52.h,
                           width: double.infinity,
-                          title: 'تأكيد',
+                          title: context.tr('confirm'),
                           onPressed: _isFormValid && !_isLoading
                               ? _updateName
                               : null,
