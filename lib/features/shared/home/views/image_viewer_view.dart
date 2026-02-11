@@ -480,7 +480,7 @@ class _ZoomableImageState extends State<_ZoomableImage>
               widget.imageUrl,
               fit: BoxFit.contain,
               width: double.infinity,
-              height: double.infinity,     
+              height: double.infinity,
             ),
           ),
         ),
@@ -531,7 +531,10 @@ class _ViewerHeader extends StatelessWidget {
                   onTap: onClose,
                   child: Icon(Icons.close, color: Colors.white, size: 28.sp),
                 ),
-                if (totalImages > 1) _buildDots() else const SizedBox(),
+                if (totalImages > 1 && totalImages < 15)
+                  _buildDots()
+                else
+                  const SizedBox(),
                 Icon(Icons.info_outline, color: Colors.white, size: 26.sp),
               ],
             ),
