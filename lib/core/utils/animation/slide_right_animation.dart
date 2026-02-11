@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class SlideRightRoute extends PageRouteBuilder {
@@ -38,42 +39,62 @@ class SlideRightRoute extends PageRouteBuilder {
       );
 }
 
-class SlideLeftRoute extends PageRouteBuilder {
+class SlideLeftRoute extends PageRoute {
   final Widget page;
   final RouteSettings? routeSettings;
 
   SlideLeftRoute({required this.page, this.routeSettings})
-    : super(
-        settings: routeSettings,
-        pageBuilder:
-            (
-              BuildContext context,
-              Animation<double> animation,
-              Animation<double> secondaryAnimation,
-            ) => page,
-        transitionsBuilder:
-            (
-              BuildContext context,
-              Animation<double> animation,
-              Animation<double> secondaryAnimation,
-              Widget child,
-            ) {
-              const begin = Offset(1.0, 0.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOutCubic;
+    : super(settings: routeSettings);
 
-              var tween = Tween(
-                begin: begin,
-                end: end,
-              ).chain(CurveTween(curve: curve));
+  @override
+  Color? get barrierColor => null;
 
-              return SlideTransition(
-                position: animation.drive(tween),
-                child: child,
-              );
-            },
-        transitionDuration: const Duration(milliseconds: 400),
+  @override
+  String? get barrierLabel => null;
+
+  @override
+  bool get maintainState => true;
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 400);
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return page;
+  }
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    // On iOS, use native Cupertino transition (supports swipe-back)
+    if (Theme.of(context).platform == TargetPlatform.iOS) {
+      // Use CupertinoPageTransitionsBuilder for native iOS transition
+      return const CupertinoPageTransitionsBuilder().buildTransitions(
+        this,
+        context,
+        animation,
+        secondaryAnimation,
+        child,
       );
+    }
+
+    // On Android, use custom slide animation
+    const begin = Offset(1.0, 0.0);
+    const end = Offset.zero;
+    const curve = Curves.easeInOutCubic;
+
+    var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+    return SlideTransition(position: animation.drive(tween), child: child);
+  }
 }
 
 class FadeScaleRoute extends PageRouteBuilder {
