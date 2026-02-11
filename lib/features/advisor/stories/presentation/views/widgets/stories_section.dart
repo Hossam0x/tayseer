@@ -341,13 +341,13 @@ class _AddStoryItem extends StatelessWidget {
                   // Upload Progress Ring
                   if (isUploading)
                     SizedBox(
-                      width: context.responsiveWidth(88),
-                      height: context.responsiveWidth(88),
+                      width: context.responsiveWidth(76),
+                      height: context.responsiveWidth(76),
                       child: CircularProgressIndicator(
                         value: storyState.uploadProgress > 0
                             ? storyState.uploadProgress
                             : null,
-                        strokeWidth: 4,
+                        strokeWidth: 3.sp,
                         color: AppColors.kprimaryColor,
                         backgroundColor: AppColors.secondary200,
                       ),
@@ -358,7 +358,7 @@ class _AddStoryItem extends StatelessWidget {
                         previous.homeInfo != current.homeInfo,
                     builder: (context, state) {
                       return MyProfileImage(
-                        width: context.responsiveWidth(76),
+                        width: context.responsiveWidth(isUploading ? 66 : 76),
                         imageUrl: state.homeInfo?.image,
                       );
                     },
