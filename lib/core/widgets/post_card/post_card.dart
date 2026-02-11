@@ -533,6 +533,8 @@ class _PostMediaState extends State<_PostMedia> {
             : const SizedBox.shrink();
       case PostContentType.event:
         return EventCardItem(
+          key: ValueKey('event_${widget.post.postId}'), // 👈 أضف ده
+
           imageUrl: widget.post.event?.image ?? '',
           sessionTitle: widget.post.event?.title ?? '',
           location: widget.post.event?.location ?? '',

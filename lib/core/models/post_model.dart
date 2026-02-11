@@ -200,6 +200,7 @@ class PostModel {
     bool? isMine,
     bool? isHidden,
     bool? isBlocked,
+    EventModel? event,
   }) {
     return PostModel(
       postId: postId ?? this.postId,
@@ -227,6 +228,7 @@ class PostModel {
       isMine: isMine ?? this.isMine,
       isHidden: isHidden ?? this.isHidden,
       isBlocked: isBlocked ?? this.isBlocked,
+      event: event ?? this.event,
     );
   }
 }
