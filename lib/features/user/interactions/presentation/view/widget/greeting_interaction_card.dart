@@ -99,7 +99,7 @@ class GreetingProfileCard extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              ' ${item.age} سنة',
+                              ' ${item.age} ${context.tr('age')}',
                               style: Styles.textStyle16.copyWith(
                                 fontWeight: FontWeight.w400,
                               ),

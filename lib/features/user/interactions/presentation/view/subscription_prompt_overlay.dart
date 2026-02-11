@@ -31,7 +31,7 @@ class SubscriptionPromptOverlay extends StatelessWidget {
             children: [
               SizedBox(height: 16.h),
               _interactionSubscriptionButton(
-                "اشترك لترى إعجباتك",
+                context.tr("subscribe_to_see_likes"),
                 context,
                 onPressed: () {
                   context.pushNamed(AppRouter.kinteractionSubscriptionView);

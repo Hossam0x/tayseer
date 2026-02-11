@@ -237,7 +237,7 @@ class ExplorationState extends State<Exploration> {
                           horizontal: 8.w,
                         ),
                         child: Text(
-                          "المزيد",
+                          context.tr("show_more"),
                           style: Styles.textStyle18SemiBold.copyWith(
                             color: AppColors.secondary800,
                           ),
@@ -309,7 +309,7 @@ class ExplorationState extends State<Exploration> {
                           horizontal: 8.w,
                         ),
                         child: Text(
-                          "المزيد",
+                            context.tr("show_more"),
                           style: Styles.textStyle16SemiBold.copyWith(
                             color: AppColors.secondary800,
                           ),
@@ -398,7 +398,7 @@ class ExplorationState extends State<Exploration> {
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
                 child: Text(
-                  "المزيد",
+                    context.tr("show_more"),
                   style: Styles.textStyle16SemiBold.copyWith(
                     color: AppColors.secondary800,
                   ),

@@ -35,11 +35,11 @@ class DefaultAppBar extends StatelessWidget {
 
           // ✅ Leading widget على اليمين
           if (leadingWidget != null)
-            Positioned(right: 16.w, child: leadingWidget!),
+            PositionedDirectional(start: 16.w, child: leadingWidget!),
 
           // ✅ Trailing widget على الشمال
           if (trailingWidget != null)
-            Positioned(left: 16.w, child: trailingWidget!),
+            PositionedDirectional(end: 16.w, child: trailingWidget!),
         ],
       ),
     );

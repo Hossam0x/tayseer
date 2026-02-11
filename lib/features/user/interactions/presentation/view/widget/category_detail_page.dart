@@ -56,11 +56,15 @@ class CategoryDetailPage extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.all(10.w),
                   color: Colors.transparent,
-                  child: AppImage(
-                    AssetsData.backArrow,
-                    width: 17.w,
-                    height: 17.h,
-                    color: AppColors.secondary600,
+                  
+                  child: Transform.flip(
+                      flipX: Directionality.of(context) == TextDirection.ltr,
+                    child: AppImage(
+                      AssetsData.backArrow,
+                      width: 17.w,
+                      height: 17.h,
+                      color: AppColors.secondary600,
+                    ),
                   ),
                 ),
               ),
