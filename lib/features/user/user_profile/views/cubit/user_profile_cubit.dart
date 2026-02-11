@@ -144,8 +144,15 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     try {
       final settings = await _loadSettings();
       final profile = await _fetchUserProfile();
+      final isNotificationEnabled = await _getNotificationStatus();
 
-      emit(SettingsLoaded(settings: settings, userProfile: profile));
+      emit(
+        SettingsLoaded(
+          settings: settings,
+          userProfile: profile,
+          isNotificationEnabled: isNotificationEnabled,
+        ),
+      );
     } catch (e) {
       emit(SettingsError(message: 'حدث خطأ في تحميل البيانات: $e'));
     }
@@ -413,18 +420,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
+    // Emit optimistic update
+    emit(currentState.copyWith(isNotificationEnabled: newValue));
+
     try {
-      currentState.settings.firstWhere((item) => item.id == id).switchValue;
-
-      final updatedSettings = currentState.settings.map((item) {
-        if (item.id == id) {
-          return item.copyWith(switchValue: newValue);
-        }
-        return item;
-      }).toList();
-
-      emit(currentState.copyWith(settings: updatedSettings));
-
       final prefs = await SharedPreferences.getInstance();
 
       if (newValue) {
@@ -435,65 +434,40 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         await prefs.setBool('notifications_enabled', false);
       }
     } catch (e) {
-      final currentState = state;
-      if (currentState is SettingsLoaded) {
-        final revertedSettings = currentState.settings.map((item) {
-          if (item.id == id) {
-            return item.copyWith(switchValue: !newValue);
-          }
-          return item;
-        }).toList();
-
-        emit(currentState.copyWith(settings: revertedSettings));
+      if (!isClosed) {
+        emit(currentState.copyWith(isNotificationEnabled: !newValue));
       }
       rethrow;
     }
   }
 
   Future<void> updateSwitch(String id, bool value, BuildContext context) async {
-    final currentState = state;
-    if (currentState is! SettingsLoaded) return;
+    if (id == 'notifications') {
+      try {
+        SnackBarService().clearAll(context);
 
-    try {
-      SnackBarService().clearAll(context);
+        // This updates isNotificationEnabled state
+        await _toggleNotificationSetting(id, value);
 
-      final updatedSettings = currentState.settings.map((item) {
-        if (item.id == id) {
-          return item.copyWith(switchValue: value);
-        }
-        return item;
-      }).toList();
-
-      emit(currentState.copyWith(settings: updatedSettings));
-
-      unawaited(_toggleNotificationSetting(id, value));
-
-      showSafeSnackBar(
-        context: context,
-        text: value
-            ? context.tr("notifications_enabled_success")
-            : context.tr("notifications_disabled_success"),
-        isSuccess: value ? true : false,
-        duration: const Duration(milliseconds: 1500),
-      );
-    } catch (e) {
-      final currentState = state;
-      if (currentState is SettingsLoaded) {
-        final revertedSettings = currentState.settings.map((item) {
-          if (item.id == id) {
-            return item.copyWith(switchValue: !value);
-          }
-          return item;
-        }).toList();
-
-        emit(currentState.copyWith(settings: revertedSettings));
+        showSafeSnackBar(
+          context: context,
+          text: value
+              ? context.tr("notifications_enabled_success")
+              : context.tr("notifications_disabled_success"),
+          isSuccess: value,
+          duration: const Duration(milliseconds: 1500),
+        );
+      } catch (e) {
+        showSafeSnackBar(
+          context: context,
+          text: context.tr("update_settings_error"),
+          isError: true,
+        );
       }
-
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_settings_error"),
-        isError: true,
-      );
+    } else {
+      // Handle other switches generally (if any)
+      // For now, valid for other switches if they exist and are handled by updating list
+      // But typically we should handle them specifically too for performance
     }
   }
 

@@ -202,38 +202,26 @@ class SettingsCubit extends Cubit<SettingsState> {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
-    // تحديث محلي أولاً
-    final updatedSettings = currentState.settings.map((item) {
-      if (item.id == id) {
-        return item.copyWith(switchValue: newValue);
-      }
-      return item;
-    }).toList();
-
-    emit(SettingsLoaded(settings: updatedSettings));
+    // Emit optimistic update for notification toggle
+    emit(currentState.copyWith(isNotificationEnabled: newValue));
 
     try {
       final prefs = await SharedPreferences.getInstance();
 
       if (newValue) {
-        // تفعيل الاشعارات
+        // Activate notifications
         await _enableNotifications();
         await prefs.setBool('notifications_enabled', true);
       } else {
-        // تعطيل الاشعارات
+        // Deactivate notifications
         await _disableNotifications();
         await prefs.setBool('notifications_enabled', false);
       }
     } catch (e) {
-      // التراجع عند الخطأ
-      final revertedSettings = currentState.settings.map((item) {
-        if (item.id == id) {
-          return item.copyWith(switchValue: !newValue);
-        }
-        return item;
-      }).toList();
-
-      emit(SettingsLoaded(settings: revertedSettings));
+      // Revert on failure
+      if (!isClosed) {
+        emit(currentState.copyWith(isNotificationEnabled: !newValue));
+      }
       rethrow;
     }
   }

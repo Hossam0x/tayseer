@@ -95,19 +95,42 @@ class _UserProfileViewState extends State<UserProfileView> {
                 children: [
                   Gap(18.h),
 
-                  // ⭐ جزء البروفايل فقط يتغير حسب الحالة
+                  // ⭐ جزء البروفايل (نطاق تحديث خاص)
                   if (_selectedTabIndex == 0)
-                    _buildProfileSection(context, state),
+                    BlocBuilder<UserProfileCubit, UserProfileState>(
+                      buildWhen: (previous, current) {
+                        if (previous is SettingsLoaded &&
+                            current is SettingsLoaded) {
+                          return previous.userProfile != current.userProfile;
+                        }
+                        return true;
+                      },
+                      builder: (context, state) {
+                        return _buildProfileSection(context, state);
+                      },
+                    ),
                 ],
               ),
             ),
           ),
 
-          // ⭐ المحتوى حسب التبويب (موجود دائماً)
+          // ⭐ المحتوى حسب التبويب (نطاق تحديث خاص للإعدادات)
           if (_selectedTabIndex == 0)
-            _buildGeneralContentSliver(context, state),
-          // ⭐ زر تسجيل الخروج (موجود دائماً)
-          _buildLogoutButtonSliver(context, state),
+            BlocBuilder<UserProfileCubit, UserProfileState>(
+              buildWhen: (previous, current) {
+                if (previous is SettingsLoaded && current is SettingsLoaded) {
+                  return previous.settings != current.settings;
+                }
+                return true;
+              },
+              builder: (context, state) {
+                // Ensure we return a Sliver here
+                return _buildGeneralContentSliver(context, state);
+              },
+            ),
+
+          // ⭐ زر تسجيل الخروج (ثابت)
+          SliverToBoxAdapter(child: _buildLogoutButton(context)),
 
           // مساحة في الأسفل
           SliverToBoxAdapter(child: Gap(100.h)),
@@ -116,7 +139,7 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  // ⭐ دالة جديدة لعرض قسم البروفايل فقط حسب الحالة
+  // ⭐ تعديل دالة بناء قسم البروفايل
   Widget _buildProfileSection(BuildContext context, UserProfileState state) {
     if (state is SettingsInitial || state is SettingsLoading) {
       return _buildProfileSkeleton();
@@ -451,13 +474,6 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   // ⭐ تحديث زر تسجيل الخروج ليكون دائماً
 
-  SliverToBoxAdapter _buildLogoutButtonSliver(
-    BuildContext context,
-    UserProfileState state,
-  ) {
-    return SliverToBoxAdapter(child: _buildLogoutButton(context));
-  }
-
   Widget _buildSettingsList(
     BuildContext context,
     List<SettingItemModel> settings,
@@ -632,22 +648,59 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
 
               if (setting.hasSwitch)
-                IgnorePointer(
-                  ignoring: false,
-                  child: Transform.scale(
-                    scaleX: -0.9,
-                    scaleY: 0.9,
-                    child: CupertinoSwitch(
-                      value: setting.switchValue,
-                      activeColor: const Color(0xFFF06C88),
-                      trackColor: AppColors.dropDownArrow,
-                      onChanged: (value) {
-                        final cubit = context.read<UserProfileCubit>();
-                        cubit.updateSwitch(setting.id, value, context);
-                      },
+                if (setting.id == 'notifications')
+                  BlocBuilder<UserProfileCubit, UserProfileState>(
+                    buildWhen: (previous, current) {
+                      if (previous is SettingsLoaded &&
+                          current is SettingsLoaded) {
+                        return previous.isNotificationEnabled !=
+                            current.isNotificationEnabled;
+                      }
+                      return false;
+                    },
+                    builder: (context, state) {
+                      final isEnabled = state is SettingsLoaded
+                          ? state.isNotificationEnabled
+                          : false;
+
+                      return IgnorePointer(
+                        ignoring: false,
+                        child: Transform.scale(
+                          scaleX: -0.9,
+                          scaleY: 0.9,
+                          child: CupertinoSwitch(
+                            value: isEnabled,
+                            activeColor: const Color(0xFFF06C88),
+                            trackColor: AppColors.dropDownArrow,
+                            onChanged: (value) {
+                              context.read<UserProfileCubit>().updateSwitch(
+                                setting.id,
+                                value,
+                                context,
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                else
+                  IgnorePointer(
+                    ignoring: false,
+                    child: Transform.scale(
+                      scaleX: -0.9,
+                      scaleY: 0.9,
+                      child: CupertinoSwitch(
+                        value: setting.switchValue,
+                        activeColor: const Color(0xFFF06C88),
+                        trackColor: AppColors.dropDownArrow,
+                        onChanged: (value) {
+                          final cubit = context.read<UserProfileCubit>();
+                          cubit.updateSwitch(setting.id, value, context);
+                        },
+                      ),
                     ),
-                  ),
-                )
+                  )
               else
                 _buildTrailingWidget(setting),
             ],
