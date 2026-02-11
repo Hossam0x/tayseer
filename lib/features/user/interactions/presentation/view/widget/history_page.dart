@@ -24,17 +24,14 @@ class HistorypageState extends State<Historypage> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   context.read<InteractionsCubit>().fetchHistory(filter: widget.selectedFilter);
-    // });
   }
- @override
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        // ✅ استخدام المفتاح مباشرة أو القيمة الافتراضية
         final filterKey = widget.selectedFilter.isEmpty 
             ? "liked_you" 
             : widget.selectedFilter;
@@ -44,6 +41,27 @@ class HistorypageState extends State<Historypage> {
     });
   }
 
+  // ✅ إضافة هذه الدالة
+  @override
+  void didUpdateWidget(Historypage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // ✅ لو الفلتر اتغير، اعمل reload
+    if (oldWidget.selectedFilter != widget.selectedFilter) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final filterKey = widget.selectedFilter.isEmpty 
+              ? "liked_you" 
+              : widget.selectedFilter;
+          
+          context.read<InteractionsCubit>().fetchHistory(filter: filterKey);
+          
+          // ✅ اعمل scroll to top
+          scrollToTop();
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -55,22 +73,33 @@ class HistorypageState extends State<Historypage> {
   void scrollToTop() {
     if (!mounted) return;
     if (_scrollController.hasClients) {
-      if (_scrollController.position.maxScrollExtent > 0 || 
-          _scrollController.position.pixels > 0) {
-        _scrollController.animateTo(
-          0,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      }
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _scrollController.hasClients) {
-          _scrollController.jumpTo(0);
-        }
-      });
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
+
+  // void scrollToTop() {
+  //   if (!mounted) return;
+  //   if (_scrollController.hasClients) {
+  //     if (_scrollController.position.maxScrollExtent > 0 || 
+  //         _scrollController.position.pixels > 0) {
+  //       _scrollController.animateTo(
+  //         0,
+  //         duration: const Duration(milliseconds: 500),
+  //         curve: Curves.easeInOut,
+  //       );
+  //     }
+  //   } else {
+  //     WidgetsBinding.instance.addPostFrameCallback((_) {
+  //       if (mounted && _scrollController.hasClients) {
+  //         _scrollController.jumpTo(0);
+  //       }
+  //     });
+  //   }
+  // }
 
   void _onScroll() {
     if (_isLoadingMore) return;

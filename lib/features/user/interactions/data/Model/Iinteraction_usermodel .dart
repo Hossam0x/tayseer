@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:tayseer/core/constant/constans.dart';
 
 class InteractionUserModel extends Equatable {
   final String userId;
@@ -69,25 +71,142 @@ class InteractionUserModel extends Equatable {
     );
   }
 
-  /// ✅ Helper function to format DateTime
+  /// ✅✅ ENHANCED: Language-aware date formatting (Arabic & English)
   static String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
+    
+    // ✅ Check if Arabic based on the constant from your codebase
+    
 
+    // Within the hour (منذ دقائق / minutes ago)
+    if (difference.inMinutes < 60) {
+      if (difference.inMinutes < 1) {
+        return isArabic ? 'الآن' : 'Just now';
+      } else if (difference.inMinutes == 1) {
+        return isArabic ? 'منذ دقيقة' : '1 minute ago';
+      } else if (difference.inMinutes == 2) {
+        return isArabic ? 'منذ دقيقتين' : '2 minutes ago';
+      } else if (difference.inMinutes <= 10) {
+        return isArabic 
+            ? 'منذ ${difference.inMinutes} دقائق' 
+            : '${difference.inMinutes} minutes ago';
+      } else {
+        return isArabic 
+            ? 'منذ ${difference.inMinutes} دقيقة' 
+            : '${difference.inMinutes} minutes ago';
+      }
+    }
+
+    // Within 24 hours (منذ ساعات / hours ago)
+    if (difference.inHours < 24) {
+      if (difference.inHours == 1) {
+        return isArabic ? 'منذ ساعة' : '1 hour ago';
+      } else if (difference.inHours == 2) {
+        return isArabic ? 'منذ ساعتين' : '2 hours ago';
+      } else if (difference.inHours <= 10) {
+        return isArabic 
+            ? 'منذ ${difference.inHours} ساعات' 
+            : '${difference.inHours} hours ago';
+      } else {
+        return isArabic 
+            ? 'منذ ${difference.inHours} ساعة' 
+            : '${difference.inHours} hours ago';
+      }
+    }
+
+    // Today (اليوم / Today)
     if (difference.inDays == 0) {
-      // return DateFormat('h:mm a', 'ar').format(dateTime);
-      return "اليوم";
-    } else if (difference.inDays == 1) {
-      return 'أمس';
-    } else if (difference.inDays < 7) {
-      return DateFormat('EEEE', 'ar').format(dateTime);
+      return isArabic ? 'اليوم' : 'Today';
+    }
+
+    // Yesterday (أمس / Yesterday)
+    if (difference.inDays == 1) {
+      return isArabic ? 'أمس' : 'Yesterday';
+    }
+
+    // 2 days ago (منذ يومين / 2 days ago)
+    if (difference.inDays == 2) {
+      return isArabic ? 'منذ يومين' : '2 days ago';
+    }
+
+    // Within a week - show day names (الأحد، الإثنين / Sunday, Monday)
+    if (difference.inDays < 7) {
+      try {
+        // ✅ Use locale-aware day name formatting
+        final locale = isArabic ? 'ar' : 'en';
+        return DateFormat('EEEE', locale).format(dateTime);
+      } catch (e) {
+        // Fallback
+        return isArabic 
+            ? 'منذ ${difference.inDays} أيام' 
+            : '${difference.inDays} days ago';
+      }
+    }
+
+    // 1 week ago (منذ أسبوع / 1 week ago)
+    if (difference.inDays < 14) {
+      return isArabic ? 'منذ أسبوع' : '1 week ago';
+    }
+
+    // 2 weeks ago (منذ أسبوعين / 2 weeks ago)
+    if (difference.inDays < 21) {
+      return isArabic ? 'منذ أسبوعين' : '2 weeks ago';
+    }
+
+    // Weeks (منذ X أسابيع / X weeks ago)
+    if (difference.inDays < 30) {
+      final weeks = (difference.inDays / 7).floor();
+      if (isArabic) {
+        return weeks <= 10 ? 'منذ $weeks أسابيع' : 'منذ $weeks أسبوع';
+      } else {
+        return weeks == 1 ? '1 week ago' : '$weeks weeks ago';
+      }
+    }
+
+    // 1 month ago (منذ شهر / 1 month ago)
+    if (difference.inDays < 60) {
+      return isArabic ? 'منذ شهر' : '1 month ago';
+    }
+
+    // 2 months ago (منذ شهرين / 2 months ago)
+    if (difference.inDays < 90) {
+      return isArabic ? 'منذ شهرين' : '2 months ago';
+    }
+
+    // Months (منذ X أشهر / X months ago)
+    if (difference.inDays < 365) {
+      final months = (difference.inDays / 30).floor();
+      if (isArabic) {
+        return months <= 10 ? 'منذ $months أشهر' : 'منذ $months شهر';
+      } else {
+        return months == 1 ? '1 month ago' : '$months months ago';
+      }
+    }
+
+    // 1 year ago (منذ سنة / 1 year ago)
+    if (difference.inDays < 730) {
+      return isArabic ? 'منذ سنة' : '1 year ago';
+    }
+
+    // 2 years ago (منذ سنتين / 2 years ago)
+    if (difference.inDays < 1095) {
+      return isArabic ? 'منذ سنتين' : '2 years ago';
+    }
+
+    // Years (منذ X سنوات / X years ago)
+    final years = (difference.inDays / 365).floor();
+    if (isArabic) {
+      return years <= 10 ? 'منذ $years سنوات' : 'منذ $years سنة';
     } else {
-      return DateFormat('d/M/yyyy', 'ar').format(dateTime);
+      return years == 1 ? '1 year ago' : '$years years ago';
     }
   }
 
-  /// fromJson
-  factory InteractionUserModel.fromJson(Map<String, dynamic> json) {
+  /// fromJson - now with language support from constants
+  factory InteractionUserModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
     // ✅ Parse the day field as DateTime and format it
     String formattedDay = '';
     try {

@@ -12,6 +12,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecu
 import 'package:tayseer/features/user/user_profile/views/marriage_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/complete_marriage_file.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_life_events_section.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/marriage_reward_card.dart';
 import 'package:tayseer/my_import.dart';
 
 // ⭐⭐⭐ Import sections
@@ -22,6 +23,7 @@ import 'package:tayseer/features/user/marriage/view/widget/interests_section.dar
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 
 import 'widgets/MarriageProfileSkeleton .dart';
+import 'widgets/profile_statistics_cards.dart'; // ⭐⭐⭐ NEW IMPORT
 
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
@@ -217,6 +219,35 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             physics: const BouncingScrollPhysics(),
             slivers: [
               _buildViewHeader(profile),
+              
+              // ⭐⭐⭐ NEW: Statistics Cards Section (Before AboutMe)
+              _buildSliverPadding(
+                child: ProfileStatisticsCards(
+                  upgradesCount: 34, 
+                  resultsCount: 1,   
+                  onUpgradesTap: () {
+                    debugPrint('⭐ Upgrades button tapped');
+                  
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('ترقية الاعجابات المتبقية'),
+                        backgroundColor: AppColors.primary600,
+                      ),
+                    );
+                  },
+                  onResultsTap: () {
+                    debugPrint('⭐ Results button tapped');
+                    // TODO: Navigate to results/rewards screen
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('عرض النتائج والمكافآت'),
+                        backgroundColor: AppColors.primary600,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              
               _buildSliverPadding(
                 child: AboutMeSection(items: _buildAboutMeItems(profile)),
               ),
@@ -235,6 +266,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 sliver: SliverToBoxAdapter(
                   child: displayImages.isNotEmpty
                       ? AdditionalImageSection(
+                        isHastar: false,
                           imageUrl: displayImages.length > 1
                               ? displayImages[1]
                               : displayImages[0],
@@ -267,135 +299,8 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 ),
               SliverToBoxAdapter(child: SizedBox(height: 50.h)),
               SliverToBoxAdapter(
-                child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 20.w),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 16.h,
-                  ),
-                  height: 113.h,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16.r),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        AppColors.kWhiteColor.withOpacity(0.7),
-                        AppColors.primary50,
-                        AppColors.primary100,
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.secondary300,
-                        blurRadius: 4,
-                        spreadRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                              context.tr("did_you_marry_by"),
-                                  style: Styles.textStyle16.copyWith(
-                                    color: AppColors.primary600,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                                SizedBox(width: 5.w),
-                                Stack(
-                                  children: [
-                                    Text(
-                                    context.tr("app_name"),
-                                      style: Styles.textStyle26Bold.copyWith(
-                                        foreground: Paint()
-                                          ..style = PaintingStyle.stroke
-                                          ..strokeWidth = 3.w
-                                          ..color = Color(0xFFAC1A36),
-                                      ),
-                                    ),
-                                    Text(
-                                  context.tr("app_name"),
-                                      style: Styles.textStyle26Bold.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8.h),
-                            Row(
-                              children: [
-                                Text(
-                                                          context.tr("contact_us_reward_msg"),
-                                  style: Styles.textStyle12.copyWith(
-                                    color: AppColors.secondary700,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-                      GestureDetector(
-                        onTap: () {
-                          
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8.r),
-                            border: Border.all(color: Colors.white, width: 2.w),
-                          ),
-                          child: Container(
-                            width: 125.w,
-                            height: 36.h,
-                            decoration: BoxDecoration(
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary300,
-                                  blurRadius: 11,
-                                  spreadRadius: 0,
-                                ),
-                              ],
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  AppColors.primary200,
-                                  AppColors.primary200,
-                                  AppColors.primary100,
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                            context.tr("contact_us"),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                child:
+              MarriageRewardCard()),
               SliverToBoxAdapter(child: SizedBox(height: 100.h)),
             ],
           ),
@@ -403,9 +308,9 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
         // 2. الكارد الثابت (يظهر فقط إذا لم تكن النسبة 100%)
         if (totalProgress < 100)
           Align(
-            alignment: Alignment.bottomCenter, // يضعه في نص الشاشة بالضبط
+            alignment: Alignment.bottomCenter,
             child: IgnorePointer(
-              ignoring: false, // تأكد من أنه يستقبل الضغطات
+              ignoring: false,
               child: _buildCompletionCard(progressFraction, profile: profile),
             ),
           ),
@@ -413,14 +318,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ UPDATED: استخدم _calculateTotalProgress بدل النسبة من السيرفر
-  // ════════════════════════════════════════════════════════════════
   Widget _buildViewHeader(MarriageUserProfileModel profile) {
     final images = profile.userMedia?.images ?? [];
     final displayImages = images.length > 5 ? images.sublist(0, 5) : images;
 
-    // ⭐⭐⭐ احسب النسبة الكاملة (سيرفر + ميديا)
     final totalProgress = _calculateTotalProgress(profile);
     final progressFraction = totalProgress / 100;
 
@@ -447,19 +348,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   ),
                 ),
               ),
-              // totalProgress == 100
-              //     ? SizedBox.shrink()
-              //     : _buildCompletionCard(progressFraction, profile: profile),
             ],
           ),
         ],
       ),
     );
   }
-
-  // ════════════════════════════════════════════════════════════════
-  // Rest of the file remains the same...
-  // ════════════════════════════════════════════════════════════════
 
   Widget _buildCompletionCard(
     double progress, {
@@ -498,7 +392,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                //  _buildEnhancedTimeline(progress: progress),
                 SizedBox(height: 20.h),
                 Row(
                   children: [
@@ -557,22 +450,19 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               profile: profile,
               progress: progress,
               onNavigateToEdit: (section) {
-                // ⭐ احفظ القسم بس، متعملش pop هنا
                 selectedSection = section;
-                Navigator.pop(context); // pop من CompleteMarriageFile
+                Navigator.pop(context);
               },
             ),
           ),
         );
 
-        // ⭐ لما نرجع من الصفحة، نغير التاب ونعمل scroll
         if (mounted && selectedSection != null) {
           setState(() {
             _selectedTabIndex = 0;
             _scrollToSection = selectedSection;
           });
 
-          // امسح بعد كده
           Future.delayed(Duration(milliseconds: 500), () {
             if (mounted) {
               setState(() {
@@ -702,7 +592,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.aboutMe?.smoker != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': "${profile.aboutMe!.smoker} ادخن",
+          'label': "${profile.aboutMe!.smoker} ",
         },
     ];
   }
