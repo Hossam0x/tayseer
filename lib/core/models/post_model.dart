@@ -1,4 +1,5 @@
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/features/advisor/event/model/my_event_model.dart';
 
 // --- Enums ---
 enum ReactionType { love, care, dislike }
@@ -68,6 +69,7 @@ class PostModel {
   final List<String> images;
   final String? videoUrl;
   final PollModel? pollModel;
+  final EventModel? event;
 
   // Stats
   final int commentsCount;
@@ -111,6 +113,7 @@ class PostModel {
     this.isMine = false,
     this.isHidden = false,
     this.isBlocked = false,
+    this.event,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -138,6 +141,8 @@ class PostModel {
               totalPollVotes: json["totalPollVotes"] ?? 0,
             )
           : null,
+
+      event: json['event'] != null ? EventModel.fromJson(json['event']) : null,
       commentsCount: json['commentsCount'] ?? 0,
       sharesCount: json['sharesCount'] ?? 0,
       likesCount: json['likesCount'] ?? 0,
