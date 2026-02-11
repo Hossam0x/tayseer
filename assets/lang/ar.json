@@ -1181,5 +1181,9 @@
   "username_same_error": "اسم المستخدم نفسه الحالي",
   "username_updated_success": "تم تحديث اسم المستخدم بنجاح",
   "username_update_failed": "فشل تحديث اسم المستخدم",
-  "edit_username": "تعديل اسم المستخدم"
+  "edit_username": "تعديل اسم المستخدم",
+  "unarchive_chat_success": "تم إلغاء أرشفة محادثة",
+  "unarchive_chat": "إلغاء الأرشفة",
+  "unarchive_chat_confirm": "هل تريد إلغاء أرشفة محادثة"
+
 }

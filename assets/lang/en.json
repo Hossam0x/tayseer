@@ -26,6 +26,7 @@
   "otp_sub_title": "Enter the verification code sent to your email",
   "resend_code_after": "You can resend the code after",
   "resend_code": "Resend Code",
+  "next": "Next",
   "choose_identity": "Select your identity",
   "choose_identity_desc": "Choose between male or female to start your journey easily and connect with the right people.",
   "male": "Male",
@@ -1198,5 +1199,8 @@
   "username_same_error": "Username is the same as current",
   "username_updated_success": "Username updated successfully",
   "username_update_failed": "Failed to update username",
-  "edit_username": "Edit Username"
+  "edit_username": "Edit Username",
+  "unarchive_chat_success": "Unarchive chat",
+  "unarchive_chat": "Unarchive chat",
+  "unarchive_chat_confirm": "Do you want to unarchive chat"
 }

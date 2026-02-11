@@ -181,8 +181,8 @@ class _PhoneEditViewState extends State<PhoneEditView> {
             child: TextFormField(
               controller: _phoneController,
               focusNode: _phoneFocusNode,
-              textAlign: TextAlign.left,
-              textDirection: TextDirection.ltr,
+              textAlign: isArabic ? TextAlign.right : TextAlign.left,
+              // textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
               keyboardType: TextInputType.phone,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
@@ -199,7 +199,10 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                   color: AppColors.primary200,
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 14.h),
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 14.h,
+                  horizontal: 12.w,
+                ),
                 errorText: null,
               ),
               onChanged: (value) {
@@ -216,7 +219,11 @@ class _PhoneEditViewState extends State<PhoneEditView> {
           InkWell(
             onTap: () => _showCountryPicker(context),
             child: Container(
-              padding: EdgeInsets.only(left: 12.w, top: 14.h, bottom: 14.h),
+              padding: EdgeInsetsDirectional.only(
+                end: 12.w,
+                top: 14.h,
+                bottom: 14.h,
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
