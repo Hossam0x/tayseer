@@ -945,12 +945,7 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   void _submitAppRating(BuildContext context, int rating) {
     if (rating > 0) {
-      debugPrint('التقييم المرسل: $rating نجوم');
+      context.read<UserProfileCubit>().rateApp(rating, context);
     }
-    showSafeSnackBar(
-        context: context,
-        text: context.tr("rate_app_success"),
-        isSuccess: true,
-      );
   }
 }

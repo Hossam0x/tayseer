@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
@@ -45,6 +47,7 @@ class _SettingsViewState extends State<SettingsView> {
   Widget _buildBody(BuildContext context) {
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
+        log('jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj');
         return _buildContent(context, state);
       },
     );
@@ -420,6 +423,26 @@ class _SettingsViewState extends State<SettingsView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // العنوان
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Icon(Icons.close, size: 24.w),
+                      ),
+                      Text(
+                        context.tr("rate_app"),
+                        style: Styles.textStyle20Meduim.copyWith(
+                          color: AppColors.primary500,
+                        ),
+                      ),
+                      Gap(24.w),
+                    ],
+                  ),
+
+                  Gap(25.h),
+
                   // النجوم للتقييم (قابلة للاختيار)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -431,7 +454,10 @@ class _SettingsViewState extends State<SettingsView> {
                           });
                         },
                         child: Icon(
-                          Icons.star_rounded,
+                          // اختيار الأيقونة بناءً على التقييم
+                          index < _rating
+                              ? Icons.star_rounded
+                              : Icons.star_rounded,
                           color: index < _rating
                               ? AppColors.kprimaryColor
                               : AppColors.secondary100,
@@ -441,7 +467,29 @@ class _SettingsViewState extends State<SettingsView> {
                     }),
                   ),
 
+                  // عرض قيمة التقييم (اختياري)
+                  if (_rating > 0) ...[
+                    Gap(12.h),
+                    Text(
+                      '${context.tr("rating")}: $_rating / 5',
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.primary500,
+                      ),
+                    ),
+                  ],
+
                   Gap(24.h),
+
+                  // الرسالة
+                  Text(
+                    context.tr("rate_app_message"),
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondary700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  Gap(32.h),
 
                   // زر الإرسال
                   CustomBotton(
