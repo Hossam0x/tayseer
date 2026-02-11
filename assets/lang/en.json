@@ -5,7 +5,6 @@
   "login_apple": "Login with Apple",
   "login_facebook": "Login with Facebook",
   "skip": "Skip",
-  "next": "Next",
   "sending": "Sending",
   "onBording_text1": "Welcome to",
   "onBording_desc1": "A space for Muslims only, where love is written in halal, and hearts meet with Allah's mercy. Our goal is to help you find a life partner that suits you, in a legitimate and safe way that preserves your privacy.",
@@ -1175,7 +1174,6 @@
   "error_play_video": "Error playing video",
   "did_you_marry_by": "Did you get married by",
   "app_name": "Tayseer",
-  "contact_us_reward_msg": "Contact us and get a financial reward",
   "commitment_title": "I commit to:",
   "commitment_respect": "I will treat everyone with respect.",
   "commitment_not_married": "I am not currently married.",
@@ -1185,8 +1183,7 @@
   "agreement_prefix": "By continuing, you agree to our ",
   "terms_of_use": "Terms of Use",
   "and": "and",
-  "privacy_policy": "Privacy Policy"
-  "contact_us_reward_msg": "Contact us and get a financial reward",
+  "privacy_policy": "Privacy Policy",
   "first_name_required": "First name is required",
   "first_name_length_error": "First name must be between 4 and 12 characters",
   "first_name_letters_only": "First name can only contain letters",
@@ -1214,7 +1211,7 @@
   "edit_username": "Edit Username",
   "unarchive_chat_success": "Unarchive chat",
   "unarchive_chat": "Unarchive chat",
-  "unarchive_chat_confirm": "Do you want to unarchive chat"
+  "unarchive_chat_confirm": "Do you want to unarchive chat",
   "contact_us_reward_msg": "Contact us and get a financial reward",
   
   "complete_data": "Complete Your Data",
