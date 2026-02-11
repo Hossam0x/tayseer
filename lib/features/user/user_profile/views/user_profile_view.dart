@@ -12,6 +12,7 @@ import 'package:tayseer/features/user/user_profile/views/marriage_file.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
+import 'dart:io';
 
 class UserProfileView extends StatefulWidget {
   const UserProfileView({super.key});
@@ -25,6 +26,7 @@ class _UserProfileViewState extends State<UserProfileView> {
   final ScrollController _scrollController = ScrollController();
   int _rating = 0;
   late UserProfileCubit _userProfileCubit; // ⭐ إضافة late للـ Cubit
+  File? _localImageFile;
 
   @override
   void initState() {
@@ -299,7 +301,31 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   // ⭐ تحديث الدوال المساعدة للبروفايل
   Widget _buildProfileImage(UserProfileModel? userProfile) {
-    final imageUrl = kCurrentUserData?.image ?? userProfile?.image;
+    // ⭐ استخدام الصورة المحلية إذا وجدت لتفادي التحميل
+    if (_localImageFile != null) {
+      return SizedBox(
+        width: 120.w,
+        height: 120.w,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.secondary100,
+          ),
+          child: ClipOval(
+            child: Image.file(
+              _localImageFile!,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final imageUrl = userProfile?.image ?? kCurrentUserData?.image;
 
     return SizedBox(
       width: 120.w,
@@ -318,11 +344,10 @@ class _UserProfileViewState extends State<UserProfileView> {
                     child: CachedNetworkImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary100,
-                          strokeWidth: 2,
-                        ),
+                      placeholder: (context, url) => Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        color: AppColors.secondary200,
                       ),
                       errorWidget: (context, url, error) {
                         return Center(
@@ -722,7 +747,16 @@ class _UserProfileViewState extends State<UserProfileView> {
       MaterialPageRoute(
         builder: (context) => UserProfileEditView(
           initialProfile: currentState.userProfile!,
-          onProfileUpdated: (updatedProfile) {
+          localImageFile: _localImageFile,
+          onProfileUpdated: (updatedProfile, imageFile) {
+            setState(() {
+              if (imageFile != null) {
+                _localImageFile = imageFile;
+              } else if (updatedProfile.image == null ||
+                  updatedProfile.image!.isEmpty) {
+                _localImageFile = null;
+              }
+            });
             cubit.updateUserProfile(updatedProfile);
           },
         ),

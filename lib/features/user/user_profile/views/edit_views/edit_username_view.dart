@@ -198,7 +198,7 @@ class _EditUsernameViewState extends State<EditUsernameView> {
               ),
               autofocus: true,
               textInputAction: TextInputAction.done,
-              maxLength: 24, // 24 حرف بدون الـ @
+              maxLength: 19, // 19 حرف بدون الـ @
               onChanged: (value) {
                 // منع كتابة @ في الحقل
                 if (value.contains('@')) {
