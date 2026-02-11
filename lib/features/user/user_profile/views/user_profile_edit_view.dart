@@ -252,33 +252,34 @@ class _UserProfileEditContent extends StatelessWidget {
                 child: AppImage(AssetsData.addCertificateImage, width: 30.w),
               ),
             ),
-            if (imageUrl != null && imageUrl.isNotEmpty)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: GestureDetector(
-                  onTap: () => cubit.removeImage(),
-                  child: Container(
-                    padding: EdgeInsets.all(4.w),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.kWhiteColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.close,
-                      color: AppColors.primary500,
-                      size: 18.w,
-                    ),
-                  ),
-                ),
-              ),
+
+            // if (imageUrl != null && imageUrl.isNotEmpty)
+            //   Positioned(
+            //     top: 10,
+            //     right: 10,
+            //     child: GestureDetector(
+            //       onTap: () => cubit.removeImage(),
+            //       child: Container(
+            //         padding: EdgeInsets.all(4.w),
+            //         decoration: BoxDecoration(
+            //           shape: BoxShape.circle,
+            //           color: AppColors.kWhiteColor,
+            //           boxShadow: [
+            //             BoxShadow(
+            //               color: Colors.black.withOpacity(0.1),
+            //               blurRadius: 4,
+            //               offset: const Offset(0, 2),
+            //             ),
+            //           ],
+            //         ),
+            //         child: Icon(
+            //           Icons.close,
+            //           color: AppColors.primary500,
+            //           size: 18.w,
+            //         ),
+            //       ),
+            //     ),
+            //   ),
           ],
         ),
         Gap(20.h),
