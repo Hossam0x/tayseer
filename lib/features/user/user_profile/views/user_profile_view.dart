@@ -975,7 +975,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                     title: context.tr("send_rating"),
                     onPressed: () {
                       Navigator.pop(context);
-                      _submitAppRating(context, _rating);
+                      _submitAppRating(_rating);
                       // إعادة تعيين التقييم بعد الإرسال
                       setState(() {
                         _rating = 0;
@@ -1030,9 +1030,9 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  void _submitAppRating(BuildContext context, int rating) {
+  void _submitAppRating(int rating) {
     if (rating > 0) {
-      context.read<UserProfileCubit>().rateApp(rating, context);
+      _userProfileCubit.rateApp(rating, context);
     }
   }
 }
