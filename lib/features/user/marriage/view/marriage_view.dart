@@ -1,3 +1,5 @@
+// lib/features/user/marriage/view/marriage_view.dart
+
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';
@@ -9,10 +11,12 @@ import 'package:tayseer/my_import.dart';
 class MarriageView extends StatelessWidget {
   const MarriageView({super.key, this.personId});
   final String? personId;
+
   @override
   Widget build(BuildContext context) {
     final completed =
         CachNetwork.getBoolData(key: kIsCompletedQuestions) == true;
+
     return Scaffold(
       body: completed
           ? BlocProvider(
@@ -26,22 +30,28 @@ class MarriageView extends StatelessWidget {
                   if (state.lastQuestionNumberState == CubitStates.success) {
                     context.pop();
                     final lastQuestionNumber =
-                        // state.lastQuestionNumberResponse?.lastQuestionNumber ??
+                        state.lastQuestionNumberResponse?.lastQuestionNumber ??
                         0;
-                    if (lastQuestionNumber == 0) {
-                      context.pushNamed(AppRouter.kChooseGenderView);
+
+                    // ✅ الترتيب الصحيح: من الأكبر للأصغر
+                    if (lastQuestionNumber >= 29) {
+                      context.pushNamed(AppRouter.kAccountReviewUserView);
+                    } else if (lastQuestionNumber >= 28) {
+                      context.pushNamed(AppRouter.kCommitmentView);
+                    } else if (lastQuestionNumber >= 27) {
+                      context.pushNamed(AppRouter.kPersonalInfoView);
                     } else if (lastQuestionNumber >= 1 &&
-                        lastQuestionNumber < 20) {
+                        lastQuestionNumber < 27) {
                       context.pushNamed(
                         AppRouter.kQuestionsPageView,
                         arguments: {'lastQuestionNumber': lastQuestionNumber},
                       );
-                    } else if (lastQuestionNumber >= 20) {
-                      context.pushNamed(AppRouter.kPersonalInfoView);
+                    } else if (lastQuestionNumber == 0) {
+                      context.pushNamed(AppRouter.kChooseGenderView);
                     }
                   } else if (state.lastQuestionNumberState ==
                       CubitStates.failure) {
-                    context.pop(); // Close loading dialog if open
+                    context.pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       CustomSnackBar(
                         context,

@@ -5,6 +5,7 @@
   "login_apple": "Login with Apple",
   "login_facebook": "Login with Facebook",
   "skip": "Skip",
+  "next": "Next",
   "sending": "Sending",
   "onBording_text1": "Welcome to",
   "onBording_desc1": "A space for Muslims only, where love is written in halal, and hearts meet with Allah's mercy. Our goal is to help you find a life partner that suits you, in a legitimate and safe way that preserves your privacy.",
@@ -1173,5 +1174,15 @@
   "error_play_video": "Error playing video",
   "did_you_marry_by": "Did you get married by",
   "app_name": "Tayseer",
-  "contact_us_reward_msg": "Contact us and get a financial reward"
+  "contact_us_reward_msg": "Contact us and get a financial reward",
+  "commitment_title": "I commit to:",
+  "commitment_respect": "I will treat everyone with respect.",
+  "commitment_not_married": "I am not currently married.",
+  "commitment_guidelines": "I will follow Tayseer guidelines.",
+  "enter_your_name": "Enter your name",
+  "name_required": "Name is required",
+  "agreement_prefix": "By continuing, you agree to our ",
+  "terms_of_use": "Terms of Use",
+  "and": "and",
+  "privacy_policy": "Privacy Policy"
 }

@@ -120,7 +120,16 @@ class FilterSelectionScreen extends StatelessWidget {
           questionNumber: 1,
           questionCategoryEnum: 'location',
           type: QuestionType.selectableList,
-          items: ['egypt', 'saudi_arabia', 'emirates', 'kuwait', 'jordan'],
+          items: [
+            'country_saudi',
+            'country_egypt',
+            'country_emirati',
+            'country_kuwait',
+            'country_qatar',
+            'country_bahrain',
+            'country_oman',
+            'country_other',
+          ],
           showSearch: true,
         );
 

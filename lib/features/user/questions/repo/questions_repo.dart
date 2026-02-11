@@ -23,4 +23,10 @@ abstract class QuestionsRepo {
   });
   Future<Either<Failure, void>> verifyOtp({required String otp});
   Future<Either<Failure, LastQuestionNumber>> getLastQuestionNumber();
+  Future<Either<Failure, void>> addPreferenceFactors({
+    required String minAge,
+    required String maxAge,
+    required String country,
+    required String nationality,
+  });
 }

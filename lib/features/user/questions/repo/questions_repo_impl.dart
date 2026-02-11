@@ -201,7 +201,6 @@ class QuestionsRepoImpl implements QuestionsRepo {
 
       final success = response['success'] ?? false;
       if (success) {
-        CachNetwork.setBool(key: kIsCompletedQuestions, value: true);
         return right(null);
       } else {
         return left(
@@ -244,6 +243,48 @@ class QuestionsRepoImpl implements QuestionsRepo {
         ServerFailure(e.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر'),
       );
     } catch (e) {
+      return left(ServerFailure('حدث خطأ غير متوقع: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> addPreferenceFactors({
+    required String minAge,
+    required String maxAge,
+    required String country,
+    required String nationality,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/user/add-preference-factors',
+        data: {
+          'preferenceFactors': {
+            'minAge': minAge,
+            'maxAge': maxAge,
+            'country': country,
+            'nationality': nationality,
+          },
+        },
+        isAuth: true,
+      );
+
+      log('add-preference-factors:::: $response');
+
+      final success = response['success'] ?? false;
+
+      if (success) {
+        return right(null);
+      } else {
+        final message = response['message'] ?? 'فشل إرسال تفضيلات الشريك';
+        return left(ServerFailure(message));
+      }
+    } on DioException catch (e) {
+      log('addPreferenceFactors DioException: $e');
+      return left(
+        ServerFailure(e.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر'),
+      );
+    } catch (e) {
+      log('addPreferenceFactors error: $e');
       return left(ServerFailure('حدث خطأ غير متوقع: $e'));
     }
   }

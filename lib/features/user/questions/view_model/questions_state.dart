@@ -1,3 +1,5 @@
+// lib/features/user/questions/view_model/questions_state.dart
+
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/user/questions/model/last_question_number_model.dart';
 
@@ -8,6 +10,7 @@ class QuestionsState {
   final CubitStates verifyOtpState;
   final CubitStates phoneNumberState;
   final CubitStates lastQuestionNumberState;
+  final CubitStates partnerFilterState;
   final LastQuestionNumber? lastQuestionNumberResponse;
   final String? errorMessage;
 
@@ -21,6 +24,11 @@ class QuestionsState {
   final List<File> images;
   final bool blurEnabled;
 
+  // بيانات فلتر البحث عن الشريك
+  final RangeValues partnerAgeRange;
+  final String? partnerCountry;
+  final String? partnerNationality;
+
   const QuestionsState({
     this.answerQuestionsState = CubitStates.initial,
     this.uploadPersonalInfoState = CubitStates.initial,
@@ -28,16 +36,18 @@ class QuestionsState {
     this.verifyOtpState = CubitStates.initial,
     this.phoneNumberState = CubitStates.initial,
     this.lastQuestionNumberState = CubitStates.initial,
+    this.partnerFilterState = CubitStates.initial,
     this.lastQuestionNumberResponse,
     this.errorMessage,
     this.faceVerificationState = CubitStates.initial,
     this.faceVerificationError,
     this.capturedFaceImage,
-
-    // إضافات جديدة
     this.mainImage,
     this.images = const [],
     this.blurEnabled = false,
+    this.partnerAgeRange = const RangeValues(22, 35),
+    this.partnerCountry,
+    this.partnerNationality,
   });
 
   QuestionsState copyWith({
@@ -47,16 +57,21 @@ class QuestionsState {
     CubitStates? verifyOtpState,
     CubitStates? phoneNumberState,
     CubitStates? lastQuestionNumberState,
+    CubitStates? partnerFilterState,
     LastQuestionNumber? lastQuestionNumberResponse,
     String? errorMessage,
     CubitStates? faceVerificationState,
     String? faceVerificationError,
     XFile? capturedFaceImage,
-
-    // إضافات جديدة
     File? mainImage,
     List<File>? images,
     bool? blurEnabled,
+    RangeValues? partnerAgeRange,
+    String? partnerCountry,
+    String? partnerNationality,
+    // ✅ إضافة flags للمسح
+    bool clearPartnerCountry = false,
+    bool clearPartnerNationality = false,
   }) {
     return QuestionsState(
       answerQuestionsState: answerQuestionsState ?? this.answerQuestionsState,
@@ -64,10 +79,11 @@ class QuestionsState {
           uploadPersonalInfoState ?? this.uploadPersonalInfoState,
       changeImageBlurState: changeImageBlurState ?? this.changeImageBlurState,
       verifyOtpState: verifyOtpState ?? this.verifyOtpState,
-        phoneNumberState: phoneNumberState ?? this.phoneNumberState,
-        lastQuestionNumberState:
+      phoneNumberState: phoneNumberState ?? this.phoneNumberState,
+      lastQuestionNumberState:
           lastQuestionNumberState ?? this.lastQuestionNumberState,
-        lastQuestionNumberResponse:
+      partnerFilterState: partnerFilterState ?? this.partnerFilterState,
+      lastQuestionNumberResponse:
           lastQuestionNumberResponse ?? this.lastQuestionNumberResponse,
       errorMessage: errorMessage ?? this.errorMessage,
       faceVerificationState:
@@ -75,11 +91,17 @@ class QuestionsState {
       faceVerificationError:
           faceVerificationError ?? this.faceVerificationError,
       capturedFaceImage: capturedFaceImage ?? this.capturedFaceImage,
-
-      // إضافات
       mainImage: mainImage ?? this.mainImage,
       images: images ?? this.images,
       blurEnabled: blurEnabled ?? this.blurEnabled,
+      partnerAgeRange: partnerAgeRange ?? this.partnerAgeRange,
+      // ✅ إذا كان flag المسح true، اجعلها null
+      partnerCountry: clearPartnerCountry
+          ? null
+          : (partnerCountry ?? this.partnerCountry),
+      partnerNationality: clearPartnerNationality
+          ? null
+          : (partnerNationality ?? this.partnerNationality),
     );
   }
 
@@ -91,4 +113,6 @@ class QuestionsState {
   bool get isVerificationFailed => faceVerificationState == CubitStates.failure;
   bool get hasImage => capturedFaceImage != null;
   bool get isInitial => faceVerificationState == CubitStates.initial;
+  bool get isPartnerFilterLoading => partnerFilterState == CubitStates.loading;
+  bool get isPartnerFilterSuccess => partnerFilterState == CubitStates.success;
 }

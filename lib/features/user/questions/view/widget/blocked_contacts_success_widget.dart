@@ -13,10 +13,7 @@ class _BlockedContactsSuccessScreenState
   @override
   void initState() {
     Future.delayed(const Duration(seconds: 5), () {
-      context.pushNamedAndRemoveUntil(
-        AppRouter.kUserLayoutView,
-        predicate: (route) => false,
-      );
+      context.pushReplacementNamed(AppRouter.kCommitmentView);
     });
     super.initState();
   }

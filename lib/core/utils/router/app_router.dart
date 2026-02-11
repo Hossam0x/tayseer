@@ -60,15 +60,19 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/inte
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/marriage_filter/view/marriage_filter_view.dart';
+import 'package:tayseer/features/user/questions/view/account_review_view.dart';
 import 'package:tayseer/features/user/questions/view/add_phone_view.dart';
 import 'package:tayseer/features/user/questions/view/added_images_view.dart';
 import 'package:tayseer/features/user/questions/view/face_verification_view.dart';
 import 'package:tayseer/features/user/questions/view/otp_phone_user_question.dart';
+import 'package:tayseer/features/user/questions/view/partner_filter_view.dart';
 import 'package:tayseer/features/user/questions/view/questions_page_view.dart';
 import 'package:tayseer/features/user/questions/view/choose_gender_view.dart';
 import 'package:tayseer/features/user/questions/view/personal_info_view.dart';
+import 'package:tayseer/features/user/questions/view/subscription_view.dart';
 import 'package:tayseer/features/user/questions/view/verify_data_view.dart';
 import 'package:tayseer/features/user/questions/view/widget/blocked_contacts_success_widget.dart';
+import 'package:tayseer/features/user/questions/view/widget/commitment_view_body.dart';
 
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
@@ -161,6 +165,10 @@ abstract class AppRouter {
   static const kBlockedContactsSuccessScreen = '/BlockedContactsSuccessScreen';
   static const kMarriageFilterView = '/MarriageFilterView';
   static const kMarriageView = '/MarriageView';
+  static const kPartnerFilterView = '/PartnerFilterView';
+  static const kCommitmentView = '/CommitmentView';
+  static const kAccountReviewUserView = '/AccountReviewUserView';
+  static const kSubscriptionView = '/SubscriptionView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -841,6 +849,30 @@ abstract class AppRouter {
             child: OtpPhoneUserQuestion(),
           ),
         );
+      case kPartnerFilterView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: PartnerFilterView(),
+          ),
+        );
+      case kCommitmentView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: CommitmentViewBody(),
+          ),
+        );
+      case kSubscriptionView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: SubscriptionView(),
+          ),
+        );
       case kBlockedContactsSuccessScreen:
         return MaterialPageRoute(
           settings: settings,
@@ -851,6 +883,12 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => MarriageFilterView(),
         );
+      case kAccountReviewUserView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => AccountReviewUserView(),
+        );
+
       case kMarriageView:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
