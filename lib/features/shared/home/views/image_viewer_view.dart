@@ -460,6 +460,8 @@ class _ZoomableImageState extends State<_ZoomableImage>
     }
   }
 
+  // في _ZoomableImage فقط - غيّر الـ build method
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -467,20 +469,35 @@ class _ZoomableImageState extends State<_ZoomableImage>
       onDoubleTapDown: _handleDoubleTap,
       child: InteractiveViewer(
         transformationController: _transformationController,
-        minScale: 1.0, // يمنع التصغير أقل من حجم الشاشة
-        maxScale: 4.0, // أقصى حد للتكبير
-        panEnabled: true, // السماح بالتحريك
+        minScale: 1.0,
+        maxScale: 4.0,
+        panEnabled: true,
         onInteractionUpdate: (_) => _checkZoomStatus(),
         onInteractionEnd: (_) => _checkZoomStatus(),
         child: Center(
           child: Hero(
             tag:
                 '${widget.isFromProfile ? 'profile' : 'home'}_post_${widget.postId}_img_${widget.imageUrl}',
-            child: AppImage(
-              widget.imageUrl,
+            // ✅ استخدم CachedNetworkImage مباشرة بدل AppImage
+            child: CachedNetworkImage(
+              imageUrl: widget.imageUrl,
               fit: BoxFit.contain,
               width: double.infinity,
               height: double.infinity,
+              // ✅ Placeholder شفاف أو خفيف للخلفية السوداء
+              placeholder: (context, url) => const SizedBox.shrink(),
+              // أو لو عايز loading indicator خفيف:
+              // placeholder: (context, url) => Center(
+              //   child: CircularProgressIndicator(
+              //     color: Colors.white.withOpacity(0.3),
+              //     strokeWidth: 2,
+              //   ),
+              // ),
+              errorWidget: (context, url, error) => Icon(
+                Icons.broken_image_outlined,
+                color: Colors.white.withOpacity(0.3),
+                size: 48,
+              ),
             ),
           ),
         ),
