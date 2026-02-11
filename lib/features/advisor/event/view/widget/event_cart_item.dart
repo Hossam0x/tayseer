@@ -138,7 +138,8 @@ class _EventCardItemState extends State<EventCardItem>
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      onTap: widget.onTap,
+      onTap: widget.onTap
+         ,
       onLongPressStart: widget.enableLongPress ? _onLongPressStart : null,
       child: AnimatedBuilder(
         animation: _animationController,
