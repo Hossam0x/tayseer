@@ -1,5 +1,7 @@
 import 'package:tayseer/core/utils/helper/picker_helper.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/add_story_view.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
@@ -296,62 +298,124 @@ class _AddStoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () async {
-        final picker = MediaPickerController(
-          config: PickerConfig(
-            allowMultiple: false,
-            maxCount: 1,
-            requestType: RequestType.image,
-          ),
-        );
-        final SelectedMedia? picked = await picker.pickFromCamera();
-        if (picked != null) {
-          if (picked.type == AssetType.image) {
-            // cubit.addCapturedImage(picked.file);
-          } else if (picked.type == AssetType.video) {
-            // cubit.addCapturedVideo(XFile(picked.file.path));
-          }
-        }
-      },
-      child: Column(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              BlocBuilder<HomeCubit, HomeState>(
-                buildWhen: (previous, current) =>
-                    previous.homeInfo != current.homeInfo,
-                builder: (context, state) {
-                  return MyProfileImage(
-                    width: context.responsiveWidth(76),
-                    imageUrl: state.homeInfo?.image,
-                  );
+    return BlocBuilder<StoriesCubit, StoriesState>(
+      buildWhen: (previous, current) =>
+          previous.createStoryState != current.createStoryState ||
+          previous.uploadProgress != current.uploadProgress,
+      builder: (context, storyState) {
+        final isUploading = storyState.createStoryState == CubitStates.loading;
+
+        return GestureDetector(
+          onTap: isUploading
+              ? null
+              : () async {
+                  // Request permissions before entering
+                  final photos = await Permission.photos.request();
+                  final camera = await Permission.camera.request();
+
+                  if (context.mounted) {
+                    if (photos.isGranted && camera.isGranted) {
+                      final storiesCubit = context.read<StoriesCubit>();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BlocProvider.value(
+                            value: storiesCubit,
+                            child: const AddStoryView(),
+                          ),
+                        ),
+                      );
+                    } else {
+                      SnackBarService().showSnackBar(
+                        context: context,
+                        text: context.tr('permissions_required'),
+                        isError: true,
+                      );
+                    }
+                  }
                 },
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: context.responsiveWidth(24),
-                  height: context.responsiveWidth(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.kprimaryColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2.sp),
+          child: Column(
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Upload Progress Ring
+                  if (isUploading)
+                    SizedBox(
+                      width: context.responsiveWidth(88),
+                      height: context.responsiveWidth(88),
+                      child: CircularProgressIndicator(
+                        value: storyState.uploadProgress > 0
+                            ? storyState.uploadProgress
+                            : null,
+                        strokeWidth: 4,
+                        color: AppColors.kprimaryColor,
+                        backgroundColor: AppColors.secondary200,
+                      ),
+                    ),
+
+                  BlocBuilder<HomeCubit, HomeState>(
+                    buildWhen: (previous, current) =>
+                        previous.homeInfo != current.homeInfo,
+                    builder: (context, state) {
+                      return MyProfileImage(
+                        width: context.responsiveWidth(76),
+                        imageUrl: state.homeInfo?.image,
+                      );
+                    },
                   ),
-                  child: Icon(Icons.add, color: Colors.white, size: 16.sp),
-                ),
+
+                  // Add Icon (Hidden when uploading)
+                  if (!isUploading)
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: context.responsiveWidth(24),
+                        height: context.responsiveWidth(24),
+                        decoration: BoxDecoration(
+                          color: AppColors.kprimaryColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2.sp),
+                        ),
+                        child: Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 16.sp,
+                        ),
+                      ),
+                    ),
+
+                  // Percentage Text Overlay
+                  if (isUploading)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Text(
+                        '${(storyState.uploadProgress * 100).toInt()}%',
+                        style: Styles.textStyle10.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              Gap(context.responsiveHeight(6)),
+              Text(
+                context.tr("your_story"),
+                style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
               ),
             ],
           ),
-          Gap(context.responsiveHeight(6)),
-          Text(
-            context.tr("your_story"),
-            style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
