@@ -79,11 +79,16 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
 
       if (hasVideo) {
         // Add video story
+        final duration =
+            (story.videoDuration != null && story.videoDuration! > 0)
+            ? Duration(milliseconds: (story.videoDuration! * 1000).round())
+            : const Duration(seconds: 15);
+
         _storyItems.add(
           StoryItem.pageVideo(
             story.video!,
             controller: _storyController,
-            duration: const Duration(seconds: 15),
+            duration: duration,
             key: Key(story.id),
           ),
         );
