@@ -788,7 +788,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         border: Border.all(color: AppColors.primary100),
       ),
       child: Row(
-        textDirection: TextDirection.rtl,
+        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
         children: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -803,7 +803,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           Expanded(
             child: TextFormField(
               controller: _usernameController,
-              textAlign: TextAlign.right,
+              textAlign: isArabic ? TextAlign.right : TextAlign.left,
               maxLength: 20,
               style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
               decoration: InputDecoration(
@@ -1060,7 +1060,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
               value: item,
               child: Text(
                 context.tr(item),
-                textAlign: TextAlign.right,
+                textAlign: isArabic ? TextAlign.right : TextAlign.left,
                 // ⭐ إضافة نمط للقيم غير المعروفة
                 style: Styles.textStyle14.copyWith(
                   color: !items.contains(item)

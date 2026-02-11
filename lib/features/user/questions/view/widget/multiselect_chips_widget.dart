@@ -3,21 +3,14 @@
 import '../../../../../my_import.dart';
 
 class MultiSelectChipsWidget extends StatefulWidget {
-  /// قائمة العناصر مع الأيقونات {key: iconPath}
-  final Map<String, String> itemsWithIcons;
-
-  /// callback يرجع قائمة العناصر المختارة (translated values)
+  final Map<String, String> itemsWithEmoji;
   final ValueChanged<List<String>> onChanged;
-
-  /// اللون الأساسي
   final Color primaryColor;
-
-  /// لون الخلفية الافتراضي
   final Color? defaultBackgroundColor;
 
   const MultiSelectChipsWidget({
     super.key,
-    required this.itemsWithIcons,
+    required this.itemsWithEmoji,
     required this.onChanged,
     this.primaryColor = Colors.pink,
     this.defaultBackgroundColor,
@@ -39,10 +32,8 @@ class _MultiSelectChipsWidgetState extends State<MultiSelectChipsWidget> {
       }
     });
 
-    final translatedValues = _selectedKeys
-        .map((key) => context.tr(key))
-        .toList();
-    widget.onChanged(translatedValues);
+    // ✅ إرجاع قائمة الـ keys المختارة
+    widget.onChanged(_selectedKeys.toList());
   }
 
   @override
@@ -52,43 +43,34 @@ class _MultiSelectChipsWidgetState extends State<MultiSelectChipsWidget> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: widget.itemsWithIcons.entries.map((entry) {
+        spacing: 10,
+        runSpacing: 10,
+        alignment: WrapAlignment.center,
+        children: widget.itemsWithEmoji.entries.map((entry) {
           final key = entry.key;
-          final iconPath = entry.value;
+          final emoji = entry.value;
           final isSelected = _selectedKeys.contains(key);
 
           return GestureDetector(
             onTap: () => _toggleSelection(key),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected ? widget.primaryColor : defaultBgColor,
+                borderRadius: BorderRadius.circular(25),
                 border: Border.all(
-                  color: isSelected ? widget.primaryColor : defaultBgColor,
+                  color: isSelected ? widget.primaryColor : Colors.transparent,
+                  width: 1.5,
                 ),
-                borderRadius: BorderRadius.circular(20),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppImage(
-                    iconPath,
-                    width: 20,
-                    height: 20,
-                    color: isSelected ? Colors.white : AppColors.kgreyColor,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    context.tr(key),
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.kgreyColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+              child: Text(
+                '$emoji ${context.tr(key)}',
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.kgreyColor,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
               ),
             ),
           );

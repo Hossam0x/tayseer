@@ -1,3 +1,6 @@
+// lib/features/user/marriage_filter/view/widget/marriage_filter_body.dart
+
+import 'package:tayseer/core/widgets/custom_build_age_and_country_section.dart';
 import 'package:tayseer/features/user/marriage_filter/view/widget/custom_data_card.dart';
 import 'package:tayseer/features/user/marriage_filter/view/widget/filter_selection_body.dart';
 import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filter_cubit.dart';
@@ -27,7 +30,7 @@ class MarriageFilterBody extends StatelessWidget {
           } else if (state.marriageFilterStatus == CubitStates.loading) {
             showDialog(
               context: context,
-              builder: (context) => Center(child: const CustomloadingApp()),
+              builder: (context) => const Center(child: CustomloadingApp()),
             );
           }
         },
@@ -36,10 +39,30 @@ class MarriageFilterBody extends StatelessWidget {
             slivers: [
               _buildSliverAppBar(context),
 
+              // ✅ استخدام الـ Custom Widget
               SliverToBoxAdapter(
-                child: _buildAgeAndCountrySection(context, state),
+                child: CustomAgeAndCountrySection(
+                  ageRange: state.ageRange,
+                  onAgeRangeChanged: (values) {
+                    context.read<MarriageFilterCubit>().updateAgeRange(values);
+                  },
+                  countryValue: state.selectedFilters['country']?.toString(),
+                  nationalityValue: state.selectedFilters['nationality']
+                      ?.toString(),
+                  onCountryTap: () => _navigateToSelection(
+                    context,
+                    fieldKey: 'country',
+                    currentValue: state.selectedFilters['country'],
+                  ),
+                  onNationalityTap: () => _navigateToSelection(
+                    context,
+                    fieldKey: 'nationality',
+                    currentValue: state.selectedFilters['nationality'],
+                  ),
+                ),
               ),
 
+              // ... باقي الـ Sections ...
               SliverToBoxAdapter(
                 child: CustomDataCard(
                   sectionTitle: "بيانات وأنشطة 🔥",
@@ -102,6 +125,26 @@ class MarriageFilterBody extends StatelessWidget {
     );
   }
 
+  /// ✅ دالة للتنقل إلى شاشة الاختيار
+  Future<void> _navigateToSelection(
+    BuildContext context, {
+    required String fieldKey,
+    dynamic currentValue,
+  }) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FilterSelectionScreen(
+          fieldKey: fieldKey,
+          initialValue: currentValue,
+        ),
+      ),
+    );
+    if (result != null && context.mounted) {
+      context.read<MarriageFilterCubit>().updateField(fieldKey, result);
+    }
+  }
+
   FilterItemModel _buildRow(
     BuildContext context,
     String title,
@@ -119,18 +162,11 @@ class MarriageFilterBody extends StatelessWidget {
     return FilterItemModel(
       title: context.tr(title),
       value: displayValue,
-      onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                FilterSelectionScreen(fieldKey: fieldKey, initialValue: value),
-          ),
-        );
-        if (result != null) {
-          context.read<MarriageFilterCubit>().updateField(fieldKey, result);
-        }
-      },
+      onTap: () => _navigateToSelection(
+        context,
+        fieldKey: fieldKey,
+        currentValue: value,
+      ),
     );
   }
 
@@ -157,123 +193,6 @@ class MarriageFilterBody extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildAgeAndCountrySection(
-    BuildContext context,
-    MarriageFilterState state,
-  ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("العمر", style: Styles.textStyle16Bold),
-          const SizedBox(height: 10),
-
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              rangeThumbShape: const RoundRangeSliderThumbShape(
-                enabledThumbRadius: 12,
-                elevation: 4,
-                pressedElevation: 6,
-              ),
-              thumbColor: Colors.white,
-              activeTrackColor: const Color(0xFFE91E63),
-              inactiveTrackColor: Colors.grey[200],
-              showValueIndicator: ShowValueIndicator.always,
-              valueIndicatorColor: Colors.pink[50],
-              valueIndicatorTextStyle: const TextStyle(
-                color: Color(0xFF535353),
-                fontWeight: FontWeight.bold,
-              ),
-              rangeValueIndicatorShape:
-                  const PaddleRangeSliderValueIndicatorShape(),
-            ),
-            child: RangeSlider(
-              values: state.ageRange,
-              min: 18,
-              max: 60,
-              labels: RangeLabels(
-                state.ageRange.start.round().toString(),
-                state.ageRange.end.round().toString(),
-              ),
-              onChanged: (values) {
-                context.read<MarriageFilterCubit>().updateAgeRange(values);
-              },
-            ),
-          ),
-
-          const Divider(height: 30, thickness: 0.8),
-          _buildInternalRow(context, "البلد", "country"),
-          const Divider(height: 30, thickness: 0.8),
-          _buildInternalRow(context, "الجنسية", "nationality"),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInternalRow(
-    BuildContext context,
-    String title,
-    String fieldKey,
-  ) {
-    final state = context.read<MarriageFilterCubit>().state;
-    final value = state.selectedFilters[fieldKey];
-
-    String displayValue = "لا يوجد تفضيل";
-    if (value != null) {
-      final s = value.toString();
-      displayValue = s.contains('_') ? context.tr(s) : s;
-    } else {
-      if (fieldKey == 'country') displayValue = "مصر";
-      if (fieldKey == 'nationality') displayValue = "مصري";
-    }
-
-    return InkWell(
-      onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                FilterSelectionScreen(fieldKey: fieldKey, initialValue: value),
-          ),
-        );
-        if (result != null) {
-          context.read<MarriageFilterCubit>().updateField(fieldKey, result);
-        }
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: Styles.textStyle16.copyWith(fontWeight: FontWeight.w500),
-          ),
-          Row(
-            children: [
-              Text(
-                displayValue,
-                style: Styles.textStyle14.copyWith(color: Colors.grey[600]),
-              ),
-              const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-            ],
-          ),
-        ],
-      ),
     );
   }
 

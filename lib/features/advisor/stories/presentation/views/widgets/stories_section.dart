@@ -38,7 +38,8 @@ class StoriesSection extends StatelessWidget {
       case CubitStates.failure:
         return _StoriesErrorWidget(
           message: state.storiesMessage,
-          onRetry: () => context.read<StoriesCubit>().fetchStories(context: context),
+          onRetry: () =>
+              context.read<StoriesCubit>().fetchStories(context: context),
         );
       case CubitStates.success:
       case CubitStates.initial:
@@ -74,7 +75,10 @@ class _StoriesListViewState extends State<_StoriesListView> {
 
   void _onScroll() {
     if (_isBottom) {
-      context.read<StoriesCubit>().fetchStories(loadMore: true, context: context);
+      context.read<StoriesCubit>().fetchStories(
+        loadMore: true,
+        context: context,
+      );
     }
   }
 
@@ -87,6 +91,9 @@ class _StoriesListViewState extends State<_StoriesListView> {
 
   @override
   Widget build(BuildContext context) {
+    // Reverse the stories list so oldest appears first (on the right in RTL)
+    final reversedStories = widget.stories.toList();
+
     return SingleChildScrollView(
       controller: _scrollController,
       scrollDirection: Axis.horizontal,
@@ -101,7 +108,7 @@ class _StoriesListViewState extends State<_StoriesListView> {
               child: const _AddStoryItem(),
             ),
           ],
-          ...widget.stories.map(
+          ...reversedStories.map(
             (userStory) => Padding(
               key: ValueKey(userStory.userId),
               padding: EdgeInsetsDirectional.only(
@@ -145,12 +152,17 @@ class _UserStoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        // Reverse stories to chronological order (oldest first) before opening
+        final chronologicalUserStory = userStoryModel.copyWith(
+          stories: userStoryModel.stories.reversed.toList(),
+        );
+
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (newContext) => BlocProvider.value(
               value: context.read<StoriesCubit>(),
-              child: StoryDetailsView(userStories: userStoryModel),
+              child: StoryDetailsView(userStories: chronologicalUserStory),
             ),
           ),
         );

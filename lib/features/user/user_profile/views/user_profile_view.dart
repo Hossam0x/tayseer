@@ -947,13 +947,10 @@ class _UserProfileViewState extends State<UserProfileView> {
     if (rating > 0) {
       debugPrint('التقييم المرسل: $rating نجوم');
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      CustomSnackBar(
-        context,
+    showSafeSnackBar(
+        context: context,
         text: context.tr("rate_app_success"),
         isSuccess: true,
-      ),
-    );
+      );
   }
 }

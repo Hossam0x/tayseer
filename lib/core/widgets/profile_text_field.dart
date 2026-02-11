@@ -25,7 +25,7 @@ class ProfileTextField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       onChanged: onChanged,
-      textAlign: TextAlign.right,
+      textAlign: isArabic ? TextAlign.right : TextAlign.left,
       maxLines: maxLines,
       maxLength: maxLength,
       keyboardType: keyboardType,

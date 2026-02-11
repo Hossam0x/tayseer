@@ -42,21 +42,23 @@ class SubscriptionCard extends StatelessWidget {
                   ),
                   Gap(5.h),
                   Text(
-                    '3 محادثات , تعزيز البوستات , تثبيت في \n الاعلي لمدة يوم',
+                    context.tr('package_features_placeholder'),
                     style: Styles.textStyle12.copyWith(
                       color: AppColors.secondary600,
                     ),
-                    textAlign: TextAlign.right,
+                    textAlign: context.isArabicLang
+                        ? TextAlign.right
+                        : TextAlign.left,
                   ),
                   Gap(10.h),
                   Text(
-                    'تاريخ التجديد : $dateStart',
+                    context.tr('renewal_date_label', args: [dateStart]),
                     style: Styles.textStyle14.copyWith(
                       color: AppColors.secondary600,
                     ),
                   ),
                   Text(
-                    'تاريخ الانتهاء : $dateEnd',
+                    context.tr('expiry_date_label', args: [dateEnd]),
                     style: Styles.textStyle14.copyWith(
                       color: AppColors.secondary600,
                     ),
@@ -68,10 +70,13 @@ class SubscriptionCard extends StatelessWidget {
               Column(
                 children: [
                   Gap(14.h),
-                  GradientText(text: '170 EGP', style: Styles.textStyle20Bold),
+                  GradientText(
+                    text: '170 ${context.tr('egp')}',
+                    style: Styles.textStyle20Bold,
+                  ),
                   Gap(10.h),
                   CustomBotton(
-                    title: 'تجديد',
+                    title: context.tr('renew'),
                     onPressed: canRenew ? () {} : null,
                     width: 95.w,
                     height: 45.h,
@@ -85,7 +90,8 @@ class SubscriptionCard extends StatelessWidget {
         if (isExpiring)
           Positioned(
             top: 4,
-            left: 4,
+            right: isArabic ? null : 4,
+            left: isArabic ? 4 : null,
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
               decoration: BoxDecoration(
@@ -105,7 +111,7 @@ class SubscriptionCard extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'اوشكت علي الانتهاء',
+                context.tr('almost_expired'),
                 style: Styles.textStyle14.copyWith(color: Colors.white),
               ),
             ),

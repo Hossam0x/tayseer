@@ -2,6 +2,7 @@ import 'package:story_view/story_view.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/my_import.dart' hide Direction;
 
 class StoryDetailsView extends StatefulWidget {
@@ -25,6 +26,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
   final List<StoryItem> _storyItems = [];
   DateTime? _currentStoryTime;
   int _currentStoryIndex = 0;
+  late List<StoryModel> _reorderedStories;
 
   @override
   void initState() {
@@ -39,11 +41,30 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
   }
 
   void _initStoryItems() {
-    if (widget.userStories.stories.isNotEmpty) {
-      _currentStoryTime = widget.userStories.stories.first.createdAt;
+    // First, reverse stories to show oldest first (chronological order)
+    final chronologicalStories = widget.userStories.stories.toList();
+
+    // Then find the first unviewed story in the chronological list
+    final firstUnviewedIndex = chronologicalStories.indexWhere(
+      (story) => !story.isViewed,
+    );
+    final startIndex = firstUnviewedIndex != -1 ? firstUnviewedIndex : 0;
+
+    // Reorder to start from the first unviewed
+    if (startIndex > 0) {
+      _reorderedStories = [
+        ...chronologicalStories.sublist(startIndex),
+        ...chronologicalStories.sublist(0, startIndex),
+      ];
+    } else {
+      _reorderedStories = chronologicalStories;
     }
 
-    for (var story in widget.userStories.stories) {
+    if (_reorderedStories.isNotEmpty) {
+      _currentStoryTime = _reorderedStories.first.createdAt;
+    }
+
+    for (var story in _reorderedStories) {
       // Check if the story has a video URL
       final hasVideo = story.video != null && story.video!.isNotEmpty;
 
@@ -73,8 +94,8 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
   }
 
   void _markCurrentStoryAsViewed() {
-    if (_currentStoryIndex < widget.userStories.stories.length) {
-      final currentStory = widget.userStories.stories[_currentStoryIndex];
+    if (_currentStoryIndex < _reorderedStories.length) {
+      final currentStory = _reorderedStories[_currentStoryIndex];
       // Note: We removed the !isMine check so the user can see their own border update locally.
       if (widget.isArchive) {
         // Archived stories view marking logic if needed
@@ -110,10 +131,9 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) {
                     setState(() {
-                      if (index < widget.userStories.stories.length) {
+                      if (index < _reorderedStories.length) {
                         _currentStoryIndex = index;
-                        _currentStoryTime =
-                            widget.userStories.stories[index].createdAt;
+                        _currentStoryTime = _reorderedStories[index].createdAt;
                         _markCurrentStoryAsViewed();
                       }
                     });
@@ -143,9 +163,18 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                         orElse: () => widget.userStories,
                       );
 
-                      final currentStory =
-                          _currentStoryIndex < updatedUserStory.stories.length
-                          ? updatedUserStory.stories[_currentStoryIndex]
+                      // Find current story by ID from reordered list
+                      final currentStoryId =
+                          _currentStoryIndex < _reorderedStories.length
+                          ? _reorderedStories[_currentStoryIndex].id
+                          : null;
+
+                      final currentStory = currentStoryId != null
+                          ? updatedUserStory.stories.firstWhere(
+                              (s) => s.id == currentStoryId,
+                              orElse: () =>
+                                  _reorderedStories[_currentStoryIndex],
+                            )
                           : null;
 
                       return _LoveButton(
@@ -171,9 +200,18 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                         orElse: () => widget.userStories,
                       );
 
-                      final currentStory =
-                          _currentStoryIndex < updatedUserStory.stories.length
-                          ? updatedUserStory.stories[_currentStoryIndex]
+                      // Find current story by ID from reordered list
+                      final currentStoryId =
+                          _currentStoryIndex < _reorderedStories.length
+                          ? _reorderedStories[_currentStoryIndex].id
+                          : null;
+
+                      final currentStory = currentStoryId != null
+                          ? updatedUserStory.stories.firstWhere(
+                              (s) => s.id == currentStoryId,
+                              orElse: () =>
+                                  _reorderedStories[_currentStoryIndex],
+                            )
                           : null;
 
                       return _LoveButton(
@@ -196,8 +234,8 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
   }
 
   Widget _buildCustomHeader() {
-    final currentStory = _currentStoryIndex < widget.userStories.stories.length
-        ? widget.userStories.stories[_currentStoryIndex]
+    final currentStory = _currentStoryIndex < _reorderedStories.length
+        ? _reorderedStories[_currentStoryIndex]
         : null;
 
     final bool isMine = currentStory?.isMine ?? false;
@@ -265,19 +303,27 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                   PopupMenuItem(
                     value: widget.isArchive ? 'unarchive' : 'archive',
                     child: _buildPopupItem(
-                      widget.isArchive ? 'إلغاء الأرشفة' : 'أرشفة القصة',
+                      widget.isArchive
+                          ? context.tr("unarchive_story")
+                          : context.tr("archive_story"),
                       widget.isArchive ? Icons.unarchive : Icons.archive,
                     ),
                   ),
-                  if (!widget.isArchive)
+                  // Only show special option if not archive and story is not already special
+                  if (!widget.isArchive &&
+                      currentStory != null &&
+                      !currentStory.isSpecial)
                     PopupMenuItem(
                       value: 'special',
-                      child: _buildPopupItem('قصة مميزة', Icons.star_outline),
+                      child: _buildPopupItem(
+                        context.tr("special_story"),
+                        Icons.star_outline,
+                      ),
                     ),
                   PopupMenuItem(
                     value: 'delete',
                     child: _buildPopupItem(
-                      'حذف القصة',
+                      context.tr("delete_story"),
                       Icons.delete_outline,
                       color: Colors.red,
                     ),
@@ -303,54 +349,66 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
             },
           ),
           Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  getTimeAgo(context, _currentStoryTime),
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w500,
-                    shadows: [Shadow(color: Colors.black45, blurRadius: 5)],
-                  ),
-                ),
-                Gap(8.w),
-                // الاسم
-                Flexible(
-                  child: Text(
-                    widget.userStories.name,
-                    textAlign: TextAlign.end,
-                    style: Styles.textStyle16SemiBold.copyWith(
-                      color: Colors.white,
-                      shadows: const [
-                        Shadow(color: Colors.black45, blurRadius: 5),
-                      ],
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserAdvisorProfileView(
+                      advisorId: widget.userStories.userId,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Gap(12.w),
-                // الصورة آخر حاجة (هتظهر في اليمين)
-                Hero(
-                  tag: widget.heroTag ?? widget.userStories.userId,
-                  child: Container(
-                    width: 45.w,
-                    height: 45.w,
-                    decoration: const BoxDecoration(shape: BoxShape.circle),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        1000.r,
-                      ), // نص الـ width عشان يبقى دايرة كاملة
-                      child: AppImage(
-                        widget.userStories.image,
-                        fit: BoxFit.cover,
+                );
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    getTimeAgo(context, _currentStoryTime),
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w500,
+                      shadows: [Shadow(color: Colors.black45, blurRadius: 5)],
+                    ),
+                  ),
+                  Gap(8.w),
+                  // الاسم
+                  Flexible(
+                    child: Text(
+                      widget.userStories.name,
+                      textAlign: TextAlign.end,
+                      style: Styles.textStyle16SemiBold.copyWith(
+                        color: Colors.white,
+                        shadows: const [
+                          Shadow(color: Colors.black45, blurRadius: 5),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Gap(12.w),
+                  // الصورة آخر حاجة (هتظهر في اليمين)
+                  Hero(
+                    tag: widget.heroTag ?? widget.userStories.userId,
+                    child: Container(
+                      width: 45.w,
+                      height: 45.w,
+                      decoration: const BoxDecoration(shape: BoxShape.circle),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          1000.r,
+                        ), // نص الـ width عشان يبقى دايرة كاملة
+                        child: AppImage(
+                          widget.userStories.image,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -360,14 +418,14 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
 
   Widget _buildPopupItem(String title, IconData icon, {Color? color}) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
+        Icon(icon, size: 20.sp, color: color ?? Colors.black),
+        Gap(8.w),
         Text(
           title,
           style: Styles.textStyle14.copyWith(color: color ?? Colors.black),
         ),
-        Gap(8.w),
-        Icon(icon, size: 20.sp, color: color ?? Colors.black),
       ],
     );
   }

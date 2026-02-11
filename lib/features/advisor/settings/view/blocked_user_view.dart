@@ -64,7 +64,7 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
                         horizontal: 20.w,
                         vertical: 15.h,
                       ),
-                      child: SimpleAppBar(title: 'المحظورات'),
+                      child: SimpleAppBar(title: context.tr('blocks')),
                     ),
 
                     // --- Main Content ---
@@ -175,10 +175,10 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(AssetsData.emptyChatImage, width: 120.w, height: 120.w),
+            AppImage(AssetsData.icNoContentSeach),
             SizedBox(height: 16.h),
             Text(
-              'لا يوجد مستخدمين محظورين',
+              context.tr('no_blocked_users'),
               style: Styles.textStyle16.copyWith(color: AppColors.secondary600),
             ),
           ],
@@ -220,17 +220,18 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
 
     CustomshowDialogWithImage(
       context,
-      title: 'إلغاء الحظر',
-      supTitle: 'هل أنت متأكد من إلغاء حظر ${blockedUser.blockedUser.name}؟',
+      title: context.tr('unblock'),
+      supTitle:
+          '${context.tr('are_you_sure_unblock')} ${blockedUser.blockedUser.name}؟',
       icon: Icons.block,
       iconColor: AppColors.kprimaryColor,
       iconBackgroundColor: AppColors.primary100,
-      bottonText: 'نعم',
+      bottonText: context.tr('yes'),
       onPressed: () {
         cubit.unblockUser(blockedUser.blockedUser.id, context);
       },
       showCancelButton: true,
-      cancelText: 'لا',
+      cancelText: context.tr('no'),
       onCancel: () {},
     );
   }

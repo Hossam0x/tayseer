@@ -37,17 +37,17 @@ class AuthRepoImpl implements AuthRepo {
     return '';
   }
 
-  String getDeviceTimeZoneGMT() {
-    final now = DateTime.now();
-    final offset = now.timeZoneOffset;
+  // String getDeviceTimeZoneGMT() {
+  //   final now = DateTime.now();
+  //   final offset = now.timeZoneOffset;
 
-    final hours = offset.inHours;
-    final minutes = offset.inMinutes.remainder(60).abs();
+  //   final hours = offset.inHours;
+  //   final minutes = offset.inMinutes.remainder(60).abs();
 
-    final sign = hours >= 0 ? '+' : '-';
+  //   final sign = hours >= 0 ? '+' : '-';
 
-    return 'GMT $sign${hours.abs()}:${minutes.toString().padLeft(2, '0')}';
-  }
+  //   return 'GMT $sign${hours.abs()}:${minutes.toString().padLeft(2, '0')}';
+  // }
 
   String? token;
   @override
@@ -70,7 +70,7 @@ class AuthRepoImpl implements AuthRepo {
           'fcmToken': fcmToken,
           'deviceId': deviceId,
           'deviceType': platform,
-          'timezone': getDeviceTimeZoneGMT(),
+          // 'timezone': getDeviceTimeZoneGMT(),
         },
       );
       log('register User response$response');
@@ -167,7 +167,7 @@ class AuthRepoImpl implements AuthRepo {
               ? 'advisor'
               : 'user',
           'deviceId': deviceId,
-          'timezone': getDeviceTimeZoneGMT(),
+          // 'timezone': getDeviceTimeZoneGMT(),
         },
       );
       debugPrint('authGoogle idToken $idToken');
@@ -229,7 +229,7 @@ class AuthRepoImpl implements AuthRepo {
               ? 'user'
               : 'advisor',
           'deviceId': deviceId,
-          'timezone': getDeviceTimeZoneGMT(),
+          // 'timezone': getDeviceTimeZoneGMT(),
         },
       );
       log('idToken$idToken');

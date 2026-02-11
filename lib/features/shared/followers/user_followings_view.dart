@@ -87,7 +87,7 @@ class _UserFollowingsViewState extends State<UserFollowingsView> {
                     horizontal: 20.w,
                     vertical: 10.h,
                   ),
-                  child: SimpleAppBar(title: 'المتابَعون'),
+                  child: SimpleAppBar(title: context.tr('followings')),
                 ),
 
                 // Search Field
@@ -147,9 +147,9 @@ class _UserFollowingsViewState extends State<UserFollowingsView> {
                       child: TextField(
                         controller: _searchController,
                         focusNode: _searchFocusNode,
-                        textAlign: TextAlign.right,
+                        textAlign: isArabic ? TextAlign.right : TextAlign.left,
                         decoration: InputDecoration(
-                          hintText: 'ابحث بالاسم...',
+                          hintText: context.tr('search_by_name'),
                           hintStyle: Styles.textStyle14.copyWith(
                             color: Colors.grey,
                           ),
@@ -181,7 +181,7 @@ class _UserFollowingsViewState extends State<UserFollowingsView> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
-                        '${state.followings.length} نتيجة',
+                        '${state.followings.length} ${context.tr('result')}',
                         style: Styles.textStyle12.copyWith(color: Colors.grey),
                       ),
                     ],
@@ -248,7 +248,7 @@ class _UserFollowingsViewState extends State<UserFollowingsView> {
           CircularProgressIndicator(color: AppColors.primary500),
           SizedBox(height: 16.h),
           Text(
-            'جاري البحث...',
+            context.tr('searching'),
             style: Styles.textStyle16.copyWith(color: Colors.grey),
           ),
         ],
@@ -265,7 +265,7 @@ class _UserFollowingsViewState extends State<UserFollowingsView> {
           Icon(Icons.search_off, size: 60.w, color: Colors.grey),
           SizedBox(height: 16.h),
           Text(
-            'لا توجد نتائج للبحث',
+            context.tr('no_search_results'),
             style: Styles.textStyle18.copyWith(color: Colors.grey),
           ),
           SizedBox(height: 8.h),
@@ -303,7 +303,7 @@ class _UserFollowingsViewState extends State<UserFollowingsView> {
           SizedBox(height: 16.h),
           ElevatedButton(
             onPressed: () => _cubit.fetchFollowings(),
-            child: const Text('إعادة المحاولة'),
+            child: Text(context.tr('retry')),
           ),
         ],
       ),
@@ -318,7 +318,7 @@ class _UserFollowingsViewState extends State<UserFollowingsView> {
           Icon(Icons.group, size: 60.w, color: Colors.grey),
           SizedBox(height: 16.h),
           Text(
-            'لا يوجد متابَعين بعد',
+            context.tr('no_followers'),
             style: Styles.textStyle18.copyWith(color: Colors.grey),
           ),
         ],

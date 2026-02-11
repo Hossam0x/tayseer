@@ -1,3 +1,4 @@
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_posts_tab.dart';
 import 'package:tayseer/my_import.dart';
@@ -12,7 +13,7 @@ class UserPublicProfileTabs extends StatefulWidget {
 class _UserPublicProfileTabsState extends State<UserPublicProfileTabs>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> _tabs = ["المنشورات"];
+  final List<String> _tabs = ['posts'];
 
   @override
   void initState() {
@@ -50,6 +51,8 @@ class _UserPublicProfileTabsState extends State<UserPublicProfileTabs>
   }
 
   Widget _buildTabsHeader() {
+    final bool isArabic =
+        context.read<LanguageCubit>().state.languageCode == 'ar';
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
@@ -58,7 +61,7 @@ class _UserPublicProfileTabsState extends State<UserPublicProfileTabs>
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Transform.translate(
-                offset: Offset(290.w, 0),
+                offset: Offset(isArabic ? 290.w : -290.w, 0),
                 child: TabBar(
                   controller: _tabController,
                   isScrollable: true,
@@ -84,7 +87,7 @@ class _UserPublicProfileTabsState extends State<UserPublicProfileTabs>
                       height: 33.w,
                       child: Column(
                         children: [
-                          Text(tab),
+                          Text(context.tr(tab)),
                           Gap(4.h),
                           Container(width: 75.w, color: Colors.transparent),
                         ],

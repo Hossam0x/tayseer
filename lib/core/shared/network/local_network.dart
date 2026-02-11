@@ -6,7 +6,7 @@ import 'package:tayseer/my_import.dart';
 
 class CachNetwork {
   static late SharedPreferences sharedPref;
-  static cacheInitializaion() async {
+  static Future<void> cacheInitializaion() async {
     sharedPref = await SharedPreferences.getInstance();
 
     kIsUserGuest = CachNetwork.getBoolData(key: 'userGuest') ?? true;
@@ -48,6 +48,9 @@ class CachNetwork {
     } else {
       CachNetwork.setBool(key: kIsCompletedQuestions, value: false);
     }
+
+    selectedLanguage = sharedPref.getString('app_language') ?? 'ar';
+    debugPrint("selectedLanguage initialized to: $selectedLanguage");
   }
 
   static Future<bool> setData({

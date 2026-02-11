@@ -1,46 +1,46 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- ⭐ الأذونات الأساسية -->
+    <!-- ================= Permissions ================= -->
+
+    <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    
-    
-    <!-- ⭐ Camera & Microphone -->
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    
-    <!-- ⭐ Storage - Android 9 وأقل (API 28-) -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
-        android:maxSdkVersion="28" 
-        tools:ignore="ScopedStorage" />
-    
-    <!-- ⭐ Android 13+ (API 33+) - Media Permissions -->
-  
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
-    
-    <!-- ⭐ Location Permissions -->
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
-    <!-- Location Permissions -->
+    <!-- Camera & Microphone -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
+    <!-- Storage (Android 12 and below) -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"
+        tools:ignore="ScopedStorage"/>
+
+    <!-- Android 13+ Media Permissions -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
+
+    <!-- Location -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
-    
-    <!-- ⭐ Features (optional) -->
+
+    <!-- Optional Hardware Features -->
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
+    <!-- ================= Application ================= -->
+
     <application
-        android:label="tayser"
         android:name="${applicationName}"
+        android:label="tayser"
         android:icon="@mipmap/ic_launcher"
-        android:requestLegacyExternalStorage="true"
         tools:targetApi="29">
-        android:icon="@mipmap/ic_launcher"
-        android:requestLegacyExternalStorage="true">
 
         <!-- Google Maps API Key -->
         <meta-data
@@ -59,8 +59,7 @@
 
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme"
-            />
+                android:resource="@style/NormalTheme"/>
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -70,9 +69,10 @@
 
         <meta-data
             android:name="flutterEmbedding"
-            android:value="2" />
+            android:value="2"/>
     </application>
 
+    <!-- Queries -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

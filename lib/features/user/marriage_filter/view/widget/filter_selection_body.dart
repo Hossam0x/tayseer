@@ -93,7 +93,7 @@ class FilterSelectionScreen extends StatelessWidget {
         );
       case QuestionType.multiSelectChips:
         return MultiSelectChipsWidget(
-          itemsWithIcons: config.itemsWithIcons ?? {},
+          itemsWithEmoji: config.itemsWithIcons ?? {},
           onChanged: (List<String> values) => onChanged(values),
         );
       case QuestionType.picker:

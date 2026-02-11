@@ -1,5 +1,7 @@
 // lib/features/user/questions/view/widget/question_page.dart
 
+import 'package:tayseer/features/user/questions/view/widget/categorized_multi_select_widget.dart';
+import 'package:tayseer/features/user/questions/view/widget/categorized_single_select_widget.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_ios_picker.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_selectable_list.dart';
 import 'package:tayseer/features/user/questions/view/widget/multiselect_chips_widget.dart';
@@ -24,6 +26,23 @@ class QuestionPage extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
+          // ✅ عرض الـ Subtitle إذا كان موجوداً
+          if (config.subtitleKey != null) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                context.tr(config.subtitleKey!),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.kgreyColor,
+                  fontWeight: FontWeight.w400,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
           /// CONTENT
           Expanded(child: _buildContent(context)),
 
@@ -43,7 +62,6 @@ class QuestionPage extends StatelessWidget {
           searchHintKey: config.searchHintKey,
           primaryColor: AppColors.kprimaryColor,
           onChanged: (key, value) {
-            // ✅ تخزين كلاهما: key للمنطق الشرطي، value للإرسال للـ Backend
             _selectedValue.value = {'key': key, 'value': value};
           },
         );
@@ -69,12 +87,18 @@ class QuestionPage extends StatelessWidget {
 
       case QuestionType.multiSelectChips:
         return MultiSelectChipsWidget(
-          itemsWithIcons: config.itemsWithIcons ?? {},
+          itemsWithEmoji: config.itemsWithIcons ?? {},
           primaryColor: AppColors.kprimaryColor,
-          onChanged: (List<String> selectedValues) {
+          onChanged: (List<String> selectedKeys) {
+            // ✅ إضافة الإيموجي مع النص المترجم
+            final translatedValuesWithEmoji = selectedKeys.map((key) {
+              final emoji = config.itemsWithIcons?[key] ?? '';
+              return '$emoji ${context.tr(key)}';
+            }).toList();
+
             _selectedValue.value = {
-              'key': selectedValues,
-              'value': selectedValues,
+              'key': selectedKeys,
+              'value': translatedValuesWithEmoji,
             };
           },
         );
@@ -90,6 +114,52 @@ class QuestionPage extends StatelessWidget {
             },
           ),
         );
+
+      case QuestionType.categorizedMultiSelectChips:
+        return CategorizedMultiSelectWidget(
+          categorizedItems: config.categorizedItems ?? {},
+          onChanged: (selectedKeys) {
+            // ✅ إضافة الإيموجي مع النص المترجم
+            final translatedValuesWithEmoji = selectedKeys.map((key) {
+              // البحث عن الإيموجي في جميع الفئات
+              String emoji = '';
+              for (var category in (config.categorizedItems ?? {}).values) {
+                if (category.containsKey(key)) {
+                  emoji = category[key] ?? '';
+                  break;
+                }
+              }
+              return '$emoji ${context.tr(key)}';
+            }).toList();
+
+            _selectedValue.value = {
+              'key': selectedKeys,
+              'value': translatedValuesWithEmoji,
+            };
+          },
+          primaryColor: AppColors.kprimaryColor,
+        );
+
+      case QuestionType.categorizedSingleSelectChips:
+        return CategorizedSingleSelectWidget(
+          categorizedItems: config.categorizedItems ?? {},
+          onChanged: (selectedItems) {
+            // ✅ إضافة الإيموجي مع النص المترجم لكل فئة
+            final valuesWithEmoji = selectedItems.entries.map((entry) {
+              final categoryKey = entry.key;
+              final itemKey = entry.value;
+              final emoji =
+                  config.categorizedItems?[categoryKey]?[itemKey] ?? '';
+              return '${context.tr(categoryKey)}: $emoji ${context.tr(itemKey)}';
+            }).toList();
+
+            _selectedValue.value = {
+              'key': selectedItems,
+              'value': valuesWithEmoji,
+            };
+          },
+          primaryColor: AppColors.kprimaryColor,
+        );
     }
   }
 
@@ -104,10 +174,17 @@ class QuestionPage extends StatelessWidget {
             bool isEnabled = false;
             if (selectedValue is Map) {
               final val = selectedValue['value'];
+              final key = selectedValue['key'];
+
               if (val is String) {
                 isEnabled = val.trim().isNotEmpty;
               } else if (val is List) {
                 isEnabled = val.isNotEmpty;
+              } else if (key is Map) {
+                // ✅ للـ categorizedSingleSelectChips
+                final requiredCategories =
+                    config.categorizedItems?.keys.length ?? 0;
+                isEnabled = key.length == requiredCategories;
               }
             }
 

@@ -155,6 +155,16 @@ class StoryModel extends Equatable {
     // Try multiple ID fields because the backend might be inconsistent
     final storyId = json['id']?.toString() ?? json['_id']?.toString() ?? "";
 
+    // Check for viewed status from multiple possible fields
+    int viewsCount = 0;
+    if (json['viewsCount'] != null) {
+      viewsCount = json['viewsCount'];
+    } else if (json['isViewedByMe'] == true) {
+      viewsCount = 1;
+    } else if (json['isViewed'] == true) {
+      viewsCount = 1;
+    }
+
     return StoryModel(
       id: storyId,
       userId: userIdStr,
@@ -164,8 +174,7 @@ class StoryModel extends Equatable {
       video: json['video']?.toString(),
       isMine: json['isMine'] ?? false,
       isSpecial: json['isSpecial'] ?? false,
-      // If backend doesn't send viewsCount, we might have an isViewed field
-      viewsCount: json['viewsCount'] ?? (json['isViewed'] == true ? 1 : 0),
+      viewsCount: viewsCount,
       likesCount: json['likesCount'] ?? 0,
       isLiked: json['isLiked'] ?? false,
       createdAt: json['createdAt'] != null

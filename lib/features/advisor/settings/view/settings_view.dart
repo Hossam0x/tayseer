@@ -6,6 +6,7 @@ import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/my_import.dart';
 
 class SettingsView extends StatefulWidget {
@@ -21,7 +22,7 @@ class _SettingsViewState extends State<SettingsView> {
   @override
   void initState() {
     super.initState();
-    _settingsCubit = SettingsCubit();
+    _settingsCubit = SettingsCubit(getIt<UserProfileRepository>());
   }
 
   @override
@@ -382,6 +383,11 @@ class _SettingsViewState extends State<SettingsView> {
       return;
     }
 
+    if (setting.id == 'rate_app') {
+      _showRateAppDialog();
+      return;
+    }
+
     if (setting.routeName.isNotEmpty) {
       if (setting.id == 'language') {
         final result = await Navigator.pushNamed(context, setting.routeName);
@@ -393,5 +399,73 @@ class _SettingsViewState extends State<SettingsView> {
         Navigator.pushNamed(context, setting.routeName);
       }
     }
+  }
+
+  int _rating = 0;
+  void _showRateAppDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // النجوم للتقييم (قابلة للاختيار)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _rating = index + 1;
+                          });
+                        },
+                        child: Icon(
+                          Icons.star_rounded,
+                          color: index < _rating
+                              ? AppColors.kprimaryColor
+                              : AppColors.secondary100,
+                          size: 56.w,
+                        ),
+                      );
+                    }),
+                  ),
+
+                  Gap(24.h),
+
+                  // زر الإرسال
+                  CustomBotton(
+                    title: context.tr("send_rating"),
+                    onPressed: () {
+                      if (_rating > 0) {
+                        Navigator.pop(context);
+                        _settingsCubit.rateApp(_rating, context);
+                        // إعادة تعيين التقييم بعد الإرسال
+                        setState(() {
+                          _rating = 0;
+                        });
+                      }
+                    },
+                    width: double.infinity,
+                    height: 54.h,
+                    useGradient: true,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 }

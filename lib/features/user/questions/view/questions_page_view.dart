@@ -30,20 +30,173 @@ class QuestionsPageView extends StatelessWidget {
   final Map<String, dynamic> _answers = {};
 
   /// ✅ خريطة الهوايات مع الأيقونات
-  static final Map<String, String> _hobbiesWithIcons = {
-    'hobby_music': AssetsData.kmusicIcon,
-    'hobby_sports': AssetsData.ksportsIcon,
-    'hobby_travel': AssetsData.ktravelIcon,
-    'hobby_reading': AssetsData.kreadingIcon,
-    'hobby_cooking': AssetsData.kcookingIcon,
-    'hobby_drawing': AssetsData.kdrawingIcon,
-    'hobby_mountain_climbing': AssetsData.kmountainIcon,
-    'hobby_meditation': AssetsData.kmeditationIcon,
-    'hobby_photography': AssetsData.kphotographyIcon,
-    'hobby_sewing': AssetsData.ksewingIcon,
-    'hobby_writing': AssetsData.kwritingIcon,
-    'hobby_cycling': AssetsData.kcyclingIcon,
-    'hobby_tourism': AssetsData.kswimmingIcon,
+  /// ✅ خريطة الاهتمامات المقسمة حسب الفئات
+  static final Map<String, Map<String, String>> _interestsWithCategories = {
+    // =============== الرياضة ===============
+    'category_sports': {
+      'interest_baseball': '⚾',
+      'interest_running': '🏃',
+      'interest_weightlifting': '🏋️',
+      'interest_gymnastics': '🤸',
+      'interest_golf': '⛳',
+      'interest_tennis': '🎾',
+      'interest_swimming': '🏊',
+      'interest_dancing': '💃',
+      'interest_skating': '⛸️',
+      'interest_yoga': '🧘',
+      'interest_flying_disc': '🥏',
+      'interest_badminton': '🏸',
+      'interest_skiing': '⛷️',
+      'interest_cycling': '🚴',
+      'interest_basketball': '🏀',
+      'interest_football': '⚽',
+      'interest_karate': '🥋',
+      'interest_boxing': '🥊',
+      'interest_archery': '🏹',
+      'interest_horse_riding': '🏇',
+    },
+
+    // =============== فنون وثقافة ===============
+    'category_arts_culture': {
+      'interest_theater': '🎭',
+      'interest_magic': '🪄',
+      'interest_music': '🎵',
+      'interest_painting': '🎨',
+      'interest_photography': '📷',
+      'interest_cinema': '🎬',
+      'interest_reading': '📚',
+      'interest_writing': '✍️',
+      'interest_poetry': '📝',
+      'interest_history': '🏛️',
+      'interest_languages': '🗣️',
+      'interest_museums': '🖼️',
+      'interest_calligraphy': '🖋️',
+      'interest_sculpture': '🗿',
+      'interest_design': '🎯',
+      'interest_fashion': '👗',
+    },
+
+    // =============== المجتمع ===============
+    'category_community': {
+      'interest_volunteering': '🤝',
+      'interest_charity': '💝',
+      'interest_teaching': '👨‍🏫',
+      'interest_mentoring': '🧑‍🤝‍🧑',
+      'interest_elderly_care': '👴',
+      'interest_children_care': '👶',
+      'interest_environment': '🌱',
+      'interest_animal_care': '🐾',
+      'interest_blood_donation': '🩸',
+      'interest_community_events': '🎉',
+      'interest_social_work': '💼',
+      'interest_human_rights': '⚖️',
+    },
+
+    // =============== التكنولوجيا ===============
+    'category_technology': {
+      'interest_programming': '💻',
+      'interest_gaming': '🎮',
+      'interest_ai': '🤖',
+      'interest_web_dev': '🌐',
+      'interest_mobile_apps': '📱',
+      'interest_cybersecurity': '🔒',
+      'interest_data_science': '📊',
+      'interest_electronics': '🔌',
+      'interest_robotics': '🦾',
+      'interest_vr_ar': '🥽',
+      'interest_3d_printing': '🖨️',
+      'interest_drones': '🚁',
+      'interest_smart_home': '🏠',
+      'interest_blockchain': '⛓️',
+    },
+
+    // =============== النزهات ===============
+    'category_outdoors': {
+      'interest_hiking': '🥾',
+      'interest_camping': '🏕️',
+      'interest_fishing': '🎣',
+      'interest_beach': '🏖️',
+      'interest_mountain_climbing': '🏔️',
+      'interest_gardening': '🌻',
+      'interest_picnic': '🧺',
+      'interest_bird_watching': '🦅',
+      'interest_stargazing': '🌟',
+      'interest_road_trips': '🚗',
+      'interest_sailing': '⛵',
+      'interest_diving': '🤿',
+      'interest_surfing': '🏄',
+      'interest_kayaking': '🛶',
+      'interest_rock_climbing': '🧗',
+      'interest_paragliding': '🪂',
+    },
+
+    // =============== الطعام والمشروبات ===============
+    'category_food_drinks': {
+      'interest_cooking': '👨‍🍳',
+      'interest_baking': '🧁',
+      'interest_grilling': '🍖',
+      'interest_coffee': '☕',
+      'interest_tea': '🍵',
+      'interest_smoothies': '🥤',
+      'interest_sushi': '🍣',
+      'interest_pizza': '🍕',
+      'interest_desserts': '🍰',
+      'interest_healthy_food': '🥗',
+      'interest_street_food': '🌮',
+      'interest_fine_dining': '🍽️',
+      'interest_food_photography': '📸',
+      'interest_chocolate': '🍫',
+      'interest_ice_cream': '🍦',
+    },
+  };
+
+  /// ✅ خريطة الإيمان مع الإيموجي
+  static final Map<String, String> _faithWithEmoji = {
+    'faith_dua': '🙏',
+    'faith_umrah': '🕋',
+    'faith_charity_work': '💼',
+    'faith_dawah': '📢',
+    'faith_sadaqah': '🤝',
+    'faith_hadith': '📖',
+    'faith_tahajjud': '😊',
+    'faith_dhikr': '📿',
+    'faith_multiple_prayers': '🕌',
+    'faith_sunnah_prayer': '🙏',
+    'faith_nafila_prayer': '🕯️',
+    'faith_hajj': '🕋',
+    'faith_five_prayers': '☪️',
+    'faith_fiqh': '📚',
+    'faith_fasting': '🌙',
+    'faith_tasawwuf': '😇',
+    'faith_good_manners': '🤲',
+    'faith_friday_prayer': '🕌',
+  };
+
+  /// ✅ خريطة نوايا الزواج
+  static final Map<String, Map<String, String>> _marriageIntentions = {
+    // اود التواصل مع الشخص خلال
+    'intention_contact_period': {
+      'period_1_3_months': '',
+      'period_4_7_months': '',
+      'period_7_12_months': '',
+      'period_1_2_years': '',
+    },
+
+    // فترة الخطوبة ستكون
+    'intention_engagement_period': {
+      'period_1_3_months': '',
+      'period_4_7_months': '',
+      'period_7_12_months': '',
+      'period_1_2_years': '',
+    },
+
+    // ارغب في الزواج
+    'intention_marriage_period': {
+      'period_1_3_months': '',
+      'period_4_7_months': '',
+      'period_7_12_months': '',
+      'period_1_2_years': '',
+    },
   };
 
   List<QuestionPageConfig> _getQuestions(BuildContext context) {
@@ -305,16 +458,25 @@ class QuestionsPageView extends StatelessWidget {
         showSearch: false,
       ),
 
-      // ✅ 18. الهوايات (Multi-Select)
+      // ✅ 19. الهوايات (Multi-Select)
       QuestionPageConfig(
         titleKey: 'choose_hobbies',
         questionNumber: 19,
         questionCategoryEnum: 'hobbies',
+        type: QuestionType.categorizedMultiSelectChips,
+        categorizedItems: _interestsWithCategories,
+      ),
+      // ✅ 20. الإيمان (Multi-Select)
+      QuestionPageConfig(
+        titleKey: 'choose_faith',
+        subtitleKey: 'faith_subtitle',
+        questionNumber: 20,
+        questionCategoryEnum: 'faith',
         type: QuestionType.multiSelectChips,
-        itemsWithIcons: _hobbiesWithIcons,
+        itemsWithIcons: _faithWithEmoji,
       ),
 
-      // 19. الحجاب (للإناث فقط)
+      // 21. الحجاب (للإناث فقط)
       if (selectedGender == Gender.female)
         QuestionPageConfig(
           titleKey: 'do_you_wear_hijab',
@@ -325,12 +487,58 @@ class QuestionsPageView extends StatelessWidget {
           showSearch: false,
         ),
 
-      // 20. Add Your CV
+      // 22. Add Your CV
       QuestionPageConfig(
         titleKey: 'add_your_cv',
-        questionNumber: 20,
+        questionNumber: 22,
         questionCategoryEnum: AuthEnum.addYourCv.name,
         type: QuestionType.textInput,
+      ),
+      // ✅ 23. نوايا الزواج (Categorized Single Select) - جديد
+      QuestionPageConfig(
+        titleKey: 'marriage_intentions',
+        questionNumber: 23,
+        questionCategoryEnum: 'marriageIntentions',
+        type: QuestionType.categorizedSingleSelectChips,
+        categorizedItems: _marriageIntentions,
+      ),
+      // الاسره 24
+      QuestionPageConfig(
+        titleKey: 'family',
+        questionNumber: 24,
+        questionCategoryEnum: 'familyAcceptance',
+        items: const ['no_problem_children', 'do_not_want_children'],
+        type: QuestionType.selectableList,
+        showSearch: false,
+      ),
+
+      // 25. السفر للخارج
+      QuestionPageConfig(
+        titleKey: 'travel',
+        questionNumber: 25,
+        questionCategoryEnum: 'intendTravelAbroad',
+        items: const ['intend_travel_abroad', 'do_not_intend_travel'],
+        type: QuestionType.selectableList,
+        showSearch: false,
+      ),
+
+      // 26. هل تأكل فقط الطعام الحلال؟
+      QuestionPageConfig(
+        titleKey: 'eat_halal_only',
+        questionNumber: 26,
+        questionCategoryEnum: 'eatHalalOnly',
+        items: const ['yes', 'no'],
+        type: QuestionType.selectableList,
+        showSearch: false,
+      ),
+      // 27. هل تشرب الكحول؟
+      QuestionPageConfig(
+        titleKey: 'drink_alcohol',
+        questionNumber: 27,
+        questionCategoryEnum: 'drinkAlcohol',
+        items: const ['yes', 'no'],
+        type: QuestionType.selectableList,
+        showSearch: false,
       ),
     ];
 
