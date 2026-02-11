@@ -1,4 +1,5 @@
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/features/advisor/event/model/my_event_model.dart';
 
 // --- Enums ---
 enum ReactionType { love, care, dislike }
@@ -65,9 +66,10 @@ class PostModel {
 
   final PostContentType contentType;
   // Media Fields
-  final List<String> images;
+  final List<ImageModel> images;
   final String? videoUrl;
   final PollModel? pollModel;
+  final EventModel? event;
 
   // Stats
   final int commentsCount;
@@ -111,6 +113,7 @@ class PostModel {
     this.isMine = false,
     this.isHidden = false,
     this.isBlocked = false,
+    this.event,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -127,7 +130,13 @@ class PostModel {
       content: json['content'] ?? '',
       images:
           (json['images'] as List<dynamic>?)
-              ?.map((e) => e.toString())
+              ?.map(
+                (e) => ImageModel(
+                  image: e['image'] ?? '',
+                  width: e['width'] ?? 0,
+                  height: e['height'] ?? 0,
+                ),
+              )
               .toList() ??
           [],
       contentType: _parseContentType(json['contentType']),
@@ -138,6 +147,8 @@ class PostModel {
               totalPollVotes: json["totalPollVotes"] ?? 0,
             )
           : null,
+
+      event: json['event'] != null ? EventModel.fromJson(json['event']) : null,
       commentsCount: json['commentsCount'] ?? 0,
       sharesCount: json['sharesCount'] ?? 0,
       likesCount: json['likesCount'] ?? 0,
@@ -172,7 +183,7 @@ class PostModel {
     String? category,
     String? timeAgo,
     String? content,
-    List<String>? images,
+    List<ImageModel>? images,
     PostContentType? contentType,
     String? videoUrl,
     PollModel? pollModel,
@@ -300,6 +311,15 @@ class PollChoice {
       votersAvatars: votersAvatars ?? this.votersAvatars,
     );
   }
+}
+
+class ImageModel {
+  final String image;
+  final int width;
+  final int height;
+  double get aspectRatio => width / height;
+
+  ImageModel({required this.image, required this.width, required this.height});
 }
 
 // // --- Data Generator (Mock Backend) ---

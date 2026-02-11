@@ -8,6 +8,7 @@ import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/core/widgets/post_card/real_video_player.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/advisor/event/view/widget/event_cart_item.dart';
 import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
 import 'package:tayseer/core/widgets/post_card/post_poll_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -531,7 +532,21 @@ class _PostMediaState extends State<_PostMedia> {
               )
             : const SizedBox.shrink();
       case PostContentType.event:
-        return const SizedBox.shrink();
+        return EventCardItem(
+          imageUrl: widget.post.event?.image ?? '',
+          sessionTitle: widget.post.event?.title ?? '',
+          location: widget.post.event?.location ?? '',
+          advisorName: widget.post.event?.advisor ?? '',
+          dateTime: widget.post.event?.date ?? '',
+          price: widget.post.event?.priceAfterDiscount.toString() ?? '',
+          oldPrice: widget.post.event?.priceBeforeDiscount.toString() ?? '',
+          onTap: () {
+            context.pushNamed(
+              AppRouter.kEventDetailView,
+              arguments: {'eventId': widget.post.event?.id},
+            );
+          },
+        );
 
       case PostContentType.poll:
         return PostPollView(
