@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/get_dummy_interaction.dart';
@@ -27,6 +28,14 @@ class ExplorationState extends State<Exploration> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InteractionsCubit>().fetchExploration(category: "all");
     });
+  }
+
+  // ✅ FIXED: Pull to refresh handler with forceRefresh: true
+  Future<void> _onRefresh() async {
+    await context.read<InteractionsCubit>().fetchExploration(
+      category: "all",
+      forceRefresh: true, // ✅ THIS IS THE FIX!
+    );
   }
 
   @override
@@ -67,7 +76,7 @@ class ExplorationState extends State<Exploration> {
         }
 
         // ✅ Check if answerCompleted is false
-        if (!state.answerCompleted) {
+        if (!state.answerCompleted && kIsCompletedQuestions == false) {
           return const EmptyExploration();
         }
 
@@ -78,7 +87,13 @@ class ExplorationState extends State<Exploration> {
           return const EmptyExploration();
         }
 
-        return _buildContent(state);
+        // ✅ Wrap content with RefreshIndicator
+        return RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppColors.primary400,
+          backgroundColor: Colors.white,
+          child: _buildContent(state),
+        );
       },
     );
   }
@@ -126,7 +141,7 @@ class ExplorationState extends State<Exploration> {
   Widget _buildContent(InteractionsState state) {
     return CustomScrollView(
       controller: widget.mainScrollController,
-      physics: const BouncingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(), // ✅ Changed to allow pull-to-refresh even when content is short
       slivers: [
         // ✅ Top Spacing
         SliverPadding(
@@ -309,7 +324,7 @@ class ExplorationState extends State<Exploration> {
                           horizontal: 8.w,
                         ),
                         child: Text(
-                            context.tr("show_more"),
+                          context.tr("show_more"),
                           style: Styles.textStyle16SemiBold.copyWith(
                             color: AppColors.secondary800,
                           ),
@@ -350,94 +365,94 @@ class ExplorationState extends State<Exploration> {
   }
 
   Widget _buildSection({
-  required String title,
-  required String subtitle,
-  required List<InteractionUserModel> data,
-  required bool isSubscribed,
-  int limit = 5,
-  bool showMoreButton = true,
-}) {
-  List<InteractionUserModel> limitedData = data.take(limit).toList();
-  
-  // ✅ تحديد حجم الكارد حسب نوع الجهاز
-  final screenWidth = MediaQuery.of(context).size.width;
-  final isTablet = screenWidth >= 600;
-  final cardWidth = isTablet ? 220.w : 190.w; // ✅ عرض أكبر للتابلت
-  final cardHeight = isTablet ? 320.h : 280.h; // ✅ ارتفاع أكبر للتابلت
+    required String title,
+    required String subtitle,
+    required List<InteractionUserModel> data,
+    required bool isSubscribed,
+    int limit = 5,
+    bool showMoreButton = true,
+  }) {
+    List<InteractionUserModel> limitedData = data.take(limit).toList();
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: Styles.textStyle18SemiBold,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+    // ✅ تحديد حجم الكارد حسب نوع الجهاز
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
+    final cardWidth = isTablet ? 220.w : 190.w; // ✅ عرض أكبر للتابلت
+    final cardHeight = isTablet ? 320.h : 280.h; // ✅ ارتفاع أكبر للتابلت
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: Styles.textStyle18SemiBold,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-          if (showMoreButton) ...[
-            SizedBox(width: 12.w),
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CategoryDetailPage(
-                      title: title,
-                      subtitle: subtitle,
-                      data: data,
-                      isSubscribed: isSubscribed,
-                      isRecentlyJoinedCategory: false,
+            if (showMoreButton) ...[
+              SizedBox(width: 12.w),
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CategoryDetailPage(
+                        title: title,
+                        subtitle: subtitle,
+                        data: data,
+                        isSubscribed: isSubscribed,
+                        isRecentlyJoinedCategory: false,
+                      ),
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
+                  child: Text(
+                    context.tr("show_more"),
+                    style: Styles.textStyle16SemiBold.copyWith(
+                      color: AppColors.secondary800,
                     ),
                   ),
-                );
-              },
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
-                child: Text(
-                    context.tr("show_more"),
-                  style: Styles.textStyle16SemiBold.copyWith(
-                    color: AppColors.secondary800,
+                ),
+              ),
+            ],
+          ],
+        ),
+        SizedBox(height: 4.h),
+        Text(
+          subtitle,
+          style: Styles.textStyle14.copyWith(
+            fontWeight: FontWeight.w400,
+            color: AppColors.secondary600,
+          ),
+        ),
+        SizedBox(height: 16.h),
+        SizedBox(
+          height: cardHeight, // ✅ ارتفاع ديناميكي
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: limitedData.length,
+            clipBehavior: Clip.none,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: EdgeInsetsDirectional.only(end: 12.w),
+                child: SizedBox(
+                  width: cardWidth, // ✅ عرض ديناميكي
+                  child: InteractionProfileCard(
+                    item: limitedData[index],
+                    forceBlur: !isSubscribed,
                   ),
                 ),
-              ),
-            ),
-          ],
-        ],
-      ),
-      SizedBox(height: 4.h),
-      Text(
-        subtitle,
-        style: Styles.textStyle14.copyWith(
-          fontWeight: FontWeight.w400,
-          color: AppColors.secondary600,
+              );
+            },
+          ),
         ),
-      ),
-      SizedBox(height: 16.h),
-      SizedBox(
-        height: cardHeight, // ✅ ارتفاع ديناميكي
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: limitedData.length,
-          clipBehavior: Clip.none,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: EdgeInsetsDirectional.only(end: 12.w),
-              child: SizedBox(
-                width: cardWidth, // ✅ عرض ديناميكي
-                child: InteractionProfileCard(
-                  item: limitedData[index],
-                  forceBlur: !isSubscribed,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 }

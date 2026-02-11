@@ -2,7 +2,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
-import 'package:tayseer/features/user/questions/view/widget/custtom_image_grid.dart';
+import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
@@ -11,6 +11,8 @@ import 'package:tayseer/features/user/user_profile/views/widgets/marriage_field_
 import 'package:tayseer/features/user/user_profile/views/widgets/voiceWidget.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:ui' as ui;
+import 'dart:math' as math;
 
 class MarriageProfileEditView extends StatefulWidget {
   MarriageProfileEditView({
@@ -21,7 +23,7 @@ class MarriageProfileEditView extends StatefulWidget {
     required this.selectedTabIndex,
     required this.maxImages,
     this.onTabChanged,
-    this.scrollToSection, // إضافة هذا
+    this.scrollToSection,
   });
 
   final int maxImages;
@@ -30,7 +32,7 @@ class MarriageProfileEditView extends StatefulWidget {
   final MarriageProfileState state;
   late int selectedTabIndex;
   final Function(int)? onTabChanged;
-  final String? scrollToSection; // إضافة هذا
+  final String? scrollToSection;
 
   @override
   State<MarriageProfileEditView> createState() =>
@@ -41,20 +43,16 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   bool _isRecordingInPlace = false;
   bool _isUploadingVideo = false;
   bool _isUploadingAudio = false;
-  // bool _didScroll = false;
-  // إضافة المفاتيح للأقسام المختلفة
+
   final GlobalKey _imagesKey = GlobalKey();
   final GlobalKey _videoKey = GlobalKey();
   final GlobalKey _audioKey = GlobalKey();
   final ScrollController _scrollController = ScrollController();
 
-@override
+  @override
   void initState() {
     super.initState();
-    // ⭐ امسح السطر ده
-    // _didScroll = false;
     
-    // ⭐ اعمل scroll مباشرة بعد بناء الـ widget
     if (widget.scrollToSection != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToSection(widget.scrollToSection!);
@@ -68,44 +66,41 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     super.dispose();
   }
 
-void _scrollToSection(String section) {
-  // نستخدم WidgetsBinding للتأكد من انتهاء بناء الواجهة أولاً
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    Future.delayed(const Duration(milliseconds: 400), () { // مهلة كافية للـ Build
-      GlobalKey? targetKey;
+  void _scrollToSection(String section) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 400), () {
+        GlobalKey? targetKey;
 
-      switch (section) {
-        case 'images': targetKey = _imagesKey; break;
-        case 'video': targetKey = _videoKey; break;
-        case 'audio': targetKey = _audioKey; break;
-      }
+        switch (section) {
+          case 'images': targetKey = _imagesKey; break;
+          case 'video': targetKey = _videoKey; break;
+          case 'audio': targetKey = _audioKey; break;
+        }
 
-      if (targetKey?.currentContext != null) {
-        Scrollable.ensureVisible(
-          targetKey!.currentContext!,
-          duration: const Duration(milliseconds: 600), // حركة أنعم وأوضح
-          curve: Curves.easeInOut,
-          alignment: 0.1, 
-        );
-      } else {
-        // إذا فشل، نحاول مرة أخيرة بعد وقت قصير جداً
-        debugPrint('⚠️ Retrying scroll for $section...');
-        Future.delayed(const Duration(milliseconds: 200), () {
-          if (targetKey?.currentContext != null) {
-            Scrollable.ensureVisible(targetKey!.currentContext!, alignment: 0.1);
-          }
-        });
-      }
+        if (targetKey?.currentContext != null) {
+          Scrollable.ensureVisible(
+            targetKey!.currentContext!,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInOut,
+            alignment: 0.1, 
+          );
+        } else {
+          debugPrint('⚠️ Retrying scroll for $section...');
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (targetKey?.currentContext != null) {
+              Scrollable.ensureVisible(targetKey!.currentContext!, alignment: 0.1);
+            }
+          });
+        }
+      });
     });
-  });
-}
+  }
+
   @override
   Widget build(BuildContext context) {
-  
     return CustomScrollView(
       controller: _scrollController,
-    // هذه الخاصية تجعل الـ Scroll يرى العناصر البعيدة ويبنيها مسبقاً
-    cacheExtent: 3000, 
+      cacheExtent: 3000, 
       physics: const BouncingScrollPhysics(),
       slivers: [
         SliverPadding(
@@ -116,7 +111,6 @@ void _scrollToSection(String section) {
               _buildPersonalInfoSection(context, widget.cubit, widget.profile),
               Gap(20.h),
 
-              // إضافة المفتاح للصور
               Container(
                 key: _imagesKey,
                 child: _buildImagesSection(
@@ -134,12 +128,10 @@ void _scrollToSection(String section) {
               ),
               Gap(24.h),
 
-              // ⭐ VIDEO لوحده
               Container(key: _videoKey, child: _buildVideoSection(context)),
 
               Gap(24.h),
 
-              // ⭐ AUDIO لوحده
               Container(key: _audioKey, child: _buildAudioSection(context)),
 
               Gap(24.h),
@@ -162,7 +154,6 @@ void _scrollToSection(String section) {
     );
   }
 
-  // ⭐ فصل الـ VIDEO لوحده
   Widget _buildVideoSection(BuildContext context) {
     final hasVideo =
         widget.profile.userMedia?.video != null &&
@@ -195,7 +186,6 @@ void _scrollToSection(String section) {
     );
   }
 
-  // ⭐ فصل الـ AUDIO لوحده
   Widget _buildAudioSection(BuildContext context) {
     final hasAudio =
         widget.profile.userMedia?.audio != null &&
@@ -228,7 +218,7 @@ void _scrollToSection(String section) {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // IMAGES SECTION
+  // IMAGES SECTION - NEW IMPLEMENTATION
   // ════════════════════════════════════════════════════════════════
   Widget _buildImagesSection(
     BuildContext context,
@@ -236,9 +226,12 @@ void _scrollToSection(String section) {
     MarriageUserProfileModel profile,
   ) {
     final allImages = profile.userMedia?.images ?? [];
-    final displayImages = allImages.length > 5
-        ? allImages.sublist(allImages.length - 5)
-        : allImages;
+    
+    // Separate main image and secondary images
+    final mainImageUrl = allImages.isNotEmpty ? allImages.first : null;
+    final secondaryImages = allImages.length > 1 
+        ? allImages.sublist(1, allImages.length > 5 ? 5 : allImages.length)
+        : <String>[];
 
     return Container(
       padding: EdgeInsets.all(10.w),
@@ -251,43 +244,99 @@ void _scrollToSection(String section) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${context.tr('images_count')} ( ${displayImages.length} ${context.tr('images_count')})',
+            '${context.tr('images_count')} ( ${allImages.length} ${context.tr('images_count')})',
             style: Styles.textStyle18Meduim,
           ),
           Gap(12.h),
-          CusttomImageGrid(
-            imageUrls: displayImages,
-            onAdd: () {
-              if (displayImages.length < widget.maxImages) {
-                _pickImage(context, cubit, profile);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  CustomSnackBar(
-                    context,
-                    text: '${context.tr('max_images')} ${widget.maxImages}',
-                    isError: true,
-                  ),
-                );
-              }
-            },
-            onRemove: (index) {
-              final realIndex = allImages.length - displayImages.length + index;
-              final imagePath = allImages[realIndex];
-              CustomshowDialogWithImage(
-                context,
-                title: context.tr('delete_image'),
-                supTitle: context.tr('delete_image_confirm'),
-                icon: Icons.delete_outline,
-                iconColor: Colors.red,
-                iconBackgroundColor: Colors.red.withOpacity(0.1),
-                bottonText: context.tr('delete'),
-                showCancelButton: true,
-                cancelText: context.tr('cancel'),
-                onPressed: () {
-                  cubit.deleteImage(imagePath);
-                },
-              );
-            },
+          
+          // New Grid Implementation
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: GridView.builder(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: 6,
+              itemBuilder: (context, index) {
+                // Main image slot (index 0)
+                if (index == 0) {
+                  return ImageSlotCard(
+                    imageUrl: mainImageUrl,
+                    isMain: true,
+                    onTap: mainImageUrl == null 
+                        ? () => _pickImage(context, cubit, profile, isMain: true)
+                        : null,
+                    onRemove: mainImageUrl != null 
+                        ? () => _removeImage(context, cubit, 0, allImages)
+                        : null,
+                  );
+                }
+
+                // Photo guidelines slot (index 5)
+                if (index == 5) {
+                  return GestureDetector(
+                    onTap: () {
+                      ImageGuidelinesBottomSheet.show(
+                        context,
+                        onNext: () {
+                          context.pop();
+                        },
+                      );
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.only(top: context.height * 0.06),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 28,
+                            color: AppColors.kscandryTextColor,
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            context.tr('photo_guidelines'),
+                            textAlign: TextAlign.center,
+                            style: Styles.textStyle16.copyWith(
+                              color: AppColors.kscandryTextColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // Secondary image slots (indices 1-4)
+                int listIndex = index - 1;
+                
+                if (listIndex < secondaryImages.length) {
+                  // Show existing secondary image
+                  final actualIndex = listIndex + 1; // +1 because first image is main
+                  return ImageSlotCard(
+                    imageUrl: secondaryImages[listIndex],
+                    isMain: false,
+                    onTap: null,
+                    onRemove: () => _removeImage(context, cubit, actualIndex, allImages),
+                  );
+                } else {
+                  // Show empty slot
+                  return ImageSlotCard(
+                    imageUrl: null,
+                    isMain: false,
+                    onTap: allImages.length < widget.maxImages
+                        ? () => _pickImage(context, cubit, profile, isMain: false)
+                        : null,
+                    onRemove: null,
+                  );
+                }
+              },
+            ),
           ),
         ],
       ),
@@ -297,8 +346,9 @@ void _scrollToSection(String section) {
   Future<void> _pickImage(
     BuildContext context,
     MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) async {
+    MarriageUserProfileModel profile, {
+    bool isMain = false,
+  }) async {
     final currentImageCount = profile.userMedia?.images.length ?? 0;
     final ImagePicker picker = ImagePicker();
 
@@ -317,6 +367,29 @@ void _scrollToSection(String section) {
     if (image != null) {
       cubit.uploadImage(File(image.path));
     }
+  }
+
+  void _removeImage(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    int index,
+    List<String> allImages,
+  ) {
+    final imagePath = allImages[index];
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr('delete_image'),
+      supTitle: context.tr('delete_image_confirm'),
+      icon: Icons.delete_outline,
+      iconColor: Colors.red,
+      iconBackgroundColor: Colors.red.withOpacity(0.1),
+      bottonText: context.tr('delete'),
+      showCancelButton: true,
+      cancelText: context.tr('cancel'),
+      onPressed: () {
+        cubit.deleteImage(imagePath);
+      },
+    );
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -557,7 +630,6 @@ void _scrollToSection(String section) {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Camera Option
               ListTile(
                 leading: Icon(
                   Icons.videocam,
@@ -578,8 +650,6 @@ void _scrollToSection(String section) {
                 },
               ),
               Divider(height: 1, color: AppColors.secondary100),
-
-              // Gallery Option
               ListTile(
                 leading: Icon(
                   Icons.video_library,
@@ -867,8 +937,7 @@ void _scrollToSection(String section) {
         if (Platform.isAndroid) {
           final androidInfo = await DeviceInfoPlugin().androidInfo;
           if (androidInfo.version.sdkInt >= 33) {
-            status = await Permission.audio
-                .request(); // تغيير من storage إلى audio
+            status = await Permission.audio.request();
           } else {
             status = await Permission.storage.request();
           }
@@ -904,7 +973,7 @@ void _scrollToSection(String section) {
 
       final result = await FilePicker.platform.pickFiles(
         type: FileType.audio,
-        allowCompression: false, // تغيير إلى false
+        allowCompression: false,
       );
 
       if (!mounted) return;
@@ -912,7 +981,6 @@ void _scrollToSection(String section) {
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
 
-        // التحقق من وجود الملف
         if (!await file.exists()) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1509,5 +1577,158 @@ void _scrollToSection(String section) {
         }
       },
     );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// IMAGE SLOT CARD WIDGET
+// ════════════════════════════════════════════════════════════════
+class ImageSlotCard extends StatelessWidget {
+  final String? imageUrl;
+  final bool isMain;
+  final VoidCallback? onTap;
+  final VoidCallback? onRemove;
+
+  const ImageSlotCard({
+    super.key,
+    this.imageUrl,
+    this.isMain = false,
+    this.onTap,
+    this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: imageUrl == null ? onTap : null,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Background / Border
+          if (imageUrl == null)
+            CustomPaint(
+              painter: DashedRectPainter(
+                color: AppColors.kbinkColor,
+                strokeWidth: 1.5,
+                gap: 5.0,
+              ),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Icon(Icons.add, size: 32, color: AppColors.kbinkColor),
+                ),
+              ),
+            )
+          else
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+                image: DecorationImage(
+                  image: NetworkImage(imageUrl!),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+
+          // Main Image Label
+          if (isMain && imageUrl != null)
+            Positioned(
+              bottom: 2,
+              right: 3,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: HexColor('b11b39'),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  "الصورة الرئيسية",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+          // Remove Button
+          if (imageUrl != null && onRemove != null)
+            Positioned(
+              top: 4,
+              left: 4,
+              child: GestureDetector(
+                onTap: onRemove,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, size: 14, color: Colors.white),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// DASHED BORDER PAINTER
+// ════════════════════════════════════════════════════════════════
+class DashedRectPainter extends CustomPainter {
+  final double strokeWidth;
+  final Color color;
+  final double gap;
+
+  DashedRectPainter({
+    this.strokeWidth = 1.0,
+    this.color = Colors.grey,
+    this.gap = 5.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint dashedPaint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    var path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          const Radius.circular(12),
+        ),
+      );
+
+    Path dashPath = Path();
+    double dashWidth = 6.0;
+    double dashSpace = gap;
+    double distance = 0.0;
+
+    for (ui.PathMetric pathMetric in path.computeMetrics()) {
+      while (distance < pathMetric.length) {
+        dashPath.addPath(
+          pathMetric.extractPath(distance, distance + dashWidth),
+          Offset.zero,
+        );
+        distance += dashWidth;
+        distance += dashSpace;
+      }
+    }
+    canvas.drawPath(dashPath, dashedPaint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return true;
   }
 }

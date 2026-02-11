@@ -57,7 +57,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       
       // ✅ CRITICAL: Enable subscription with short interval
       await _recorder!.setSubscriptionDuration(
-        const Duration(milliseconds: 200), // ✅ تحديث كل 50ms لسلاسة أكثر
+        const Duration(milliseconds: 150), // ✅ تحديث كل 50ms لسلاسة أكثر
       );
       
       setState(() {
@@ -176,13 +176,15 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         
         if (decibels <= -80) {
           // صوت ضعيف جداً أو صمت
-          amplitude = 0.1;
-        } else if (decibels <= -40) {
-          // صوت متوسط
-          amplitude = ((decibels + 80) / 40).clamp(0.1, 0.6);
-        } else {
+          amplitude = 0.01;
+        }
+        //  else if (decibels <= -40) {
+        //   // صوت متوسط
+        //   amplitude = ((decibels + 80) / 40).clamp(0.1, 0.6);
+        // } 
+        else {
           // صوت عالي
-          amplitude = ((decibels + 80) / 80).clamp(0.6, 1.0);
+        amplitude = ((decibels + 80) / 100).clamp(0.04, 0.4);
         }
 
         // ✅ تنعيم التغييرات (Smoothing)
@@ -415,13 +417,13 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                                 
                                 // ✅ تدرج لوني من الأزرق للأخضر حسب الارتفاع
                                 final color = Color.lerp(
-                                  AppColors.primary200.withOpacity(0.5),
-                                  AppColors.primary400,
+                                  AppColors.secondary200.withOpacity(0.5),
+                                  AppColors.secondary600,
                                   (height / 35.0).clamp(0.0, 1.0),
                                 )!;
                                 
                                 return AnimatedContainer(
-                                  duration: Duration(milliseconds: 80),
+                                  duration: Duration(milliseconds: 400),
                                   curve: Curves.easeOut,
                                   width: 2.5,
                                   height: height,
