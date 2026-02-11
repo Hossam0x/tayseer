@@ -66,7 +66,7 @@ class PostModel {
 
   final PostContentType contentType;
   // Media Fields
-  final List<String> images;
+  final List<ImageModel> images;
   final String? videoUrl;
   final PollModel? pollModel;
   final EventModel? event;
@@ -130,7 +130,13 @@ class PostModel {
       content: json['content'] ?? '',
       images:
           (json['images'] as List<dynamic>?)
-              ?.map((e) => e.toString())
+              ?.map(
+                (e) => ImageModel(
+                  image: e['image'] ?? '',
+                  width: e['width'] ?? 0,
+                  height: e['height'] ?? 0,
+                ),
+              )
               .toList() ??
           [],
       contentType: _parseContentType(json['contentType']),
@@ -177,7 +183,7 @@ class PostModel {
     String? category,
     String? timeAgo,
     String? content,
-    List<String>? images,
+    List<ImageModel>? images,
     PostContentType? contentType,
     String? videoUrl,
     PollModel? pollModel,
@@ -305,6 +311,15 @@ class PollChoice {
       votersAvatars: votersAvatars ?? this.votersAvatars,
     );
   }
+}
+
+class ImageModel {
+  final String image;
+  final int width;
+  final int height;
+  double get aspectRatio => width / height;
+
+  ImageModel({required this.image, required this.width, required this.height});
 }
 
 // // --- Data Generator (Mock Backend) ---
