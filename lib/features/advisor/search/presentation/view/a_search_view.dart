@@ -86,7 +86,20 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       } else {
         _searchCubit.loadInitialData();
       }
-      _searchFocusNode.requestFocus();
+
+      // ✅ نستخدم تأخير أطول قليلاً لضمان انتهاء انتقال الـ Hero بشكل كامل
+      // الأجهزة المختلفة قد تستغرق أوقاتاً متفاوتة في الأنميشن
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          _searchFocusNode.requestFocus();
+          // نكرر الطلب بعد فترة بسيطة جداً للتأكيد في حال تم سحب التركيز بواسطة الـ Hero
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (mounted && !_searchFocusNode.hasFocus) {
+              _searchFocusNode.requestFocus();
+            }
+          });
+        }
+      });
     });
   }
 
@@ -224,7 +237,10 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                         children: [
                           // أيقونة البحث / اللودينج
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12.w),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12.w,
+                              vertical: 12.h,
+                            ),
                             child: state.isLoading
                                 ? SizedBox(
                                     width: 20.w,
@@ -246,7 +262,8 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                             child: TextField(
                               controller: _searchController,
                               focusNode: _searchFocusNode,
-                              autofocus: true,
+                              autofocus:
+                                  false, // ✅ تم تعطيلها لصالح الطلب اليدوي بتأخير
                               textAlign: TextAlign.start,
                               style: Styles.textStyle14SemiBold,
                               onChanged: (_) => _onSearchChanged(),
@@ -259,10 +276,8 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                                   color: AppColors.kGreyB3,
                                 ),
                                 border: InputBorder.none,
-                                contentPadding: EdgeInsets.only(
-                                  left: 12.w,
-                                  top: 15.h,
-                                  bottom: 15.h,
+                                contentPadding: EdgeInsetsDirectional.symmetric(
+                                  vertical: 15.h,
                                 ),
                               ),
                             ),
