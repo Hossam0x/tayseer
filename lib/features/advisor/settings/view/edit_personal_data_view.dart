@@ -1,4 +1,5 @@
 import 'package:chewie/chewie.dart';
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
@@ -1001,40 +1002,63 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
       children: [
         Stack(
           children: [
-            Container(
-              height: 150.h,
-              width: 155.w,
-              decoration: BoxDecoration(
-                color: AppColors.hintText,
-                borderRadius: BorderRadius.circular(32.r),
+            GestureDetector(
+              onTap:
+                  !isImageDeleted &&
+                      (imageFile != null ||
+                          (imageUrl != null && imageUrl.isNotEmpty))
+                  ? () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FullScreenImageView(
+                            imageUrl: imageUrl,
+                            imageFile: imageFile,
+                            heroTag: 'advisor_edit_profile_avatar',
+                            userName: state.profile?.name,
+                          ),
+                        ),
+                      );
+                    }
+                  : null,
+              child: Hero(
+                tag: 'advisor_edit_profile_avatar',
+                child: Container(
+                  height: 150.h,
+                  width: 155.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.hintText,
+                    borderRadius: BorderRadius.circular(32.r),
+                  ),
+                  child: isImageDeleted
+                      ? _buildDefaultAvatar() // ⭐ عرض الصورة الافتراضية إذا تم الحذف
+                      : imageFile != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(32.r),
+                          child: Image.file(
+                            imageFile,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildDefaultAvatar();
+                            },
+                          ),
+                        )
+                      : imageUrl != null && imageUrl.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(32.r),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildDefaultAvatar();
+                            },
+                          ),
+                        )
+                      : _buildDefaultAvatar(),
+                ),
               ),
-              child: isImageDeleted
-                  ? _buildDefaultAvatar() // ⭐ عرض الصورة الافتراضية إذا تم الحذف
-                  : imageFile != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(32.r),
-                      child: Image.file(
-                        imageFile,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildDefaultAvatar();
-                        },
-                      ),
-                    )
-                  : imageUrl != null && imageUrl.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(32.r),
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildDefaultAvatar();
-                        },
-                      ),
-                    )
-                  : _buildDefaultAvatar(),
             ),
             Positioned(
               bottom: 8,

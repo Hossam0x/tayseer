@@ -86,8 +86,11 @@ class SlideLeftRoute extends PageRoute {
       );
     }
 
-    // On Android, use custom slide animation
-    const begin = Offset(1.0, 0.0);
+    // On Android, use custom slide animation based on text direction
+    // RTL (Arabic): slide from left (-1.0)
+    // LTR (English): slide from right (1.0)
+    final isRTL = Directionality.of(context) == TextDirection.rtl;
+    final begin = Offset(isRTL ? -1.0 : 1.0, 0.0);
     const end = Offset.zero;
     const curve = Curves.easeInOutCubic;
 
