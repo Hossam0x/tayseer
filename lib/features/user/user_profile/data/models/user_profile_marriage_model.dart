@@ -453,14 +453,17 @@ class UserMedia {
   final List<String> images;
   final String? video;
   final String? audio;
+  final String? singleImage;
 
   UserMedia({
+    this.singleImage, 
     this.images = const [],
     this.video,
     this.audio,
   });
 
   factory UserMedia.fromJson(Map<String, dynamic> json) => UserMedia(
+       singleImage: json['singleImage'] as String?,
         images: json['image'] != null 
             ? List<String>.from(json['image'] as List) 
             : [],
@@ -472,19 +475,23 @@ class UserMedia {
         'image': images,
         'video': video,
         'audio': audio,
+        'singleImage': singleImage
       };
 
-  UserMedia copyWith({
+ UserMedia copyWith({
     List<String>? images,
+    String? singleImage,
     String? video,
     String? audio,
   }) {
     return UserMedia(
       images: images ?? this.images,
+      singleImage: singleImage ?? this.singleImage,
       video: video ?? this.video,
       audio: audio ?? this.audio,
     );
   }
+
 }
 
 // ════════════════════════════════════════════════════════════════

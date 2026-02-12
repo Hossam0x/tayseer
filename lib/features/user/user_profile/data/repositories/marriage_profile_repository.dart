@@ -478,6 +478,87 @@ Map<String, dynamic> _convertToServerFormat(
     return null;
   }
 
+// ⭐⭐⭐ UPLOAD SINGLE IMAGE - WITH RELOAD
+Future<Either<Failure, String>> uploadSingleImage(File imageFile) async {
+  try {
+    debugPrint('📤 [UPLOAD_SINGLE_IMAGE] Uploading single cover image...');
+
+    final formData = FormData.fromMap({
+      'singleImage': await MultipartFile.fromFile(
+        imageFile.path,
+        filename: 'single_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      ),
+    });
+
+    final response = await _apiService.post(
+      endPoint: '/user/add-single-image', // ⭐ Adjust endpoint if different
+      data: formData,
+    );
+
+    if (response['success'] == true) {
+      debugPrint('✅ [UPLOAD_SINGLE_IMAGE] Single image uploaded successfully');
+
+      // ⭐ Reload profile to get updated progress
+      debugPrint('🔄 [UPLOAD_SINGLE_IMAGE] Reloading profile...');
+      final profileResult = await getMarriageProfile();
+
+      return profileResult.fold(
+        (failure) {
+          debugPrint('⚠️ [UPLOAD_SINGLE_IMAGE] Could not reload profile');
+          return const Right('uploaded');
+        },
+        (profile) {
+          debugPrint('✅ [UPLOAD_SINGLE_IMAGE] Profile reloaded - Progress: ${profile.answerCompletedPercentage}%');
+          return const Right('uploaded');
+        },
+      );
+    }
+
+    return Left(ServerFailure(response['message'] ?? 'فشل رفع الصورة'));
+  } catch (e) {
+    debugPrint('❌ [UPLOAD_SINGLE_IMAGE] Error: $e');
+    return Left(ServerFailure('خطأ: $e'));
+  }
+}
+
+// ⭐⭐⭐ DELETE SINGLE IMAGE - WITH RELOAD
+Future<Either<Failure, bool>> deleteSingleImage(String imageUrl) async {
+  try {
+    debugPrint('🗑️ [DELETE_SINGLE_IMAGE] Deleting: $imageUrl');
+
+    final response = await _apiService.delete(
+      endPoint: '/user/delete-single-image', // ⭐ Adjust endpoint if different
+      data: {'link': imageUrl},
+    );
+
+    if (response['success'] == true) {
+      debugPrint('✅ [DELETE_SINGLE_IMAGE] Single image deleted successfully');
+
+      // ⭐ Reload profile to get updated progress
+      debugPrint('🔄 [DELETE_SINGLE_IMAGE] Reloading profile...');
+      await getMarriageProfile();
+
+      return const Right(true);
+    }
+
+    return Left(ServerFailure(response['message'] ?? 'فشل حذف الصورة'));
+  } on DioException catch (e) {
+    debugPrint('❌ [DELETE_SINGLE_IMAGE] DioException: ${e.response?.data}');
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    debugPrint('❌ [DELETE_SINGLE_IMAGE] Error: $e');
+    return Left(ServerFailure('خطأ: $e'));
+  }
+}
+
+
+
+
+
+
+
+
+
   Future<void> clearLocalStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();

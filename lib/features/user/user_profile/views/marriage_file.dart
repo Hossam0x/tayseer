@@ -597,13 +597,161 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     ];
   }
 
-  List<Map<String, dynamic>> _buildInterestsItems(profile) {
-    return profile.hobbies
-        .map<Map<String, dynamic>>(
-          (hobby) => {'icon': AssetsData.kmusicIcon, 'label': hobby},
-        )
-        .toList();
-  }
+// UPDATED: _buildInterestsItems method in MarriagefilePage
+// Replace the existing _buildInterestsItems method with this:
+
+List<Map<String, dynamic>> _buildInterestsItems(profile) {
+  // ⭐⭐⭐ Map to get emoji from key
+  final Map<String, String> _keyToEmojiMap = {};
+  
+  // Build emoji map from all categories
+  final categories = {
+  'category_sports': {
+        'interest_baseball': '⚾',
+        'interest_running': '🏃',
+        'interest_weightlifting': '🏋️',
+        'interest_gymnastics': '🤸',
+        'interest_golf': '⛳',
+        'interest_tennis': '🎾',
+        'interest_swimming': '🏊',
+        'interest_dancing': '💃',
+        'interest_skating': '⛸️',
+        'interest_yoga': '🧘',
+        'interest_flying_disc': '🥏',
+        'interest_badminton': '🏸',
+        'interest_skiing': '⛷️',
+        'interest_cycling': '🚴',
+        'interest_basketball': '🏀',
+        'interest_football': '⚽',
+        'interest_karate': '🥋',
+        'interest_boxing': '🥊',
+        'interest_archery': '🏹',
+        'interest_horse_riding': '🏇',
+      },
+      'category_arts_culture': {
+        'interest_theater': '🎭',
+        'interest_magic': '🪄',
+        'interest_music': '🎵',
+        'interest_painting': '🎨',
+        'interest_photography': '📷',
+        'interest_cinema': '🎬',
+        'interest_reading': '📚',
+        'interest_writing': '✍️',
+        'interest_poetry': '📝',
+        'interest_history': '🏛️',
+        'interest_languages': '🗣️',
+        'interest_museums': '🖼️',
+        'interest_calligraphy': '🖋️',
+        'interest_sculpture': '🗿',
+        'interest_design': '🎯',
+        'interest_fashion': '👗',
+      },
+      'category_community': {
+        'interest_volunteering': '🤝',
+        'interest_charity': '💝',
+        'interest_teaching': '👨‍🏫',
+        'interest_mentoring': '🧑‍🤝‍🧑',
+        'interest_elderly_care': '👴',
+        'interest_children_care': '👶',
+        'interest_environment': '🌱',
+        'interest_animal_care': '🐾',
+        'interest_blood_donation': '🩸',
+        'interest_community_events': '🎉',
+        'interest_social_work': '💼',
+        'interest_human_rights': '⚖️',
+      },
+      'category_technology': {
+        'interest_programming': '💻',
+        'interest_gaming': '🎮',
+        'interest_ai': '🤖',
+        'interest_web_dev': '🌐',
+        'interest_mobile_apps': '📱',
+        'interest_cybersecurity': '🔒',
+        'interest_data_science': '📊',
+        'interest_electronics': '🔌',
+        'interest_robotics': '🦾',
+        'interest_vr_ar': '🥽',
+        'interest_3d_printing': '🖨️',
+        'interest_drones': '🚁',
+        'interest_smart_home': '🏠',
+        'interest_blockchain': '⛓️',
+      },
+      'category_outdoors': {
+        'interest_hiking': '🥾',
+        'interest_camping': '🏕️',
+        'interest_fishing': '🎣',
+        'interest_beach': '🏖️',
+        'interest_mountain_climbing': '🏔️',
+        'interest_gardening': '🌻',
+        'interest_picnic': '🧺',
+        'interest_bird_watching': '🦅',
+        'interest_stargazing': '🌟',
+        'interest_road_trips': '🚗',
+        'interest_sailing': '⛵',
+        'interest_diving': '🤿',
+        'interest_surfing': '🏄',
+        'interest_kayaking': '🛶',
+        'interest_rock_climbing': '🧗',
+        'interest_paragliding': '🪂',
+      },
+      'category_food_drinks': {
+        'interest_cooking': '👨‍🍳',
+        'interest_baking': '🧁',
+        'interest_grilling': '🍖',
+        'interest_coffee': '☕',
+        'interest_tea': '🍵',
+        'interest_smoothies': '🥤',
+        'interest_sushi': '🍣',
+        'interest_pizza': '🍕',
+        'interest_desserts': '🍰',
+        'interest_healthy_food': '🥗',
+        'interest_street_food': '🌮',
+        'interest_fine_dining': '🍽️',
+        'interest_food_photography': '📸',
+        'interest_chocolate': '🍫',
+        'interest_ice_cream': '🍦',
+      },
+  };
+
+  // Build key-to-emoji map
+  categories.forEach((categoryKey, items) {
+    items.forEach((key, emoji) {
+      _keyToEmojiMap[key] = emoji;
+    });
+  });
+
+  // ⭐⭐⭐ Now profile.hobbies contains KEYS like ["interest_running", "interest_golf"]
+  return profile.hobbies.map<Map<String, dynamic>>((hobbyKey) {
+    // Get emoji for this key
+    final emoji = _keyToEmojiMap[hobbyKey] ?? '🎵'; // default fallback
+    
+    // Translate the key to display text
+    final displayText = context.tr(hobbyKey);
+
+    debugPrint('🎯 Interest: key="$hobbyKey", emoji="$emoji", display="$displayText"');
+
+    return {
+      'icon': AssetsData.kmusicIcon,
+      'label': '$emoji $displayText', // ⭐ Show emoji + translated text
+    };
+  }).toList();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   Widget _buildError(BuildContext context, String? message) {
     return Center(

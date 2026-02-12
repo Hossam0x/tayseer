@@ -53,7 +53,11 @@ abstract class AssetsData {
   static const String kWrongImageAI = "assets/images/kWrongImageAI.jpg";
   static const String kWrongImageCovered =
       "assets/images/kWrongImageCovered.jpg";
+  static const String kWrongImageCovered =
+      "assets/images/kWrongImageCovered.jpg";
   static const String kWrongImageFar = "assets/images/kWrongImageFar.png";
+  static const String kWrongImageNotPerson =
+      "assets/images/kWrongImageNotPerson.jpg";
   static const String kWrongImageNotPerson =
       "assets/images/kWrongImageNotPerson.jpg";
   static const String kCommitmentBackgroundImage =
@@ -157,6 +161,7 @@ abstract class AssetsData {
   static const String kfavoriteIcon = "assets/icons/favorite_icon.svg";
   static const String kbulbIcon = "assets/icons/bulb_icon.svg";
   static const String kfaceIdIcon = "assets/icons/Face_id_icon.svg";
+  static const String archiveIcon = "assets/icons/archive.svg";
   static const String verified2Icon = "assets/icons/verified2.svg";
   static const String verifiedIcon = "assets/icons/verified.svg";
   static const String krotateCameraIcon =
@@ -164,7 +169,6 @@ abstract class AssetsData {
   static const String kFeature1 = "assets/icons/kFeature1.svg";
   static const String kFeature2 = "assets/icons/kFeature2.svg";
   static const String kFeature3 = "assets/icons/kFeature3.svg";
-
 
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
