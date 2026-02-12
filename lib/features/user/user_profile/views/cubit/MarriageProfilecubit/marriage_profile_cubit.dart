@@ -130,8 +130,65 @@ Future<void> saveProfile() async {
     },
   );
 }  // ════════════════════════════════════════════════════════════════
-  // ⭐ UPDATE FIELD (LOCAL STATE)
+ // ⭐⭐⭐ أضف الـ function دي هنا
+ static const Map<String, String> _countryToNationalityKeyMap = {
+    'country_saudi': 'nationality_saudi',
+    'country_egypt': 'nationality_egyptian',
+    'country_emirati': 'nationality_emirati',
+    'country_kuwait': 'nationality_kuwaiti',
+    'country_qatar': 'nationality_qatari',
+    'country_bahrain': 'nationality_bahraini',
+    'country_jordan': 'nationality_jordanian',
+    'country_palestine': 'nationality_palestinian',
+    'country_morocco': 'nationality_moroccan',
+    'country_tunisia': 'nationality_tunisian',
+  };
+
+  /// خريطة عكسية لتحويل القيم المترجمة → Nationality Keys
+  static const Map<String, String> _countryValueToNationalityKeyMap = {
+    // Arabic
+    'السعودية': 'nationality_saudi',
+    'مصر': 'nationality_egyptian',
+    'الإمارات': 'nationality_emirati',
+    'الكويت': 'nationality_kuwaiti',
+    'قطر': 'nationality_qatari',
+    'البحرين': 'nationality_bahraini',
+    'الأردن': 'nationality_jordanian',
+    'فلسطين': 'nationality_palestinian',
+    'المغرب': 'nationality_moroccan',
+    'تونس': 'nationality_tunisian',
+
+    // English
+    'Saudi Arabia': 'nationality_saudi',
+    'Egypt': 'nationality_egyptian',
+    'United Arab Emirates': 'nationality_emirati',
+    'Kuwait': 'nationality_kuwaiti',
+    'Qatar': 'nationality_qatari',
+    'Bahrain': 'nationality_bahraini',
+    'Jordan': 'nationality_jordanian',
+    'Palestine': 'nationality_palestinian',
+    'Morocco': 'nationality_moroccan',
+    'Tunisia': 'nationality_tunisian',
+  };
+   /// ⭐ دالة التحويل من Country → Nationality
+  String _convertCountryToNationality(String country) {
+    // أولوية 1: Key-to-Key
+    if (_countryToNationalityKeyMap.containsKey(country)) {
+      return _countryToNationalityKeyMap[country]!;
+    }
+
+    // أولوية 2: Value-to-Key
+    if (_countryValueToNationalityKeyMap.containsKey(country)) {
+      return _countryValueToNationalityKeyMap[country]!;
+    }
+
+    // إذا لم يتم العثور، أرجع القيمة كما هي
+    return country;
+  }
   // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ UPDATE FIELD WITH AUTO-SYNC
+  // ════════════════════════════════════════════════════════════════
+
   void updateField(String fieldKey, dynamic value) {
     if (state.profile == null) {
       debugPrint('⚠️ [CUBIT] No profile to update');
@@ -140,6 +197,24 @@ Future<void> saveProfile() async {
 
     debugPrint('🔄 [CUBIT] Updating field: $fieldKey = $value');
 
+    // ⭐⭐⭐ AUTO-SYNC: إذا كان الحقل "country"، احسب nationality تلقائياً
+    if (fieldKey == 'country') {
+      final nationalityValue = _convertCountryToNationality(value);
+      debugPrint('🔄 [AUTO-SYNC] Country: $value → Nationality: $nationalityValue');
+
+      // تحديث الـ nationality أولاً
+      _updateFieldInternal('nationality', nationalityValue);
+    }
+
+    // تحديث الحقل الأصلي
+    _updateFieldInternal(fieldKey, value);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⭐ INTERNAL UPDATE (بدون auto-sync)
+  // ════════════════════════════════════════════════════════════════
+
+  void _updateFieldInternal(String fieldKey, dynamic value) {
     final profile = state.profile!;
     MarriageUserProfileModel updatedProfile;
 
@@ -151,69 +226,81 @@ Future<void> saveProfile() async {
         case 'country':
           updatedAbout = currentAbout.copyWith(country: value);
           break;
+
         case 'nationality':
           updatedAbout = currentAbout.copyWith(nationality: value);
           break;
+
         case 'height':
           updatedAbout = currentAbout.copyWith(height: value);
           break;
+
         case 'weight':
           updatedAbout = currentAbout.copyWith(weight: value);
           break;
+
         case 'skinColor':
         case 'ethnicity':
           updatedAbout = currentAbout.copyWith(skinColor: value);
           break;
+
         case 'healthStatus':
           updatedAbout = currentAbout.copyWith(healthStatus: value);
           break;
+
         case 'religiousCommitment':
         case 'religiosity':
           updatedAbout = currentAbout.copyWith(religiousCommitment: value);
           break;
+
         case 'smoker':
         case 'smoking':
           updatedAbout = currentAbout.copyWith(smoker: value);
           break;
-        case 'maritalStatus':
+
         case 'socialStatus':
-        case 'previouslyMarried':
+        case 'maritalStatus':
           updatedAbout = currentAbout.copyWith(socialStatus: value);
           break;
+
         case 'age':
-          updatedAbout = currentAbout.copyWith(age: value.toString());
+          updatedAbout = currentAbout.copyWith(age: value);
           break;
+
         default:
           updatedAbout = currentAbout;
       }
 
       updatedProfile = profile.copyWith(aboutMe: updatedAbout);
     } else if (_isProfessionalLifeField(fieldKey)) {
-      final currentPro = profile.professionalLife ?? ProfessionalLife();
-      ProfessionalLife updatedPro;
+      final currentProfessional = profile.professionalLife ?? ProfessionalLife();
+      ProfessionalLife updatedProfessional;
 
       switch (fieldKey) {
+        case 'education_level':
+        case 'educationLevel':
+          updatedProfessional =
+              currentProfessional.copyWith(educationLevel: value);
+          break;
+
+        case 'choose_job':
         case 'job':
         case 'occupation':
-        case 'choose_job':
-          updatedPro = currentPro.copyWith(job: value);
+          updatedProfessional = currentProfessional.copyWith(job: value);
           break;
-        case 'jobTitle':
-        case 'professionalLevel':
-        case 'educationLevel':
-        case 'education_level':
-          updatedPro = currentPro.copyWith(educationLevel: value);
-          break;
+
+        case 'choose_employer':
         case 'employer':
         case 'chooseEmployer':
-        case 'choose_employer':
-          updatedPro = currentPro.copyWith(chooseEmployer: value);
+          updatedProfessional =
+              currentProfessional.copyWith(chooseEmployer: value);
           break;
+
         default:
-          updatedPro = currentPro;
+          updatedProfessional = currentProfessional;
       }
 
-      updatedProfile = profile.copyWith(professionalLife: updatedPro);
+      updatedProfile = profile.copyWith(professionalLife: updatedProfessional);
     } else if (_isFamilyField(fieldKey)) {
       final currentFamily = profile.family ?? Family();
       Family updatedFamily;
@@ -222,73 +309,68 @@ Future<void> saveProfile() async {
         case 'hasChildren':
           updatedFamily = currentFamily.copyWith(hasChildren: value);
           break;
+
         case 'childrenNumber':
           updatedFamily = currentFamily.copyWith(childrenNumber: value);
           break;
+
         case 'childrenLiveWithYou':
         case 'childrenLivingStatus':
           updatedFamily = currentFamily.copyWith(childrenLivingStatus: value);
           break;
+
         default:
           updatedFamily = currentFamily;
       }
 
       updatedProfile = profile.copyWith(family: updatedFamily);
-    } else if (_isYourGoalsField(fieldKey)) {
+    } else if (_isGoalsField(fieldKey)) {
       final currentGoals = profile.yourGoals ?? YourGoals();
       YourGoals updatedGoals;
 
       switch (fieldKey) {
-        case 'communicationTimeline':
-        case 'marry':
-          updatedGoals = currentGoals.copyWith(marry: value);
-          break;
-        case 'engagementTimeline':
         case 'engagement':
+        case 'engagementTimeline':
           updatedGoals = currentGoals.copyWith(engagement: value);
           break;
-        case 'marriageTimeline':
+
+        case 'marry':
+        case 'communicationTimeline':
           updatedGoals = currentGoals.copyWith(marry: value);
           break;
-        case 'travelPreference':
-        case 'travel':
-          updatedGoals = currentGoals.copyWith(travel: value);
-          break;
+
+        case 'familyAcceptance':
         case 'dowry':
-        case 'children':
           updatedGoals = currentGoals.copyWith(children: value);
           break;
+
+        case 'travel':
+        case 'travelPreference':
+          updatedGoals = currentGoals.copyWith(travel: value);
+          break;
+
         default:
           updatedGoals = currentGoals;
       }
 
       updatedProfile = profile.copyWith(yourGoals: updatedGoals);
+    } else if (fieldKey == 'bio' || fieldKey == 'myDescription') {
+      updatedProfile = profile.copyWith(myDescription: value);
+    } else if (fieldKey == 'hobbies' || fieldKey == 'interests') {
+      final hobbiesList = (value as String).split(', ');
+      updatedProfile = profile.copyWith(hobbies: hobbiesList);
     } else {
-      switch (fieldKey) {
-        case 'bio':
-        case 'myDescription':
-          updatedProfile = profile.copyWith(myDescription: value);
-          break;
-        case 'interests':
-        case 'hobbies':
-          final hobbiesList = value is String
-              ? value.split(', ').where((s) => s.isNotEmpty).toList()
-              : (value as List<String>);
-          updatedProfile = profile.copyWith(hobbies: hobbiesList);
-          break;
-        default:
-          debugPrint('⚠️ [CUBIT] Unknown field: $fieldKey');
-          updatedProfile = profile;
-      }
+      updatedProfile = profile;
     }
 
     emit(state.copyWith(profile: updatedProfile));
-    debugPrint('✅ [CUBIT] Field updated successfully');
+    debugPrint('✅ [CUBIT] Field $fieldKey updated successfully');
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐ FIELD TYPE CHECKERS
+  // HELPER METHODS
   // ════════════════════════════════════════════════════════════════
+
   bool _isAboutMeField(String fieldKey) {
     return [
       'country',
@@ -302,25 +384,22 @@ Future<void> saveProfile() async {
       'religiosity',
       'smoker',
       'smoking',
-      'maritalStatus',
       'socialStatus',
-      'previouslyMarried',
-      'age',
+      'maritalStatus',
+      'age'
     ].contains(fieldKey);
   }
 
   bool _isProfessionalLifeField(String fieldKey) {
     return [
+      'education_level',
+      'educationLevel',
+      'choose_job',
       'job',
       'occupation',
-      'choose_job',
-      'jobTitle',
-      'professionalLevel',
-      'educationLevel',
-      'education_level',
-      'employer',
-      'chooseEmployer',
       'choose_employer',
+      'employer',
+      'chooseEmployer'
     ].contains(fieldKey);
   }
 
@@ -329,21 +408,20 @@ Future<void> saveProfile() async {
       'hasChildren',
       'childrenNumber',
       'childrenLiveWithYou',
-      'childrenLivingStatus',
+      'childrenLivingStatus'
     ].contains(fieldKey);
   }
 
-  bool _isYourGoalsField(String fieldKey) {
+  bool _isGoalsField(String fieldKey) {
     return [
-      'communicationTimeline',
-      'engagementTimeline',
-      'marriageTimeline',
-      'dowry',
-      'travelPreference',
-      'travel',
-      'marry',
       'engagement',
-      'children',
+      'engagementTimeline',
+      'marry',
+      'communicationTimeline',
+      'familyAcceptance',
+      'dowry',
+      'travel',
+      'travelPreference'
     ].contains(fieldKey);
   }
 

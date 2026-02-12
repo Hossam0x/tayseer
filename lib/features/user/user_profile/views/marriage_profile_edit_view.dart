@@ -1226,7 +1226,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               _navigateToFieldSelection(
                 context,
                 cubit,
-                'children',
+                'familyAcceptance',
                 profile.yourGoals?.children,
               );
             },
@@ -1275,8 +1275,22 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               _navigateToBioEdit(context, cubit, profile.myDescription);
             },
           ),
+          // _buildInfoRow(
+          //   context.tr('select_hobbies_title'),
+          //   profile.hobbies.isNotEmpty
+          //       ? profile.hobbies.join(', ')
+          //       : context.tr('select'),
+          //   () {
+          //     _navigateToFieldSelection(
+          //       context,
+          //       cubit,
+          //       'interests',
+          //       profile.hobbies.isNotEmpty ? profile.hobbies.join(', ') : null,
+          //     );
+          //   },
+          // ),
           _buildInfoRow(
-            context.tr('interests'),
+            context.tr('select_hobbies_title'),
             profile.hobbies.isNotEmpty
                 ? profile.hobbies.join(', ')
                 : context.tr('select'),
@@ -1285,20 +1299,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 context,
                 cubit,
                 'interests',
-                profile.hobbies.isNotEmpty ? profile.hobbies.join(', ') : null,
-              );
-            },
-          ),
-          _buildInfoRow(
-            context.tr('hobbies'),
-            profile.hobbies.isNotEmpty
-                ? profile.hobbies.join(', ')
-                : context.tr('select'),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'hobbies',
                 profile.hobbies.isNotEmpty ? profile.hobbies.join(', ') : null,
               );
             },
@@ -1458,77 +1458,86 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   // ════════════════════════════════════════════════════════════════
   // INFO ROW
   // ════════════════════════════════════════════════════════════════
-  Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
-    final isLongText = value.length > 30;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: AppColors.kWhiteColor,
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isLongText) ...[
-              Text(label, style: Styles.textStyle18),
-              Gap(8.h),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      value,
-                      textAlign: TextAlign.left,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: Styles.textStyle16,
-                    ),
-                  ),
-                  Gap(8.w),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14.w,
-                    color: AppColors.secondary400,
-                  ),
-                ],
-              ),
-            ] else ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(label, style: Styles.textStyle18),
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            value,
-                            textAlign: TextAlign.right,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Styles.textStyle16,
-                          ),
-                        ),
-                        Gap(8.w),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 14.w,
-                          color: AppColors.secondary400,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
+Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
+  final isLongText = value.length > 30;
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      color: AppColors.kWhiteColor,
+      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (isLongText) ...[
+            Text(label, style: Styles.textStyle18),
             Gap(8.h),
-            Divider(color: AppColors.secondary100, height: 1),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.left,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: Styles.textStyle16,
+                  ),
+                ),
+                Gap(8.w),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14.w,
+                  color: AppColors.secondary400,
+                ),
+              ],
+            ),
+          ] else ...[
+            Row(
+              children: [ // ⭐ شيلت mainAxisAlignment
+                Expanded( // ⭐ label
+                  flex: 2,
+                  child: Text(
+                    label, 
+                    style: Styles.textStyle18,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Gap(8.w),
+                Expanded( // ⭐ value + icon
+                  flex: 3,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          value,
+                          textAlign: TextAlign.right,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Styles.textStyle16,
+                        ),
+                      ),
+                      Gap(8.w),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14.w,
+                        color: AppColors.secondary400,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
-        ),
+          Gap(8.h),
+          Divider(color: AppColors.secondary100, height: 1),
+        ],
       ),
-    );
-  }
-
+    ),
+  );
+}
   void _navigateToFieldSelection(
     BuildContext context,
     MarriageProfileCubit cubit,
