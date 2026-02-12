@@ -381,11 +381,7 @@ class AuthCubit extends Cubit<AuthState> {
     required UserTypeEnum userType,
   }) async {
     emit(
-      state.copyWith(
-        authGoogleState: CubitStates.loading,
-        fromScreen: 'registration',
-        currentAuthUserType: userType,
-      ),
+      state.copyWith(fromScreen: 'registration', currentAuthUserType: userType),
     );
 
     try {

@@ -1,5 +1,5 @@
 import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
-import 'package:tayseer/features/advisor/event/view/event_view.dart';
+import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/custom_feb_menu.dart';

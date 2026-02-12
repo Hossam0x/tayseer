@@ -1,3 +1,4 @@
+import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/widgets/custom_outline_button.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -7,9 +8,11 @@ class EventBottomBar extends StatelessWidget {
     this.onBoostPressed,
     this.onEditPressed,
     required this.priceAfterDiscount,
+    this.onBookTicketPressed,
   });
   final VoidCallback? onBoostPressed;
   final VoidCallback? onEditPressed;
+  final VoidCallback? onBookTicketPressed;
   final String priceAfterDiscount;
   @override
   Widget build(BuildContext context) {
@@ -48,20 +51,32 @@ class EventBottomBar extends StatelessWidget {
               ],
             ),
             const Spacer(),
-            CustomBotton(
-              width: context.width * .25,
-              useGradient: true,
-              onPressed: onBoostPressed,
-              title: context.tr('boost_button'),
-            ),
-            Gap(context.responsiveWidth(12)),
-            CustomOutlineButton(
-              height: 50,
-              isSocialLinkButton: true,
-              width: context.width * .25,
-              onTap: onEditPressed,
-              text: context.tr('edit_button'),
-            ),
+            if (selectedUserType == UserTypeEnum.asConsultant)
+              Row(
+                children: [
+                  CustomBotton(
+                    width: context.width * .25,
+                    useGradient: true,
+                    onPressed: onBoostPressed,
+                    title: context.tr('boost_button'),
+                  ),
+                  Gap(context.responsiveWidth(12)),
+                  CustomOutlineButton(
+                    height: 50,
+                    isSocialLinkButton: true,
+                    width: context.width * .25,
+                    onTap: onEditPressed,
+                    text: context.tr('edit_button'),
+                  ),
+                ],
+              ),
+            if (selectedUserType == UserTypeEnum.user)
+              CustomBotton(
+                title: context.tr('book_ticket'),
+                onPressed: onBookTicketPressed,
+                width: context.width * .25,
+                useGradient: true,
+              ),
           ],
         ),
       ),

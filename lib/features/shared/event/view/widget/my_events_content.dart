@@ -1,8 +1,8 @@
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
-import 'package:tayseer/features/advisor/event/view/widget/empty_event_section.dart';
-import 'package:tayseer/features/advisor/event/view/widget/event_cart_item.dart';
-import 'package:tayseer/features/advisor/event/view_model/events_cubit.dart';
-import 'package:tayseer/features/advisor/event/view_model/events_state.dart';
+import 'package:tayseer/features/shared/event/view/widget/empty_event_section.dart';
+import 'package:tayseer/features/shared/event/view/widget/event_cart_item.dart';
+import 'package:tayseer/features/shared/event/view_model/events_cubit.dart';
+import 'package:tayseer/features/shared/event/view_model/events_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class MyEventsContent extends StatelessWidget {

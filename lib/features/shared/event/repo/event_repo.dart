@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tayseer/core/errors/failure.dart';
-import 'package:tayseer/features/advisor/event/model/my_event_model.dart';
+import 'package:tayseer/features/shared/event/model/my_event_model.dart';
 
 abstract class EventRepo {
   Future<Either<Failure, List<EventModel>>> getAdvisorEvents();

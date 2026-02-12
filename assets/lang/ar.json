@@ -1245,6 +1245,9 @@
   "go_unlimited_with_effort": "انطلق بلا حدود مع الجهود",
   "upgrade": "ترقية",
   "greeting": "تحية",
-  "get_free_credit_daily_with_gold": "احصل علي رصيد مجانى كل يوم مع الجولد"
+  "get_free_credit_daily_with_gold": "احصل علي رصيد مجانى كل يوم مع الجولد",
+  "no_events_title_user": "لا يوجد احداث حاليا",
+  "no_events_sub_title_user": "لم يقم احد المستشارين بانشاء احداث انتظر وسوف تظهرلك تلقائيًا",
+  "book_ticket": "حجز تذكرة"
 
 }

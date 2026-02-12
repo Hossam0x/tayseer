@@ -58,6 +58,7 @@ abstract class AssetsData {
       "assets/images/kWrongImageNotPerson.jpg";
   static const String kCommitmentBackgroundImage =
       "assets/images/kCommitmentBackground_imge.png";
+  static const String kEmptyEventsImage = "assets/images/empty_events_image.png";
 
   //////////////////////icons//////////////////////
   static const String kArroBackIcon = "assets/icons/arro_back.svg";

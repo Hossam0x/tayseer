@@ -5,10 +5,10 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
-import 'package:tayseer/features/advisor/event/model/location_result_model.dart';
-import 'package:tayseer/features/advisor/event/model/my_event_model.dart';
-import 'package:tayseer/features/advisor/event/repo/event_repo.dart';
-import 'package:tayseer/features/advisor/event/view_model/events_state.dart';
+import 'package:tayseer/features/shared/event/model/location_result_model.dart';
+import 'package:tayseer/features/shared/event/model/my_event_model.dart';
+import 'package:tayseer/features/shared/event/repo/event_repo.dart';
+import 'package:tayseer/features/shared/event/view_model/events_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class EventsCubit extends Cubit<EventsState> {

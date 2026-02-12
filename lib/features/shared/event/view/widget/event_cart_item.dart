@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:tayseer/features/advisor/event/view/widget/app_media.dart';
+import 'package:tayseer/features/shared/event/view/widget/app_media.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:flutter/services.dart';
 
