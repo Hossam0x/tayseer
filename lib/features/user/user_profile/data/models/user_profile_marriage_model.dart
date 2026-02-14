@@ -89,12 +89,23 @@ class MarriageUserProfileModel {
         children: children,
       );
     }
-
-    // Parse hobbies/interests
-    final hobbies = interestsData
-        .map((e) => (e as Map<String, dynamic>)['label'] as String?)
-        .whereType<String>()
+ List<String> parsedHobbies = [];
+  
+  if (json['hobbies'] is String && json['hobbies'] != null) {
+    final hobbiesStr = json['hobbies'] as String;
+    parsedHobbies = hobbiesStr
+        .split(',')
+        .map((h) => h.trim())
+        .where((h) => h.isNotEmpty)
         .toList();
+  } else if (json['hobbies'] is List) {
+    parsedHobbies = List<String>.from(json['hobbies']);
+  }
+    // // Parse hobbies/interests
+    // final hobbies = interestsData
+    //     .map((e) => (e as Map<String, dynamic>)['label'] as String?)
+    //     .whereType<String>()
+    //     .toList();
 
     // Parse bio
     final bioText = json['bio'] != null 
@@ -105,7 +116,7 @@ class MarriageUserProfileModel {
       aboutMe: aboutMe,
       userMedia: userMedia,
       yourGoals: yourGoals,
-      hobbies: hobbies,
+      hobbies: parsedHobbies,
       myDescription: bioText,
       answerCompletedPercentage: json['answerCompletedPercentage'] as int?, // ⭐⭐⭐ NEW
       header: header,
@@ -449,6 +460,7 @@ class Family {
 // ════════════════════════════════════════════════════════════════
 // UserMedia Model
 // ════════════════════════════════════════════════════════════════
+// في user_profile_marriage_model.dart
 class UserMedia {
   final List<String> images;
   final String? video;
@@ -462,14 +474,43 @@ class UserMedia {
     this.audio,
   });
 
-  factory UserMedia.fromJson(Map<String, dynamic> json) => UserMedia(
-       singleImage: json['singleImage'] as String?,
-        images: json['image'] != null 
-            ? List<String>.from(json['image'] as List) 
-            : [],
-        video: json['video'] as String?,
-        audio: json['audio'] as String?,
-      );
+  // ⭐ دالة مساعدة لفلترة الصور الـ default
+  static String? _filterDefaultImage(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return null;
+    
+    // ⭐ قائمة بالصور الـ default المعروفة
+    final defaultImages = [
+      'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+      'cdn-icons-png.flaticon.com/512/149/149071.png',
+      'flaticon.com/512/149/149071.png',
+    ];
+    
+    // ⭐ لو الصورة في القائمة، ارجع null
+    for (final defaultImg in defaultImages) {
+      if (imageUrl.contains(defaultImg)) {
+        return null;
+      }
+    }
+    
+    return imageUrl;
+  }
+
+  factory UserMedia.fromJson(Map<String, dynamic> json) {
+    // ⭐ فلتر singleImage قبل ما نحفظها
+    final rawSingleImage = json['singleImage'] as String?;
+    final filteredSingleImage = _filterDefaultImage(rawSingleImage);
+    
+  
+    
+    return UserMedia(
+      singleImage: filteredSingleImage, // ⭐ استخدم الصورة المفلترة
+      images: json['image'] != null 
+          ? List<String>.from(json['image'] as List) 
+          : [],
+      video: json['video'] as String?,
+      audio: json['audio'] as String?,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'image': images,
@@ -478,7 +519,7 @@ class UserMedia {
         'singleImage': singleImage
       };
 
- UserMedia copyWith({
+  UserMedia copyWith({
     List<String>? images,
     String? singleImage,
     String? video,
@@ -491,9 +532,7 @@ class UserMedia {
       audio: audio ?? this.audio,
     );
   }
-
 }
-
 // ════════════════════════════════════════════════════════════════
 // YourGoals Model
 // ════════════════════════════════════════════════════════════════

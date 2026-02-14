@@ -1197,6 +1197,13 @@
   "go_unlimited_with_effort": "Go unlimited with effort",
   "upgrade": "Upgrade",
   "greeting": "Greeting",
-  "get_free_credit_daily_with_gold": "Get free credit daily with Gold"
+  "get_free_credit_daily_with_gold": "Get free credit daily with Gold",
+    "delete_main_image": "Delete Profile Picture",
+  "must_upload_new_main_image": "You must upload a new profile picture before deleting the current one",
+  "choose_new_image": "Choose New Image",
+  "max_secondary_images_4": "Maximum 4 secondary images",
+  "add_main_image_required": "Main Image Required",
+  "must_add_main_image_before_exit": "You cannot exit without adding a main image",
+  "add_image": "Add Image"
 
 }

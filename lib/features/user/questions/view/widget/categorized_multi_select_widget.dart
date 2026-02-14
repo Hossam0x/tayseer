@@ -39,19 +39,19 @@ class _CategorizedMultiSelectWidgetState
   }
 
   void _toggleSelection(String key) {
-    setState(() {
-      if (_selectedKeys.contains(key)) {
-        _selectedKeys.remove(key);
-      } else {
-        _selectedKeys.add(key);
-      }
-    });
+  setState(() {
+    if (_selectedKeys.contains(key)) {
+      _selectedKeys.remove(key);
+    } else {
+      _selectedKeys.add(key);
+    }
+  });
 
-    // ⭐⭐⭐ Return KEYS directly (not translated values)
-    widget.onChanged(_selectedKeys.toList());
-    debugPrint('💾 [CategorizedMultiSelect] Selected keys: ${_selectedKeys.toList()}');
-  }
-
+  // ⭐⭐⭐ أرجع الـ KEYS فقط (بدون ترجمة)
+  widget.onChanged(_selectedKeys.toList());
+  
+  debugPrint('✅ Selected keys: $_selectedKeys');
+}
   @override
   Widget build(BuildContext context) {
     final defaultBgColor = widget.defaultBackgroundColor ?? HexColor('fdf5f8');

@@ -59,6 +59,80 @@ Future<void> loadProfile() async {
     },
   );
 }
+// ════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ UPLOAD SINGLE IMAGE
+// ════════════════════════════════════════════════════════════════
+Future<void> uploadSingleImage(File imageFile) async {
+  if (state.profile == null) {
+    debugPrint('⚠️ [CUBIT] No profile for single image upload');
+    return;
+  }
+
+  emit(state.copyWith(isLoading: true, clearMessages: true));
+
+  debugPrint('📤 [CUBIT] Uploading single image...');
+
+  final result = await _repository.uploadSingleImage(imageFile);
+
+  result.fold(
+    (failure) {
+      debugPrint('❌ [CUBIT] Single image upload failed: ${failure.message}');
+      emit(state.copyWith(
+        state: CubitStates.failure,
+        errorMessage: failure.message,
+        isLoading: false,
+      ));
+    },
+    (_) async {
+      debugPrint('✅ [CUBIT] Single image uploaded, reloading profile...');
+      await loadProfile();
+    },
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ DELETE SINGLE IMAGE
+// ════════════════════════════════════════════════════════════════
+Future<void> deleteSingleImage() async {
+  final currentSingleImage = state.profile?.userMedia?.singleImage;
+  
+  debugPrint('📸 [CUBIT] Current singleImage before delete: $currentSingleImage');
+  
+  if (currentSingleImage == null) {
+    debugPrint('⚠️ [CUBIT] No single image to delete');
+    return;
+  }
+
+  emit(state.copyWith(isLoading: true, clearMessages: true));
+
+  debugPrint('🗑️ [CUBIT] Deleting single image...');
+
+  final result = await _repository.deleteSingleImage(currentSingleImage);
+
+  result.fold(
+    (failure) {
+      debugPrint('❌ [CUBIT] Delete single image failed: ${failure.message}');
+      emit(state.copyWith(
+        state: CubitStates.failure,
+        errorMessage: failure.message,
+        isLoading: false,
+      ));
+    },
+    (_) async {
+      debugPrint('✅ [CUBIT] Single image deleted, reloading profile...');
+      await loadProfile();
+      
+      // ⭐ DEBUG: تأكد من القيمة بعد الـ reload
+      final newSingleImage = state.profile?.userMedia?.singleImage;
+      debugPrint('📸 [CUBIT] After loadProfile - singleImage: $newSingleImage');
+      
+      if (newSingleImage != null) {
+        debugPrint('⚠️ [CUBIT] WARNING: singleImage is not null after delete!');
+        debugPrint('⚠️ [CUBIT] This means backend returned: $newSingleImage');
+      }
+    },
+  );
+}
   // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ CALCULATE PROGRESS WITH MEDIA
   // ════════════════════════════════════════════════════════════════
@@ -190,6 +264,7 @@ Future<void> saveProfile() async {
   // ════════════════════════════════════════════════════════════════
 
   void updateField(String fieldKey, dynamic value) {
+    
     if (state.profile == null) {
       debugPrint('⚠️ [CUBIT] No profile to update');
       return;
@@ -357,8 +432,16 @@ Future<void> saveProfile() async {
     } else if (fieldKey == 'bio' || fieldKey == 'myDescription') {
       updatedProfile = profile.copyWith(myDescription: value);
     } else if (fieldKey == 'hobbies' || fieldKey == 'interests') {
-      final hobbiesList = (value as String).split(', ');
-      updatedProfile = profile.copyWith(hobbies: hobbiesList);
+    final hobbiesList = (value as String).split(', ');
+    
+    // ⭐ تأكد إنها keys (تبدأ بـ interest_)
+    final validKeys = hobbiesList.where((h) => 
+      h.startsWith('interest_') || h.startsWith('faith_')
+    ).toList();
+    
+    debugPrint('💾 [CUBIT] Saving hobbies keys: $validKeys');
+    
+    updatedProfile = profile.copyWith(hobbies: validKeys);
     } else {
       updatedProfile = profile;
     }

@@ -219,15 +219,15 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             physics: const BouncingScrollPhysics(),
             slivers: [
               _buildViewHeader(profile),
-              
+
               // ⭐⭐⭐ NEW: Statistics Cards Section (Before AboutMe)
               _buildSliverPadding(
                 child: ProfileStatisticsCards(
-                  upgradesCount: 34, 
-                  resultsCount: 1,   
+                  upgradesCount: 34,
+                  resultsCount: 1,
                   onUpgradesTap: () {
                     debugPrint('⭐ Upgrades button tapped');
-                  
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('ترقية الاعجابات المتبقية'),
@@ -247,7 +247,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   },
                 ),
               ),
-              
+
               _buildSliverPadding(
                 child: AboutMeSection(items: _buildAboutMeItems(profile)),
               ),
@@ -257,7 +257,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               if (profile.yourGoals != null)
                 _buildSliverPadding(
                   child: MarriageLifeEventsSection(
-                    titleName:context.tr("my_goals"),
+                    titleName: context.tr("my_goals"),
                     events: _buildTimelineEvents(profile.yourGoals!),
                   ),
                 ),
@@ -266,7 +266,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 sliver: SliverToBoxAdapter(
                   child: displayImages.isNotEmpty
                       ? AdditionalImageSection(
-                        isHastar: false,
+                          isHastar: false,
                           imageUrl: displayImages.length > 1
                               ? displayImages[1]
                               : displayImages[0],
@@ -298,9 +298,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   ),
                 ),
               SliverToBoxAdapter(child: SizedBox(height: 50.h)),
-              SliverToBoxAdapter(
-                child:
-              MarriageRewardCard()),
+              SliverToBoxAdapter(child: MarriageRewardCard()),
               SliverToBoxAdapter(child: SizedBox(height: 100.h)),
             ],
           ),
@@ -597,162 +595,434 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     ];
   }
 
-// UPDATED: _buildInterestsItems method in MarriagefilePage
-// Replace the existing _buildInterestsItems method with this:
+  // UPDATED: _buildInterestsItems method in MarriagefilePage
 
-List<Map<String, dynamic>> _buildInterestsItems(profile) {
-  // ⭐⭐⭐ Map to get emoji from key
-  final Map<String, String> _keyToEmojiMap = {};
-  
-  // Build emoji map from all categories
-  final categories = {
-  'category_sports': {
-        'interest_baseball': '⚾',
-        'interest_running': '🏃',
-        'interest_weightlifting': '🏋️',
-        'interest_gymnastics': '🤸',
-        'interest_golf': '⛳',
-        'interest_tennis': '🎾',
-        'interest_swimming': '🏊',
-        'interest_dancing': '💃',
-        'interest_skating': '⛸️',
-        'interest_yoga': '🧘',
-        'interest_flying_disc': '🥏',
-        'interest_badminton': '🏸',
-        'interest_skiing': '⛷️',
-        'interest_cycling': '🚴',
-        'interest_basketball': '🏀',
-        'interest_football': '⚽',
-        'interest_karate': '🥋',
-        'interest_boxing': '🥊',
-        'interest_archery': '🏹',
-        'interest_horse_riding': '🏇',
-      },
-      'category_arts_culture': {
-        'interest_theater': '🎭',
-        'interest_magic': '🪄',
-        'interest_music': '🎵',
-        'interest_painting': '🎨',
-        'interest_photography': '📷',
-        'interest_cinema': '🎬',
-        'interest_reading': '📚',
-        'interest_writing': '✍️',
-        'interest_poetry': '📝',
-        'interest_history': '🏛️',
-        'interest_languages': '🗣️',
-        'interest_museums': '🖼️',
-        'interest_calligraphy': '🖋️',
-        'interest_sculpture': '🗿',
-        'interest_design': '🎯',
-        'interest_fashion': '👗',
-      },
-      'category_community': {
-        'interest_volunteering': '🤝',
-        'interest_charity': '💝',
-        'interest_teaching': '👨‍🏫',
-        'interest_mentoring': '🧑‍🤝‍🧑',
-        'interest_elderly_care': '👴',
-        'interest_children_care': '👶',
-        'interest_environment': '🌱',
-        'interest_animal_care': '🐾',
-        'interest_blood_donation': '🩸',
-        'interest_community_events': '🎉',
-        'interest_social_work': '💼',
-        'interest_human_rights': '⚖️',
-      },
-      'category_technology': {
-        'interest_programming': '💻',
-        'interest_gaming': '🎮',
-        'interest_ai': '🤖',
-        'interest_web_dev': '🌐',
-        'interest_mobile_apps': '📱',
-        'interest_cybersecurity': '🔒',
-        'interest_data_science': '📊',
-        'interest_electronics': '🔌',
-        'interest_robotics': '🦾',
-        'interest_vr_ar': '🥽',
-        'interest_3d_printing': '🖨️',
-        'interest_drones': '🚁',
-        'interest_smart_home': '🏠',
-        'interest_blockchain': '⛓️',
-      },
-      'category_outdoors': {
-        'interest_hiking': '🥾',
-        'interest_camping': '🏕️',
-        'interest_fishing': '🎣',
-        'interest_beach': '🏖️',
-        'interest_mountain_climbing': '🏔️',
-        'interest_gardening': '🌻',
-        'interest_picnic': '🧺',
-        'interest_bird_watching': '🦅',
-        'interest_stargazing': '🌟',
-        'interest_road_trips': '🚗',
-        'interest_sailing': '⛵',
-        'interest_diving': '🤿',
-        'interest_surfing': '🏄',
-        'interest_kayaking': '🛶',
-        'interest_rock_climbing': '🧗',
-        'interest_paragliding': '🪂',
-      },
-      'category_food_drinks': {
-        'interest_cooking': '👨‍🍳',
-        'interest_baking': '🧁',
-        'interest_grilling': '🍖',
-        'interest_coffee': '☕',
-        'interest_tea': '🍵',
-        'interest_smoothies': '🥤',
-        'interest_sushi': '🍣',
-        'interest_pizza': '🍕',
-        'interest_desserts': '🍰',
-        'interest_healthy_food': '🥗',
-        'interest_street_food': '🌮',
-        'interest_fine_dining': '🍽️',
-        'interest_food_photography': '📸',
-        'interest_chocolate': '🍫',
-        'interest_ice_cream': '🍦',
-      },
-  };
+  List<Map<String, dynamic>> _buildInterestsItems(profile) {
+    final Map<String, String> _keyToEmojiMap = {
+      // ═══════════════════════════════════════════════════════════
+      // SPORTS (الرياضة)
+      // ═══════════════════════════════════════════════════════════
+      'interest_baseball': '⚾',
+      'interest_running': '🏃',
+      'interest_weightlifting': '🏋️',
+      'interest_gymnastics': '🤸',
+      'interest_golf': '⛳',
+      'interest_tennis': '🎾',
+      'interest_swimming': '🏊',
+      'interest_dancing': '💃',
+      'interest_skating': '⛸️',
+      'interest_yoga': '🧘',
+      'interest_flying_disc': '🥏',
+      'interest_badminton': '🏸',
+      'interest_skiing': '⛷️',
+      'interest_cycling': '🚴',
+      'interest_basketball': '🏀',
+      'interest_football': '⚽',
+      'interest_karate': '🥋',
+      'interest_boxing': '🥊',
+      'interest_archery': '🏹',
+      'interest_horse_riding': '🏇',
 
-  // Build key-to-emoji map
-  categories.forEach((categoryKey, items) {
-    items.forEach((key, emoji) {
-      _keyToEmojiMap[key] = emoji;
-    });
-  });
+      // ⭐ MISSING SPORTS - من الصور
+      'interest_theater': '🎭',
+      'interest_magic': '🪄',
+      'interest_music': '🎵',
+      'interest_painting': '🎨',
+      'interest_photography': '📷',
+      'interest_cinema': '🎬',
+      'interest_reading': '📚',
+      'interest_writing': '✍️',
+      'interest_poetry': '📝',
+      'interest_history': '🏛️',
+      'interest_languages': '🗣️',
+      'interest_museums': '🖼️',
+      'interest_calligraphy': '🖋️',
+      'interest_sculpture': '🗿',
+      'interest_design': '🎯',
+      'interest_fashion': '👗',
 
-  // ⭐⭐⭐ Now profile.hobbies contains KEYS like ["interest_running", "interest_golf"]
-  return profile.hobbies.map<Map<String, dynamic>>((hobbyKey) {
-    // Get emoji for this key
-    final emoji = _keyToEmojiMap[hobbyKey] ?? '🎵'; // default fallback
+      // ═══════════════════════════════════════════════════════════
+      // TECHNOLOGY (التكنولوجيا)
+      // ═══════════════════════════════════════════════════════════
+      'interest_volunteering': '🤝',
+      'interest_charity': '💝',
+      'interest_teaching': '👨‍🏫',
+      'interest_mentoring': '🧑‍🤝‍🧑',
+      'interest_elderly_care': '👴',
+      'interest_children_care': '👶',
+      'interest_environment': '🌱',
+      'interest_animal_care': '🐾',
+      'interest_blood_donation': '🩸',
+      'interest_community_events': '🎉',
+      'interest_social_work': '💼',
+      'interest_human_rights': '⚖️',
+
+      // ⭐ MISSING TECH
+      'interest_programming': '💻',
+      'interest_gaming': '🎮',
+      'interest_ai': '🤖',
+      'interest_web_dev': '🌐',
+      'interest_mobile_apps': '📱',
+      'interest_cybersecurity': '🔒',
+      'interest_data_science': '📊',
+      'interest_electronics': '🔌',
+      'interest_robotics': '🦾',
+      'interest_vr_ar': '🥽',
+      'interest_3d_printing': '🖨️',
+      'interest_drones': '🚁',
+      'interest_smart_home': '🏠',
+      'interest_blockchain': '⛓️',
+
+      // ═══════════════════════════════════════════════════════════
+      // COMMUNITY (المجتمع)
+      // ═══════════════════════════════════════════════════════════
+      'interest_hiking': '🥾',
+      'interest_camping': '🏕️',
+      'interest_fishing': '🎣',
+      'interest_beach': '🏖️',
+      'interest_mountain_climbing': '🏔️',
+      'interest_gardening': '🌻',
+      'interest_picnic': '🧺',
+      'interest_bird_watching': '🦅',
+      'interest_stargazing': '🌟',
+      'interest_road_trips': '🚗',
+      'interest_sailing': '⛵',
+      'interest_diving': '🤿',
+      'interest_surfing': '🏄',
+      'interest_kayaking': '🛶',
+      'interest_rock_climbing': '🧗',
+      'interest_paragliding': '🪂',
+      // ⭐ MISSING COMMUNITY
+      'interest_cooking': '👨‍🍳',
+      'interest_baking': '🧁',
+      'interest_grilling': '🍖',
+      'interest_coffee': '☕',
+      'interest_tea': '🍵',
+      'interest_smoothies': '🥤',
+      'interest_sushi': '🍣',
+      'interest_pizza': '🍕',
+      'interest_desserts': '🍰',
+      'interest_healthy_food': '🥗',
+      'interest_street_food': '🌮',
+      'interest_fine_dining': '🍽️',
+      'interest_food_photography': '📸',
+      'interest_chocolate': '🍫',
+      'interest_ice_cream': '🍦',
+      // ═══════════════════════════════════════════════════════════
+      // ARTS & CULTURE (الفنون والثقافة)
+      // ═══════════════════════════════════════════════════════════
+      'faith_dua': '🙏',
+      'faith_umrah': '🕋',
+      'faith_charity_work': '💼',
+      'faith_dawah': '📢',
+      'faith_sadaqah': '🤝',
+      'faith_hadith': '📖',
+      'faith_tahajjud': '😊',
+      'faith_dhikr': '📿',
+      'faith_multiple_prayers': '🕌',
+      'faith_sunnah_prayer': '🙏',
+      'faith_nafila_prayer': '🕯️',
+      'faith_hajj': '🕋',
+      'faith_five_prayers': '☪️',
+      'faith_fiqh': '📚',
+      'faith_fasting': '🌙',
+      'faith_tasawwuf': '😇',
+      'faith_good_manners': '🤲',
+      'faith_friday_prayer': '🕌',
+
+      // ⭐ MISSING ARTS
+      'interest_singing': '🎤',
+      'interest_dancing_ballroom': '💃',
+      'interest_opera': '🎭',
+      'interest_ballet': '🩰',
+      'interest_acting': '🎬',
+      'interest_filmmaking': '🎥',
+      'interest_journalism': '📰',
+      'interest_blogging': '✍️',
+      'interest_podcasting': '🎙️',
+      'interest_storytelling': '📖',
+      'interest_archeology': '🏺',
+      'interest_astronomy': '🔭',
+      'interest_philosophy': '🤔',
+      'interest_literature': '📚',
+      'interest_crafts': '✂️',
+      'interest_knitting': '🧶',
+      'interest_sewing': '🧵',
+      'interest_pottery': '🏺',
+      'interest_woodworking': '🪵',
+      'interest_origami': '📄',
+
+      // ═══════════════════════════════════════════════════════════
+      // FOOD & DRINKS (الطعام والشراب)
+      // ═══════════════════════════════════════════════════════════
+
+      // ⭐ MISSING FOOD
+      'interest_wine_tasting': '🍷',
+      'interest_mixology': '🍸',
+      'interest_veganism': '🥬',
+      'interest_vegetarian': '🥕',
+      'interest_meal_prep': '🍱',
+      'interest_canning': '🥫',
+      'interest_cheese_making': '🧀',
+      'interest_brewing': '🍺',
+      'interest_nutrition': '🥗',
+
+      // ═══════════════════════════════════════════════════════════
+      // OUTDOORS & NATURE (الطبيعة والخارج)
+      // ═══════════════════════════════════════════════════════════
+
+      // ⭐ MISSING OUTDOORS
+      'interest_skiing_water': '🎿',
+      'interest_snowboarding': '🏂',
+      'interest_sledding': '🛷',
+      'interest_skateboarding': '🛹',
+      'interest_rollerblading': '🛼',
+      'interest_scuba_diving': '🤿',
+      'interest_snorkeling': '🤿',
+      'interest_windsurfing': '🏄',
+      'interest_kitesurfing': '🪁',
+      'interest_canoeing': '🛶',
+      'interest_rafting': '🚣',
+      'interest_bungee_jumping': '🪂',
+      'interest_skydiving': '🪂',
+      'interest_hang_gliding': '🪂',
+      'interest_hot_air_ballooning': '🎈',
+      'interest_horseback_riding': '🐴',
+      'interest_horse_racing': '🏇',
+      'interest_cycling_mountain': '🚵',
+      'interest_trail_running': '🏃‍♂️',
+      'interest_backpacking': '🎒',
+      'interest_geocaching': '🗺️',
+      'interest_foraging': '🍄',
+      'interest_hunting': '🦌',
+      'interest_wildlife_photography': '📸',
+      'interest_nature_conservation': '🌳',
+      'interest_beekeeping': '🐝',
+      'interest_farming': '🚜',
+      'interest_landscaping': '🌿',
+
+      // ═══════════════════════════════════════════════════════════
+      // GAMES & HOBBIES (الألعاب والهوايات)
+      // ═══════════════════════════════════════════════════════════
+      'interest_board_games': '🎲',
+      'interest_card_games': '🃏',
+      'interest_chess': '♟️',
+      'interest_puzzle_solving': '🧩',
+      'interest_escape_rooms': '🔐',
+      'interest_trivia': '❓',
+      'interest_crosswords': '📰',
+      'interest_sudoku': '🔢',
+      'interest_collecting': '🏆',
+      'interest_stamp_collecting': '💌',
+      'interest_coin_collecting': '💰',
+      'interest_antiques': '🏺',
+      'interest_model_building': '🏗️',
+      'interest_lego': '🧱',
+      'interest_trains': '🚂',
+      'interest_cars': '🚗',
+      'interest_motorcycles': '🏍️',
+      'interest_aviation': '✈️',
+
+      // ═══════════════════════════════════════════════════════════
+      // MUSIC (الموسيقى)
+      // ═══════════════════════════════════════════════════════════
+      'interest_guitar': '🎸',
+      'interest_piano': '🎹',
+      'interest_drums': '🥁',
+      'interest_violin': '🎻',
+      'interest_flute': '🪈',
+      'interest_saxophone': '🎷',
+      'interest_trumpet': '🎺',
+      'interest_ukulele': '🪕',
+      'interest_harmonica': '🎵',
+      'interest_djing': '🎧',
+      'interest_music_production': '🎛️',
+      'interest_composing': '🎼',
+      'interest_choir': '🎤',
+      'interest_karaoke': '🎤',
+      'interest_concerts': '🎵',
+
+      // ═══════════════════════════════════════════════════════════
+      // WELLNESS & FITNESS (الصحة واللياقة)
+      // ═══════════════════════════════════════════════════════════
+      'interest_meditation': '🧘‍♀️',
+      'interest_pilates': '🤸',
+      'interest_crossfit': '🏋️',
+      'interest_zumba': '💃',
+      'interest_aerobics': '🤸',
+      'interest_jogging': '🏃',
+      'interest_walking': '🚶',
+      'interest_stretching': '🧘',
+      'interest_spa': '💆',
+      'interest_massage': '💆‍♀️',
+      'interest_sauna': '🧖',
+      'interest_aromatherapy': '🌸',
+
+      // ═══════════════════════════════════════════════════════════
+      // TRAVEL (السفر)
+      // ═══════════════════════════════════════════════════════════
+      'interest_travel': '✈️',
+      'interest_backpacking_travel': '🎒',
+      'interest_cruises': '🚢',
+      'interest_solo_travel': '🧳',
+      'interest_cultural_tourism': '🗿',
+      'interest_adventure_travel': '🏔️',
+      'interest_ecotourism': '🌍',
+      'interest_city_breaks': '🏙️',
+      'interest_beach_vacations': '🏖️',
+      'interest_ski_resorts': '⛷️',
+
+      // ═══════════════════════════════════════════════════════════
+      // PETS & ANIMALS (الحيوانات الأليفة)
+      // ═══════════════════════════════════════════════════════════
+      'interest_dogs': '🐕',
+      'interest_cats': '🐈',
+      'interest_birds': '🐦',
+      'interest_fish': '🐠',
+      'interest_horses': '🐴',
+      'interest_reptiles': '🦎',
+      'interest_exotic_pets': '🦜',
+      'interest_pet_training': '🦮',
+      'interest_veterinary': '🩺',
+
+      // ═══════════════════════════════════════════════════════════
+      // BUSINESS & ENTREPRENEURSHIP (الأعمال)
+      // ═══════════════════════════════════════════════════════════
+      'interest_entrepreneurship': '💼',
+      'interest_investing': '📈',
+      'interest_real_estate': '🏠',
+      'interest_stocks': '📊',
+      'interest_cryptocurrency': '₿',
+      'interest_marketing': '📣',
+      'interest_sales': '💰',
+
+      'interest_leadership': '👔',
+      'interest_project_management': '📋',
+
+      // ═══════════════════════════════════════════════════════════
+      // SCIENCE (العلوم)
+      // ═══════════════════════════════════════════════════════════
+      'interest_physics': '⚛️',
+      'interest_chemistry': '🧪',
+      'interest_biology': '🧬',
+      'interest_mathematics': '➕',
+      'interest_geology': '🪨',
+      'interest_meteorology': '🌦️',
+      'interest_oceanography': '🌊',
+      'interest_zoology': '🦁',
+      'interest_botany': '🌿',
+      'interest_ecology': '🌍',
+
+      // ═══════════════════════════════════════════════════════════
+      // AUTOMOTIVE (السيارات)
+      // ═══════════════════════════════════════════════════════════
+      'interest_car_restoration': '🚗',
+      'interest_car_racing': '🏎️',
+      'interest_car_mechanics': '🔧',
+      'interest_off_roading': '🚙',
+      'interest_car_shows': '🚘',
+
+      // ═══════════════════════════════════════════════════════════
+      // HOME & LIFESTYLE (المنزل ونمط الحياة)
+      // ═══════════════════════════════════════════════════════════
+      'interest_interior_design': '🛋️',
+      'interest_home_improvement': '🔨',
+      'interest_diy': '🛠️',
+      'interest_furniture_making': '🪑',
+      'interest_home_automation': '🏠',
+      'interest_cleaning': '🧹',
+      'interest_organizing': '📦',
+      'interest_minimalism': '⬜',
+
+      // ═══════════════════════════════════════════════════════════
+      // ENTERTAINMENT (الترفيه)
+      // ═══════════════════════════════════════════════════════════
+      'interest_movies': '🎬',
+      'interest_tv_shows': '📺',
+      'interest_anime': '🎌',
+      'interest_comics': '📚',
+      'interest_manga': '📖',
+      'interest_stand_up_comedy': '🎤',
+      'interest_improv': '🎭',
+      'interest_cosplay': '🦸',
+
+      // ═══════════════════════════════════════════════════════════
+      // SPIRITUAL & RELIGIOUS (الروحانيات)
+      // ═══════════════════════════════════════════════════════════
+      'interest_quran': '📖',
+      'interest_prayer': '🤲',
+      'interest_islamic_studies': '☪️',
+      'interest_hadith': '📚',
+      'interest_tafsir': '📖',
+      'interest_fiqh': '⚖️',
+      'interest_dhikr': '📿',
+      'interest_charity_islam': '💝',
+    };
+
+
+
+   // ⭐⭐⭐ SAME LOGIC AS _formatHobbiesForDisplay
+  List<String> hobbiesList = [];
+
+  if (profile.hobbies is String) {
+    // ⭐ حالة String
+    hobbiesList = (profile.hobbies as String)
+        .split(',')  // ✅ فاصلة بس
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
     
-    // Translate the key to display text
-    final displayText = context.tr(hobbyKey);
+    debugPrint('📋 [INTERESTS] String input: "${profile.hobbies}" → parsed: $hobbiesList');
+  } else if (profile.hobbies is List) {
+    debugPrint('📋 [INTERESTS] Raw List: ${profile.hobbies}');
+    
+    // ⭐⭐⭐ CRITICAL FIX: فصل الـ strings اللي فيها فواصل
+    for (var item in profile.hobbies) {
+      final itemStr = item.toString().trim();
+      if (itemStr.isEmpty) continue;
+      
+      // ⭐ إذا العنصر فيه فاصلة، فصّله!
+      if (itemStr.contains(',')) {
+        debugPrint('  🔄 Splitting item: "$itemStr"');
+        final subItems = itemStr
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty);
+        hobbiesList.addAll(subItems);
+      } else {
+        hobbiesList.add(itemStr);
+      }
+    }
+    
+    debugPrint('📋 [INTERESTS] Processed List: $hobbiesList');
+  } else {
+    debugPrint('⚠️ [INTERESTS] Invalid type: ${profile.hobbies.runtimeType}');
+    hobbiesList = [];
+  }
 
-    debugPrint('🎯 Interest: key="$hobbyKey", emoji="$emoji", display="$displayText"');
+  // ⭐ فلترة: خلي بس الـ keys الصحيحة
+  hobbiesList = hobbiesList
+      .where((s) => s.startsWith('interest_') || s.startsWith('faith_'))
+      .toList();
+
+  if (hobbiesList.isEmpty) {
+    debugPrint('⚠️ [INTERESTS] No valid hobbies found');
+    return [];
+  }
+
+  return hobbiesList.map<Map<String, dynamic>>((hobbyKey) {
+    final trimmedKey = hobbyKey.trim();
+    final emoji = _keyToEmojiMap[trimmedKey] ?? '🎵';
+    final displayText = context.tr(trimmedKey);
+
+    debugPrint('🎯 Hobby: key="$trimmedKey", emoji="$emoji", display="$displayText"');
 
     return {
       'icon': AssetsData.kmusicIcon,
-      'label': '$emoji $displayText', // ⭐ Show emoji + translated text
+      'label': '$emoji $displayText'
     };
   }).toList();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   Widget _buildError(BuildContext context, String? message) {
     return Center(
       child: Column(
