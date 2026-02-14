@@ -68,6 +68,7 @@ class CommentContent extends StatelessWidget {
                 ? _navigateToUserAdvisorProfile(context)
                 : _navigateToUserProfile(context),
             child: CommentAvatar(
+              isAnnonymous: comment.commenter.isAnnonymous,
               avatarUrl: comment.commenter.avatar,
               isReply: isReply,
             ),
@@ -154,7 +155,9 @@ class _CommentHeader extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      comment.commenter.userName,
+                      comment.commenter.isAnnonymous
+                          ? "@${context.tr(AppStrings.anonymous)}"
+                          : comment.commenter.userName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Styles.textStyle12.copyWith(

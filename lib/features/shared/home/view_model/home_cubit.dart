@@ -894,6 +894,25 @@ class HomeCubit extends Cubit<HomeState> {
     return index != -1 ? posts[index] : null;
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // 📌 MARK POST AS COMMENTED
+  // ═══════════════════════════════════════════════════════════
+  void markPostAsCommented({
+    required String postId,
+    required bool isAnonymous,
+  }) {
+    emit(
+      state.updatePostInAllCategories(
+        postId,
+        (p) => p.copyWith(
+          isCommented: true,
+          isAnonymous: isAnonymous,
+          commentsCount: p.commentsCount + 1,
+        ),
+      ),
+    );
+  }
+
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
   void sessionStart() {

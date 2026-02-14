@@ -1,6 +1,5 @@
 // lib/features/advisor/home/cubit/post_details_cubit.dart
 
-
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -217,7 +216,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   // 📌 ADD COMMENT (Optimistic Update + Auto-Scroll)
   // ═══════════════════════════════════════════════════════════
 
-  Future<void> addComment(String content) async {
+  Future<void> addComment(String content, {required bool anonymous}) async {
     if (content.trim().isEmpty) return;
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
@@ -226,7 +225,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       id: kCurrentUserData?.id ?? "..",
       name: kCurrentUserData?.name ?? 'أنت',
       userName: kCurrentUserData?.username ?? '@you',
-      avatar: kCurrentUserData?.image,
+      avatar: anonymous ? AssetsData.anonymousProfile : kCurrentUserData?.image,
       isVerified: kCurrentUserData?.isVerified ?? false,
       userType: selectedUserType?.name ?? 'user',
     );
@@ -248,6 +247,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     final result = await homeRepository.addComment(
       postId: postId,
       comment: content,
+      anonymous: anonymous,
     );
 
     result.fold(
@@ -281,6 +281,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             // ✅ NEW: Scroll للكومنت الجديد
             scrollToCommentId: newComment.id,
             scrollTrigger: state.scrollTrigger + 1,
+            commentedAnonymous: anonymous,
           ),
         );
 

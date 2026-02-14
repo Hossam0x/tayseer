@@ -38,6 +38,7 @@ abstract class HomeRepository {
   Future<Either<Failure, CommentModel>> addComment({
     required String postId,
     required String comment,
+    required bool anonymous,
   });
 
   Future<Either<Failure, String>> deleteComment({required String commentId});

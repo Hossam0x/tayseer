@@ -1,12 +1,17 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
-import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/widgets/comment_avatar.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:flutter/foundation.dart' as foundation;
 
 class CommentInputArea extends StatefulWidget {
-  const CommentInputArea({super.key});
-
+  const CommentInputArea({
+    super.key,
+    required this.iscommented,
+    this.isAnonymous,
+  });
+  final bool iscommented;
+  final bool? isAnonymous;
   @override
   State<CommentInputArea> createState() => CommentInputAreaState();
 }
@@ -17,10 +22,14 @@ class CommentInputAreaState extends State<CommentInputArea> {
 
   TextDirection _textDirection = TextDirection.rtl;
   bool _showEmojiPicker = false;
+  bool _isAnonymous = false;
+  bool _hasCommented = false;
 
   @override
   void initState() {
     super.initState();
+    _isAnonymous = widget.isAnonymous ?? false;
+    _hasCommented = widget.isAnonymous != null || widget.iscommented;
     _controller.addListener(_updateTextDirection);
 
     _focusNode.addListener(() {
@@ -79,7 +88,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
     _focusNode.unfocus();
 
     // 2️⃣ إرسال الكومنت للـ Cubit
-    context.read<PostDetailsCubit>().addComment(text);
+    context.read<PostDetailsCubit>().addComment(text, anonymous: _isAnonymous);
   }
 
   @override
@@ -90,11 +99,11 @@ class CommentInputAreaState extends State<CommentInputArea> {
           listenWhen: (previous, current) {
             final replyStarted =
                 previous.activeReplyId != current.activeReplyId &&
-                    current.activeReplyId != null;
+                current.activeReplyId != null;
 
             final editStarted =
                 previous.editingCommentId != current.editingCommentId &&
-                    current.editingCommentId != null;
+                current.editingCommentId != null;
 
             final focusTriggered =
                 previous.focusInputTrigger != current.focusInputTrigger;
@@ -126,7 +135,10 @@ class CommentInputAreaState extends State<CommentInputArea> {
                 state.errorMessage ?? "حدث خطأ أثناء إضافة التعليق",
               );
             }
-            // ✅ Success: مش محتاج نعمل حاجة لأن الكومنت ظاهر فعلاً
+            // ✅ بعد أول تعليق ناجح، نقفل تغيير الصفة
+            if (state.addingCommentState == CubitStates.success) {
+              setState(() => _hasCommented = true);
+            }
           },
         ),
       ],
@@ -164,7 +176,18 @@ class CommentInputAreaState extends State<CommentInputArea> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const MyProfileImage(),
+                        CommentAvatar(
+                          iscommented: _hasCommented,
+                          isAnonymous: _hasCommented
+                              ? _isAnonymous
+                              : widget.isAnonymous,
+                          currentSelection: _isAnonymous,
+                          onSelectionChanged: (value) {
+                            setState(() {
+                              _isAnonymous = value;
+                            });
+                          },
+                        ),
                         Gap(12.w),
                         Expanded(
                           child: Container(
@@ -188,8 +211,8 @@ class CommentInputAreaState extends State<CommentInputArea> {
                                     textDirection: _textDirection,
                                     textAlign:
                                         _textDirection == TextDirection.rtl
-                                            ? TextAlign.right
-                                            : TextAlign.left,
+                                        ? TextAlign.right
+                                        : TextAlign.left,
                                     maxLines: null,
                                     keyboardType: TextInputType.multiline,
                                     style: TextStyle(
@@ -257,7 +280,8 @@ class CommentInputAreaState extends State<CommentInputArea> {
                         height: 250.h,
                         checkPlatformCompatibility: true,
                         emojiViewConfig: EmojiViewConfig(
-                          emojiSizeMax: 28 *
+                          emojiSizeMax:
+                              28 *
                               (foundation.defaultTargetPlatform ==
                                       TargetPlatform.iOS
                                   ? 1.30

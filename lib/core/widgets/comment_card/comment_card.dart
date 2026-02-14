@@ -154,6 +154,7 @@ class _HiddenCommentWidget extends StatelessWidget {
             children: [
               // Avatar
               CommentAvatar(
+                isAnnonymous: comment.commenter.isAnnonymous,
                 avatarUrl: comment.commenter.avatar,
                 isReply: isReply,
               ),
@@ -164,7 +165,9 @@ class _HiddenCommentWidget extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        comment.commenter.name,
+                        comment.commenter.isAnnonymous
+                            ? context.tr(AppStrings.anonymous)
+                            : comment.commenter.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Styles.textStyle16SemiBold.copyWith(
@@ -173,7 +176,8 @@ class _HiddenCommentWidget extends StatelessWidget {
                       ),
                     ),
                     Gap(4.w),
-                    if (comment.commenter.isVerified)
+                    if (comment.commenter.isVerified &&
+                        !comment.commenter.isAnnonymous)
                       Icon(Icons.verified, color: Colors.blue, size: 14.sp),
 
                     Gap(4.w),

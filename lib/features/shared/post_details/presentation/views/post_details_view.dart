@@ -92,6 +92,18 @@ class _PostDetailsViewState extends State<PostDetailsView> {
           listener: (_, state) {
             if (state.addingCommentState == CubitStates.success) {
               _scrollToTop();
+              // ✅ تحديث البوست محلياً + إبلاغ الـ HomeCubit
+              final isAnonymous = state.commentedAnonymous ?? false;
+              setState(() {
+                _currentPost = _currentPost.copyWith(
+                  isCommented: true,
+                  isAnonymous: isAnonymous,
+                );
+              });
+              widget.callbacks.onCommented?.call(
+                _currentPost.postId,
+                isAnonymous,
+              );
             }
           },
           child: Column(
@@ -105,7 +117,10 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                   callbacks: widget.callbacks,
                 ),
               ),
-              const CommentInputArea(),
+              CommentInputArea(
+                iscommented: _currentPost.isCommented,
+                isAnonymous: _currentPost.isAnonymous,
+              ),
             ],
           ),
         ),
