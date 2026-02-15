@@ -1439,7 +1439,7 @@ Future<void> _reorderImage(
           Text(context.tr('know_me_more'), style: Styles.textStyle18Meduim),
           Gap(12.h),
           _buildInfoRow(
-            context.tr('bio'),
+            context.tr('my_cv'),
             profile.myDescription ?? context.tr('select'),
             () {
               _navigateToBioEdit(context, cubit, profile.myDescription);
