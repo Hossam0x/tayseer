@@ -652,6 +652,9 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                 ),
               );
             },
+            onPollVote: (postId, choiceText) {
+              _searchCubit.voteInPoll(postId: postId, choiceText: choiceText);
+            },
           ),
         ),
       ),
@@ -664,6 +667,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       child: PostCard(
         post: post,
         isFromProfile: false,
+        onNavigateToDetails: _onNavigateToDetails,
         callbacks: PostCallbacks(
           onReactionChanged: (postId, type) {
             _searchCubit.reactToPost(postId: postId, reactionType: type);
@@ -701,8 +705,10 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
               ),
             );
           },
+          onPollVote: (postId, choiceText) {
+            _searchCubit.voteInPoll(postId: postId, choiceText: choiceText);
+          },
         ),
-        onNavigateToDetails: _onNavigateToDetails,
       ),
     );
   }
