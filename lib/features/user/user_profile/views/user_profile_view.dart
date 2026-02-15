@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
@@ -7,10 +8,7 @@ import 'package:tayseer/features/user/user_profile/data/models/user_profile_mode
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
-import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_file.dart';
-import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
-import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserProfileView extends StatefulWidget {
@@ -350,41 +348,61 @@ class _UserProfileViewState extends State<UserProfileView> {
       height: 120.w,
       child: Stack(
         children: [
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.secondary100,
-            ),
-            child: (imageUrl != null && imageUrl.isNotEmpty)
-                ? ClipOval(
-                    child: CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        width: double.infinity,
-                        height: double.infinity,
-                        color: AppColors.secondary200,
+          GestureDetector(
+            onTap: (imageUrl != null && imageUrl.isNotEmpty)
+                ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FullScreenImageView(
+                          imageUrl: imageUrl,
+                          heroTag: 'user_profile_image',
+                          userName:
+                              userProfile?.name ?? kCurrentUserData?.name ?? '',
+                        ),
                       ),
-                      errorWidget: (context, url, error) {
-                        return Center(
-                          child: Icon(
-                            Icons.person,
-                            size: 48.w,
-                            color: AppColors.secondary400,
+                    );
+                  }
+                : null,
+            child: Hero(
+              tag: 'user_profile_image',
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.secondary100,
+                ),
+                child: (imageUrl != null && imageUrl.isNotEmpty)
+                    ? ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            color: AppColors.secondary200,
                           ),
-                        );
-                      },
-                    ),
-                  )
-                : Center(
-                    child: Icon(
-                      Icons.person,
-                      size: 48.w,
-                      color: AppColors.secondary400,
-                    ),
-                  ),
+                          errorWidget: (context, url, error) {
+                            return Center(
+                              child: Icon(
+                                Icons.person,
+                                size: 48.w,
+                                color: AppColors.secondary400,
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    : Center(
+                        child: Icon(
+                          Icons.person,
+                          size: 48.w,
+                          color: AppColors.secondary400,
+                        ),
+                      ),
+              ),
+            ),
           ),
         ],
       ),
@@ -420,12 +438,10 @@ class _UserProfileViewState extends State<UserProfileView> {
         Gap(8.h),
         GestureDetector(
           onTap: () {
-            Navigator.push(
+            Navigator.pushNamed(
               context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    UserPublicProfileView(userId: userProfile.id),
-              ),
+              AppRouter.kUserPublicProfileView,
+              arguments: userProfile.id,
             );
           },
           child: Row(
@@ -608,14 +624,10 @@ class _UserProfileViewState extends State<UserProfileView> {
 
           if (setting.id == 'settings') {
             final cubit = context.read<UserProfileCubit>();
-            Navigator.push(
+            Navigator.pushNamed(
               context,
-              MaterialPageRoute(
-                builder: (context) => BlocProvider.value(
-                  value: cubit,
-                  child: const GeneralSettingsView(),
-                ),
-              ),
+              AppRouter.kGeneralSettingsView,
+              arguments: cubit,
             );
           } else if (setting.routeName.isNotEmpty) {
             if (setting.id == 'language') {
@@ -733,17 +745,15 @@ class _UserProfileViewState extends State<UserProfileView> {
       return;
     }
 
-    Navigator.push(
+    Navigator.pushNamed(
       context,
-      MaterialPageRoute(
-        builder: (context) => UserProfileEditView(
-          initialProfile: currentState.userProfile!,
-          localImageFile: null, // Removed usage
-          onProfileUpdated: (updatedProfile, imageFile) {
-            cubit.updateUserProfile(updatedProfile);
-          },
-        ),
-      ),
+      AppRouter.kUserProfileEditView,
+      arguments: {
+        'initialProfile': currentState.userProfile!,
+        'onProfileUpdated': (updatedProfile, imageFile) {
+          cubit.updateUserProfile(updatedProfile);
+        },
+      },
     );
   }
 
