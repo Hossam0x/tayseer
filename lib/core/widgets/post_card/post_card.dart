@@ -562,6 +562,8 @@ class _PostMediaState extends State<_PostMedia> {
           postId: widget.post.postId,
           videoUrl: widget.post.videoUrl ?? '',
           isReel: true,
+          videoData: widget.post.videoData, // ✅ جديد
+
           videoController: widget.sharedController ?? _activeController,
           onControllerCreated: (controller) {
             _activeController = controller;

@@ -70,6 +70,7 @@ class PostModel {
   final String? videoUrl;
   final PollModel? pollModel;
   final EventModel? event;
+  final VideoModel? videoData; // ✅ جديد
 
   // Stats
   final int commentsCount;
@@ -117,6 +118,7 @@ class PostModel {
     this.isHidden = false,
     this.isBlocked = false,
     this.event,
+    this.videoData,
 
     this.isCommented = false,
     this.isAnonymous,
@@ -145,6 +147,10 @@ class PostModel {
               )
               .toList() ??
           [],
+
+      videoData: json['video'] != null
+          ? VideoModel.fromJson(json['video'] as Map<String, dynamic>)
+          : null,
       contentType: _parseContentType(json['contentType']),
       videoUrl: json['videoUrl'],
       pollModel: json["pollModel"] != null
@@ -338,6 +344,32 @@ class ImageModel {
   ImageModel({required this.image, required this.width, required this.height});
 }
 
+// lib/core/models/video_model.dart
+
+class VideoModel {
+  final String video;
+  final int width;
+  final int height;
+  final String thumbnail;
+
+  VideoModel({
+    required this.video,
+    required this.width,
+    required this.height,
+    required this.thumbnail,
+  });
+
+  double get aspectRatio => width / height;
+
+  factory VideoModel.fromJson(Map<String, dynamic> json) {
+    return VideoModel(
+      video: json['video'] ?? '',
+      width: json['width'] ?? 0,
+      height: json['height'] ?? 0,
+      thumbnail: json['thumbnail'] ?? '',
+    );
+  }
+}
 // // --- Data Generator (Mock Backend) ---
 // List<PostModel> dummyPosts = [
 //   // 1.

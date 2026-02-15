@@ -73,7 +73,7 @@ class CommentAvatar extends StatelessWidget {
             _buildOption(
               context,
               isAnonymous: false,
-              title: kCurrentUserData?.name ?? "عام",
+              title: kCurrentUserData?.name ?? context.tr(AppStrings.general),
               isSelected: !currentSelection,
             ),
             Divider(height: 1, color: Colors.grey.shade100),
@@ -119,7 +119,11 @@ class CommentAvatar extends StatelessWidget {
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: const Color(0xFFD65A73), size: 24.sp),
+              Icon(
+                Icons.check_circle,
+                color: const Color(0xFFD65A73),
+                size: 24.sp,
+              ),
           ],
         ),
       ),

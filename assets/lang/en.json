@@ -1279,5 +1279,6 @@
   "yes_make_first": "Yes, Make it First",
   "image_reordered_successfully": "Image reordered successfully",
   "error_reordering_image": "Error reordering image",
-  "under_review": "Awaiting review"
+  "under_review": "Awaiting review",
+  "general":"General"
 }

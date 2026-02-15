@@ -2,6 +2,7 @@
 
 // ignore_for_file: unused_element_parameter
 
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart'; // ✅ أضف هذا
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
@@ -13,6 +14,7 @@ import 'package:tayseer/my_import.dart';
 class RealVideoPlayer extends StatefulWidget {
   final String postId;
   final String videoUrl;
+  final VideoModel? videoData; // ✅ جديد
   final bool isReel;
   final VideoPlayerController? videoController;
   final Function(VideoPlayerController)? onControllerCreated;
@@ -22,6 +24,7 @@ class RealVideoPlayer extends StatefulWidget {
     super.key,
     required this.postId,
     required this.videoUrl,
+    this.videoData, // ✅ جديد
     this.isReel = false,
     this.videoController,
     this.onControllerCreated,
@@ -404,60 +407,70 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     }
   }
 
-  void _togglePlay() {
-    if (_controller!.value.isPlaying) {
-      _controller!.pause();
-    } else {
-      VideoManager.instance.playVideo(widget.postId);
-      _controller!.play();
-    }
-    setState(() {});
-  }
+  // void _togglePlay() {
+  //   if (_controller!.value.isPlaying) {
+  //     _controller!.pause();
+  //   } else {
+  //     VideoManager.instance.playVideo(widget.postId);
+  //     _controller!.play();
+  //   }
+  //   setState(() {});
+  // }
 
-  void _seekRelative(Duration offset) {
-    if (_controller == null) return;
-    final newPos = _controller!.value.position + offset;
-    final dur = _controller!.value.duration;
-    if (newPos < Duration.zero) {
-      _controller!.seekTo(Duration.zero);
-    } else if (newPos > dur) {
-      _controller!.seekTo(dur);
-    } else {
-      _controller!.seekTo(newPos);
-    }
-  }
+  // void _seekRelative(Duration offset) {
+  //   if (_controller == null) return;
+  //   final newPos = _controller!.value.position + offset;
+  //   final dur = _controller!.value.duration;
+  //   if (newPos < Duration.zero) {
+  //     _controller!.seekTo(Duration.zero);
+  //   } else if (newPos > dur) {
+  //     _controller!.seekTo(dur);
+  //   } else {
+  //     _controller!.seekTo(newPos);
+  //   }
+  // }
 
-  Future<void> _openFullscreen() async {
-    if (_controller == null || !_isInitialized) return;
+  // Future<void> _openFullscreen() async {
+  //   if (_controller == null || !_isInitialized) return;
 
-    _controller!.pause();
+  //   _controller!.pause();
 
-    final result = await Navigator.push<FullscreenResult>(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => FullscreenVideoPlayer(
-          videoUrl: widget.videoUrl,
-          startPosition: _controller!.value.position,
-          // ✅ الـ FullscreenVideoPlayer هيستخدم الـ Global Mute برضو
-        ),
-        transitionsBuilder: (_, a, __, c) =>
-            FadeTransition(opacity: a, child: c),
-      ),
-    );
+  //   final result = await Navigator.push<FullscreenResult>(
+  //     context,
+  //     PageRouteBuilder(
+  //       pageBuilder: (_, __, ___) => FullscreenVideoPlayer(
+  //         videoUrl: widget.videoUrl,
+  //         startPosition: _controller!.value.position,
+  //         // ✅ الـ FullscreenVideoPlayer هيستخدم الـ Global Mute برضو
+  //       ),
+  //       transitionsBuilder: (_, a, __, c) =>
+  //           FadeTransition(opacity: a, child: c),
+  //     ),
+  //   );
 
-    if (result != null && mounted) {
-      await _controller!.seekTo(result.position);
-      if (result.wasPlaying) {
-        VideoManager.instance.playVideo(widget.postId);
-        _controller!.play();
-      }
-    }
-  }
+  //   if (result != null && mounted) {
+  //     await _controller!.seekTo(result.position);
+  //     if (result.wasPlaying) {
+  //       VideoManager.instance.playVideo(widget.postId);
+  //       _controller!.play();
+  //     }
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
-    final aspectRatio = widget.isReel ? 4 / 5 : 16 / 9;
+    // ✅ الـ aspect ratio من الـ API أو fallback
+    final double aspectRatio;
+    if (widget.videoData != null &&
+        widget.videoData!.width > 0 &&
+        widget.videoData!.height > 0) {
+      aspectRatio = widget.videoData!.aspectRatio.clamp(0.4, 2.5);
+    } else {
+      aspectRatio = widget.isReel ? 4 / 5 : 16 / 9;
+    }
+
     final visibilityKey = Key("${widget.postId}_${widget.videoUrl}");
+    final thumbnail = widget.videoData?.thumbnail;
 
     Widget content = AspectRatio(
       aspectRatio: aspectRatio,
@@ -473,9 +486,21 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Video Player
+                // ✅ Thumbnail يظهر فوراً قبل الفيديو ما يحمل
+                if (thumbnail != null && thumbnail.isNotEmpty)
+                  Positioned.fill(
+                    child: CachedNetworkImage(
+                      imageUrl: thumbnail,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: Colors.black),
+                      errorWidget: (_, __, ___) =>
+                          Container(color: Colors.black),
+                    ),
+                  ),
+
+                // Video Player (يظهر فوق الـ thumbnail لما يحمل)
                 if (_isInitialized && _controller != null)
-                  SizedBox.expand(
+                  Positioned.fill(
                     child: FittedBox(
                       fit: BoxFit.cover,
                       child: SizedBox(
@@ -489,7 +514,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
                 // Error State
                 if (_hasError) _buildErrorState(),
 
-                // Loading
+                // ✅ Loading indicator (فوق الـ thumbnail)
                 if (!_isInitialized && !_hasError)
                   const Center(
                     child: CircularProgressIndicator(
@@ -519,7 +544,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
                     ),
                   ),
 
-                // ✅ زرار الـ Mute العام (دايماً ظاهر في أسفل اليمين)
+                // Mute Button
                 if (_isInitialized && _controller != null && widget.isReel)
                   Positioned(
                     bottom: 12.h,
@@ -527,26 +552,26 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
                     child: _GlobalMuteButton(onTap: _toggleGlobalMute),
                   ),
 
-                // Controls Overlay (for non-reel videos)
-                if (_isInitialized && _controller != null && !widget.isReel)
-                  _ControlsOverlay(
-                    controller: _controller!,
-                    isVisible: _showControls,
-                    isEnded: _isEnded,
-                    onPlayPause: _togglePlay,
-                    onReplay: () {
-                      _controller!.seekTo(Duration.zero);
-                      VideoManager.instance.playVideo(widget.postId);
-                      _controller!.play();
-                      setState(() => _isEnded = false);
-                    },
-                    onSeekForward: () =>
-                        _seekRelative(const Duration(seconds: 10)),
-                    onSeekBackward: () =>
-                        _seekRelative(const Duration(seconds: -10)),
-                    onFullscreen: _openFullscreen,
-                    onTapBackground: _handleTap,
-                  ),
+                // // Controls Overlay
+                // if (_isInitialized && _controller != null && !widget.isReel)
+                //   _ControlsOverlay(
+                //     controller: _controller!,
+                //     isVisible: _showControls,
+                //     isEnded: _isEnded,
+                //     onPlayPause: _togglePlay,
+                //     onReplay: () {
+                //       _controller!.seekTo(Duration.zero);
+                //       VideoManager.instance.playVideo(widget.postId);
+                //       _controller!.play();
+                //       setState(() => _isEnded = false);
+                //     },
+                //     onSeekForward: () =>
+                //         _seekRelative(const Duration(seconds: 10)),
+                //     onSeekBackward: () =>
+                //         _seekRelative(const Duration(seconds: -10)),
+                //     onFullscreen: _openFullscreen,
+                //     onTapBackground: _handleTap,
+                //   ),
               ],
             ),
           ),
