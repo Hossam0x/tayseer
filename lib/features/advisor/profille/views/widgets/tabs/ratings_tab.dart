@@ -30,7 +30,7 @@ class _RatingsTabState extends State<RatingsTab>
 
     return BlocBuilder<RatingsCubit, RatingsState>(
       builder: (context, state) {
-        if (state.state == CubitStates.loading && !state.hasLoadedOnce) {
+        if (state.state == CubitStates.loading) {
           return _buildSkeletonRatings();
         }
 

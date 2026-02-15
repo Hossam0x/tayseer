@@ -37,7 +37,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
     // ⭐ استخدام الـ Cubit الموجود من الـ context
     return BlocBuilder<CertificatesCubit, CertificatesState>(
       builder: (context, state) {
-        if (state.state == CubitStates.loading && !state.hasLoadedOnce) {
+        if (state.state == CubitStates.loading) {
           return _buildSkeletonSection();
         }
 

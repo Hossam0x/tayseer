@@ -155,6 +155,7 @@ class RatingsCubit extends Cubit<RatingsState> {
         advisorId: advisorId,
         loadMore: false,
         isSilent: false, // Normal refresh
+        forceRefresh: true, // ⭐ Force reload to update list
       );
     }
   }
