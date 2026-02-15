@@ -63,7 +63,7 @@ class SearchCubit extends Cubit<SearchState> {
   Future<void> _executeSearch(String query, String type) async {
     try {
       final results = await _searchRepository.search(query: query, type: type);
-
+      if (isClosed) return;
       emit(
         state.copyWith(
           searchStatus: CubitStates.success,
