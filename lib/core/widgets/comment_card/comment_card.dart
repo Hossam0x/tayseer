@@ -75,7 +75,7 @@ class CommentCard extends StatelessWidget {
         initialText: '',
         buttonText: context.tr(AppStrings.sendReply),
         isLoading: isReplyLoading,
-        showAnonymousToggle: true,
+        showAnonymousToggle: isUser,
         onCancel: () => callbacks.onCancelReply?.call(),
         onSubmit: (text) => callbacks.onSendReply?.call(comment.id, text),
       ),

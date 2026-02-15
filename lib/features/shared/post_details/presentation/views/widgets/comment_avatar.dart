@@ -21,54 +21,8 @@ class CommentAvatar extends StatelessWidget {
       return MyProfileImage(isAnnonymous: isAnonymous ?? false);
     }
 
-    return PopupMenuButton<bool>(
-      offset: Offset(0, -130.h),
-      onSelected: onSelectionChanged,
-      color: Colors.white,
-      shadowColor: Colors.black.withOpacity(0.1),
-      elevation: 6,
-      constraints: BoxConstraints(minWidth: 180.w),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: false,
-          height: 50.h,
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          child: Row(
-            children: [
-              const MyProfileImage(isAnnonymous: false, size: 36),
-              Gap(12.w),
-              Text(
-                kCurrentUserData?.name ?? "عام ",
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: true,
-          height: 50.h,
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          child: Row(
-            children: [
-              const MyProfileImage(isAnnonymous: true, size: 36),
-              Gap(12.w),
-              Text(
-                context.tr(AppStrings.anonymous),
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+    return GestureDetector(
+      onTap: () => _showAvatarMenu(context),
       child: Stack(
         alignment: Alignment.bottomLeft,
         children: [
@@ -87,6 +41,87 @@ class CommentAvatar extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showAvatarMenu(BuildContext context) async {
+    // 1️⃣ اقفل الكيبورد عشان الشكل يبقى أحسن
+    FocusScope.of(context).unfocus();
+
+    // 2️⃣ اعرض BottomSheet بدل الـ Menu العائمة
+    final bool? value = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Gap(10.h),
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            Gap(20.h),
+            _buildOption(
+              context,
+              isAnonymous: false,
+              title: kCurrentUserData?.name ?? "عام",
+              isSelected: !currentSelection,
+            ),
+            Divider(height: 1, color: Colors.grey.shade100),
+            _buildOption(
+              context,
+              isAnonymous: true,
+              title: context.tr(AppStrings.anonymous),
+              isSelected: currentSelection,
+            ),
+            Gap(20.h),
+          ],
+        ),
+      ),
+    );
+
+    if (value != null) {
+      onSelectionChanged(value);
+    }
+  }
+
+  Widget _buildOption(
+    BuildContext context, {
+    required bool isAnonymous,
+    required String title,
+    required bool isSelected,
+  }) {
+    return InkWell(
+      onTap: () => Navigator.pop(context, isAnonymous),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
+        child: Row(
+          children: [
+            MyProfileImage(isAnnonymous: isAnonymous, size: 40),
+            Gap(15.w),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_circle, color: const Color(0xFFD65A73), size: 24.sp),
+          ],
+        ),
       ),
     );
   }
