@@ -99,9 +99,12 @@ class _UserProfileViewState extends State<UserProfileView> {
                     // context.read<LanguageCubit>().setLanguage(code);
                     // We can check if message is "update_language_success"
                     if (state.actionMessage == "update_language_success") {
-                      // LanguageCubit update must be handled where we have the code.
-                      // The previous logic did it in the View's then() callback.
-                      // We'll keep that part in the specific widget interaction call.
+                      SharedPreferences.getInstance().then((p) {
+                        final lang = p.getString('app_language') ?? 'ar';
+                        if (context.mounted) {
+                          context.read<LanguageCubit>().setLanguage(lang);
+                        }
+                      });
                     }
                   }
                 },
@@ -619,8 +622,6 @@ class _UserProfileViewState extends State<UserProfileView> {
               Navigator.pushNamed(context, setting.routeName).then((result) {
                 if (result != null && result is String) {
                   context.read<UserProfileCubit>().updateLanguage(result);
-                  // Also update global provider if needed, but the cubit will emit success
-                  context.read<LanguageCubit>().setLanguage(result);
                 }
               });
             } else {

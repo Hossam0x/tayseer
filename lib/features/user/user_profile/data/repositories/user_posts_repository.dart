@@ -24,6 +24,10 @@ abstract class UserPostsRepository {
   Future<Either<Failure, String>> deletePost({required String postId});
   void hidePost({required String postId, required bool isHide});
   Future<Either<Failure, String>> archivePost({required String postId});
+  Future<Either<Failure, bool>> voteInPoll({
+    required String postId,
+    required String choiceIndex,
+  });
 }
 
 // features/user/user_profile/data/repositories/user_posts_repository_impl.dart
@@ -158,6 +162,27 @@ class UserPostsRepositoryImpl implements UserPostsRepository {
         data: {"postId": postId},
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> voteInPoll({
+    required String postId,
+    required String choiceIndex,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.vote,
+        data: {"postId": postId, "choiceIndex": choiceIndex},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return const Right(true);
+      }
+      return Left(ServerFailure(response['message'] ?? 'فشل التصويت'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {

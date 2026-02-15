@@ -42,6 +42,8 @@ class UserPublicProfileState extends Equatable {
   final bool isSendingGreeting;
   final String? greetingMessage;
   final bool greetingSuccess;
+  final CubitStates pollVoteActionState;
+  final String? pollVoteMessage;
 
   const UserPublicProfileState({
     this.state = CubitStates.initial,
@@ -73,6 +75,8 @@ class UserPublicProfileState extends Equatable {
     this.isSendingGreeting = false,
     this.greetingMessage,
     this.greetingSuccess = false,
+    this.pollVoteActionState = CubitStates.initial,
+    this.pollVoteMessage,
   });
 
   UserPublicProfileState copyWith({
@@ -105,6 +109,8 @@ class UserPublicProfileState extends Equatable {
     bool? isSendingGreeting,
     String? greetingMessage,
     bool? greetingSuccess,
+    CubitStates? pollVoteActionState,
+    String? pollVoteMessage,
   }) {
     return UserPublicProfileState(
       state: state ?? this.state,
@@ -138,6 +144,8 @@ class UserPublicProfileState extends Equatable {
       isSendingGreeting: isSendingGreeting ?? this.isSendingGreeting,
       greetingMessage: greetingMessage ?? this.greetingMessage,
       greetingSuccess: greetingSuccess ?? this.greetingSuccess,
+      pollVoteActionState: pollVoteActionState ?? this.pollVoteActionState,
+      pollVoteMessage: pollVoteMessage ?? this.pollVoteMessage,
     );
   }
 
@@ -172,5 +180,7 @@ class UserPublicProfileState extends Equatable {
     isSendingGreeting,
     greetingMessage,
     greetingSuccess,
+    pollVoteActionState,
+    pollVoteMessage,
   ];
 }
