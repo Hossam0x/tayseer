@@ -1,4 +1,6 @@
 import 'package:country_picker/country_picker.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import '../../my_import.dart';
 
 class CustomTextFormField extends StatefulWidget {
@@ -25,6 +27,8 @@ class CustomTextFormField extends StatefulWidget {
     this.keyboardType,
     this.textInputAction,
     this.validator,
+    this.inputFormatters,
+    this.autovalidateMode,
     this.onChanged,
     this.onTap,
     this.readOnly = false,
@@ -52,6 +56,8 @@ class CustomTextFormField extends StatefulWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final FormFieldValidator<String>? validator;
+  final List<TextInputFormatter>? inputFormatters;
+  final AutovalidateMode? autovalidateMode;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onTap;
   final bool readOnly;
@@ -90,6 +96,13 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      autovalidateMode: widget.autovalidateMode ?? AutovalidateMode.disabled,
+      inputFormatters: widget.inputFormatters,
+      onTapOutside: (event) {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          FocusScope.of(context).unfocus();
+        });
+      },
       autocorrect: false,
       controller: widget.controller,
       keyboardType: _resolveKeyboardType(),
@@ -99,7 +112,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       maxLines: widget.maxLines,
       onChanged: widget.onChanged,
       onTap: widget.onTap,
-      style: Styles.textStyle10,
+      style: Styles.textStyle12,
       obscureText: widget.isPasswordFiled || widget.isConfirmPasswordFiled
           ? _showPassword
           : false,

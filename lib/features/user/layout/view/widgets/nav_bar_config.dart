@@ -66,9 +66,9 @@ class NavBarConfig {
       labelKey: "mySpace",
     ),
     NavBarItem(
-      icon: AssetsData.reactionsIcon,
-      activeIcon: AssetsData.selectedReactionsIcon,
-      labelKey: "reactions",
+      icon: AssetsData.eventIcon,
+      activeIcon: AssetsData.selectedEventIcon,
+      labelKey: "event",
     ),
 
     NavBarItem(

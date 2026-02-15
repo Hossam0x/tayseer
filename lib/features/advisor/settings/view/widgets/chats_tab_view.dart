@@ -2,63 +2,55 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/chats_tab_ui_cubit.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/features/user/user_profile/data/repositories/user_service.dart';
 
-class ChatsTabView extends StatefulWidget {
+class ChatsTabView extends StatelessWidget {
   const ChatsTabView({super.key});
 
   @override
-  State<ChatsTabView> createState() => _ChatsTabViewState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => ChatsTabUiCubit()..loadCurrentUserId(),
+      child: const _ChatsTabViewBody(),
+    );
+  }
 }
 
-class _ChatsTabViewState extends State<ChatsTabView> {
-  String? _currentUserId;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCurrentUserId();
-  }
-
-  Future<void> _loadCurrentUserId() async {
-    try {
-      final userId = await UserService.getCurrentUserId();
-      setState(() {
-        _currentUserId = userId;
-      });
-    } catch (e) {
-      print('❌ Error loading current user ID: $e');
-    }
-  }
+class _ChatsTabViewBody extends StatelessWidget {
+  const _ChatsTabViewBody();
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ArchivedChatsCubit, ArchivedChatsState>(
-      listener: (context, state) {
-        if (state.errorMessage != null) {
-          AppToast.error(context, state.errorMessage.toString());
-          context.read<ArchivedChatsCubit>().clearError();
-        }
-      },
-      builder: (context, state) {
-        if (_currentUserId == null) {
-          return _buildSkeletonChats();
-        }
-
-        switch (state.state) {
-          case CubitStates.loading:
-            return _buildSkeletonChats();
-          case CubitStates.failure:
-            return _buildErrorChats(context, state.errorMessage);
-          case CubitStates.success:
-            if (state.chatRooms.isEmpty) {
-              return _buildEmptyState();
+    return BlocBuilder<ChatsTabUiCubit, ChatsTabUiState>(
+      builder: (context, uiState) {
+        return BlocConsumer<ArchivedChatsCubit, ArchivedChatsState>(
+          listener: (context, state) {
+            if (state.errorMessage != null) {
+              AppToast.error(context, state.errorMessage.toString());
+              context.read<ArchivedChatsCubit>().clearError();
             }
-            return _buildChatsList(context, state);
-          default:
-            return const SizedBox.shrink();
-        }
+          },
+          builder: (context, state) {
+            if (uiState.isLoading || uiState.currentUserId == null) {
+              return _buildSkeletonChats();
+            }
+
+            switch (state.state) {
+              case CubitStates.loading:
+                return _buildSkeletonChats();
+              case CubitStates.failure:
+                return _buildErrorChats(context, state.errorMessage);
+              case CubitStates.success:
+                if (state.chatRooms.isEmpty) {
+                  return _buildEmptyState(context);
+                }
+                return _buildChatsList(context, state, uiState.currentUserId!);
+              default:
+                return const SizedBox.shrink();
+            }
+          },
+        );
       },
     );
   }
@@ -76,7 +68,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
             padding: EdgeInsets.symmetric(vertical: 12.h),
             child: Row(
               children: [
-                // Avatar skeleton
                 Container(
                   width: 56.r,
                   height: 56.r,
@@ -86,7 +77,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                   ),
                 ),
                 SizedBox(width: 12.w),
-                // Info skeleton
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +101,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                     ],
                   ),
                 ),
-                // Time skeleton
                 Container(
                   width: 60.w,
                   height: 14.h,
@@ -165,7 +154,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -186,7 +175,11 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     );
   }
 
-  Widget _buildChatsList(BuildContext context, ArchivedChatsState state) {
+  Widget _buildChatsList(
+    BuildContext context,
+    ArchivedChatsState state,
+    String currentUserId,
+  ) {
     return NotificationListener<ScrollNotification>(
       onNotification: (scrollInfo) {
         if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
@@ -216,7 +209,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                   }
 
                   final chatRoom = state.chatRooms[index];
-                  return _buildChatItem(context, chatRoom);
+                  return _buildChatItem(context, chatRoom, currentUserId);
                 },
               ),
             ),
@@ -227,20 +220,19 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     );
   }
 
-  Widget _buildChatItem(BuildContext context, ArchiveChatRoomModel chatRoom) {
-    // الحصول على المستخدم الآخر
-    final otherUser = _getOtherUser(chatRoom);
+  Widget _buildChatItem(
+    BuildContext context,
+    ArchiveChatRoomModel chatRoom,
+    String currentUserId,
+  ) {
+    final otherUser = _getOtherUser(chatRoom, currentUserId);
     final displayName = otherUser?.name ?? context.tr('unknown_user');
     final displayImage = otherUser?.image;
 
-    // الحصول على محتوى آخر رسالة
-    final lastMessageContent = _getLastMessageContent(chatRoom);
+    final lastMessageContent = _getLastMessageContent(context, chatRoom);
     final lastMessageText = lastMessageContent.isNotEmpty
         ? lastMessageContent
         : context.tr('no_messages');
-
-    // الحصول على الوقت
-    // final messageTime = _formatTime(chatRoom.lastMessageAt ?? '');
 
     return Dismissible(
       key: Key('archived_chat_${chatRoom.id}'),
@@ -281,7 +273,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
       },
       onDismissed: (direction) {
         context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
-
         AppToast.success(
           context,
           '${context.tr('unarchived_chat')} $displayName',
@@ -298,11 +289,8 @@ class _ChatsTabViewState extends State<ChatsTabView> {
             padding: EdgeInsets.symmetric(vertical: 12.h),
             child: Row(
               children: [
-                // User Avatar
                 _buildUserAvatar(displayImage, chatRoom.isBlocked),
                 SizedBox(width: 12.w),
-
-                // Chat Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,10 +316,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                     ],
                   ),
                 ),
-
                 SizedBox(width: 12.w),
-
-                // Time and Status
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -373,38 +358,30 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     );
   }
 
-  ArchiveUserModel? _getOtherUser(ArchiveChatRoomModel chatRoom) {
+  ArchiveUserModel? _getOtherUser(
+    ArchiveChatRoomModel chatRoom,
+    String currentUserId,
+  ) {
     try {
-      // إذا كان لدينا ID المستخدم الحالي
-      if (_currentUserId != null) {
-        // البحث عن مستخدم ليس هو الحالي
+      if (currentUserId.isNotEmpty) {
         for (final user in chatRoom.users) {
-          if (user.id != _currentUserId) {
+          if (user.id != currentUserId) {
             return user;
           }
         }
-
-        // إذا كان جميع users هم نفس المستخدم الحالي
-        // نستخدم sender إذا كان مختلفاً
-        if (chatRoom.sender != null && chatRoom.sender!.id != _currentUserId) {
+        if (chatRoom.sender != null && chatRoom.sender!.id != currentUserId) {
           return chatRoom.sender;
         }
       }
 
-      // الحالة الثانية: إذا لم نعرف المستخدم الحالي
-      // نستخدم نفس منطق MySpaceConsultationContent
       if (chatRoom.sender != null) {
-        // البحث عن user يطابق sender
         for (final user in chatRoom.users) {
           if (user.id == chatRoom.sender!.id) {
             return user;
           }
         }
-        // إذا لم نجد، نستخدم sender مباشرة
         return chatRoom.sender;
       }
-
-      // الحالة الأخيرة: نستخدم أول user في القائمة
       return chatRoom.users.isNotEmpty ? chatRoom.users.first : null;
     } catch (e) {
       print('❌ Error getting other user: $e');
@@ -412,7 +389,10 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     }
   }
 
-  String _getLastMessageContent(ArchiveChatRoomModel chatRoom) {
+  String _getLastMessageContent(
+    BuildContext context,
+    ArchiveChatRoomModel chatRoom,
+  ) {
     final lastMessage = chatRoom.lastMessage;
     if (lastMessage == null) {
       return context.tr('new_chat');
@@ -482,7 +462,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
         },
       );
     }
-
     return Image.asset(AssetsData.avatarImage, fit: BoxFit.cover);
   }
 
@@ -507,45 +486,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
       ),
     );
   }
-
-  // String _formatTime(String dateString) {
-  //   try {
-  //     if (dateString.isEmpty) return '--:--';
-
-  //     final date = DateTime.parse(dateString);
-  //     final now = DateTime.now();
-  //     final difference = now.difference(date);
-
-  //     // الحصول على الساعة والدقائق بتنسيق 12 ساعة
-  //     final hour = date.hour % 12;
-  //     final minute = date.minute.toString().padLeft(2, '0');
-  //     final period = date.hour < 12 ? 'ص' : 'م';
-
-  //     final timeStr = '${hour == 0 ? 12 : hour}:$minute $period';
-
-  //     if (difference.inDays == 0) {
-  //       return timeStr;
-  //     } else if (difference.inDays == 1) {
-  //       return 'أمس';
-  //     } else if (difference.inDays < 7) {
-  //       // أسماء الأيام بالعربي
-  //       final arabicDays = [
-  //         'الأحد',
-  //         'الإثنين',
-  //         'الثلاثاء',
-  //         'الأربعاء',
-  //         'الخميس',
-  //         'الجمعة',
-  //         'السبت',
-  //       ];
-  //       return arabicDays[date.weekday % 7];
-  //     } else {
-  //       return DateFormat('dd/MM').format(date);
-  //     }
-  //   } catch (e) {
-  //     return '--:--';
-  //   }
-  // }
 
   Future<bool> _showUnarchiveConfirmation(
     BuildContext context,
@@ -599,7 +539,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // الأيقونة
                         Container(
                           width: 90.w,
                           height: 90.h,
@@ -614,8 +553,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                           ),
                         ),
                         Gap(24.h),
-
-                        // العنوان
                         Text(
                           context.tr('unarchive'),
                           style: Styles.textStyle16.copyWith(
@@ -626,8 +563,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                           textAlign: TextAlign.center,
                         ),
                         Gap(12.h),
-
-                        // النص
                         Text(
                           '${context.tr('are_you_want_to_unarchive')} $userName؟',
                           style: Styles.textStyle12.copyWith(
@@ -637,8 +572,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
                           textAlign: TextAlign.center,
                         ),
                         Gap(28.h),
-
-                        // الأزرار
                         Row(
                           children: [
                             Expanded(
@@ -680,7 +613,6 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     return result;
   }
 
-  // دالة مساعدة لبناء زر الـ Dialog
   Widget _buildDialogButton({
     required String text,
     required Color backgroundColor,
@@ -726,10 +658,7 @@ class _ChatsTabViewState extends State<ChatsTabView> {
     ArchiveUserModel? otherUser,
   ) {
     if (otherUser == null) {
-      AppToast.error(
-        context,
-        context.tr('user_not_found'),
-      );
+      AppToast.error(context, context.tr('user_not_found'));
       return;
     }
 

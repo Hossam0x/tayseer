@@ -6,6 +6,7 @@ class StoryVisibilityState extends Equatable {
   final CubitStates state;
   final List<RestrictedUserModel> users;
   final String? errorMessage;
+  final String? successMessage;
   final bool isLoading;
   final bool isUnrestricting;
   final String searchQuery;
@@ -14,6 +15,7 @@ class StoryVisibilityState extends Equatable {
     this.state = CubitStates.initial,
     this.users = const [],
     this.errorMessage,
+    this.successMessage,
     this.isLoading = false,
     this.isUnrestricting = false,
     this.searchQuery = '',
@@ -27,6 +29,7 @@ class StoryVisibilityState extends Equatable {
     CubitStates? state,
     List<RestrictedUserModel>? users,
     String? errorMessage,
+    String? successMessage,
     bool? isLoading,
     bool? isUnrestricting,
     String? searchQuery,
@@ -34,7 +37,8 @@ class StoryVisibilityState extends Equatable {
     return StoryVisibilityState(
       state: state ?? this.state,
       users: users ?? this.users,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage, // Intentionally not keeping previous
+      successMessage: successMessage, // Intentionally not keeping previous
       isLoading: isLoading ?? this.isLoading,
       isUnrestricting: isUnrestricting ?? this.isUnrestricting,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -61,6 +65,7 @@ class StoryVisibilityState extends Equatable {
     state,
     users,
     errorMessage,
+    successMessage,
     isLoading,
     isUnrestricting,
     searchQuery,

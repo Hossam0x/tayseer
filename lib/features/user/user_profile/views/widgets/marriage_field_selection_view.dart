@@ -1,5 +1,7 @@
 // features/user/user_profile/views/widgets/marriage_field_selection_view.dart
+// ⭐⭐⭐ COMPLETE FIXED VERSION WITH FULL TRANSLATION SUPPORT
 
+import 'package:tayseer/features/user/questions/view/widget/categorized_multi_select_widget.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_ios_picker.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_selectable_list.dart';
 import 'package:tayseer/my_import.dart';
@@ -173,52 +175,90 @@ class _MarriageFieldSelectionViewState
     );
   }
 
-  // ⭐⭐⭐ بناء محتوى MultiSelect (للاهتمامات والهوايات) - FIXED
+  // ⭐⭐⭐ بناء محتوى MultiSelect - WITH KEY-BASED SAVING
   Widget _buildMultiSelectContent(
     BuildContext context,
     Map<String, dynamic> fieldData,
   ) {
-    final List<String> items = List<String>.from(fieldData['items']);
-    final List<String> selectedItems = [];
+    // ⭐ Parse current selected KEYS (not translated values)
+    final List<String> selectedKeys = [];
 
-    // Parse current value if it's a comma-separated string
     if (widget.currentValue != null && widget.currentValue!.isNotEmpty) {
-      selectedItems.addAll(widget.currentValue!.split(', '));
+      selectedKeys.addAll(widget.currentValue!.split(', '));
     }
 
-    return Expanded(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
-        child: _MultiSelectChips(
-          items: items,
-          initialSelected: selectedItems,
+    debugPrint('🎯 MultiSelect - Current Keys: $selectedKeys');
+
+    // ⭐ Check if categorized items exist
+    final categorizedItems =
+        fieldData['categorizedItems'] as Map<String, Map<String, String>>?;
+
+    if (categorizedItems != null) {
+      debugPrint('✅ Using CategorizedMultiSelectWidget');
+
+      // ⭐⭐⭐ Use CategorizedMultiSelectWidget
+      return Expanded(
+        child: CategorizedMultiSelectWidget(
+          categorizedItems: categorizedItems,
+          initialSelected: selectedKeys, // ⭐ Pass keys directly
           primaryColor: AppColors.kprimaryColor,
-          onChanged: (selected) {
+          onChanged: (selectedKeys) {
             setState(() {
-              _selectedValue = selected.join(', ');
+              // ⭐⭐⭐ Save as comma-separated KEYS (not translated text)
+              _selectedValue = selectedKeys.join(', ');
             });
+            debugPrint('💾 Selected Keys: $_selectedValue');
           },
         ),
-      ),
-    );
+      );
+    } else {
+      debugPrint('⚠️ Using fallback _MultiSelectChips');
+
+      // ⭐ Fallback: Use old multi-select chips
+      final List<String> items = List<String>.from(fieldData['items'] ?? []);
+      return Expanded(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: _MultiSelectChips(
+            items: items,
+            initialSelected: selectedKeys,
+            primaryColor: AppColors.kprimaryColor,
+            onChanged: (selected) {
+              setState(() {
+                _selectedValue = selected.join(', ');
+              });
+            },
+          ),
+        ),
+      );
+    }
   }
 
-  // ⭐ بناء محتوى القائمة - بدون translationMap
+  // ⭐⭐⭐ بناء محتوى القائمة - يحفظ الـ key بدل الترجمة
   Widget _buildListContent(
     BuildContext context,
     Map<String, dynamic> fieldData,
   ) {
     final List<String> items = List<String>.from(fieldData['items']);
 
-    // ⭐ البحث عن الـ key المناسب للقيمة الحالية باستخدام context.tr
+    // ⭐ البحث عن الـ key المناسب للقيمة الحالية
     String? initialSelectedKey;
+    
     if (widget.currentValue != null &&
         widget.currentValue != 'اختر' &&
+        widget.currentValue != 'select' &&
         widget.currentValue!.isNotEmpty) {
-      for (var key in items) {
-        if (context.tr(key) == widget.currentValue) {
-          initialSelectedKey = key;
-          break;
+      
+      // أولاً: جرب مطابقة مباشرة (إذا كانت القيمة key فعلاً)
+      if (items.contains(widget.currentValue)) {
+        initialSelectedKey = widget.currentValue;
+      } else {
+        // ثانياً: ابحث عن key يطابق الترجمة
+        for (var key in items) {
+          if (context.tr(key) == widget.currentValue) {
+            initialSelectedKey = key;
+            break;
+          }
         }
       }
     }
@@ -237,11 +277,11 @@ class _MarriageFieldSelectionViewState
           primaryColor: AppColors.kprimaryColor,
           onChanged: (key, translatedValue) {
             setState(() {
-              // ⭐ احفظ الترجمة العربية مباشرة
-              _selectedValue = translatedValue;
+              // ⭐⭐⭐ CRITICAL: حفظ الـ key مش الترجمة
+              _selectedValue = key;
 
               debugPrint('💾 Selected Key: $key');
-              debugPrint('💾 Selected Value: $_selectedValue');
+              debugPrint('💾 Translated Value: $translatedValue');
             });
           },
         ),
@@ -257,7 +297,7 @@ class _MarriageFieldSelectionViewState
   ) {
     final isEnabled = type == 'picker'
         ? _selectedPickerValue != null
-        : _selectedValue != null;
+        : _selectedValue != null && _selectedValue!.isNotEmpty;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
@@ -287,8 +327,130 @@ class _MarriageFieldSelectionViewState
     );
   }
 
-  // ⭐⭐⭐ الحصول على بيانات الحقل - بدون translationMap
+  // ⭐⭐⭐ الحصول على بيانات الحقل - SAME AS BEFORE
   Map<String, dynamic> _getFieldData(String fieldKey, String? currentValue) {
+    // ⭐⭐⭐ خريطة الاهتمامات المقسمة حسب الفئات
+    final Map<String, Map<String, String>> _interestsWithCategories = {
+  
+    // =============== الرياضة ===============
+    'category_sports': {
+      'interest_baseball': '⚾',
+      'interest_running': '🏃',
+      'interest_weightlifting': '🏋️',
+      'interest_gymnastics': '🤸',
+      'interest_golf': '⛳',
+      'interest_tennis': '🎾',
+      'interest_swimming': '🏊',
+      'interest_dancing': '💃',
+      'interest_skating': '⛸️',
+      'interest_yoga': '🧘',
+      'interest_flying_disc': '🥏',
+      'interest_badminton': '🏸',
+      'interest_skiing': '⛷️',
+      'interest_cycling': '🚴',
+      'interest_basketball': '🏀',
+      'interest_football': '⚽',
+      'interest_karate': '🥋',
+      'interest_boxing': '🥊',
+      'interest_archery': '🏹',
+      'interest_horse_riding': '🏇',
+    },
+
+    // =============== فنون وثقافة ===============
+    'category_arts_culture': {
+      'interest_theater': '🎭',
+      'interest_magic': '🪄',
+      'interest_music': '🎵',
+      'interest_painting': '🎨',
+      'interest_photography': '📷',
+      'interest_cinema': '🎬',
+      'interest_reading': '📚',
+      'interest_writing': '✍️',
+      'interest_poetry': '📝',
+      'interest_history': '🏛️',
+      'interest_languages': '🗣️',
+      'interest_museums': '🖼️',
+      'interest_calligraphy': '🖋️',
+      'interest_sculpture': '🗿',
+      'interest_design': '🎯',
+      'interest_fashion': '👗',
+    },
+
+    // =============== المجتمع ===============
+    'category_community': {
+      'interest_volunteering': '🤝',
+      'interest_charity': '💝',
+      'interest_teaching': '👨‍🏫',
+      'interest_mentoring': '🧑‍🤝‍🧑',
+      'interest_elderly_care': '👴',
+      'interest_children_care': '👶',
+      'interest_environment': '🌱',
+      'interest_animal_care': '🐾',
+      'interest_blood_donation': '🩸',
+      'interest_community_events': '🎉',
+      'interest_social_work': '💼',
+      'interest_human_rights': '⚖️',
+    },
+
+    // =============== التكنولوجيا ===============
+    'category_technology': {
+      'interest_programming': '💻',
+      'interest_gaming': '🎮',
+      'interest_ai': '🤖',
+      'interest_web_dev': '🌐',
+      'interest_mobile_apps': '📱',
+      'interest_cybersecurity': '🔒',
+      'interest_data_science': '📊',
+      'interest_electronics': '🔌',
+      'interest_robotics': '🦾',
+      'interest_vr_ar': '🥽',
+      'interest_3d_printing': '🖨️',
+      'interest_drones': '🚁',
+      'interest_smart_home': '🏠',
+      'interest_blockchain': '⛓️',
+    },
+
+    // =============== النزهات ===============
+    'category_outdoors': {
+      'interest_hiking': '🥾',
+      'interest_camping': '🏕️',
+      'interest_fishing': '🎣',
+      'interest_beach': '🏖️',
+      'interest_mountain_climbing': '🏔️',
+      'interest_gardening': '🌻',
+      'interest_picnic': '🧺',
+      'interest_bird_watching': '🦅',
+      'interest_stargazing': '🌟',
+      'interest_road_trips': '🚗',
+      'interest_sailing': '⛵',
+      'interest_diving': '🤿',
+      'interest_surfing': '🏄',
+      'interest_kayaking': '🛶',
+      'interest_rock_climbing': '🧗',
+      'interest_paragliding': '🪂',
+    },
+
+    // =============== الطعام والمشروبات ===============
+    'category_food_drinks': {
+      'interest_cooking': '👨‍🍳',
+      'interest_baking': '🧁',
+      'interest_grilling': '🍖',
+      'interest_coffee': '☕',
+      'interest_tea': '🍵',
+      'interest_smoothies': '🥤',
+      'interest_sushi': '🍣',
+      'interest_pizza': '🍕',
+      'interest_desserts': '🍰',
+      'interest_healthy_food': '🥗',
+      'interest_street_food': '🌮',
+      'interest_fine_dining': '🍽️',
+      'interest_food_photography': '📸',
+      'interest_chocolate': '🍫',
+      'interest_ice_cream': '🍦',
+    },
+  };
+
+
     switch (fieldKey) {
       case 'country':
         return {
@@ -447,7 +609,6 @@ class _MarriageFieldSelectionViewState
           'searchHint': 'search_occupation',
         };
 
-      // case 'jobTitle':
       case 'education_level':
         return {
           'titleKey': 'education_level',
@@ -463,7 +624,6 @@ class _MarriageFieldSelectionViewState
           'showSearch': false,
         };
 
-      // case 'professionalLevel':
       case 'choose_employer':
         return {
           'titleKey': 'select_employer',
@@ -519,10 +679,6 @@ class _MarriageFieldSelectionViewState
           'showSearch': false,
         };
 
-      // ═══════════════════════════════════════════════════════════════
-      // ⭐⭐⭐ قسم الأهداف (Goals)
-      // ═══════════════════════════════════════════════════════════════
-
       case 'communicationTimeline':
       case 'marry':
         return {
@@ -557,16 +713,10 @@ class _MarriageFieldSelectionViewState
         };
 
       case 'dowry':
-      case 'children':
+      case 'familyAcceptance':
         return {
-          'titleKey': 'select_dowry_title',
-          'items': [
-            'dowry_flexible',
-            'dowry_under_10k',
-            'dowry_10k_30k',
-            'dowry_30k_50k',
-            'dowry_over_50k',
-          ],
+          'titleKey': 'family',
+          'items': ['no_problem_children', 'do_not_want_children'],
           'showSearch': false,
         };
 
@@ -583,10 +733,6 @@ class _MarriageFieldSelectionViewState
           'showSearch': false,
         };
 
-      // ═══════════════════════════════════════════════════════════════
-      // ⭐⭐⭐ قسم تعرف عليّ أكثر (Get to Know Me)
-      // ═══════════════════════════════════════════════════════════════
-
       case 'bio':
       case 'myDescription':
         return {
@@ -595,46 +741,16 @@ class _MarriageFieldSelectionViewState
           'maxLength': 500,
         };
 
+      // ⭐⭐⭐ HOBBIES & INTERESTS - NOW WITH CATEGORIZED ITEMS
       case 'interests':
-        return {
-          'titleKey': 'select_interests_title',
-          'type': 'multiselect',
-          'items': [
-            'hobby_music',
-            'hobby_sports',
-            'hobby_travel',
-            'hobby_reading',
-            'hobby_cooking',
-            'hobby_drawing',
-            'hobby_mountain_climbing',
-            'hobby_meditation',
-            'hobby_photography',
-            'hobby_sewing',
-            'hobby_writing',
-            'hobby_cycling',
-            'hobby_tourism',
-          ],
-        };
-
       case 'hobbies':
         return {
-          'titleKey': 'select_hobbies_title',
+          'titleKey': fieldKey == 'interests'
+              ? 'select_interests_title'
+              : 'select_hobbies_title',
           'type': 'multiselect',
-          'items': [
-            'hobby_music',
-            'hobby_sports',
-            'hobby_travel',
-            'hobby_reading',
-            'hobby_cooking',
-            'hobby_drawing',
-            'hobby_mountain_climbing',
-            'hobby_meditation',
-            'hobby_photography',
-            'hobby_sewing',
-            'hobby_writing',
-            'hobby_cycling',
-            'hobby_tourism',
-          ],
+          'categorizedItems':
+              _interestsWithCategories, // ⭐ USE CATEGORIZED WIDGET
         };
 
       default:
@@ -644,7 +760,7 @@ class _MarriageFieldSelectionViewState
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ⭐ MultiSelect Chips Widget (للاهتمامات والهوايات) - FIXED
+// ⭐ MultiSelect Chips Widget (Fallback for non-categorized items)
 // ═══════════════════════════════════════════════════════════════
 
 class _MultiSelectChips extends StatefulWidget {
@@ -670,14 +786,12 @@ class _MultiSelectChipsState extends State<_MultiSelectChips> {
   @override
   void initState() {
     super.initState();
-    // ⭐ DON'T use context.tr() here - move it to didChangeDependencies
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // ⭐ NOW it's safe to use context.tr()
     if (_selectedKeys.isEmpty) {
       for (var item in widget.items) {
         final translated = context.tr(item);
@@ -698,10 +812,8 @@ class _MultiSelectChipsState extends State<_MultiSelectChips> {
       }
     });
 
-    final translatedValues = _selectedKeys
-        .map((key) => context.tr(key))
-        .toList();
-    widget.onChanged(translatedValues);
+    // ⭐⭐⭐ CRITICAL: أرسل الـ keys مش الترجمة
+    widget.onChanged(_selectedKeys.toList());
   }
 
   @override

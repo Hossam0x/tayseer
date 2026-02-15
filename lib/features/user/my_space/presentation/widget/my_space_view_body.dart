@@ -25,12 +25,11 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody> {
               Text('مساحتى', style: Styles.textStyle16Bold),
               SizedBox(height: 24.h),
               ContentSwitcher(
-                options: ['الزواج', 'الاستشارات', 'الاحداث'],
+                options: ['الزواج', 'الاستشارات'],
                 onOptionSelected: (selectedOption) {
                   final newIndex = [
                     'الزواج',
                     'الاستشارات',
-                    'الاحداث',
                   ].indexOf(selectedOption);
                   if (newIndex != -1) setState(() => selectedIndex = newIndex);
                 },

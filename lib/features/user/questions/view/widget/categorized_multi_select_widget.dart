@@ -1,9 +1,13 @@
 // lib/core/widgets/categorized_multi_select_widget.dart
+// ════════════════════════════════════════════════════════════════
+// ✅ COMPLETE FIXED VERSION - WITH INITIAL SELECTED SUPPORT
+// ════════════════════════════════════════════════════════════════
 
 import '../../../../../my_import.dart';
 
 class CategorizedMultiSelectWidget extends StatefulWidget {
   final Map<String, Map<String, String>> categorizedItems;
+  final List<String> initialSelected; // ⭐ ADDED
   final ValueChanged<List<String>> onChanged;
   final Color primaryColor;
   final Color? defaultBackgroundColor;
@@ -11,6 +15,7 @@ class CategorizedMultiSelectWidget extends StatefulWidget {
   const CategorizedMultiSelectWidget({
     super.key,
     required this.categorizedItems,
+    required this.initialSelected, // ⭐ REQUIRED NOW
     required this.onChanged,
     this.primaryColor = Colors.pink,
     this.defaultBackgroundColor,
@@ -25,18 +30,28 @@ class _CategorizedMultiSelectWidgetState
     extends State<CategorizedMultiSelectWidget> {
   final Set<String> _selectedKeys = {};
 
-  void _toggleSelection(String key) {
-    setState(() {
-      if (_selectedKeys.contains(key)) {
-        _selectedKeys.remove(key);
-      } else {
-        _selectedKeys.add(key);
-      }
-    });
-
-    widget.onChanged(_selectedKeys.toList());
+  @override
+  void initState() {
+    super.initState();
+    // ⭐⭐⭐ Initialize with keys from initialSelected
+    _selectedKeys.addAll(widget.initialSelected);
+    debugPrint('🎯 [CategorizedMultiSelect] Initialized with keys: $_selectedKeys');
   }
 
+  void _toggleSelection(String key) {
+  setState(() {
+    if (_selectedKeys.contains(key)) {
+      _selectedKeys.remove(key);
+    } else {
+      _selectedKeys.add(key);
+    }
+  });
+
+  // ⭐⭐⭐ أرجع الـ KEYS فقط (بدون ترجمة)
+  widget.onChanged(_selectedKeys.toList());
+  
+  debugPrint('✅ Selected keys: $_selectedKeys');
+}
   @override
   Widget build(BuildContext context) {
     final defaultBgColor = widget.defaultBackgroundColor ?? HexColor('fdf5f8');

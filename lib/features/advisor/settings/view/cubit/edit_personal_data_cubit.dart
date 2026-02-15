@@ -1,5 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/widgets.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
+import 'package:tayseer/core/shared/network/local_network.dart';
+import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -167,7 +170,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
     );
   }
 
-  Future<void> saveChanges(BuildContext context) async {
+  Future<void> saveChanges() async {
     if (state.isSaving || !state.hasChanges) return;
 
     emit(state.copyWith(isSaving: true, errorMessage: null));
@@ -228,26 +231,21 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
             debugPrint('✅ تم تحديث كاش الصورة والاسم في HomeAppBar');
           }
 
-          emit(
-            state.copyWith(
-              isSaving: false,
-              errorMessage: null,
-              profile: updatedProfile,
-              // مسح الملفات المؤقتة بعد الحفظ
-              imageFile: null,
-              videoFile: null,
-            ),
-          );
-
-          // إظهار رسالة النجاح
           if (response.success) {
-            showSafeSnackBar(
-              context: context,
-              text: 'تم تحديث البيانات بنجاح',
-              isSuccess: true,
+            emit(
+              state.copyWith(
+                isSaving: false,
+                errorMessage: null,
+                profile: updatedProfile,
+                state: CubitStates.success,
+                successMessage: 'تم تحديث البيانات بنجاح',
+                // مسح الملفات المؤقتة بعد الحفظ
+                imageFile: null,
+                videoFile: null,
+              ),
             );
-            // ⭐ إرجاع البروفايل المحدث للصفحة السابقة
-            Navigator.pop(context, updatedProfile);
+          } else {
+            emit(state.copyWith(isSaving: false, errorMessage: 'فشل الحفظ'));
           }
         },
       );
@@ -264,6 +262,12 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   void clearError() {
     if (state.errorMessage != null) {
       emit(state.copyWith(errorMessage: null));
+    }
+  }
+
+  void clearSuccess() {
+    if (state.successMessage != null) {
+      emit(state.copyWith(successMessage: null));
     }
   }
 }

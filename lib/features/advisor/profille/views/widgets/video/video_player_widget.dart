@@ -1,3 +1,5 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/video/cubit/video_player_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
@@ -29,22 +31,16 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
   final _videoCacheManager = VideoCacheManager();
   final _stateManager = VideoStateManager();
   final _controllerCache = VideoControllerCache(); // ⭐ الـ cache
-
-  // States
-  bool _isInitialized = false;
-  bool _hasError = false;
-  bool _isBuffering = false;
-  bool _showControls = false;
-  bool _isMuted = false;
-  bool _isEnded = false;
-  bool _isDisposed = false;
+  late VideoPlayerCubit _cubit;
 
   int _retryCount = 0;
   static const int _maxRetries = 3;
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
+    _cubit = VideoPlayerCubit();
 
     VideoManager.instance.currentlyPlayingPostId.addListener(
       _videoManagerListener,
@@ -55,15 +51,15 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
 
     if (_controller != null && _controller!.value.isInitialized) {
       // ⭐ الـ controller موجود ومجهز
-      _isInitialized = true;
+      _cubit.setInitialized(true);
       _controller!.addListener(_videoListener);
 
       // استرجاع الموضع
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {});
-          _restorePosition();
-        }
+        // if (mounted) {
+        //   _restorePosition();
+        // }
+        _restorePosition();
       });
     } else {
       // ⭐ تهيئة جديدة
@@ -80,7 +76,8 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
         if (_controller!.value.isPlaying) {
           _savePosition();
           _controller!.pause();
-          if (mounted && !_isDisposed) setState(() {});
+          // if (mounted && !_isDisposed) setState(() {});
+          _cubit.setPlaying(false);
         }
       } catch (e) {
         debugPrint('⚠️ Cannot pause in listener: $e');
@@ -112,7 +109,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
       _controller!.removeListener(_videoListener);
       // لا نعمل dispose هنا - الـ cache يتعامل معه
     }
-
+    _cubit.close();
     super.dispose();
   }
 
@@ -124,6 +121,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
       if (_controller!.value.isPlaying) {
         _savePosition();
         _controller!.pause();
+        _cubit.setPlaying(false);
       }
     } catch (e) {
       debugPrint('⚠️ Cannot pause: $e');
@@ -201,10 +199,8 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
       _retryCount = 0;
 
       if (mounted && !_isDisposed) {
-        setState(() {
-          _isInitialized = true;
-          _isMuted = _controller!.value.volume == 0;
-        });
+        _cubit.setInitialized(true);
+        _cubit.setMuted(_controller!.value.volume == 0);
       }
     } catch (e) {
       debugPrint("❌ Error initializing video: $e");
@@ -218,7 +214,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
             _initializeVideo();
           }
         } else {
-          setState(() => _hasError = true);
+          _cubit.setError(true);
         }
       }
     }
@@ -230,26 +226,33 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
     try {
       final value = _controller!.value;
 
-      if (value.isBuffering != _isBuffering) {
-        if (mounted) setState(() => _isBuffering = value.isBuffering);
+      if (value.isBuffering != _cubit.state.isBuffering) {
+        if (mounted) _cubit.setBuffering(value.isBuffering);
       }
 
       if (value.isInitialized &&
           !value.isPlaying &&
           value.position >=
               value.duration - const Duration(milliseconds: 500)) {
-        if (!_isEnded) {
+        if (!_cubit.state.isEnded) {
           if (mounted) {
-            setState(() {
-              _isEnded = true;
-              _showControls = true;
-            });
+            _cubit.setEnded(true);
+            _cubit.setControls(true);
+            _cubit.setPlaying(false);
           }
         }
       } else {
-        if (_isEnded &&
+        if (_cubit.state.isEnded &&
             value.position < value.duration - const Duration(seconds: 1)) {
-          if (mounted) setState(() => _isEnded = false);
+          if (mounted) {
+            _cubit.setEnded(false);
+            _cubit.setPlaying(value.isPlaying);
+          }
+        } else {
+          // update playing state generally
+          if (_cubit.state.isPlaying != value.isPlaying) {
+            _cubit.setPlaying(value.isPlaying);
+          }
         }
       }
     } catch (e) {
@@ -264,10 +267,8 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
     _videoCacheManager.resetFailedStatus(widget.videoUrl);
     _retryCount = 0;
 
-    setState(() {
-      _hasError = false;
-      _isInitialized = false;
-    });
+    _cubit.setError(false);
+    _cubit.setInitialized(false);
 
     if (_controller != null) {
       _controller!.removeListener(_videoListener);
@@ -283,24 +284,25 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
 
     if (_controller!.value.isPlaying) {
       _controller!.pause();
+      _cubit.setPlaying(false);
     } else {
       VideoManager.instance.playVideo(widget.videoUrl);
       _controller!.play();
+      _cubit.setPlaying(true);
     }
-    if (mounted) setState(() {});
   }
 
   void _toggleControls() {
     if (mounted) {
-      setState(() => _showControls = !_showControls);
+      _cubit.toggleControls();
     }
 
-    if (_showControls && (_controller?.value.isPlaying ?? false)) {
+    if (_cubit.state.showControls && (_controller?.value.isPlaying ?? false)) {
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted &&
             (_controller?.value.isPlaying ?? false) &&
-            _showControls) {
-          setState(() => _showControls = false);
+            _cubit.state.showControls) {
+          _cubit.setControls(false);
         }
       });
     }
@@ -322,13 +324,14 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
   }
 
   Future<void> _openFullscreen() async {
-    if (_controller == null || !_isInitialized) return;
+    if (_controller == null || !_cubit.state.isInitialized) return;
 
     final wasPlaying = _controller!.value.isPlaying;
     final currentPosition = _controller!.value.position;
 
     if (wasPlaying) {
       _controller!.pause();
+      _cubit.setPlaying(false);
     }
 
     final result = await Navigator.push<FullscreenResult>(
@@ -337,7 +340,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
         pageBuilder: (_, __, ___) => FullscreenVideoPlayer(
           videoUrl: widget.videoUrl,
           startPosition: currentPosition,
-          isMuted: _isMuted,
+          isMuted: _cubit.state.isMuted,
         ),
         transitionsBuilder: (_, a, __, c) =>
             FadeTransition(opacity: a, child: c),
@@ -345,59 +348,56 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
     );
 
     if (result != null && mounted) {
-      setState(() => _isMuted = result.isMuted);
-      _controller!.setVolume(_isMuted ? 0.0 : 1.0);
+      _cubit.setMuted(result.isMuted);
+      _controller!.setVolume(result.isMuted ? 0.0 : 1.0);
 
       await _controller!.seekTo(result.position);
 
       if (result.wasPlaying) {
         VideoManager.instance.playVideo(widget.videoUrl);
         _controller!.play();
+        _cubit.setPlaying(true);
       }
     } else if (wasPlaying && mounted) {
       // إذا تم إلغاء الـ fullscreen، أكمل التشغيل
       VideoManager.instance.playVideo(widget.videoUrl);
       _controller!.play();
+      _cubit.setPlaying(true);
     }
   }
-
-  // String _formatDuration(Duration duration) {
-  //   String twoDigits(int n) => n.toString().padLeft(2, '0');
-  //   final hours = twoDigits(duration.inHours);
-  //   final minutes = twoDigits(duration.inMinutes.remainder(60));
-  //   final seconds = twoDigits(duration.inSeconds.remainder(60));
-
-  //   if (duration.inHours > 0) {
-  //     return '$hours:$minutes:$seconds';
-  //   }
-  //   return '$minutes:$seconds';
-  // }
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // ⭐ مهم للـ AutomaticKeepAliveClientMixin
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return BlocProvider.value(
+      value: _cubit, // Provide local cubit
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: BlocBuilder<VideoPlayerCubit, VideoPlayerState>(
+            builder: (context, state) {
+              return state.isInitialized && _controller != null
+                  ? _buildVideoPlayer(state)
+                  : _buildLoadingState(state);
+            },
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.r),
-        child: _isInitialized && _controller != null
-            ? _buildVideoPlayer()
-            : _buildLoadingState(),
+        ),
       ),
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(VideoPlayerState state) {
     return Container(
       height: 400.h,
       decoration: BoxDecoration(
@@ -405,7 +405,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Center(
-        child: _hasError
+        child: state.hasError
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -424,9 +424,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
     );
   }
 
-  Widget _buildVideoPlayer() {
-    // final duration = _controller!.value.duration;
-    // final position = _controller!.value.position;
+  Widget _buildVideoPlayer(VideoPlayerState state) {
     final videoSize = _controller!.value.size;
 
     return SizedBox(
@@ -443,23 +441,8 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
             ),
           ),
 
-          // Play Button Overlay
-          // if (!_controller!.value.isPlaying && !_isBuffering)
-          //   GestureDetector(
-          //     onTap: _togglePlayPause,
-          //     child: Container(
-          //       width: 64.w,
-          //       height: 64.w,
-          //       decoration: BoxDecoration(
-          //         color: Colors.black.withOpacity(0.6),
-          //         shape: BoxShape.circle,
-          //       ),
-          //       child: Icon(Icons.play_arrow, color: Colors.white, size: 32.w),
-          //     ),
-          //   ),
-
           // Controls
-          if (_showControls)
+          if (state.showControls)
             Positioned.fill(
               child: GestureDetector(
                 onTap: _toggleControls,
@@ -480,7 +463,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
                       IconButton(
                         onPressed: _togglePlayPause,
                         icon: Icon(
-                          _controller!.value.isPlaying
+                          state.isPlaying
                               ? Icons.pause_circle_filled
                               : Icons.play_circle_filled,
                           color: Colors.white,
@@ -536,13 +519,8 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
             ),
           ),
 
-          // Buffering Indicator
-          // if (_isBuffering)
-          // Center(
-          //   child: CircularProgressIndicator(color: AppColors.kprimaryColor),
-          // ),
           // Tap to show/hide controls
-          if (!_showControls && !_isBuffering)
+          if (!state.showControls && !state.isBuffering)
             Positioned.fill(
               child: GestureDetector(
                 onTap: _toggleControls,

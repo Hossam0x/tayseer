@@ -30,10 +30,10 @@ import 'package:tayseer/features/advisor/settings/view/packages_tab_view.dart';
 import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
-import 'package:tayseer/features/advisor/event/view/creat_event_view.dart';
-import 'package:tayseer/features/advisor/event_detail/view/event_detail_view.dart';
-import 'package:tayseer/features/advisor/event_detail/view/update_event_view.dart';
-import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
+import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
+import 'package:tayseer/features/shared/event_detail/view/update_event_view.dart';
+import 'package:tayseer/features/shared/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/map/map_view.dart';
 import 'package:tayseer/features/advisor/notification/presentation/view/notification_view.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/session_details_view.dart';
@@ -381,14 +381,14 @@ abstract class AppRouter {
 
       case AppRouter.kFollowersView:
         final userId = settings.arguments as String? ?? '';
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: FollowersView(userId: userId),
           routeSettings: settings,
         );
 
       case AppRouter.kFollowingView:
         final userId = settings.arguments as String? ?? '';
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: FollowingView(userId: userId),
           routeSettings: settings,
         );
@@ -400,13 +400,13 @@ abstract class AppRouter {
         );
 
       case AppRouter.kUserProfileEditView:
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: const UserProfileEditView(),
           routeSettings: settings,
         );
 
       case AppRouter.kUserArchiveChatsView:
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: const UserArchiveChatsView(),
           routeSettings: settings,
         );
@@ -779,7 +779,7 @@ abstract class AppRouter {
           },
         );
       case AppRouter.kinteractionSubscriptionView:
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: const interactionSubscriptionView(),
           routeSettings: settings,
         );

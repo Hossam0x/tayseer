@@ -1,5 +1,5 @@
 // features/shared/search/presentation/widgets/search_loading_state.dart
-import 'package:tayseer/features/advisor/event/view/widget/event_cart_item.dart';
+import 'package:tayseer/features/shared/event/view/widget/event_cart_item.dart';
 import 'package:tayseer/features/advisor/search/presentation/widgets/search_shimmer.dart';
 import 'package:tayseer/features/shared/followers/widgets/follower_item.dart';
 import 'package:tayseer/my_import.dart';

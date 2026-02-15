@@ -76,7 +76,7 @@ class ExplorationState extends State<Exploration> {
         }
 
         // ✅ Check if answerCompleted is false
-        if (!state.answerCompleted && kIsCompletedQuestions == false) {
+        if (!state.answerCompleted && kCurrentUserData?.completeData == false) {
           return const EmptyExploration();
         }
 
@@ -141,7 +141,8 @@ class ExplorationState extends State<Exploration> {
   Widget _buildContent(InteractionsState state) {
     return CustomScrollView(
       controller: widget.mainScrollController,
-      physics: const AlwaysScrollableScrollPhysics(), // ✅ Changed to allow pull-to-refresh even when content is short
+      physics:
+          const AlwaysScrollableScrollPhysics(), // ✅ Changed to allow pull-to-refresh even when content is short
       slivers: [
         // ✅ Top Spacing
         SliverPadding(

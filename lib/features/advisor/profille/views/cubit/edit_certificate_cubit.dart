@@ -2,20 +2,18 @@ import 'package:tayseer/features/advisor/profille/data/models/certificate_model.
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_state.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/core/enum/cubit_states.dart';
 
 class EditCertificateCubit extends Cubit<EditCertificateState> {
   final CertificatesRepository _repository;
   late TextEditingController nameCertificateController;
   late TextEditingController fromWhereController;
 
-  EditCertificateCubit(
-    this._repository, {
-    CertificateModel? initialCertificate, // ⭐ بارامتر جديد
-  }) : super(const EditCertificateState()) {
+  EditCertificateCubit(this._repository, {CertificateModel? initialCertificate})
+    : super(const EditCertificateState()) {
     nameCertificateController = TextEditingController();
     fromWhereController = TextEditingController();
 
-    // ⭐ إذا كانت هناك شهادة أولية، قم بتحميل بياناتها
     if (initialCertificate != null) {
       _loadCertificateData(initialCertificate);
     }
@@ -63,29 +61,8 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
   void updateFromWhere(String value) =>
       emit(state.copyWith(fromWhere: value.trim()));
 
-  Future<void> pickDate(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: state.date ?? DateTime.now(),
-      firstDate: DateTime(1950),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.kprimaryColor,
-              onPrimary: Colors.white,
-              onSurface: AppColors.secondary800,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null && context.mounted) {
-      emit(state.copyWith(date: picked));
-    }
+  void updateDate(DateTime date) {
+    emit(state.copyWith(date: date));
   }
 
   Future<void> pickCertificateImage() async {
@@ -112,21 +89,27 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
     );
   }
 
-  Future<void> addCertificate(BuildContext context) async {
+  Future<void> addCertificate() async {
     if (state.nameCertificate.isEmpty ||
         state.fromWhere.isEmpty ||
         state.date == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: 'يرجى ملء جميع الحقول المطلوبة',
-          isError: true,
+      emit(
+        state.copyWith(
+          errorMessage: 'complete_all_data',
+          state: CubitStates.failure,
         ),
       );
       return;
     }
 
-    emit(state.copyWith(isLoading: true));
+    emit(
+      state.copyWith(
+        isLoading: true,
+        errorMessage: null,
+        successMessage: null,
+        state: CubitStates.loading,
+      ),
+    );
 
     final result = await _repository.addCertificate(
       nameCertificate: state.nameCertificate,
@@ -139,31 +122,27 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
 
     result.fold(
       (failure) {
-        emit(state.copyWith(isLoading: false));
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: failure.message, isError: true),
-          );
-        }
+        emit(
+          state.copyWith(
+            isLoading: false,
+            errorMessage: failure.message,
+            state: CubitStates.failure,
+          ),
+        );
       },
       (response) {
-        emit(state.copyWith(isLoading: false));
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: 'تم إضافة الشهادة بنجاح',
-              isSuccess: true,
-            ),
-          );
-          Navigator.pop(context, true);
-        }
+        emit(
+          state.copyWith(
+            isLoading: false,
+            successMessage: 'certificateAdded',
+            state: CubitStates.success,
+            isNavigationSuccess: true,
+          ),
+        );
       },
     );
   }
 
-  // في EditCertificateCubit
-  // تعديل دالة selectCertificate لتحميل البيانات بشكل صحيح
   void selectCertificate(CertificateModel cert) {
     nameCertificateController.text = cert.nameCertificate;
     fromWhereController.text = cert.fromWhere;
@@ -181,51 +160,12 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
     );
   }
 
-  // // إضافة دالة لحذف الشهادة (اختياري)
-  // Future<void> deleteCertificate(
-  //   BuildContext context,
-  //   String certificateId,
-  // ) async {
-  //   if (certificateId.isEmpty) return;
-
-  //   emit(state.copyWith(isLoading: true));
-
-  //   final result = await _repository.deleteCertificate(certificateId);
-
-  //   if (isClosed) return;
-
-  //   result.fold(
-  //     (failure) {
-  //       emit(state.copyWith(isLoading: false));
-  //       if (context.mounted) {
-  //         ScaffoldMessenger.of(context).showSnackBar(
-  //           CustomSnackBar(context, text: failure.message, isError: true),
-  //         );
-  //       }
-  //     },
-  //     (response) {
-  //       emit(state.copyWith(isLoading: false));
-  //       if (context.mounted) {
-  //         ScaffoldMessenger.of(context).showSnackBar(
-  //           CustomSnackBar(
-  //             context,
-  //             text: 'تم حذف الشهادة بنجاح',
-  //             isSuccess: true,
-  //           ),
-  //         );
-  //         Navigator.pop(context, true);
-  //       }
-  //     },
-  //   );
-  // }
-
-  Future<void> updateCertificate(BuildContext context) async {
+  Future<void> updateCertificate() async {
     if (state.selectedCertificateId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: 'لم يتم تحديد شهادة للتحديث',
-          isError: true,
+      emit(
+        state.copyWith(
+          errorMessage: 'select_certificate_error',
+          state: CubitStates.failure,
         ),
       );
       return;
@@ -234,17 +174,23 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
     if (state.nameCertificate.isEmpty ||
         state.fromWhere.isEmpty ||
         state.date == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: 'يرجى ملء جميع الحقول المطلوبة',
-          isError: true,
+      emit(
+        state.copyWith(
+          errorMessage: 'complete_all_data',
+          state: CubitStates.failure,
         ),
       );
       return;
     }
 
-    emit(state.copyWith(isLoading: true));
+    emit(
+      state.copyWith(
+        isLoading: true,
+        errorMessage: null,
+        successMessage: null,
+        state: CubitStates.loading,
+      ),
+    );
 
     final result = await _repository.updateCertificate(
       certificateId: state.selectedCertificateId!,
@@ -259,46 +205,40 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
 
     result.fold(
       (failure) {
-        emit(state.copyWith(isLoading: false));
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: failure.message, isError: true),
-          );
-        }
+        emit(
+          state.copyWith(
+            isLoading: false,
+            errorMessage: failure.message,
+            state: CubitStates.failure,
+          ),
+        );
       },
       (response) {
-        // ⭐ تحديث الصورة في الـ state إذا كان هناك صورة جديدة من الـ response
         String? newImageUrl = state.certificateImageUrl;
         if (response['data'] != null && response['data']['image'] != null) {
           newImageUrl = response['data']['image'];
         }
 
         emit(
-          state.copyWith(isLoading: false, certificateImageUrl: newImageUrl),
+          state.copyWith(
+            isLoading: false,
+            certificateImageUrl: newImageUrl,
+            successMessage: 'update_success',
+            state: CubitStates.success,
+            isNavigationSuccess: true,
+          ),
         );
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: 'تم تحديث الشهادة بنجاح',
-              isSuccess: true,
-            ),
-          );
-
-          // ⭐ إرجاع البيانات المحدثة
-          Navigator.pop(context, {
-            'updated': true,
-            'certificate': CertificateModel(
-              id: state.selectedCertificateId!,
-              nameCertificate: state.nameCertificate,
-              fromWhere: state.fromWhere,
-              date: state.date!,
-              image: newImageUrl,
-            ),
-          });
-        }
       },
+    );
+  }
+
+  void clearMessages() {
+    emit(
+      state.copyWith(
+        errorMessage: null,
+        successMessage: null,
+        isNavigationSuccess: false,
+      ),
     );
   }
 

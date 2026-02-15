@@ -2,6 +2,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_state.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class HideStoryFromView extends StatefulWidget {
@@ -37,31 +38,25 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
       create: (_) => getIt<StoryVisibilityCubit>(),
       child: BlocConsumer<StoryVisibilityCubit, StoryVisibilityState>(
         listener: (context, state) {
-          // معالجة الأخطاء
-          if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(context, text: state.errorMessage!, isError: true),
+          if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr(state.errorMessage!),
+              isError: true,
             );
             context.read<StoryVisibilityCubit>().clearError();
           }
 
           // عرض رسالة النجاح بعد إلغاء التقييد
-          // if (state.isUnrestricting == false &&
-          //     state.errorMessage == null &&
-          //     state.state == CubitStates.success) {
-          //   // نتحقق من أن العملية تمت بنجاح
-          //   Future.delayed(Duration.zero, () {
-          //     if (state.hasSelections == false) {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   CustomSnackBar(
-          //     context,
-          //     text: 'تم إلغاء الإخفاء بنجاح',
-          //     isSuccess: true,
-          //   ),
-          // );
-          //     }
-          //   });
-          // }
+          if (state.successMessage != null &&
+              state.successMessage!.isNotEmpty) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr(state.successMessage!),
+              isSuccess: true,
+            );
+            context.read<StoryVisibilityCubit>().clearSuccess();
+          }
         },
         builder: (context, state) {
           final cubit = context.read<StoryVisibilityCubit>();
@@ -504,7 +499,7 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                     ),
                     onPressed: () async {
                       Navigator.pop(context);
-                      await cubit.unrestrictSelectedUsers(context);
+                      await cubit.unrestrictSelectedUsers();
                     },
                     child: Text(
                       context.tr('confirm'),

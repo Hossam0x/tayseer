@@ -74,7 +74,19 @@ class _UploadImageWidgetState extends State<UploadImageWidget> {
                     width: double.infinity,
                     height: double.infinity,
                   )
-                : AppImage(AssetsData.kUpLoadImageIcon),
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AppImage(AssetsData.kUpLoadImageIcon),
+                      const SizedBox(height: 8),
+                      Text(
+                        context.tr('upload_Photo_required'),
+                        style: Styles.textStyle12.copyWith(
+                          color: AppColors.kBlueColor,
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),

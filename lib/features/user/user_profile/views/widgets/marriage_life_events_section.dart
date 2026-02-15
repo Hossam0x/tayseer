@@ -1,3 +1,7 @@
+// marriage_life_events_section.dart - FIXED VERSION
+// ════════════════════════════════════════════════════════════════
+// ✅ FIX: استخدام goalType بدل goalLabel للترجمة الصحيحة
+// ════════════════════════════════════════════════════════════════
 
 import 'package:tayseer/my_import.dart';
 
@@ -13,11 +17,9 @@ class MarriageLifeEventsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ensuring RTL directionality so the timeline starts from the right
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 24.h),
       decoration: BoxDecoration(
-        // Updated gradient to match the soft blue-yellow-pink transition
         gradient: const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
@@ -39,7 +41,6 @@ class MarriageLifeEventsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title: أهدافي
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: Text(
@@ -125,7 +126,7 @@ class MarriageLifeEventsSection extends StatelessWidget {
         ),
         Gap(6.h),
 
-        // 3. Goal Labels (Bottom Bubbles) - الهدف الفعلي (خطوبة/زواج/أطفال/سفر)
+        // 3. Goal Labels (Bottom Bubbles) - الهدف الفعلي
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Row(
@@ -162,10 +163,10 @@ class MarriageLifeEventsSection extends StatelessWidget {
                       ),
                       child: Center(
                         child: Text(
-                          // ✅ عرض الهدف الفعلي (خطوبة/زواج/أطفال/سفر)
-                          _getGoalDisplayName(event['goalType'],context),
+                          // ⭐⭐⭐ استخدام goalType للترجمة الصحيحة
+                          _getGoalDisplayName(event['goalType'], context),
                           style: Styles.textStyle14Bold.copyWith(
-                            color: const Color(0xFF9E1C36), // Deep red/pink text
+                            color: const Color(0xFF9E1C36),
                             height: 1.2,
                           ),
                           textAlign: TextAlign.center,
@@ -184,29 +185,31 @@ class MarriageLifeEventsSection extends StatelessWidget {
     );
   }
 
-  // ✅ NEW: Convert goal type to display name
-String _getGoalDisplayName(String? goalType, BuildContext context) {
-  if (goalType == null) return '';
-  
-  switch (goalType.toLowerCase()) {
-    case 'engagement':
-    case 'engagment':
-      return context.tr('engagement_profile');
-    case 'marry':
-    case 'marriage':
-      return context.tr('marriage_profile');
-    case 'children':
-      return context.tr('children_profile');
-    case 'travel':
-      return context.tr('travel_profile');
-    default:
-      return goalType;
+  // ⭐⭐⭐ FIXED: Convert goal type to display name
+  String _getGoalDisplayName(String? goalType, BuildContext context) {
+    if (goalType == null || goalType.isEmpty) return '';
+    
+    final normalized = goalType.toLowerCase().trim();
+    
+    switch (normalized) {
+      case 'engagement':
+        return context.tr('engagement_profile');
+      case 'marry':
+      case 'marriage':
+        return context.tr('marriage_profile');
+      case 'familyacceptance':
+      case 'children':
+        return context.tr('children_profile');
+      case 'travel':
+        return context.tr('travel_profile');
+      default:
+        // If it's already a translated value, return as-is
+        return goalType;
+    }
   }
-}
 }
 
 class TrianglePainter extends CustomPainter {
-  
   final Color color;
   TrianglePainter({required this.color});
 

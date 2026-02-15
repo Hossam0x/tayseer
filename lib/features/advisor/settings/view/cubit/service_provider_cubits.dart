@@ -68,7 +68,6 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
         isEnabled: oldSession.isEnabled,
       );
 
-      // حساب التغييرات
       final hasChanges = _hasSessionTypesChanged(updatedSessionTypes);
 
       emit(
@@ -94,7 +93,6 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
         isEnabled: isEnabled,
       );
 
-      // حساب التغييرات
       final hasChanges = _hasSessionTypesChanged(updatedSessionTypes);
 
       emit(
@@ -123,10 +121,12 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
     return false;
   }
 
-  Future<void> saveChanges(BuildContext context) async {
+  Future<void> saveChanges() async {
     if (!state.hasChanges) return;
 
-    emit(state.copyWith(isSaving: true));
+    emit(
+      state.copyWith(isSaving: true, errorMessage: null, successMessage: null),
+    );
 
     final currentProvider = state.serviceProvider;
     final request = currentProvider != null
@@ -138,11 +138,7 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
         : ServiceProviderRequest.defaultRequest();
 
     final result = await _repository.updateServiceProvider(request: request);
-    ScaffoldMessenger.of(context).showSnackBar(
-      CustomSnackBar(context, text: 'تم حفظ التغييرات بنجاح', isSuccess: true),
-    );
 
-    context.pop();
     result.fold(
       (failure) {
         emit(state.copyWith(isSaving: false, errorMessage: failure.message));
@@ -155,6 +151,8 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
             originalServiceProvider: response.data,
             sessionTypes: response.data?.sessionTypes ?? state.sessionTypes,
             hasChanges: false,
+            successMessage: 'changes_saved_successfully',
+            state: CubitStates.success,
           ),
         );
       },
@@ -163,6 +161,10 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
 
   void clearError() {
     emit(state.copyWith(errorMessage: null));
+  }
+
+  void clearSuccess() {
+    emit(state.copyWith(successMessage: null));
   }
 }
 
@@ -233,7 +235,6 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
         timeSlots: isEnabled ? oldDay.timeSlots : [],
       );
 
-      // حساب التغييرات
       final hasChanges = _hasAvailabilityChanged(updatedAvailability);
 
       emit(
@@ -261,7 +262,6 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
         timeSlots: [TimeSlotModel(start: startTime, end: endTime)],
       );
 
-      // حساب التغييرات
       final hasChanges = _hasAvailabilityChanged(updatedAvailability);
 
       emit(
@@ -302,10 +302,12 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
     return false;
   }
 
-  Future<void> saveChanges(BuildContext context) async {
+  Future<void> saveChanges() async {
     if (!state.hasChanges) return;
 
-    emit(state.copyWith(isSaving: true));
+    emit(
+      state.copyWith(isSaving: true, successMessage: null, errorMessage: null),
+    );
 
     final currentProvider = state.serviceProvider;
     final request = currentProvider != null
@@ -317,11 +319,7 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
         : ServiceProviderRequest.defaultRequest();
 
     final result = await _repository.updateServiceProvider(request: request);
-    ScaffoldMessenger.of(context).showSnackBar(
-      CustomSnackBar(context, text: 'تم حفظ التغييرات بنجاح', isSuccess: true),
-    );
 
-    context.pop();
     result.fold(
       (failure) {
         emit(state.copyWith(isSaving: false, errorMessage: failure.message));
@@ -335,6 +333,7 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
             weeklyAvailability:
                 response.data?.weeklyAvailability ?? state.weeklyAvailability,
             hasChanges: false,
+            successMessage: 'changes_saved_successfully',
           ),
         );
       },
@@ -343,5 +342,9 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
 
   void clearError() {
     emit(state.copyWith(errorMessage: null));
+  }
+
+  void clearSuccess() {
+    emit(state.copyWith(successMessage: null));
   }
 }
