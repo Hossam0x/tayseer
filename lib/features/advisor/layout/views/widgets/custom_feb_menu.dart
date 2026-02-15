@@ -88,8 +88,8 @@ class _CustomFabMenuState extends State<CustomFabMenu>
         GestureDetector(
           onTap: _toggleMenu,
           child: Container(
-            width: 80.w,
-            height: 80.w,
+            width: 80.r,
+            height: 80.r,
             decoration: BoxDecoration(
               // اللون الوردي المتدرج او الثابت حسب الصورة
               gradient: AppColors.defaultGradient,
@@ -168,12 +168,12 @@ class _CustomFabMenuState extends State<CustomFabMenu>
           child: FadeTransition(
             opacity: _expandAnimation,
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
+              padding: EdgeInsets.only(bottom: 12.r),
               child: InkWell(
                 onTap: items[i].onTap,
                 child: Container(
-                  width: 60.w,
-                  height: 60.w,
+                  width: 60.r,
+                  height: 60.r,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,

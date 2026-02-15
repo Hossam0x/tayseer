@@ -106,17 +106,7 @@ class ReelsOverlay extends StatelessWidget {
                   onTap: () => context.pop(),
                   child: Icon(Icons.close, color: Colors.white, size: 28.sp),
                 ),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.camera_alt_outlined,
-                      color: Colors.white,
-                      size: 26.sp,
-                    ),
-                    Gap(20.w),
-                    Icon(Icons.info_outline, color: Colors.white, size: 26.sp),
-                  ],
-                ),
+                Icon(Icons.info_outline, color: Colors.white, size: 26.sp),
               ],
             ),
           ),
