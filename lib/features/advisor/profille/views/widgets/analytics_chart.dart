@@ -100,7 +100,7 @@ class AnalyticsChart extends StatelessWidget {
                     }
 
                     return BarTooltipItem(
-                      '$category\n$week: ${value.toInt()}',
+                      '$category\n$week: ${_formatNumber(value)}',
                       TextStyle(
                         color: Colors.white,
                         fontSize: 12.sp,
@@ -126,12 +126,15 @@ class AnalyticsChart extends StatelessWidget {
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
+                    reservedSize: 45.w,
                     interval: _calculateMaxValue(weeklyData) / 4,
                     getTitlesWidget: (value, meta) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4.0),
                         child: Text(
-                          value.toInt().toString(),
+                          _formatNumber(value),
+                          maxLines: 1,
+                          overflow: TextOverflow.visible,
                           style: Styles.textStyle12.copyWith(
                             color: AppColors.blackColor,
                           ),
@@ -386,5 +389,17 @@ class AnalyticsChart extends StatelessWidget {
       width: width,
       borderRadius: BorderRadius.circular(0.r),
     );
+  }
+
+  String _formatNumber(double value) {
+    if (value >= 1000) {
+      double kValue = value / 1000;
+      if (kValue == kValue.toInt().toDouble()) {
+        return '${kValue.toInt()}k';
+      } else {
+        return '${kValue.toStringAsFixed(1)}k';
+      }
+    }
+    return value.toInt().toString();
   }
 }
