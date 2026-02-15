@@ -1,5 +1,5 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/data/models/blocked_user_item.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/blocked_user_model.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users_cubit.dart';
@@ -7,6 +7,7 @@ import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users_state
 import 'package:tayseer/features/advisor/settings/view/widgets/custom_error_widget.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/features/advisor/settings/data/models/blocked_user_item.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 
 class BlockedUsersView extends StatefulWidget {
@@ -69,10 +70,32 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
 
                     // --- Main Content ---
                     Expanded(
-                      child: BlocBuilder<BlockedUsersCubit, BlockedUsersState>(
-                        builder: (context, state) {
-                          return _buildContent(context, state);
+                      child: BlocListener<BlockedUsersCubit, BlockedUsersState>(
+                        listener: (context, state) {
+                          if (state is BlockedUsersLoaded) {
+                            if (state.actionError != null) {
+                              showSafeSnackBar(
+                                context: context,
+                                text: state.actionError!,
+                                isError: true,
+                              );
+                              context.read<BlockedUsersCubit>().clearMessages();
+                            } else if (state.actionSuccess != null) {
+                              showSafeSnackBar(
+                                context: context,
+                                text: state.actionSuccess!,
+                                isSuccess: true,
+                              );
+                              context.read<BlockedUsersCubit>().clearMessages();
+                            }
+                          }
                         },
+                        child:
+                            BlocBuilder<BlockedUsersCubit, BlockedUsersState>(
+                              builder: (context, state) {
+                                return _buildContent(context, state);
+                              },
+                            ),
                       ),
                     ),
                   ],
@@ -228,7 +251,7 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
       iconBackgroundColor: AppColors.primary100,
       bottonText: context.tr('yes'),
       onPressed: () {
-        cubit.unblockUser(blockedUser.blockedUser.id, context);
+        cubit.unblockUser(blockedUser.blockedUser.id);
       },
       showCancelButton: true,
       cancelText: context.tr('no'),

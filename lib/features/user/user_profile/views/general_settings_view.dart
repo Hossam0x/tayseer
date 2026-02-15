@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/views/age_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/email_edit_view.dart';
@@ -20,7 +21,25 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<UserProfileCubit, UserProfileState>(
-      listener: (context, state) {},
+      listenWhen: (previous, current) {
+        if (current is SettingsLoaded && previous is SettingsLoaded) {
+          return current.actionTimestamp != previous.actionTimestamp;
+        }
+        if (current is SettingsLoaded && current.actionMessage != null) {
+          return true;
+        }
+        return false;
+      },
+      listener: (context, state) {
+        if (state is SettingsLoaded && state.actionMessage != null) {
+          showSafeSnackBar(
+            context: context,
+            text: context.tr(state.actionMessage ?? ""),
+            isSuccess: state.isActionSuccess ?? false,
+            isError: !(state.isActionSuccess ?? true),
+          );
+        }
+      },
       builder: (context, state) {
         return Scaffold(
           body: AdvisorBackground(
@@ -244,7 +263,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
 
             if (result != null && userProfile != null) {
               final cubit = context.read<UserProfileCubit>();
-              await cubit.updateAge(int.parse(result), context);
+              await cubit.updateAge(int.parse(result));
             }
           },
           child: _buildSettingRow(
@@ -252,27 +271,6 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
             value: userProfile?.age.toString() ?? '',
           ),
         ),
-        // InkWell(
-        //   onTap: () async {
-        //     final currentGender = _getGenderDisplayText(userProfile?.gender);
-        //     final result = await Navigator.push(
-        //       context,
-        //       MaterialPageRoute(
-        //         builder: (context) =>
-        //             GenderSelectionView(initialGender: currentGender),
-        //       ),
-        //     );
-
-        //     if (result != null && userProfile != null) {
-        //       final cubit = context.read<UserProfileCubit>();
-        //       await cubit.updateGender(result, context);
-        //     }
-        //   },
-        //   child: _buildSettingRow(
-        //     label: "النوع",
-        //     value: _getGenderDisplayText(userProfile?.gender),
-        //   ),
-        // ),
         InkWell(
           onTap: () async {
             await Navigator.push(
@@ -280,13 +278,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
               MaterialPageRoute(builder: (context) => EmailEditView()),
             );
           },
-          child: _buildSettingRow(
-            label: context.tr('email'),
-            value: '',
-            // value: userProfile?.email?.isNotEmpty == true
-            //     ? userProfile!.email!
-            //     : 'غير محدد',
-          ),
+          child: _buildSettingRow(label: context.tr('email'), value: ''),
         ),
         InkWell(
           onTap: () async {
@@ -298,9 +290,6 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           child: _buildSettingRow(
             label: context.tr('phone'),
             value: '',
-            // value: userProfile?.phone?.isNotEmpty == true
-            //     ? userProfile!.phone!
-            //     : 'غير محدد',
             isLast: true,
           ),
         ),
@@ -320,7 +309,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           value: !(userProfile?.availableForMarry ?? false),
           onChanged: (value) async {
             final cubit = context.read<UserProfileCubit>();
-            await cubit.toggleMarriageStatus(!value, context);
+            await cubit.toggleMarriageStatus(!value);
           },
         ),
         InkWell(
@@ -350,7 +339,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
 
             if (result != null && userProfile != null) {
               final cubit = context.read<UserProfileCubit>();
-              await cubit.toggleAnonymousStatus(result == "hidden", context);
+              await cubit.toggleAnonymousStatus(result == "hidden");
             }
           },
           child: _buildSettingRow(
@@ -387,7 +376,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
 
             if (result != null) {
               final cubit = context.read<UserProfileCubit>();
-              await cubit.updateImageBlur(result == "blur_val", context);
+              await cubit.updateImageBlur(result == "blur_val");
             }
           },
           child: _buildSettingRow(
@@ -426,7 +415,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
 
             if (result != null && userProfile != null) {
               final cubit = context.read<UserProfileCubit>();
-              await cubit.toggleAnonymousStatus(result == "hide_val", context);
+              await cubit.toggleAnonymousStatus(result == "hide_val");
             }
           },
           child: _buildSettingRow(
@@ -439,7 +428,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           value: userProfile?.isAnonymous ?? false,
           onChanged: (value) async {
             final cubit = context.read<UserProfileCubit>();
-            await cubit.toggleAnonymousStatus(value, context);
+            await cubit.toggleAnonymousStatus(value);
           },
           isLast: true,
         ),
@@ -542,11 +531,6 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
       ],
     );
   }
-
-  // String _getGenderDisplayText(String? gender) {
-  //   if (gender == null) return '';
-  //   return gender == 'male' ? 'ذكر' : 'أنثى';
-  // }
 
   String _getPrivacyStatus(bool? isAnonymous) {
     if (isAnonymous == null) return 'everyone';

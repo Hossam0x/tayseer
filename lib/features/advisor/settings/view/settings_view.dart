@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
@@ -9,6 +7,8 @@ import 'package:tayseer/features/advisor/settings/data/models/setting_item_model
 
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/rating_cubit.dart';
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -40,7 +40,42 @@ class _SettingsViewState extends State<SettingsView> {
       value: _settingsCubit,
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: AdvisorBackground(child: _buildBody(context)),
+        body: AdvisorBackground(
+          child: BlocListener<SettingsCubit, SettingsState>(
+            listener: (context, state) {
+              if (state is SettingsLoaded) {
+                if (state.actionSuccess != null) {
+                  showSafeSnackBar(
+                    context: context,
+                    text: state.isActionKey
+                        ? context.tr(state.actionSuccess!)
+                        : state.actionSuccess!,
+                    isSuccess: true,
+                    duration: const Duration(milliseconds: 1500),
+                  );
+                  // Special handling for language update side effect
+                  if (state.actionSuccess == "update_language_success") {
+                    SharedPreferences.getInstance().then((p) {
+                      final lang = p.getString('app_language') ?? 'ar';
+                      context.read<LanguageCubit>().setLanguage(lang);
+                    });
+                  }
+                  context.read<SettingsCubit>().clearMessages();
+                } else if (state.actionError != null) {
+                  showSafeSnackBar(
+                    context: context,
+                    text: state.isActionKey
+                        ? context.tr(state.actionError!)
+                        : state.actionError!,
+                    isError: true,
+                  );
+                  context.read<SettingsCubit>().clearMessages();
+                }
+              }
+            },
+            child: _buildBody(context),
+          ),
+        ),
       ),
     );
   }
@@ -64,7 +99,7 @@ class _SettingsViewState extends State<SettingsView> {
         ),
         Column(
           children: [
-            // Static Header (Does not rebuild on settings toggle)
+            // Static Header
             SafeArea(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -87,7 +122,6 @@ class _SettingsViewState extends State<SettingsView> {
                   return true;
                 },
                 builder: (context, state) {
-                  log('jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj');
                   if (state is SettingsError) {
                     return Center(
                       child: SingleChildScrollView(
@@ -164,9 +198,6 @@ class _SettingsViewState extends State<SettingsView> {
       ],
     );
   }
-
-  // Helper method moved/removed as it's now integrated
-  // Widget _buildContent(BuildContext context, SettingsState state) { ... }
 
   Widget _buildSettingsSliverList(
     BuildContext context,
@@ -271,7 +302,6 @@ class _SettingsViewState extends State<SettingsView> {
                                     context.read<SettingsCubit>().updateSwitch(
                                       setting.id,
                                       value,
-                                      context,
                                     );
                                   },
                                 ),
@@ -417,7 +447,10 @@ class _SettingsViewState extends State<SettingsView> {
     }
 
     if (setting.id == 'invite') {
-      await context.read<SettingsCubit>().shareApp(context);
+      await context.read<SettingsCubit>().shareApp(
+        context.tr("share_app_message"),
+        context.tr("share_app_subject"),
+      );
       return;
     }
 
@@ -430,8 +463,7 @@ class _SettingsViewState extends State<SettingsView> {
       if (setting.id == 'language') {
         final result = await Navigator.pushNamed(context, setting.routeName);
         if (result != null && result is String) {
-          // النتيجة الآن هي اسم اللغة (العربية، الإنجليزية...)
-          context.read<SettingsCubit>().updateLanguage(result, context);
+          context.read<SettingsCubit>().updateLanguage(result);
         }
       } else {
         Navigator.pushNamed(context, setting.routeName);
@@ -439,114 +471,124 @@ class _SettingsViewState extends State<SettingsView> {
     }
   }
 
-  int _rating = 0;
   void _showRateAppDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        child: StatefulBuilder(
-          builder: (context, setState) {
-            return Container(
-              padding: EdgeInsets.all(24.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // العنوان
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Icon(Icons.close, size: 24.w),
-                      ),
-                      Text(
-                        context.tr("rate_app"),
-                        style: Styles.textStyle20Meduim.copyWith(
-                          color: AppColors.primary500,
-                        ),
-                      ),
-                      Gap(24.w),
-                    ],
-                  ),
-
-                  Gap(25.h),
-
-                  // النجوم للتقييم (قابلة للاختيار)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _rating = index + 1;
-                          });
-                        },
-                        child: Icon(
-                          // اختيار الأيقونة بناءً على التقييم
-                          index < _rating
-                              ? Icons.star_rounded
-                              : Icons.star_rounded,
-                          color: index < _rating
-                              ? AppColors.kprimaryColor
-                              : AppColors.secondary100,
-                          size: 56.w,
-                        ),
-                      );
-                    }),
-                  ),
-
-                  // عرض قيمة التقييم (اختياري)
-                  if (_rating > 0) ...[
-                    Gap(12.h),
+      builder: (context) => BlocProvider(
+        create: (_) => RatingCubit(),
+        child: Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          child: Container(
+            padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // العنوان
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Icon(Icons.close, size: 24.w),
+                    ),
                     Text(
-                      '${context.tr("rating")}: $_rating / 5',
-                      style: Styles.textStyle14.copyWith(
+                      context.tr("rate_app"),
+                      style: Styles.textStyle20Meduim.copyWith(
                         color: AppColors.primary500,
                       ),
                     ),
+                    Gap(24.w),
                   ],
+                ),
 
-                  Gap(24.h),
+                Gap(25.h),
 
-                  // الرسالة
-                  Text(
-                    context.tr("rate_app_message"),
-                    style: Styles.textStyle16.copyWith(
-                      color: AppColors.secondary700,
-                    ),
-                    textAlign: TextAlign.center,
+                // النجوم للتقييم (قابلة للاختيار)
+                BlocBuilder<RatingCubit, int>(
+                  builder: (context, rating) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return GestureDetector(
+                          onTap: () {
+                            context.read<RatingCubit>().setRating(index + 1);
+                          },
+                          child: Icon(
+                            // اختيار الأيقونة بناءً على التقييم
+                            index < rating
+                                ? Icons.star_rounded
+                                : Icons.star_rounded,
+                            color: index < rating
+                                ? AppColors.kprimaryColor
+                                : AppColors.secondary100,
+                            size: 56.w,
+                          ),
+                        );
+                      }),
+                    );
+                  },
+                ),
+
+                // عرض قيمة التقييم (اختياري)
+                BlocBuilder<RatingCubit, int>(
+                  builder: (context, rating) {
+                    if (rating > 0) {
+                      return Column(
+                        children: [
+                          Gap(12.h),
+                          Text(
+                            '${context.tr("rating")}: $rating / 5',
+                            style: Styles.textStyle14.copyWith(
+                              color: AppColors.primary500,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+
+                Gap(24.h),
+
+                // الرسالة
+                Text(
+                  context.tr("rate_app_message"),
+                  style: Styles.textStyle16.copyWith(
+                    color: AppColors.secondary700,
                   ),
+                  textAlign: TextAlign.center,
+                ),
 
-                  Gap(32.h),
+                Gap(32.h),
 
-                  // زر الإرسال
-                  CustomBotton(
-                    title: context.tr("send_rating"),
-                    onPressed: () {
-                      if (_rating > 0) {
-                        Navigator.pop(context);
-                        _settingsCubit.rateApp(_rating, context);
-                        // إعادة تعيين التقييم بعد الإرسال
-                        setState(() {
-                          _rating = 0;
-                        });
-                      }
-                    },
-                    width: double.infinity,
-                    height: 54.h,
-                    useGradient: true,
-                  ),
-                ],
-              ),
-            );
-          },
+                // زر الإرسال
+                BlocBuilder<RatingCubit, int>(
+                  builder: (context, rating) {
+                    return CustomBotton(
+                      title: context.tr("send_rating"),
+                      onPressed: () {
+                        if (rating > 0) {
+                          // Using _settingsCubit from parent widget closure
+                          _settingsCubit.rateApp(rating);
+                          Navigator.pop(context);
+                        }
+                      },
+                      width: double.infinity,
+                      height: 54.h,
+                      useGradient: true,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

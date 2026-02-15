@@ -6,6 +6,7 @@ class EmailEditState {
   final String email;
   final String emailError;
   final String errorMessage;
+  final String successMessage;
   final String fullEmail;
 
   const EmailEditState({
@@ -13,6 +14,7 @@ class EmailEditState {
     this.email = '',
     this.emailError = '',
     this.errorMessage = '',
+    this.successMessage = '',
     this.fullEmail = '',
   });
 
@@ -24,6 +26,7 @@ class EmailEditState {
     String? email,
     String? emailError,
     String? errorMessage,
+    String? successMessage,
     String? fullEmail,
   }) {
     return EmailEditState(
@@ -31,6 +34,7 @@ class EmailEditState {
       email: email ?? this.email,
       emailError: emailError ?? this.emailError,
       errorMessage: errorMessage ?? this.errorMessage,
+      successMessage: successMessage ?? this.successMessage,
       fullEmail: fullEmail ?? this.fullEmail,
     );
   }

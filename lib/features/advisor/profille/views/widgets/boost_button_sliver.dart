@@ -61,9 +61,6 @@ class _BoostButtonState extends State<BoostButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // onTapDown: (_) => setState(() => _isPressed = true),
-      // onTapUp: (_) => setState(() => _isPressed = false),
-      // onTapCancel: () => setState(() => _isPressed = false),
       onTap: widget.onPressed,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),

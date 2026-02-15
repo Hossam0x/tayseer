@@ -27,7 +27,6 @@ class TimeSlotItem extends StatefulWidget {
 
 class _TimeSlotItemState extends State<TimeSlotItem>
     with SingleTickerProviderStateMixin {
-  late bool isActive;
   late TextEditingController fromController;
   late TextEditingController toController;
   late AnimationController _animationController;
@@ -37,7 +36,6 @@ class _TimeSlotItemState extends State<TimeSlotItem>
   @override
   void initState() {
     super.initState();
-    isActive = widget.initialStatus;
     fromController = TextEditingController(text: widget.initialFrom);
     toController = TextEditingController(text: widget.initialTo);
 
@@ -54,11 +52,10 @@ class _TimeSlotItemState extends State<TimeSlotItem>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    // تشغيل أو إيقاف الأنيميشن بناءً على حالة isActive
-    if (isActive) {
+    if (widget.initialStatus) {
       _animationController.forward();
     } else {
-      _animationController.reverse();
+      _animationController.value = 0.0;
     }
   }
 
@@ -72,28 +69,12 @@ class _TimeSlotItemState extends State<TimeSlotItem>
       toController.text = widget.initialTo;
     }
     if (oldWidget.initialStatus != widget.initialStatus) {
-      _toggleStatus(widget.initialStatus, animate: false);
-    }
-  }
-
-  void _toggleStatus(bool val, {bool animate = true}) {
-    setState(() => isActive = val);
-
-    if (animate) {
-      if (val) {
+      if (widget.initialStatus) {
         _animationController.forward();
       } else {
         _animationController.reverse();
       }
-    } else {
-      if (val) {
-        _animationController.value = 1.0;
-      } else {
-        _animationController.value = 0.0;
-      }
     }
-
-    widget.onStatusChanged?.call(val);
   }
 
   Future<void> _pickTime(bool isFrom) async {
@@ -107,13 +88,11 @@ class _TimeSlotItemState extends State<TimeSlotItem>
       final formattedTime =
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
 
-      setState(() {
-        if (isFrom) {
-          fromController.text = formattedTime;
-        } else {
-          toController.text = formattedTime;
-        }
-      });
+      if (isFrom) {
+        fromController.text = formattedTime;
+      } else {
+        toController.text = formattedTime;
+      }
 
       // إرسال القيم المحدثة
       widget.onTimeChanged?.call(fromController.text, toController.text);
@@ -149,9 +128,8 @@ class _TimeSlotItemState extends State<TimeSlotItem>
                   return Transform.scale(
                     scale: scaleFactor,
                     child: CupertinoSwitch(
-                      value: isActive,
+                      value: widget.initialStatus,
                       onChanged: (val) {
-                        setState(() => isActive = val);
                         widget.onStatusChanged?.call(val);
                       },
                       activeColor: const Color(0xFFF06C88),
@@ -165,38 +143,41 @@ class _TimeSlotItemState extends State<TimeSlotItem>
         ),
 
         // الأنيميشن لظهور أو اختفاء حقول الوقت
-        AnimatedSize(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          alignment: Alignment.topCenter,
-          child: isActive
-              ? Column(
-                  children: [
-                    Gap(8.h),
-                    Row(
-                      children: [
-                        Text(
-                          context.tr('from'),
-                          style: Styles.textStyle16.copyWith(
-                            color: AppColors.secondaryText,
-                          ),
-                        ),
-                        Gap(8.w),
-                        Expanded(child: _buildTimeField(fromController, true)),
-                        Gap(8.w),
-                        Text(
-                          context.tr('to'),
-                          style: Styles.textStyle16.copyWith(
-                            color: AppColors.secondaryText,
-                          ),
-                        ),
-                        Gap(8.w),
-                        Expanded(child: _buildTimeField(toController, false)),
-                      ],
+        AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Align(
+              heightFactor: _animationController.value,
+              alignment: Alignment.topCenter,
+              child: Opacity(opacity: _animationController.value, child: child),
+            );
+          },
+          child: Column(
+            children: [
+              Gap(8.h),
+              Row(
+                children: [
+                  Text(
+                    context.tr('from'),
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondaryText,
                     ),
-                  ],
-                )
-              : const SizedBox.shrink(),
+                  ),
+                  Gap(8.w),
+                  Expanded(child: _buildTimeField(fromController, true)),
+                  Gap(8.w),
+                  Text(
+                    context.tr('to'),
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondaryText,
+                    ),
+                  ),
+                  Gap(8.w),
+                  Expanded(child: _buildTimeField(toController, false)),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );

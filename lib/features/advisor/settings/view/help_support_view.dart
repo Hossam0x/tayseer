@@ -1,4 +1,6 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/help_support_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class HelpSupportView extends StatefulWidget {
@@ -11,9 +13,6 @@ class HelpSupportView extends StatefulWidget {
 class _HelpSupportViewState extends State<HelpSupportView> {
   final TextEditingController _problemController = TextEditingController();
 
-  /// حالة فتح / قفل كل سؤال
-  final Map<int, bool> _expandedMap = {};
-
   final List<String> faqs = [
     'ما هو تطبيق تيسير',
     'كيف أحجز جلسة',
@@ -22,177 +21,201 @@ class _HelpSupportViewState extends State<HelpSupportView> {
   ];
 
   @override
+  void dispose() {
+    _problemController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: AdvisorBackground(
-        child: Stack(
-          children: [
-            /// Background العلوي
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 110.h,
-              child: Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(AssetsData.homeBarBackgroundImage),
-                    fit: BoxFit.fill,
+    return BlocProvider(
+      create: (context) => HelpSupportCubit(),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: AdvisorBackground(
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 110.h,
+                child: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(AssetsData.homeBarBackgroundImage),
+                      fit: BoxFit.fill,
+                    ),
                   ),
                 ),
               ),
-            ),
-
-            SafeArea(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Column(
-                  children: [
-                    Gap(16.h),
-                    SimpleAppBar(title: 'المساعدة والدعم', isLargeTitle: true),
-                    Gap(36.h),
-
-                    Expanded(
-                      child: ListView(
-                        physics: const BouncingScrollPhysics(),
-                        children: [
-                          _buildFaqs(),
-
-                          Gap(24.h),
-
-                          _buildInstructions(),
-
-                          Gap(24.h),
-
-                          _buildReportProblem(),
-
-                          Gap(24.h),
-
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            child: CustomBotton(
-                              height: 54.h,
-                              width: double.infinity,
-                              title: 'إرسال',
-                              useGradient: true,
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  CustomSnackBar(
-                                    context,
-                                    text: 'تم إرسال المشكلة بنجاح',
-                                    isSuccess: true,
-                                  ),
-                                );
-                                _problemController.clear();
-                              },
-                            ),
-                          ),
-
-                          Gap(40.h),
-                        ],
+              SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Column(
+                    children: [
+                      Gap(16.h),
+                      SimpleAppBar(
+                        title: 'المساعدة والدعم',
+                        isLargeTitle: true,
                       ),
-                    ),
-                  ],
+                      Gap(36.h),
+                      Expanded(
+                        child: ListView(
+                          physics: const BouncingScrollPhysics(),
+                          children: [
+                            _buildFaqs(),
+                            Gap(24.h),
+                            _buildInstructions(),
+                            Gap(24.h),
+                            _buildReportProblem(),
+                            Gap(24.h),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              child:
+                                  BlocConsumer<
+                                    HelpSupportCubit,
+                                    HelpSupportState
+                                  >(
+                                    listener: (context, state) {
+                                      if (state.isSuccess) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          CustomSnackBar(
+                                            context,
+                                            text: 'تم إرسال المشكلة بنجاح',
+                                            isSuccess: true,
+                                          ),
+                                        );
+                                        _problemController.clear();
+                                      }
+                                    },
+                                    builder: (context, state) {
+                                      return CustomBotton(
+                                        height: 54.h,
+                                        width: double.infinity,
+                                        title: state.isSending
+                                            ? 'جاري الإرسال...'
+                                            : 'إرسال',
+                                        useGradient: true,
+                                        onPressed: state.isSending
+                                            ? null
+                                            : () {
+                                                context
+                                                    .read<HelpSupportCubit>()
+                                                    .sendProblem(
+                                                      _problemController.text,
+                                                    );
+                                              },
+                                      );
+                                    },
+                                  ),
+                            ),
+                            Gap(40.h),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ================== Widgets ==================
-
   Widget _buildFaqs() {
-    return Container(
-      padding: EdgeInsetsDirectional.only(
-        start: 16.w,
-        end: 16.w,
-        top: 16.h,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.whiteCard2Back,
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'الأسئلة الشائعة (FAQs)',
-            style: Styles.textStyle18Meduim.copyWith(
-              color: AppColors.primaryText,
-            ),
+    return BlocBuilder<HelpSupportCubit, HelpSupportState>(
+      builder: (context, state) {
+        return Container(
+          padding: EdgeInsetsDirectional.only(
+            start: 16.w,
+            end: 16.w,
+            top: 16.h,
           ),
-          Gap(16.h),
-
-          Column(
-            children: faqs.asMap().entries.map((entry) {
-              final index = entry.key;
-              final question = entry.value;
-              final isExpanded = _expandedMap[index] ?? false;
-
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                  hoverColor: Colors.transparent,
-                  dividerColor: Colors.transparent,
+          decoration: BoxDecoration(
+            color: AppColors.whiteCard2Back,
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'الأسئلة الشائعة (FAQs)',
+                style: Styles.textStyle18Meduim.copyWith(
+                  color: AppColors.primaryText,
                 ),
-                child: ExpansionTile(
-                  onExpansionChanged: (expanded) {
-                    setState(() {
-                      _expandedMap[index] = expanded;
-                    });
-                  },
+              ),
+              Gap(16.h),
+              Column(
+                children: faqs.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final question = entry.value;
+                  final isExpanded = state.expandedMap[index] ?? false;
 
-                  title: Text(
-                    question,
-                    style: Styles.textStyle16.copyWith(
-                      color: AppColors.blackColor,
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      hoverColor: Colors.transparent,
+                      dividerColor: Colors.transparent,
                     ),
-                  ),
-
-                  /// السهم المتحرك
-                  trailing: AnimatedRotation(
-                    turns: isExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      Icons.keyboard_arrow_down,
-                      color: AppColors.dropDownArrow,
-                      size: 24.w,
-                    ),
-                  ),
-
-                  shape: const RoundedRectangleBorder(
-                    side: BorderSide(color: Colors.transparent),
-                  ),
-                  collapsedShape: const RoundedRectangleBorder(
-                    side: BorderSide(color: Colors.transparent),
-                  ),
-
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.only(
-                        right: 16.w,
-                        left: 16.w,
-                        bottom: 16.h,
-                      ),
-                      child: Text(
-                        'هذا نص توضيحي للإجابة الخاصة بالسؤال.',
-                        style: Styles.textStyle14.copyWith(
-                          color: AppColors.primaryText,
+                    child: ExpansionTile(
+                      key: ValueKey(index), // Ensure uniqueness
+                      initiallyExpanded: isExpanded,
+                      onExpansionChanged: (expanded) {
+                        context.read<HelpSupportCubit>().toggleExpansion(
+                          index,
+                          expanded,
+                        );
+                      },
+                      title: Text(
+                        question,
+                        style: Styles.textStyle16.copyWith(
+                          color: AppColors.blackColor,
                         ),
                       ),
+                      trailing: AnimatedRotation(
+                        turns: isExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          Icons.keyboard_arrow_down,
+                          color: AppColors.dropDownArrow,
+                          size: 24.w,
+                        ),
+                      ),
+                      shape: const RoundedRectangleBorder(
+                        side: BorderSide(color: Colors.transparent),
+                      ),
+                      collapsedShape: const RoundedRectangleBorder(
+                        side: BorderSide(color: Colors.transparent),
+                      ),
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(
+                            right: 16.w,
+                            left: 16.w,
+                            bottom: 16.h,
+                          ),
+                          child: Text(
+                            'هذا نص توضيحي للإجابة الخاصة بالسؤال.',
+                            style: Styles.textStyle14.copyWith(
+                              color: AppColors.primaryText,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -213,7 +236,6 @@ class _HelpSupportViewState extends State<HelpSupportView> {
             ),
           ),
           Gap(16.h),
-
           Container(
             padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
@@ -282,7 +304,6 @@ class _HelpSupportViewState extends State<HelpSupportView> {
   }
 }
 
-/// عنصر تعليمات
 class _InstructionItem extends StatelessWidget {
   final String text;
 

@@ -1,16 +1,20 @@
+import 'package:tayseer/features/advisor/profille/views/cubit/age_range_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
-class AgeRangeSelector extends StatefulWidget {
+class AgeRangeSelector extends StatelessWidget {
   const AgeRangeSelector({super.key});
 
   @override
-  State<AgeRangeSelector> createState() => _AgeRangeSelectorState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => AgeRangeCubit(),
+      child: const _AgeRangeSelectorBody(),
+    );
+  }
 }
 
-class _AgeRangeSelectorState extends State<AgeRangeSelector> {
-  RangeValues _currentRangeValues = const RangeValues(170, 180);
-  final double minValue = 0;
-  final double maxValue = 200;
+class _AgeRangeSelectorBody extends StatelessWidget {
+  const _AgeRangeSelectorBody();
 
   @override
   Widget build(BuildContext context) {
@@ -54,31 +58,37 @@ class _AgeRangeSelectorState extends State<AgeRangeSelector> {
                 trackHeight: isTablet ? 8.h : 4.h, // تكبير المسار
                 trackShape: CustomTrackShape(), // لتحسين الشكل على التابلت
               ),
-              child: RangeSlider(
-                values: _currentRangeValues,
-                min: minValue,
-                max: maxValue,
-                onChanged: (RangeValues values) {
-                  setState(() {
-                    _currentRangeValues = values;
-                  });
+              child: BlocBuilder<AgeRangeCubit, RangeValues>(
+                builder: (context, currentRangeValues) {
+                  return RangeSlider(
+                    values: currentRangeValues,
+                    min: 0,
+                    max: 200,
+                    onChanged: (RangeValues values) {
+                      context.read<AgeRangeCubit>().updateRange(values);
+                    },
+                  );
                 },
               ),
             ),
           ),
           Gap(6.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildValueBox(
-                'الحد الأقصى',
-                '${_currentRangeValues.end.round()}',
-              ),
-              _buildValueBox(
-                'الحد الأدنى',
-                '${_currentRangeValues.start.round()}',
-              ),
-            ],
+          BlocBuilder<AgeRangeCubit, RangeValues>(
+            builder: (context, currentRangeValues) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildValueBox(
+                    'الحد الأقصى',
+                    '${currentRangeValues.end.round()}',
+                  ),
+                  _buildValueBox(
+                    'الحد الأدنى',
+                    '${currentRangeValues.start.round()}',
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

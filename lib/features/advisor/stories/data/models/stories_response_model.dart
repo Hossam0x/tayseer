@@ -130,11 +130,14 @@ class StoryModel extends Equatable {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  final double? videoDuration;
+
   const StoryModel({
     required this.id,
     required this.userId,
     required this.image,
     this.video,
+    this.videoDuration,
     required this.isMine,
     required this.isSpecial,
     required this.viewsCount,
@@ -172,6 +175,7 @@ class StoryModel extends Equatable {
           json['image']?.toString() ??
           "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80",
       video: json['video']?.toString(),
+      videoDuration: (json['videoDuration'] as num?)?.toDouble(),
       isMine: json['isMine'] ?? false,
       isSpecial: json['isSpecial'] ?? false,
       viewsCount: viewsCount,
@@ -193,6 +197,7 @@ class StoryModel extends Equatable {
     String? userId,
     String? image,
     String? video,
+    double? videoDuration,
     bool? isMine,
     bool? isSpecial,
     int? viewsCount,
@@ -206,6 +211,7 @@ class StoryModel extends Equatable {
       userId: userId ?? this.userId,
       image: image ?? this.image,
       video: video ?? this.video,
+      videoDuration: videoDuration ?? this.videoDuration,
       isMine: isMine ?? this.isMine,
       isSpecial: isSpecial ?? this.isSpecial,
       viewsCount: viewsCount ?? this.viewsCount,
@@ -222,6 +228,7 @@ class StoryModel extends Equatable {
     userId,
     image,
     video,
+    videoDuration,
     isMine,
     isSpecial,
     viewsCount,

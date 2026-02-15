@@ -402,6 +402,69 @@ class SearchCubit extends Cubit<SearchState> {
   // 🔄 SHARE
   // ═══════════════════════════════════════════════════════════════════════════
 
+  Future<void> voteInPoll({
+    required String postId,
+    required String choiceText,
+  }) async {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+    if (post.pollModel == null) return;
+
+    // البدء بالتحديث اللحظي (Optimistic update) لسرعة تفاعل الواجهة
+    final choiceIndex = post.pollModel!.pollChoices.indexWhere(
+      (c) => c.choice == choiceText,
+    );
+    if (choiceIndex == -1) return;
+
+    final result = await _homeRepository.voteInPoll(
+      postId: postId,
+      choiceIndex: choiceIndex.toString(),
+    );
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            actionStatus: CubitStates.failure,
+            actionMessage: failure.message,
+          ),
+        );
+      },
+      (success) {
+        final updatedChoices = post.pollModel!.pollChoices.asMap().entries.map((
+          entry,
+        ) {
+          final idx = entry.key;
+          final choice = entry.value;
+          if (idx == choiceIndex) {
+            return choice.copyWith(votes: choice.votes + 1, isSelected: true);
+          }
+          return choice;
+        }).toList();
+
+        final updatedPost = post.copyWith(
+          pollModel: post.pollModel!.copyWith(
+            pollChoices: updatedChoices,
+            totalPollVotes: post.pollModel!.totalPollVotes + 1,
+          ),
+        );
+
+        final updatedPosts = List<PostModel>.from(state.posts);
+        updatedPosts[postIndex] = updatedPost;
+
+        emit(
+          state.copyWith(
+            posts: updatedPosts,
+            actionStatus: CubitStates.success,
+            actionMessage: 'تم التصويت بنجاح',
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> toggleSharePost({required String postId}) async {
     final postIndex = state.posts.indexWhere((p) => p.postId == postId);
     if (postIndex == -1) return;
