@@ -18,7 +18,7 @@ class ALayOutViewBody extends StatelessWidget {
 
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
-        final pages = _getPages(state.userType, cubit);
+        final pages = _getPages(state.userType, cubit, context);
 
         return Scaffold(
           body: Stack(
@@ -61,7 +61,11 @@ class ALayOutViewBody extends StatelessWidget {
     );
   }
 
-  List<Widget> _getPages(UserTypeEnum userType, LayoutCubit cubit) {
+  List<Widget> _getPages(
+    UserTypeEnum userType,
+    LayoutCubit cubit,
+    BuildContext context,
+  ) {
     switch (userType) {
       case UserTypeEnum.asConsultant:
         return [
@@ -98,17 +102,35 @@ class ALayOutViewBody extends StatelessWidget {
         return [
           HomeView(onScroll: cubit.onScroll),
           GuestLockWidget(
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+            },
             message: 'فرص التوافق تبدأ بعد التسجيل',
             description:
                 'أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.',
           ),
           MySpaceView(),
           GuestLockWidget(
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+            },
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
           ),
           GuestLockWidget(
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+            },
             message: 'إنشاء ملفك الشخصي أولًا',
             description:
                 'التسجيل بيسمح لك بإنشاء ملفك وعرض الملفات المناسبة لك.',
