@@ -74,7 +74,7 @@ class _ProfessionalInformationAsConsultantBodyState
                       /// ➜ Title
                       Text(
                         context.tr('enterProfessionalInfo'),
-                        style: Styles.textStyle18Bold.copyWith(
+                        style: Styles.textStyle20Bold.copyWith(
                           color: AppColors.kscandryTextColor,
                         ),
                       ),

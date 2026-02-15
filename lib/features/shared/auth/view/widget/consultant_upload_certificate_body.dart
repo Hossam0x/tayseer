@@ -38,7 +38,7 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
                       /// Title
                       Text(
                         context.tr('shareYourCertificates'),
-                        style: Styles.textStyle18Bold.copyWith(
+                        style: Styles.textStyle20Bold.copyWith(
                           color: AppColors.kscandryTextColor,
                         ),
                       ),

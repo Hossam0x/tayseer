@@ -46,8 +46,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
               /// Title
               Text(
                 context.tr('selectSessionDuration'),
-                style: Styles.textStyle18.copyWith(
-                  fontWeight: FontWeight.bold,
+                style: Styles.textStyle20Bold.copyWith(
                   color: AppColors.kscandryTextColor,
                 ),
               ),
