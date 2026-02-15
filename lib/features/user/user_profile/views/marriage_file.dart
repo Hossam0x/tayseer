@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:ui';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
@@ -45,6 +44,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   final int _maxImages = 5;
   String? _scrollToSection;
 
+  // ⭐⭐⭐ DEFAULT IMAGE URL
+  static const String _defaultImageUrl =
+      "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
   @override
   void initState() {
     super.initState();
@@ -56,16 +59,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   // ════════════════════════════════════════════════════════════════
   String _translateValue(String? value) {
     if (value == null || value.isEmpty) return '';
-    
-    // جرب الترجمة - إذا مافيش ترجمة، هيرجع نفس القيمة
+
     final translated = context.tr(value);
-    
-    // إذا الترجمة نفس الـ key، يعني مافيش ترجمة → أرجع القيمة الأصلية
+
     if (translated == value && !value.contains(' ')) {
-      // لو فيها مسافات، يعني قيمة مترجمة فعلاً مش key
       return value;
     }
-    
+
     return translated;
   }
 
@@ -104,6 +104,57 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     debugPrint('📊 Total: $totalProgress%');
 
     return totalProgress;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ NEW: Get Main Display Image
+  // ════════════════════════════════════════════════════════════════
+  String _getMainDisplayImage(MarriageUserProfileModel profile) {
+    // Priority 1: singleImage
+    if (profile.userMedia?.singleImage != null &&
+        profile.userMedia!.singleImage!.isNotEmpty) {
+      debugPrint('📸 [MAIN_IMAGE] Using singleImage');
+      return profile.userMedia!.singleImage!;
+    }
+
+    // // Priority 2: First image from images list
+    // final images = profile.userMedia?.images ?? [];
+    // if (images.isNotEmpty) {
+    //   debugPrint('📸 [MAIN_IMAGE] Using first image from list');
+    //   return images[0];
+    // }
+
+    // Priority 3: Default placeholder
+    debugPrint('📸 [MAIN_IMAGE] Using default placeholder');
+    return _defaultImageUrl;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ NEW: Get Secondary Display Image
+  // ════════════════════════════════════════════════════════════════
+  String? _getSecondaryDisplayImage(MarriageUserProfileModel profile) {
+    final images = profile.userMedia?.images ?? [];
+
+    // If we have singleImage, first image in list becomes secondary
+    if (profile.userMedia?.singleImage != null &&
+        profile.userMedia!.singleImage!.isNotEmpty) {
+      if (images.isNotEmpty) {
+        debugPrint(
+          '📸 [SECONDARY_IMAGE] Using first image from list (singleImage exists)',
+        );
+        return images[0];
+      }
+      return null;
+    }
+
+    // If no singleImage, second image in list becomes secondary
+    if (images.length > 1) {
+      debugPrint('📸 [SECONDARY_IMAGE] Using second image from list');
+      return images[0];
+    }
+
+    debugPrint('📸 [SECONDARY_IMAGE] No secondary image available');
+    return null;
   }
 
   @override
@@ -221,8 +272,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   }
 
   Widget _buildViewContent(MarriageUserProfileModel profile) {
-    final images = profile.userMedia?.images ?? [];
-    final displayImages = images.length > 5 ? images.sublist(0, 5) : images;
     final totalProgress = _calculateTotalProgress(profile);
     final progressFraction = totalProgress / 100;
 
@@ -234,18 +283,42 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             physics: const BouncingScrollPhysics(),
             slivers: [
               _buildViewHeader(profile),
-
-              // ⭐⭐⭐ Statistics Cards Section
+              _buildSliverPadding(
+                child: (profile.inReview == true)
+                    ? Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Color.fromRGBO(255, 255, 255, 0.55),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        padding: EdgeInsets.all(5),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AppImage(AssetsData.underreviewIcon, width: 24.w),
+                            Gap(5.w),
+                            Text(
+                              "${context.tr("under_review")}",
+                              style: Styles.textStyle18SemiBold,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    : SizedBox.shrink(),
+              ),
+              // ⭐⭐⭐ Statistics Cards Section with REAL DATA
               _buildSliverPadding(
                 child: ProfileStatisticsCards(
-                  upgradesCount: 34,
-                  resultsCount: 1,
+                  upgradesCount: profile.interactionCount ?? 0, // ⭐ من السيرفر
+                  resultsCount: profile.regredsCount ?? 0, // ⭐ من السيرفر
                   onUpgradesTap: () {
                     debugPrint('⭐ Upgrades button tapped');
-
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('ترقية الاعجابات المتبقية'),
+                        content: Text(
+                          'ترقية الاعجابات المتبقية: ${profile.interactionCount ?? 0}',
+                        ),
                         backgroundColor: AppColors.primary600,
                       ),
                     );
@@ -254,7 +327,9 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                     debugPrint('⭐ Results button tapped');
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('عرض النتائج والمكافآت'),
+                        content: Text(
+                          'عرض النتائج: ${profile.regredsCount ?? 0}',
+                        ),
                         backgroundColor: AppColors.primary600,
                       ),
                     );
@@ -275,19 +350,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                     events: _buildTimelineEvents(profile.yourGoals!),
                   ),
                 ),
-              SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                sliver: SliverToBoxAdapter(
-                  child: displayImages.isNotEmpty
-                      ? AdditionalImageSection(
-                          isHastar: false,
-                          imageUrl: displayImages.length > 1
-                              ? displayImages[1]
-                              : displayImages[0],
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ),
+
+              // ⭐⭐⭐ UPDATED: Secondary Image Section
+              _buildSecondaryImageSection(profile),
+
               _buildSliverPadding(
                 child: ReligiousSection(tags: _buildReligiousTags(profile)),
               ),
@@ -329,12 +395,39 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  Widget _buildViewHeader(MarriageUserProfileModel profile) {
-    final images = profile.userMedia?.images ?? [];
-    final displayImages = images.length > 5 ? images.sublist(0, 5) : images;
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ NEW: Secondary Image Section with proper logic
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildSecondaryImageSection(MarriageUserProfileModel profile) {
+    final secondaryImage = _getSecondaryDisplayImage(profile);
 
+    if (secondaryImage == null) {
+      return SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverPadding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+      sliver: SliverToBoxAdapter(
+        child: AdditionalImageSection(
+          isHastar: false,
+          imageUrl: secondaryImage,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewHeader(MarriageUserProfileModel profile) {
+    final mainImage = _getMainDisplayImage(profile);
     final totalProgress = _calculateTotalProgress(profile);
     final progressFraction = totalProgress / 100;
+
+    debugPrint('═══════════════════════════════════════════');
+    debugPrint('📸 [HEADER] Main image: $mainImage');
+    debugPrint('📸 [HEADER] singleImage: ${profile.userMedia?.singleImage}');
+    debugPrint(
+      '📸 [HEADER] images count: ${profile.userMedia?.images.length ?? 0}',
+    );
+    debugPrint('═══════════════════════════════════════════');
 
     return SliverToBoxAdapter(
       child: Column(
@@ -350,11 +443,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                     top: Radius.circular(33.r),
                   ),
                   image: DecorationImage(
-                    image: NetworkImage(
-                      displayImages.isNotEmpty
-                          ? displayImages[0]
-                          : 'https://via.placeholder.com/400',
-                    ),
+                    image: NetworkImage(mainImage),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -531,7 +620,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  // ⭐⭐⭐ FIX: دالة _buildAboutMeItems مع الترجمة
   List<Map<String, dynamic>> _buildAboutMeItems(profile) {
     return [
       if (profile.aboutMe?.socialStatus != null)
@@ -540,14 +628,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           'label': _translateValue(profile.aboutMe!.socialStatus),
         },
       if (profile.aboutMe?.weight != null)
-        {
-          'icon': AssetsData.kdrawingIcon, 
-          'label': profile.aboutMe?.weight // الوزن رقم، ما يحتاج ترجمة
-        },
+        {'icon': AssetsData.kdrawingIcon, 'label': profile.aboutMe?.weight},
       if (profile.aboutMe?.skinColor != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': "${context.tr('Skin')} ${_translateValue(profile.aboutMe!.skinColor)}",
+          'label':
+              "${context.tr('Skin')} ${_translateValue(profile.aboutMe!.skinColor)}",
         },
       if (profile.aboutMe?.healthStatus != null)
         {
@@ -557,7 +643,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     ];
   }
 
-  // ⭐⭐⭐ FIX: دالة _buildEducationItems مع الترجمة
   List<Map<String, dynamic>> _buildEducationItems(profile) {
     return [
       if (profile.professionalLife?.educationLevel != null)
@@ -573,42 +658,40 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     ];
   }
 
-  // ⭐⭐⭐ FIX: دالة _buildTimelineEvents مع الترجمة
   List<Map<String, dynamic>> _buildTimelineEvents(YourGoals goals) {
     final List<Map<String, dynamic>> events = [];
 
     if (goals.travel != null && goals.travel!.isNotEmpty) {
       events.add({
         'timeLabel': _translateValue(goals.travel),
-        'goalType': 'travel'
+        'goalType': 'travel',
       });
     }
 
     if (goals.children != null && goals.children!.isNotEmpty) {
       events.add({
         'timeLabel': _translateValue(goals.children),
-        'goalType': context.tr("select_dowry_title"),
+        'goalType': context.tr("children_profile"),
       });
     }
 
     if (goals.engagement != null && goals.engagement!.isNotEmpty) {
       events.add({
         'timeLabel': _translateValue(goals.engagement),
-        'goalType': 'engagement'
+        'goalType': 'engagement',
       });
     }
 
     if (goals.marry != null && goals.marry!.isNotEmpty) {
       events.add({
         'timeLabel': _translateValue(goals.marry),
-        'goalType': 'marry'
+        'goalType': 'marry',
       });
     }
 
     return events;
   }
 
-  // ⭐⭐⭐ FIX: دالة _buildReligiousTags مع الترجمة
   List<Map<String, dynamic>> _buildReligiousTags(profile) {
     return [
       if (profile.aboutMe?.religiousCommitment != null)
@@ -784,15 +867,17 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty)
           .toList();
-      
-      debugPrint('📋 [INTERESTS] String input: "${profile.hobbies}" → parsed: $hobbiesList');
+
+      debugPrint(
+        '📋 [INTERESTS] String input: "${profile.hobbies}" → parsed: $hobbiesList',
+      );
     } else if (profile.hobbies is List) {
       debugPrint('📋 [INTERESTS] Raw List: ${profile.hobbies}');
-      
+
       for (var item in profile.hobbies) {
         final itemStr = item.toString().trim();
         if (itemStr.isEmpty) continue;
-        
+
         if (itemStr.contains(',')) {
           debugPrint('  🔄 Splitting item: "$itemStr"');
           final subItems = itemStr
@@ -804,7 +889,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           hobbiesList.add(itemStr);
         }
       }
-      
+
       debugPrint('📋 [INTERESTS] Processed List: $hobbiesList');
     } else {
       debugPrint('⚠️ [INTERESTS] Invalid type: ${profile.hobbies.runtimeType}');
@@ -825,12 +910,11 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       final emoji = _keyToEmojiMap[trimmedKey] ?? '🎵';
       final displayText = _translateValue(trimmedKey);
 
-      debugPrint('🎯 Hobby: key="$trimmedKey", emoji="$emoji", display="$displayText"');
+      debugPrint(
+        '🎯 Hobby: key="$trimmedKey", emoji="$emoji", display="$displayText"',
+      );
 
-      return {
-        'icon': AssetsData.kmusicIcon,
-        'label': '$emoji $displayText'
-      };
+      return {'icon': AssetsData.kmusicIcon, 'label': '$emoji $displayText'};
     }).toList();
   }
 

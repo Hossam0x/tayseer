@@ -1192,7 +1192,8 @@
   "reorder_image_question": "هل تريد أن تكون هذه الصورة هي الصورة الثانية بعد الرئيسية؟",
   "yes_make_first": "نعم، اجعلها الأولى",
   "image_reordered_successfully": "تم إعادة ترتيب الصورة بنجاح",
-  "error_reordering_image": "حدث خطأ أثناء إعادة ترتيب الصورة"
+  "error_reordering_image": "حدث خطأ أثناء إعادة ترتيب الصورة",
+  "under_review":"انتظار المراجعة"
 
 
 }

@@ -1209,6 +1209,7 @@
   "reorder_image_question": "Do you want this image to be the first secondary image after the main one?",
   "yes_make_first": "Yes, Make it First",
   "image_reordered_successfully": "Image reordered successfully",
-  "error_reordering_image": "Error reordering image"
+  "error_reordering_image": "Error reordering image",
+  "under_review":"Awaiting review"
 
 }

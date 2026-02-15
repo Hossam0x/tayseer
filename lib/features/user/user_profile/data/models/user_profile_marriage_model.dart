@@ -12,6 +12,10 @@ class MarriageUserProfileModel {
   
   // ⭐⭐⭐ NEW: Progress percentage from API
   final num? answerCompletedPercentage;
+    // ⭐⭐⭐ NEW: Statistics fields
+  final int? interactionCount;
+  final int? regredsCount;
+  final bool? inReview;
 
   // Additional fields for the "view" format from API
   final ProfileHeader? header;
@@ -29,6 +33,9 @@ class MarriageUserProfileModel {
     this.myDescription,
     this.lastQuestionNumber,
     this.answerCompletedPercentage, // ⭐⭐⭐ NEW
+      this.interactionCount,
+    this.regredsCount,
+    this.inReview,
     this.header,
     this.timeline,
     this.religious,
@@ -156,7 +163,12 @@ class MarriageUserProfileModel {
       myDescription: json['myDescription'] as String?,
       lastQuestionNumber: json['lastQuestionNumber']?['questionNumber'] as int?,
       answerCompletedPercentage: json['answerCompletedPercentage'] as num?, // ⭐⭐⭐ NEW
+    // ⭐⭐⭐ NEW: Parse statistics
+      interactionCount: json['interactionCount'] as int?,
+      regredsCount: json['regredsCount'] as int?,
+      inReview: json['inReview'] as bool?,
     );
+
   }
 
   Map<String, dynamic> toJson() {
@@ -170,9 +182,11 @@ class MarriageUserProfileModel {
       'yourGoals': yourGoals?.toJson(),
       'myDescription': myDescription,
       'answerCompletedPercentage': answerCompletedPercentage, // ⭐⭐⭐ NEW
+      
     };
   }
 
+  // ⭐⭐⭐ UPDATED: copyWith with new fields
   MarriageUserProfileModel copyWith({
     AboutMe? aboutMe,
     ProfessionalLife? professionalLife,
@@ -182,7 +196,10 @@ class MarriageUserProfileModel {
     YourGoals? yourGoals,
     String? myDescription,
     int? lastQuestionNumber,
-    num? answerCompletedPercentage, // ⭐⭐⭐ NEW
+    num? answerCompletedPercentage,
+    int? interactionCount,
+    int? regredsCount,
+    bool? inReview,
     ProfileHeader? header,
     List<TimelineGoal>? timeline,
     ReligiousInfo? religious,
@@ -197,7 +214,10 @@ class MarriageUserProfileModel {
       yourGoals: yourGoals ?? this.yourGoals,
       myDescription: myDescription ?? this.myDescription,
       lastQuestionNumber: lastQuestionNumber ?? this.lastQuestionNumber,
-      answerCompletedPercentage: answerCompletedPercentage ?? this.answerCompletedPercentage, // ⭐⭐⭐ NEW
+      answerCompletedPercentage: answerCompletedPercentage ?? this.answerCompletedPercentage,
+      interactionCount: interactionCount ?? this.interactionCount,
+      regredsCount: regredsCount ?? this.regredsCount,
+      inReview: inReview ?? this.inReview,
       header: header ?? this.header,
       timeline: timeline ?? this.timeline,
       religious: religious ?? this.religious,
@@ -205,7 +225,6 @@ class MarriageUserProfileModel {
     );
   }
 }
-
 // ════════════════════════════════════════════════════════════════
 // ProfileHeader (for view format)
 // ════════════════════════════════════════════════════════════════

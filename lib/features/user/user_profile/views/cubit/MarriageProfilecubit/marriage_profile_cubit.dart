@@ -695,7 +695,30 @@ Future<void> saveProfile() async {
       },
     );
   }
+/// ⭐⭐⭐ Reorder Images and Save to Server
+Future<void> reorderImages(List<String> newOrderedImages) async {
+  if (state.profile == null) {
+    debugPrint('⚠️ [CUBIT] No profile to reorder images');
+    return;
+  }
 
+  debugPrint('🔄 [CUBIT] Reordering images...');
+  debugPrint('📋 [CUBIT] New order: $newOrderedImages');
+
+  // تحديث الـ profile محلياً
+  final updatedProfile = state.profile!.copyWith(
+    userMedia: state.profile!.userMedia?.copyWith(
+      images: newOrderedImages,
+    ),
+  );
+
+  emit(state.copyWith(profile: updatedProfile));
+
+  // ⭐⭐⭐ حفظ في السيرفر
+  await saveProfile();
+  
+  debugPrint('✅ [CUBIT] Images reordered and saved to server');
+}
   // ════════════════════════════════════════════════════════════════
   // ⭐ DUMMY PROFILE (FOR TESTING)
   // ════════════════════════════════════════════════════════════════

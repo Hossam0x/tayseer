@@ -656,16 +656,15 @@ void _showReorderImageDialog(
 }
 
 // ⭐⭐⭐ NEW: Reorder Image (Move to First Position)
+
 Future<void> _reorderImage(
   BuildContext context,
   MarriageProfileCubit cubit,
   int currentIndex,
   List<String> allImages,
 ) async {
-  // نسخة من القائمة الحالية
   final List<String> reorderedImages = List<String>.from(allImages);
   
-  // نقل الصورة المختارة للمركز الأول
   final selectedImage = reorderedImages.removeAt(currentIndex);
   reorderedImages.insert(0, selectedImage);
   
@@ -675,22 +674,36 @@ Future<void> _reorderImage(
   debugPrint('📋 [REORDER] New order: $reorderedImages');
   debugPrint('═══════════════════════════════════════');
   
-  // حفظ الترتيب الجديد
-  try {
-    // ⭐ هنا بنحفظ الترتيب الجديد في الـ profile
-    final updatedProfile = widget.profile.copyWith(
-      userMedia: widget.profile.userMedia?.copyWith(
-        images: reorderedImages,
+  // عرض Loading
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20.w,
+              height: 20.w,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            Gap(12.w),
+            Text(context.tr('saving_changes')),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+        backgroundColor: AppColors.primary600,
       ),
     );
+  }
+  
+  // ⭐⭐⭐ حفظ الترتيب في السيرفر
+  try {
+    await cubit.reorderImages(reorderedImages);
     
-    // ⭐ تحديث الـ state
-    cubit.emit(
-      widget.state.copyWith(profile: updatedProfile),
-    );
-    
-    // ⭐ عرض رسالة نجاح
     if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(
           context,
@@ -699,15 +712,15 @@ Future<void> _reorderImage(
         ),
       );
       
-      // ⭐ Refresh the UI
       setState(() {});
     }
     
-    debugPrint('✅ [REORDER] Image reordered successfully');
+    debugPrint('✅ [REORDER] Image reordered and saved successfully');
   } catch (e) {
     debugPrint('❌ [REORDER] Error: $e');
     
     if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(
           context,
@@ -718,7 +731,6 @@ Future<void> _reorderImage(
     }
   }
 }
-
 
   Future<void> _pickSingleImage(
     BuildContext context,
