@@ -470,6 +470,11 @@ class AuthRepoImpl implements AuthRepo {
           key: ktoken,
           value: guestResponse.data?.token ?? '',
         );
+        await CachNetwork.setData(
+          key: kUserType,
+          value: UserTypeEnum.guest.name
+              ,
+        );
         return right(guestResponse);
       } else {
         final message = response['message'] ?? 'فشل تسجيل الدخول كزائر.';

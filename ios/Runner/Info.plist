@@ -48,49 +48,54 @@
 
     <!-- Camera + Microphone -->
     <key>NSCameraUsageDescription</key>
-    <string>يحتاج التطبيق الوصول للكاميرا لالتقاط الصور والفيديوهات</string>
+    <string>يستخدم التطبيق الكاميرا لالتقاط صورة للملف الشخصي ومشاركة الصور أو الفيديوهات داخل التطبيق.</string>
+
     <key>NSMicrophoneUsageDescription</key>
-    <string>يحتاج التطبيق الوصول للميكروفون لتسجيل الصوت والرسائل الصوتية</string>
+    <string>يستخدم التطبيق الميكروفون لتسجيل الرسائل الصوتية أو أثناء مكالمات الصوت أو الفيديو داخل التطبيق.</string>
 
     <!-- Photos -->
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>يحتاج التطبيق الوصول لمكتبة الصور لاختيار الصور والفيديوهات</string>
+    <string>يستخدم التطبيق مكتبة الصور لاختيار الصور أو الفيديوهات ومشاركتها داخل التطبيق.</string>
+
     <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>يحتاج التطبيق إضافة الصور والفيديوهات إلى مكتبة الصور</string>
+    <string>يستخدم التطبيق حفظ الصور أو الفيديوهات التي ينشئها المستخدم داخل مكتبة الصور.</string>
 
     <!-- Media & Files -->
     <key>NSAppleMusicUsageDescription</key>
-    <string>يحتاج التطبيق الوصول للمكتبة الموسيقية والملفات الصوتية</string>
-    
+    <string>يستخدم التطبيق الوصول إلى الملفات الصوتية لاختيار ومشاركة المقاطع الصوتية داخل التطبيق.</string>
+
     <!-- Location -->
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>يحتاج التطبيق الوصول لموقعك لتقديم خدمات الموقع داخل التطبيق</string>
+    <string>يستخدم التطبيق موقعك لتقديم خدمات تعتمد على الموقع مثل عرض المستخدمين أو الخدمات القريبة منك.</string>
+
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>يحتاج التطبيق الوصول لموقعك لتقديم خدمات الموقع حتى عند عدم استخدام التطبيق</string>
+    <string>يستخدم التطبيق موقعك لتحسين الخدمات المرتبطة بالموقع حتى عند تشغيل التطبيق في الخلفية.</string>
+
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>يحتاج التطبيق الوصول لموقعك بشكل دائم لتحديثات الموقع</string>
+    <string>يستخدم التطبيق موقعك بشكل مستمر لتحسين تجربة الخدمات المعتمدة على الموقع.</string>
 
-    <!-- Bluetooth (Required by ZEGO UIKit) -->
+    <!-- Bluetooth -->
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>يحتاج التطبيق الوصول للبلوتوث للتواصل مع الأجهزة الصوتية</string>
-    <key>NSBluetoothPeripheralUsageDescription</key>
-    <string>يحتاج التطبيق الوصول للبلوتوث للتواصل مع الأجهزة الصوتية</string>
+    <string>يستخدم التطبيق البلوتوث للاتصال بالأجهزة الصوتية مثل السماعات أثناء المكالمات الصوتية أو الفيديو.</string>
 
-    <!-- Motion (Optional but recommended for some Camera features) -->
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>يستخدم التطبيق البلوتوث للتواصل مع الأجهزة الصوتية المتصلة بالجهاز.</string>
+
+    <!-- Motion -->
     <key>NSMotionUsageDescription</key>
-    <string>يحتاج التطبيق الوصول للحساسات لتحسين جودة التصوير</string>
+    <string>يستخدم التطبيق بيانات الحركة لتحسين تجربة التصوير أو عرض المحتوى بشكل أفضل.</string>
 
     <!-- Photo Library Limited Access (iOS 14+) -->
     <key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
     <true/>
-    
-    <!-- Limited Photo Library Access Description (iOS 14+) -->
+
     <key>NSPhotoLibraryLimitedUsageDescription</key>
-    <string>يحتاج التطبيق الوصول لمكتبة الصور المحددة لاختيار الصور والفيديوهات للقصص</string>
+    <string>يستخدم التطبيق الصور المحددة فقط من مكتبتك لاختيار ومشاركة المحتوى داخل التطبيق.</string>
 
     <!-- Notifications -->
     <key>NSUserNotificationAlertStyle</key>
     <string>alert</string>
+
     <key>UIBackgroundModes</key>
     <array>
         <string>fetch</string>
@@ -116,7 +121,7 @@
     <key>UIMainStoryboardFile</key>
     <string>Main</string>
 
-    <!-- Supported Orientations (iPhone + iPad) -->
+    <!-- Supported Orientations -->
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
@@ -125,7 +130,7 @@
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
 
-    <!-- Google Sign-In URL Schemes -->
+    <!-- Google Sign-In -->
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
