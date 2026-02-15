@@ -1303,5 +1303,7 @@
   "yes_make_first": "نعم، اجعلها الأولى",
   "image_reordered_successfully": "تم إعادة ترتيب الصورة بنجاح",
   "error_reordering_image": "حدث خطأ أثناء إعادة ترتيب الصورة",
-  "under_review": "انتظار المراجعة"
+  "under_review": "انتظار المراجعة",
+  "end_of_results_search": "تم الوصول لنهاية نتائج البحث",
+  "see_all": "عرض الكل"
 }
