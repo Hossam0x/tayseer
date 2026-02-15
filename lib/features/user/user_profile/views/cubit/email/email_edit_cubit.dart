@@ -18,9 +18,9 @@ class EmailEditCubit extends Cubit<EmailEditState> {
     final email = state.email;
 
     if (email.isEmpty) {
-      error = 'يرجى إدخال البريد الإلكتروني';
+      error = 'email_required';
     } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      error = 'البريد الإلكتروني غير صالح';
+      error = 'invalid_email';
     }
 
     emit(state.copyWith(emailError: error));
@@ -54,12 +54,12 @@ class EmailEditCubit extends Cubit<EmailEditState> {
           state.copyWith(
             status: CubitStates.success,
             fullEmail: state.email,
-            successMessage: 'تم إرسال رمز التحقق بنجاح',
+            successMessage: 'otp_sent_success',
             errorMessage: '',
           ),
         );
       } else {
-        final msg = response['message'] ?? 'فشل تحديث البريد';
+        final msg = response['message'] ?? 'update_email_failed';
         emit(state.copyWith(status: CubitStates.failure, errorMessage: msg));
       }
     } on DioException catch (e) {
@@ -74,7 +74,7 @@ class EmailEditCubit extends Cubit<EmailEditState> {
       emit(
         state.copyWith(
           status: CubitStates.failure,
-          errorMessage: 'حدث خطأ غير متوقع',
+          errorMessage: 'error_occurred',
         ),
       );
     }

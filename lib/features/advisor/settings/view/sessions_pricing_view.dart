@@ -3,6 +3,7 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_states.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/session_price_item.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class SessionPricingView extends StatelessWidget {
@@ -14,20 +15,21 @@ class SessionPricingView extends StatelessWidget {
       create: (_) => getIt<SessionPricingCubit>(),
       child: BlocConsumer<SessionPricingCubit, SessionPricingState>(
         listener: (context, state) {
-          if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(context, text: state.errorMessage!, isError: true),
+          if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr(state.errorMessage!),
+              isError: true,
             );
             context.read<SessionPricingCubit>().clearError();
           }
 
-          if (state.successMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(
-                context,
-                text: state.successMessage!,
-                isSuccess: true,
-              ),
+          if (state.successMessage != null &&
+              state.successMessage!.isNotEmpty) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr(state.successMessage!),
+              isSuccess: true,
             );
             context.read<SessionPricingCubit>().clearSuccess();
             Navigator.pop(context);

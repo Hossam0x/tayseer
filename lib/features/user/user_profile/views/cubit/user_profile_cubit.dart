@@ -43,7 +43,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final profile = await _fetchUserProfile();
       emit(currentState.copyWith(userProfile: profile));
     } catch (e) {
-      debugPrint('❌ خطأ في جلب بيانات المستخدم: $e');
+      debugPrint('❌ Error fetching user profile: $e');
     }
   }
 
@@ -151,7 +151,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         ),
       );
     } catch (e) {
-      emit(SettingsError(message: 'حدث خطأ في تحميل البيانات: $e'));
+      emit(SettingsError(message: 'error_loading_data'));
     }
   }
 
@@ -171,7 +171,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           emit(
             currentState.copyWith(
-              actionMessage: 'update_age_failed:${failure.message}',
+              actionMessage: 'update_age_failed',
               isActionSuccess: false,
               actionTimestamp: DateTime.now().millisecondsSinceEpoch,
             ),
@@ -215,7 +215,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           emit(
             currentState.copyWith(
-              actionMessage: 'update_gender_failed:${failure.message}',
+              actionMessage: 'update_gender_failed',
               isActionSuccess: false,
               actionTimestamp: DateTime.now().millisecondsSinceEpoch,
             ),
@@ -259,7 +259,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           emit(
             currentState.copyWith(
-              actionMessage: 'update_anonymous_failed:${failure.message}',
+              actionMessage: 'update_anonymous_failed',
               isActionSuccess: false,
               actionTimestamp: DateTime.now().millisecondsSinceEpoch,
             ),
@@ -306,7 +306,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           emit(
             currentState.copyWith(
-              actionMessage: 'update_marriage_status_failed:${failure.message}',
+              actionMessage: 'update_marriage_status_failed',
               isActionSuccess: false,
               actionTimestamp: DateTime.now().millisecondsSinceEpoch,
             ),
@@ -351,7 +351,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           emit(
             currentState.copyWith(
-              actionMessage: 'update_blur_failed:${failure.message}',
+              actionMessage: 'update_blur_failed',
               isActionSuccess: false,
               actionTimestamp: DateTime.now().millisecondsSinceEpoch,
             ),
@@ -426,7 +426,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       await Share.share(message, subject: 'دعوة لتطبيق تيسير');
     } catch (e) {
-      debugPrint('❌ خطأ في المشاركة: $e');
+      debugPrint('❌ Error sharing: $e');
     }
   }
 
@@ -508,14 +508,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
             sound: true,
           );
         }
-
-        debugPrint('✅ تم تفعيل الاشعارات بنجاح');
       } else {
-        debugPrint('❌ المستخدم رفض إذن الاشعارات');
-        throw Exception('تم رفض إذن الاشعارات');
+        throw Exception('Notifications permission denied');
       }
     } catch (e) {
-      debugPrint('❌ خطأ في تفعيل الاشعارات: $e');
       rethrow;
     }
   }
@@ -533,10 +529,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           sound: false,
         );
       }
-
-      debugPrint('✅ تم تعطيل الاشعارات بنجاح');
     } catch (e) {
-      debugPrint('❌ خطأ في تعطيل الاشعارات: $e');
       rethrow;
     }
   }
@@ -552,7 +545,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         (failure) {
           emit(
             currentState.copyWith(
-              actionMessage: 'rate_app_failed:${failure.message}',
+              actionMessage: 'rate_app_failed',
               isActionSuccess: false,
               actionTimestamp: DateTime.now().millisecondsSinceEpoch,
             ),
@@ -581,14 +574,11 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
   Future<void> logout() async {
     final currentState = state;
-    // We don't guard with SettingsLoaded because logout should always be possible if initialized
 
     try {
       try {
         await FirebaseMessaging.instance.unsubscribeFromTopic("all");
-      } catch (e) {
-        debugPrint('⚠️ Error unsubscribing from topics: $e');
-      }
+      } catch (e) {}
 
       await _notificationService.clearAllNotifications();
 
@@ -603,7 +593,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
                 actionTimestamp: DateTime.now().millisecondsSinceEpoch,
               )
             : SettingsLoaded(
-                // Fallback if state was not loaded, though unlikely
                 settings: [],
                 actionMessage: "logout_success",
                 isActionSuccess: true,
@@ -637,7 +626,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final profile = await _fetchUserProfile();
       emit(currentState.copyWith(userProfile: profile));
     } catch (e) {
-      emit(SettingsError(message: 'حدث خطأ في تحديث البيانات: $e'));
+      emit(SettingsError(message: 'update_error'));
     }
   }
 }

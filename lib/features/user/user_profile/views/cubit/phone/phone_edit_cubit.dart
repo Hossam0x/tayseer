@@ -71,19 +71,19 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     final phone = state.phoneNumber.trim();
 
     if (phone.isEmpty) {
-      error = 'يرجى إدخال رقم الهاتف';
+      error = 'field_required';
     } else if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
-      error = 'يجب أن يحتوي الرقم على أرقام فقط';
+      error = 'invalid_phone';
     } else if (phone.length < 8) {
-      error = 'رقم الهاتف قصير جداً';
+      error = 'invalid_phone';
     } else if (phone.length > 15) {
-      error = 'رقم الهاتف طويل جداً';
+      error = 'invalid_phone';
     } else {
       // تحقق حسب رمز الدولة
       if (state.selectedCountryCode == "+966" && !phone.startsWith('5')) {
-        error = 'يجب أن يبدأ الرقم السعودي بـ 5';
+        error = 'invalid_phone';
       } else if (state.selectedCountryCode == "+20" && !phone.startsWith('1')) {
-        error = 'يجب أن يبدأ الرقم المصري بـ 1';
+        error = 'invalid_phone';
       }
     }
 
@@ -118,7 +118,7 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
           state.copyWith(
             updatePhoneStatus: CubitStates.success,
             fullPhoneNumber: fullPhoneNumber,
-            successMessage: 'تم إرسال رمز التحقق بنجاح',
+            successMessage: 'otp_sent_success',
             errorMessage: '',
           ),
         );
@@ -126,7 +126,7 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
         emit(
           state.copyWith(
             updatePhoneStatus: CubitStates.failure,
-            errorMessage: response['message'] ?? 'فشل تحديث رقم الهاتف',
+            errorMessage: response['message'] ?? 'update_phone_failed',
           ),
         );
       }
@@ -142,7 +142,7 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
       emit(
         state.copyWith(
           updatePhoneStatus: CubitStates.failure,
-          errorMessage: 'حدث خطأ غير متوقع',
+          errorMessage: 'error_occurred',
         ),
       );
     }

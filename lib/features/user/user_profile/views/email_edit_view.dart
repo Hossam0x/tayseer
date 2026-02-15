@@ -38,7 +38,7 @@ class _EmailEditViewState extends State<EmailEditView> {
             if (state.errorMessage.isNotEmpty) {
               showSafeSnackBar(
                 context: context,
-                text: state.errorMessage,
+                text: context.tr(state.errorMessage),
                 isError: true,
               );
               context.read<EmailEditCubit>().clearMessages();
@@ -46,7 +46,7 @@ class _EmailEditViewState extends State<EmailEditView> {
                 state.status == CubitStates.success) {
               showSafeSnackBar(
                 context: context,
-                text: state.successMessage,
+                text: context.tr(state.successMessage),
                 isSuccess: true,
               );
 
@@ -146,7 +146,7 @@ class _EmailEditViewState extends State<EmailEditView> {
                             Padding(
                               padding: EdgeInsets.only(right: 12.w),
                               child: Text(
-                                state.emailError,
+                                context.tr(state.emailError),
                                 style: Styles.textStyle12.copyWith(
                                   color: Colors.red,
                                   height: 1.4,

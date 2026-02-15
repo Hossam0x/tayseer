@@ -84,7 +84,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
               if (state.errorMessage.isNotEmpty) {
                 showSafeSnackBar(
                   context: context,
-                  text: state.errorMessage,
+                  text: context.tr(state.errorMessage),
                   isError: true,
                 );
                 context.read<OtpCubit>().clearMessages();
@@ -92,7 +92,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
                   state.otpStatus == OtpStatus.success) {
                 showSafeSnackBar(
                   context: context,
-                  text: state.successMessage,
+                  text: context.tr(state.successMessage),
                   isSuccess: true,
                 );
 
@@ -107,7 +107,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
                 // If success but not success status (like resend)
                 showSafeSnackBar(
                   context: context,
-                  text: state.successMessage,
+                  text: context.tr(state.successMessage),
                   isSuccess: true,
                 );
                 context.read<OtpCubit>().clearMessages();
@@ -129,9 +129,11 @@ class _OtpViewUserState extends State<OtpViewUser> {
                     SizedBox(height: context.height * 0.05),
 
                     Padding(
-                      padding: const EdgeInsets.only(right: 25),
+                      padding: const EdgeInsetsDirectional.only(start: 25),
                       child: Align(
-                        alignment: Alignment.centerRight,
+                        alignment: isArabic
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: IconButton(
                           onPressed: () => Navigator.pop(context),
                           icon: const Icon(
@@ -147,10 +149,10 @@ class _OtpViewUserState extends State<OtpViewUser> {
 
                     Text(
                       state.isPhoneUpdate
-                          ? 'تأكيد رقم الهاتف الجديد'
+                          ? context.tr('confirm_new_phone')
                           : state.isEmailUpdate
-                          ? 'تأكيد البريد الإلكتروني الجديد'
-                          : 'رمز التحقق',
+                          ? context.tr('confirm_new_email')
+                          : context.tr('otp_title'),
                       style: Styles.textStyle24.copyWith(
                         color: HexColor('590d1c'),
                       ),
@@ -161,7 +163,10 @@ class _OtpViewUserState extends State<OtpViewUser> {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 40.w),
                       child: Text(
-                        'تم إرسال رمز التحقق إلى ${state.phoneNumber}',
+                        context.tr(
+                          'otp_sent_to_number',
+                          args: [state.phoneNumber],
+                        ),
                         textAlign: TextAlign.center,
                         style: Styles.textStyle14.copyWith(color: Colors.grey),
                       ),
@@ -185,7 +190,9 @@ class _OtpViewUserState extends State<OtpViewUser> {
                       child: CustomBotton(
                         width: double.infinity,
                         useGradient: true,
-                        title: state.isLoading ? 'جاري التحقق...' : 'تأكيد',
+                        title: state.isLoading
+                            ? context.tr('verifying')
+                            : context.tr('confirm'),
                         onPressed: state.isLoading
                             ? null
                             : () {
@@ -194,7 +201,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
                                 } else {
                                   showSafeSnackBar(
                                     context: context,
-                                    text: 'يجب إدخال الرمز المكون من 6 أرقام',
+                                    text: context.tr('otp_digit_6_error'),
                                     isError: true,
                                   );
                                 }
@@ -301,7 +308,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
                 context.read<OtpCubit>().resendCode();
               },
         child: Text(
-          'إعادة إرسال الرمز',
+          context.tr('resend_code'),
           style: Styles.textStyle12.copyWith(
             color: HexColor('4d81e7'),
             decoration: TextDecoration.underline,
@@ -314,7 +321,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
       return Column(
         children: [
           Text(
-            'إعادة إرسال الرمز خلال',
+            context.tr('resend_code_in'),
             style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
           SizedBox(height: 4.h),

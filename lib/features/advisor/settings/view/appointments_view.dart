@@ -3,6 +3,7 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_states.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/time_slot_item.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class AppointmentsView extends StatelessWidget {
@@ -14,27 +15,27 @@ class AppointmentsView extends StatelessWidget {
       create: (_) => getIt<AppointmentsCubit>(),
       child: BlocConsumer<AppointmentsCubit, AppointmentsState>(
         listener: (context, state) {
-          if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(context, text: state.errorMessage!, isError: true),
+          if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr(state.errorMessage!),
+              isError: true,
             );
             context.read<AppointmentsCubit>().clearError();
           }
 
-          // // عرض رسالة النجاح فقط عند الانتهاء من الحفظ وبدون أخطاء
-          // if (state.isSaving == false &&
-          //     state.errorMessage == null &&
-          //     !state.hasChanges) {
-          //   Future.delayed(Duration.zero, () {
-          //     ScaffoldMessenger.of(context).showSnackBar(
-          //       CustomSnackBar(
-          //         context,
-          //         text: 'تم حفظ التغييرات بنجاح',
-          //         isSuccess: true,
-          //       ),
-          //     );
-          //   });
-          // }
+          if (state.successMessage != null &&
+              state.successMessage!.isNotEmpty) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr(state.successMessage!),
+              isSuccess: true,
+            );
+            context.read<AppointmentsCubit>().clearSuccess();
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (context.mounted) Navigator.pop(context);
+            });
+          }
         },
         builder: (context, state) {
           final cubit = context.read<AppointmentsCubit>();
@@ -269,7 +270,7 @@ class AppointmentsView extends StatelessWidget {
           : context.tr('no_changes'),
       onPressed: state.isSaving || !state.hasChanges
           ? null
-          : () => cubit.saveChanges(context),
+          : () => cubit.saveChanges(),
       backGroundcolor: state.hasChanges ? null : AppColors.inactiveColor,
     );
   }

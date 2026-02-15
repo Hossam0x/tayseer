@@ -30,6 +30,7 @@ class OtpCubit extends Cubit<OtpState> {
 
   void updateOtpCode(String code) {
     emit(state.copyWith(otpCode: code));
+    // No auto-verify on 6 digits here to avoid context/dialog complexity
   }
 
   void _startResendTimer() {
@@ -110,7 +111,7 @@ class OtpCubit extends Cubit<OtpState> {
             state.copyWith(
               resendSeconds: 300,
               otpStatus: OtpStatus.initial,
-              successMessage: 'تم إعادة إرسال رمز التحقق على البريد الإلكتروني',
+              successMessage: 'otp_sent_success',
               canResend: false,
             ),
           );
@@ -123,7 +124,7 @@ class OtpCubit extends Cubit<OtpState> {
         emit(
           state.copyWith(
             otpStatus: OtpStatus.failure,
-            errorMessage: 'تنسيق رقم الهاتف غير صحيح',
+            errorMessage: 'invalid_phone',
             canResend: true,
           ),
         );
@@ -150,7 +151,7 @@ class OtpCubit extends Cubit<OtpState> {
             state.copyWith(
               resendSeconds: 300,
               otpStatus: OtpStatus.initial,
-              successMessage: 'تم إعادة إرسال رمز التحقق',
+              successMessage: 'otp_sent_success',
               canResend: false,
             ),
           );
@@ -161,7 +162,7 @@ class OtpCubit extends Cubit<OtpState> {
       emit(
         state.copyWith(
           otpStatus: OtpStatus.failure,
-          errorMessage: 'هذه العملية غير مدعومة حالياً',
+          errorMessage: 'operation_not_supported',
           canResend: true,
         ),
       );
@@ -183,17 +184,17 @@ class OtpCubit extends Cubit<OtpState> {
     switch (_otpSource) {
       case OtpSource.email:
         final result = await _otpRepository.verifyEmailOtp(state.otpCode);
-        _handleVerificationResult(result, 'تم تأكيد البريد الإلكتروني بنجاح');
+        _handleVerificationResult(result, 'otp_verify_success');
         break;
 
       case OtpSource.editPhone:
         final result = await _otpRepository.verifyEditPhoneOtp(state.otpCode);
-        _handleVerificationResult(result, 'تم تأكيد رقم الهاتف بنجاح');
+        _handleVerificationResult(result, 'otp_verify_success');
         break;
 
       case OtpSource.phone:
         final result = await _otpRepository.verifyEditPhoneOtp(state.otpCode);
-        _handleVerificationResult(result, 'تم التحقق بنجاح');
+        _handleVerificationResult(result, 'otp_verify_success');
         break;
     }
   }

@@ -6,6 +6,7 @@ import 'package:tayseer/features/advisor/profille/data/repositories/certificates
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_state.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:intl/intl.dart';
 
@@ -33,31 +34,28 @@ class EditCertificateView extends StatelessWidget {
           listenWhen: (previous, current) =>
               previous.isLoading != current.isLoading && !current.isLoading,
           listener: (context, state) {
-            if (state.errorMessage != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                CustomSnackBar(
-                  context,
-                  text: state.errorMessage!,
-                  isError: true,
-                ),
+            if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+              showSafeSnackBar(
+                context: context,
+                text: context.tr(state.errorMessage!),
+                isError: true,
               );
               context.read<EditCertificateCubit>().clearMessages();
-            } else if (state.successMessage != null &&
-                state.state == CubitStates.success) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                CustomSnackBar(
-                  context,
-                  text: state.successMessage!,
-                  isSuccess: true,
-                ),
+            }
+
+            if (state.successMessage != null &&
+                state.successMessage!.isNotEmpty) {
+              showSafeSnackBar(
+                context: context,
+                text: context.tr(state.successMessage!),
+                isSuccess: true,
               );
 
               if (state.isNavigationSuccess) {
-                // ⭐ عند نجاح التحديث، نقوم بتحديث القائمة محليًا في CertificatesCubit
-                if (state.selectedCertificateId != null) {
-                  try {
-                    final certificatesCubit = context.read<CertificatesCubit>();
-
+                // Try to update local list if CertificatesCubit is available
+                try {
+                  final certificatesCubit = context.read<CertificatesCubit>();
+                  if (state.selectedCertificateId != null) {
                     final updatedCertificate = CertificateModel(
                       id: state.selectedCertificateId!,
                       nameCertificate: state.nameCertificate,
@@ -65,15 +63,17 @@ class EditCertificateView extends StatelessWidget {
                       date: state.date!,
                       image: state.certificateImageUrl,
                     );
-
                     certificatesCubit.updateCertificateLocally(
                       updatedCertificate,
                     );
-                  } catch (e) {
-                    // CertificatesCubit is not in context, ignore
                   }
+                } catch (e) {
+                  // ignore if not in context
                 }
-                Navigator.pop(context, true);
+
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  if (context.mounted) Navigator.pop(context, true);
+                });
               }
               context.read<EditCertificateCubit>().clearMessages();
             }
@@ -112,49 +112,37 @@ class EditCertificateView extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               SimpleAppBar(
-                                title: 'تعديل الشهادات',
+                                title: context.tr('edit_certificates'),
                                 isLargeTitle: true,
                               ),
-
-                              // Certificate Image / Preview
-                              _buildImagePickerSection(cubit, state),
+                              _buildImagePickerSection(context, cubit, state),
                               Gap(32.h),
-
-                              // Name Certificate field
                               ProfileTextField(
                                 controller: state.nameCertificateController!,
                                 onChanged: cubit.updateNameCertificate,
-                                hint: 'اسم الشهادة (مثال: بكالوريوس علم النفس)',
+                                hint: context.tr('certificate_name_hint'),
                               ),
                               Gap(20.h),
-
-                              // From Where field
                               ProfileTextField(
                                 controller: state.fromWhereController!,
                                 onChanged: cubit.updateFromWhere,
-                                hint: 'من أين (مثال: جامعة الملك فيصل)',
+                                hint: context.tr('institution_name_hint'),
                               ),
                               Gap(20.h),
-
-                              // Date picker
                               _buildDatePicker(context, cubit, state),
                               Gap(24.h),
-
-                              // Update Button
                               CustomBotton(
                                 height: 54.h,
                                 width: context.width * 0.8,
                                 useGradient: true,
                                 title: state.isLoading
-                                    ? 'جارٍ التحديث...'
-                                    : 'تحديث',
+                                    ? context.tr('updating')
+                                    : context.tr('update'),
                                 onPressed: state.isLoading
                                     ? null
                                     : () => cubit.updateCertificate(),
                               ),
                               Gap(20.h),
-
-                              // Certificates List
                               if (certificates.isNotEmpty) ...[
                                 SizedBox(
                                   height: 180.h,
@@ -213,79 +201,21 @@ class EditCertificateView extends StatelessWidget {
                                                                     .infinity,
                                                                 height: double
                                                                     .infinity,
-                                                                placeholder: (context, url) => Container(
-                                                                  width: double
-                                                                      .infinity,
-                                                                  height: double
-                                                                      .infinity,
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade200,
-                                                                  child: Shimmer.fromColors(
-                                                                    baseColor:
-                                                                        AppColors
-                                                                            .kprimaryColor,
-                                                                    highlightColor: AppColors
-                                                                        .kprimaryColor
-                                                                        .withOpacity(
-                                                                          0.5,
-                                                                        ),
-                                                                    child: Container(
-                                                                      width: double
-                                                                          .infinity,
-                                                                      height: double
-                                                                          .infinity,
-                                                                      color: Colors
-                                                                          .grey
-                                                                          .shade200,
-                                                                    ),
-                                                                  ),
-                                                                ),
+                                                                placeholder:
+                                                                    (
+                                                                      context,
+                                                                      url,
+                                                                    ) =>
+                                                                        _buildPlaceholder(),
                                                                 errorWidget:
                                                                     (
                                                                       context,
                                                                       url,
                                                                       error,
-                                                                    ) => Container(
-                                                                      width: double
-                                                                          .infinity,
-                                                                      height: double
-                                                                          .infinity,
-                                                                      color: Colors
-                                                                          .grey
-                                                                          .shade200,
-                                                                      child: const Center(
-                                                                        child: Icon(
-                                                                          Icons
-                                                                              .image,
-                                                                          color:
-                                                                              Colors.grey,
-                                                                          size:
-                                                                              40,
-                                                                        ),
-                                                                      ),
-                                                                    ),
+                                                                    ) =>
+                                                                        _buildErrorWidget(),
                                                               )
-                                                            : Container(
-                                                                width: double
-                                                                    .infinity,
-                                                                height: double
-                                                                    .infinity,
-                                                                color: Colors
-                                                                    .grey
-                                                                    .shade200,
-                                                                child: const Center(
-                                                                  child: Icon(
-                                                                    Icons
-                                                                        .school,
-                                                                    color: Colors
-                                                                        .grey,
-                                                                    size: 40,
-                                                                  ),
-                                                                ),
-                                                              ),
-
-                                                        // Edit icon
+                                                            : _buildDefaultImage(),
                                                         Positioned(
                                                           top: 4.r,
                                                           left: 4.r,
@@ -294,89 +224,12 @@ class EditCertificateView extends StatelessWidget {
                                                             width: 20.w,
                                                           ),
                                                         ),
-
-                                                        // Delete icon
-                                                        Positioned(
-                                                          top: 4.r,
-                                                          right: 4.r,
-                                                          child: Container(
-                                                            width: 24.r,
-                                                            height: 24.r,
-                                                            decoration:
-                                                                const BoxDecoration(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  shape: BoxShape
-                                                                      .circle,
-                                                                ),
-                                                            child: const Center(
-                                                              child: Icon(
-                                                                Icons.close,
-                                                                size: 20,
-                                                                color:
-                                                                    Colors.red,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
                                                       ],
                                                     ),
                                                   ),
                                                 ),
                                               ),
-                                              Container(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 16.w,
-                                                  vertical: 8.h,
-                                                ),
-                                                child: Column(
-                                                  children: [
-                                                    Text(
-                                                      cert.nameCertificate,
-                                                      style: Styles.textStyle16
-                                                          .copyWith(
-                                                            color: AppColors
-                                                                .primaryText,
-                                                          ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                    ),
-                                                    Gap(4.h),
-                                                    Text(
-                                                      cert.fromWhere,
-                                                      style: Styles.textStyle16
-                                                          .copyWith(
-                                                            color: AppColors
-                                                                .primaryText,
-                                                          ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                    ),
-                                                    Gap(4.h),
-                                                    Text(
-                                                      DateFormat(
-                                                        'yyyy',
-                                                      ).format(cert.date),
-                                                      style: Styles.textStyle16
-                                                          .copyWith(
-                                                            color: AppColors
-                                                                .primaryText,
-                                                          ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
+                                              _buildCertDetails(cert),
                                             ],
                                           ),
                                         ),
@@ -402,12 +255,79 @@ class EditCertificateView extends StatelessWidget {
     );
   }
 
-  // باقي الدوال بدون تغيير
+  Widget _buildPlaceholder() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.grey.shade200,
+      child: Shimmer.fromColors(
+        baseColor: AppColors.kprimaryColor,
+        highlightColor: AppColors.kprimaryColor.withOpacity(0.5),
+        child: Container(color: Colors.grey.shade200),
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.grey.shade200,
+      child: const Center(
+        child: Icon(Icons.image, color: Colors.grey, size: 40),
+      ),
+    );
+  }
+
+  Widget _buildDefaultImage() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.grey.shade200,
+      child: const Center(
+        child: Icon(Icons.school, color: Colors.grey, size: 40),
+      ),
+    );
+  }
+
+  Widget _buildCertDetails(CertificateModel cert) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      child: Column(
+        children: [
+          Text(
+            cert.nameCertificate,
+            style: Styles.textStyle16.copyWith(color: AppColors.primaryText),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+          Gap(4.h),
+          Text(
+            cert.fromWhere,
+            style: Styles.textStyle16.copyWith(color: AppColors.primaryText),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+          Gap(4.h),
+          Text(
+            DateFormat('yyyy').format(cert.date),
+            style: Styles.textStyle16.copyWith(color: AppColors.primaryText),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildImagePickerSection(
+    BuildContext context,
     EditCertificateCubit cubit,
     EditCertificateState state,
   ) {
-    // ... نفس الكود الذي كان موجودًا
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -440,15 +360,10 @@ class EditCertificateView extends StatelessWidget {
                       ),
                     )
                   : Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.school,
-                            size: 40.w,
-                            color: Colors.grey.shade500,
-                          ),
-                        ],
+                      child: Icon(
+                        Icons.school,
+                        size: 40.w,
+                        color: Colors.grey.shade500,
                       ),
                     ),
             ),
@@ -485,7 +400,7 @@ class EditCertificateView extends StatelessWidget {
         ),
         Gap(8.h),
         Text(
-          'يرجى رفع صورة واضحة للشهادة الأكاديمية، مع التأكد من أن جميع التفاصيل قابلة للقراءة دون تشويش',
+          context.tr('certificate_image_hint'),
           style: Styles.textStyle16.copyWith(color: AppColors.secondary400),
           textAlign: TextAlign.center,
         ),
@@ -518,9 +433,7 @@ class EditCertificateView extends StatelessWidget {
             );
           },
         );
-        if (picked != null) {
-          cubit.updateDate(picked);
-        }
+        if (picked != null) cubit.updateDate(picked);
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
@@ -541,7 +454,7 @@ class EditCertificateView extends StatelessWidget {
               child: Text(
                 state.date != null
                     ? DateFormat('yyyy/MM/dd').format(state.date!)
-                    : 'اختر التاريخ',
+                    : context.tr('choose_date'),
                 style: Styles.textStyle14.copyWith(
                   color: state.date == null
                       ? AppColors.primary200

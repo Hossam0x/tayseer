@@ -61,8 +61,8 @@ class SessionPricingState extends Equatable {
       serviceProvider: serviceProvider ?? this.serviceProvider,
       originalServiceProvider:
           originalServiceProvider ?? this.originalServiceProvider,
-      errorMessage: errorMessage, // Intentionally not keeping previous
-      successMessage: successMessage, // Intentionally not keeping previous
+      errorMessage: errorMessage,
+      successMessage: successMessage,
       isSaving: isSaving ?? this.isSaving,
       sessionTypes: sessionTypes ?? this.sessionTypes,
       hasChanges: hasChanges ?? this.hasChanges,
@@ -90,6 +90,7 @@ class AppointmentsState extends Equatable {
   final ServiceProviderRequest? serviceProvider;
   final ServiceProviderRequest? originalServiceProvider;
   final String? errorMessage;
+  final String? successMessage;
   final bool isSaving;
   final List<WeeklyAvailabilityModel> weeklyAvailability;
   final bool hasChanges;
@@ -99,6 +100,7 @@ class AppointmentsState extends Equatable {
     this.serviceProvider,
     this.originalServiceProvider,
     this.errorMessage,
+    this.successMessage,
     this.isSaving = false,
     required this.weeklyAvailability,
     required this.hasChanges,
@@ -109,9 +111,7 @@ class AppointmentsState extends Equatable {
       weeklyAvailability: List.generate(7, (index) {
         return WeeklyAvailabilityModel(
           dayOfWeek: index,
-          isEnabled:
-              index == 0 ||
-              index == 1, // Saturday and Sunday enabled by default
+          isEnabled: index == 0 || index == 1,
           timeSlots: index == 0
               ? [
                   TimeSlotModel(start: '10:00', end: '12:00'),
@@ -131,6 +131,7 @@ class AppointmentsState extends Equatable {
     ServiceProviderRequest? serviceProvider,
     ServiceProviderRequest? originalServiceProvider,
     String? errorMessage,
+    String? successMessage,
     bool? isSaving,
     List<WeeklyAvailabilityModel>? weeklyAvailability,
     bool? hasChanges,
@@ -140,7 +141,8 @@ class AppointmentsState extends Equatable {
       serviceProvider: serviceProvider ?? this.serviceProvider,
       originalServiceProvider:
           originalServiceProvider ?? this.originalServiceProvider,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage,
+      successMessage: successMessage,
       isSaving: isSaving ?? this.isSaving,
       weeklyAvailability: weeklyAvailability ?? this.weeklyAvailability,
       hasChanges: hasChanges ?? this.hasChanges,
@@ -153,6 +155,7 @@ class AppointmentsState extends Equatable {
     serviceProvider,
     originalServiceProvider,
     errorMessage,
+    successMessage,
     isSaving,
     weeklyAvailability,
     hasChanges,

@@ -109,19 +109,13 @@ class StoryVisibilityCubit extends Cubit<StoryVisibilityState> {
         );
       },
       (response) {
-        // إزالة المستخدمين المحددين من القائمة
-        final updatedUsers = state.users
-            .where((user) => !state.selectedUserIds.contains(user.userId))
-            .toList();
-
         emit(
           state.copyWith(
-            users: updatedUsers,
+            successMessage: 'story_unrestrict_success',
             isUnrestricting: false,
-            successMessage: 'تم إلغاء الإخفاء بنجاح',
-            state: CubitStates.success, // Ensure state success for listeners
           ),
         );
+        loadRestrictedUsers(); // Assuming loadBlockedUsers() should be loadRestrictedUsers() based on context
       },
     );
   }

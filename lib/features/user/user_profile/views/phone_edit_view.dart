@@ -42,7 +42,7 @@ class _PhoneEditViewState extends State<PhoneEditView> {
             if (state.errorMessage.isNotEmpty) {
               showSafeSnackBar(
                 context: context,
-                text: state.errorMessage,
+                text: context.tr(state.errorMessage),
                 isError: true,
               );
               context.read<PhoneEditCubit>().clearMessages();
@@ -50,12 +50,12 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                 state.updatePhoneStatus == CubitStates.success) {
               showSafeSnackBar(
                 context: context,
-                text: state.successMessage,
+                text: context.tr(state.successMessage),
                 isSuccess: true,
               );
 
               // التنقل عند النجاح فقط
-              Future.delayed(Duration(milliseconds: 1500), () {
+              Future.delayed(const Duration(milliseconds: 1500), () {
                 if (mounted) {
                   Navigator.push(
                     context,
@@ -126,7 +126,7 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                             Padding(
                               padding: EdgeInsets.only(right: 12.w),
                               child: Text(
-                                state.phoneError,
+                                context.tr(state.phoneError),
                                 style: Styles.textStyle12.copyWith(
                                   color: Colors.red,
                                   height: 1.4,

@@ -95,7 +95,7 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
         state.date == null) {
       emit(
         state.copyWith(
-          errorMessage: 'يرجى ملء جميع الحقول المطلوبة',
+          errorMessage: 'complete_all_data',
           state: CubitStates.failure,
         ),
       );
@@ -134,9 +134,9 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
         emit(
           state.copyWith(
             isLoading: false,
-            successMessage: 'تم إضافة الشهادة بنجاح',
+            successMessage: 'certificateAdded',
             state: CubitStates.success,
-            isNavigationSuccess: true, // Trigger navigation
+            isNavigationSuccess: true,
           ),
         );
       },
@@ -164,7 +164,7 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
     if (state.selectedCertificateId == null) {
       emit(
         state.copyWith(
-          errorMessage: 'لم يتم تحديد شهادة للتحديث',
+          errorMessage: 'select_certificate_error',
           state: CubitStates.failure,
         ),
       );
@@ -176,7 +176,7 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
         state.date == null) {
       emit(
         state.copyWith(
-          errorMessage: 'يرجى ملء جميع الحقول المطلوبة',
+          errorMessage: 'complete_all_data',
           state: CubitStates.failure,
         ),
       );
@@ -223,7 +223,7 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
           state.copyWith(
             isLoading: false,
             certificateImageUrl: newImageUrl,
-            successMessage: 'تم تحديث الشهادة بنجاح',
+            successMessage: 'update_success',
             state: CubitStates.success,
             isNavigationSuccess: true,
           ),
