@@ -96,10 +96,10 @@ class UserPublicProfileBio extends StatelessWidget {
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
-              if (profile.isVerified!) ...[
-                Gap(8.w),
-                Icon(Icons.verified, color: Colors.blue, size: 20.w),
-              ],
+              // if (profile.isVerified ?? false) ...[
+              //   Gap(8.w),
+              //   Icon(Icons.verified, color: Colors.blue, size: 20.w),
+              // ],
             ],
           ),
           Gap(4.h),
