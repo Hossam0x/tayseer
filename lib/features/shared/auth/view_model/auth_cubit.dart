@@ -429,7 +429,6 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  // ✅ تم التعديل - إضافة userType parameter
   Future<void> signInWithApple({required UserTypeEnum userType}) async {
     // امنع الضغط مرتين
     if (state.signInWithAppleState == CubitStates.loading) return;
@@ -453,7 +452,7 @@ class AuthCubit extends Cubit<AuthState> {
           AppleIDAuthorizationScopes.fullName,
         ],
         nonce: nonce,
-      ).timeout(const Duration(seconds: 12));
+      );
 
       if (appleCredential.identityToken == null) {
         throw Exception('Apple identityToken is null');
@@ -480,9 +479,7 @@ class AuthCubit extends Cubit<AuthState> {
         idToken: firebaseIdToken,
         userType: userType,
       );
-
     } on SignInWithAppleAuthorizationException catch (e) {
-      // المستخدم قفل الـ dialog أو Cancel
       emit(
         state.copyWith(
           signInWithAppleState: CubitStates.failure,

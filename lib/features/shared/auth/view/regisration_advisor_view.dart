@@ -121,7 +121,7 @@ class RegisrationAdvisorView extends StatelessWidget {
                     Column(
                       children: [
                         Align(
-                          alignment: Alignment.centerRight,
+                          alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
                           child: IconButton(
                             onPressed: () async {
                               context.pop();

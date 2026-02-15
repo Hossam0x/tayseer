@@ -64,7 +64,7 @@ class RegisterBody extends StatelessWidget {
                 children: [
                   SizedBox(height: context.height * 0.05),
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
                     child: IconButton(
                       onPressed: () async {
                         context.pop();
