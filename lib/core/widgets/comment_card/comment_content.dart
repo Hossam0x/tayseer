@@ -64,9 +64,15 @@ class CommentContent extends StatelessWidget {
         children: [
           // Avatar
           GestureDetector(
-            onTap: () => comment.commenter.userType == 'Advisor'
-                ? _navigateToUserAdvisorProfile(context)
-                : _navigateToUserProfile(context),
+            onTap: () {
+              if (comment.commenter.isAnnonymous) {
+                // لا تفعل شيئًا أو أظهر رسالة
+                return;
+              }
+              comment.commenter.userType == 'Advisor'
+                  ? _navigateToUserAdvisorProfile(context)
+                  : _navigateToUserProfile(context);
+            },
             child: CommentAvatar(
               isAnnonymous: comment.commenter.isAnnonymous,
               avatarUrl: comment.commenter.avatar,
