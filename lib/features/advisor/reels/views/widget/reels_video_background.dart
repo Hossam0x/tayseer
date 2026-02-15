@@ -1,12 +1,15 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/video/video_state_manager.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ReelsVideoBackground extends StatefulWidget {
   final String videoUrl;
-  final String? videoId; // إضافة videoId للتتبع
+  final String? videoId;
+  final String? thumbnailUrl;
   final bool shouldPlay;
   final VoidCallback onTap;
   final void Function(Offset)? onDoubleTap;
@@ -18,6 +21,7 @@ class ReelsVideoBackground extends StatefulWidget {
     super.key,
     required this.videoUrl,
     this.videoId,
+    this.thumbnailUrl,
     required this.shouldPlay,
     required this.onTap,
     this.onDoubleTap,
@@ -32,6 +36,10 @@ class ReelsVideoBackground extends StatefulWidget {
 
 class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   VideoPlayerController? _controller;
+  final _videoCacheManager = VideoCacheManager();
+  final _stateManager = VideoStateManager();
+  final _muteManager = GlobalMuteManager.instance;
+
   bool _isInitialized = false;
   bool _hasError = false;
   bool _isBuffering = false;
@@ -39,11 +47,9 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   bool _isDisposed = false;
   bool _isSpeedUp = false;
   bool _showSpeedIndicator = false;
-  final _videoCacheManager = VideoCacheManager();
-  final _stateManager = VideoStateManager();
 
-  // لتتبع محاولات إعادة التحميل
   int _retryCount = 0;
+  int _lastSavedSecond = -1;
   static const int _maxRetries = 3;
 
   String get _videoId => widget.videoId ?? widget.videoUrl.hashCode.toString();
@@ -51,33 +57,40 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   @override
   void initState() {
     super.initState();
+    _muteManager.isMuted.addListener(_onGlobalMuteChanged);
     _initializeVideo();
   }
+
+  void _onGlobalMuteChanged() {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized || _isDisposed) {
+      return;
+    }
+    try {
+      controller.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+    } catch (e) {
+      debugPrint('⚠️ Cannot change volume: $e');
+    }
+  }
+
+  double get _volume => _muteManager.isMuted.value ? 0.0 : 1.0;
 
   Future<void> _initializeVideo() async {
     if (_isDisposed) return;
 
-    // 1. Shared Controller Logic
+    // Shared Controller
     if (widget.sharedController != null) {
       _controller = widget.sharedController;
+      await _controller!.setVolume(_volume);
 
-      // بنقوله لو جاي من بره (حتى لو كان صامت)، علي الصوت للآخر
-      await _controller!.setVolume(1.0);
-
-      // الحماية من التدمير أثناء الـ await
       if (!mounted || _controller == null || _isDisposed) return;
 
       if (_controller!.value.isInitialized) {
         _isInitialized = true;
         _hasError = false;
-
-        // استرجاع آخر موضع
+        await _controller!.setLooping(true);
         await _restorePosition();
-
-        // Auto-play if shouldPlay is true
-        if (widget.shouldPlay) {
-          _controller!.play();
-        }
+        if (widget.shouldPlay) _controller!.play();
       }
       _controller!.addListener(_videoListener);
       widget.onControllerCreated?.call(_controller!);
@@ -86,63 +99,61 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
     }
 
     try {
+      if (widget.videoUrl.isEmpty) return;
+
       final cachedFile = await _videoCacheManager.getCachedFile(
         widget.videoUrl,
       );
       if (!mounted || _isDisposed) return;
 
-      if (cachedFile != null) {
-        _controller = VideoPlayerController.file(cachedFile);
-        debugPrint('📁 Reels: Loading from cache');
-      } else {
-        _controller = VideoPlayerController.networkUrl(
-          Uri.parse(widget.videoUrl),
-          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-        );
+      _controller = cachedFile != null
+          ? VideoPlayerController.file(cachedFile)
+          : VideoPlayerController.networkUrl(
+              Uri.parse(widget.videoUrl),
+              videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+            );
+
+      if (cachedFile == null) {
         _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
-        debugPrint('🌐 Reels: Loading from network');
       }
 
       _controller!.addListener(_videoListener);
       await _controller!.initialize();
       await _controller!.setLooping(true);
-      await _controller!.setVolume(1.0);
+      await _controller!.setVolume(_volume);
 
-      if (mounted && !_isDisposed) {
-        widget.onControllerCreated?.call(_controller!);
-
-        // استرجاع آخر موضع
-        await _restorePosition();
-
-        setState(() {
-          _isInitialized = true;
-          _hasError = false;
-        });
-
-        // تسجيل نجاح التحميل
-        _stateManager.markAsLoaded(_videoId);
-        _retryCount = 0;
-
-        if (widget.shouldPlay) _controller!.play();
+      if (!mounted || _isDisposed) {
+        _controller?.dispose();
+        _controller = null;
+        return;
       }
+
+      widget.onControllerCreated?.call(_controller!);
+      await _restorePosition();
+
+      setState(() {
+        _isInitialized = true;
+        _hasError = false;
+      });
+
+      _stateManager.markAsLoaded(_videoId);
+      _retryCount = 0;
+
+      if (widget.shouldPlay) _controller!.play();
     } catch (e) {
       debugPrint('❌ Error initializing video: $e');
-      if (mounted && !_isDisposed) {
-        // تسجيل الخطأ وإعادة المحاولة تلقائياً
-        if (_retryCount < _maxRetries && _stateManager.canRetry(_videoId)) {
-          _retryCount++;
-          _stateManager.recordError(_videoId);
-          debugPrint('🔄 Auto-retrying... (${_retryCount}/$_maxRetries)');
-          await Future.delayed(Duration(milliseconds: 500 * _retryCount));
-          if (mounted && !_isDisposed) {
-            _initializeVideo();
-          }
-        } else {
-          setState(() {
-            _hasError = true;
-            _isInitialized = false;
-          });
-        }
+      if (!mounted || _isDisposed) return;
+
+      if (_retryCount < _maxRetries && _stateManager.canRetry(_videoId)) {
+        _retryCount++;
+        _stateManager.recordError(_videoId);
+        await Future.delayed(Duration(milliseconds: 500 * _retryCount));
+        if (mounted && !_isDisposed) _initializeVideo();
+      } else {
+        _scheduleSetState(() {
+          _hasError = true;
+          _isInitialized = false;
+        });
       }
     }
   }
@@ -183,31 +194,35 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   }
 
   void _videoListener() {
-    if (_controller == null || !mounted || _isDisposed) return;
+    final controller = _controller;
+    if (controller == null || !mounted || _isDisposed) return;
 
     try {
-      final value = _controller!.value;
+      final value = controller.value;
 
-      // تتبع حالة التخزين المؤقت
-      final isBuffering = value.isBuffering;
-      if (isBuffering != _isBuffering) {
-        // تأخير setState لتجنب خطأ build scope
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && !_isDisposed)
-            setState(() => _isBuffering = isBuffering);
-        });
+      if (value.isBuffering != _isBuffering) {
+        _scheduleSetState(() => _isBuffering = value.isBuffering);
       }
 
-      // حفظ الموضع دورياً (كل 5 ثواني تقريباً)
+      // Debounced position save
+      final currentSecond = value.position.inSeconds;
       if (_isInitialized &&
           !_isDragging &&
-          value.position.inSeconds % 5 == 0 &&
-          value.position.inSeconds > 0) {
+          currentSecond > 0 &&
+          currentSecond % 5 == 0 &&
+          currentSecond != _lastSavedSecond) {
+        _lastSavedSecond = currentSecond;
         _savePosition();
       }
     } catch (e) {
       debugPrint('⚠️ Controller disposed in listener');
     }
+  }
+
+  void _scheduleSetState(VoidCallback fn) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isDisposed) setState(fn);
+    });
   }
 
   @override
@@ -230,15 +245,14 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   @override
   void dispose() {
     _isDisposed = true;
-
-    // حفظ الموضع قبل التدمير
     _savePosition();
+    _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
 
-    if (_controller != null) {
-      _controller!.removeListener(_videoListener);
-      // Protection: Don't dispose if shared
+    final controller = _controller;
+    if (controller != null) {
+      controller.removeListener(_videoListener);
       if (widget.sharedController == null) {
-        _controller!.dispose();
+        controller.dispose();
       }
     }
     _controller = null;
@@ -289,24 +303,17 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
     }
   }
 
-  void _onLongPressEnd(LongPressEndDetails details) {
-    if (_isSpeedUp) {
-      setState(() {
-        _isSpeedUp = false;
-        _showSpeedIndicator = false;
-      });
-      _controller?.setPlaybackSpeed(1.0);
-    }
-  }
+  void _onLongPressEnd(LongPressEndDetails details) => _resetSpeed();
 
-  void _onLongPressCancel() {
-    if (_isSpeedUp) {
-      setState(() {
-        _isSpeedUp = false;
-        _showSpeedIndicator = false;
-      });
-      _controller?.setPlaybackSpeed(1.0);
-    }
+  void _onLongPressCancel() => _resetSpeed();
+
+  void _resetSpeed() {
+    if (!_isSpeedUp) return;
+    setState(() {
+      _isSpeedUp = false;
+      _showSpeedIndicator = false;
+    });
+    _controller?.setPlaybackSpeed(1.0);
   }
 
   @override
@@ -318,118 +325,154 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
       onLongPressStart: _onLongPressStart,
       onLongPressEnd: _onLongPressEnd,
       onLongPressCancel: _onLongPressCancel,
-      child: Container(
+      child: ColoredBox(
         color: Colors.black,
-        width: double.infinity,
-        height: double.infinity,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Video
-            if (_isInitialized && _controller != null)
-              Center(
-                child: FittedBox(
-                  fit: BoxFit.cover,
-                  clipBehavior: Clip.hardEdge,
-                  child: SizedBox(
-                    width: _controller!.value.size.width,
-                    height: _controller!.value.size.height,
-                    child: VideoPlayer(_controller!),
+        child: SizedBox.expand(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Thumbnail (instant display before video loads)
+              if (!_isInitialized &&
+                  widget.thumbnailUrl != null &&
+                  widget.thumbnailUrl!.isNotEmpty)
+                Positioned.fill(
+                  child: CachedNetworkImage(
+                    imageUrl: widget.thumbnailUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) =>
+                        const ColoredBox(color: Colors.black),
+                    errorWidget: (_, __, ___) =>
+                        const ColoredBox(color: Colors.black),
                   ),
                 ),
-              ),
 
-            // Loading
-            if (!_isInitialized && !_hasError)
-              const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              ),
-
-            // Buffering
-            if (_isInitialized && _isBuffering && widget.shouldPlay)
-              Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
+              // Video
+              if (_isInitialized && _controller != null)
+                Center(
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    clipBehavior: Clip.hardEdge,
+                    child: SizedBox(
+                      width: _controller!.value.size.width,
+                      height: _controller!.value.size.height,
+                      child: VideoPlayer(_controller!),
+                    ),
+                  ),
                 ),
-              ),
 
-            // Speed Indicator (2x)
-            if (_showSpeedIndicator)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 75.h,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.fast_forward, color: Colors.white, size: 20),
-                        SizedBox(width: 6),
-                        Text(
-                          '2x',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+              // Loading
+              if (!_isInitialized && !_hasError)
+                const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+
+              // Buffering
+              if (_isInitialized && _isBuffering && widget.shouldPlay)
+                const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ),
+
+              // Speed Indicator (2x)
+              if (_showSpeedIndicator)
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 75.h,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-            // Error
-            if (_hasError)
-              Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: Colors.white54,
-                      size: 48,
-                    ),
-                    TextButton.icon(
-                      onPressed: _retryInitialization,
-                      icon: const Icon(Icons.refresh, color: Colors.white),
-                      label: const Text(
-                        'إعادة المحاولة',
-                        style: TextStyle(color: Colors.white),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.fast_forward,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              '2x',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
 
-            // Progress Bar
-            if (widget.showProgressBar && _isInitialized && _controller != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: _VideoSeekBar(
-                  controller: _controller!,
-                  onDragStart: () {
-                    if (mounted) setState(() => _isDragging = true);
-                  },
-                  onDragEnd: () {
-                    if (mounted) setState(() => _isDragging = false);
-                  },
-                  onSeek: _seekTo,
+              // Error – opaque overlay absorbs taps so they reach the retry button
+              if (_hasError)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _retryInitialization,
+                    child: ColoredBox(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: Colors.white54,
+                              size: 48,
+                            ),
+                            const SizedBox(height: 8),
+                            const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.refresh, color: Colors.white),
+                                SizedBox(width: 6),
+                                Text(
+                                  'إعادة المحاولة',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-          ],
+
+              // Progress Bar
+              if (widget.showProgressBar &&
+                  _isInitialized &&
+                  _controller != null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _VideoSeekBar(
+                    controller: _controller!,
+                    onDragStart: () {
+                      if (mounted) setState(() => _isDragging = true);
+                    },
+                    onDragEnd: () {
+                      if (mounted) setState(() => _isDragging = false);
+                    },
+                    onSeek: _seekTo,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -509,26 +552,26 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
               child: Stack(
                 alignment: Alignment.centerLeft,
                 children: [
-                  // Gray background
-                  Container(
-                    height: _isDragging ? 6.h : 3.h,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(3.r),
-                    ),
-                  ),
-                  // White progress
-                  AnimatedContainer(
-                    duration: _isDragging
-                        ? Duration.zero
-                        : const Duration(milliseconds: 100),
-                    height: _isDragging ? 6.h : 3.h,
-                    width:
-                        (MediaQuery.of(context).size.width - 24.w) *
-                        progress.clamp(0.0, 1.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(3.r),
+                  // Gray background + white progress inside it
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3.r),
+                    child: Container(
+                      height: _isDragging ? 6.h : 3.h,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(3.r),
+                      ),
+                      alignment: Alignment.centerLeft,
+                      child: AnimatedContainer(
+                        duration: _isDragging
+                            ? Duration.zero
+                            : const Duration(milliseconds: 100),
+                        height: _isDragging ? 6.h : 3.h,
+                        width:
+                            (MediaQuery.of(context).size.width - 24.w) *
+                            progress.clamp(0.0, 1.0),
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   // Drag circle

@@ -119,7 +119,8 @@ class _ReelsItemState extends State<ReelsItem>
           // 1. Video Background
           ReelsVideoBackground(
             videoUrl: widget.post.videoUrl ?? '',
-            videoId: widget.post.postId, // إضافة videoId
+            videoId: widget.post.postId,
+            thumbnailUrl: widget.post.videoData?.thumbnail,
             shouldPlay: _shouldPlay,
             onTap: _togglePlay,
             onDoubleTap: _handleDoubleTap,
@@ -133,20 +134,21 @@ class _ReelsItemState extends State<ReelsItem>
 
           // 2. Gradient Overlay
           IgnorePointer(
-            child: Container(
+            child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
                     Colors.transparent,
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                   ],
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   stops: const [0.0, 0.15, 0.85, 1.0],
                 ),
               ),
+              child: const SizedBox.expand(),
             ),
           ),
 
@@ -155,18 +157,20 @@ class _ReelsItemState extends State<ReelsItem>
             Center(
               child: ScaleTransition(
                 scale: _iconScaleAnim,
-                child: Container(
-                  padding: EdgeInsets.all(16.r),
+                child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.4),
+                    color: Colors.black.withValues(alpha: 0.4),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    _isPausedByUser
-                        ? Icons.play_arrow_rounded
-                        : Icons.pause_rounded,
-                    color: Colors.white,
-                    size: 50.sp,
+                  child: Padding(
+                    padding: EdgeInsets.all(16.r),
+                    child: Icon(
+                      _isPausedByUser
+                          ? Icons.play_arrow_rounded
+                          : Icons.pause_rounded,
+                      color: Colors.white,
+                      size: 50.sp,
+                    ),
                   ),
                 ),
               ),
