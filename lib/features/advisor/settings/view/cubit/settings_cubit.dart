@@ -1,13 +1,13 @@
+import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
-import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 
 class SettingsCubit extends Cubit<SettingsState> {
   final LocalNotification _notificationService = LocalNotification();
@@ -140,7 +140,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   /// تحديث اللغة المختارة + حفظها + تحديث الـ UI
-  Future<void> updateLanguage(String languageCode, BuildContext context) async {
+  Future<void> updateLanguage(String languageCode) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
@@ -156,24 +156,19 @@ class SettingsCubit extends Cubit<SettingsState> {
         return item;
       }).toList();
 
-      emit(SettingsLoaded(settings: updatedSettings));
-
-      // تحديث اللغة عالمياً لتغيير الواجهة فوراً (بعد تحديث الحالة المحلية)
-      if (context.mounted) {
-        context.read<LanguageCubit>().setLanguage(languageCode);
-      }
-
-      // عرض رسالة نجاح
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_language_success"),
-        isSuccess: true,
+      emit(
+        currentState.copyWith(
+          settings: updatedSettings,
+          actionSuccess: "update_language_success",
+          isActionKey: true,
+        ),
       );
     } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_language_error"),
-        isError: true,
+      emit(
+        currentState.copyWith(
+          actionError: "update_language_error",
+          isActionKey: true,
+        ),
       );
     }
   }
@@ -184,14 +179,14 @@ class SettingsCubit extends Cubit<SettingsState> {
     return prefs.getBool('notifications_enabled') ?? true;
   }
 
-  Future<void> shareApp(BuildContext context) async {
+  Future<void> shareApp(String message, String subject) async {
     try {
       // رابط التطبيق
       const String appLink =
           'https://play.google.com/store/apps/details?id=com.tayseer.app';
-      String message = '${context.tr("share_app_message")}$appLink';
+      String fullMessage = '$message$appLink';
 
-      await Share.share(message, subject: context.tr("share_app_subject"));
+      await Share.share(fullMessage, subject: subject);
     } catch (e) {
       debugPrint('❌ خطأ في المشاركة: $e');
     }
@@ -276,7 +271,7 @@ class SettingsCubit extends Cubit<SettingsState> {
       // 2. إلغاء جميع الاشعارات المحلية
       await _notificationService.clearAllNotifications();
 
-      // 3. تعطيل عرض الاشعارات في الخلفية
+      // 3. تشغيل عرض الاشعارات في الخلفية
       if (Platform.isIOS) {
         await messaging.setForegroundNotificationPresentationOptions(
           alert: false,
@@ -293,59 +288,68 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   /// تحديث قيمة switch (للاستخدام العام)
-  Future<void> updateSwitch(String id, bool value, BuildContext context) async {
-    try {
-      SnackBarService().clearAll(context);
+  Future<void> updateSwitch(String id, bool value) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
 
+    try {
       await _toggleNotificationSetting(id, value);
 
-      showSafeSnackBar(
-        context: context,
-        text: value
-            ? context.tr("notifications_enabled_success")
-            : context.tr("notifications_disabled_success"),
-        isSuccess: value,
-        duration: const Duration(milliseconds: 1500),
+      emit(
+        currentState.copyWith(
+          actionSuccess: value
+              ? "notifications_enabled_success"
+              : "notifications_disabled_success",
+          isActionKey: true,
+          isNotificationEnabled: value, // Ensure UI reflects state
+        ),
       );
     } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_settings_error"),
-        isError: true,
+      emit(
+        currentState.copyWith(
+          actionError: "update_settings_error",
+          isActionKey: true,
+        ),
       );
     }
   }
 
-  Future<void> rateApp(int rating, BuildContext context) async {
+  Future<void> rateApp(int rating) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
+
     try {
       final result = await _userProfileRepository.rateApp(rating);
 
-      if (context.mounted) {
-        result.fold(
-          (failure) {
-            showSafeSnackBar(
-              context: context,
-              text: '${context.tr("rate_app_failed")}: ${failure.message}',
-              isError: true,
-            );
-          },
-          (_) {
-            showSafeSnackBar(
-              context: context,
-              text: context.tr("rate_app_success"),
-              isSuccess: true,
-            );
-          },
-        );
-      }
+      result.fold(
+        (failure) {
+          emit(
+            currentState.copyWith(
+              actionError: failure.message,
+              isActionKey: false, // Message from API
+            ),
+          );
+        },
+        (_) {
+          emit(
+            currentState.copyWith(
+              actionSuccess: "rate_app_success",
+              isActionKey: true,
+            ),
+          );
+        },
+      );
     } catch (e) {
-      if (context.mounted) {
-        showSafeSnackBar(
-          context: context,
-          text: context.tr("rate_app_error"),
-          isError: true,
-        );
-      }
+      emit(
+        currentState.copyWith(actionError: "rate_app_error", isActionKey: true),
+      );
+    }
+  }
+
+  void clearMessages() {
+    if (state is SettingsLoaded) {
+      final currentState = state as SettingsLoaded;
+      emit(currentState.copyWith(actionSuccess: null, actionError: null));
     }
   }
 

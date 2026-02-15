@@ -70,7 +70,6 @@
 //   Widget _buildGenderOption(String gender) {
 //     bool isSelected = selectedGender == gender;
 //     return GestureDetector(
-//       onTap: () => setState(() => selectedGender = gender),
 //       child: Container(
 //         padding: EdgeInsets.symmetric(
 //           horizontal: 16.w,

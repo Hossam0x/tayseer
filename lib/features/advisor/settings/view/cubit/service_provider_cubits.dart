@@ -123,10 +123,12 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
     return false;
   }
 
-  Future<void> saveChanges(BuildContext context) async {
+  Future<void> saveChanges() async {
     if (!state.hasChanges) return;
 
-    emit(state.copyWith(isSaving: true));
+    emit(
+      state.copyWith(isSaving: true, errorMessage: null, successMessage: null),
+    );
 
     final currentProvider = state.serviceProvider;
     final request = currentProvider != null
@@ -138,11 +140,7 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
         : ServiceProviderRequest.defaultRequest();
 
     final result = await _repository.updateServiceProvider(request: request);
-    ScaffoldMessenger.of(context).showSnackBar(
-      CustomSnackBar(context, text: 'تم حفظ التغييرات بنجاح', isSuccess: true),
-    );
 
-    context.pop();
     result.fold(
       (failure) {
         emit(state.copyWith(isSaving: false, errorMessage: failure.message));
@@ -155,6 +153,8 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
             originalServiceProvider: response.data,
             sessionTypes: response.data?.sessionTypes ?? state.sessionTypes,
             hasChanges: false,
+            successMessage: 'تم حفظ التغييرات بنجاح',
+            state: CubitStates.success,
           ),
         );
       },
@@ -163,6 +163,10 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
 
   void clearError() {
     emit(state.copyWith(errorMessage: null));
+  }
+
+  void clearSuccess() {
+    emit(state.copyWith(successMessage: null));
   }
 }
 

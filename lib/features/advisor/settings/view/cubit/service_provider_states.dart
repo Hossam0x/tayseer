@@ -10,6 +10,7 @@ class SessionPricingState extends Equatable {
   final ServiceProviderRequest? serviceProvider;
   final ServiceProviderRequest? originalServiceProvider;
   final String? errorMessage;
+  final String? successMessage;
   final bool isSaving;
   final Map<String, SessionTypeModel> sessionTypes;
   final bool hasChanges;
@@ -19,6 +20,7 @@ class SessionPricingState extends Equatable {
     this.serviceProvider,
     this.originalServiceProvider,
     this.errorMessage,
+    this.successMessage,
     this.isSaving = false,
     required this.sessionTypes,
     required this.hasChanges,
@@ -49,6 +51,7 @@ class SessionPricingState extends Equatable {
     ServiceProviderRequest? serviceProvider,
     ServiceProviderRequest? originalServiceProvider,
     String? errorMessage,
+    String? successMessage,
     bool? isSaving,
     Map<String, SessionTypeModel>? sessionTypes,
     bool? hasChanges,
@@ -58,7 +61,8 @@ class SessionPricingState extends Equatable {
       serviceProvider: serviceProvider ?? this.serviceProvider,
       originalServiceProvider:
           originalServiceProvider ?? this.originalServiceProvider,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage, // Intentionally not keeping previous
+      successMessage: successMessage, // Intentionally not keeping previous
       isSaving: isSaving ?? this.isSaving,
       sessionTypes: sessionTypes ?? this.sessionTypes,
       hasChanges: hasChanges ?? this.hasChanges,
@@ -71,6 +75,7 @@ class SessionPricingState extends Equatable {
     serviceProvider,
     originalServiceProvider,
     errorMessage,
+    successMessage,
     isSaving,
     sessionTypes,
     hasChanges,

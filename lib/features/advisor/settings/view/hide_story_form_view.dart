@@ -46,22 +46,16 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
           }
 
           // عرض رسالة النجاح بعد إلغاء التقييد
-          // if (state.isUnrestricting == false &&
-          //     state.errorMessage == null &&
-          //     state.state == CubitStates.success) {
-          //   // نتحقق من أن العملية تمت بنجاح
-          //   Future.delayed(Duration.zero, () {
-          //     if (state.hasSelections == false) {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   CustomSnackBar(
-          //     context,
-          //     text: 'تم إلغاء الإخفاء بنجاح',
-          //     isSuccess: true,
-          //   ),
-          // );
-          //     }
-          //   });
-          // }
+          if (state.successMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(
+                context,
+                text: state.successMessage!,
+                isSuccess: true,
+              ),
+            );
+            context.read<StoryVisibilityCubit>().clearSuccess();
+          }
         },
         builder: (context, state) {
           final cubit = context.read<StoryVisibilityCubit>();
@@ -504,7 +498,7 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                     ),
                     onPressed: () async {
                       Navigator.pop(context);
-                      await cubit.unrestrictSelectedUsers(context);
+                      await cubit.unrestrictSelectedUsers();
                     },
                     child: Text(
                       context.tr('confirm'),

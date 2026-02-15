@@ -1,11 +1,9 @@
 import 'dart:developer';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 part 'phone_edit_state.dart';
 
 class PhoneEditCubit extends Cubit<PhoneEditState> {
   final ApiService _apiService;
-  final SnackBarService _snackBarService = SnackBarService();
 
   PhoneEditCubit() : _apiService = ApiService(Dio()), super(PhoneEditInitial());
 
@@ -92,15 +90,18 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     emit(state.copyWith(phoneError: error));
   }
 
-  Future<void> updatePhone(BuildContext context) async {
+  Future<void> updatePhone() async {
     if (state.phoneNumber.isEmpty || state.phoneError.isNotEmpty) {
-      if (state.phoneError.isNotEmpty) {
-        _showError(context, state.phoneError);
-      }
       return;
     }
 
-    emit(state.copyWith(updatePhoneStatus: CubitStates.loading));
+    emit(
+      state.copyWith(
+        updatePhoneStatus: CubitStates.loading,
+        errorMessage: '',
+        successMessage: '',
+      ),
+    );
 
     try {
       final cleanedPhone = state.phoneNumber.replaceAll(RegExp(r'\D'), '');
@@ -117,11 +118,10 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
           state.copyWith(
             updatePhoneStatus: CubitStates.success,
             fullPhoneNumber: fullPhoneNumber,
+            successMessage: 'تم إرسال رمز التحقق بنجاح',
             errorMessage: '',
           ),
         );
-
-        _showSuccess(context, 'تم إرسال رمز التحقق بنجاح');
       } else {
         emit(
           state.copyWith(
@@ -129,7 +129,6 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
             errorMessage: response['message'] ?? 'فشل تحديث رقم الهاتف',
           ),
         );
-        _showError(context, response['message'] ?? 'فشل تحديث رقم الهاتف');
       }
     } on DioException catch (e) {
       final failure = ServerFailure.fromDioError(e);
@@ -139,7 +138,6 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
           errorMessage: failure.message,
         ),
       );
-      _showError(context, failure.message);
     } catch (e) {
       emit(
         state.copyWith(
@@ -147,28 +145,11 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
           errorMessage: 'حدث خطأ غير متوقع',
         ),
       );
-      _showError(context, 'حدث خطأ غير متوقع');
     }
   }
 
-  void _showError(BuildContext context, String message) {
-    if (context.mounted) {
-      _snackBarService.showSnackBar(
-        context: context,
-        text: message,
-        isError: true,
-      );
-    }
-  }
-
-  void _showSuccess(BuildContext context, String message) {
-    if (context.mounted) {
-      _snackBarService.showSnackBar(
-        context: context,
-        text: message,
-        isSuccess: true,
-      );
-    }
+  void clearMessages() {
+    emit(state.copyWith(errorMessage: '', successMessage: ''));
   }
 
   void resetError() {

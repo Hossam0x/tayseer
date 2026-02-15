@@ -1,8 +1,8 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
@@ -12,7 +12,6 @@ import 'package:tayseer/features/user/user_profile/views/marriage_file.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
-import 'dart:io';
 
 class UserProfileView extends StatefulWidget {
   const UserProfileView({super.key});
@@ -25,8 +24,7 @@ class _UserProfileViewState extends State<UserProfileView> {
   final int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();
   int _rating = 0;
-  late UserProfileCubit _userProfileCubit; // ⭐ إضافة late للـ Cubit
-  File? _localImageFile;
+  late UserProfileCubit _userProfileCubit;
 
   @override
   void initState() {
@@ -36,7 +34,7 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   @override
   void dispose() {
-    _userProfileCubit.close(); // ⭐ مهم: إغلاق الـ Cubit عند التخلص
+    _userProfileCubit.close();
     _scrollController.dispose();
     super.dispose();
   }
@@ -44,7 +42,7 @@ class _UserProfileViewState extends State<UserProfileView> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => _userProfileCubit, // ⭐ استخدام الـ Cubit المنشأ
+      create: (context) => _userProfileCubit,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
@@ -56,10 +54,62 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
             ),
             AdvisorBackground(
-              child: BlocBuilder<UserProfileCubit, UserProfileState>(
-                builder: (context, state) {
-                  return _buildBodyContent(context, state);
+              child: BlocListener<UserProfileCubit, UserProfileState>(
+                listenWhen: (previous, current) {
+                  if (current is SettingsLoaded && previous is SettingsLoaded) {
+                    return current.actionTimestamp != previous.actionTimestamp;
+                  }
+                  // If we transitioned from non-loaded to loaded with action (unlikely case for actions but possible)
+                  if (current is SettingsLoaded &&
+                      current.actionMessage != null) {
+                    return true;
+                  }
+                  return false;
                 },
+                listener: (context, state) {
+                  if (state is SettingsLoaded && state.actionMessage != null) {
+                    final isLogout = state.actionMessage == 'logout_success';
+                    final isLogoutError = state.actionMessage == 'logout_error';
+
+                    if (isLogout) {
+                      _handleLogoutSuccess();
+                      return;
+                    }
+
+                    if (isLogoutError) {
+                      Navigator.pop(context); // Close loading dialog if open
+                      showSafeSnackBar(
+                        context: context,
+                        text: context.tr("logout_error"),
+                        isError: true,
+                      );
+                      return;
+                    }
+
+                    showSafeSnackBar(
+                      context: context,
+                      text: context.tr(state.actionMessage ?? ""),
+                      isSuccess: state.isActionSuccess ?? false,
+                      isError: !(state.isActionSuccess ?? true),
+                    );
+
+                    // Special case for language: also update context provider
+                    // But language update is usually handled by app restart or root rebuild
+                    // If we need to update LanguageCubit, the View logic wrapper suggested:
+                    // context.read<LanguageCubit>().setLanguage(code);
+                    // We can check if message is "update_language_success"
+                    if (state.actionMessage == "update_language_success") {
+                      // LanguageCubit update must be handled where we have the code.
+                      // The previous logic did it in the View's then() callback.
+                      // We'll keep that part in the specific widget interaction call.
+                    }
+                  }
+                },
+                child: BlocBuilder<UserProfileCubit, UserProfileState>(
+                  builder: (context, state) {
+                    return _buildBodyContent(context, state);
+                  },
+                ),
               ),
             ),
           ],
@@ -84,7 +134,6 @@ class _UserProfileViewState extends State<UserProfileView> {
           parent: AlwaysScrollableScrollPhysics(),
         ),
         slivers: [
-          // التبويب الثابت في الأعلى (موجود دائماً)
           SliverToBoxAdapter(
             child: Container(
               color: Colors.transparent,
@@ -96,53 +145,54 @@ class _UserProfileViewState extends State<UserProfileView> {
               child: Column(
                 children: [
                   Gap(18.h),
-
-                  // ⭐ جزء البروفايل (نطاق تحديث خاص)
                   if (_selectedTabIndex == 0)
-                    BlocBuilder<UserProfileCubit, UserProfileState>(
-                      buildWhen: (previous, current) {
-                        if (previous is SettingsLoaded &&
-                            current is SettingsLoaded) {
-                          return previous.userProfile != current.userProfile;
-                        }
-                        return true;
+                    BlocSelector<
+                      UserProfileCubit,
+                      UserProfileState,
+                      UserProfileModel?
+                    >(
+                      selector: (state) {
+                        if (state is SettingsLoaded) return state.userProfile;
+                        return null;
                       },
-                      builder: (context, state) {
-                        return _buildProfileSection(context, state);
+                      builder: (context, userProfile) {
+                        return _buildProfileSection(
+                          context,
+                          state,
+                          userProfile,
+                        );
                       },
                     ),
                 ],
               ),
             ),
           ),
-
-          // ⭐ المحتوى حسب التبويب (نطاق تحديث خاص للإعدادات)
           if (_selectedTabIndex == 0)
-            BlocBuilder<UserProfileCubit, UserProfileState>(
-              buildWhen: (previous, current) {
-                if (previous is SettingsLoaded && current is SettingsLoaded) {
-                  return previous.settings != current.settings;
-                }
-                return true;
+            BlocSelector<
+              UserProfileCubit,
+              UserProfileState,
+              List<SettingItemModel>
+            >(
+              selector: (state) {
+                if (state is SettingsLoaded) return state.settings;
+                return [];
               },
-              builder: (context, state) {
-                // Ensure we return a Sliver here
-                return _buildGeneralContentSliver(context, state);
+              builder: (context, settings) {
+                return _buildGeneralContentSliver(context, state, settings);
               },
             ),
-
-          // ⭐ زر تسجيل الخروج (ثابت)
           SliverToBoxAdapter(child: _buildLogoutButton(context)),
-
-          // مساحة في الأسفل
           SliverToBoxAdapter(child: Gap(100.h)),
         ],
       ),
     );
   }
 
-  // ⭐ تعديل دالة بناء قسم البروفايل
-  Widget _buildProfileSection(BuildContext context, UserProfileState state) {
+  Widget _buildProfileSection(
+    BuildContext context,
+    UserProfileState state,
+    UserProfileModel? userProfile,
+  ) {
     if (state is SettingsInitial || state is SettingsLoading) {
       return _buildProfileSkeleton();
     }
@@ -152,7 +202,7 @@ class _UserProfileViewState extends State<UserProfileView> {
     }
 
     if (state is SettingsLoaded) {
-      return _buildProfileLoadedSection(context, state.userProfile);
+      return _buildProfileLoadedSection(context, userProfile);
     }
 
     return const SizedBox();
@@ -161,7 +211,6 @@ class _UserProfileViewState extends State<UserProfileView> {
   Widget _buildProfileSkeleton() {
     return Column(
       children: [
-        // Skeleton للصورة الشخصية
         Container(
           width: 120.w,
           height: 120.w,
@@ -171,8 +220,6 @@ class _UserProfileViewState extends State<UserProfileView> {
           ),
         ),
         Gap(9.h),
-
-        // Skeleton للمعلومات
         Column(
           children: [
             Container(
@@ -222,7 +269,6 @@ class _UserProfileViewState extends State<UserProfileView> {
   Widget _buildProfileErrorSection(BuildContext context, SettingsError state) {
     return Column(
       children: [
-        // صورة الخطأ
         Container(
           width: 120.w,
           height: 120.w,
@@ -240,8 +286,6 @@ class _UserProfileViewState extends State<UserProfileView> {
           ),
         ),
         Gap(12.h),
-
-        // رسالة الخطأ
         Text(
           context.tr("error_loading_data"),
           style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
@@ -255,16 +299,12 @@ class _UserProfileViewState extends State<UserProfileView> {
           maxLines: 2,
         ),
         Gap(16.h),
-
-        // زر إعادة المحاولة
         ElevatedButton(
           onPressed: () async {
             final cubit = context.read<UserProfileCubit>();
             try {
               await cubit.refresh();
-            } catch (e) {
-              // معالجة الخطأ
-            }
+            } catch (e) {}
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary100,
@@ -299,32 +339,7 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  // ⭐ تحديث الدوال المساعدة للبروفايل
   Widget _buildProfileImage(UserProfileModel? userProfile) {
-    // ⭐ استخدام الصورة المحلية إذا وجدت لتفادي التحميل
-    if (_localImageFile != null) {
-      return SizedBox(
-        width: 120.w,
-        height: 120.w,
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.secondary100,
-          ),
-          child: ClipOval(
-            child: Image.file(
-              _localImageFile!,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-            ),
-          ),
-        ),
-      );
-    }
-
     final imageUrl = userProfile?.image ?? kCurrentUserData?.image;
 
     return SizedBox(
@@ -378,7 +393,6 @@ class _UserProfileViewState extends State<UserProfileView> {
       return _buildUserInfoSkeleton();
     }
 
-    // ⭐ استخدام kCurrentUserData كمصدر أساسي للاسم و username
     final displayName = kCurrentUserData?.name ?? userProfile.name;
     final displayUsername = kCurrentUserData?.username ?? userProfile.username;
 
@@ -403,13 +417,11 @@ class _UserProfileViewState extends State<UserProfileView> {
         Gap(8.h),
         GestureDetector(
           onTap: () {
-            // ⭐ التحديث: تمرير userId فقط
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => UserPublicProfileView(
-                  userId: userProfile.id, // ⭐ تمرير الـ ID فقط
-                ),
+                builder: (context) =>
+                    UserPublicProfileView(userId: userProfile.id),
               ),
             );
           },
@@ -472,21 +484,11 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  // ⭐ تحديث بناء المحتوى العام
   SliverList _buildGeneralContentSliver(
     BuildContext context,
     UserProfileState state,
+    List<SettingItemModel> settings,
   ) {
-    List<SettingItemModel> settings = [];
-
-    if (state is SettingsLoaded) {
-      settings = state.settings;
-    } else if (state is SettingsError) {
-      // إذا كان هناك خطأ، نستخدم الإعدادات الافتراضية أو ننتظر البيانات
-      // يمكنك إنشاء قائمة إعدادات افتراضية هنا إذا أردت
-      settings = [];
-    }
-
     return SliverList(
       delegate: SliverChildListDelegate([
         Padding(
@@ -497,14 +499,11 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  // ⭐ تحديث زر تسجيل الخروج ليكون دائماً
-
   Widget _buildSettingsList(
     BuildContext context,
     List<SettingItemModel> settings,
     UserProfileState state,
   ) {
-    // إذا كانت القائمة فارغة، نعرض سكلتون أو ننتظر
     if (settings.isEmpty) {
       return Column(
         children: [
@@ -619,10 +618,9 @@ class _UserProfileViewState extends State<UserProfileView> {
             if (setting.id == 'language') {
               Navigator.pushNamed(context, setting.routeName).then((result) {
                 if (result != null && result is String) {
-                  context.read<UserProfileCubit>().updateLanguage(
-                    result,
-                    context,
-                  );
+                  context.read<UserProfileCubit>().updateLanguage(result);
+                  // Also update global provider if needed, but the cubit will emit success
+                  context.read<LanguageCubit>().setLanguage(result);
                 }
               });
             } else {
@@ -674,20 +672,13 @@ class _UserProfileViewState extends State<UserProfileView> {
 
               if (setting.hasSwitch)
                 if (setting.id == 'notifications')
-                  BlocBuilder<UserProfileCubit, UserProfileState>(
-                    buildWhen: (previous, current) {
-                      if (previous is SettingsLoaded &&
-                          current is SettingsLoaded) {
-                        return previous.isNotificationEnabled !=
-                            current.isNotificationEnabled;
-                      }
+                  BlocSelector<UserProfileCubit, UserProfileState, bool>(
+                    selector: (state) {
+                      if (state is SettingsLoaded)
+                        return state.isNotificationEnabled;
                       return false;
                     },
-                    builder: (context, state) {
-                      final isEnabled = state is SettingsLoaded
-                          ? state.isNotificationEnabled
-                          : false;
-
+                    builder: (context, isEnabled) {
                       return IgnorePointer(
                         ignoring: false,
                         child: Transform.scale(
@@ -701,7 +692,6 @@ class _UserProfileViewState extends State<UserProfileView> {
                               context.read<UserProfileCubit>().updateSwitch(
                                 setting.id,
                                 value,
-                                context,
                               );
                             },
                           ),
@@ -721,7 +711,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                         trackColor: AppColors.dropDownArrow,
                         onChanged: (value) {
                           final cubit = context.read<UserProfileCubit>();
-                          cubit.updateSwitch(setting.id, value, context);
+                          cubit.updateSwitch(setting.id, value);
                         },
                       ),
                     ),
@@ -747,16 +737,8 @@ class _UserProfileViewState extends State<UserProfileView> {
       MaterialPageRoute(
         builder: (context) => UserProfileEditView(
           initialProfile: currentState.userProfile!,
-          localImageFile: _localImageFile,
+          localImageFile: null, // Removed usage
           onProfileUpdated: (updatedProfile, imageFile) {
-            setState(() {
-              if (imageFile != null) {
-                _localImageFile = imageFile;
-              } else if (updatedProfile.image == null ||
-                  updatedProfile.image!.isEmpty) {
-                _localImageFile = null;
-              }
-            });
             cubit.updateUserProfile(updatedProfile);
           },
         ),
@@ -845,43 +827,29 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  void _performLogout(BuildContext context) async {
+  void _performLogout(BuildContext context) {
+    final cubit = context.read<UserProfileCubit>();
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) =>
           Center(child: CircularProgressIndicator(color: AppColors.primary100)),
     );
+    cubit.logout();
+  }
 
-    try {
-      try {
-        await FirebaseMessaging.instance.unsubscribeFromTopic("all");
-      } catch (e) {
-        debugPrint('⚠️ Error unsubscribing from topics: $e');
-      }
+  void _handleLogoutSuccess() async {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRouter.kRegisrationView,
+      (route) => false,
+    );
 
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRouter.kRegisrationView,
-        (route) => false,
-      );
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("logout_success"),
-        isSuccess: true,
-      );
-    } catch (e) {
-      Navigator.pop(context);
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("logout_error"),
-        isError: true,
-      );
-    }
+    showSafeSnackBar(
+      context: context,
+      text: context.tr("logout_success"),
+      isSuccess: true,
+    );
   }
 
   void _showRateAppDialog() {
@@ -902,7 +870,6 @@ class _UserProfileViewState extends State<UserProfileView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // العنوان
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -922,7 +889,6 @@ class _UserProfileViewState extends State<UserProfileView> {
 
                   Gap(25.h),
 
-                  // النجوم للتقييم (قابلة للاختيار)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (index) {
@@ -933,7 +899,6 @@ class _UserProfileViewState extends State<UserProfileView> {
                           });
                         },
                         child: Icon(
-                          // اختيار الأيقونة بناءً على التقييم
                           index < _rating
                               ? Icons.star_rounded
                               : Icons.star_rounded,
@@ -946,7 +911,6 @@ class _UserProfileViewState extends State<UserProfileView> {
                     }),
                   ),
 
-                  // عرض قيمة التقييم (اختياري)
                   if (_rating > 0) ...[
                     Gap(12.h),
                     Text(
@@ -959,7 +923,6 @@ class _UserProfileViewState extends State<UserProfileView> {
 
                   Gap(24.h),
 
-                  // الرسالة
                   Text(
                     context.tr("rate_app_message"),
                     style: Styles.textStyle16.copyWith(
@@ -970,13 +933,11 @@ class _UserProfileViewState extends State<UserProfileView> {
 
                   Gap(32.h),
 
-                  // زر الإرسال
                   CustomBotton(
                     title: context.tr("send_rating"),
                     onPressed: () {
                       Navigator.pop(context);
                       _submitAppRating(_rating);
-                      // إعادة تعيين التقييم بعد الإرسال
                       setState(() {
                         _rating = 0;
                       });
@@ -999,17 +960,14 @@ class _UserProfileViewState extends State<UserProfileView> {
       return;
     }
 
-    // ⭐ التحقق من اكتمال البيانات
     final isDataCompleted = state.userProfile!.dataCompleted ?? false;
 
     if (!isDataCompleted) {
-      // ⭐ إذا البيانات غير مكتملة، نروح لتاب الزواج مباشرة
       final layoutCubit = context.read<LayoutCubit>();
-      layoutCubit.changeIndex(1); // Marriage tab index
+      layoutCubit.changeIndex(1);
       return;
     }
 
-    // ⭐ إذا البيانات مكتملة، نفتح صفحة التعديل كاملة
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1032,7 +990,7 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   void _submitAppRating(int rating) {
     if (rating > 0) {
-      _userProfileCubit.rateApp(rating, context);
+      _userProfileCubit.rateApp(rating);
     }
   }
 }

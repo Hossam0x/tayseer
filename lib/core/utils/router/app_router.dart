@@ -381,14 +381,14 @@ abstract class AppRouter {
 
       case AppRouter.kFollowersView:
         final userId = settings.arguments as String? ?? '';
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: FollowersView(userId: userId),
           routeSettings: settings,
         );
 
       case AppRouter.kFollowingView:
         final userId = settings.arguments as String? ?? '';
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: FollowingView(userId: userId),
           routeSettings: settings,
         );
@@ -400,13 +400,13 @@ abstract class AppRouter {
         );
 
       case AppRouter.kUserProfileEditView:
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: const UserProfileEditView(),
           routeSettings: settings,
         );
 
       case AppRouter.kUserArchiveChatsView:
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: const UserArchiveChatsView(),
           routeSettings: settings,
         );
@@ -779,7 +779,7 @@ abstract class AppRouter {
           },
         );
       case AppRouter.kinteractionSubscriptionView:
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: const interactionSubscriptionView(),
           routeSettings: settings,
         );

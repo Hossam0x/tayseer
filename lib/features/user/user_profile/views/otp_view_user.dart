@@ -81,13 +81,36 @@ class _OtpViewUserState extends State<OtpViewUser> {
         body: CustomBackground(
           child: BlocConsumer<OtpCubit, OtpState>(
             listener: (context, state) {
-              if (state.otpStatus == OtpStatus.success) {
-                Future.delayed(Duration(milliseconds: 1500), () {
+              if (state.errorMessage.isNotEmpty) {
+                showSafeSnackBar(
+                  context: context,
+                  text: state.errorMessage,
+                  isError: true,
+                );
+                context.read<OtpCubit>().clearMessages();
+              } else if (state.successMessage.isNotEmpty &&
+                  state.otpStatus == OtpStatus.success) {
+                showSafeSnackBar(
+                  context: context,
+                  text: state.successMessage,
+                  isSuccess: true,
+                );
+
+                Future.delayed(const Duration(milliseconds: 1500), () {
                   if (mounted) {
                     Navigator.pop(context);
                     context.read<OtpCubit>().resetError();
                   }
                 });
+                context.read<OtpCubit>().clearMessages();
+              } else if (state.successMessage.isNotEmpty) {
+                // If success but not success status (like resend)
+                showSafeSnackBar(
+                  context: context,
+                  text: state.successMessage,
+                  isSuccess: true,
+                );
+                context.read<OtpCubit>().clearMessages();
               }
             },
             builder: (context, state) {
@@ -167,7 +190,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
                             ? null
                             : () {
                                 if (state.otpCode.length == 6) {
-                                  context.read<OtpCubit>().verifyOtp(context);
+                                  context.read<OtpCubit>().verifyOtp();
                                 } else {
                                   showSafeSnackBar(
                                     context: context,
@@ -204,9 +227,9 @@ class _OtpViewUserState extends State<OtpViewUser> {
         onCompleted: (value) {
           print('✅ اكتمل OTP: $value');
           if (value.length == 6) {
-            Future.delayed(Duration(milliseconds: 300), () {
+            Future.delayed(const Duration(milliseconds: 300), () {
               if (mounted) {
-                context.read<OtpCubit>().verifyOtp(context);
+                context.read<OtpCubit>().verifyOtp();
               }
             });
           }
@@ -275,7 +298,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
         onPressed: state.isLoading
             ? null
             : () {
-                context.read<OtpCubit>().resendCode(context);
+                context.read<OtpCubit>().resendCode();
               },
         child: Text(
           'إعادة إرسال الرمز',

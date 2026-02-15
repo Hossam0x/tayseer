@@ -33,27 +33,49 @@ class EditCertificateView extends StatelessWidget {
           listenWhen: (previous, current) =>
               previous.isLoading != current.isLoading && !current.isLoading,
           listener: (context, state) {
-            // ⭐ عند نجاح التحديث، نقوم بتحديث القائمة محليًا في CertificatesCubit
-            if (!state.isLoading && state.selectedCertificateId != null) {
-              try {
-                final certificatesCubit = context.read<CertificatesCubit>();
+            if (state.errorMessage != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                CustomSnackBar(
+                  context,
+                  text: state.errorMessage!,
+                  isError: true,
+                ),
+              );
+              context.read<EditCertificateCubit>().clearMessages();
+            } else if (state.successMessage != null &&
+                state.state == CubitStates.success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                CustomSnackBar(
+                  context,
+                  text: state.successMessage!,
+                  isSuccess: true,
+                ),
+              );
 
-                final updatedCertificate = CertificateModel(
-                  id: state.selectedCertificateId!,
-                  nameCertificate: state.nameCertificate,
-                  fromWhere: state.fromWhere,
-                  date: state.date!,
-                  image: state.certificateImageUrl,
-                );
+              if (state.isNavigationSuccess) {
+                // ⭐ عند نجاح التحديث، نقوم بتحديث القائمة محليًا في CertificatesCubit
+                if (state.selectedCertificateId != null) {
+                  try {
+                    final certificatesCubit = context.read<CertificatesCubit>();
 
-                certificatesCubit.updateCertificateLocally(updatedCertificate);
+                    final updatedCertificate = CertificateModel(
+                      id: state.selectedCertificateId!,
+                      nameCertificate: state.nameCertificate,
+                      fromWhere: state.fromWhere,
+                      date: state.date!,
+                      image: state.certificateImageUrl,
+                    );
 
-                // اختياري: إغلاق الشاشة بعد النجاح
-                // Navigator.pop(context);
-              } catch (e) {
-                // CertificatesCubit غير موجود في الـ context
-                // يمكنك إضافة معالجة خطأ هنا إذا أردت (مثل snackbar)
+                    certificatesCubit.updateCertificateLocally(
+                      updatedCertificate,
+                    );
+                  } catch (e) {
+                    // CertificatesCubit is not in context, ignore
+                  }
+                }
+                Navigator.pop(context, true);
               }
+              context.read<EditCertificateCubit>().clearMessages();
             }
           },
           child: BlocBuilder<EditCertificateCubit, EditCertificateState>(
@@ -128,7 +150,7 @@ class EditCertificateView extends StatelessWidget {
                                     : 'تحديث',
                                 onPressed: state.isLoading
                                     ? null
-                                    : () => cubit.updateCertificate(context),
+                                    : () => cubit.updateCertificate(),
                               ),
                               Gap(20.h),
 
@@ -477,7 +499,29 @@ class EditCertificateView extends StatelessWidget {
     EditCertificateState state,
   ) {
     return GestureDetector(
-      onTap: () => cubit.pickDate(context),
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: state.date ?? DateTime.now(),
+          firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.light(
+                  primary: AppColors.kprimaryColor,
+                  onPrimary: Colors.white,
+                  onSurface: AppColors.secondary800,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+        if (picked != null) {
+          cubit.updateDate(picked);
+        }
+      },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         decoration: BoxDecoration(

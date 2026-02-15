@@ -17,32 +17,57 @@ class SettingsLoaded extends UserProfileState {
   final List<SettingItemModel> settings;
   final UserProfileModel? userProfile;
   final bool isNotificationEnabled;
+  final String? actionMessage;
+  final bool?
+  isActionSuccess; // Simple boolean for success/failure of last action
+  final int
+  actionTimestamp; // To force listener to react even if message is same
 
   const SettingsLoaded({
     required this.settings,
     this.userProfile,
     this.isNotificationEnabled = false,
+    this.actionMessage,
+    this.isActionSuccess,
+    this.actionTimestamp = 0,
   });
 
   SettingsLoaded copyWith({
     List<SettingItemModel>? settings,
     UserProfileModel? userProfile,
     bool? isNotificationEnabled,
+    String? actionMessage,
+    bool? isActionSuccess,
+    int? actionTimestamp,
   }) {
     return SettingsLoaded(
       settings: settings ?? this.settings,
       userProfile: userProfile ?? this.userProfile,
       isNotificationEnabled:
           isNotificationEnabled ?? this.isNotificationEnabled,
+      actionMessage:
+          actionMessage, // Not keeping previous message by default to avoid stale snacks
+      isActionSuccess: isActionSuccess,
+      actionTimestamp: actionTimestamp ?? this.actionTimestamp,
     );
   }
 
   @override
-  List<Object?> get props => [settings, userProfile, isNotificationEnabled];
+  List<Object?> get props => [
+    settings,
+    userProfile,
+    isNotificationEnabled,
+    actionMessage,
+    isActionSuccess,
+    actionTimestamp,
+  ];
 }
 
 class SettingsError extends UserProfileState {
   final String message;
 
   const SettingsError({required this.message});
+
+  @override
+  List<Object?> get props => [message];
 }

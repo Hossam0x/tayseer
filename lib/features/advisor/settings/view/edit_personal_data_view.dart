@@ -1,11 +1,16 @@
+import 'dart:io';
 import 'package:chewie/chewie.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_ui_cubit.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:video_player/video_player.dart';
 
 class EditPersonalDataView extends StatefulWidget {
   const EditPersonalDataView({super.key});
@@ -19,6 +24,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   late TextEditingController _idController;
   late TextEditingController _bioController;
   late TextEditingController _usernameController;
+  late EditPersonalDataUiCubit _uiCubit;
 
   // ⭐ خرائط تحويل للمناصب
   final Map<String, String> _positionMapping = {
@@ -29,9 +35,9 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     "lecturer": "job_lecturer",
   };
 
-  // ⭐ خرائط تحويل للتخصصات (تأكد من اكتمالها)
+  // ⭐ خرائط تحويل للتخصصات
   final Map<String, String> _specializationMapping = {
-    "doctor": "spec_psychiatrist", // Or spec_doctor_psych if distinct
+    "doctor": "spec_psychiatrist",
     "psychology": "spec_psych_counseling",
     "psychiatrist": "spec_psychiatrist",
     "psychologist": "spec_psychologist",
@@ -41,7 +47,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     "consultant": "spec_consultant",
   };
 
-  // ⭐ تحديث القوائم
   final List<String> _positions = [
     "job_consultant_title",
     "job_senior",
@@ -49,7 +54,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     "job_trainer",
     "job_lecturer",
   ];
-  // ⭐ خرائط تحويل لسنوات الخبرة
+
   final Map<String, String> _experienceMapping = {
     "2": "exp_2_years",
     "3": "exp_3_years",
@@ -74,100 +79,63 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     {"display": "exp_more_than_10_years", "value": "11"},
   ];
 
-  String? _selectedPosition;
-  String? _selectedSpecialization;
-  String? _selectedExperienceDisplay;
-  String? _selectedExperienceValue;
-
-  // ⭐ دالة لتحويل القيمة من الباكند إلى قيمة للعرض
-  // ⭐ دالة لتحويل القيمة من الباكند إلى قيمة للعرض
   String? _mapFromBackend(String? backendValue, Map<String, String> mapping) {
     if (backendValue == null) return null;
-
-    // أولاً: تحقق إذا كانت القيمة موجودة مباشرة في الـ mapping
     if (mapping.containsKey(backendValue)) {
       return mapping[backendValue];
     }
-
-    // ثانياً: تحقق إذا كانت القيمة موجودة في القيم (العكس)
     final matchingEntry = mapping.entries.firstWhere(
       (entry) => entry.value == backendValue,
-      orElse: () => MapEntry("", ""),
+      orElse: () => const MapEntry("", ""),
     );
-
     if (matchingEntry.key.isNotEmpty) {
       return matchingEntry.value;
     }
-
-    // ⭐ ثالثاً: إذا لم توجد في الخريطة، ارجع القيمة كما هي
     return backendValue;
   }
 
-  // ⭐ دالة لتحويل القيمة من الواجهة إلى قيمة للباكند
   String? _mapToBackend(String? displayValue, Map<String, String> mapping) {
     if (displayValue == null) return null;
-
-    // ابحث عن الـ key الذي يحتوي على الـ value
     final matchingEntry = mapping.entries.firstWhere(
       (entry) => entry.value == displayValue,
-      orElse: () => MapEntry("", ""),
+      orElse: () => const MapEntry("", ""),
     );
-
-    // إذا وجدنا تطابق، أرسل المفتاح
     if (matchingEntry.key.isNotEmpty) {
       return matchingEntry.key;
     }
-
-    // ⭐ إذا لم نجد تطابق، تحقق إذا كان العرض يساوي أي مفتاح
     final directMatch = mapping.entries.firstWhere(
       (entry) => entry.key == displayValue,
-      orElse: () => MapEntry("", ""),
+      orElse: () => const MapEntry("", ""),
     );
-
     return directMatch.key.isNotEmpty ? directMatch.key : displayValue;
   }
 
-  // ⭐ دالة خاصة لسنوات الخبرة (بسبب الـ " من الخبرة")
   String? _normalizeExperienceFromBackend(String? backendValue) {
     if (backendValue == null) return null;
-
-    // تحويل "10 سنوات من الخبرة" → "10 سنوات"
     final normalized = backendValue.replaceAll(" من الخبرة", "");
-
-    // تحقق في الـ mapping
     if (_experienceMapping.values.contains(normalized)) {
       return normalized;
     }
-
-    // إذا كانت تحتوي على رقم، حاول إيجاد أقرب تطابق
     final match = RegExp(r'(\d+)').firstMatch(backendValue);
     if (match != null) {
       final years = match.group(1);
       return _experienceMapping[years] ?? backendValue;
     }
-
     return backendValue;
   }
 
-  // ⭐ دالة لاستخراج القيمة الرقمية من نص الخبرة
   String _getValueFromExperience(String displayValue) {
-    if (displayValue == "exp_2_years" || displayValue.contains("سنتين")) {
+    if (displayValue == "exp_2_years" || displayValue.contains("سنتين"))
       return "2";
-    }
-    if (displayValue == "exp_3_years" || displayValue.contains("3 سنوات")) {
+    if (displayValue == "exp_3_years" || displayValue.contains("3 سنوات"))
       return "3";
-    }
-    if (displayValue == "exp_5_years" || displayValue.contains("5 سنوات")) {
+    if (displayValue == "exp_5_years" || displayValue.contains("5 سنوات"))
       return "5";
-    }
-    if (displayValue == "exp_10_years" || displayValue.contains("10 سنوات")) {
+    if (displayValue == "exp_10_years" || displayValue.contains("10 سنوات"))
       return "10";
-    }
     if (displayValue == "exp_more_than_10_years" ||
-        displayValue.contains("أكثر من")) {
+        displayValue.contains("أكثر من"))
       return "11";
-    }
-
     final match = RegExp(r'(\d+)').firstMatch(displayValue);
     return match?.group(1) ?? displayValue;
   }
@@ -176,41 +144,14 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   ChewieController? _chewieController;
   String? _currentVideoUrl;
   bool _controllersInitialized = false;
-  bool _isVideoLoading = false;
-  double _uploadProgress = 0.0;
-  String? _nameError;
-  String? _usernameError;
 
-  bool get _isFormValid => _nameError == null && _usernameError == null;
-
-  void _validateName(String value) {
-    setState(() {
-      if (value.trim().length < 4 || value.trim().length > 24) {
-        _nameError = 'الاسم يجب أن يكون بين 4 و 24 حرف';
-      } else {
-        _nameError = null;
-      }
-    });
-  }
-
-  void _validateUsername(String value) {
-    // إزالة الـ @ من بداية النص
-    final cleaned = value.startsWith('@') ? value.substring(1) : value;
-    // تنظيف المسافات الزائدة
-    final trimmed = cleaned.trim();
-
-    setState(() {
-      if (trimmed.length < 4 || trimmed.length > 24) {
-        _usernameError = 'اسم المستخدم يجب أن يكون بين 4 و 24 حرف';
-      } else {
-        _usernameError = null;
-      }
-    });
-  }
+  bool get _isFormValid =>
+      _uiCubit.state.nameError == null && _uiCubit.state.usernameError == null;
 
   @override
   void initState() {
     super.initState();
+    _uiCubit = EditPersonalDataUiCubit();
     _nameController = TextEditingController();
     _idController = TextEditingController();
     _bioController = TextEditingController();
@@ -224,13 +165,14 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _bioController.dispose();
     _usernameController.dispose();
     _disposeVideoPlayer();
+    _uiCubit.close();
     super.dispose();
   }
 
   Future<void> _disposeVideoPlayer() async {
     try {
       if (_chewieController != null) {
-        await _chewieController!.pause();
+        _chewieController!.pause();
         _chewieController!.dispose();
         _chewieController = null;
       }
@@ -257,25 +199,114 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
 
     if (!mounted) return;
 
-    setState(() {
-      _isVideoLoading = true;
-      _uploadProgress = 0.0;
-    });
+    _uiCubit.setVideoLoading(true);
+    _uiCubit.updateProgress(0.0);
 
     try {
       _videoPlayerController = VideoPlayerController.networkUrl(
         Uri.parse(videoUrl),
       );
 
-      // محاكاة التقدم للفيديوهات من الشبكة
       _simulateProgress();
 
       await _videoPlayerController!.initialize();
 
       if (mounted) {
-        setState(() {
-          _isVideoLoading = false;
-          _uploadProgress = 1.0;
+        _chewieController = ChewieController(
+          videoPlayerController: _videoPlayerController!,
+          autoPlay: false,
+          looping: false,
+          showControls: true,
+          allowFullScreen: true,
+          allowMuting: true,
+          showControlsOnInitialize: false,
+          placeholder: Container(
+            color: AppColors.secondary100,
+            child: Center(
+              child: Icon(
+                Icons.video_library,
+                size: 50.w,
+                color: AppColors.primary300,
+              ),
+            ),
+          ),
+          errorBuilder: (context, errorMessage) {
+            return Center(
+              child: Text(
+                context.tr("video_load_error"),
+                style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
+              ),
+            );
+          },
+        );
+        _uiCubit.updateProgress(1.0);
+        _uiCubit.setVideoLoading(false);
+      }
+    } catch (e) {
+      if (mounted) {
+        _chewieController = null;
+        _videoPlayerController = null;
+        _uiCubit.updateProgress(0.0);
+        _uiCubit.setVideoLoading(false);
+      }
+    }
+  }
+
+  void _simulateProgress() {
+    _uiCubit.updateProgress(0.0);
+    const steps = 20;
+    const duration = Duration(milliseconds: 100);
+
+    for (int i = 1; i <= steps; i++) {
+      // Warning: this loop creates multiple futures.
+      // It's better to cancel value if unmounted but loop runs locally.
+      Future.delayed(duration * i, () {
+        if (mounted && _uiCubit.state.isVideoLoading) {
+          _uiCubit.updateProgress(i / steps);
+        }
+      });
+    }
+  }
+
+  Future<void> _pickVideo(EditPersonalDataCubit cubit) async {
+    final SnackBarService snackBarService = SnackBarService();
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickVideo(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final file = File(pickedFile.path);
+      final int fileSizeInBytes = await file.length();
+      final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+
+      if (fileSizeInMB > 10) {
+        if (mounted) {
+          snackBarService.showSnackBar(
+            context: context,
+            text: context.tr("video_size_error_10mb"),
+            isError: true,
+          );
+        }
+        return;
+      }
+
+      cubit.updateVideoFile(file, previewUrl: pickedFile.path);
+
+      if (mounted) {
+        _uiCubit.setVideoLoading(true);
+        _uiCubit.updateProgress(0.0);
+      }
+
+      await _disposeVideoPlayer();
+
+      try {
+        _videoPlayerController = VideoPlayerController.file(file);
+
+        _simulateProgress();
+
+        await _videoPlayerController!.initialize();
+
+        if (mounted) {
+          _currentVideoUrl = pickedFile.path;
           _chewieController = ChewieController(
             videoPlayerController: _videoPlayerController!,
             autoPlay: false,
@@ -294,125 +325,17 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 ),
               ),
             ),
-            errorBuilder: (context, errorMessage) {
-              return Center(
-                child: Text(
-                  context.tr("video_load_error"),
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.kRedColor,
-                  ),
-                ),
-              );
-            },
           );
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _chewieController = null;
-          _videoPlayerController = null;
-          _isVideoLoading = false;
-          _uploadProgress = 0.0;
-        });
-      }
-    }
-  }
-
-  void _simulateProgress() {
-    _uploadProgress = 0.0;
-    const steps = 20;
-    const duration = Duration(milliseconds: 100);
-
-    for (int i = 1; i <= steps; i++) {
-      Future.delayed(duration * i, () {
-        if (mounted && _isVideoLoading) {
-          setState(() {
-            _uploadProgress = i / steps;
-          });
-        }
-      });
-    }
-  }
-
-  Future<void> _pickVideo(EditPersonalDataCubit cubit) async {
-    final SnackBarService snackBarService = SnackBarService();
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickVideo(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      final file = File(pickedFile.path);
-      final int fileSizeInBytes = await file.length();
-      final double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
-
-      // ⭐ تغيير الحد الأقصى إلى 10MB
-      if (fileSizeInMB > 10) {
-        if (mounted) {
-          snackBarService.showSnackBar(
-            context: context,
-            text: context.tr("video_size_error_10mb"),
-            isError: true,
-          );
-        }
-        return;
-      }
-
-      // ⭐ تحديث الـ cubit أولاً
-      cubit.updateVideoFile(file, previewUrl: pickedFile.path);
-
-      // ⭐ ثم نبدأ تحميل الفيديو
-      if (mounted) {
-        setState(() {
-          _isVideoLoading = true;
-          _uploadProgress = 0.0;
-        });
-      }
-
-      await _disposeVideoPlayer();
-
-      try {
-        _videoPlayerController = VideoPlayerController.file(file);
-
-        // محاكاة التقدم
-        _simulateProgress();
-
-        await _videoPlayerController!.initialize();
-
-        if (mounted) {
-          setState(() {
-            _currentVideoUrl = pickedFile.path;
-            _chewieController = ChewieController(
-              videoPlayerController: _videoPlayerController!,
-              autoPlay: false,
-              looping: false,
-              showControls: true,
-              allowFullScreen: true,
-              allowMuting: true,
-              showControlsOnInitialize: false,
-              placeholder: Container(
-                color: AppColors.secondary100,
-                child: Center(
-                  child: Icon(
-                    Icons.video_library,
-                    size: 50.w,
-                    color: AppColors.primary300,
-                  ),
-                ),
-              ),
-            );
-            // ⭐ إيقاف التحميل بعد النجاح
-            _isVideoLoading = false;
-            _uploadProgress = 1.0;
-          });
+          _uiCubit.updateProgress(1.0);
+          _uiCubit.setVideoLoading(false);
         }
       } catch (e) {
         if (mounted) {
-          setState(() {
-            _isVideoLoading = false;
-            _uploadProgress = 0.0;
-            _chewieController = null;
-            _videoPlayerController = null;
-          });
+          _uiCubit.updateProgress(0.0);
+          _uiCubit.setVideoLoading(false);
+          _chewieController = null;
+          _videoPlayerController = null;
+
           snackBarService.showSnackBar(
             context: context,
             text: context.tr("video_load_error"),
@@ -433,26 +356,30 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   }
 
   void _removeVideo(EditPersonalDataCubit cubit) async {
-    // ⭐ أولاً: تحديث الحالة في الـ Cubit لإخفاء الفيديو فوراً من الواجهة
     cubit.removeVideo();
 
-    // ⭐ ثانياً: تحديث الحالة المحلية
     if (mounted) {
-      setState(() {
-        _isVideoLoading = false;
-        _uploadProgress = 0.0;
-      });
+      _uiCubit.updateProgress(0.0);
+      _uiCubit.setVideoLoading(false);
     }
 
-    // ⭐ ثالثاً: التخلص من الـ controllers في الخلفية
     await _disposeVideoPlayer();
 
     if (mounted) {
-      setState(() {
-        _currentVideoUrl = null;
-        _chewieController = null;
-        _videoPlayerController = null;
-      });
+      _currentVideoUrl = null;
+      _chewieController = null;
+      _videoPlayerController = null;
+      // Force rebuild to remove video player widget
+      _uiCubit.setVideoLoading(
+        false,
+      ); // Emit again or different? Just ensure state reflects 'no video'.
+      // Actually _uiCubit.state.isVideoLoading is false already.
+      // But parent widget rebuilds because of `cubit` (Main Logic Cubit) state change potentially?
+      // Yes, main cubit emitted changes.
+      // But _chewieController is local.
+      // We need to ensure _buildVideoSection sees null controller.
+      // The build method reads _chewieController directly.
+      // Since main cubit emits, build() is called.
     }
   }
 
@@ -462,45 +389,46 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _nameController.text = state.profile!.name;
     _idController.text = state.profile!.userName;
     _bioController.text = state.profile!.aboutYou ?? '';
-    // Strip @ from username for display
     final username = state.profile!.userName;
     _usernameController.text = username.startsWith('@')
         ? username.substring(1)
         : username;
 
-    // ⭐ معالجة jobGrade بعناية
+    String? jobGradeDisplay;
     final jobGrade = state.currentData.jobGrade;
     if (jobGrade != null && jobGrade.isNotEmpty) {
-      // حاول التحويل أولاً
-      _selectedPosition = _mapFromBackend(jobGrade, _positionMapping);
-
-      // إذا فشل التحويل، استخدم القيمة كما هي
-      if (_selectedPosition == null || _selectedPosition!.isEmpty) {
-        _selectedPosition = jobGrade;
+      jobGradeDisplay = _mapFromBackend(jobGrade, _positionMapping);
+      if (jobGradeDisplay == null || jobGradeDisplay.isEmpty) {
+        jobGradeDisplay = jobGrade;
       }
     }
 
-    // ⭐ نفس الشيء للتخصص
+    String? specializationDisplay;
     final specialization = state.currentData.professionalSpecialization;
     if (specialization != null && specialization.isNotEmpty) {
-      _selectedSpecialization = _mapFromBackend(
+      specializationDisplay = _mapFromBackend(
         specialization,
         _specializationMapping,
       );
-
-      if (_selectedSpecialization == null || _selectedSpecialization!.isEmpty) {
-        _selectedSpecialization = specialization;
+      if (specializationDisplay == null || specializationDisplay.isEmpty) {
+        specializationDisplay = specialization;
       }
     }
 
-    // ⭐ معالجة سنوات الخبرة بشكل خاص
+    String? experienceDisplay;
+    String? experienceValue;
     final yearsExp = state.currentData.yearsOfExperience;
     if (yearsExp != null && yearsExp.isNotEmpty) {
-      _selectedExperienceDisplay = _normalizeExperienceFromBackend(yearsExp);
-      _selectedExperienceValue = _getValueFromExperience(
-        _selectedExperienceDisplay!,
-      );
+      experienceDisplay = _normalizeExperienceFromBackend(yearsExp);
+      experienceValue = _getValueFromExperience(experienceDisplay!);
     }
+
+    _uiCubit.initializeFields(
+      position: jobGradeDisplay,
+      specialization: specializationDisplay,
+      experienceDisplay: experienceDisplay,
+      experienceValue: experienceValue,
+    );
 
     _controllersInitialized = true;
 
@@ -514,8 +442,11 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<EditPersonalDataCubit>(
-      create: (_) => getIt<EditPersonalDataCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => getIt<EditPersonalDataCubit>()),
+        BlocProvider.value(value: _uiCubit),
+      ],
       child: BlocConsumer<EditPersonalDataCubit, EditPersonalDataState>(
         listener: (context, state) {
           if (state.errorMessage != null) {
@@ -527,20 +458,35 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             context.read<EditPersonalDataCubit>().clearError();
           }
 
-          if (state.state == CubitStates.success && state.profile != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!_controllersInitialized) {
-                _initializeControllers(state);
+          if (state.state == CubitStates.success) {
+            if (state.successMessage != null) {
+              showSafeSnackBar(
+                context: context,
+                text: state.successMessage!,
+                isSuccess: true,
+              );
+              context.read<EditPersonalDataCubit>().clearSuccess();
+              // ⭐ إرجاع البروفايل المحدث للصفحة السابقة
+              if (state.profile != null) {
+                Navigator.pop(context, state.profile);
               }
+            }
 
-              final videoUrl = state.videoPreviewUrl;
-              if (videoUrl != null &&
-                  videoUrl.isNotEmpty &&
-                  videoUrl.startsWith('http') &&
-                  _currentVideoUrl != videoUrl) {
-                _initializeVideoPlayer(videoUrl);
-              }
-            });
+            if (state.profile != null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!_controllersInitialized) {
+                  _initializeControllers(state);
+                }
+
+                final videoUrl = state.videoPreviewUrl;
+                if (videoUrl != null &&
+                    videoUrl.isNotEmpty &&
+                    videoUrl.startsWith('http') &&
+                    _currentVideoUrl != videoUrl) {
+                  _initializeVideoPlayer(videoUrl);
+                }
+              });
+            }
           }
         },
         builder: (context, state) {
@@ -635,7 +581,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          // قسم الصورة الشخصية
                                           Center(
                                             child: _buildAvatarImageSection(
                                               cubit,
@@ -644,53 +589,61 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           ),
                                           Gap(20.h),
 
-                                          // حقل الاسم باستخدام ProfileTextField
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              ProfileTextField(
-                                                controller: _nameController,
-                                                maxLength: 24,
-                                                onChanged: (value) {
-                                                  _validateName(value);
-                                                  cubit.updateName(value);
-                                                },
-                                                hint: context.tr("enter_name"),
-                                              ),
-                                              if (_nameError != null)
-                                                Padding(
-                                                  padding: EdgeInsets.only(
-                                                    top: 4.h,
-                                                    right: 8.w,
+                                          BlocBuilder<
+                                            EditPersonalDataUiCubit,
+                                            EditPersonalDataUiState
+                                          >(
+                                            builder: (context, uiState) {
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  ProfileTextField(
+                                                    controller: _nameController,
+                                                    maxLength: 24,
+                                                    onChanged: (value) {
+                                                      _uiCubit.validateName(
+                                                        value,
+                                                      );
+                                                      cubit.updateName(value);
+                                                    },
+                                                    hint: context.tr(
+                                                      "enter_name",
+                                                    ),
                                                   ),
-                                                  child: Text(
-                                                    _nameError!,
-                                                    style: Styles.textStyle12
-                                                        .copyWith(
-                                                          color: AppColors
-                                                              .kRedColor,
-                                                        ),
-                                                  ),
-                                                ),
-                                            ],
+                                                  if (uiState.nameError != null)
+                                                    Padding(
+                                                      padding: EdgeInsets.only(
+                                                        top: 4.h,
+                                                        right: 8.w,
+                                                      ),
+                                                      child: Text(
+                                                        uiState.nameError!,
+                                                        style: Styles
+                                                            .textStyle12
+                                                            .copyWith(
+                                                              color: AppColors
+                                                                  .kRedColor,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              );
+                                            },
                                           ),
                                           Gap(11.h),
                                           _buildUsernameField(cubit),
                                           Gap(11.h),
 
-                                          // Dropdown للتخصص
                                           _buildSpecializationDropdown(cubit),
                                           Gap(11.h),
 
-                                          // Dropdown للمنصب
                                           _buildPositionDropdown(cubit),
                                           Gap(11.h),
 
-                                          // Dropdown للخبرة
                                           _buildExperienceDropdown(cubit),
                                           Gap(11.h),
-                                          // حقل السيرة الذاتية باستخدام ProfileTextField
+
                                           ProfileTextField(
                                             controller: _bioController,
                                             onChanged: (value) =>
@@ -711,26 +664,29 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                           ),
                                           Gap(25.h),
 
-                                          // قسم رفع الفيديو
                                           _buildVideoSection(cubit, state),
                                           Gap(35.h),
 
-                                          // زر الحفظ
-                                          CustomBotton(
-                                            height: 54.h,
-                                            width: double.infinity,
-                                            useGradient: true,
-                                            title: state.isSaving
-                                                ? context.tr("saving")
-                                                : context.tr("save"),
-                                            onPressed:
-                                                state.isSaving ||
-                                                    !state.hasChanges ||
-                                                    !_isFormValid
-                                                ? null
-                                                : () => cubit.saveChanges(
-                                                    context,
-                                                  ),
+                                          BlocBuilder<
+                                            EditPersonalDataUiCubit,
+                                            EditPersonalDataUiState
+                                          >(
+                                            builder: (context, uiState) {
+                                              return CustomBotton(
+                                                height: 54.h,
+                                                width: double.infinity,
+                                                useGradient: true,
+                                                title: state.isSaving
+                                                    ? context.tr("saving")
+                                                    : context.tr("save"),
+                                                onPressed:
+                                                    state.isSaving ||
+                                                        !state.hasChanges ||
+                                                        !_isFormValid
+                                                    ? null
+                                                    : () => cubit.saveChanges(),
+                                              );
+                                            },
                                           ),
                                           Gap(40.h),
                                         ],
@@ -825,9 +781,9 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
 
     if (result == 'save') {
       if (context.mounted) {
-        await cubit.saveChanges(context);
+        await cubit.saveChanges();
       }
-      return false; // saveChanges handles navigation or stays if error
+      return false;
     } else if (result == 'discard') {
       return true;
     }
@@ -835,78 +791,84 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   }
 
   Widget _buildUsernameField(EditPersonalDataCubit cubit) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.kWhiteColor,
-            borderRadius: BorderRadius.circular(8.r),
-            border: Border.all(
-              color: _usernameError != null
-                  ? AppColors.kRedColor
-                  : AppColors.primary100,
-            ),
-          ),
-          child: Row(
-            textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Text(
-                  '@',
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.primary200,
-                    fontWeight: FontWeight.bold,
-                  ),
+    return BlocBuilder<EditPersonalDataUiCubit, EditPersonalDataUiState>(
+      builder: (context, uiState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.kWhiteColor,
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(
+                  color: uiState.usernameError != null
+                      ? AppColors.kRedColor
+                      : AppColors.primary100,
                 ),
               ),
-              Expanded(
-                child: TextFormField(
-                  controller: _usernameController,
-                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
-                  maxLength: 24,
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.secondary800,
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: context.tr("enter_username"),
-                    hintStyle: Styles.textStyle14.copyWith(
-                      color: AppColors.primary200,
+              child: Row(
+                textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Text(
+                      '@',
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.primary200,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    counterText: "",
-                    contentPadding: EdgeInsets.symmetric(vertical: 14.h),
                   ),
-                  onChanged: (value) {
-                    if (value.contains('@')) {
-                      final cleaned = value.replaceAll('@', '');
-                      _usernameController.value = _usernameController.value
-                          .copyWith(
-                            text: cleaned,
-                            selection: TextSelection.collapsed(
-                              offset: cleaned.length,
-                            ),
-                          );
-                      value = cleaned;
-                    }
-                    _validateUsername(value);
-                    cubit.updateUsername('@$value');
-                  },
+                  Expanded(
+                    child: TextFormField(
+                      controller: _usernameController,
+                      textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                      maxLength: 24,
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.secondary800,
+                      ),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: context.tr("enter_username"),
+                        hintStyle: Styles.textStyle14.copyWith(
+                          color: AppColors.primary200,
+                        ),
+                        counterText: "",
+                        contentPadding: EdgeInsets.symmetric(vertical: 14.h),
+                      ),
+                      onChanged: (value) {
+                        if (value.contains('@')) {
+                          final cleaned = value.replaceAll('@', '');
+                          _usernameController.value = _usernameController.value
+                              .copyWith(
+                                text: cleaned,
+                                selection: TextSelection.collapsed(
+                                  offset: cleaned.length,
+                                ),
+                              );
+                          value = cleaned;
+                        }
+                        _uiCubit.validateUsername(value);
+                        cubit.updateUsername('@$value');
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (uiState.usernameError != null)
+              Padding(
+                padding: EdgeInsets.only(top: 4.h, right: 8.w),
+                child: Text(
+                  uiState.usernameError!,
+                  style: Styles.textStyle12.copyWith(
+                    color: AppColors.kRedColor,
+                  ),
                 ),
               ),
-            ],
-          ),
-        ),
-        if (_usernameError != null)
-          Padding(
-            padding: EdgeInsets.only(top: 4.h, right: 8.w),
-            child: Text(
-              _usernameError!,
-              style: Styles.textStyle12.copyWith(color: AppColors.kRedColor),
-            ),
-          ),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -939,6 +901,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             borderRadius: BorderRadius.circular(12.r),
           ),
         ),
+        // ... (truncated parts of skeleton, I will use simplified or standard if needed, or stick to what I saw)
+        // I will copy what I saw in previous view
         Gap(11.h),
         Container(
           height: 48.h,
@@ -1031,7 +995,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                     borderRadius: BorderRadius.circular(32.r),
                   ),
                   child: isImageDeleted
-                      ? _buildDefaultAvatar() // ⭐ عرض الصورة الافتراضية إذا تم الحذف
+                      ? _buildDefaultAvatar()
                       : imageFile != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(32.r),
@@ -1113,12 +1077,12 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
     required String hint,
-    // bool isExperience = false,
-    bool isPosition = false, // ⭐ باراميتر جديد
+    required BuildContext
+    context, // Pass context explicitly if needed, but we occupy class method
+    bool isPosition = false,
   }) {
     final bool isTablet = MediaQuery.of(context).size.width > 600;
 
-    // ⭐ تأكد من وجود القيمة في القائمة
     List<String> effectiveItems = List.from(items);
     if (value != null && !effectiveItems.contains(value)) {
       effectiveItems = [value, ...effectiveItems];
@@ -1158,7 +1122,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
               child: Text(
                 context.tr(item),
                 textAlign: isArabic ? TextAlign.right : TextAlign.left,
-                // ⭐ إضافة نمط للقيم غير المعروفة
                 style: Styles.textStyle14.copyWith(
                   color: !items.contains(item)
                       ? AppColors.secondary400
@@ -1180,291 +1143,300 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     EditPersonalDataCubit cubit,
     EditPersonalDataState state,
   ) {
-    final videoFile = state.videoFile;
-    final videoPreviewUrl = state.videoPreviewUrl;
-    // ⭐ تحقق إذا كان الفيديو محذوفاً
-    final isVideoDeleted = state.currentData.video == "";
+    return BlocBuilder<EditPersonalDataUiCubit, EditPersonalDataUiState>(
+      builder: (context, uiState) {
+        final videoFile = state.videoFile;
+        final videoPreviewUrl = state.videoPreviewUrl;
+        final isVideoDeleted = state.currentData.video == "";
 
-    // ⭐ الفيديو موجود فقط إذا:
-    // 1. في ملف جديد محلي OR
-    // 2. في URL من السيرفر وليس محذوف
-    final hasVideo =
-        videoFile != null ||
-        (!isVideoDeleted &&
-            videoPreviewUrl != null &&
-            videoPreviewUrl.isNotEmpty &&
-            _chewieController != null);
+        final hasVideo =
+            videoFile != null ||
+            (!isVideoDeleted &&
+                videoPreviewUrl != null &&
+                videoPreviewUrl.isNotEmpty &&
+                _chewieController != null);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_isVideoLoading)
-          Container(
-            width: double.infinity,
-            height: 250.h,
-            decoration: BoxDecoration(
-              color: AppColors.kWhiteColor,
-              borderRadius: BorderRadius.circular(10.r),
-              border: Border.all(color: AppColors.primary100, width: 1.0),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 60.w,
-                    height: 60.w,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: 60.w,
-                          height: 60.w,
-                          child: CircularProgressIndicator(
-                            value: _uploadProgress,
-                            color: AppColors.primary500,
-                            backgroundColor: AppColors.primary100,
-                            strokeWidth: 4,
-                          ),
-                        ),
-                        Text(
-                          '${(_uploadProgress * 100).toInt()}%',
-                          style: Styles.textStyle14.copyWith(
-                            color: AppColors.primary500,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Gap(16.h),
-                  Text(
-                    context.tr("loading_video"),
-                    style: Styles.textStyle14.copyWith(
-                      color: AppColors.secondary600,
-                    ),
-                  ),
-                  Gap(8.h),
-                  Text(
-                    '${(_uploadProgress * 100).toInt()}%',
-                    style: Styles.textStyle12.copyWith(
-                      color: AppColors.secondary400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else if (hasVideo)
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.kWhiteColor,
-              borderRadius: BorderRadius.circular(10.r),
-              border: Border.all(color: AppColors.primary100, width: 1.0),
-            ),
-            child: Column(
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      height: 250.h,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child:
-                          _chewieController != null &&
-                              _chewieController!
-                                  .videoPlayerController
-                                  .value
-                                  .isInitialized
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8.r),
-                              child: Chewie(controller: _chewieController!),
-                            )
-                          : Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.video_library_rounded,
-                                    size: 50.w,
-                                    color: Colors.white70,
-                                  ),
-                                  Gap(8.h),
-                                  Text(
-                                    videoFile != null
-                                        ? context.tr("loading_new_video")
-                                        : context.tr("loading_video"),
-                                    style: Styles.textStyle14.copyWith(
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (uiState.isVideoLoading)
+              Container(
+                width: double.infinity,
+                height: 250.h,
+                decoration: BoxDecoration(
+                  color: AppColors.kWhiteColor,
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(color: AppColors.primary100, width: 1.0),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 60.w,
+                        height: 60.w,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 60.w,
+                              height: 60.w,
+                              child: CircularProgressIndicator(
+                                value: uiState.uploadProgress,
+                                color: AppColors.primary500,
+                                backgroundColor: AppColors.primary100,
+                                strokeWidth: 4,
                               ),
                             ),
-                    ),
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: GestureDetector(
-                        onTap: () => _removeVideo(cubit),
-                        child: Container(
-                          padding: EdgeInsets.all(4.w),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.kWhiteColor,
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            color: AppColors.primary500,
-                            size: 18.w,
-                          ),
+                            Text(
+                              '${(uiState.uploadProgress * 100).toInt()}%',
+                              style: Styles.textStyle14.copyWith(
+                                color: AppColors.primary500,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                if (videoFile != null)
-                  Padding(
-                    padding: EdgeInsets.all(8.w),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 16.sp,
-                          color: AppColors.primary500,
+                      Gap(16.h),
+                      Text(
+                        context.tr("loading_video"),
+                        style: Styles.textStyle14.copyWith(
+                          color: AppColors.secondary600,
                         ),
-                        Gap(4.w),
-                        Text(
-                          context.tr("new_video_selected"),
-                          style: Styles.textStyle12.copyWith(
-                            color: AppColors.secondary600,
+                      ),
+                      Gap(8.h),
+                      Text(
+                        '${(uiState.uploadProgress * 100).toInt()}%',
+                        style: Styles.textStyle12.copyWith(
+                          color: AppColors.secondary400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (hasVideo)
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.kWhiteColor,
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(color: AppColors.primary100, width: 1.0),
+                ),
+                child: Column(
+                  children: [
+                    Stack(
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 250.h,
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child:
+                              _chewieController != null &&
+                                  _chewieController!
+                                      .videoPlayerController
+                                      .value
+                                      .isInitialized
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                  child: Chewie(controller: _chewieController!),
+                                )
+                              : Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.video_library_rounded,
+                                        size: 50.w,
+                                        color: Colors.white70,
+                                      ),
+                                      Gap(8.h),
+                                      Text(
+                                        videoFile != null
+                                            ? context.tr("loading_new_video")
+                                            : context.tr("loading_video"),
+                                        style: Styles.textStyle14.copyWith(
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                        ),
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: GestureDetector(
+                            onTap: () => _removeVideo(cubit),
+                            child: Container(
+                              padding: EdgeInsets.all(4.w),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.kWhiteColor,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                color: AppColors.primary500,
+                                size: 18.w,
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-              ],
-            ),
-          )
-        else
-          GestureDetector(
-            onTap: () => _pickVideo(cubit),
-            child: Container(
-              height: 250.h,
-              width: double.infinity,
-              padding: EdgeInsets.all(24.w),
-              decoration: BoxDecoration(
-                color: AppColors.kWhiteColor,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.primary100, width: 1.0),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AppImage(AssetsData.kvideoIcon, width: 60.w, height: 60.h),
-                  Gap(12.h),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      textAlign: TextAlign.center,
-                      isVideoDeleted
-                          ? context.tr("video_deleted_click_to_add")
-                          : context.tr("click_to_upload_intro_video"),
-                      style: Styles.textStyle16.copyWith(
-                        color: isVideoDeleted
-                            ? AppColors.kRedColor
-                            : AppColors.secondary600,
+                    if (videoFile != null)
+                      Padding(
+                        padding: EdgeInsets.all(8.w),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 16.sp,
+                              color: AppColors.primary500,
+                            ),
+                            Gap(4.w),
+                            Text(
+                              context.tr("new_video_selected"),
+                              style: Styles.textStyle12.copyWith(
+                                color: AppColors.secondary600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                  ],
+                ),
+              )
+            else
+              GestureDetector(
+                onTap: () => _pickVideo(cubit),
+                child: Container(
+                  height: 250.h,
+                  width: double.infinity,
+                  padding: EdgeInsets.all(24.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.kWhiteColor,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: AppColors.primary100, width: 1.0),
                   ),
-                ],
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AppImage(
+                        AssetsData.kvideoIcon,
+                        width: 60.w,
+                        height: 60.h,
+                      ),
+                      Gap(12.h),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          textAlign: TextAlign.center,
+                          isVideoDeleted
+                              ? context.tr("video_deleted_click_to_add")
+                              : context.tr("click_to_upload_intro_video"),
+                          style: Styles.textStyle16.copyWith(
+                            color: isVideoDeleted
+                                ? AppColors.kRedColor
+                                : AppColors.secondary600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
+            Gap(8.h),
+            Text(
+              context.tr("video_size_limit_10mb"),
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
             ),
-          ),
-        Gap(8.h),
-        Text(
-          context.tr("video_size_limit_10mb"),
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 
-  // ⭐ دالة منفصلة لكل dropdown
   Widget _buildSpecializationDropdown(EditPersonalDataCubit cubit) {
-    return _buildDropdown(
-      value: _selectedSpecialization,
-      items: _specializations,
-      onChanged: (displayValue) {
-        setState(() {
-          _selectedSpecialization = displayValue;
-        });
-        if (displayValue != null) {
-          // تحويل القيمة للباكند
-          final backendValue = _mapToBackend(
-            displayValue,
-            _specializationMapping,
-          );
-          cubit.updateSpecialization(backendValue ?? displayValue);
-        }
+    return BlocBuilder<EditPersonalDataUiCubit, EditPersonalDataUiState>(
+      builder: (context, uiState) {
+        return _buildDropdown(
+          context: context,
+          value: uiState.selectedSpecialization,
+          items: _specializations,
+          onChanged: (displayValue) {
+            _uiCubit.updateSelectedSpecialization(displayValue);
+            if (displayValue != null) {
+              final backendValue = _mapToBackend(
+                displayValue,
+                _specializationMapping,
+              );
+              cubit.updateSpecialization(backendValue ?? displayValue);
+            }
+          },
+          hint: 'select_specialization',
+        );
       },
-      hint: 'select_specialization',
     );
   }
 
   Widget _buildPositionDropdown(EditPersonalDataCubit cubit) {
-    // ⭐ تأكد من وجود القيمة في القائمة
-    List<String> effectiveItems = List.from(_positions);
-    if (_selectedPosition != null &&
-        !effectiveItems.contains(_selectedPosition)) {
-      effectiveItems = [_selectedPosition!, ...effectiveItems];
-    }
-
-    return _buildDropdown(
-      value: _selectedPosition,
-      items: effectiveItems,
-      onChanged: (displayValue) {
-        setState(() {
-          _selectedPosition = displayValue;
-        });
-        if (displayValue != null) {
-          // تحويل القيمة للباكند
-          final backendValue = _mapToBackend(displayValue, _positionMapping);
-          cubit.updatePosition(backendValue ?? displayValue);
-        }
+    return BlocBuilder<EditPersonalDataUiCubit, EditPersonalDataUiState>(
+      builder: (context, uiState) {
+        // Effective items logic in drop down takes care of it? No, need to pass it.
+        // Wait, the dropdown widget handles effective items if I kept that logic.
+        // Let's rely on _buildDropdown logic I wrote above.
+        // But I need to handle effective items in _buildDropdown.
+        return _buildDropdown(
+          context: context,
+          value: uiState.selectedPosition,
+          items: _positions,
+          onChanged: (displayValue) {
+            _uiCubit.updateSelectedPosition(displayValue);
+            if (displayValue != null) {
+              final backendValue = _mapToBackend(
+                displayValue,
+                _positionMapping,
+              );
+              cubit.updatePosition(backendValue ?? displayValue);
+            }
+          },
+          hint: 'select_position',
+          isPosition: true,
+        );
       },
-      hint: 'select_position',
-      isPosition: true, // ⭐ إضافة باراميتر جديد
     );
   }
 
   Widget _buildExperienceDropdown(EditPersonalDataCubit cubit) {
-    return _buildDropdown(
-      value: _selectedExperienceDisplay,
-      items: _experienceOptions.map((e) => e["display"]!).toList(),
-      onChanged: (displayValue) {
-        setState(() {
-          _selectedExperienceDisplay = displayValue;
-          final selected = _experienceOptions.firstWhere(
-            (e) => e["display"] == displayValue,
-            orElse: () => {
-              "value": _getValueFromExperience(displayValue ?? ""),
-            },
-          );
-          _selectedExperienceValue = selected["value"];
-        });
+    return BlocBuilder<EditPersonalDataUiCubit, EditPersonalDataUiState>(
+      builder: (context, uiState) {
+        return _buildDropdown(
+          context: context,
+          value: uiState.selectedExperienceDisplay,
+          items: _experienceOptions.map((e) => e["display"]!).toList(),
+          onChanged: (displayValue) {
+            final selected = _experienceOptions.firstWhere(
+              (e) => e["display"] == displayValue,
+              orElse: () => {
+                "value": _getValueFromExperience(displayValue ?? ""),
+              },
+            );
+            final val = selected["value"];
+            _uiCubit.updateSelectedExperience(displayValue, val);
 
-        if (_selectedExperienceValue != null &&
-            _selectedExperienceValue!.isNotEmpty) {
-          cubit.updateExperience(_selectedExperienceValue!);
-        }
+            if (val != null && val.isNotEmpty) {
+              cubit.updateExperience(val);
+            }
+          },
+          hint: 'select_experience_years',
+        );
       },
-      hint: 'select_experience_years',
     );
   }
 }

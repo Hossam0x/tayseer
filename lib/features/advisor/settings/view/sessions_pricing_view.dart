@@ -21,19 +21,17 @@ class SessionPricingView extends StatelessWidget {
             context.read<SessionPricingCubit>().clearError();
           }
 
-          // if (state.isSaving == false &&
-          //     state.errorMessage == null &&
-          //     !state.hasChanges) {
-          //   Future.delayed(Duration.zero, () {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   CustomSnackBar(
-          //     context,
-          //     text: 'تم حفظ التغييرات بنجاح',
-          //     isSuccess: true,
-          //   ),
-          // );
-          //   });
-          // }
+          if (state.successMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(
+                context,
+                text: state.successMessage!,
+                isSuccess: true,
+              ),
+            );
+            context.read<SessionPricingCubit>().clearSuccess();
+            Navigator.pop(context);
+          }
         },
         builder: (context, state) {
           final cubit = context.read<SessionPricingCubit>();
@@ -291,7 +289,7 @@ class SessionPricingView extends StatelessWidget {
           : context.tr('no_changes'),
       onPressed: state.isSaving || !state.hasChanges
           ? null
-          : () => cubit.saveChanges(context),
+          : () => cubit.saveChanges(),
       backGroundcolor: state.hasChanges ? null : AppColors.inactiveColor,
     );
   }

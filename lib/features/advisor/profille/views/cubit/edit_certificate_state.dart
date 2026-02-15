@@ -1,6 +1,8 @@
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/core/enum/cubit_states.dart'; // Ensure enum is imported
 
 class EditCertificateState {
+  final CubitStates state; // Add CubitStates
   final String nameCertificate;
   final String fromWhere;
   final DateTime? date;
@@ -10,10 +12,13 @@ class EditCertificateState {
   final String? selectedCertificateId;
   final TextEditingController? nameCertificateController;
   final TextEditingController? fromWhereController;
-
+  final String? errorMessage; // Add errorMessage
+  final String? successMessage; // Add successMessage
   final bool isImageRemoved;
+  final bool isNavigationSuccess; // Add helper for navigation
 
   const EditCertificateState({
+    this.state = CubitStates.initial,
     this.nameCertificate = '',
     this.fromWhere = '',
     this.date,
@@ -23,10 +28,14 @@ class EditCertificateState {
     this.selectedCertificateId,
     this.nameCertificateController,
     this.fromWhereController,
+    this.errorMessage,
+    this.successMessage,
     this.isImageRemoved = false,
+    this.isNavigationSuccess = false,
   });
 
   EditCertificateState copyWith({
+    CubitStates? state,
     String? nameCertificate,
     String? fromWhere,
     DateTime? date,
@@ -36,11 +45,15 @@ class EditCertificateState {
     String? selectedCertificateId,
     TextEditingController? nameCertificateController,
     TextEditingController? fromWhereController,
+    String? errorMessage,
+    String? successMessage,
     bool clearImageFile = false,
     bool clearImageUrl = false,
     bool? isImageRemoved,
+    bool? isNavigationSuccess,
   }) {
     return EditCertificateState(
+      state: state ?? this.state,
       nameCertificate: nameCertificate ?? this.nameCertificate,
       fromWhere: fromWhere ?? this.fromWhere,
       date: date ?? this.date,
@@ -56,7 +69,10 @@ class EditCertificateState {
       nameCertificateController:
           nameCertificateController ?? this.nameCertificateController,
       fromWhereController: fromWhereController ?? this.fromWhereController,
+      errorMessage: errorMessage, // Intentionally not keeping previous
+      successMessage: successMessage, // Intentionally not keeping previous
       isImageRemoved: isImageRemoved ?? this.isImageRemoved,
+      isNavigationSuccess: isNavigationSuccess ?? false,
     );
   }
 }

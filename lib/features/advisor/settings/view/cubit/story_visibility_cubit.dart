@@ -19,7 +19,7 @@ class StoryVisibilityCubit extends Cubit<StoryVisibilityState> {
   void _initialize() {
     // إعداد listener للبحث المتباطئ
     _searchDebouncer.values.listen((searchQuery) {
-      // _loadRestrictedUsers(searchQuery: searchQuery);
+      loadRestrictedUsers(searchQuery: searchQuery);
     });
 
     // تحميل البيانات الأولية
@@ -87,17 +87,19 @@ class StoryVisibilityCubit extends Cubit<StoryVisibilityState> {
     emit(state.copyWith(users: updatedUsers));
   }
 
-  Future<void> unrestrictSelectedUsers(BuildContext context) async {
+  Future<void> unrestrictSelectedUsers() async {
     if (state.selectedUserIds.isEmpty || state.isUnrestricting) return;
 
-    emit(state.copyWith(isUnrestricting: true));
+    emit(
+      state.copyWith(
+        isUnrestricting: true,
+        errorMessage: null,
+        successMessage: null,
+      ),
+    );
 
     final result = await _repository.unrestrictUsers(
       userIds: state.selectedUserIds,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      CustomSnackBar(context, text: 'تم إلغاء الإخفاء بنجاح', isSuccess: true),
     );
 
     result.fold(
@@ -112,13 +114,28 @@ class StoryVisibilityCubit extends Cubit<StoryVisibilityState> {
             .where((user) => !state.selectedUserIds.contains(user.userId))
             .toList();
 
-        emit(state.copyWith(users: updatedUsers, isUnrestricting: false));
+        emit(
+          state.copyWith(
+            users: updatedUsers,
+            isUnrestricting: false,
+            successMessage: 'تم إلغاء الإخفاء بنجاح',
+            state: CubitStates.success, // Ensure state success for listeners
+          ),
+        );
       },
     );
   }
 
   void clearError() {
-    emit(state.copyWith(errorMessage: null));
+    if (state.errorMessage != null) {
+      emit(state.copyWith(errorMessage: null));
+    }
+  }
+
+  void clearSuccess() {
+    if (state.successMessage != null) {
+      emit(state.copyWith(successMessage: null));
+    }
   }
 
   @override

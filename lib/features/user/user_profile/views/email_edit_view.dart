@@ -2,6 +2,7 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/otp_view_user.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class EmailEditView extends StatefulWidget {
@@ -34,7 +35,21 @@ class _EmailEditViewState extends State<EmailEditView> {
       child: Scaffold(
         body: BlocConsumer<EmailEditCubit, EmailEditState>(
           listener: (context, state) {
-            if (state.status == CubitStates.success) {
+            if (state.errorMessage.isNotEmpty) {
+              showSafeSnackBar(
+                context: context,
+                text: state.errorMessage,
+                isError: true,
+              );
+              context.read<EmailEditCubit>().clearMessages();
+            } else if (state.successMessage.isNotEmpty &&
+                state.status == CubitStates.success) {
+              showSafeSnackBar(
+                context: context,
+                text: state.successMessage,
+                isSuccess: true,
+              );
+
               Future.delayed(const Duration(milliseconds: 1400), () {
                 if (!mounted) return;
                 Navigator.push(
@@ -44,12 +59,13 @@ class _EmailEditViewState extends State<EmailEditView> {
                       phoneNumber: state.fullEmail,
                       isPhoneUpdate: false,
                       isEmailUpdate: true,
-                      otpSource: OtpSource.email, // ⭐⭐ تحديد المصدر
+                      otpSource: OtpSource.email,
                     ),
                   ),
                 );
                 context.read<EmailEditCubit>().reset();
               });
+              context.read<EmailEditCubit>().clearMessages();
             }
           },
           builder: (context, state) {
@@ -162,7 +178,7 @@ class _EmailEditViewState extends State<EmailEditView> {
                             ? null
                             : () => context
                                   .read<EmailEditCubit>()
-                                  .updateEmailRequest(context),
+                                  .updateEmailRequest(),
                       ),
                     ),
                     Gap(MediaQuery.of(context).viewInsets.bottom),

@@ -17,23 +17,35 @@ class SettingsLoaded extends SettingsState {
   final List<SettingItemModel> settings;
   final bool isNotificationEnabled;
   final CubitStates notificationStatus;
+  final String? actionSuccess; // Key or message
+  final String? actionError; // Key or message
+  final bool isActionKey; // If true, View should translate the message
 
   const SettingsLoaded({
     required this.settings,
     this.isNotificationEnabled = false,
     this.notificationStatus = CubitStates.initial,
+    this.actionSuccess,
+    this.actionError,
+    this.isActionKey = false,
   });
 
   SettingsLoaded copyWith({
     List<SettingItemModel>? settings,
     bool? isNotificationEnabled,
     CubitStates? notificationStatus,
+    String? actionSuccess,
+    String? actionError,
+    bool? isActionKey,
   }) {
     return SettingsLoaded(
       settings: settings ?? this.settings,
       isNotificationEnabled:
           isNotificationEnabled ?? this.isNotificationEnabled,
       notificationStatus: notificationStatus ?? this.notificationStatus,
+      actionSuccess: actionSuccess, // Intentionally not keeping previous
+      actionError: actionError, // Intentionally not keeping previous
+      isActionKey: isActionKey ?? false,
     );
   }
 
@@ -42,6 +54,9 @@ class SettingsLoaded extends SettingsState {
     settings,
     isNotificationEnabled,
     notificationStatus,
+    actionSuccess,
+    actionError,
+    isActionKey,
   ];
 }
 
@@ -52,29 +67,4 @@ class SettingsError extends SettingsState {
 
   @override
   List<Object?> get props => [message];
-}
-
-class SettingState {
-  CubitStates notificationStatus;
-  final List<SettingItemModel> settings;
-  final bool isNotificationEnabled;
-
-  SettingState({
-    this.notificationStatus = CubitStates.initial,
-    this.settings = const [],
-    this.isNotificationEnabled = false,
-  });
-
-  SettingState copyWith({
-    CubitStates? notificationStatus,
-    List<SettingItemModel>? settings,
-    bool? isNotificationEnabled,
-  }) {
-    return SettingState(
-      notificationStatus: notificationStatus ?? this.notificationStatus,
-      settings: settings ?? this.settings,
-      isNotificationEnabled:
-          isNotificationEnabled ?? this.isNotificationEnabled,
-    );
-  }
 }

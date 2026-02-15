@@ -10,6 +10,7 @@ class EditPersonalDataState extends Equatable {
   final File? imageFile;
   final File? videoFile;
   final String? errorMessage;
+  final String? successMessage;
   final bool isSaving;
   final String? videoPreviewUrl;
   final String? imagePreviewUrl;
@@ -21,6 +22,7 @@ class EditPersonalDataState extends Equatable {
     this.imageFile,
     this.videoFile,
     this.errorMessage,
+    this.successMessage,
     this.isSaving = false,
     this.videoPreviewUrl,
     this.imagePreviewUrl,
@@ -40,6 +42,7 @@ class EditPersonalDataState extends Equatable {
     File? imageFile,
     File? videoFile,
     String? errorMessage,
+    String? successMessage,
     bool? isSaving,
     String? videoPreviewUrl,
     String? imagePreviewUrl,
@@ -52,7 +55,8 @@ class EditPersonalDataState extends Equatable {
       currentData: currentData ?? this.currentData,
       imageFile: clearImage ? null : (imageFile ?? this.imageFile),
       videoFile: clearVideo ? null : (videoFile ?? this.videoFile),
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage, // Intentionally not keeping previous
+      successMessage: successMessage, // Intentionally not keeping previous
       isSaving: isSaving ?? this.isSaving,
       videoPreviewUrl: clearVideo
           ? null
@@ -95,6 +99,7 @@ class EditPersonalDataState extends Equatable {
     imageFile,
     videoFile,
     errorMessage,
+    successMessage,
     isSaving,
     videoPreviewUrl,
     imagePreviewUrl,
