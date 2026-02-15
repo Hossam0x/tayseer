@@ -4,8 +4,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/core/enum/user_type.dart';
@@ -497,7 +497,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         state.copyWith(
           signInWithAppleState: CubitStates.failure,
-          errorMessage: 'حدث خطأ أثناء تسجيل الدخول',
+          errorMessage: e.toString(),
         ),
       );
     }
