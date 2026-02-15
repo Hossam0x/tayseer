@@ -104,11 +104,12 @@ class HomeRepositoryImpl implements HomeRepository {
   Future<Either<Failure, CommentModel>> addComment({
     required String postId,
     required String comment,
+    required bool anonymous,
   }) async {
     try {
       final response = await apiService.post(
         endPoint: ApiEndPoint.comments,
-        data: {"postId": postId, "comment": comment},
+        data: {"postId": postId, "comment": comment, "anonymous": anonymous},
       );
       return Right(CommentModel.fromJson(response['data']));
     } on DioException catch (e) {
@@ -120,11 +121,12 @@ class HomeRepositoryImpl implements HomeRepository {
   Future<Either<Failure, CommentModel>> addReply({
     required String commentId,
     required String reply,
+    required bool anonymous,
   }) async {
     try {
       final response = await apiService.post(
         endPoint: ApiEndPoint.createReply,
-        data: {"commentId": commentId, "reply": reply},
+        data: {"commentId": commentId, "reply": reply, "anonymous": anonymous},
       );
       return Right(CommentModel.fromJson(response['data']));
     } on DioException catch (e) {

@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
+import 'package:tayseer/features/shared/auth/model/login_data.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/model/last_question_number_model.dart';
 import 'package:tayseer/my_import.dart';
@@ -12,7 +14,7 @@ class QuestionsRepoImpl implements QuestionsRepo {
   final ApiService apiService;
 
   @override
-  Future<Either<Failure, void>> answerQuestions({
+  Future<Either<Failure, UserModel>> answerQuestions({
     required String question,
     required String questionCategoryEnum,
     required int questionNumber,
@@ -37,10 +39,15 @@ class QuestionsRepoImpl implements QuestionsRepo {
       debugPrint('success $success');
 
       if (success) {
+        final data = UserModel.fromJson(response['data']);
         if (answerCompleted == true) {
-          await CachNetwork.setBool(key: kIsCompletedQuestions, value: true);
+          await CachNetwork.setData(
+            key: kuserData,
+            value: jsonEncode(data.toJson()),
+          );
+          kCurrentUserData = data;
         }
-        return right(null);
+        return right(data);
       } else {
         final message = response['message'] ?? 'فشل ارسال الاجابه';
         debugPrint('message $message');

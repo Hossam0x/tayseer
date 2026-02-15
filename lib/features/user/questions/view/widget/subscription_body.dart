@@ -1,8 +1,8 @@
 // lib/features/subscription/view/subscription_screen.dart
 
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/features/user/questions/model/subscription_plan_model.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
+import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class SubscriptionBody extends StatefulWidget {
@@ -171,39 +171,63 @@ class _SubscriptionBodyState extends State<SubscriptionBody> {
                       (Widget child, Animation<double> animation) {
                         return ScaleTransition(scale: animation, child: child);
                       },
-                  child: CustomBotton(
-                    // استخدام الزر الخاص بك
-                    key: ValueKey<int>(_currentIndex), // مهم للأنيميشن
-                    width: context.width,
-                    title: context.tr(currentPlan.buttonTextKey),
-                    // إذا كانت الخطة الذهبية نستخدم تدرج لوني، وإلا لون ثابت
-                    useGradient: currentPlan.type == PlanType.basic,
-                    backGroundcolor: currentPlan.type == PlanType.gold
-                        ? currentPlan.primaryColor
-                        : currentPlan.type == PlanType.premium
-                        ? currentPlan.primaryColor
-                        : null,
-                    onPressed: () async {
-                      if (currentPlan.type == PlanType.basic) {
+                  child: BlocConsumer<QuestionsCubit, QuestionsState>(
+                    listener: (context, state) {
+                      if (state.answerQuestionsState == CubitStates.loading) {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) =>
+                              const Center(child: CustomloadingApp()),
+                        );
+                      } else if (state.answerQuestionsState ==
+                          CubitStates.success) {
+                        // close loading dialog only (don't pop the current route)
+                        if (Navigator.canPop(context)) Navigator.pop(context);
                         context.pushNamedAndRemoveUntil(
                           AppRouter.kUserLayoutView,
                           predicate: (route) => false,
                         );
-
-                        context.read<QuestionsCubit>().sendAnswerQuestions(
-                          question: "subscription",
-                          questionCategoryEnum: "subscription",
-                          questionNumber: 30,
-                          answerCompleted: true,
-                          answers: [
-                            {'answer': 'تم'},
-                          ],
-                        );
-                        await CachNetwork.setBool(
-                          key: kIsCompletedQuestions,
-                          value: true,
+                      } else if (state.answerQuestionsState ==
+                          CubitStates.failure) {
+                        // close loading dialog only (don't pop the current route)
+                        if (Navigator.canPop(context)) Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          CustomSnackBar(
+                            context,
+                            text:
+                                state.errorMessage ??
+                                context.tr("submit_failed"),
+                            isSuccess: false,
+                          ),
                         );
                       }
+                    },
+                    builder: (context, state) {
+                      return CustomBotton(
+                        key: ValueKey<int>(_currentIndex),
+                        width: context.width,
+                        title: context.tr(currentPlan.buttonTextKey),
+                        useGradient: currentPlan.type == PlanType.basic,
+                        backGroundcolor: currentPlan.type == PlanType.gold
+                            ? currentPlan.primaryColor
+                            : currentPlan.type == PlanType.premium
+                            ? currentPlan.primaryColor
+                            : null,
+                        onPressed: () async {
+                          if (currentPlan.type == PlanType.basic) {
+                            context.read<QuestionsCubit>().sendAnswerQuestions(
+                              question: "subscription",
+                              questionCategoryEnum: "subscription",
+                              questionNumber: 30,
+                              answerCompleted: true,
+                              answers: [
+                                {'answer': 'تم'},
+                              ],
+                            );
+                          }
+                        },
+                      );
                     },
                   ),
                 ),

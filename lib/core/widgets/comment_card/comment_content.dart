@@ -68,6 +68,7 @@ class CommentContent extends StatelessWidget {
                 ? _navigateToUserAdvisorProfile(context)
                 : _navigateToUserProfile(context),
             child: CommentAvatar(
+              isAnnonymous: comment.commenter.isAnnonymous,
               avatarUrl: comment.commenter.avatar,
               isReply: isReply,
             ),
@@ -145,7 +146,8 @@ class _CommentHeader extends StatelessWidget {
                     ),
                   ),
                   Gap(4.w),
-                  if (comment.commenter.isVerified)
+                  if (comment.commenter.isVerified &&
+                      !comment.commenter.isAnnonymous)
                     Icon(Icons.verified, color: Colors.blue, size: 14.sp),
                 ],
               ),
@@ -154,7 +156,9 @@ class _CommentHeader extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      comment.commenter.userName,
+                      comment.commenter.isAnnonymous
+                          ? ""
+                          : comment.commenter.userName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Styles.textStyle12.copyWith(

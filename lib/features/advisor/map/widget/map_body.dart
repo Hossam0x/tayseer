@@ -1,6 +1,6 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
-import 'package:tayseer/features/advisor/event/view_model/events_cubit.dart';
-import 'package:tayseer/features/advisor/event/view_model/events_state.dart';
+import 'package:tayseer/features/shared/event/view_model/events_cubit.dart';
+import 'package:tayseer/features/shared/event/view_model/events_state.dart';
 import 'package:tayseer/features/advisor/map/widget/bottom_card.dart';
 import 'package:tayseer/features/advisor/map/widget/control_buttons.dart';
 import 'package:tayseer/features/advisor/map/widget/loading_overlay.dart';

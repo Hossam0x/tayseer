@@ -117,6 +117,7 @@ class QuestionPage extends StatelessWidget {
 
       case QuestionType.categorizedMultiSelectChips:
         return CategorizedMultiSelectWidget(
+          initialSelected:  [],
           categorizedItems: config.categorizedItems ?? {},
           onChanged: (selectedKeys) {
             // ✅ إضافة الإيموجي مع النص المترجم

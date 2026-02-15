@@ -1,7 +1,3 @@
-// marriage_fetch_body.dart - FIXED VIEW PAGE
-// ════════════════════════════════════════════════════════════════
-// ✅ صفحة العرض - تستخدم loadProfileForView()
-// ════════════════════════════════════════════════════════════════
 
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
@@ -23,7 +19,7 @@ class MarriageFetchBody extends StatelessWidget {
     return BlocProvider(
       create: (context) =>
           MarriageProfileCubit(getIt<MarriageProfileRepository>())
-            ..loadProfile(), // ⭐⭐⭐ استخدام method الصحيح للعرض
+            ..loadProfile(),
       child: const _MarriageBodyContent(),
     );
   }
@@ -37,27 +33,31 @@ class _MarriageBodyContent extends StatelessWidget {
     return CustomBackground(
       child: BlocBuilder<MarriageProfileCubit, MarriageProfileState>(
         builder: (context, state) {
-          // ✅ Loading state
           if (state.isLoading && state.profile == null) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // ✅ Error state
           if (state.state == CubitStates.failure && state.profile == null) {
             return _buildErrorPlaceholder(context, state.errorMessage);
           }
 
-          // ✅ Get profile
           final profile = state.profile;
           if (profile == null) return const SizedBox.shrink();
+
+          // ⭐⭐⭐ FIX: استخدام singleImage بدل أول صورة
+          final mainImage = profile.userMedia?.singleImage ?? 
+                           (profile.userMedia?.images.isNotEmpty == true 
+                               ? profile.userMedia!.images.first 
+                               : null);
 
           return Stack(
             children: [
               CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
-                  // ⭐ Header with images and basic info
+                  // ⭐ Header with SINGLE IMAGE
                   SliverProfileHeader(
+                    mainImage: mainImage, // ⭐⭐⭐ استخدام singleImage
                     images: _getLastNImages(profile.userMedia?.images ?? [], 5),
                     name: profile.aboutMe?.country ?? 'غير محدد',
                     age: int.tryParse(profile.aboutMe?.age ?? '0') ?? 0,
@@ -66,19 +66,17 @@ class _MarriageBodyContent extends StatelessWidget {
                     tags: _buildHeaderTags(profile),
                   ),
 
-                  // ⭐ About Me Section
                   _buildSliverPadding(
                     child: AboutMeSection(items: _buildAboutMeItems(profile)),
                   ),
 
-                  // ⭐ Education Section
                   _buildSliverPadding(
                     child: EducationSection(
                       items: _buildEducationItems(profile),
                     ),
                   ),
 
-                  // ⭐ Goals/Timeline Section
+                  // ⭐ Goals/Timeline Section - FIXED
                   if (profile.yourGoals != null)
                     _buildSliverPadding(
                       child: LifeEventsSection(
@@ -102,12 +100,10 @@ class _MarriageBodyContent extends StatelessWidget {
                       ),
                     ),
 
-                  // ⭐ Religious Section
                   _buildSliverPadding(
                     child: ReligiousSection(tags: _buildReligiousTags(profile)),
                   ),
 
-                  // ⭐ Interests/Hobbies Section
                   if (profile.hobbies.isNotEmpty)
                     _buildSliverPadding(
                       child: InterestsSection(
@@ -115,7 +111,6 @@ class _MarriageBodyContent extends StatelessWidget {
                       ),
                     ),
 
-                  // ⭐ Bio & Voice Section
                   if (profile.myDescription != null &&
                       profile.myDescription!.isNotEmpty)
                     _buildSliverPadding(
@@ -125,7 +120,6 @@ class _MarriageBodyContent extends StatelessWidget {
                       ),
                     ),
 
-                  // ⭐ Message Input Section
                   _buildSliverPadding(
                     child: MessageInputSection(
                       name: profile.aboutMe?.country ?? 'المستخدم',
@@ -136,7 +130,6 @@ class _MarriageBodyContent extends StatelessWidget {
                 ],
               ),
 
-              // ⭐ Floating Action Buttons
               _buildFloatingOverlay(context),
             ],
           );
@@ -144,10 +137,6 @@ class _MarriageBodyContent extends StatelessWidget {
       ),
     );
   }
-
-  // ════════════════════════════════════════════════════════════════
-  // UI Helper Methods
-  // ════════════════════════════════════════════════════════════════
 
   Widget _buildSliverPadding({required Widget child}) {
     return SliverPadding(
@@ -243,31 +232,48 @@ class _MarriageBodyContent extends StatelessWidget {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // Data Processing Helper Methods
-  // ════════════════════════════════════════════════════════════════
-
   List<String> _getLastNImages(List<String> images, int n) {
     if (images.length <= n) return images;
     return images.sublist(images.length - n);
   }
 
+  // ⭐⭐⭐ FIXED: Timeline Events with correct goal types
   List<Map<String, dynamic>> _buildTimelineEvents(dynamic yourGoals) {
     List<Map<String, dynamic>> events = [];
-    if (yourGoals.marry != null && yourGoals.marry.isNotEmpty) {
-      events.add({
-        'timeLabel': 'خلال سنتين',
-        'goalLabel': yourGoals.marry,
-        'isActive': true,
-      });
-    }
+    
+    // ⭐ Add events in order with GOAL TYPE
     if (yourGoals.engagement != null && yourGoals.engagement.isNotEmpty) {
       events.add({
-        'timeLabel': 'خلال سنة',
-        'goalLabel': yourGoals.engagement,
+        'timeLabel': yourGoals.engagement,
+        'goalType': 'engagement', // ⭐ This is the key field
         'isActive': true,
       });
     }
+    
+    if (yourGoals.marry != null && yourGoals.marry.isNotEmpty) {
+      events.add({
+        'timeLabel': yourGoals.marry,
+        'goalType': 'marry', // ⭐ This is the key field
+        'isActive': true,
+      });
+    }
+    
+    if (yourGoals.children != null && yourGoals.children.isNotEmpty) {
+      events.add({
+        'timeLabel': yourGoals.children,
+        'goalType': 'familyAcceptance', // ⭐ This is the key field
+        'isActive': true,
+      });
+    }
+    
+    if (yourGoals.travel != null && yourGoals.travel.isNotEmpty) {
+      events.add({
+        'timeLabel': yourGoals.travel,
+        'goalType': 'travel', // ⭐ This is the key field
+        'isActive': true,
+      });
+    }
+    
     return events;
   }
 
@@ -381,7 +387,9 @@ class MessageInputSection extends StatelessWidget {
   }
 }
 
+// ⭐⭐⭐ UPDATED: SliverProfileHeader with mainImage parameter
 class SliverProfileHeader extends StatelessWidget {
+  final String? mainImage; // ⭐⭐⭐ NEW: Separate main image
   final List<String> images;
   final String name;
   final int age;
@@ -390,6 +398,7 @@ class SliverProfileHeader extends StatelessWidget {
 
   const SliverProfileHeader({
     super.key,
+    this.mainImage, // ⭐⭐⭐ NEW
     required this.images,
     required this.name,
     required this.age,
@@ -406,7 +415,7 @@ class SliverProfileHeader extends StatelessWidget {
             clipBehavior: Clip.none,
             alignment: Alignment.bottomCenter,
             children: [
-              // Main image
+              // ⭐⭐⭐ Main image from singleImage
               Container(
                 height: 450.h,
                 width: double.infinity,
@@ -416,16 +425,13 @@ class SliverProfileHeader extends StatelessWidget {
                   ),
                   image: DecorationImage(
                     image: NetworkImage(
-                      images.isNotEmpty
-                          ? images[0]
-                          : 'https://via.placeholder.com/400',
+                      mainImage ?? 'https://via.placeholder.com/400',
                     ),
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
 
-              // Completion progress card
               Positioned(
                 bottom: 20.h,
                 left: 20.w,
@@ -435,7 +441,6 @@ class SliverProfileHeader extends StatelessWidget {
             ],
           ),
 
-          // Name and location info
           Padding(
             padding: EdgeInsets.all(16.w),
             child: Column(

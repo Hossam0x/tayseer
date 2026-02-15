@@ -1,7 +1,7 @@
 // lib/features/advisor/event/view_model/events_state.dart
 
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
-import 'package:tayseer/features/advisor/event/model/my_event_model.dart';
+import 'package:tayseer/features/shared/event/model/my_event_model.dart';
 import 'package:tayseer/my_import.dart';
 
 // Sentinel used in copyWith to allow explicitly setting nullable fields to null

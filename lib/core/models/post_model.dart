@@ -1,5 +1,5 @@
 import 'package:tayseer/core/utils/assets.dart';
-import 'package:tayseer/features/advisor/event/model/my_event_model.dart';
+import 'package:tayseer/features/shared/event/model/my_event_model.dart';
 
 // --- Enums ---
 enum ReactionType { love, care, dislike }
@@ -87,6 +87,9 @@ class PostModel {
   final bool isMine;
   final bool isBlocked;
 
+  // for commnets
+  final bool isCommented;
+  final bool? isAnonymous;
   PostModel({
     required this.postId,
     required this.name,
@@ -114,6 +117,9 @@ class PostModel {
     this.isHidden = false,
     this.isBlocked = false,
     this.event,
+
+    this.isCommented = false,
+    this.isAnonymous,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -163,6 +169,9 @@ class PostModel {
       repostedBy: json['repostedBy'],
       isSaved: json['isSaved'] ?? false,
       isMine: json['isMine'] ?? false,
+
+      isCommented: json['isCommented'] ?? false,
+      isAnonymous: json['isAnonymousCommented'],
     );
   }
 
@@ -201,6 +210,9 @@ class PostModel {
     bool? isHidden,
     bool? isBlocked,
     EventModel? event,
+
+    bool? isCommented,
+    bool? isAnonymous,
   }) {
     return PostModel(
       postId: postId ?? this.postId,
@@ -229,6 +241,8 @@ class PostModel {
       isHidden: isHidden ?? this.isHidden,
       isBlocked: isBlocked ?? this.isBlocked,
       event: event ?? this.event,
+      isCommented: isCommented ?? this.isCommented,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
     );
   }
 }

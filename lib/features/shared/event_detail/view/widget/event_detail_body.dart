@@ -1,9 +1,9 @@
-import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
-import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_state.dart';
+import 'package:tayseer/features/shared/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/shared/event_detail/view_model/event_detail_state.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/features/advisor/event_detail/view/widget/event_body_content.dart';
-import 'package:tayseer/features/advisor/event_detail/view/widget/floating_info_card.dart';
-import 'package:tayseer/features/advisor/event_detail/view/widget/event_bottom_bar.dart';
+import 'package:tayseer/features/shared/event_detail/view/widget/event_body_content.dart';
+import 'package:tayseer/features/shared/event_detail/view/widget/floating_info_card.dart';
+import 'package:tayseer/features/shared/event_detail/view/widget/event_bottom_bar.dart';
 
 class EventDetailBody extends StatelessWidget {
   const EventDetailBody({super.key});
@@ -187,9 +187,7 @@ class EventDetailBody extends StatelessWidget {
           return EventBottomBar(
             priceAfterDiscount:
                 state.event?.priceAfterDiscount.toString() ?? '',
-            onBoostPressed: () {
-              /// handle boost action
-            },
+
             onEditPressed: () {
               context.pushNamed(
                 AppRouter.kUpdateEventView,

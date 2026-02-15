@@ -20,6 +20,7 @@ class AuthState {
   final CubitStates addCertificateState;
   final CubitStates addNationalImageState;
   final CubitStates addLanguageState;
+  final CubitStates isAiState;
 
   final LastLoginResponse? lastLoginResponse;
   final GuestData? guestData;
@@ -28,6 +29,7 @@ class AuthState {
   final String? lastLoginBy;
   final String? lastLoginEmail;
   final String? fromScreen;
+  final String draftText;
   final bool? verify;
   final bool? answerCompleted;
   final int? lastQuestionNumber;
@@ -65,6 +67,7 @@ class AuthState {
     this.addCertificateState = CubitStates.initial,
     this.addNationalImageState = CubitStates.initial,
     this.addLanguageState = CubitStates.initial,
+    this.isAiState = CubitStates.initial,
     this.lastLoginResponse,
     this.guestData,
     this.answerCompleted,
@@ -72,6 +75,7 @@ class AuthState {
     this.errorMessage,
     this.verify,
     this.fromScreen,
+    this.draftText = '',
     this.lastLoginBy,
     this.lastLoginEmail,
     this.days = const [],
@@ -103,12 +107,14 @@ class AuthState {
     CubitStates? addCertificateState,
     CubitStates? addNationalImageState,
     CubitStates? addLanguageState,
+    CubitStates? isAiState,
     LastLoginResponse? lastLoginResponse,
     bool? verify,
     bool? answerCompleted,
     int? lastQuestionNumber,
     String? errorMessage,
     String? fromScreen,
+    String? draftText,
     String? lastLoginBy,
     String? lastLoginEmail,
     List<String>? days,
@@ -143,12 +149,15 @@ class AuthState {
       addNationalImageState:
           addNationalImageState ?? this.addNationalImageState,
       addLanguageState: addLanguageState ?? this.addLanguageState,
+      isAiState: isAiState ?? this.isAiState,
       lastLoginResponse: lastLoginResponse ?? this.lastLoginResponse,
       errorMessage: errorMessage ?? this.errorMessage,
       lastLoginBy: lastLoginBy ?? this.lastLoginBy,
       lastLoginEmail: lastLoginEmail ?? this.lastLoginEmail,
       verify: verify ?? this.verify,
       fromScreen: fromScreen ?? this.fromScreen,
+      draftText: draftText ?? this.draftText,
+
       answerCompleted: answerCompleted ?? this.answerCompleted,
       lastQuestionNumber: lastQuestionNumber ?? this.lastQuestionNumber,
       days: days ?? this.days,

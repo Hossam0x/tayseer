@@ -6,6 +6,7 @@ class MyProfileImage extends StatelessWidget {
   final String? imageUrl;
   final String? heroTag;
   final VoidCallback? onTap;
+  final bool isAnnonymous;
 
   const MyProfileImage({
     super.key,
@@ -14,6 +15,7 @@ class MyProfileImage extends StatelessWidget {
     this.imageUrl,
     this.heroTag,
     this.onTap,
+    this.isAnnonymous = false,
   });
 
   @override
@@ -28,7 +30,7 @@ class MyProfileImage extends StatelessWidget {
       width: width ?? size.r,
       child: ClipOval(
         child: AppImage(
-          isUserAnonymous ? AssetsData.anonymousProfile : image,
+          isAnnonymous ? AssetsData.anonymousProfile : image,
           fit: BoxFit.cover,
         ),
       ),

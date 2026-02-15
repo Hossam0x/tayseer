@@ -37,8 +37,7 @@ class SelectDaysBody extends StatelessWidget {
               /// Title
               Text(
                 context.tr('selectAvailableDays'),
-                style: Styles.textStyle18.copyWith(
-                  fontWeight: FontWeight.bold,
+                style: Styles.textStyle20Bold.copyWith(
                   color: AppColors.kscandryTextColor,
                 ),
               ),

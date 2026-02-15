@@ -1,3 +1,4 @@
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:tayseer/my_import.dart';
 
 class CustomDropdownFormField<T> extends StatelessWidget {
@@ -18,23 +19,51 @@ class CustomDropdownFormField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<T>(
+    return DropdownButtonFormField2<T>(
       value: value,
       validator: validator,
       isExpanded: true,
+
+      // ✅ شكل الـ icon
+      iconStyleData: IconStyleData(
+        icon: Icon(
+          Icons.arrow_drop_down,
+          color: AppColors.kprimaryColor.withOpacity(0.5),
+        ),
+      ),
+
+      // ✅ التحكم في الـ Dropdown Menu
+      dropdownStyleData: DropdownStyleData(
+        // ✅ العرض على قد الـ Field
+        useRootNavigator: true,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        maxHeight: 300,
+        offset: const Offset(0, -5), // ✅ يظهر فوق الـ field شوية
+      ),
+
+      // ✅ التحكم في شكل كل Item
+      menuItemStyleData: const MenuItemStyleData(
+        padding: EdgeInsets.symmetric(horizontal: 12),
+      ),
 
       decoration: InputDecoration(
         filled: true,
         fillColor: AppColors.kWhiteColor,
         isDense: true,
-
-        /// نفس الـ padding بتاع الـ CustomTextFormField
         contentPadding: EdgeInsets.symmetric(
           vertical: context.height * .022,
           horizontal: 12,
         ),
-
-        /// نفس borders بالظبط
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(

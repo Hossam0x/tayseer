@@ -82,18 +82,36 @@ class _PostDetailsViewState extends State<PostDetailsView> {
       create: (_) => PostDetailsCubit(
         homeRepository: getIt<HomeRepository>(),
         postId: widget.post.postId,
+        isCommented: widget.post.isCommented,
+        isAnonymous: widget.post.isAnonymous,
       ),
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: _buildAppBar(context),
-        body: BlocListener<PostDetailsCubit, PostDetailsState>(
-          listenWhen: (prev, curr) =>
-              prev.addingCommentState != curr.addingCommentState,
-          listener: (_, state) {
-            if (state.addingCommentState == CubitStates.success) {
-              _scrollToTop();
-            }
-          },
+        body: MultiBlocListener(
+          listeners: [
+            // ✅ Comment success
+            BlocListener<PostDetailsCubit, PostDetailsState>(
+              listenWhen: (prev, curr) =>
+                  prev.addingCommentState != curr.addingCommentState,
+              listener: (_, state) {
+                if (state.addingCommentState == CubitStates.success) {
+                  _scrollToTop();
+                  _notifyCommented(state.selectedAnonymous);
+                }
+              },
+            ),
+            // ✅ Reply success
+            BlocListener<PostDetailsCubit, PostDetailsState>(
+              listenWhen: (prev, curr) =>
+                  prev.addingReplyState != curr.addingReplyState,
+              listener: (_, state) {
+                if (state.addingReplyState == CubitStates.success) {
+                  _notifyCommented(state.selectedAnonymous);
+                }
+              },
+            ),
+          ],
           child: Column(
             children: [
               Expanded(
@@ -111,6 +129,18 @@ class _PostDetailsViewState extends State<PostDetailsView> {
         ),
       ),
     );
+  }
+
+  /// Notify HomeCubit about the comment/reply + update local post
+  void _notifyCommented(bool isAnonymous) {
+    setState(() {
+      _currentPost = _currentPost.copyWith(
+        isCommented: true,
+        isAnonymous: isAnonymous,
+        commentsCount: _currentPost.commentsCount + 1,
+      );
+    });
+    widget.callbacks.onCommented?.call(_currentPost.postId, isAnonymous);
   }
 
   AppBar _buildAppBar(BuildContext context) {
@@ -214,7 +244,8 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
                       cubit.toggleHideComment(commentId: commentId),
                   onHideReply: (replyId) =>
                       cubit.toggleHideReply(replyId: replyId),
-                  onSendReply: cubit.addReply,
+                  onSendReply: (parentId, text) =>
+                      cubit.addReply(parentId, text),
                   onLoadReplies: cubit.loadReplies,
                   onDeleteReply: (id) => cubit.deleteReply(
                     replyId: id,

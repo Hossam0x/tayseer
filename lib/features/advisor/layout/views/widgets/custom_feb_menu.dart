@@ -88,19 +88,20 @@ class _CustomFabMenuState extends State<CustomFabMenu>
         GestureDetector(
           onTap: _toggleMenu,
           child: Container(
-            width: 60.w,
-            height: 60.w,
+            width: 80.w,
+            height: 80.w,
             decoration: BoxDecoration(
               // اللون الوردي المتدرج او الثابت حسب الصورة
               gradient: AppColors.defaultGradient,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.kprimaryColor.withOpacity(0.4),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              border: Border.all(color: Colors.white, width: 10.r),
+              // boxShadow: [
+              //   BoxShadow(
+              //     color: AppColors.kprimaryColor.withOpacity(0.4),
+              //     blurRadius: 10,
+              //     offset: const Offset(0, 4),
+              //   ),
+              // ],
             ),
             child: RotationTransition(
               turns: _rotateAnimation,
@@ -122,9 +123,7 @@ class _CustomFabMenuState extends State<CustomFabMenu>
         onTap: () {
           context.pushNamed(
             AppRouter.kAddPostView,
-            arguments:{
-              "addPostEnum" : AddPostEnum.post,
-            },
+            arguments: {"addPostEnum": AddPostEnum.post},
           );
         },
       ),
@@ -134,9 +133,7 @@ class _CustomFabMenuState extends State<CustomFabMenu>
         onTap: () {
           context.pushNamed(
             AppRouter.kAddPostView,
-            arguments:{
-              "addPostEnum" : AddPostEnum.video,
-            },
+            arguments: {"addPostEnum": AddPostEnum.video},
           );
         },
       ),
@@ -146,9 +143,7 @@ class _CustomFabMenuState extends State<CustomFabMenu>
         onTap: () {
           context.pushNamed(
             AppRouter.kAddPostView,
-            arguments:{
-              "addPostEnum" : AddPostEnum.reel,
-            },
+            arguments: {"addPostEnum": AddPostEnum.reel},
           );
         },
       ),

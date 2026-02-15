@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
-import 'package:tayseer/features/advisor/event/view/widget/event_cart_item.dart';
+import 'package:tayseer/features/shared/event/view/widget/event_cart_item.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_advisor_model.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_event_model.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_user_model.dart';

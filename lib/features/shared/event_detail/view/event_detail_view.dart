@@ -1,5 +1,5 @@
-import 'package:tayseer/features/advisor/event_detail/view/widget/event_detail_body.dart';
-import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/shared/event_detail/view/widget/event_detail_body.dart';
+import 'package:tayseer/features/shared/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class EventDetailView extends StatefulWidget {

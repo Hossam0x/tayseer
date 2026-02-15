@@ -1,6 +1,5 @@
 // lib/features/user/marriage/view/marriage_view.dart
 
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
@@ -14,8 +13,7 @@ class MarriageView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final completed =
-        CachNetwork.getBoolData(key: kIsCompletedQuestions) == true;
+    final completed = kCurrentUserData?.completeData == true;
 
     return Scaffold(
       body: completed
