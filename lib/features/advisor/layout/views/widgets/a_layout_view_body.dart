@@ -38,7 +38,9 @@ class ALayOutViewBody extends StatelessWidget {
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
-                bottom: state.isNavVisible ? 30.h : -200.h,
+                bottom: state.isNavVisible
+                    ? MediaQuery.of(context).padding.bottom + 25.h
+                    : -200.h,
                 left: 0,
                 right: 0,
                 child: Center(

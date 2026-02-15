@@ -51,6 +51,7 @@ abstract class HomeRepository {
   Future<Either<Failure, CommentModel>> addReply({
     required String commentId,
     required String reply,
+    required bool anonymous,
   });
 
   Future<void> likeToggle({

@@ -26,7 +26,7 @@ class CommenterModel {
       avatar: json['avatar'],
       isVerified: json['isVerified'] ?? false,
       userType: json['userType'] ?? '',
-      isAnnonymous: json['isAnnonymous'] ?? false,
+      isAnnonymous: json['isAnonymousCommented'] ?? false,
     );
   }
 }

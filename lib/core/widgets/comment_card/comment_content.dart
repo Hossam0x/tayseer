@@ -146,7 +146,8 @@ class _CommentHeader extends StatelessWidget {
                     ),
                   ),
                   Gap(4.w),
-                  if (comment.commenter.isVerified)
+                  if (comment.commenter.isVerified &&
+                      !comment.commenter.isAnnonymous)
                     Icon(Icons.verified, color: Colors.blue, size: 14.sp),
                 ],
               ),
@@ -156,7 +157,7 @@ class _CommentHeader extends StatelessWidget {
                   Flexible(
                     child: Text(
                       comment.commenter.isAnnonymous
-                          ? "@${context.tr(AppStrings.anonymous)}"
+                          ? ""
                           : comment.commenter.userName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

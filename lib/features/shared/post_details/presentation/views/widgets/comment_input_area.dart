@@ -5,13 +5,8 @@ import 'package:tayseer/my_import.dart';
 import 'package:flutter/foundation.dart' as foundation;
 
 class CommentInputArea extends StatefulWidget {
-  const CommentInputArea({
-    super.key,
-    required this.iscommented,
-    this.isAnonymous,
-  });
-  final bool iscommented;
-  final bool? isAnonymous;
+  const CommentInputArea({super.key});
+
   @override
   State<CommentInputArea> createState() => CommentInputAreaState();
 }
@@ -22,14 +17,10 @@ class CommentInputAreaState extends State<CommentInputArea> {
 
   TextDirection _textDirection = TextDirection.rtl;
   bool _showEmojiPicker = false;
-  bool _isAnonymous = false;
-  bool _hasCommented = false;
 
   @override
   void initState() {
     super.initState();
-    _isAnonymous = widget.isAnonymous ?? false;
-    _hasCommented = widget.isAnonymous != null || widget.iscommented;
     _controller.addListener(_updateTextDirection);
 
     _focusNode.addListener(() {
@@ -88,7 +79,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
     _focusNode.unfocus();
 
     // 2️⃣ إرسال الكومنت للـ Cubit
-    context.read<PostDetailsCubit>().addComment(text, anonymous: _isAnonymous);
+    context.read<PostDetailsCubit>().addComment(text);
   }
 
   @override
@@ -135,10 +126,6 @@ class CommentInputAreaState extends State<CommentInputArea> {
                 state.errorMessage ?? "حدث خطأ أثناء إضافة التعليق",
               );
             }
-            // ✅ بعد أول تعليق ناجح، نقفل تغيير الصفة
-            if (state.addingCommentState == CubitStates.success) {
-              setState(() => _hasCommented = true);
-            }
           },
         ),
       ],
@@ -149,6 +136,10 @@ class CommentInputAreaState extends State<CommentInputArea> {
           if (shouldHideInput) {
             return const SizedBox.shrink();
           }
+
+          final cubit = context.watch<PostDetailsCubit>();
+          final isLocked = cubit.state.isAnonymousLocked;
+          final selectedAnonymous = cubit.state.selectedAnonymous;
 
           return PopScope(
             canPop: !_showEmojiPicker,
@@ -177,15 +168,13 @@ class CommentInputAreaState extends State<CommentInputArea> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         CommentAvatar(
-                          iscommented: _hasCommented,
-                          isAnonymous: _hasCommented
-                              ? _isAnonymous
-                              : widget.isAnonymous,
-                          currentSelection: _isAnonymous,
+                          iscommented: isLocked,
+                          isAnonymous: selectedAnonymous,
+                          currentSelection: selectedAnonymous,
                           onSelectionChanged: (value) {
-                            setState(() {
-                              _isAnonymous = value;
-                            });
+                            context.read<PostDetailsCubit>().changeAnonymous(
+                              value,
+                            );
                           },
                         ),
                         Gap(12.w),

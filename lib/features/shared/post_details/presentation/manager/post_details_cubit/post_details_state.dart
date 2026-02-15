@@ -36,8 +36,9 @@ class PostDetailsState extends Equatable {
   final String deleteReplyMessage;
   final CubitStates deleteReplyActionState;
 
-  // ✅ Anonymous tracking
-  final bool? commentedAnonymous;
+  // ✅ Anonymous state
+  final bool isAnonymousLocked;
+  final bool selectedAnonymous;
 
   const PostDetailsState({
     this.commentsState = CubitStates.initial,
@@ -59,7 +60,8 @@ class PostDetailsState extends Equatable {
     this.deleteCommentActionState = CubitStates.initial,
     this.deleteReplyMessage = '',
     this.deleteReplyActionState = CubitStates.initial,
-    this.commentedAnonymous,
+    this.isAnonymousLocked = false,
+    this.selectedAnonymous = false,
   });
 
   bool get hasMoreComments => currentPage < totalPages;
@@ -94,8 +96,9 @@ class PostDetailsState extends Equatable {
     // DELETE REPLY
     String? deleteReplyMessage,
     CubitStates? deleteReplyActionState,
-    // Anonymous tracking
-    bool? commentedAnonymous,
+    // Anonymous state
+    bool? isAnonymousLocked,
+    bool? selectedAnonymous,
   }) {
     return PostDetailsState(
       commentsState: commentsState ?? this.commentsState,
@@ -129,7 +132,8 @@ class PostDetailsState extends Equatable {
       deleteReplyMessage: deleteReplyMessage ?? this.deleteReplyMessage,
       deleteReplyActionState:
           deleteReplyActionState ?? this.deleteReplyActionState,
-      commentedAnonymous: commentedAnonymous ?? this.commentedAnonymous,
+      isAnonymousLocked: isAnonymousLocked ?? this.isAnonymousLocked,
+      selectedAnonymous: selectedAnonymous ?? this.selectedAnonymous,
     );
   }
 
@@ -154,6 +158,7 @@ class PostDetailsState extends Equatable {
     deleteCommentActionState,
     deleteReplyMessage,
     deleteReplyActionState,
-    commentedAnonymous,
+    isAnonymousLocked,
+    selectedAnonymous,
   ];
 }

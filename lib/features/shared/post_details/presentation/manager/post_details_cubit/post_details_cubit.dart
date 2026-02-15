@@ -11,9 +11,24 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   final HomeRepository homeRepository;
   final String postId;
 
-  PostDetailsCubit({required this.homeRepository, required this.postId})
-    : super(const PostDetailsState()) {
+  PostDetailsCubit({
+    required this.homeRepository,
+    required this.postId,
+    bool isCommented = false,
+    bool? isAnonymous,
+  }) : super(
+         PostDetailsState(
+           isAnonymousLocked: isCommented,
+           selectedAnonymous: isAnonymous ?? false,
+         ),
+       ) {
     loadComments();
+  }
+
+  /// Toggle anonymous selection (only if not locked)
+  void changeAnonymous(bool value) {
+    if (state.isAnonymousLocked) return;
+    emit(state.copyWith(selectedAnonymous: value));
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -216,9 +231,10 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   // 📌 ADD COMMENT (Optimistic Update + Auto-Scroll)
   // ═══════════════════════════════════════════════════════════
 
-  Future<void> addComment(String content, {required bool anonymous}) async {
+  Future<void> addComment(String content) async {
     if (content.trim().isEmpty) return;
 
+    final anonymous = state.selectedAnonymous;
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
 
     final currentUser = CommenterModel(
@@ -281,7 +297,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             // ✅ NEW: Scroll للكومنت الجديد
             scrollToCommentId: newComment.id,
             scrollTrigger: state.scrollTrigger + 1,
-            commentedAnonymous: anonymous,
+            isAnonymousLocked: true,
           ),
         );
 
@@ -297,11 +313,13 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   Future<void> addReply(String parentCommentId, String content) async {
     if (content.trim().isEmpty) return;
 
+    final anonymous = state.selectedAnonymous;
     emit(state.copyWith(addingReplyState: CubitStates.loading));
 
     final result = await homeRepository.addReply(
       commentId: parentCommentId,
       reply: content,
+      anonymous: anonymous,
     );
 
     result.fold(
@@ -344,6 +362,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             // ✅ NEW: Scroll للرد الجديد
             scrollToCommentId: newReply.id,
             scrollTrigger: state.scrollTrigger + 1,
+            isAnonymousLocked: true,
           ),
         );
 
