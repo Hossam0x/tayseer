@@ -970,7 +970,6 @@
   "everyone": "Everyone",
   "hidden": "Hidden",
   "show_val": "Show",
-  
   "blur_val": "Blur",
   "hide_val": "Hide",
   "appear_val": "Appear",
@@ -1222,9 +1221,7 @@
   "add_audio_clip": "Add audio clip",
   "add_audio_description": "Record a short clip to introduce yourself.",
   "get_verified": "Get verified",
-  "get_verified": "Get verified",
   "verify_profile_description": "Verify your profile to build trust with others.",
-  "verify_all_profiles_real": "Ensuring all profiles are real",
   "verify_all_profiles_real": "Ensuring all profiles are real",
   "verify_all_data_accuracy": "We must verify all data for accuracy",
   "photo_verification": "Photo Verification",
@@ -1234,7 +1231,6 @@
   "identity_verification": "Identity Verification",
   "identity_verification_desc": "Identity has been verified to confirm your membership",
   "okay_understood": "Okay, Got it!",
-  "remaining_likes_count": "Remaining Likes",
   "remaining_likes_count": "Remaining Likes",
   "go_unlimited_with_effort": "Go unlimited with effort",
   "upgrade": "Upgrade",
@@ -1264,27 +1260,24 @@
   "experience_10_plus": "More than 10 Years",
   "generate_ai_content": "Generate with AI",
   "app_fees_deduction_note": "50% will be deducted as application fees",
-  "final_price_after_discount": "Final price after discount"
-  "get_free_credit_daily_with_gold": "Get free credit daily with Gold",
+  "final_price_after_discount": "Final price after discount",
   "confirm_new_phone": "Confirm New Phone",
   "confirm_new_email": "Confirm New Email",
   "verifying": "Verifying...",
   "otp_digit_6_error": "Please enter the 6-digit code",
   "resend_code_in": "Resend code in",
-  "otp_sent_to_number": "Verification code sent to {}"
-  "get_free_credit_daily_with_gold": "Get free credit daily with Gold",
-    "delete_main_image": "Delete Profile Picture",
+  "otp_sent_to_number": "Verification code sent to {}",
+  "delete_main_image": "Delete Profile Picture",
   "must_upload_new_main_image": "You must upload a new profile picture before deleting the current one",
   "choose_new_image": "Choose New Image",
   "max_secondary_images_4": "Maximum 4 secondary images",
   "add_main_image_required": "Main Image Required",
   "must_add_main_image_before_exit": "You cannot exit without adding a main image",
   "add_image": "Add Image",
-    "reorder_image": "Reorder Image",
+  "reorder_image": "Reorder Image",
   "reorder_image_question": "Do you want this image to be the first secondary image after the main one?",
   "yes_make_first": "Yes, Make it First",
   "image_reordered_successfully": "Image reordered successfully",
   "error_reordering_image": "Error reordering image",
-  "under_review":"Awaiting review"
-
+  "under_review": "Awaiting review"
 }
