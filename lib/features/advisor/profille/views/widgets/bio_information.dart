@@ -124,18 +124,23 @@ class BioInformation extends StatelessWidget {
   }
 
   Widget _buildNameSection(ProfileModel profile) {
+    // Make is Verified badge
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Text(
-            "Dr / ${profile.name}",
+            profile.name,
             style: Styles.textStyle20SemiBold.copyWith(
               color: AppColors.blueText,
             ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        if (profile.isVerified) ...[
+          Gap(8.w),
+          Icon(Icons.verified, color: Colors.blue, size: 20.w),
+        ],
       ],
     );
   }

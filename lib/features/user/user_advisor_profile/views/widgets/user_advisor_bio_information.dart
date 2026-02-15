@@ -157,15 +157,14 @@ class UserAdvisorBioInformation extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          "Dr / ${profile.name}",
+          profile.name,
           style: Styles.textStyle20SemiBold.copyWith(color: AppColors.blueText),
           overflow: TextOverflow.ellipsis,
         ),
-        if (profile.isVerified)
-          Padding(
-            padding: EdgeInsets.only(left: 8.w),
-            child: AppImage(AssetsData.expertAdvisor, width: 24.w),
-          ),
+        if (profile.isVerified) ...[
+          Gap(8.w),
+          Icon(Icons.verified, color: Colors.blue, size: 20.w),
+        ],
       ],
     );
   }

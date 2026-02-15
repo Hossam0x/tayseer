@@ -87,12 +87,20 @@ class UserPublicProfileBio extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // الاسم
-          Text(
-            profile.name,
-            style: Styles.textStyle20SemiBold.copyWith(
-              color: AppColors.blueText,
-            ),
-            overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              Text(
+                profile.name,
+                style: Styles.textStyle20SemiBold.copyWith(
+                  color: AppColors.blueText,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (profile.isVerified!) ...[
+                Gap(8.w),
+                Icon(Icons.verified, color: Colors.blue, size: 20.w),
+              ],
+            ],
           ),
           Gap(4.h),
 
