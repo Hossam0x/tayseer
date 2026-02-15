@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/core/enum/user_type.dart';
@@ -384,11 +385,7 @@ class AuthCubit extends Cubit<AuthState> {
     required UserTypeEnum userType,
   }) async {
     emit(
-      state.copyWith(
-        authGoogleState: CubitStates.loading,
-        fromScreen: 'registration',
-        currentAuthUserType: userType,
-      ),
+      state.copyWith(fromScreen: 'registration', currentAuthUserType: userType),
     );
 
     try {
@@ -502,7 +499,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         state.copyWith(
           signInWithAppleState: CubitStates.failure,
-          errorMessage: 'حدث خطأ أثناء تسجيل الدخول',
+          errorMessage: e.toString(),
         ),
       );
     }
@@ -517,7 +514,7 @@ class AuthCubit extends Cubit<AuthState> {
       final response = await _repo.authApple(idToken: idToken);
 
       response.fold(
-            (failure) {
+        (failure) {
           emit(
             state.copyWith(
               authAppleState: CubitStates.failure,
@@ -630,7 +627,7 @@ class AuthCubit extends Cubit<AuthState> {
       final response = await _repo.getLastLogIn();
 
       response.fold(
-            (failure) {
+        (failure) {
           emit(
             state.copyWith(
               getLastLoginState: CubitStates.failure,
@@ -638,7 +635,7 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-            (lastLoginResponse) {
+        (lastLoginResponse) {
           emit(
             state.copyWith(
               getLastLoginState: CubitStates.success,
