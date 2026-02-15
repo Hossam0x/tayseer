@@ -239,6 +239,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     });
   }
 
+// ⭐⭐⭐ FIX: دالة تنسيق الهوايات مع دعم الترجمة الكامل
 String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
   List<String> hobbiesList = [];
 
@@ -300,6 +301,24 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
   return result;
 }
 
+// ⭐⭐⭐ NEW: دالة عامة لترجمة أي قيمة تلقائياً
+String _translateValue(String value, BuildContext context) {
+  // إذا كانت القيمة فاضية أو "اختر"، أرجعها كما هي
+  if (value.isEmpty || value == 'اختر' || value == 'select') {
+    return context.tr('select');
+  }
+
+  // جرب الترجمة - إذا مافيش ترجمة، هيرجع نفس القيمة
+  final translated = context.tr(value);
+  
+  // إذا الترجمة نفس الـ key، يعني مافيش ترجمة → أرجع القيمة الأصلية
+  if (translated == value && !value.contains(' ')) {
+    // لو فيها مسافات، يعني قيمة مترجمة فعلاً مش key
+    return value;
+  }
+  
+  return translated;
+}
 
   @override
   Widget build(BuildContext context) {
@@ -429,99 +448,277 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
       ),
     );
   }
+// ⭐⭐⭐ UPDATED: _buildImagesSection with REORDER functionality
+// ⭐⭐⭐ UPDATED: _buildImagesSection with REORDER functionality
+Widget _buildImagesSection(
+  BuildContext context,
+  MarriageProfileCubit cubit,
+  MarriageUserProfileModel profile,
+) {
+  final allImages = profile.userMedia?.images ?? [];
+  final singleImageUrl = profile.userMedia?.singleImage;
+  final secondaryImages = allImages.length > 4 ? allImages.sublist(0, 4) : allImages;
 
-  Widget _buildImagesSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    final allImages = profile.userMedia?.images ?? [];
-    final singleImageUrl = profile.userMedia?.singleImage;
-    final secondaryImages = allImages.length > 4 ? allImages.sublist(0, 4) : allImages;
-
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${context.tr('images_count')} ( ${(singleImageUrl != null ? 1 : 0) + allImages.length} ${context.tr('images_count')})',
-            style: Styles.textStyle18Meduim,
-          ),
-          Gap(12.h),
-          Directionality(
-            textDirection: TextDirection.rtl,
-            child: GridView.builder(
-              padding: EdgeInsets.zero,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: 6,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return ImageSlotCard(
-                    imageUrl: singleImageUrl,
-                    isMain: true,
-                    onTap: singleImageUrl == null ? () => _pickSingleImage(context, cubit, profile) : null,
-                    onRemove: singleImageUrl != null ? () => _removeSingleImage(context, cubit) : null,
-                  );
-                }
-                if (index == 5) {
-                  return GestureDetector(
-                    onTap: () {
-                      ImageGuidelinesBottomSheet.show(context, onNext: () {
-                        context.pop();
-                      });
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.only(top: context.height * 0.06),
-                      child: Column(
-                        children: [
-                          Icon(Icons.info_outline, size: 28, color: AppColors.kscandryTextColor),
-                          SizedBox(height: 8),
-                          Text(
-                            context.tr('photo_guidelines'),
-                            textAlign: TextAlign.center,
-                            style: Styles.textStyle16.copyWith(color: AppColors.kscandryTextColor),
-                          ),
-                        ],
-                      ),
+  return Container(
+    padding: EdgeInsets.all(10.w),
+    decoration: BoxDecoration(
+      color: AppColors.kWhiteColor,
+      borderRadius: BorderRadius.circular(12.r),
+      border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${context.tr('images_count')} ( ${(singleImageUrl != null ? 1 : 0) + allImages.length} ${context.tr('images_count')})',
+          style: Styles.textStyle18Meduim,
+        ),
+        Gap(12.h),
+        Directionality(
+          textDirection: TextDirection.rtl,
+          child: GridView.builder(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 0.7,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: 6,
+            itemBuilder: (context, index) {
+              // ⭐ SLOT 0: Main Image
+              if (index == 0) {
+                return ImageSlotCard(
+                  imageUrl: singleImageUrl,
+                  isMain: true,
+                  onTap: singleImageUrl == null 
+                    ? () => _pickSingleImage(context, cubit, profile) 
+                    : null,
+                  onRemove: singleImageUrl != null 
+                    ? () => _removeSingleImage(context, cubit) 
+                    : null,
+                );
+              }
+              
+              // ⭐ SLOT 5: Guidelines
+              if (index == 5) {
+                return GestureDetector(
+                  onTap: () {
+                    ImageGuidelinesBottomSheet.show(context, onNext: () {
+                      context.pop();
+                    });
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.only(top: context.height * 0.06),
+                    child: Column(
+                      children: [
+                        Icon(Icons.info_outline, size: 28, color: AppColors.kscandryTextColor),
+                        SizedBox(height: 8),
+                        Text(
+                          context.tr('photo_guidelines'),
+                          textAlign: TextAlign.center,
+                          style: Styles.textStyle16.copyWith(color: AppColors.kscandryTextColor),
+                        ),
+                      ],
                     ),
-                  );
-                }
-                int listIndex = index - 1;
-                if (listIndex < secondaryImages.length) {
-                  return ImageSlotCard(
-                    imageUrl: secondaryImages[listIndex],
-                    isMain: false,
-                    onTap: null,
-                    onRemove: () => _removeImage(context, cubit, listIndex, allImages),
-                  );
-                } else {
-                  return ImageSlotCard(
-                    imageUrl: null,
-                    isMain: false,
-                    onTap: allImages.length < 4 ? () => _pickImage(context, cubit, profile, isMain: false) : null,
-                    onRemove: null,
-                  );
-                }
-              },
+                  ),
+                );
+              }
+              
+              // ⭐ SLOTS 1-4: Secondary Images
+              int listIndex = index - 1;
+              if (listIndex < secondaryImages.length) {
+                return ImageSlotCard(
+                  imageUrl: secondaryImages[listIndex],
+                  isMain: false,
+                  onTap: () => _showReorderImageDialog(
+                    context, 
+                    cubit, 
+                    listIndex, 
+                    allImages,
+                  ), // ⭐⭐⭐ NEW: Show reorder dialog
+                  onRemove: () => _removeImage(context, cubit, listIndex, allImages),
+                );
+              } else {
+                // Empty slot
+                return ImageSlotCard(
+                  imageUrl: null,
+                  isMain: false,
+                  onTap: allImages.length < 4 
+                    ? () => _pickImage(context, cubit, profile, isMain: false) 
+                    : null,
+                  onRemove: null,
+                );
+              }
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ⭐⭐⭐ NEW: Show Reorder Image Dialog
+void _showReorderImageDialog(
+  BuildContext context,
+  MarriageProfileCubit cubit,
+  int currentIndex,
+  List<String> allImages,
+) {
+  // إذا كانت أول صورة، ما فيه داعي للترتيب
+  if (currentIndex == 0) {
+    return;
+  }
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      title: Row(
+        children: [
+          Icon(Icons.swap_vert, color: AppColors.primary600, size: 28.w),
+          Gap(12.w),
+          Expanded(
+            child: Text(
+              context.tr('reorder_image'),
+              style: Styles.textStyle18Meduim.copyWith(
+                color: AppColors.primary600,
+              ),
             ),
           ),
         ],
       ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ⭐ عرض الصورة
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12.r),
+            child: Image.network(
+              allImages[currentIndex],
+              height: 200.h,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Gap(16.h),
+          Text(
+            context.tr('reorder_image_question'),
+            textAlign: TextAlign.center,
+            style: Styles.textStyle16.copyWith(
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        // ⭐ زر الإلغاء
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            context.tr('cancel'),
+            style: TextStyle(
+              color: AppColors.secondary600,
+              fontSize: 16.sp,
+            ),
+          ),
+        ),
+        
+        // ⭐ زر التأكيد
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context);
+            _reorderImage(context, cubit, currentIndex, allImages);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary600,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+          ),
+          child: Text(
+            context.tr('yes_make_first'),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ⭐⭐⭐ NEW: Reorder Image (Move to First Position)
+Future<void> _reorderImage(
+  BuildContext context,
+  MarriageProfileCubit cubit,
+  int currentIndex,
+  List<String> allImages,
+) async {
+  // نسخة من القائمة الحالية
+  final List<String> reorderedImages = List<String>.from(allImages);
+  
+  // نقل الصورة المختارة للمركز الأول
+  final selectedImage = reorderedImages.removeAt(currentIndex);
+  reorderedImages.insert(0, selectedImage);
+  
+  debugPrint('═══════════════════════════════════════');
+  debugPrint('🔄 [REORDER] Moving image from index $currentIndex to 0');
+  debugPrint('📋 [REORDER] Old order: $allImages');
+  debugPrint('📋 [REORDER] New order: $reorderedImages');
+  debugPrint('═══════════════════════════════════════');
+  
+  // حفظ الترتيب الجديد
+  try {
+    // ⭐ هنا بنحفظ الترتيب الجديد في الـ profile
+    final updatedProfile = widget.profile.copyWith(
+      userMedia: widget.profile.userMedia?.copyWith(
+        images: reorderedImages,
+      ),
     );
+    
+    // ⭐ تحديث الـ state
+    cubit.emit(
+      widget.state.copyWith(profile: updatedProfile),
+    );
+    
+    // ⭐ عرض رسالة نجاح
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('image_reordered_successfully'),
+          isError: false,
+        ),
+      );
+      
+      // ⭐ Refresh the UI
+      setState(() {});
+    }
+    
+    debugPrint('✅ [REORDER] Image reordered successfully');
+  } catch (e) {
+    debugPrint('❌ [REORDER] Error: $e');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('error_reordering_image'),
+          isError: true,
+        ),
+      );
+    }
   }
+}
+
 
   Future<void> _pickSingleImage(
     BuildContext context,
@@ -636,7 +833,7 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
           Gap(12.h),
           _buildInfoRow(
             context.tr('qualification'),
-            profile.professionalLife?.educationLevel ?? context.tr('select'),
+            _translateValue(profile.professionalLife?.educationLevel ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'education_level', profile.professionalLife?.educationLevel);
             },
@@ -644,7 +841,7 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
           Gap(12.h),
           _buildInfoRow(
             context.tr('job'),
-            profile.professionalLife?.job ?? context.tr('select'),
+            _translateValue(profile.professionalLife?.job ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'choose_job', profile.professionalLife?.job);
             },
@@ -652,7 +849,7 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
           Gap(12.h),
           _buildInfoRow(
             context.tr('employer'),
-            profile.professionalLife?.chooseEmployer ?? context.tr('select'),
+            _translateValue(profile.professionalLife?.chooseEmployer ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'choose_employer', profile.professionalLife?.chooseEmployer);
             },
@@ -1131,28 +1328,28 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
           Gap(12.h),
           _buildInfoRow(
             context.tr('marital_status'),
-            profile.aboutMe?.socialStatus ?? context.tr('select'),
+            _translateValue(profile.aboutMe?.socialStatus ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'maritalStatus', profile.aboutMe?.socialStatus);
             },
           ),
           _buildInfoRow(
             context.tr('has_children'),
-            profile.family?.hasChildren ?? context.tr('select'),
+            _translateValue(profile.family?.hasChildren ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'hasChildren', profile.family?.hasChildren);
             },
           ),
           _buildInfoRow(
             context.tr('children_count'),
-            profile.family?.childrenNumber ?? context.tr('select'),
+            _translateValue(profile.family?.childrenNumber ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'childrenNumber', profile.family?.childrenNumber);
             },
           ),
           _buildInfoRow(
             context.tr('children_live_with_you'),
-            profile.family?.childrenLivingStatus ?? context.tr('select'),
+            _translateValue(profile.family?.childrenLivingStatus ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'childrenLiveWithYou', profile.family?.childrenLivingStatus);
             },
@@ -1181,28 +1378,28 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
           Gap(12.h),
           _buildInfoRow(
             context.tr('engagement'),
-            profile.yourGoals?.engagement ?? context.tr('select'),
+            _translateValue(profile.yourGoals?.engagement ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'engagement', profile.yourGoals?.engagement);
             },
           ),
           _buildInfoRow(
             context.tr('marriage'),
-            profile.yourGoals?.marry ?? context.tr('select'),
+            _translateValue(profile.yourGoals?.marry ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'marry', profile.yourGoals?.marry);
             },
           ),
           _buildInfoRow(
             context.tr('family'),
-            profile.yourGoals?.children ?? context.tr('select'),
+            _translateValue(profile.yourGoals?.children ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'familyAcceptance', profile.yourGoals?.children);
             },
           ),
           _buildInfoRow(
             context.tr('travel'),
-            profile.yourGoals?.travel ?? context.tr('select'),
+            _translateValue(profile.yourGoals?.travel ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'travel', profile.yourGoals?.travel);
             },
@@ -1253,7 +1450,6 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
     );
   }
   
-// ✅ الحل الصحيح - استخدم BlocConsumer:
 Widget _buildSaveButton(
   BuildContext context,
   MarriageProfileCubit cubit,
@@ -1261,11 +1457,9 @@ Widget _buildSaveButton(
 ) {
   return BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
     listener: (context, state) {
-      // ⭐ Listener بيسمع التغييرات
       if (state.state == CubitStates.success && !state.isUpdating) {
         debugPrint('✅ [SAVE] Profile saved successfully!');
         
-        // ⭐ اعرض رسالة نجاح
         if (state.successMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
@@ -1276,12 +1470,10 @@ Widget _buildSaveButton(
           );
         }
         
-        // ⭐ انتقل للـ Show tab
         widget.onTabChanged?.call(1);
       } else if (state.state == CubitStates.failure) {
         debugPrint('❌ [SAVE] Error: ${state.errorMessage}');
         
-        // ⭐ اعرض رسالة خطأ
         if (state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
@@ -1329,14 +1521,14 @@ Widget _buildSaveButton(
           Gap(12.h),
           _buildInfoRow(
             context.tr('country'),
-            profile.aboutMe?.country ?? context.tr('select'),
+            _translateValue(profile.aboutMe?.country ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'country', profile.aboutMe?.country);
             },
           ),
           _buildInfoRow(
             context.tr('nationality'),
-            profile.aboutMe?.nationality ?? context.tr('select'),
+            _translateValue(profile.aboutMe?.nationality ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'nationality', profile.aboutMe?.nationality);
             },
@@ -1357,28 +1549,28 @@ Widget _buildSaveButton(
           ),
           _buildInfoRow(
             context.tr('skin_color'),
-            profile.aboutMe?.skinColor ?? context.tr('select'),
+            _translateValue(profile.aboutMe?.skinColor ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'skinColor', profile.aboutMe?.skinColor);
             },
           ),
           _buildInfoRow(
             context.tr('health_status'),
-            profile.aboutMe?.healthStatus ?? context.tr('select'),
+            _translateValue(profile.aboutMe?.healthStatus ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'healthStatus', profile.aboutMe?.healthStatus);
             },
           ),
           _buildInfoRow(
             context.tr('religious_commitment'),
-            profile.aboutMe?.religiousCommitment ?? context.tr('select'),
+            _translateValue(profile.aboutMe?.religiousCommitment ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'religiousCommitment', profile.aboutMe?.religiousCommitment);
             },
           ),
           _buildInfoRow(
             context.tr('smoking'),
-            profile.aboutMe?.smoker ?? context.tr('select'),
+            _translateValue(profile.aboutMe?.smoker ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'smoker', profile.aboutMe?.smoker);
             },
@@ -1388,73 +1580,75 @@ Widget _buildSaveButton(
     );
   }
 
-  Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
-    final isLongText = value.length > 30;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: AppColors.kWhiteColor,
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isLongText) ...[
-              Text(label, style: Styles.textStyle18),
-              Gap(8.h),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      value,
-                      textAlign: TextAlign.left,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: Styles.textStyle16,
-                    ),
-                  ),
-                  Gap(8.w),
-                  Icon(Icons.arrow_forward_ios_rounded, size: 14.w, color: AppColors.secondary400),
-                ],
-              ),
-            ] else ...[
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Text(label, style: Styles.textStyle18, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                  Gap(8.w),
-                  Expanded(
-                    flex: 3,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            value,
-                            textAlign: TextAlign.right,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Styles.textStyle16,
-                          ),
-                        ),
-                        Gap(8.w),
-                        Icon(Icons.arrow_forward_ios_rounded, size: 14.w, color: AppColors.secondary400),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
+// ⭐⭐⭐ FIX: دالة _buildInfoRow مع الترجمة التلقائية
+Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
+  final isLongText = value.length > 30;
+  
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      color: AppColors.kWhiteColor,
+      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (isLongText) ...[
+            Text(label, style: Styles.textStyle18),
             Gap(8.h),
-            Divider(color: AppColors.secondary100, height: 1),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.left,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: Styles.textStyle16,
+                  ),
+                ),
+                Gap(8.w),
+                Icon(Icons.arrow_forward_ios_rounded, size: 14.w, color: AppColors.secondary400),
+              ],
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(label, style: Styles.textStyle18, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
+                Gap(8.w),
+                Expanded(
+                  flex: 3,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          value,
+                          textAlign: TextAlign.right,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Styles.textStyle16,
+                        ),
+                      ),
+                      Gap(8.w),
+                      Icon(Icons.arrow_forward_ios_rounded, size: 14.w, color: AppColors.secondary400),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
-        ),
+          Gap(8.h),
+          Divider(color: AppColors.secondary100, height: 1),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
 void _navigateToFieldSelection(
   BuildContext context,
@@ -1469,7 +1663,6 @@ void _navigateToFieldSelection(
         fieldName: fieldKey,
         currentValue: currentValue,
         onValueSelected: (value) {
-          // 🐛🐛🐛 DEBUG: طبع القيمة قبل الحفظ
           debugPrint('═══════════════════════════════════════════');
           debugPrint('🔍 [SELECTION] Field: $fieldKey');
           debugPrint('🔍 [SELECTION] Value received: "$value"');
@@ -1479,7 +1672,6 @@ void _navigateToFieldSelection(
             final parts = value.split(', ');
             debugPrint('🔍 [SELECTION] Split parts: $parts');
             
-            // ⭐ تأكد إنها keys
             for (var part in parts) {
               final isKey = part.startsWith('interest_') || part.startsWith('faith_');
               debugPrint('  ${isKey ? "✅" : "❌"} $part ${isKey ? "(KEY)" : "(VALUE - WRONG!)"}');
@@ -1522,8 +1714,7 @@ void _navigateToFieldSelection(
     );
   }
 }
-
-
+// ⭐⭐⭐ FIXED: ImageSlotCard - يسمح بالضغط على الصور الموجودة
 class ImageSlotCard extends StatelessWidget {
   final String? imageUrl;
   final bool isMain;
@@ -1541,7 +1732,7 @@ class ImageSlotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: imageUrl == null ? onTap : null,
+      onTap: onTap, // ⭐⭐⭐ FIX: دائماً استخدم onTap (مش بس لما الصورة مش موجودة)
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -1594,7 +1785,7 @@ class ImageSlotCard extends StatelessWidget {
               top: 4,
               left: 4,
               child: GestureDetector(
-                onTap: onRemove,
+                onTap: onRemove, // ⭐ زر الحذف منفصل
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: const BoxDecoration(
@@ -1610,7 +1801,6 @@ class ImageSlotCard extends StatelessWidget {
     );
   }
 }
-
 class DashedRectPainter extends CustomPainter {
   final double strokeWidth;
   final Color color;

@@ -1,5 +1,5 @@
 // features/user/user_profile/views/widgets/marriage_field_selection_view.dart
-// ⭐⭐⭐ FIXED VERSION - يحفظ الـ keys فقط، ويعرض النص المترجم + الإيموجي
+// ⭐⭐⭐ COMPLETE FIXED VERSION WITH FULL TRANSLATION SUPPORT
 
 import 'package:tayseer/features/user/questions/view/widget/categorized_multi_select_widget.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_ios_picker.dart';
@@ -175,7 +175,7 @@ class _MarriageFieldSelectionViewState
     );
   }
 
-  // ⭐⭐⭐ بناء محتوى MultiSelect - UPDATED WITH KEY-BASED SAVING
+  // ⭐⭐⭐ بناء محتوى MultiSelect - WITH KEY-BASED SAVING
   Widget _buildMultiSelectContent(
     BuildContext context,
     Map<String, dynamic> fieldData,
@@ -234,22 +234,31 @@ class _MarriageFieldSelectionViewState
     }
   }
 
-  // ⭐ بناء محتوى القائمة - بدون translationMap
+  // ⭐⭐⭐ بناء محتوى القائمة - يحفظ الـ key بدل الترجمة
   Widget _buildListContent(
     BuildContext context,
     Map<String, dynamic> fieldData,
   ) {
     final List<String> items = List<String>.from(fieldData['items']);
 
-    // ⭐ البحث عن الـ key المناسب للقيمة الحالية باستخدام context.tr
+    // ⭐ البحث عن الـ key المناسب للقيمة الحالية
     String? initialSelectedKey;
+    
     if (widget.currentValue != null &&
         widget.currentValue != 'اختر' &&
+        widget.currentValue != 'select' &&
         widget.currentValue!.isNotEmpty) {
-      for (var key in items) {
-        if (context.tr(key) == widget.currentValue) {
-          initialSelectedKey = key;
-          break;
+      
+      // أولاً: جرب مطابقة مباشرة (إذا كانت القيمة key فعلاً)
+      if (items.contains(widget.currentValue)) {
+        initialSelectedKey = widget.currentValue;
+      } else {
+        // ثانياً: ابحث عن key يطابق الترجمة
+        for (var key in items) {
+          if (context.tr(key) == widget.currentValue) {
+            initialSelectedKey = key;
+            break;
+          }
         }
       }
     }
@@ -268,10 +277,11 @@ class _MarriageFieldSelectionViewState
           primaryColor: AppColors.kprimaryColor,
           onChanged: (key, translatedValue) {
             setState(() {
-              _selectedValue = translatedValue;
+              // ⭐⭐⭐ CRITICAL: حفظ الـ key مش الترجمة
+              _selectedValue = key;
 
               debugPrint('💾 Selected Key: $key');
-              debugPrint('💾 Selected Value: $_selectedValue');
+              debugPrint('💾 Translated Value: $translatedValue');
             });
           },
         ),
@@ -287,7 +297,7 @@ class _MarriageFieldSelectionViewState
   ) {
     final isEnabled = type == 'picker'
         ? _selectedPickerValue != null
-        : _selectedValue != null;
+        : _selectedValue != null && _selectedValue!.isNotEmpty;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
@@ -802,10 +812,8 @@ class _MultiSelectChipsState extends State<_MultiSelectChips> {
       }
     });
 
-    final translatedValues = _selectedKeys
-        .map((key) => context.tr(key))
-        .toList();
-    widget.onChanged(translatedValues);
+    // ⭐⭐⭐ CRITICAL: أرسل الـ keys مش الترجمة
+    widget.onChanged(_selectedKeys.toList());
   }
 
   @override

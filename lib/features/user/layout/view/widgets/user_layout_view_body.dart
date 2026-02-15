@@ -33,7 +33,6 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
         final cachedCompleted = CachNetwork.getBoolData(
           key: kIsCompletedQuestions,
         );
-        debugPrint('kIsCompletedQuestions cached value: $cachedCompleted');
 
         return Scaffold(
           body: Stack(

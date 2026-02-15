@@ -1187,7 +1187,12 @@
   "max_secondary_images_4": "الحد الأقصى 4 صور ثانوية",
   "add_main_image_required": "يجب إضافة صورة رئيسية",
   "must_add_main_image_before_exit": "لا يمكنك الخروج بدون إضافة صورة رئيسية",
-  "add_image": "إضافة صورة"
+  "add_image": "إضافة صورة",
+    "reorder_image": "إعادة ترتيب الصورة",
+  "reorder_image_question": "هل تريد أن تكون هذه الصورة هي الصورة الثانية بعد الرئيسية؟",
+  "yes_make_first": "نعم، اجعلها الأولى",
+  "image_reordered_successfully": "تم إعادة ترتيب الصورة بنجاح",
+  "error_reordering_image": "حدث خطأ أثناء إعادة ترتيب الصورة"
 
 
 }

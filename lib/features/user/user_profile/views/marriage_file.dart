@@ -23,7 +23,7 @@ import 'package:tayseer/features/user/marriage/view/widget/interests_section.dar
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 
 import 'widgets/MarriageProfileSkeleton .dart';
-import 'widgets/profile_statistics_cards.dart'; // ⭐⭐⭐ NEW IMPORT
+import 'widgets/profile_statistics_cards.dart';
 
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
@@ -52,34 +52,49 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   }
 
   // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ NEW: دالة ترجمة عامة
+  // ════════════════════════════════════════════════════════════════
+  String _translateValue(String? value) {
+    if (value == null || value.isEmpty) return '';
+    
+    // جرب الترجمة - إذا مافيش ترجمة، هيرجع نفس القيمة
+    final translated = context.tr(value);
+    
+    // إذا الترجمة نفس الـ key، يعني مافيش ترجمة → أرجع القيمة الأصلية
+    if (translated == value && !value.contains(' ')) {
+      // لو فيها مسافات، يعني قيمة مترجمة فعلاً مش key
+      return value;
+    }
+    
+    return translated;
+  }
+
+  // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ CALCULATE TOTAL PROGRESS (Server + Media)
   // ════════════════════════════════════════════════════════════════
   double _calculateTotalProgress(MarriageUserProfileModel profile) {
-    // Questions contribute 20% max
     double questionProgress = (profile.answerCompletedPercentage ?? 0)
         .toDouble();
     questionProgress = questionProgress > 20 ? 20 : questionProgress;
 
-    // Media contributes 80% max
     int mediaBonus = 0;
 
     final images = profile.userMedia?.images ?? [];
     if (images.isNotEmpty) {
       final imageCount = images.length > 5 ? 5 : images.length;
-      mediaBonus += imageCount * 5; // Max 25%
+      mediaBonus += imageCount * 5;
     }
 
     bool hasVideo =
         profile.userMedia?.video != null &&
         profile.userMedia!.video!.isNotEmpty;
-    if (hasVideo) mediaBonus += 30; // 30%
+    if (hasVideo) mediaBonus += 30;
 
     bool hasAudio =
         profile.userMedia?.audio != null &&
         profile.userMedia!.audio!.isNotEmpty;
-    if (hasAudio) mediaBonus += 30; // 25%
+    if (hasAudio) mediaBonus += 30;
 
-    // Cap media at 80%
     mediaBonus = mediaBonus > 80 ? 80 : mediaBonus;
 
     double totalProgress = questionProgress + mediaBonus;
@@ -220,7 +235,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             slivers: [
               _buildViewHeader(profile),
 
-              // ⭐⭐⭐ NEW: Statistics Cards Section (Before AboutMe)
+              // ⭐⭐⭐ Statistics Cards Section
               _buildSliverPadding(
                 child: ProfileStatisticsCards(
                   upgradesCount: 34,
@@ -237,7 +252,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   },
                   onResultsTap: () {
                     debugPrint('⭐ Results button tapped');
-                    // TODO: Navigate to results/rewards screen
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('عرض النتائج والمكافآت'),
@@ -303,7 +317,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             ],
           ),
         ),
-        // 2. الكارد الثابت (يظهر فقط إذا لم تكن النسبة 100%)
         if (totalProgress < 100)
           Align(
             alignment: Alignment.bottomCenter,
@@ -518,90 +531,103 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
+  // ⭐⭐⭐ FIX: دالة _buildAboutMeItems مع الترجمة
   List<Map<String, dynamic>> _buildAboutMeItems(profile) {
     return [
       if (profile.aboutMe?.socialStatus != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': profile.aboutMe!.socialStatus,
+          'label': _translateValue(profile.aboutMe!.socialStatus),
         },
       if (profile.aboutMe?.weight != null)
-        {'icon': AssetsData.kdrawingIcon, 'label': profile.aboutMe?.weight},
+        {
+          'icon': AssetsData.kdrawingIcon, 
+          'label': profile.aboutMe?.weight // الوزن رقم، ما يحتاج ترجمة
+        },
       if (profile.aboutMe?.skinColor != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': "${context.tr('Skin')} ${profile.aboutMe!.skinColor}",
+          'label': "${context.tr('Skin')} ${_translateValue(profile.aboutMe!.skinColor)}",
         },
       if (profile.aboutMe?.healthStatus != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': profile.aboutMe!.healthStatus,
+          'label': _translateValue(profile.aboutMe!.healthStatus),
         },
     ];
   }
 
+  // ⭐⭐⭐ FIX: دالة _buildEducationItems مع الترجمة
   List<Map<String, dynamic>> _buildEducationItems(profile) {
     return [
       if (profile.professionalLife?.educationLevel != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': profile.professionalLife!.educationLevel,
+          'label': _translateValue(profile.professionalLife!.educationLevel),
         },
       if (profile.professionalLife?.job != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': profile.professionalLife!.job,
+          'label': _translateValue(profile.professionalLife!.job),
         },
     ];
   }
 
+  // ⭐⭐⭐ FIX: دالة _buildTimelineEvents مع الترجمة
   List<Map<String, dynamic>> _buildTimelineEvents(YourGoals goals) {
     final List<Map<String, dynamic>> events = [];
 
     if (goals.travel != null && goals.travel!.isNotEmpty) {
-      events.add({'timeLabel': goals.travel, 'goalType': 'travel'});
+      events.add({
+        'timeLabel': _translateValue(goals.travel),
+        'goalType': 'travel'
+      });
     }
 
     if (goals.children != null && goals.children!.isNotEmpty) {
       events.add({
-        'timeLabel': goals.children,
+        'timeLabel': _translateValue(goals.children),
         'goalType': context.tr("select_dowry_title"),
       });
     }
 
     if (goals.engagement != null && goals.engagement!.isNotEmpty) {
-      events.add({'timeLabel': goals.engagement, 'goalType': 'engagement'});
+      events.add({
+        'timeLabel': _translateValue(goals.engagement),
+        'goalType': 'engagement'
+      });
     }
 
     if (goals.marry != null && goals.marry!.isNotEmpty) {
-      events.add({'timeLabel': goals.marry, 'goalType': 'marry'});
+      events.add({
+        'timeLabel': _translateValue(goals.marry),
+        'goalType': 'marry'
+      });
     }
 
     return events;
   }
 
+  // ⭐⭐⭐ FIX: دالة _buildReligiousTags مع الترجمة
   List<Map<String, dynamic>> _buildReligiousTags(profile) {
     return [
       if (profile.aboutMe?.religiousCommitment != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': profile.aboutMe!.religiousCommitment,
+          'label': _translateValue(profile.aboutMe!.religiousCommitment),
         },
       if (profile.aboutMe?.smoker != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': "${profile.aboutMe!.smoker} ",
+          'label': _translateValue(profile.aboutMe!.smoker),
         },
     ];
   }
 
-  // UPDATED: _buildInterestsItems method in MarriagefilePage
-
+  // ⭐⭐⭐ FIX: دالة _buildInterestsItems مع الترجمة الكاملة
   List<Map<String, dynamic>> _buildInterestsItems(profile) {
     final Map<String, String> _keyToEmojiMap = {
-      // ═══════════════════════════════════════════════════════════
-      // SPORTS (الرياضة)
-      // ═══════════════════════════════════════════════════════════
+      // Sports
       'interest_baseball': '⚾',
       'interest_running': '🏃',
       'interest_weightlifting': '🏋️',
@@ -623,7 +649,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       'interest_archery': '🏹',
       'interest_horse_riding': '🏇',
 
-      // ⭐ MISSING SPORTS - من الصور
+      // Arts & Culture
       'interest_theater': '🎭',
       'interest_magic': '🪄',
       'interest_music': '🎵',
@@ -641,9 +667,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       'interest_design': '🎯',
       'interest_fashion': '👗',
 
-      // ═══════════════════════════════════════════════════════════
-      // TECHNOLOGY (التكنولوجيا)
-      // ═══════════════════════════════════════════════════════════
+      // Community
       'interest_volunteering': '🤝',
       'interest_charity': '💝',
       'interest_teaching': '👨‍🏫',
@@ -657,7 +681,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       'interest_social_work': '💼',
       'interest_human_rights': '⚖️',
 
-      // ⭐ MISSING TECH
+      // Technology
       'interest_programming': '💻',
       'interest_gaming': '🎮',
       'interest_ai': '🤖',
@@ -673,9 +697,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       'interest_smart_home': '🏠',
       'interest_blockchain': '⛓️',
 
-      // ═══════════════════════════════════════════════════════════
-      // COMMUNITY (المجتمع)
-      // ═══════════════════════════════════════════════════════════
+      // Outdoors
       'interest_hiking': '🥾',
       'interest_camping': '🏕️',
       'interest_fishing': '🎣',
@@ -692,7 +714,8 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       'interest_kayaking': '🛶',
       'interest_rock_climbing': '🧗',
       'interest_paragliding': '🪂',
-      // ⭐ MISSING COMMUNITY
+
+      // Food & Drinks
       'interest_cooking': '👨‍🍳',
       'interest_baking': '🧁',
       'interest_grilling': '🍖',
@@ -708,9 +731,8 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       'interest_food_photography': '📸',
       'interest_chocolate': '🍫',
       'interest_ice_cream': '🍦',
-      // ═══════════════════════════════════════════════════════════
-      // ARTS & CULTURE (الفنون والثقافة)
-      // ═══════════════════════════════════════════════════════════
+
+      // Faith
       'faith_dua': '🙏',
       'faith_umrah': '🕋',
       'faith_charity_work': '💼',
@@ -730,7 +752,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       'faith_good_manners': '🤲',
       'faith_friday_prayer': '🕌',
 
-      // ⭐ MISSING ARTS
+      // More Arts
       'interest_singing': '🎤',
       'interest_dancing_ballroom': '💃',
       'interest_opera': '🎭',
@@ -751,278 +773,67 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       'interest_pottery': '🏺',
       'interest_woodworking': '🪵',
       'interest_origami': '📄',
-
-      // ═══════════════════════════════════════════════════════════
-      // FOOD & DRINKS (الطعام والشراب)
-      // ═══════════════════════════════════════════════════════════
-
-      // ⭐ MISSING FOOD
-      'interest_wine_tasting': '🍷',
-      'interest_mixology': '🍸',
-      'interest_veganism': '🥬',
-      'interest_vegetarian': '🥕',
-      'interest_meal_prep': '🍱',
-      'interest_canning': '🥫',
-      'interest_cheese_making': '🧀',
-      'interest_brewing': '🍺',
-      'interest_nutrition': '🥗',
-
-      // ═══════════════════════════════════════════════════════════
-      // OUTDOORS & NATURE (الطبيعة والخارج)
-      // ═══════════════════════════════════════════════════════════
-
-      // ⭐ MISSING OUTDOORS
-      'interest_skiing_water': '🎿',
-      'interest_snowboarding': '🏂',
-      'interest_sledding': '🛷',
-      'interest_skateboarding': '🛹',
-      'interest_rollerblading': '🛼',
-      'interest_scuba_diving': '🤿',
-      'interest_snorkeling': '🤿',
-      'interest_windsurfing': '🏄',
-      'interest_kitesurfing': '🪁',
-      'interest_canoeing': '🛶',
-      'interest_rafting': '🚣',
-      'interest_bungee_jumping': '🪂',
-      'interest_skydiving': '🪂',
-      'interest_hang_gliding': '🪂',
-      'interest_hot_air_ballooning': '🎈',
-      'interest_horseback_riding': '🐴',
-      'interest_horse_racing': '🏇',
-      'interest_cycling_mountain': '🚵',
-      'interest_trail_running': '🏃‍♂️',
-      'interest_backpacking': '🎒',
-      'interest_geocaching': '🗺️',
-      'interest_foraging': '🍄',
-      'interest_hunting': '🦌',
-      'interest_wildlife_photography': '📸',
-      'interest_nature_conservation': '🌳',
-      'interest_beekeeping': '🐝',
-      'interest_farming': '🚜',
-      'interest_landscaping': '🌿',
-
-      // ═══════════════════════════════════════════════════════════
-      // GAMES & HOBBIES (الألعاب والهوايات)
-      // ═══════════════════════════════════════════════════════════
-      'interest_board_games': '🎲',
-      'interest_card_games': '🃏',
-      'interest_chess': '♟️',
-      'interest_puzzle_solving': '🧩',
-      'interest_escape_rooms': '🔐',
-      'interest_trivia': '❓',
-      'interest_crosswords': '📰',
-      'interest_sudoku': '🔢',
-      'interest_collecting': '🏆',
-      'interest_stamp_collecting': '💌',
-      'interest_coin_collecting': '💰',
-      'interest_antiques': '🏺',
-      'interest_model_building': '🏗️',
-      'interest_lego': '🧱',
-      'interest_trains': '🚂',
-      'interest_cars': '🚗',
-      'interest_motorcycles': '🏍️',
-      'interest_aviation': '✈️',
-
-      // ═══════════════════════════════════════════════════════════
-      // MUSIC (الموسيقى)
-      // ═══════════════════════════════════════════════════════════
-      'interest_guitar': '🎸',
-      'interest_piano': '🎹',
-      'interest_drums': '🥁',
-      'interest_violin': '🎻',
-      'interest_flute': '🪈',
-      'interest_saxophone': '🎷',
-      'interest_trumpet': '🎺',
-      'interest_ukulele': '🪕',
-      'interest_harmonica': '🎵',
-      'interest_djing': '🎧',
-      'interest_music_production': '🎛️',
-      'interest_composing': '🎼',
-      'interest_choir': '🎤',
-      'interest_karaoke': '🎤',
-      'interest_concerts': '🎵',
-
-      // ═══════════════════════════════════════════════════════════
-      // WELLNESS & FITNESS (الصحة واللياقة)
-      // ═══════════════════════════════════════════════════════════
-      'interest_meditation': '🧘‍♀️',
-      'interest_pilates': '🤸',
-      'interest_crossfit': '🏋️',
-      'interest_zumba': '💃',
-      'interest_aerobics': '🤸',
-      'interest_jogging': '🏃',
-      'interest_walking': '🚶',
-      'interest_stretching': '🧘',
-      'interest_spa': '💆',
-      'interest_massage': '💆‍♀️',
-      'interest_sauna': '🧖',
-      'interest_aromatherapy': '🌸',
-
-      // ═══════════════════════════════════════════════════════════
-      // TRAVEL (السفر)
-      // ═══════════════════════════════════════════════════════════
-      'interest_travel': '✈️',
-      'interest_backpacking_travel': '🎒',
-      'interest_cruises': '🚢',
-      'interest_solo_travel': '🧳',
-      'interest_cultural_tourism': '🗿',
-      'interest_adventure_travel': '🏔️',
-      'interest_ecotourism': '🌍',
-      'interest_city_breaks': '🏙️',
-      'interest_beach_vacations': '🏖️',
-      'interest_ski_resorts': '⛷️',
-
-      // ═══════════════════════════════════════════════════════════
-      // PETS & ANIMALS (الحيوانات الأليفة)
-      // ═══════════════════════════════════════════════════════════
-      'interest_dogs': '🐕',
-      'interest_cats': '🐈',
-      'interest_birds': '🐦',
-      'interest_fish': '🐠',
-      'interest_horses': '🐴',
-      'interest_reptiles': '🦎',
-      'interest_exotic_pets': '🦜',
-      'interest_pet_training': '🦮',
-      'interest_veterinary': '🩺',
-
-      // ═══════════════════════════════════════════════════════════
-      // BUSINESS & ENTREPRENEURSHIP (الأعمال)
-      // ═══════════════════════════════════════════════════════════
-      'interest_entrepreneurship': '💼',
-      'interest_investing': '📈',
-      'interest_real_estate': '🏠',
-      'interest_stocks': '📊',
-      'interest_cryptocurrency': '₿',
-      'interest_marketing': '📣',
-      'interest_sales': '💰',
-
-      'interest_leadership': '👔',
-      'interest_project_management': '📋',
-
-      // ═══════════════════════════════════════════════════════════
-      // SCIENCE (العلوم)
-      // ═══════════════════════════════════════════════════════════
-      'interest_physics': '⚛️',
-      'interest_chemistry': '🧪',
-      'interest_biology': '🧬',
-      'interest_mathematics': '➕',
-      'interest_geology': '🪨',
-      'interest_meteorology': '🌦️',
-      'interest_oceanography': '🌊',
-      'interest_zoology': '🦁',
-      'interest_botany': '🌿',
-      'interest_ecology': '🌍',
-
-      // ═══════════════════════════════════════════════════════════
-      // AUTOMOTIVE (السيارات)
-      // ═══════════════════════════════════════════════════════════
-      'interest_car_restoration': '🚗',
-      'interest_car_racing': '🏎️',
-      'interest_car_mechanics': '🔧',
-      'interest_off_roading': '🚙',
-      'interest_car_shows': '🚘',
-
-      // ═══════════════════════════════════════════════════════════
-      // HOME & LIFESTYLE (المنزل ونمط الحياة)
-      // ═══════════════════════════════════════════════════════════
-      'interest_interior_design': '🛋️',
-      'interest_home_improvement': '🔨',
-      'interest_diy': '🛠️',
-      'interest_furniture_making': '🪑',
-      'interest_home_automation': '🏠',
-      'interest_cleaning': '🧹',
-      'interest_organizing': '📦',
-      'interest_minimalism': '⬜',
-
-      // ═══════════════════════════════════════════════════════════
-      // ENTERTAINMENT (الترفيه)
-      // ═══════════════════════════════════════════════════════════
-      'interest_movies': '🎬',
-      'interest_tv_shows': '📺',
-      'interest_anime': '🎌',
-      'interest_comics': '📚',
-      'interest_manga': '📖',
-      'interest_stand_up_comedy': '🎤',
-      'interest_improv': '🎭',
-      'interest_cosplay': '🦸',
-
-      // ═══════════════════════════════════════════════════════════
-      // SPIRITUAL & RELIGIOUS (الروحانيات)
-      // ═══════════════════════════════════════════════════════════
-      'interest_quran': '📖',
-      'interest_prayer': '🤲',
-      'interest_islamic_studies': '☪️',
-      'interest_hadith': '📚',
-      'interest_tafsir': '📖',
-      'interest_fiqh': '⚖️',
-      'interest_dhikr': '📿',
-      'interest_charity_islam': '💝',
     };
 
+    // ⭐⭐⭐ SAME LOGIC AS edit view
+    List<String> hobbiesList = [];
 
-
-   // ⭐⭐⭐ SAME LOGIC AS _formatHobbiesForDisplay
-  List<String> hobbiesList = [];
-
-  if (profile.hobbies is String) {
-    // ⭐ حالة String
-    hobbiesList = (profile.hobbies as String)
-        .split(',')  // ✅ فاصلة بس
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-    
-    debugPrint('📋 [INTERESTS] String input: "${profile.hobbies}" → parsed: $hobbiesList');
-  } else if (profile.hobbies is List) {
-    debugPrint('📋 [INTERESTS] Raw List: ${profile.hobbies}');
-    
-    // ⭐⭐⭐ CRITICAL FIX: فصل الـ strings اللي فيها فواصل
-    for (var item in profile.hobbies) {
-      final itemStr = item.toString().trim();
-      if (itemStr.isEmpty) continue;
+    if (profile.hobbies is String) {
+      hobbiesList = (profile.hobbies as String)
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
       
-      // ⭐ إذا العنصر فيه فاصلة، فصّله!
-      if (itemStr.contains(',')) {
-        debugPrint('  🔄 Splitting item: "$itemStr"');
-        final subItems = itemStr
-            .split(',')
-            .map((s) => s.trim())
-            .where((s) => s.isNotEmpty);
-        hobbiesList.addAll(subItems);
-      } else {
-        hobbiesList.add(itemStr);
+      debugPrint('📋 [INTERESTS] String input: "${profile.hobbies}" → parsed: $hobbiesList');
+    } else if (profile.hobbies is List) {
+      debugPrint('📋 [INTERESTS] Raw List: ${profile.hobbies}');
+      
+      for (var item in profile.hobbies) {
+        final itemStr = item.toString().trim();
+        if (itemStr.isEmpty) continue;
+        
+        if (itemStr.contains(',')) {
+          debugPrint('  🔄 Splitting item: "$itemStr"');
+          final subItems = itemStr
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty);
+          hobbiesList.addAll(subItems);
+        } else {
+          hobbiesList.add(itemStr);
+        }
       }
+      
+      debugPrint('📋 [INTERESTS] Processed List: $hobbiesList');
+    } else {
+      debugPrint('⚠️ [INTERESTS] Invalid type: ${profile.hobbies.runtimeType}');
+      hobbiesList = [];
     }
-    
-    debugPrint('📋 [INTERESTS] Processed List: $hobbiesList');
-  } else {
-    debugPrint('⚠️ [INTERESTS] Invalid type: ${profile.hobbies.runtimeType}');
-    hobbiesList = [];
+
+    hobbiesList = hobbiesList
+        .where((s) => s.startsWith('interest_') || s.startsWith('faith_'))
+        .toList();
+
+    if (hobbiesList.isEmpty) {
+      debugPrint('⚠️ [INTERESTS] No valid hobbies found');
+      return [];
+    }
+
+    return hobbiesList.map<Map<String, dynamic>>((hobbyKey) {
+      final trimmedKey = hobbyKey.trim();
+      final emoji = _keyToEmojiMap[trimmedKey] ?? '🎵';
+      final displayText = _translateValue(trimmedKey);
+
+      debugPrint('🎯 Hobby: key="$trimmedKey", emoji="$emoji", display="$displayText"');
+
+      return {
+        'icon': AssetsData.kmusicIcon,
+        'label': '$emoji $displayText'
+      };
+    }).toList();
   }
 
-  // ⭐ فلترة: خلي بس الـ keys الصحيحة
-  hobbiesList = hobbiesList
-      .where((s) => s.startsWith('interest_') || s.startsWith('faith_'))
-      .toList();
-
-  if (hobbiesList.isEmpty) {
-    debugPrint('⚠️ [INTERESTS] No valid hobbies found');
-    return [];
-  }
-
-  return hobbiesList.map<Map<String, dynamic>>((hobbyKey) {
-    final trimmedKey = hobbyKey.trim();
-    final emoji = _keyToEmojiMap[trimmedKey] ?? '🎵';
-    final displayText = context.tr(trimmedKey);
-
-    debugPrint('🎯 Hobby: key="$trimmedKey", emoji="$emoji", display="$displayText"');
-
-    return {
-      'icon': AssetsData.kmusicIcon,
-      'label': '$emoji $displayText'
-    };
-  }).toList();
-}
   Widget _buildError(BuildContext context, String? message) {
     return Center(
       child: Column(
