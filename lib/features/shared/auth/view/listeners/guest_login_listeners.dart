@@ -30,11 +30,12 @@ class GuestLoginListeners extends StatelessWidget {
               isSuccess: true,
             ),
           );
+          selectedUserType = UserTypeEnum.guest;
 
           Future.delayed(const Duration(seconds: 1), () {
-            log('Navigating to Advisor Layout as Guest');
+            log('Navigating to User Layout as Guest');
             context.pushReplacementNamed(
-              AppRouter.kAdvisorLayoutView,
+              AppRouter.kUserLayoutView,
               arguments: {'currentUserType': UserTypeEnum.guest},
             );
           });

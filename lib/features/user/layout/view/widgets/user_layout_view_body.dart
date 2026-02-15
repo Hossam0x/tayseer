@@ -1,3 +1,4 @@
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
@@ -81,6 +82,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
+              CachNetwork.removeData(key: ktoken);
             },
             message: 'فرص التوافق تبدأ بعد التسجيل',
             description:
@@ -95,6 +97,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
+              CachNetwork.removeData(key: ktoken);
             },
           ),
           GuestLockWidget(
@@ -106,9 +109,21 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
+              CachNetwork.removeData(key: ktoken);
             },
           ),
-          const UserProfileView(),
+          GuestLockWidget(
+            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
+            description:
+                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+              CachNetwork.removeData(key: ktoken);
+            },
+          ),
         ];
 
       case UserTypeEnum.asConsultant:

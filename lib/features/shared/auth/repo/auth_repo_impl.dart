@@ -460,18 +460,21 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   @override
-  Future<Either<Failure, GuestResponseModel>> guestLogin() {
+  Future<Either<Failure, GuestResponseModel>> guestLogin() async {
     try {
-      return apiService.post(endPoint: ApiEndPoint.guestLogin).then((response) {
-        final success = response['success'] ?? false;
-        if (success) {
-          final guestResponse = GuestResponseModel.fromJson(response);
-          return right(guestResponse);
-        } else {
-          final message = response['message'] ?? 'فشل تسجيل الدخول كزائر.';
-          return left(ServerFailure(message));
-        }
-      });
+      final response = await apiService.post(endPoint: ApiEndPoint.guestLogin);
+      final success = response['success'] ?? false;
+      if (success) {
+        final guestResponse = GuestResponseModel.fromJson(response);
+        await CachNetwork.setData(
+          key: ktoken,
+          value: guestResponse.data?.token ?? '',
+        );
+        return right(guestResponse);
+      } else {
+        final message = response['message'] ?? 'فشل تسجيل الدخول كزائر.';
+        return left(ServerFailure(message));
+      }
     } on DioException catch (error) {
       final message =
           error.response?.data['message'] ?? 'خطأ في الاتصال بالخادم';

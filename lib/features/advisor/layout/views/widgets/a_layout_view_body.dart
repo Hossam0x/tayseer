@@ -1,3 +1,4 @@
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
@@ -107,6 +108,7 @@ class ALayOutViewBody extends StatelessWidget {
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
+              CachNetwork.removeData(key: ktoken);
             },
             message: 'فرص التوافق تبدأ بعد التسجيل',
             description:
@@ -119,6 +121,7 @@ class ALayOutViewBody extends StatelessWidget {
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
+              CachNetwork.removeData(key: ktoken);
             },
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:
@@ -130,6 +133,7 @@ class ALayOutViewBody extends StatelessWidget {
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
+              CachNetwork.removeData(key: ktoken);
             },
             message: 'إنشاء ملفك الشخصي أولًا',
             description:
