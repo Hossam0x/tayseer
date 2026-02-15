@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:ui';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
@@ -23,7 +22,7 @@ import 'package:tayseer/features/user/marriage/view/widget/interests_section.dar
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 
 import 'widgets/MarriageProfileSkeleton .dart';
-import 'widgets/profile_statistics_cards.dart'; // ⭐⭐⭐ NEW IMPORT
+import 'widgets/profile_statistics_cards.dart';
 
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
@@ -45,6 +44,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   final int _maxImages = 5;
   String? _scrollToSection;
 
+  // ⭐⭐⭐ DEFAULT IMAGE URL
+  static const String _defaultImageUrl =
+      "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
   @override
   void initState() {
     super.initState();
@@ -52,34 +55,46 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   }
 
   // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ NEW: دالة ترجمة عامة
+  // ════════════════════════════════════════════════════════════════
+  String _translateValue(String? value) {
+    if (value == null || value.isEmpty) return '';
+
+    final translated = context.tr(value);
+
+    if (translated == value && !value.contains(' ')) {
+      return value;
+    }
+
+    return translated;
+  }
+
+  // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ CALCULATE TOTAL PROGRESS (Server + Media)
   // ════════════════════════════════════════════════════════════════
   double _calculateTotalProgress(MarriageUserProfileModel profile) {
-    // Questions contribute 20% max
     double questionProgress = (profile.answerCompletedPercentage ?? 0)
         .toDouble();
     questionProgress = questionProgress > 20 ? 20 : questionProgress;
 
-    // Media contributes 80% max
     int mediaBonus = 0;
 
     final images = profile.userMedia?.images ?? [];
     if (images.isNotEmpty) {
       final imageCount = images.length > 5 ? 5 : images.length;
-      mediaBonus += imageCount * 5; // Max 25%
+      mediaBonus += imageCount * 5;
     }
 
     bool hasVideo =
         profile.userMedia?.video != null &&
         profile.userMedia!.video!.isNotEmpty;
-    if (hasVideo) mediaBonus += 30; // 30%
+    if (hasVideo) mediaBonus += 30;
 
     bool hasAudio =
         profile.userMedia?.audio != null &&
         profile.userMedia!.audio!.isNotEmpty;
-    if (hasAudio) mediaBonus += 30; // 25%
+    if (hasAudio) mediaBonus += 30;
 
-    // Cap media at 80%
     mediaBonus = mediaBonus > 80 ? 80 : mediaBonus;
 
     double totalProgress = questionProgress + mediaBonus;
@@ -89,6 +104,57 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     debugPrint('📊 Total: $totalProgress%');
 
     return totalProgress;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ NEW: Get Main Display Image
+  // ════════════════════════════════════════════════════════════════
+  String _getMainDisplayImage(MarriageUserProfileModel profile) {
+    // Priority 1: singleImage
+    if (profile.userMedia?.singleImage != null &&
+        profile.userMedia!.singleImage!.isNotEmpty) {
+      debugPrint('📸 [MAIN_IMAGE] Using singleImage');
+      return profile.userMedia!.singleImage!;
+    }
+
+    // // Priority 2: First image from images list
+    // final images = profile.userMedia?.images ?? [];
+    // if (images.isNotEmpty) {
+    //   debugPrint('📸 [MAIN_IMAGE] Using first image from list');
+    //   return images[0];
+    // }
+
+    // Priority 3: Default placeholder
+    debugPrint('📸 [MAIN_IMAGE] Using default placeholder');
+    return _defaultImageUrl;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ NEW: Get Secondary Display Image
+  // ════════════════════════════════════════════════════════════════
+  String? _getSecondaryDisplayImage(MarriageUserProfileModel profile) {
+    final images = profile.userMedia?.images ?? [];
+
+    // If we have singleImage, first image in list becomes secondary
+    if (profile.userMedia?.singleImage != null &&
+        profile.userMedia!.singleImage!.isNotEmpty) {
+      if (images.isNotEmpty) {
+        debugPrint(
+          '📸 [SECONDARY_IMAGE] Using first image from list (singleImage exists)',
+        );
+        return images[0];
+      }
+      return null;
+    }
+
+    // If no singleImage, second image in list becomes secondary
+    if (images.length > 1) {
+      debugPrint('📸 [SECONDARY_IMAGE] Using second image from list');
+      return images[0];
+    }
+
+    debugPrint('📸 [SECONDARY_IMAGE] No secondary image available');
+    return null;
   }
 
   @override
@@ -206,8 +272,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   }
 
   Widget _buildViewContent(MarriageUserProfileModel profile) {
-    final images = profile.userMedia?.images ?? [];
-    final displayImages = images.length > 5 ? images.sublist(0, 5) : images;
     final totalProgress = _calculateTotalProgress(profile);
     final progressFraction = totalProgress / 100;
 
@@ -219,35 +283,60 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             physics: const BouncingScrollPhysics(),
             slivers: [
               _buildViewHeader(profile),
-              
-              // ⭐⭐⭐ NEW: Statistics Cards Section (Before AboutMe)
+              _buildSliverPadding(
+                child: (profile.inReview == true)
+                    ? Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Color.fromRGBO(255, 255, 255, 0.55),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        padding: EdgeInsets.all(5),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AppImage(AssetsData.underreviewIcon, width: 24.w),
+                            Gap(5.w),
+                            Text(
+                              "${context.tr("under_review")}",
+                              style: Styles.textStyle18SemiBold,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    : SizedBox.shrink(),
+              ),
+              // ⭐⭐⭐ Statistics Cards Section with REAL DATA
               _buildSliverPadding(
                 child: ProfileStatisticsCards(
-                  upgradesCount: 34, 
-                  resultsCount: 1,   
+                  upgradesCount: profile.interactionCount ?? 0, // ⭐ من السيرفر
+                  resultsCount: profile.regredsCount ?? 0, // ⭐ من السيرفر
                   onUpgradesTap: () {
                     debugPrint('⭐ Upgrades button tapped');
-                  
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('ترقية الاعجابات المتبقية'),
+                        content: Text(
+                          'ترقية الاعجابات المتبقية: ${profile.interactionCount ?? 0}',
+                        ),
                         backgroundColor: AppColors.primary600,
                       ),
                     );
                   },
                   onResultsTap: () {
                     debugPrint('⭐ Results button tapped');
-                    // TODO: Navigate to results/rewards screen
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('عرض النتائج والمكافآت'),
+                        content: Text(
+                          'عرض النتائج: ${profile.regredsCount ?? 0}',
+                        ),
                         backgroundColor: AppColors.primary600,
                       ),
                     );
                   },
                 ),
               ),
-              
+
               _buildSliverPadding(
                 child: AboutMeSection(items: _buildAboutMeItems(profile)),
               ),
@@ -257,23 +346,14 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               if (profile.yourGoals != null)
                 _buildSliverPadding(
                   child: MarriageLifeEventsSection(
-                    titleName:context.tr("my_goals"),
+                    titleName: context.tr("my_goals"),
                     events: _buildTimelineEvents(profile.yourGoals!),
                   ),
                 ),
-              SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                sliver: SliverToBoxAdapter(
-                  child: displayImages.isNotEmpty
-                      ? AdditionalImageSection(
-                        isHastar: false,
-                          imageUrl: displayImages.length > 1
-                              ? displayImages[1]
-                              : displayImages[0],
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ),
+
+              // ⭐⭐⭐ UPDATED: Secondary Image Section
+              _buildSecondaryImageSection(profile),
+
               _buildSliverPadding(
                 child: ReligiousSection(tags: _buildReligiousTags(profile)),
               ),
@@ -298,14 +378,11 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   ),
                 ),
               SliverToBoxAdapter(child: SizedBox(height: 50.h)),
-              SliverToBoxAdapter(
-                child:
-              MarriageRewardCard()),
+              SliverToBoxAdapter(child: MarriageRewardCard()),
               SliverToBoxAdapter(child: SizedBox(height: 100.h)),
             ],
           ),
         ),
-        // 2. الكارد الثابت (يظهر فقط إذا لم تكن النسبة 100%)
         if (totalProgress < 100)
           Align(
             alignment: Alignment.bottomCenter,
@@ -318,12 +395,39 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  Widget _buildViewHeader(MarriageUserProfileModel profile) {
-    final images = profile.userMedia?.images ?? [];
-    final displayImages = images.length > 5 ? images.sublist(0, 5) : images;
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ NEW: Secondary Image Section with proper logic
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildSecondaryImageSection(MarriageUserProfileModel profile) {
+    final secondaryImage = _getSecondaryDisplayImage(profile);
 
+    if (secondaryImage == null) {
+      return SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverPadding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+      sliver: SliverToBoxAdapter(
+        child: AdditionalImageSection(
+          isHastar: false,
+          imageUrl: secondaryImage,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewHeader(MarriageUserProfileModel profile) {
+    final mainImage = _getMainDisplayImage(profile);
     final totalProgress = _calculateTotalProgress(profile);
     final progressFraction = totalProgress / 100;
+
+    debugPrint('═══════════════════════════════════════════');
+    debugPrint('📸 [HEADER] Main image: $mainImage');
+    debugPrint('📸 [HEADER] singleImage: ${profile.userMedia?.singleImage}');
+    debugPrint(
+      '📸 [HEADER] images count: ${profile.userMedia?.images.length ?? 0}',
+    );
+    debugPrint('═══════════════════════════════════════════');
 
     return SliverToBoxAdapter(
       child: Column(
@@ -339,11 +443,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                     top: Radius.circular(33.r),
                   ),
                   image: DecorationImage(
-                    image: NetworkImage(
-                      displayImages.isNotEmpty
-                          ? displayImages[0]
-                          : 'https://via.placeholder.com/400',
-                    ),
+                    image: NetworkImage(mainImage),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -525,19 +625,20 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.aboutMe?.socialStatus != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': profile.aboutMe!.socialStatus,
+          'label': _translateValue(profile.aboutMe!.socialStatus),
         },
       if (profile.aboutMe?.weight != null)
         {'icon': AssetsData.kdrawingIcon, 'label': profile.aboutMe?.weight},
       if (profile.aboutMe?.skinColor != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': "${context.tr('Skin')} ${profile.aboutMe!.skinColor}",
+          'label':
+              "${context.tr('Skin')} ${_translateValue(profile.aboutMe!.skinColor)}",
         },
       if (profile.aboutMe?.healthStatus != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': profile.aboutMe!.healthStatus,
+          'label': _translateValue(profile.aboutMe!.healthStatus),
         },
     ];
   }
@@ -547,12 +648,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.professionalLife?.educationLevel != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': profile.professionalLife!.educationLevel,
+          'label': _translateValue(profile.professionalLife!.educationLevel),
         },
       if (profile.professionalLife?.job != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': profile.professionalLife!.job,
+          'label': _translateValue(profile.professionalLife!.job),
         },
     ];
   }
@@ -561,22 +662,31 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     final List<Map<String, dynamic>> events = [];
 
     if (goals.travel != null && goals.travel!.isNotEmpty) {
-      events.add({'timeLabel': goals.travel, 'goalType': 'travel'});
+      events.add({
+        'timeLabel': _translateValue(goals.travel),
+        'goalType': 'travel',
+      });
     }
 
     if (goals.children != null && goals.children!.isNotEmpty) {
       events.add({
-        'timeLabel': goals.children,
-        'goalType': context.tr("select_dowry_title"),
+        'timeLabel': _translateValue(goals.children),
+        'goalType': context.tr("children_profile"),
       });
     }
 
     if (goals.engagement != null && goals.engagement!.isNotEmpty) {
-      events.add({'timeLabel': goals.engagement, 'goalType': 'engagement'});
+      events.add({
+        'timeLabel': _translateValue(goals.engagement),
+        'goalType': 'engagement',
+      });
     }
 
     if (goals.marry != null && goals.marry!.isNotEmpty) {
-      events.add({'timeLabel': goals.marry, 'goalType': 'marry'});
+      events.add({
+        'timeLabel': _translateValue(goals.marry),
+        'goalType': 'marry',
+      });
     }
 
     return events;
@@ -587,171 +697,226 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.aboutMe?.religiousCommitment != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': profile.aboutMe!.religiousCommitment,
+          'label': _translateValue(profile.aboutMe!.religiousCommitment),
         },
       if (profile.aboutMe?.smoker != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': "${profile.aboutMe!.smoker} ",
+          'label': _translateValue(profile.aboutMe!.smoker),
         },
     ];
   }
 
-// UPDATED: _buildInterestsItems method in MarriagefilePage
-// Replace the existing _buildInterestsItems method with this:
+  // ⭐⭐⭐ FIX: دالة _buildInterestsItems مع الترجمة الكاملة
+  List<Map<String, dynamic>> _buildInterestsItems(profile) {
+    final Map<String, String> _keyToEmojiMap = {
+      // Sports
+      'interest_baseball': '⚾',
+      'interest_running': '🏃',
+      'interest_weightlifting': '🏋️',
+      'interest_gymnastics': '🤸',
+      'interest_golf': '⛳',
+      'interest_tennis': '🎾',
+      'interest_swimming': '🏊',
+      'interest_dancing': '💃',
+      'interest_skating': '⛸️',
+      'interest_yoga': '🧘',
+      'interest_flying_disc': '🥏',
+      'interest_badminton': '🏸',
+      'interest_skiing': '⛷️',
+      'interest_cycling': '🚴',
+      'interest_basketball': '🏀',
+      'interest_football': '⚽',
+      'interest_karate': '🥋',
+      'interest_boxing': '🥊',
+      'interest_archery': '🏹',
+      'interest_horse_riding': '🏇',
 
-List<Map<String, dynamic>> _buildInterestsItems(profile) {
-  // ⭐⭐⭐ Map to get emoji from key
-  final Map<String, String> _keyToEmojiMap = {};
-  
-  // Build emoji map from all categories
-  final categories = {
-  'category_sports': {
-        'interest_baseball': '⚾',
-        'interest_running': '🏃',
-        'interest_weightlifting': '🏋️',
-        'interest_gymnastics': '🤸',
-        'interest_golf': '⛳',
-        'interest_tennis': '🎾',
-        'interest_swimming': '🏊',
-        'interest_dancing': '💃',
-        'interest_skating': '⛸️',
-        'interest_yoga': '🧘',
-        'interest_flying_disc': '🥏',
-        'interest_badminton': '🏸',
-        'interest_skiing': '⛷️',
-        'interest_cycling': '🚴',
-        'interest_basketball': '🏀',
-        'interest_football': '⚽',
-        'interest_karate': '🥋',
-        'interest_boxing': '🥊',
-        'interest_archery': '🏹',
-        'interest_horse_riding': '🏇',
-      },
-      'category_arts_culture': {
-        'interest_theater': '🎭',
-        'interest_magic': '🪄',
-        'interest_music': '🎵',
-        'interest_painting': '🎨',
-        'interest_photography': '📷',
-        'interest_cinema': '🎬',
-        'interest_reading': '📚',
-        'interest_writing': '✍️',
-        'interest_poetry': '📝',
-        'interest_history': '🏛️',
-        'interest_languages': '🗣️',
-        'interest_museums': '🖼️',
-        'interest_calligraphy': '🖋️',
-        'interest_sculpture': '🗿',
-        'interest_design': '🎯',
-        'interest_fashion': '👗',
-      },
-      'category_community': {
-        'interest_volunteering': '🤝',
-        'interest_charity': '💝',
-        'interest_teaching': '👨‍🏫',
-        'interest_mentoring': '🧑‍🤝‍🧑',
-        'interest_elderly_care': '👴',
-        'interest_children_care': '👶',
-        'interest_environment': '🌱',
-        'interest_animal_care': '🐾',
-        'interest_blood_donation': '🩸',
-        'interest_community_events': '🎉',
-        'interest_social_work': '💼',
-        'interest_human_rights': '⚖️',
-      },
-      'category_technology': {
-        'interest_programming': '💻',
-        'interest_gaming': '🎮',
-        'interest_ai': '🤖',
-        'interest_web_dev': '🌐',
-        'interest_mobile_apps': '📱',
-        'interest_cybersecurity': '🔒',
-        'interest_data_science': '📊',
-        'interest_electronics': '🔌',
-        'interest_robotics': '🦾',
-        'interest_vr_ar': '🥽',
-        'interest_3d_printing': '🖨️',
-        'interest_drones': '🚁',
-        'interest_smart_home': '🏠',
-        'interest_blockchain': '⛓️',
-      },
-      'category_outdoors': {
-        'interest_hiking': '🥾',
-        'interest_camping': '🏕️',
-        'interest_fishing': '🎣',
-        'interest_beach': '🏖️',
-        'interest_mountain_climbing': '🏔️',
-        'interest_gardening': '🌻',
-        'interest_picnic': '🧺',
-        'interest_bird_watching': '🦅',
-        'interest_stargazing': '🌟',
-        'interest_road_trips': '🚗',
-        'interest_sailing': '⛵',
-        'interest_diving': '🤿',
-        'interest_surfing': '🏄',
-        'interest_kayaking': '🛶',
-        'interest_rock_climbing': '🧗',
-        'interest_paragliding': '🪂',
-      },
-      'category_food_drinks': {
-        'interest_cooking': '👨‍🍳',
-        'interest_baking': '🧁',
-        'interest_grilling': '🍖',
-        'interest_coffee': '☕',
-        'interest_tea': '🍵',
-        'interest_smoothies': '🥤',
-        'interest_sushi': '🍣',
-        'interest_pizza': '🍕',
-        'interest_desserts': '🍰',
-        'interest_healthy_food': '🥗',
-        'interest_street_food': '🌮',
-        'interest_fine_dining': '🍽️',
-        'interest_food_photography': '📸',
-        'interest_chocolate': '🍫',
-        'interest_ice_cream': '🍦',
-      },
-  };
+      // Arts & Culture
+      'interest_theater': '🎭',
+      'interest_magic': '🪄',
+      'interest_music': '🎵',
+      'interest_painting': '🎨',
+      'interest_photography': '📷',
+      'interest_cinema': '🎬',
+      'interest_reading': '📚',
+      'interest_writing': '✍️',
+      'interest_poetry': '📝',
+      'interest_history': '🏛️',
+      'interest_languages': '🗣️',
+      'interest_museums': '🖼️',
+      'interest_calligraphy': '🖋️',
+      'interest_sculpture': '🗿',
+      'interest_design': '🎯',
+      'interest_fashion': '👗',
 
-  // Build key-to-emoji map
-  categories.forEach((categoryKey, items) {
-    items.forEach((key, emoji) {
-      _keyToEmojiMap[key] = emoji;
-    });
-  });
+      // Community
+      'interest_volunteering': '🤝',
+      'interest_charity': '💝',
+      'interest_teaching': '👨‍🏫',
+      'interest_mentoring': '🧑‍🤝‍🧑',
+      'interest_elderly_care': '👴',
+      'interest_children_care': '👶',
+      'interest_environment': '🌱',
+      'interest_animal_care': '🐾',
+      'interest_blood_donation': '🩸',
+      'interest_community_events': '🎉',
+      'interest_social_work': '💼',
+      'interest_human_rights': '⚖️',
 
-  // ⭐⭐⭐ Now profile.hobbies contains KEYS like ["interest_running", "interest_golf"]
-  return profile.hobbies.map<Map<String, dynamic>>((hobbyKey) {
-    // Get emoji for this key
-    final emoji = _keyToEmojiMap[hobbyKey] ?? '🎵'; // default fallback
-    
-    // Translate the key to display text
-    final displayText = context.tr(hobbyKey);
+      // Technology
+      'interest_programming': '💻',
+      'interest_gaming': '🎮',
+      'interest_ai': '🤖',
+      'interest_web_dev': '🌐',
+      'interest_mobile_apps': '📱',
+      'interest_cybersecurity': '🔒',
+      'interest_data_science': '📊',
+      'interest_electronics': '🔌',
+      'interest_robotics': '🦾',
+      'interest_vr_ar': '🥽',
+      'interest_3d_printing': '🖨️',
+      'interest_drones': '🚁',
+      'interest_smart_home': '🏠',
+      'interest_blockchain': '⛓️',
 
-    debugPrint('🎯 Interest: key="$hobbyKey", emoji="$emoji", display="$displayText"');
+      // Outdoors
+      'interest_hiking': '🥾',
+      'interest_camping': '🏕️',
+      'interest_fishing': '🎣',
+      'interest_beach': '🏖️',
+      'interest_mountain_climbing': '🏔️',
+      'interest_gardening': '🌻',
+      'interest_picnic': '🧺',
+      'interest_bird_watching': '🦅',
+      'interest_stargazing': '🌟',
+      'interest_road_trips': '🚗',
+      'interest_sailing': '⛵',
+      'interest_diving': '🤿',
+      'interest_surfing': '🏄',
+      'interest_kayaking': '🛶',
+      'interest_rock_climbing': '🧗',
+      'interest_paragliding': '🪂',
 
-    return {
-      'icon': AssetsData.kmusicIcon,
-      'label': '$emoji $displayText', // ⭐ Show emoji + translated text
+      // Food & Drinks
+      'interest_cooking': '👨‍🍳',
+      'interest_baking': '🧁',
+      'interest_grilling': '🍖',
+      'interest_coffee': '☕',
+      'interest_tea': '🍵',
+      'interest_smoothies': '🥤',
+      'interest_sushi': '🍣',
+      'interest_pizza': '🍕',
+      'interest_desserts': '🍰',
+      'interest_healthy_food': '🥗',
+      'interest_street_food': '🌮',
+      'interest_fine_dining': '🍽️',
+      'interest_food_photography': '📸',
+      'interest_chocolate': '🍫',
+      'interest_ice_cream': '🍦',
+
+      // Faith
+      'faith_dua': '🙏',
+      'faith_umrah': '🕋',
+      'faith_charity_work': '💼',
+      'faith_dawah': '📢',
+      'faith_sadaqah': '🤝',
+      'faith_hadith': '📖',
+      'faith_tahajjud': '😊',
+      'faith_dhikr': '📿',
+      'faith_multiple_prayers': '🕌',
+      'faith_sunnah_prayer': '🙏',
+      'faith_nafila_prayer': '🕯️',
+      'faith_hajj': '🕋',
+      'faith_five_prayers': '☪️',
+      'faith_fiqh': '📚',
+      'faith_fasting': '🌙',
+      'faith_tasawwuf': '😇',
+      'faith_good_manners': '🤲',
+      'faith_friday_prayer': '🕌',
+
+      // More Arts
+      'interest_singing': '🎤',
+      'interest_dancing_ballroom': '💃',
+      'interest_opera': '🎭',
+      'interest_ballet': '🩰',
+      'interest_acting': '🎬',
+      'interest_filmmaking': '🎥',
+      'interest_journalism': '📰',
+      'interest_blogging': '✍️',
+      'interest_podcasting': '🎙️',
+      'interest_storytelling': '📖',
+      'interest_archeology': '🏺',
+      'interest_astronomy': '🔭',
+      'interest_philosophy': '🤔',
+      'interest_literature': '📚',
+      'interest_crafts': '✂️',
+      'interest_knitting': '🧶',
+      'interest_sewing': '🧵',
+      'interest_pottery': '🏺',
+      'interest_woodworking': '🪵',
+      'interest_origami': '📄',
     };
-  }).toList();
-}
 
+    // ⭐⭐⭐ SAME LOGIC AS edit view
+    List<String> hobbiesList = [];
 
+    if (profile.hobbies is String) {
+      hobbiesList = (profile.hobbies as String)
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
 
+      debugPrint(
+        '📋 [INTERESTS] String input: "${profile.hobbies}" → parsed: $hobbiesList',
+      );
+    } else if (profile.hobbies is List) {
+      debugPrint('📋 [INTERESTS] Raw List: ${profile.hobbies}');
 
+      for (var item in profile.hobbies) {
+        final itemStr = item.toString().trim();
+        if (itemStr.isEmpty) continue;
 
+        if (itemStr.contains(',')) {
+          debugPrint('  🔄 Splitting item: "$itemStr"');
+          final subItems = itemStr
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty);
+          hobbiesList.addAll(subItems);
+        } else {
+          hobbiesList.add(itemStr);
+        }
+      }
 
+      debugPrint('📋 [INTERESTS] Processed List: $hobbiesList');
+    } else {
+      debugPrint('⚠️ [INTERESTS] Invalid type: ${profile.hobbies.runtimeType}');
+      hobbiesList = [];
+    }
 
+    hobbiesList = hobbiesList
+        .where((s) => s.startsWith('interest_') || s.startsWith('faith_'))
+        .toList();
 
+    if (hobbiesList.isEmpty) {
+      debugPrint('⚠️ [INTERESTS] No valid hobbies found');
+      return [];
+    }
 
+    return hobbiesList.map<Map<String, dynamic>>((hobbyKey) {
+      final trimmedKey = hobbyKey.trim();
+      final emoji = _keyToEmojiMap[trimmedKey] ?? '🎵';
+      final displayText = _translateValue(trimmedKey);
 
+      debugPrint(
+        '🎯 Hobby: key="$trimmedKey", emoji="$emoji", display="$displayText"',
+      );
 
-
-
-
-
-
+      return {'icon': AssetsData.kmusicIcon, 'label': '$emoji $displayText'};
+    }).toList();
+  }
 
   Widget _buildError(BuildContext context, String? message) {
     return Center(

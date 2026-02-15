@@ -1272,4 +1272,19 @@
   "otp_digit_6_error": "Please enter the 6-digit code",
   "resend_code_in": "Resend code in",
   "otp_sent_to_number": "Verification code sent to {}"
+  "get_free_credit_daily_with_gold": "Get free credit daily with Gold",
+    "delete_main_image": "Delete Profile Picture",
+  "must_upload_new_main_image": "You must upload a new profile picture before deleting the current one",
+  "choose_new_image": "Choose New Image",
+  "max_secondary_images_4": "Maximum 4 secondary images",
+  "add_main_image_required": "Main Image Required",
+  "must_add_main_image_before_exit": "You cannot exit without adding a main image",
+  "add_image": "Add Image",
+    "reorder_image": "Reorder Image",
+  "reorder_image_question": "Do you want this image to be the first secondary image after the main one?",
+  "yes_make_first": "Yes, Make it First",
+  "image_reordered_successfully": "Image reordered successfully",
+  "error_reordering_image": "Error reordering image",
+  "under_review":"Awaiting review"
+
 }
