@@ -1,4 +1,5 @@
-import 'package:tayseer/core/widgets/my_profile_Image.dart';
+import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/widgets/comment_avatar.dart';
 import 'package:tayseer/my_import.dart';
 
 /// CommentInputEditor - Reusable input for comments/replies
@@ -14,6 +15,9 @@ class CommentInputEditor extends StatefulWidget {
   final VoidCallback onCancel;
   final void Function(String text) onSubmit;
 
+  /// Whether to show the anonymous avatar toggle
+  final bool showAnonymousToggle;
+
   const CommentInputEditor({
     super.key,
     required this.initialText,
@@ -21,6 +25,7 @@ class CommentInputEditor extends StatefulWidget {
     required this.onCancel,
     required this.onSubmit,
     this.isLoading = false,
+    this.showAnonymousToggle = false,
   });
 
   @override
@@ -91,8 +96,23 @@ class _CommentInputEditorState extends State<CommentInputEditor> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const MyProfileImage(),
-        Gap(10.w),
+        if (widget.showAnonymousToggle)
+          BlocBuilder<PostDetailsCubit, PostDetailsState>(
+            buildWhen: (prev, curr) =>
+                prev.isAnonymousLocked != curr.isAnonymousLocked ||
+                prev.selectedAnonymous != curr.selectedAnonymous,
+            builder: (context, state) {
+              return CommentAvatar(
+                iscommented: state.isAnonymousLocked,
+                isAnonymous: state.selectedAnonymous,
+                currentSelection: state.selectedAnonymous,
+                onSelectionChanged: (value) {
+                  context.read<PostDetailsCubit>().changeAnonymous(value);
+                },
+              );
+            },
+          ),
+        if (widget.showAnonymousToggle) Gap(10.w),
         Expanded(child: _buildTextField()),
       ],
     );

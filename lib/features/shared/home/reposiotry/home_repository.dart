@@ -38,6 +38,7 @@ abstract class HomeRepository {
   Future<Either<Failure, CommentModel>> addComment({
     required String postId,
     required String comment,
+    required bool anonymous,
   });
 
   Future<Either<Failure, String>> deleteComment({required String commentId});
@@ -50,6 +51,7 @@ abstract class HomeRepository {
   Future<Either<Failure, CommentModel>> addReply({
     required String commentId,
     required String reply,
+    required bool anonymous,
   });
 
   Future<void> likeToggle({

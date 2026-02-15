@@ -210,6 +210,7 @@ class _CommentsList extends StatelessWidget {
   final void Function(String commentId)? onLoadReplies;
   final GlobalKey Function(String commentId)? getCommentKey;
   final CommentCallbacks commentCallbacks;
+
   const _CommentsList({
     required this.comments,
     required this.hasMore,
@@ -256,6 +257,7 @@ class _CommentsList extends StatelessWidget {
                 isEditLoading: editingCommentId == comment.id && isEditLoading,
                 isReplyLoading: activeReplyId == comment.id && isReplyLoading,
                 getReplyKey: getCommentKey,
+
                 onLikeTap: () => onLikeComment?.call(comment, false),
                 onReplyTap: () => onReplyTap?.call(comment.id),
                 onEditTap: () => onEditTap?.call(comment.id),
@@ -322,6 +324,7 @@ class _CommentItem extends StatefulWidget {
   final void Function(String replyId, String content)? onSaveReplyEdit;
   final GlobalKey Function(String commentId)? getReplyKey;
   final CommentCallbacks callbacks;
+
   const _CommentItem({
     required this.comment,
     required this.callbacks,

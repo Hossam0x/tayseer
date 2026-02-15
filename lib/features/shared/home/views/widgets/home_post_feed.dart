@@ -360,6 +360,7 @@ class _PostItemState extends State<_PostItem> {
       onArchive: _archivePost,
       onEdit: _editPost,
       onPollVote: _onPollVote,
+      onCommented: _onCommented,
     );
   }
 
@@ -392,6 +393,13 @@ class _PostItemState extends State<_PostItem> {
 
   void _onPollVote(String postId, String choiceText) {
     widget.homeCubit.voteInPoll(postId: postId, choiceText: choiceText);
+  }
+
+  void _onCommented(String postId, bool isAnonymous) {
+    widget.homeCubit.markPostAsCommented(
+      postId: postId,
+      isAnonymous: isAnonymous,
+    );
   }
 
   void _onReaction(String id, ReactionType? type) {
