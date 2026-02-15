@@ -9,6 +9,7 @@ class OtpState {
   final bool isEmailUpdate;
   final String otpCode;
   final String errorMessage;
+  final String successMessage;
   final int resendSeconds;
   final bool canResend;
 
@@ -19,6 +20,7 @@ class OtpState {
     this.isEmailUpdate = false,
     this.otpCode = '',
     this.errorMessage = '',
+    this.successMessage = '',
     this.resendSeconds = 300,
     this.canResend = false,
   });
@@ -33,6 +35,7 @@ class OtpState {
     bool? isEmailUpdate,
     String? otpCode,
     String? errorMessage,
+    String? successMessage,
     int? resendSeconds,
     bool? canResend,
   }) {
@@ -43,6 +46,7 @@ class OtpState {
       isEmailUpdate: isEmailUpdate ?? this.isEmailUpdate,
       otpCode: otpCode ?? this.otpCode,
       errorMessage: errorMessage ?? this.errorMessage,
+      successMessage: successMessage ?? this.successMessage,
       resendSeconds: resendSeconds ?? this.resendSeconds,
       canResend: canResend ?? this.canResend,
     );

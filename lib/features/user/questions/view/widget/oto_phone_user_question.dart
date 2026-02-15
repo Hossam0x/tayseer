@@ -18,6 +18,10 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<QuestionsCubit, QuestionsState>(
+      listenWhen: (previous, current) =>
+          previous.verifyOtpState != current.verifyOtpState ||
+          previous.answerQuestionsState != current.answerQuestionsState,
+
       listener: (context, state) {
         if (state.verifyOtpState == CubitStates.loading) {
           showDialog(
@@ -41,31 +45,27 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
                 context.read<QuestionsCubit>().sendAnswerQuestions(
                   question: AuthEnum.phone.name,
                   questionCategoryEnum: AuthEnum.phone.name,
-                  questionNumber: 25,
-                  answerCompleted: true,
+                  questionNumber: 28,
                   answers: [
                     {'answer': 'تم'},
                   ],
                 );
-                context.pushNamedAndRemoveUntil(
+                context.pushReplacementNamed(
                   AppRouter.kBlockedContactsSuccessScreen,
-                  predicate: (route) => false,
                 );
               },
               onCancel: () {
                 context.read<QuestionsCubit>().sendAnswerQuestions(
                   question: AuthEnum.phone.name,
                   questionCategoryEnum: AuthEnum.phone.name,
-                  questionNumber: 25,
-                  answerCompleted: true,
+                  questionNumber: 28,
                   answers: [
                     {'answer': 'تم'},
                   ],
                 );
-                context.pushNamedAndRemoveUntil(
-                  AppRouter.kUserLayoutView,
-                  predicate: (route) => false,
-                );
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  context.pushReplacementNamed(AppRouter.kCommitmentView);
+                });
               },
               showCancelButton: true,
             );

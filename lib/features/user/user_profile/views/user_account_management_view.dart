@@ -64,11 +64,11 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Gap(16.h),
-                          SimpleAppBar(title: 'ادارة الحساب'),
+                          SimpleAppBar(title: context.tr('account_management')),
                           Gap(50.h),
                           // خيار "حذف الحساب نهائياً"
                           _buildOptionCard(
-                            title: 'حذف الحساب',
+                            title: context.tr('permanent_delete'),
                             action: AccountAction.permanentDelete,
                           ),
                           Gap(10.h),
@@ -78,7 +78,7 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
                           Gap(10.h),
                           // خيار "إيقاف حسابي بشكل مؤقت"
                           _buildOptionCard(
-                            title: 'إيقاف حسابي بشكل مؤقت',
+                            title: context.tr('temporary_disable'),
                             action: AccountAction.temporaryDisable,
                           ),
 
@@ -90,8 +90,8 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
                               height: 54.h,
                               width: double.infinity,
                               title: state.state == CubitStates.loading
-                                  ? 'جاري المعالجة...'
-                                  : 'تأكيد',
+                                  ? context.tr('loading')
+                                  : context.tr('confirm'),
                               onPressed:
                                   (selectedAction != null &&
                                       state.state != CubitStates.loading)
@@ -163,10 +163,10 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
       context: context,
       builder: (context) => _buildCustomDialog(
         icon: Icons.archive_outlined,
-        title: 'هل تريد أرشفة الحساب ؟',
-        message: 'في حالة أرشفة الحساب لن يظهر لك رسائل من الشخص في الاشعارات.',
-        confirmText: 'نعم',
-        cancelText: 'لا',
+        title: context.tr('are_you_sure_temporary_disable'),
+        message: context.tr('are_you_sure_temporary_disable_message'),
+        confirmText: context.tr('yes'),
+        cancelText: context.tr('no'),
         onConfirm: () {
           Navigator.pop(context);
           // تنفيذ عملية الإيقاف المؤقت لليوزر
@@ -181,10 +181,10 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
       context: context,
       builder: (context) => _buildCustomDialog(
         icon: Icons.delete_outline,
-        title: 'هل تريد حذف الحساب ؟',
-        message: 'في حالة حذف الحساب سيتم حذف جميع بياناتك بشكل نهائي.',
-        confirmText: 'نعم',
-        cancelText: 'لا',
+        title: context.tr('are_you_sure_permanent_delete'),
+        message: context.tr('are_you_sure_permanent_delete_message'),
+        confirmText: context.tr('yes'),
+        cancelText: context.tr('no'),
         onConfirm: () {
           Navigator.pop(context);
           // تنفيذ عملية الحذف النهائي لليوزر
@@ -275,8 +275,8 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
       await _logoutAndClearData(
         context,
         message: state.operation == AccountOperation.suspend
-            ? 'تم إيقاف حسابك مؤقتاً بنجاح'
-            : 'تم حذف حسابك بنجاح',
+            ? context.tr('account_suspended_successfully')
+            : context.tr('account_deleted_successfully'),
       );
     }
 

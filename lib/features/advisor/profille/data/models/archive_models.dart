@@ -403,7 +403,7 @@ class ArchivePostModel extends Equatable {
   final String? userImage;
   final String? advisorId;
   final String? content;
-  final List<String>? images;
+  final List<ImageModel>? images;
   final String? video;
   final PostContentType? contentType;
   final int? commentsCount;
@@ -483,7 +483,9 @@ class ArchivePostModel extends Equatable {
         userImage: json['userImage']?.toString(),
         advisorId: json['advisorId']?.toString(),
         content: json['content']?.toString(),
-        images: imagesList,
+        images: imagesList
+            ?.map((url) => ImageModel(image: '', width: 0, height: 0))
+            .toList(),
         video: json['video']?.toString(),
         contentType: parsedContentType,
         commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,

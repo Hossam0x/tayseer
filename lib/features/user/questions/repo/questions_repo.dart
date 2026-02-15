@@ -1,9 +1,10 @@
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/features/shared/auth/model/login_data.dart';
 import 'package:tayseer/features/user/questions/model/last_question_number_model.dart';
 import 'package:tayseer/my_import.dart';
 
 abstract class QuestionsRepo {
-  Future<Either<Failure, void>> answerQuestions({
+  Future<Either<Failure, UserModel>> answerQuestions({
     required String question,
     required String questionCategoryEnum,
     required int questionNumber,
@@ -23,4 +24,10 @@ abstract class QuestionsRepo {
   });
   Future<Either<Failure, void>> verifyOtp({required String otp});
   Future<Either<Failure, LastQuestionNumber>> getLastQuestionNumber();
+  Future<Either<Failure, void>> addPreferenceFactors({
+    required String minAge,
+    required String maxAge,
+    required String country,
+    required String nationality,
+  });
 }

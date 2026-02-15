@@ -7,7 +7,7 @@ class CommenterModel {
   final String? avatar;
   final bool isVerified;
   final String userType;
-
+  final bool isAnnonymous;
   const CommenterModel({
     required this.id,
     required this.name,
@@ -15,6 +15,7 @@ class CommenterModel {
     this.avatar,
     required this.isVerified,
     required this.userType,
+    this.isAnnonymous = false,
   });
 
   factory CommenterModel.fromJson(Map<String, dynamic> json) {
@@ -25,6 +26,7 @@ class CommenterModel {
       avatar: json['avatar'],
       isVerified: json['isVerified'] ?? false,
       userType: json['userType'] ?? '',
+      isAnnonymous: json['isAnonymousCommented'] ?? false,
     );
   }
 }

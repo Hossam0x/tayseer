@@ -105,8 +105,8 @@ class VerifyDataBody extends StatelessWidget {
                 title: context.tr('next'),
                 useGradient: true,
                 onPressed: () {
-                  // context.pushNamed(AppRouter.kFaceVerificationView);
-                  context.pushReplacementNamed(AppRouter.kAddedImagesView);
+                  context.pushNamed(AppRouter.kFaceVerificationView);
+                  // context.pushReplacementNamed(AppRouter.kAddedImagesView);
                 },
               ),
             ),

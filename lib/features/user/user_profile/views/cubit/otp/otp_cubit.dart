@@ -1,16 +1,12 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/views/repos/otp_repository.dart';
 import 'package:tayseer/my_import.dart';
 part 'otp_state.dart';
 
 class OtpCubit extends Cubit<OtpState> {
   final OtpRepository _otpRepository;
-  final SnackBarService _snackBarService = SnackBarService();
   Timer? _resendTimer;
-
-  // ⭐⭐ إضافة متغير لتحديد مصدر الـ OTP
   final OtpSource _otpSource;
 
   OtpCubit({
@@ -18,7 +14,7 @@ class OtpCubit extends Cubit<OtpState> {
     required bool isPhoneUpdate,
     bool isEmailUpdate = false,
     required OtpRepository otpRepository,
-    OtpSource otpSource = OtpSource.phone, // ⭐⭐ القيمة الافتراضية للتوافق
+    OtpSource otpSource = OtpSource.phone,
   }) : _otpRepository = otpRepository,
        _otpSource = otpSource,
        super(
@@ -34,6 +30,7 @@ class OtpCubit extends Cubit<OtpState> {
 
   void updateOtpCode(String code) {
     emit(state.copyWith(otpCode: code));
+    // No auto-verify on 6 digits here to avoid context/dialog complexity
   }
 
   void _startResendTimer() {
@@ -48,7 +45,6 @@ class OtpCubit extends Cubit<OtpState> {
     });
   }
 
-  // استخراج رمز الدولة + الرقم (يُستخدم فقط في حالة isPhoneUpdate)
   ({String countryCode, String phoneNumber})? _extractPhoneParts(
     String fullPhone,
   ) {
@@ -78,29 +74,30 @@ class OtpCubit extends Cubit<OtpState> {
           );
         }
       }
-
-      // لو مفيش كود معروف → نرجع الرقم كامل كـ phoneNumber
       return (countryCode: '', phoneNumber: fullPhone);
     } catch (e) {
       return null;
     }
   }
 
-  Future<void> resendCode(BuildContext context) async {
+  Future<void> resendCode() async {
     if (!state.canResend || state.otpStatus == OtpStatus.loading) return;
 
-    emit(state.copyWith(otpStatus: OtpStatus.loading, canResend: false));
+    emit(
+      state.copyWith(
+        otpStatus: OtpStatus.loading,
+        canResend: false,
+        errorMessage: '',
+        successMessage: '',
+      ),
+    );
 
-    // ⭐⭐ تحديد الـ endpoint بناءً على المصدر
     if (_otpSource == OtpSource.email) {
-      // ── حالة إعادة إرسال للإيميل ──
       final result = await _otpRepository.resendEmailOtp(
         email: state.phoneNumber,
       );
-
       result.fold(
         (failure) {
-          _showError(context, failure.message);
           emit(
             state.copyWith(
               otpStatus: OtpStatus.failure,
@@ -114,23 +111,23 @@ class OtpCubit extends Cubit<OtpState> {
             state.copyWith(
               resendSeconds: 300,
               otpStatus: OtpStatus.initial,
-              errorMessage: '',
+              successMessage: 'otp_sent_success',
               canResend: false,
             ),
           );
           _startResendTimer();
-          _showSuccess(
-            context,
-            'تم إعادة إرسال رمز التحقق على البريد الإلكتروني',
-          );
         },
       );
     } else if (_otpSource == OtpSource.editPhone) {
-      // ⭐⭐ حالة إعادة إرسال لتعديل رقم الهاتف
       final phoneParts = _extractPhoneParts(state.phoneNumber);
       if (phoneParts == null || phoneParts.countryCode.isEmpty) {
-        _showError(context, 'تنسيق رقم الهاتف غير صحيح');
-        emit(state.copyWith(otpStatus: OtpStatus.initial, canResend: true));
+        emit(
+          state.copyWith(
+            otpStatus: OtpStatus.failure,
+            errorMessage: 'invalid_phone',
+            canResend: true,
+          ),
+        );
         return;
       }
 
@@ -141,7 +138,6 @@ class OtpCubit extends Cubit<OtpState> {
 
       result.fold(
         (failure) {
-          _showError(context, failure.message);
           emit(
             state.copyWith(
               otpStatus: OtpStatus.failure,
@@ -155,61 +151,60 @@ class OtpCubit extends Cubit<OtpState> {
             state.copyWith(
               resendSeconds: 300,
               otpStatus: OtpStatus.initial,
-              errorMessage: '',
+              successMessage: 'otp_sent_success',
               canResend: false,
             ),
           );
           _startResendTimer();
-          _showSuccess(context, 'تم إعادة إرسال رمز التحقق');
         },
       );
     } else {
-      // ── حالة إعادة إرسال للجوال العادي (التسجيل/تسجيل الدخول) ──
-      // ⭐⭐ هنا يمكنك إضافة الـ endpoint الخاص بالتسجيل إذا كان مختلفاً
-      // أو استخدام نفس الـ endpoint مع معاملات مختلفة
-      _showError(context, 'هذه العملية غير مدعومة حالياً');
-      emit(state.copyWith(otpStatus: OtpStatus.initial, canResend: true));
+      emit(
+        state.copyWith(
+          otpStatus: OtpStatus.failure,
+          errorMessage: 'operation_not_supported',
+          canResend: true,
+        ),
+      );
     }
   }
 
-  Future<void> verifyOtp(BuildContext context) async {
-    // ... التحقق من الطول والحالة ...
+  Future<void> verifyOtp() async {
+    if (state.otpCode.length != 6 || state.otpStatus == OtpStatus.loading)
+      return;
 
-    emit(state.copyWith(otpStatus: OtpStatus.loading));
+    emit(
+      state.copyWith(
+        otpStatus: OtpStatus.loading,
+        errorMessage: '',
+        successMessage: '',
+      ),
+    );
 
     switch (_otpSource) {
       case OtpSource.email:
         final result = await _otpRepository.verifyEmailOtp(state.otpCode);
-        _handleVerificationResult(
-          context,
-          result,
-          'تم تأكيد البريد الإلكتروني بنجاح',
-        );
+        _handleVerificationResult(result, 'otp_verify_success');
         break;
 
       case OtpSource.editPhone:
         final result = await _otpRepository.verifyEditPhoneOtp(state.otpCode);
-        _handleVerificationResult(context, result, 'تم تأكيد رقم الهاتف بنجاح');
+        _handleVerificationResult(result, 'otp_verify_success');
         break;
 
       case OtpSource.phone:
-        // ⭐⭐ استخدام الـ endpoint العادي
-        // final result = await _otpRepository.verifyPhoneOtp(state.otpCode);
-        // أو استخدام تعديل الهاتف إذا كان نفس الـ endpoint
         final result = await _otpRepository.verifyEditPhoneOtp(state.otpCode);
-        _handleVerificationResult(context, result, 'تم التحقق بنجاح');
+        _handleVerificationResult(result, 'otp_verify_success');
         break;
     }
   }
 
   void _handleVerificationResult(
-    BuildContext context,
     Either<Failure, bool> result,
-    String successMessage,
+    String successMsg,
   ) {
     result.fold(
       (failure) {
-        _showError(context, failure.message);
         emit(
           state.copyWith(
             otpStatus: OtpStatus.failure,
@@ -218,30 +213,18 @@ class OtpCubit extends Cubit<OtpState> {
         );
       },
       (_) {
-        emit(state.copyWith(otpStatus: OtpStatus.success, errorMessage: ''));
-        _showSuccess(context, successMessage);
+        emit(
+          state.copyWith(
+            otpStatus: OtpStatus.success,
+            successMessage: successMsg,
+          ),
+        );
       },
     );
   }
 
-  void _showError(BuildContext context, String message) {
-    if (context.mounted) {
-      _snackBarService.showSnackBar(
-        context: context,
-        text: message,
-        isError: true,
-      );
-    }
-  }
-
-  void _showSuccess(BuildContext context, String message) {
-    if (context.mounted) {
-      _snackBarService.showSnackBar(
-        context: context,
-        text: message,
-        isSuccess: true,
-      );
-    }
+  void clearMessages() {
+    emit(state.copyWith(errorMessage: '', successMessage: ''));
   }
 
   void resetError() {
@@ -255,9 +238,4 @@ class OtpCubit extends Cubit<OtpState> {
   }
 }
 
-// ⭐⭐ إضافة enum لتحديد مصدر الـ OTP
-enum OtpSource {
-  phone, // للـ OTP العادي (التسجيل/تسجيل الدخول)
-  editPhone, // لتعديل رقم الهاتف
-  email, // لتعديل البريد الإلكتروني
-}
+enum OtpSource { phone, editPhone, email }

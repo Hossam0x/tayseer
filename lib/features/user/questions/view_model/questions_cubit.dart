@@ -1,3 +1,5 @@
+// lib/features/user/questions/view_model/questions_cubit.dart
+
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -196,7 +198,7 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   }
 
   // -------------------------------------
-  // change image blur ✅ التعديل هنا
+  // change image blur
   // -------------------------------------
 
   Future<void> changeImageBlur() async {
@@ -214,7 +216,6 @@ class QuestionsCubit extends Cubit<QuestionsState> {
           );
         },
         (_) {
-          // ✅ التعديل: إضافة blurEnabled: true عند النجاح
           emit(
             state.copyWith(
               changeImageBlurState: CubitStates.success,
@@ -235,12 +236,10 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     emit(state.copyWith(changeImageBlurState: CubitStates.initial));
   }
 
-  // ✅ دالة جديدة لإعادة تعيين حالة البلور (اختياري)
   void resetBlurState() {
     emit(state.copyWith(changeImageBlurState: CubitStates.initial));
   }
 
-  // ✅ دالة جديدة لإلغاء تفعيل البلور (اختياري)
   Future<void> disableBlur() async {
     emit(state.copyWith(changeImageBlurState: CubitStates.loading));
 
@@ -277,7 +276,7 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   }
 
   // -------------------------------------
-  // phone number ✅ دالة جديدة
+  // phone number
   // -------------------------------------
 
   Future<void> sendPhoneNumber() async {
@@ -388,6 +387,76 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     }
 
     emit(state.copyWith(lastQuestionNumberState: CubitStates.initial));
+  }
+
+  // -------------------------------------
+  // Partner Filter
+  // -------------------------------------
+
+  void updatePartnerAgeRange(RangeValues values) {
+    emit(state.copyWith(partnerAgeRange: values));
+  }
+
+  void updatePartnerCountry(String? country) {
+    emit(state.copyWith(partnerCountry: country));
+  }
+
+  void updatePartnerNationality(String? nationality) {
+    emit(state.copyWith(partnerNationality: nationality));
+  }
+
+  // ✅ تعديل: استخدام flags للمسح
+  void resetPartnerFilter() {
+    emit(
+      state.copyWith(
+        partnerAgeRange: const RangeValues(22, 35),
+        clearPartnerCountry: true,
+        clearPartnerNationality: true,
+      ),
+    );
+  }
+
+  Future<void> submitPartnerFilter() async {
+    emit(state.copyWith(partnerFilterState: CubitStates.loading));
+
+    try {
+      final minAge = state.partnerAgeRange.start.round().toString();
+      final maxAge = state.partnerAgeRange.end.round().toString();
+
+      final country = state.partnerCountry ?? 'Egypt';
+      final nationality = state.partnerNationality ?? 'Egyptian';
+
+      final result = await _repo.addPreferenceFactors(
+        minAge: minAge,
+        maxAge: maxAge,
+        country: country,
+        nationality: nationality,
+      );
+
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              partnerFilterState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+          emit(state.copyWith(partnerFilterState: CubitStates.initial));
+        },
+        (_) {
+          emit(state.copyWith(partnerFilterState: CubitStates.success));
+          emit(state.copyWith(partnerFilterState: CubitStates.initial));
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          partnerFilterState: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+      emit(state.copyWith(partnerFilterState: CubitStates.initial));
+    }
   }
 
   void clear() {

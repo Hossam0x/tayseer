@@ -1,16 +1,13 @@
 import 'dart:async';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
-import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 
 class UserProfileCubit extends Cubit<UserProfileState> {
   final LocalNotification _notificationService = LocalNotification();
@@ -46,7 +43,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final profile = await _fetchUserProfile();
       emit(currentState.copyWith(userProfile: profile));
     } catch (e) {
-      debugPrint('❌ خطأ في جلب بيانات المستخدم: $e');
+      debugPrint('❌ Error fetching user profile: $e');
     }
   }
 
@@ -144,15 +141,22 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     try {
       final settings = await _loadSettings();
       final profile = await _fetchUserProfile();
+      final isNotificationEnabled = await _getNotificationStatus();
 
-      emit(SettingsLoaded(settings: settings, userProfile: profile));
+      emit(
+        SettingsLoaded(
+          settings: settings,
+          userProfile: profile,
+          isNotificationEnabled: isNotificationEnabled,
+        ),
+      );
     } catch (e) {
-      emit(SettingsError(message: 'حدث خطأ في تحميل البيانات: $e'));
+      emit(SettingsError(message: 'error_loading_data'));
     }
   }
 
   // ⭐ وظيفة جديدة: تحديث السن
-  Future<void> updateAge(int newAge, BuildContext context) async {
+  Future<void> updateAge(int newAge) async {
     final currentState = state;
     if (currentState is! SettingsLoaded || currentState.userProfile == null) {
       return;
@@ -165,32 +169,38 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       result.fold(
         (failure) {
-          showSafeSnackBar(
-            context: context,
-            text: '${context.tr("update_age_failed")}: ${failure.message}',
-            isError: true,
+          emit(
+            currentState.copyWith(
+              actionMessage: 'update_age_failed',
+              isActionSuccess: false,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
           );
         },
         (updatedProfile) {
-          emit(currentState.copyWith(userProfile: updatedProfile));
-          showSafeSnackBar(
-            context: context,
-            text: context.tr("update_age_success"),
-            isSuccess: true,
+          emit(
+            currentState.copyWith(
+              userProfile: updatedProfile,
+              actionMessage: "update_age_success",
+              isActionSuccess: true,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
           );
         },
       );
     } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_age_error"),
-        isError: true,
+      emit(
+        currentState.copyWith(
+          actionMessage: "update_age_error",
+          isActionSuccess: false,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
     }
   }
 
   // ⭐ وظيفة جديدة: تحديث النوع (الجندر)
-  Future<void> updateGender(String newGender, BuildContext context) async {
+  Future<void> updateGender(String newGender) async {
     final currentState = state;
     if (currentState is! SettingsLoaded || currentState.userProfile == null) {
       return;
@@ -203,35 +213,38 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       result.fold(
         (failure) {
-          showSafeSnackBar(
-            context: context,
-            text: '${context.tr("update_gender_failed")}: ${failure.message}',
-            isError: true,
+          emit(
+            currentState.copyWith(
+              actionMessage: 'update_gender_failed',
+              isActionSuccess: false,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
           );
         },
         (updatedProfile) {
-          emit(currentState.copyWith(userProfile: updatedProfile));
-          showSafeSnackBar(
-            context: context,
-            text: context.tr("update_gender_success"),
-            isSuccess: true,
+          emit(
+            currentState.copyWith(
+              userProfile: updatedProfile,
+              actionMessage: "update_gender_success",
+              isActionSuccess: true,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
           );
         },
       );
     } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_gender_error"),
-        isError: true,
+      emit(
+        currentState.copyWith(
+          actionMessage: "update_gender_error",
+          isActionSuccess: false,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
     }
   }
 
   // ⭐ وظيفة جديدة: تبديل حالة المجهول
-  Future<void> toggleAnonymousStatus(
-    bool isAnonymous,
-    BuildContext context,
-  ) async {
+  Future<void> toggleAnonymousStatus(bool isAnonymous) async {
     final currentState = state;
     if (currentState is! SettingsLoaded || currentState.userProfile == null) {
       return;
@@ -244,39 +257,43 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       result.fold(
         (failure) {
-          showSafeSnackBar(
-            context: context,
-            text:
-                '${context.tr("update_anonymous_failed")}: ${failure.message}',
-            isError: true,
+          emit(
+            currentState.copyWith(
+              actionMessage: 'update_anonymous_failed',
+              isActionSuccess: false,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
           );
         },
         (_) {
           final updatedProfile = currentState.userProfile!.copyWith(
             isAnonymous: isAnonymous,
           );
-          emit(currentState.copyWith(userProfile: updatedProfile));
-
-          showSafeSnackBar(
-            context: context,
-            text: isAnonymous
-                ? context.tr("anonymous_enabled")
-                : context.tr("anonymous_disabled"),
-            isSuccess: true,
+          emit(
+            currentState.copyWith(
+              userProfile: updatedProfile,
+              actionMessage: isAnonymous
+                  ? "anonymous_enabled"
+                  : "anonymous_disabled",
+              isActionSuccess: true,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
           );
         },
       );
     } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_anonymous_error"),
-        isError: true,
+      emit(
+        currentState.copyWith(
+          actionMessage: "update_anonymous_error",
+          isActionSuccess: false,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
     }
   }
 
   // ⭐ وظيفة جديدة: تبديل حالة الزواج
-  Future<void> toggleMarriageStatus(bool enable, BuildContext context) async {
+  Future<void> toggleMarriageStatus(bool enable) async {
     final currentState = state;
     if (currentState is! SettingsLoaded || currentState.userProfile == null) {
       return;
@@ -287,71 +304,82 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       result.fold(
         (failure) {
-          showSafeSnackBar(
-            context: context,
-            text:
-                '${context.tr("update_marriage_status_failed")}: ${failure.message}',
-            isError: true,
+          emit(
+            currentState.copyWith(
+              actionMessage: 'update_marriage_status_failed',
+              isActionSuccess: false,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
           );
         },
         (_) {
           final updatedProfile = currentState.userProfile!.copyWith(
             availableForMarry: enable,
           );
-          emit(currentState.copyWith(userProfile: updatedProfile));
-
-          showSafeSnackBar(
-            context: context,
-            text: enable
-                ? context.tr("marriage_status_enabled")
-                : context.tr("marriage_status_disabled"),
-            isSuccess: true,
+          emit(
+            currentState.copyWith(
+              userProfile: updatedProfile,
+              actionMessage: enable
+                  ? "marriage_status_enabled"
+                  : "marriage_status_disabled",
+              isActionSuccess: true,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
           );
         },
       );
     } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_marriage_status_error"),
-        isError: true,
+      emit(
+        currentState.copyWith(
+          actionMessage: "update_marriage_status_error",
+          isActionSuccess: false,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
     }
   }
 
   // ⭐ وظيفة جديدة: تحديث تمويه الصورة
-  Future<void> updateImageBlur(bool blurEnabled, BuildContext context) async {
+  Future<void> updateImageBlur(bool blurEnabled) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
+
     try {
       final result = await _userProfileRepository.updateImageBlur(blurEnabled);
 
       result.fold(
         (failure) {
-          showSafeSnackBar(
-            context: context,
-            text: '${context.tr("update_blur_failed")}: ${failure.message}',
-            isError: true,
+          emit(
+            currentState.copyWith(
+              actionMessage: 'update_blur_failed',
+              isActionSuccess: false,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
           );
         },
         (_) {
-          showSafeSnackBar(
-            context: context,
-            text: blurEnabled
-                ? context.tr("blur_enabled")
-                : context.tr("blur_disabled"),
-            isSuccess: true,
+          emit(
+            currentState.copyWith(
+              actionMessage: blurEnabled ? "blur_enabled" : "blur_disabled",
+              isActionSuccess: true,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
           );
         },
       );
     } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_blur_error"),
-        isError: true,
+      emit(
+        currentState.copyWith(
+          actionMessage: "update_blur_error",
+          isActionSuccess: false,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
     }
   }
 
   // وظائف موجودة مسبقاً (بدون تغيير)
-  Future<void> updateLanguage(String languageCode, BuildContext context) async {
+  Future<void> updateLanguage(String languageCode) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
@@ -367,27 +395,20 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       }).toList();
 
       emit(
-        SettingsLoaded(
+        currentState.copyWith(
           settings: updatedSettings,
-          userProfile: currentState.userProfile,
+          actionMessage: "update_language_success",
+          isActionSuccess: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
         ),
       );
-
-      // تحديث اللغة عالمياً لتغيير الواجهة فوراً (بعد تحديث الحالة المحلية)
-      if (context.mounted) {
-        context.read<LanguageCubit>().setLanguage(languageCode);
-      }
-
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_language_success"),
-        isSuccess: true,
-      );
     } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_language_error"),
-        isError: true,
+      emit(
+        currentState.copyWith(
+          actionMessage: "update_language_error",
+          isActionSuccess: false,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
     }
   }
@@ -405,7 +426,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       await Share.share(message, subject: 'دعوة لتطبيق تيسير');
     } catch (e) {
-      debugPrint('❌ خطأ في المشاركة: $e');
+      debugPrint('❌ Error sharing: $e');
     }
   }
 
@@ -413,18 +434,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
+    // Emit optimistic update
+    emit(currentState.copyWith(isNotificationEnabled: newValue));
+
     try {
-      currentState.settings.firstWhere((item) => item.id == id).switchValue;
-
-      final updatedSettings = currentState.settings.map((item) {
-        if (item.id == id) {
-          return item.copyWith(switchValue: newValue);
-        }
-        return item;
-      }).toList();
-
-      emit(currentState.copyWith(settings: updatedSettings));
-
       final prefs = await SharedPreferences.getInstance();
 
       if (newValue) {
@@ -435,65 +448,39 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         await prefs.setBool('notifications_enabled', false);
       }
     } catch (e) {
-      final currentState = state;
-      if (currentState is SettingsLoaded) {
-        final revertedSettings = currentState.settings.map((item) {
-          if (item.id == id) {
-            return item.copyWith(switchValue: !newValue);
-          }
-          return item;
-        }).toList();
-
-        emit(currentState.copyWith(settings: revertedSettings));
+      if (!isClosed) {
+        emit(currentState.copyWith(isNotificationEnabled: !newValue));
       }
       rethrow;
     }
   }
 
-  Future<void> updateSwitch(String id, bool value, BuildContext context) async {
+  Future<void> updateSwitch(String id, bool value) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
-    try {
-      SnackBarService().clearAll(context);
+    if (id == 'notifications') {
+      try {
+        await _toggleNotificationSetting(id, value);
 
-      final updatedSettings = currentState.settings.map((item) {
-        if (item.id == id) {
-          return item.copyWith(switchValue: value);
-        }
-        return item;
-      }).toList();
-
-      emit(currentState.copyWith(settings: updatedSettings));
-
-      unawaited(_toggleNotificationSetting(id, value));
-
-      showSafeSnackBar(
-        context: context,
-        text: value
-            ? context.tr("notifications_enabled_success")
-            : context.tr("notifications_disabled_success"),
-        isSuccess: value ? true : false,
-        duration: const Duration(milliseconds: 1500),
-      );
-    } catch (e) {
-      final currentState = state;
-      if (currentState is SettingsLoaded) {
-        final revertedSettings = currentState.settings.map((item) {
-          if (item.id == id) {
-            return item.copyWith(switchValue: !value);
-          }
-          return item;
-        }).toList();
-
-        emit(currentState.copyWith(settings: revertedSettings));
+        emit(
+          currentState.copyWith(
+            actionMessage: value
+                ? "notifications_enabled_success"
+                : "notifications_disabled_success",
+            isActionSuccess: true,
+            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+      } catch (e) {
+        emit(
+          currentState.copyWith(
+            actionMessage: "update_settings_error",
+            isActionSuccess: false,
+            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
       }
-
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("update_settings_error"),
-        isError: true,
-      );
     }
   }
 
@@ -521,14 +508,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
             sound: true,
           );
         }
-
-        debugPrint('✅ تم تفعيل الاشعارات بنجاح');
       } else {
-        debugPrint('❌ المستخدم رفض إذن الاشعارات');
-        throw Exception('تم رفض إذن الاشعارات');
+        throw Exception('Notifications permission denied');
       }
     } catch (e) {
-      debugPrint('❌ خطأ في تفعيل الاشعارات: $e');
       rethrow;
     }
   }
@@ -546,42 +529,84 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           sound: false,
         );
       }
-
-      debugPrint('✅ تم تعطيل الاشعارات بنجاح');
     } catch (e) {
-      debugPrint('❌ خطأ في تعطيل الاشعارات: $e');
       rethrow;
     }
   }
 
-  Future<void> rateApp(int rating, BuildContext context) async {
+  Future<void> rateApp(int rating) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
+
     try {
       final result = await _userProfileRepository.rateApp(rating);
 
-      if (context.mounted) {
-        result.fold(
-          (failure) {
-            showSafeSnackBar(
-              context: context,
-              text: '${context.tr("rate_app_failed")}: ${failure.message}',
-              isError: true,
-            );
-          },
-          (_) {
-            showSafeSnackBar(
-              context: context,
-              text: context.tr("rate_app_success"),
-              isSuccess: true,
-            );
-          },
-        );
-      }
+      result.fold(
+        (failure) {
+          emit(
+            currentState.copyWith(
+              actionMessage: 'rate_app_failed',
+              isActionSuccess: false,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
+          );
+        },
+        (_) {
+          emit(
+            currentState.copyWith(
+              actionMessage: "rate_app_success",
+              isActionSuccess: true,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
+          );
+        },
+      );
     } catch (e) {
-      if (context.mounted) {
-        showSafeSnackBar(
-          context: context,
-          text: context.tr("rate_app_error"),
-          isError: true,
+      emit(
+        currentState.copyWith(
+          actionMessage: "rate_app_error",
+          isActionSuccess: false,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+    }
+  }
+
+  Future<void> logout() async {
+    final currentState = state;
+
+    try {
+      try {
+        await FirebaseMessaging.instance.unsubscribeFromTopic("all");
+      } catch (e) {}
+
+      await _notificationService.clearAllNotifications();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      emit(
+        currentState is SettingsLoaded
+            ? currentState.copyWith(
+                actionMessage: "logout_success",
+                isActionSuccess: true,
+                actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+              )
+            : SettingsLoaded(
+                settings: [],
+                actionMessage: "logout_success",
+                isActionSuccess: true,
+                actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+              ),
+      );
+    } catch (e) {
+      if (currentState is SettingsLoaded) {
+        emit(
+          currentState.copyWith(
+            actionMessage: "logout_error",
+            isActionSuccess: false,
+            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
         );
       }
     }
@@ -601,7 +626,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final profile = await _fetchUserProfile();
       emit(currentState.copyWith(userProfile: profile));
     } catch (e) {
-      emit(SettingsError(message: 'حدث خطأ في تحديث البيانات: $e'));
+      emit(SettingsError(message: 'update_error'));
     }
   }
 }

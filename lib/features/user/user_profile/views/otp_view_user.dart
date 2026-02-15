@@ -81,13 +81,36 @@ class _OtpViewUserState extends State<OtpViewUser> {
         body: CustomBackground(
           child: BlocConsumer<OtpCubit, OtpState>(
             listener: (context, state) {
-              if (state.otpStatus == OtpStatus.success) {
-                Future.delayed(Duration(milliseconds: 1500), () {
+              if (state.errorMessage.isNotEmpty) {
+                showSafeSnackBar(
+                  context: context,
+                  text: context.tr(state.errorMessage),
+                  isError: true,
+                );
+                context.read<OtpCubit>().clearMessages();
+              } else if (state.successMessage.isNotEmpty &&
+                  state.otpStatus == OtpStatus.success) {
+                showSafeSnackBar(
+                  context: context,
+                  text: context.tr(state.successMessage),
+                  isSuccess: true,
+                );
+
+                Future.delayed(const Duration(milliseconds: 1500), () {
                   if (mounted) {
                     Navigator.pop(context);
                     context.read<OtpCubit>().resetError();
                   }
                 });
+                context.read<OtpCubit>().clearMessages();
+              } else if (state.successMessage.isNotEmpty) {
+                // If success but not success status (like resend)
+                showSafeSnackBar(
+                  context: context,
+                  text: context.tr(state.successMessage),
+                  isSuccess: true,
+                );
+                context.read<OtpCubit>().clearMessages();
               }
             },
             builder: (context, state) {
@@ -106,9 +129,11 @@ class _OtpViewUserState extends State<OtpViewUser> {
                     SizedBox(height: context.height * 0.05),
 
                     Padding(
-                      padding: const EdgeInsets.only(right: 25),
+                      padding: const EdgeInsetsDirectional.only(start: 25),
                       child: Align(
-                        alignment: Alignment.centerRight,
+                        alignment: isArabic
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: IconButton(
                           onPressed: () => Navigator.pop(context),
                           icon: const Icon(
@@ -124,10 +149,10 @@ class _OtpViewUserState extends State<OtpViewUser> {
 
                     Text(
                       state.isPhoneUpdate
-                          ? 'تأكيد رقم الهاتف الجديد'
+                          ? context.tr('confirm_new_phone')
                           : state.isEmailUpdate
-                          ? 'تأكيد البريد الإلكتروني الجديد'
-                          : 'رمز التحقق',
+                          ? context.tr('confirm_new_email')
+                          : context.tr('otp_title'),
                       style: Styles.textStyle24.copyWith(
                         color: HexColor('590d1c'),
                       ),
@@ -138,7 +163,10 @@ class _OtpViewUserState extends State<OtpViewUser> {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 40.w),
                       child: Text(
-                        'تم إرسال رمز التحقق إلى ${state.phoneNumber}',
+                        context.tr(
+                          'otp_sent_to_number',
+                          args: [state.phoneNumber],
+                        ),
                         textAlign: TextAlign.center,
                         style: Styles.textStyle14.copyWith(color: Colors.grey),
                       ),
@@ -162,16 +190,18 @@ class _OtpViewUserState extends State<OtpViewUser> {
                       child: CustomBotton(
                         width: double.infinity,
                         useGradient: true,
-                        title: state.isLoading ? 'جاري التحقق...' : 'تأكيد',
+                        title: state.isLoading
+                            ? context.tr('verifying')
+                            : context.tr('confirm'),
                         onPressed: state.isLoading
                             ? null
                             : () {
                                 if (state.otpCode.length == 6) {
-                                  context.read<OtpCubit>().verifyOtp(context);
+                                  context.read<OtpCubit>().verifyOtp();
                                 } else {
                                   showSafeSnackBar(
                                     context: context,
-                                    text: 'يجب إدخال الرمز المكون من 6 أرقام',
+                                    text: context.tr('otp_digit_6_error'),
                                     isError: true,
                                   );
                                 }
@@ -204,9 +234,9 @@ class _OtpViewUserState extends State<OtpViewUser> {
         onCompleted: (value) {
           print('✅ اكتمل OTP: $value');
           if (value.length == 6) {
-            Future.delayed(Duration(milliseconds: 300), () {
+            Future.delayed(const Duration(milliseconds: 300), () {
               if (mounted) {
-                context.read<OtpCubit>().verifyOtp(context);
+                context.read<OtpCubit>().verifyOtp();
               }
             });
           }
@@ -275,10 +305,10 @@ class _OtpViewUserState extends State<OtpViewUser> {
         onPressed: state.isLoading
             ? null
             : () {
-                context.read<OtpCubit>().resendCode(context);
+                context.read<OtpCubit>().resendCode();
               },
         child: Text(
-          'إعادة إرسال الرمز',
+          context.tr('resend_code'),
           style: Styles.textStyle12.copyWith(
             color: HexColor('4d81e7'),
             decoration: TextDecoration.underline,
@@ -291,7 +321,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
       return Column(
         children: [
           Text(
-            'إعادة إرسال الرمز خلال',
+            context.tr('resend_code_in'),
             style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
           SizedBox(height: 4.h),

@@ -1,5 +1,5 @@
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
@@ -29,11 +29,6 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
         final pages = _getPages(context, cubit);
-
-        final cachedCompleted = CachNetwork.getBoolData(
-          key: kIsCompletedQuestions,
-        );
-
         return Scaffold(
           body: Stack(
             children: [
@@ -69,12 +64,11 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
           HomeView(onScroll: cubit.onScroll),
           MarriageView(),
           MySpaceView(),
-          BlocProvider(
-            create: (context) => getIt<InteractionsCubit>(),
-            child: InteractionBody(
-              key: _interactionsKey,
-            ), // ✅ تمرير الـ Key مباشرة
-          ),
+          // BlocProvider(
+          //   create: (context) => getIt<InteractionsCubit>(),
+          //   child: InteractionBody(key: _interactionsKey), // ✅
+          // ),
+          EventView(),
           const UserProfileView(),
         ];
 

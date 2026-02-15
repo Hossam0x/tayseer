@@ -1,4 +1,5 @@
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/features/shared/event/model/my_event_model.dart';
 
 // --- Enums ---
 enum ReactionType { love, care, dislike }
@@ -65,9 +66,10 @@ class PostModel {
 
   final PostContentType contentType;
   // Media Fields
-  final List<String> images;
+  final List<ImageModel> images;
   final String? videoUrl;
   final PollModel? pollModel;
+  final EventModel? event;
 
   // Stats
   final int commentsCount;
@@ -85,6 +87,9 @@ class PostModel {
   final bool isMine;
   final bool isBlocked;
 
+  // for commnets
+  final bool isCommented;
+  final bool? isAnonymous;
   PostModel({
     required this.postId,
     required this.name,
@@ -111,6 +116,10 @@ class PostModel {
     this.isMine = false,
     this.isHidden = false,
     this.isBlocked = false,
+    this.event,
+
+    this.isCommented = false,
+    this.isAnonymous,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -127,7 +136,13 @@ class PostModel {
       content: json['content'] ?? '',
       images:
           (json['images'] as List<dynamic>?)
-              ?.map((e) => e.toString())
+              ?.map(
+                (e) => ImageModel(
+                  image: e['image'] ?? '',
+                  width: e['width'] ?? 0,
+                  height: e['height'] ?? 0,
+                ),
+              )
               .toList() ??
           [],
       contentType: _parseContentType(json['contentType']),
@@ -138,6 +153,8 @@ class PostModel {
               totalPollVotes: json["totalPollVotes"] ?? 0,
             )
           : null,
+
+      event: json['event'] != null ? EventModel.fromJson(json['event']) : null,
       commentsCount: json['commentsCount'] ?? 0,
       sharesCount: json['sharesCount'] ?? 0,
       likesCount: json['likesCount'] ?? 0,
@@ -152,6 +169,9 @@ class PostModel {
       repostedBy: json['repostedBy'],
       isSaved: json['isSaved'] ?? false,
       isMine: json['isMine'] ?? false,
+
+      isCommented: json['isCommented'] ?? false,
+      isAnonymous: json['isAnonymousCommented'],
     );
   }
 
@@ -172,7 +192,7 @@ class PostModel {
     String? category,
     String? timeAgo,
     String? content,
-    List<String>? images,
+    List<ImageModel>? images,
     PostContentType? contentType,
     String? videoUrl,
     PollModel? pollModel,
@@ -189,6 +209,10 @@ class PostModel {
     bool? isMine,
     bool? isHidden,
     bool? isBlocked,
+    EventModel? event,
+
+    bool? isCommented,
+    bool? isAnonymous,
   }) {
     return PostModel(
       postId: postId ?? this.postId,
@@ -216,6 +240,9 @@ class PostModel {
       isMine: isMine ?? this.isMine,
       isHidden: isHidden ?? this.isHidden,
       isBlocked: isBlocked ?? this.isBlocked,
+      event: event ?? this.event,
+      isCommented: isCommented ?? this.isCommented,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
     );
   }
 }
@@ -300,6 +327,15 @@ class PollChoice {
       votersAvatars: votersAvatars ?? this.votersAvatars,
     );
   }
+}
+
+class ImageModel {
+  final String image;
+  final int width;
+  final int height;
+  double get aspectRatio => width / height;
+
+  ImageModel({required this.image, required this.width, required this.height});
 }
 
 // // --- Data Generator (Mock Backend) ---

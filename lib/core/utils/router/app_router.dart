@@ -30,10 +30,10 @@ import 'package:tayseer/features/advisor/settings/view/packages_tab_view.dart';
 import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
-import 'package:tayseer/features/advisor/event/view/creat_event_view.dart';
-import 'package:tayseer/features/advisor/event_detail/view/event_detail_view.dart';
-import 'package:tayseer/features/advisor/event_detail/view/update_event_view.dart';
-import 'package:tayseer/features/advisor/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
+import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
+import 'package:tayseer/features/shared/event_detail/view/update_event_view.dart';
+import 'package:tayseer/features/shared/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/map/map_view.dart';
 import 'package:tayseer/features/advisor/notification/presentation/view/notification_view.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/session_details_view.dart';
@@ -60,15 +60,19 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/inte
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/marriage_filter/view/marriage_filter_view.dart';
+import 'package:tayseer/features/user/questions/view/account_review_view.dart';
 import 'package:tayseer/features/user/questions/view/add_phone_view.dart';
 import 'package:tayseer/features/user/questions/view/added_images_view.dart';
 import 'package:tayseer/features/user/questions/view/face_verification_view.dart';
 import 'package:tayseer/features/user/questions/view/otp_phone_user_question.dart';
+import 'package:tayseer/features/user/questions/view/partner_filter_view.dart';
 import 'package:tayseer/features/user/questions/view/questions_page_view.dart';
 import 'package:tayseer/features/user/questions/view/choose_gender_view.dart';
 import 'package:tayseer/features/user/questions/view/personal_info_view.dart';
+import 'package:tayseer/features/user/questions/view/subscription_view.dart';
 import 'package:tayseer/features/user/questions/view/verify_data_view.dart';
 import 'package:tayseer/features/user/questions/view/widget/blocked_contacts_success_widget.dart';
+import 'package:tayseer/features/user/questions/view/widget/commitment_view_body.dart';
 
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
@@ -161,6 +165,10 @@ abstract class AppRouter {
   static const kBlockedContactsSuccessScreen = '/BlockedContactsSuccessScreen';
   static const kMarriageFilterView = '/MarriageFilterView';
   static const kMarriageView = '/MarriageView';
+  static const kPartnerFilterView = '/PartnerFilterView';
+  static const kCommitmentView = '/CommitmentView';
+  static const kAccountReviewUserView = '/AccountReviewUserView';
+  static const kSubscriptionView = '/SubscriptionView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -373,14 +381,14 @@ abstract class AppRouter {
 
       case AppRouter.kFollowersView:
         final userId = settings.arguments as String? ?? '';
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: FollowersView(userId: userId),
           routeSettings: settings,
         );
 
       case AppRouter.kFollowingView:
         final userId = settings.arguments as String? ?? '';
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: FollowingView(userId: userId),
           routeSettings: settings,
         );
@@ -392,13 +400,13 @@ abstract class AppRouter {
         );
 
       case AppRouter.kUserProfileEditView:
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: const UserProfileEditView(),
           routeSettings: settings,
         );
 
       case AppRouter.kUserArchiveChatsView:
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: const UserArchiveChatsView(),
           routeSettings: settings,
         );
@@ -771,7 +779,7 @@ abstract class AppRouter {
           },
         );
       case AppRouter.kinteractionSubscriptionView:
-        return FadeScaleRoute(
+        return SlideLeftRoute(
           page: const interactionSubscriptionView(),
           routeSettings: settings,
         );
@@ -841,6 +849,30 @@ abstract class AppRouter {
             child: OtpPhoneUserQuestion(),
           ),
         );
+      case kPartnerFilterView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: PartnerFilterView(),
+          ),
+        );
+      case kCommitmentView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: CommitmentViewBody(),
+          ),
+        );
+      case kSubscriptionView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<QuestionsCubit>(),
+            child: SubscriptionView(),
+          ),
+        );
       case kBlockedContactsSuccessScreen:
         return MaterialPageRoute(
           settings: settings,
@@ -851,6 +883,12 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => MarriageFilterView(),
         );
+      case kAccountReviewUserView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => AccountReviewUserView(),
+        );
+
       case kMarriageView:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(

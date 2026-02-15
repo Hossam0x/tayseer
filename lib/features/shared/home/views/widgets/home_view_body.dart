@@ -1,6 +1,5 @@
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
-import 'package:tayseer/features/shared/home/views/widgets/anonymous_mode_banner.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_app_bar.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_filter_section.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
@@ -120,10 +119,9 @@ class HomeViewBodyState extends State<HomeViewBody> {
                 const HomeAppBar(notificationCount: 3),
                 const HomeSearchBar(),
 
-                // ✅ كل اللوجيك بقى جوه، هنا بننده عليها بس
-                if (isUser)
-                  const SliverToBoxAdapter(child: AnonymousModeBanner()),
-
+                // // ✅ كل اللوجيك بقى جوه، هنا بننده عليها بس
+                // if (isUser)
+                //   const SliverToBoxAdapter(child: AnonymousModeBanner()),
                 const StoriesSection(),
                 HomeFilterSection(
                   key: _filterSectionKey,

@@ -1,7 +1,5 @@
 part of 'phone_edit_cubit.dart';
 
-// enum CubitStates { initial, loading, success, failure }
-
 class PhoneEditState {
   final CubitStates updatePhoneStatus;
   final String selectedCountryCode;
@@ -10,6 +8,7 @@ class PhoneEditState {
   final String phoneNumber;
   final String phoneError;
   final String errorMessage;
+  final String successMessage;
   final String fullPhoneNumber;
 
   const PhoneEditState({
@@ -20,6 +19,7 @@ class PhoneEditState {
     this.phoneNumber = '',
     this.phoneError = '',
     this.errorMessage = '',
+    this.successMessage = '',
     this.fullPhoneNumber = '',
   });
 
@@ -34,6 +34,7 @@ class PhoneEditState {
     String? phoneNumber,
     String? phoneError,
     String? errorMessage,
+    String? successMessage,
     String? fullPhoneNumber,
   }) {
     return PhoneEditState(
@@ -44,6 +45,7 @@ class PhoneEditState {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       phoneError: phoneError ?? this.phoneError,
       errorMessage: errorMessage ?? this.errorMessage,
+      successMessage: successMessage ?? this.successMessage,
       fullPhoneNumber: fullPhoneNumber ?? this.fullPhoneNumber,
     );
   }

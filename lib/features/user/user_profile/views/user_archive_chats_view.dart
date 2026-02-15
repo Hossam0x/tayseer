@@ -66,7 +66,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
                         vertical: 15.h,
                       ),
                       child: SimpleAppBar(
-                        title: 'المحادثات المؤرشفة',
+                        title: context.tr('archived_chats'),
                         isLargeTitle: true,
                       ),
                     ),
@@ -191,7 +191,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
             Icon(Icons.error_outline, color: AppColors.kRedColor, size: 64.w),
             Gap(16.h),
             Text(
-              errorMessage ?? 'حدث خطأ في تحميل المحادثات المؤرشفة',
+              errorMessage ?? context.tr('error_loading_chats'),
               style: Styles.textStyle16.copyWith(color: AppColors.secondary700),
               textAlign: TextAlign.center,
             ),
@@ -206,7 +206,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
                 padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 14.h),
               ),
               child: Text(
-                'إعادة المحاولة',
+                context.tr('retry'),
                 style: Styles.textStyle16Meduim.copyWith(
                   color: AppColors.kWhiteColor,
                 ),
@@ -226,12 +226,12 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
           Image.asset(AssetsData.emptyChatImage, width: 150.w, height: 150.w),
           Gap(20.h),
           Text(
-            'لا توجد محادثات مؤرشفة',
+            context.tr('no_archived_chats'),
             style: Styles.textStyle18.copyWith(color: AppColors.secondary600),
           ),
           Gap(8.h),
           Text(
-            'سيتم عرض المحادثات المؤرشفة هنا',
+            context.tr('no_archived_chats_message'),
             style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
           ),
         ],
@@ -283,14 +283,14 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
   Widget _buildChatItem(BuildContext context, ArchiveChatRoomModel chatRoom) {
     // الحصول على المستخدم الآخر
     final otherUser = _getOtherUser(chatRoom);
-    final displayName = otherUser?.name ?? 'مستخدم غير معروف';
+    final displayName = otherUser?.name ?? context.tr('unknown_user');
     final displayImage = otherUser?.image;
 
     // الحصول على محتوى آخر رسالة
     final lastMessageContent = chatRoom.lastMessageContent;
     final lastMessageText = lastMessageContent.isNotEmpty
         ? lastMessageContent
-        : 'لا توجد رسائل';
+        : context.tr('no_messages');
 
     // الحصول على الوقت بتوقيت مصر
     // final messageTime = chatRoom.formattedLastMessageTime;
@@ -316,7 +316,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
             ),
             Gap(8.w),
             Text(
-              'إلغاء الأرشفة',
+              context.tr('unarchive'),
               style: Styles.textStyle14.copyWith(
                 color: AppColors.kWhiteColor,
                 fontWeight: FontWeight.w500,
@@ -337,7 +337,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
 
         showSafeSnackBar(
           context: context,
-          text: 'تم إلغاء أرشفة محادثة $displayName',
+          text: '${context.tr('unarchive_chat_success')} $displayName',
           isSuccess: true,
         );
       },
@@ -610,7 +610,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
 
                         // العنوان
                         Text(
-                          'إلغاء الأرشفة',
+                          context.tr('unarchive_chat'),
                           style: Styles.textStyle16.copyWith(
                             color: const Color(0xFF2D2D2D),
                             fontWeight: FontWeight.bold,
@@ -622,7 +622,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
 
                         // النص
                         Text(
-                          'هل تريد إلغاء أرشفة محادثة $userName؟',
+                          '${context.tr('unarchive_chat_confirm')} $userName؟',
                           style: Styles.textStyle12.copyWith(
                             color: const Color(0xFF6B6B6B),
                             height: 1.5,
@@ -636,7 +636,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
                           children: [
                             Expanded(
                               child: _buildDialogButton(
-                                text: 'نعم',
+                                text: context.tr('yes'),
                                 backgroundColor: Colors.green,
                                 textColor: Colors.white,
                                 onPressed: () {
@@ -648,7 +648,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
                             Gap(12.w),
                             Expanded(
                               child: _buildDialogButton(
-                                text: 'لا',
+                                text: context.tr('no'),
                                 backgroundColor: AppColors.kprimaryColor,
                                 textColor: Colors.white,
                                 onPressed: () {

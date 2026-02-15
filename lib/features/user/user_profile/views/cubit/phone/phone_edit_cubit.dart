@@ -1,11 +1,9 @@
 import 'dart:developer';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 part 'phone_edit_state.dart';
 
 class PhoneEditCubit extends Cubit<PhoneEditState> {
   final ApiService _apiService;
-  final SnackBarService _snackBarService = SnackBarService();
 
   PhoneEditCubit() : _apiService = ApiService(Dio()), super(PhoneEditInitial());
 
@@ -73,34 +71,37 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     final phone = state.phoneNumber.trim();
 
     if (phone.isEmpty) {
-      error = 'يرجى إدخال رقم الهاتف';
+      error = 'field_required';
     } else if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
-      error = 'يجب أن يحتوي الرقم على أرقام فقط';
+      error = 'invalid_phone';
     } else if (phone.length < 8) {
-      error = 'رقم الهاتف قصير جداً';
+      error = 'invalid_phone';
     } else if (phone.length > 15) {
-      error = 'رقم الهاتف طويل جداً';
+      error = 'invalid_phone';
     } else {
       // تحقق حسب رمز الدولة
       if (state.selectedCountryCode == "+966" && !phone.startsWith('5')) {
-        error = 'يجب أن يبدأ الرقم السعودي بـ 5';
+        error = 'invalid_phone';
       } else if (state.selectedCountryCode == "+20" && !phone.startsWith('1')) {
-        error = 'يجب أن يبدأ الرقم المصري بـ 1';
+        error = 'invalid_phone';
       }
     }
 
     emit(state.copyWith(phoneError: error));
   }
 
-  Future<void> updatePhone(BuildContext context) async {
+  Future<void> updatePhone() async {
     if (state.phoneNumber.isEmpty || state.phoneError.isNotEmpty) {
-      if (state.phoneError.isNotEmpty) {
-        _showError(context, state.phoneError);
-      }
       return;
     }
 
-    emit(state.copyWith(updatePhoneStatus: CubitStates.loading));
+    emit(
+      state.copyWith(
+        updatePhoneStatus: CubitStates.loading,
+        errorMessage: '',
+        successMessage: '',
+      ),
+    );
 
     try {
       final cleanedPhone = state.phoneNumber.replaceAll(RegExp(r'\D'), '');
@@ -117,19 +118,17 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
           state.copyWith(
             updatePhoneStatus: CubitStates.success,
             fullPhoneNumber: fullPhoneNumber,
+            successMessage: 'otp_sent_success',
             errorMessage: '',
           ),
         );
-
-        _showSuccess(context, 'تم إرسال رمز التحقق بنجاح');
       } else {
         emit(
           state.copyWith(
             updatePhoneStatus: CubitStates.failure,
-            errorMessage: response['message'] ?? 'فشل تحديث رقم الهاتف',
+            errorMessage: response['message'] ?? 'update_phone_failed',
           ),
         );
-        _showError(context, response['message'] ?? 'فشل تحديث رقم الهاتف');
       }
     } on DioException catch (e) {
       final failure = ServerFailure.fromDioError(e);
@@ -139,36 +138,18 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
           errorMessage: failure.message,
         ),
       );
-      _showError(context, failure.message);
     } catch (e) {
       emit(
         state.copyWith(
           updatePhoneStatus: CubitStates.failure,
-          errorMessage: 'حدث خطأ غير متوقع',
+          errorMessage: 'error_occurred',
         ),
       );
-      _showError(context, 'حدث خطأ غير متوقع');
     }
   }
 
-  void _showError(BuildContext context, String message) {
-    if (context.mounted) {
-      _snackBarService.showSnackBar(
-        context: context,
-        text: message,
-        isError: true,
-      );
-    }
-  }
-
-  void _showSuccess(BuildContext context, String message) {
-    if (context.mounted) {
-      _snackBarService.showSnackBar(
-        context: context,
-        text: message,
-        isSuccess: true,
-      );
-    }
+  void clearMessages() {
+    emit(state.copyWith(errorMessage: '', successMessage: ''));
   }
 
   void resetError() {

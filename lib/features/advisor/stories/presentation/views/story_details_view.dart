@@ -9,12 +9,14 @@ class StoryDetailsView extends StatefulWidget {
   final UserStoriesModel userStories;
   final String? heroTag;
   final bool isArchive;
+  final String? initialStoryId;
 
   const StoryDetailsView({
     super.key,
     required this.userStories,
     this.heroTag,
     this.isArchive = false,
+    this.initialStoryId,
   });
 
   @override
@@ -41,27 +43,34 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
   }
 
   void _initStoryItems() {
-    // First, reverse stories to show oldest first (chronological order)
-    final chronologicalStories = widget.userStories.stories.toList();
+    // Force chronological order (Oldest -> Newest)
+    final chronologicalStories = widget.userStories.stories.toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-    // Then find the first unviewed story in the chronological list
-    final firstUnviewedIndex = chronologicalStories.indexWhere(
-      (story) => !story.isViewed,
-    );
-    final startIndex = firstUnviewedIndex != -1 ? firstUnviewedIndex : 0;
+    _reorderedStories = chronologicalStories;
 
-    // Reorder to start from the first unviewed
-    if (startIndex > 0) {
-      _reorderedStories = [
-        ...chronologicalStories.sublist(startIndex),
-        ...chronologicalStories.sublist(0, startIndex),
-      ];
+    // Determine start index
+    int startIndex = 0;
+
+    if (widget.initialStoryId != null) {
+      // If a specific story ID is provided, start from there
+      final index = chronologicalStories.indexWhere(
+        (s) => s.id == widget.initialStoryId,
+      );
+      if (index != -1) {
+        startIndex = index;
+      }
     } else {
-      _reorderedStories = chronologicalStories;
+      // Find the first unviewed story index as default
+      final firstUnviewedIndex = chronologicalStories.indexWhere(
+        (story) => !story.isViewed,
+      );
+      startIndex = firstUnviewedIndex != -1 ? firstUnviewedIndex : 0;
     }
 
     if (_reorderedStories.isNotEmpty) {
-      _currentStoryTime = _reorderedStories.first.createdAt;
+      _currentStoryTime = _reorderedStories[startIndex].createdAt;
+      _currentStoryIndex = startIndex;
     }
 
     for (var story in _reorderedStories) {
@@ -70,11 +79,16 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
 
       if (hasVideo) {
         // Add video story
+        final duration =
+            (story.videoDuration != null && story.videoDuration! > 0)
+            ? Duration(milliseconds: (story.videoDuration! * 1000).round())
+            : const Duration(seconds: 15);
+
         _storyItems.add(
           StoryItem.pageVideo(
             story.video!,
             controller: _storyController,
-            duration: const Duration(seconds: 15),
+            duration: duration,
             key: Key(story.id),
           ),
         );
@@ -90,6 +104,22 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
           ),
         );
       }
+    }
+
+    // Jump to the first unviewed story after the widget builds
+    if (startIndex > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (mounted) {
+          // Small delay to ensure StoryView is ready
+          await Future.delayed(const Duration(milliseconds: 100));
+          if (!mounted) return;
+
+          // Jump to the story at startIndex
+          for (int i = 0; i < startIndex; i++) {
+            _storyController.next();
+          }
+        }
+      });
     }
   }
 

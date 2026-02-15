@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
@@ -62,7 +63,8 @@ class UserAdvisorProfileHeader extends StatelessWidget {
       followers: profile.followers.toString(),
       isVerified: profile.isVerified,
       context: context,
-      profileId: profile.id, // ⭐ تمرير الـ id فقط
+      profileId: profile.id,
+      profileName: profile.name,
     );
   }
 
@@ -72,7 +74,8 @@ class UserAdvisorProfileHeader extends StatelessWidget {
     required String followers,
     required bool isVerified,
     required BuildContext context,
-    required String profileId, // ⭐ تغيير إلى String
+    required String profileId,
+    String? profileName,
   }) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
@@ -80,9 +83,29 @@ class UserAdvisorProfileHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Gap(1.w),
-          // Profile picture
+          // Profile picture with Hero animation
           Stack(
-            children: [MyProfileImage(width: 85.w, imageUrl: imageUrl)],
+            children: [
+              MyProfileImage(
+                width: 85.w,
+                imageUrl: imageUrl,
+                heroTag: 'advisor_profile_image_$profileId',
+                onTap: imageUrl.isNotEmpty
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FullScreenImageView(
+                              imageUrl: imageUrl,
+                              heroTag: 'advisor_profile_image_$profileId',
+                              userName: profileName,
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+              ),
+            ],
           ),
           Gap(10.w),
           // Stats

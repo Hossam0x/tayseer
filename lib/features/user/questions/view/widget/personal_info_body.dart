@@ -164,6 +164,9 @@ class _PersonalInfoBodyState extends State<PersonalInfoBody> {
 
                 // Action Button
                 BlocConsumer<QuestionsCubit, QuestionsState>(
+                  listenWhen: (previous, current) =>
+                      previous.uploadPersonalInfoState !=
+                      current.uploadPersonalInfoState,
                   listener: (context, state) {
                     if (state.uploadPersonalInfoState == CubitStates.success) {
                       context.pop(); // Close loading dialog if open
@@ -171,7 +174,7 @@ class _PersonalInfoBodyState extends State<PersonalInfoBody> {
                         images.clear();
                         mainImage = null;
                       });
-                      context.pushNamed(AppRouter.kFaceVerificationView);
+                      context.pushNamed(AppRouter.kVerifyDataView);
                     } else if (state.uploadPersonalInfoState ==
                         CubitStates.failure) {
                       context.pop(); // Close loading dialog if open
@@ -289,7 +292,7 @@ class ImageSlotCard extends StatelessWidget {
                 ),
 
                 child: Text(
-                  "الصورة الرئيسية",
+                    context.tr('main_image'),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10, // Small text like design

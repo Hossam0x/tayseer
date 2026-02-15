@@ -40,6 +40,9 @@ typedef BlockUserCallback =
 /// Callback for voting in a poll
 typedef PollVoteCallback = void Function(String postId, String choiceText);
 
+/// Callback when user adds a comment (to update isCommented/isAnonymous)
+typedef CommentedCallback = void Function(String postId, bool isAnonymous);
+
 /// Bundle of post-related callbacks for easy passing
 class PostCallbacks {
   // Existing callbacks
@@ -56,6 +59,7 @@ class PostCallbacks {
   final PostActionCallback? onSave;
   final BlockUserCallback? onBlock; // Takes userId
   final PollVoteCallback? onPollVote;
+  final CommentedCallback? onCommented;
 
   const PostCallbacks({
     this.onReactionChanged,
@@ -71,6 +75,7 @@ class PostCallbacks {
     this.onSave,
     this.onBlock,
     this.onPollVote,
+    this.onCommented,
   });
 
   /// Empty callbacks (for optional usage)

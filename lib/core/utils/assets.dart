@@ -51,11 +51,17 @@ abstract class AssetsData {
       "assets/images/success_true_image.png";
   static const String kCorrectImage1 = "assets/images/kCorrectImage1.jpg";
   static const String kWrongImageAI = "assets/images/kWrongImageAI.jpg";
+
   static const String kWrongImageCovered =
       "assets/images/kWrongImageCovered.jpg";
   static const String kWrongImageFar = "assets/images/kWrongImageFar.png";
   static const String kWrongImageNotPerson =
       "assets/images/kWrongImageNotPerson.jpg";
+
+  static const String kCommitmentBackgroundImage =
+      "assets/images/kCommitmentBackground_imge.png";
+  static const String kEmptyEventsImage =
+      "assets/images/empty_events_image.png";
 
   //////////////////////icons//////////////////////
   static const String kArroBackIcon = "assets/icons/arro_back.svg";
@@ -160,12 +166,17 @@ abstract class AssetsData {
   static const String verifiedIcon = "assets/icons/verified.svg";
   static const String krotateCameraIcon =
       "assets/icons/rotate_the_camera_icon.svg";
+  static const String kFeature1 = "assets/icons/kFeature1.svg";
+  static const String kFeature2 = "assets/icons/kFeature2.svg";
+  static const String kFeature3 = "assets/icons/kFeature3.svg";
 
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =
       "assets/animations/loading_animations.json";
   static const String kSuccessMarriageAnimationsLottie =
       "assets/animations/success_marriage.json";
+  static const String kLoadingAiAnimationLottie =
+      "assets/animations/Loading_ai_animation.json";
 
   /////////////// Profile assests/////////////////////
   static const String certificatePlaceholder =

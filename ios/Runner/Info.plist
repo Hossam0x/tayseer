@@ -74,6 +74,10 @@
     <!-- Photo Library Limited Access (iOS 14+) -->
     <key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
     <true/>
+    
+    <!-- Limited Photo Library Access Description (iOS 14+) -->
+    <key>NSPhotoLibraryLimitedUsageDescription</key>
+    <string>يحتاج التطبيق الوصول لمكتبة الصور المحددة لاختيار الصور والفيديوهات للقصص</string>
 
     <!-- Notifications -->
     <key>NSUserNotificationAlertStyle</key>

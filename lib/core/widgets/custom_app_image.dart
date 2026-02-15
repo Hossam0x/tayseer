@@ -59,6 +59,14 @@ class AppImage extends StatelessWidget {
           height: height,
           width: width,
           color: gradientColorSvg == null ? color : null,
+          placeholderBuilder: (context) => placeholderImage != null
+              ? Image.asset(
+                  placeholderImage!,
+                  height: height,
+                  width: width,
+                  fit: fit,
+                )
+              : _buildLoadingPlaceholder(),
         );
       }
 

@@ -3,6 +3,7 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/otp_view_user.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class PhoneEditView extends StatefulWidget {
@@ -38,9 +39,23 @@ class _PhoneEditViewState extends State<PhoneEditView> {
       child: Scaffold(
         body: BlocConsumer<PhoneEditCubit, PhoneEditState>(
           listener: (context, state) {
-            // التنقل عند النجاح فقط
-            if (state.updatePhoneStatus == CubitStates.success) {
-              Future.delayed(Duration(milliseconds: 1500), () {
+            if (state.errorMessage.isNotEmpty) {
+              showSafeSnackBar(
+                context: context,
+                text: context.tr(state.errorMessage),
+                isError: true,
+              );
+              context.read<PhoneEditCubit>().clearMessages();
+            } else if (state.successMessage.isNotEmpty &&
+                state.updatePhoneStatus == CubitStates.success) {
+              showSafeSnackBar(
+                context: context,
+                text: context.tr(state.successMessage),
+                isSuccess: true,
+              );
+
+              // التنقل عند النجاح فقط
+              Future.delayed(const Duration(milliseconds: 1500), () {
                 if (mounted) {
                   Navigator.push(
                     context,
@@ -48,16 +63,15 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                       builder: (_) => OtpViewUser(
                         phoneNumber: state.fullPhoneNumber,
                         isPhoneUpdate: true,
-                        otpSource: OtpSource.editPhone, // ⭐⭐ تحديد المصدر
+                        otpSource: OtpSource.editPhone,
                       ),
                     ),
                   );
                   context.read<PhoneEditCubit>().resetError();
                 }
               });
+              context.read<PhoneEditCubit>().clearMessages();
             }
-
-            // لا حاجة لعرض SnackBar هنا لأن الكيوبت يتولى ذلك
           },
           builder: (context, state) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -112,7 +126,7 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                             Padding(
                               padding: EdgeInsets.only(right: 12.w),
                               child: Text(
-                                state.phoneError,
+                                context.tr(state.phoneError),
                                 style: Styles.textStyle12.copyWith(
                                   color: Colors.red,
                                   height: 1.4,
@@ -145,9 +159,7 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                         onPressed: state.isLoading || !state.canProceed
                             ? null
                             : () {
-                                context.read<PhoneEditCubit>().updatePhone(
-                                  context,
-                                );
+                                context.read<PhoneEditCubit>().updatePhone();
                               },
                       ),
                     ),
@@ -181,8 +193,8 @@ class _PhoneEditViewState extends State<PhoneEditView> {
             child: TextFormField(
               controller: _phoneController,
               focusNode: _phoneFocusNode,
-              textAlign: TextAlign.left,
-              textDirection: TextDirection.ltr,
+              textAlign: isArabic ? TextAlign.right : TextAlign.left,
+              // textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
               keyboardType: TextInputType.phone,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
@@ -199,7 +211,10 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                   color: AppColors.primary200,
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 14.h),
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 14.h,
+                  horizontal: 12.w,
+                ),
                 errorText: null,
               ),
               onChanged: (value) {
@@ -216,7 +231,11 @@ class _PhoneEditViewState extends State<PhoneEditView> {
           InkWell(
             onTap: () => _showCountryPicker(context),
             child: Container(
-              padding: EdgeInsets.only(left: 12.w, top: 14.h, bottom: 14.h),
+              padding: EdgeInsetsDirectional.only(
+                end: 12.w,
+                top: 14.h,
+                bottom: 14.h,
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

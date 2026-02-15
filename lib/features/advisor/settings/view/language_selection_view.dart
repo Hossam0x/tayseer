@@ -1,41 +1,34 @@
-import 'package:flutter/scheduler.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/selection_item.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/language_selection_ui_cubit.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
-class LanguageSelectionView extends StatefulWidget {
+class LanguageSelectionView extends StatelessWidget {
   const LanguageSelectionView({super.key});
 
   @override
-  State<LanguageSelectionView> createState() => _LanguageSelectionViewState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => LanguageSelectionUiCubit()..loadSavedLanguage(),
+      child: const _LanguageSelectionViewBody(),
+    );
+  }
 }
 
-class _LanguageSelectionViewState extends State<LanguageSelectionView> {
-  AppLanguage? _selectedLanguage;
-  final _searchController = TextEditingController();
-  String _searchQuery = '';
+class _LanguageSelectionViewBody extends StatefulWidget {
+  const _LanguageSelectionViewBody();
 
-  /// اللغات المدعومة
-  final List<AppLanguage> _allLanguages = const [
-    AppLanguage(code: 'ar', title: 'العربية'),
-    AppLanguage(code: 'en', title: 'الإنجليزية'),
-    AppLanguage(code: 'fa', title: 'الفارسية'),
-    AppLanguage(code: 'ru', title: 'الروسية'),
-    AppLanguage(code: 'fr', title: 'الفرنسية'),
-    AppLanguage(code: 'es', title: 'الإسبانية'),
-    AppLanguage(code: 'de', title: 'الألمانية'),
-    AppLanguage(code: 'tr', title: 'التركية'),
-    AppLanguage(code: 'ur', title: 'الأردية'),
-    AppLanguage(code: 'hi', title: 'الهندية'),
-    AppLanguage(code: 'bn', title: 'البنغالية'),
-    AppLanguage(code: 'pt', title: 'البرتغالية'),
-    AppLanguage(code: 'it', title: 'الإيطالية'),
-    AppLanguage(code: 'ja', title: 'اليابانية'),
-    AppLanguage(code: 'ko', title: 'الكورية'),
-    AppLanguage(code: 'zh', title: 'الصينية'),
-  ];
+  @override
+  State<_LanguageSelectionViewBody> createState() =>
+      _LanguageSelectionViewBodyState();
+}
+
+class _LanguageSelectionViewBodyState
+    extends State<_LanguageSelectionViewBody> {
+  final _searchController = TextEditingController();
 
   final Map<String, String> _languageKeys = const {
     'ar': 'arabic',
@@ -56,71 +49,38 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
     'zh': 'chinese',
   };
 
-  List<AppLanguage> get _filteredLanguages {
-    if (_searchQuery.isEmpty) {
-      return _allLanguages;
-    }
-
-    final query = _searchQuery.toLowerCase();
-    return _allLanguages.where((lang) {
-      final localizedTitle = context
-          .tr(_languageKeys[lang.code] ?? lang.title)
-          .toLowerCase();
-      return localizedTitle.contains(query) ||
-          lang.code.toLowerCase().contains(query);
-    }).toList();
-  }
-
   @override
   void initState() {
     super.initState();
-    _loadSavedLanguage();
-
-    // ربط البحث بـ listener بدل onChanged + setState مباشر
     _searchController.addListener(() {
-      final newQuery = _searchController.text;
-      if (newQuery != _searchQuery) {
-        // نأجل الـ setState لما الفريم يخلّص عشان نتجنب الخطأ
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {
-              _searchQuery = newQuery;
-            });
-          }
-        });
-      }
+      context.read<LanguageSelectionUiCubit>().updateSearchQuery(
+        _searchController.text,
+      );
     });
-  }
-
-  Future<void> _loadSavedLanguage() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedCode = prefs.getString('app_language') ?? 'ar';
-
-    if (mounted) {
-      setState(() {
-        _selectedLanguage = _allLanguages.firstWhere(
-          (lang) => lang.code == savedCode,
-          orElse: () => _allLanguages.first,
-        );
-      });
-    }
-  }
-
-  Future<void> _saveLanguage() async {
-    if (_selectedLanguage == null) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('app_language', _selectedLanguage!.code);
-
-    if (mounted) {
-      Navigator.pop(context, _selectedLanguage!.code);
-    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  List<AppLanguage> _getFilteredLanguages(
+    BuildContext context,
+    String query,
+    List<AppLanguage> allLanguages,
+  ) {
+    if (query.isEmpty) {
+      return allLanguages;
+    }
+    final lowerQuery = query.toLowerCase();
+    return allLanguages.where((lang) {
+      final localizedTitle = context
+          .tr(_languageKeys[lang.code] ?? lang.title)
+          .toLowerCase();
+      return localizedTitle.contains(lowerQuery) ||
+          lang.code.toLowerCase().contains(lowerQuery);
+    }).toList();
   }
 
   @override
@@ -181,48 +141,68 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
 
                     // قائمة اللغات
                     Expanded(
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.symmetric(horizontal: 30.w),
-                        child: Column(
-                          children: [
-                            if (_filteredLanguages.isEmpty)
-                              Padding(
-                                padding: EdgeInsets.symmetric(vertical: 40.h),
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.language_outlined,
-                                      size: 48.sp,
-                                      color: Colors.grey.shade400,
-                                    ),
-                                    Gap(12.h),
-                                    Text(
-                                      context.tr('no_matching_languages'),
-                                      style: Styles.textStyle16.copyWith(
+                      child:
+                          BlocBuilder<
+                            LanguageSelectionUiCubit,
+                            LanguageSelectionState
+                          >(
+                            builder: (context, state) {
+                              if (state.isLoading) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+
+                              final filteredLanguages = _getFilteredLanguages(
+                                context,
+                                state.searchQuery,
+                                LanguageSelectionUiCubit.allLanguages,
+                              );
+
+                              if (filteredLanguages.isEmpty) {
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 40.h),
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.language_outlined,
+                                        size: 48.sp,
                                         color: Colors.grey.shade400,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            else
-                              ..._filteredLanguages.map(
-                                (lang) => SelectionItem(
-                                  title: context.tr(
-                                    _languageKeys[lang.code] ?? lang.title,
+                                      Gap(12.h),
+                                      Text(
+                                        context.tr('no_matching_languages'),
+                                        style: Styles.textStyle16.copyWith(
+                                          color: Colors.grey.shade400,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  isSelected:
-                                      _selectedLanguage?.code == lang.code,
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedLanguage = lang;
-                                    });
-                                  },
+                                );
+                              }
+
+                              return SingleChildScrollView(
+                                padding: EdgeInsets.symmetric(horizontal: 30.w),
+                                child: Column(
+                                  children: filteredLanguages.map((lang) {
+                                    return SelectionItem(
+                                      title: context.tr(
+                                        _languageKeys[lang.code] ?? lang.title,
+                                      ),
+                                      isSelected:
+                                          state.selectedLanguage?.code ==
+                                          lang.code,
+                                      onTap: () {
+                                        context
+                                            .read<LanguageSelectionUiCubit>()
+                                            .selectLanguage(lang);
+                                      },
+                                    );
+                                  }).toList(),
                                 ),
-                              ),
-                          ],
-                        ),
-                      ),
+                              );
+                            },
+                          ),
                     ),
                   ],
                 ),
@@ -236,7 +216,14 @@ class _LanguageSelectionViewState extends State<LanguageSelectionView> {
                   width: double.infinity,
                   title: context.tr('confirm'),
                   useGradient: true,
-                  onPressed: _saveLanguage,
+                  onPressed: () async {
+                    final result = await context
+                        .read<LanguageSelectionUiCubit>()
+                        .confirmSelection();
+                    if (result != null && context.mounted) {
+                      Navigator.pop(context, result);
+                    }
+                  },
                 ),
               ),
 

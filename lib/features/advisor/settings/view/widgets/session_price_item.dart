@@ -22,13 +22,11 @@ class SessionPriceItem extends StatefulWidget {
 }
 
 class _SessionPriceItemState extends State<SessionPriceItem> {
-  late bool isActive;
   late TextEditingController priceController;
 
   @override
   void initState() {
     super.initState();
-    isActive = widget.initialStatus;
     priceController = TextEditingController(text: widget.initialPrice);
   }
 
@@ -36,10 +34,9 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
   void didUpdateWidget(covariant SessionPriceItem oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialPrice != widget.initialPrice) {
-      priceController.text = widget.initialPrice;
-    }
-    if (oldWidget.initialStatus != widget.initialStatus) {
-      isActive = widget.initialStatus;
+      if (priceController.text != widget.initialPrice) {
+        priceController.text = widget.initialPrice;
+      }
     }
   }
 
@@ -73,9 +70,8 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
                   return Transform.scale(
                     scale: scaleFactor,
                     child: CupertinoSwitch(
-                      value: isActive,
+                      value: widget.initialStatus,
                       onChanged: (val) {
-                        setState(() => isActive = val);
                         widget.onStatusChanged?.call(val);
                       },
                       activeColor: const Color(0xFFF06C88),

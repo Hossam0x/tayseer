@@ -1,5 +1,5 @@
 import 'package:tayseer/features/advisor/map/widget/map_body.dart';
-import 'package:tayseer/features/advisor/event/view_model/events_cubit.dart';
+import 'package:tayseer/features/shared/event/view_model/events_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class MapView extends StatelessWidget {

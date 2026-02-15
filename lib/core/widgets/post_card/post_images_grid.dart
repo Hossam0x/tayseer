@@ -4,7 +4,7 @@ import 'package:tayseer/features/shared/home/views/image_viewer_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostImagesGrid extends StatelessWidget {
-  final List<String> images;
+  final List<ImageModel> images; // ✅ غيرناها
   final String postId;
   final PostModel? post;
   final bool isFromPostDetails;
@@ -25,67 +25,49 @@ class PostImagesGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     if (images.isEmpty) return const SizedBox.shrink();
 
-    // ✅ 1. لو صورة واحدة: اللوجيك الجديد
     if (images.length == 1) {
       return _buildSingleImage(context);
     }
 
-    // ✅ 2. لو أكثر من صورة: Grid ثابت
     final height = context.responsiveHeight(250);
     final gap = context.responsiveWidth(4);
 
     return SizedBox(
       height: height,
-      child: Row(children: _buildMultiLayout(context, gap, isFromProfile)),
+      child: Row(children: _buildMultiLayout(context, gap)),
     );
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 🖼️ Single Image Logic (الحل النهائي للريسايز)
+  // 🖼️ Single Image - مع AspectRatio من الـ API ✅
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildSingleImage(BuildContext context) {
-    // ارتفاع الشيمر فقط (عشان التحميل)
-    final double placeholderHeight = context.responsiveHeight(250);
-    // أقصى ارتفاع مسموح (عشان الصور الطويلة أوي متغطيش الشاشة)
-    final double maxAllowedHeight = context.responsiveHeight(500);
+    final image = images[0];
+    final maxAllowedHeight = context.responsiveHeight(500);
+
+    // ✅ الـ aspect ratio من الـ API مباشرة
+    final aspectRatio = image.aspectRatio.clamp(0.5, 2.5);
 
     return GestureDetector(
       onTap: () => _openGallery(context, 0),
       child: Hero(
         tag:
-            '${isFromProfile ? 'profile' : 'home'}_post_${postId}_img_${images[0]}',
+            '${isFromProfile ? 'profile' : 'home'}_post_${postId}_img_${image.image}',
         placeholderBuilder: (_, __, child) => child,
         child: Container(
           width: double.infinity,
-          // ✅ التعديل هنا: شيلنا minHeight
-          // سيبنا بس maxHeight عشان لو الصورة طويلة أوي يقصها
           constraints: BoxConstraints(maxHeight: maxAllowedHeight),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8.r),
-            child: CachedNetworkImage(
-              imageUrl: images[0],
-
-              // ✅ fitWidth: بيخلي الصورة تملى العرض، وطولها يبقى على قدها بالظبط
-              // لو الصورة قصيرة، الكونتينر هيقصر معاها ومش هيبقى فيه فراغات
-              // لو الصورة طويلة عن 500، هتتقص من فوق وتحت
-              fit: BoxFit.fitWidth,
-
-              // محاذاة الصورة في النص عشان لو اتقصت تتقص من فوق وتحت بالتساوي
-              alignment: Alignment.center,
-
-              // ✅ الشيمر بس هو اللي ليه طول ثابت عشان اللودينج
-              placeholder: (context, url) => Container(
-                height: placeholderHeight,
-                width: double.infinity,
-                color: Colors.grey[200],
-                child: const Center(), // ممكن تحط سبينر هنا لو حابب
-              ),
-
-              errorWidget: (context, url, error) => Container(
-                height: placeholderHeight,
-                width: double.infinity,
-                color: Colors.grey[200],
-                child: Icon(Icons.broken_image, color: Colors.grey[400]),
+            // ✅ AspectRatio يحجز المساحة الصحيحة من البداية
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child: CachedNetworkImage(
+                imageUrl: image.image,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                placeholder: (context, url) => _buildShimmerPlaceholder(),
+                errorWidget: (context, url, error) => _buildErrorWidget(),
               ),
             ),
           ),
@@ -95,13 +77,27 @@ class PostImagesGrid extends StatelessWidget {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 🔢 Multi Images Logic (Grid) - زي ما هو بدون تغيير
+  // ✨ Shimmer & Error Widgets
   // ══════════════════════════════════════════════════════════════════════════
-  List<Widget> _buildMultiLayout(
-    BuildContext context,
-    double gap,
-    bool isFromProfile,
-  ) {
+  Widget _buildShimmerPlaceholder() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(color: Colors.white),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      color: Colors.grey[200],
+      child: Center(child: Icon(Icons.broken_image, color: Colors.grey[400])),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 🔢 Multi Images (Grid)
+  // ══════════════════════════════════════════════════════════════════════════
+  List<Widget> _buildMultiLayout(BuildContext context, double gap) {
     final count = images.length;
 
     if (count == 2) {
@@ -133,11 +129,11 @@ class PostImagesGrid extends StatelessWidget {
   Widget _buildRoundedImage(
     BuildContext context,
     int index,
-    String imagePath, {
+    ImageModel image, {
     int moreCount = 0,
   }) {
     final heroTag =
-        '${isFromProfile ? 'profile' : 'home'}_post_${postId}_img_$imagePath';
+        '${isFromProfile ? 'profile' : 'home'}_post_${postId}_img_${image.image}';
 
     return Expanded(
       child: GestureDetector(
@@ -150,11 +146,11 @@ class PostImagesGrid extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                AppImage(
-                  imagePath,
+                CachedNetworkImage(
+                  imageUrl: image.image,
                   fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
+                  placeholder: (_, __) => _buildShimmerPlaceholder(),
+                  errorWidget: (_, __, ___) => _buildErrorWidget(),
                 ),
                 if (moreCount > 0)
                   Container(
@@ -183,7 +179,7 @@ class PostImagesGrid extends StatelessWidget {
         opaque: false,
         pageBuilder: (_, __, ___) => ImageViewerView(
           isFromProfile: isFromProfile,
-          images: images,
+          images: images.map((e) => e.image).toList(), // ✅ نرجع URLs بس
           initialIndex: index,
           postId: postId,
           post: post,

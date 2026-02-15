@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
+import 'package:tayseer/features/shared/auth/model/login_data.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/model/last_question_number_model.dart';
 import 'package:tayseer/my_import.dart';
@@ -12,7 +14,7 @@ class QuestionsRepoImpl implements QuestionsRepo {
   final ApiService apiService;
 
   @override
-  Future<Either<Failure, void>> answerQuestions({
+  Future<Either<Failure, UserModel>> answerQuestions({
     required String question,
     required String questionCategoryEnum,
     required int questionNumber,
@@ -37,10 +39,15 @@ class QuestionsRepoImpl implements QuestionsRepo {
       debugPrint('success $success');
 
       if (success) {
+        final data = UserModel.fromJson(response['data']);
         if (answerCompleted == true) {
-          await CachNetwork.setBool(key: kIsCompletedQuestions, value: true);
+          await CachNetwork.setData(
+            key: kuserData,
+            value: jsonEncode(data.toJson()),
+          );
+          kCurrentUserData = data;
         }
-        return right(null);
+        return right(data);
       } else {
         final message = response['message'] ?? 'فشل ارسال الاجابه';
         debugPrint('message $message');
@@ -201,7 +208,6 @@ class QuestionsRepoImpl implements QuestionsRepo {
 
       final success = response['success'] ?? false;
       if (success) {
-        CachNetwork.setBool(key: kIsCompletedQuestions, value: true);
         return right(null);
       } else {
         return left(
@@ -244,6 +250,48 @@ class QuestionsRepoImpl implements QuestionsRepo {
         ServerFailure(e.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر'),
       );
     } catch (e) {
+      return left(ServerFailure('حدث خطأ غير متوقع: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> addPreferenceFactors({
+    required String minAge,
+    required String maxAge,
+    required String country,
+    required String nationality,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/user/add-preference-factors',
+        data: {
+          'preferenceFactors': {
+            'minAge': minAge,
+            'maxAge': maxAge,
+            'country': country,
+            'nationality': nationality,
+          },
+        },
+        isAuth: true,
+      );
+
+      log('add-preference-factors:::: $response');
+
+      final success = response['success'] ?? false;
+
+      if (success) {
+        return right(null);
+      } else {
+        final message = response['message'] ?? 'فشل إرسال تفضيلات الشريك';
+        return left(ServerFailure(message));
+      }
+    } on DioException catch (e) {
+      log('addPreferenceFactors DioException: $e');
+      return left(
+        ServerFailure(e.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر'),
+      );
+    } catch (e) {
+      log('addPreferenceFactors error: $e');
       return left(ServerFailure('حدث خطأ غير متوقع: $e'));
     }
   }
