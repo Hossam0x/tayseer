@@ -1,4 +1,5 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/comment_avatar.dart';
 import 'package:tayseer/my_import.dart';
@@ -167,16 +168,19 @@ class CommentInputAreaState extends State<CommentInputArea> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        CommentAvatar(
-                          iscommented: isLocked,
-                          isAnonymous: selectedAnonymous,
-                          currentSelection: selectedAnonymous,
-                          onSelectionChanged: (value) {
-                            context.read<PostDetailsCubit>().changeAnonymous(
-                              value,
-                            );
-                          },
-                        ),
+                        if (isUser)
+                          CommentAvatar(
+                            iscommented: isLocked,
+                            isAnonymous: selectedAnonymous,
+                            currentSelection: selectedAnonymous,
+                            onSelectionChanged: (value) {
+                              context.read<PostDetailsCubit>().changeAnonymous(
+                                value,
+                              );
+                            },
+                          )
+                        else
+                          const MyProfileImage(isAnnonymous: false),
                         Gap(12.w),
                         Expanded(
                           child: Container(

@@ -194,6 +194,7 @@ class _NavItemState extends State<_NavItem>
                               ),
                             ),
                     ),
+                    Gap(4.h),
                   ],
                 ),
               ),

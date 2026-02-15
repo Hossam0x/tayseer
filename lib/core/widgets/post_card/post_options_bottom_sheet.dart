@@ -46,7 +46,9 @@ class PostOptionsBottomSheet extends StatelessWidget {
       builder: (context) => PostOptionsBottomSheet(
         post: post,
         onShare: onShare,
-        onReport: onReport,
+        onReport: () {
+          context.pushNamed(AppRouter.kReportReasonsScreen);
+        },
         onBlock: onBlock,
         onHide: onHide,
         onSave: onSave,
@@ -259,7 +261,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
   void _showArchiveConfirmation(BuildContext context) {
     CustomshowDialogWithImage(
       context,
-      title: context.tr(AppStrings.archivePostConfirmation), 
+      title: context.tr(AppStrings.archivePostConfirmation),
       supTitle: context.tr(
         AppStrings.archivePostConfirmationMessage,
       ), // رسالة التأكيد
