@@ -1,0 +1,189 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+
+class CurrencyHelper {
+  CurrencyHelper._(); // ✅ منع إنشاء instance
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ خريطة البلد → رمز العملة المحلي
+  // ═══════════════════════════════════════════════════════════
+  static const Map<String, String> _currencySymbols = {
+    // ───── الخليج ─────
+    'SA': 'ر.س', // السعودية
+    'AE': 'د.إ', // الإمارات
+    'KW': 'د.ك', // الكويت
+    'QA': 'ر.ق', // قطر
+    'BH': 'د.ب', // البحرين
+    'OM': 'ر.ع', // عمان
+    // ───── عربي ─────
+    'EG': 'ج.م', // مصر
+    'JO': 'د.أ', // الأردن
+    'LB': 'ل.ل', // لبنان
+    'IQ': 'د.ع', // العراق
+    'SY': 'ل.س', // سوريا
+    'SD': 'ج.س', // السودان
+    'LY': 'د.ل', // ليبيا
+    'TN': 'د.ت', // تونس
+    'DZ': 'د.ج', // الجزائر
+    'MA': 'د.م', // المغرب
+    'YE': 'ر.ي', // اليمن
+    'PS': '₪', // فلسطين
+    // ───── عالمي ─────
+    'US': '\$', // أمريكا
+    'GB': '£', // بريطانيا
+    'TR': '₺', // تركيا
+    'DE': '€', // ألمانيا
+    'FR': '€', // فرنسا
+    'IT': '€', // إيطاليا
+    'ES': '€', // إسبانيا
+    'NL': '€', // هولندا
+    'BE': '€', // بلجيكا
+    'AT': '€', // النمسا
+    'PT': '€', // البرتغال
+    'GR': '€', // اليونان
+    'IE': '€', // أيرلندا
+    'IN': '₹', // الهند
+    'PK': 'Rs', // باكستان
+    'MY': 'RM', // ماليزيا
+    'ID': 'Rp', // إندونيسيا
+    'JP': '¥', // اليابان
+    'CN': '¥', // الصين
+    'KR': '₩', // كوريا الجنوبية
+    'RU': '₽', // روسيا
+    'BR': 'R\$', // البرازيل
+    'ZA': 'R', // جنوب أفريقيا
+    'NG': '₦', // نيجيريا
+    'CA': 'CA\$', // كندا
+    'AU': 'A\$', // أستراليا
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ خريطة البلد → كود العملة الدولي (ISO 4217)
+  // ═══════════════════════════════════════════════════════════
+  static const Map<String, String> _currencyCodes = {
+    // ───── الخليج ─────
+    'SA': 'SAR',
+    'AE': 'AED',
+    'KW': 'KWD',
+    'QA': 'QAR',
+    'BH': 'BHD',
+    'OM': 'OMR',
+
+    // ───── عربي ─────
+    'EG': 'EGP',
+    'JO': 'JOD',
+    'LB': 'LBP',
+    'IQ': 'IQD',
+    'SY': 'SYP',
+    'SD': 'SDG',
+    'LY': 'LYD',
+    'TN': 'TND',
+    'DZ': 'DZD',
+    'MA': 'MAD',
+    'YE': 'YER',
+    'PS': 'ILS',
+
+    // ───── عالمي ─────
+    'US': 'USD',
+    'GB': 'GBP',
+    'TR': 'TRY',
+    'DE': 'EUR',
+    'FR': 'EUR',
+    'IT': 'EUR',
+    'ES': 'EUR',
+    'NL': 'EUR',
+    'BE': 'EUR',
+    'AT': 'EUR',
+    'PT': 'EUR',
+    'GR': 'EUR',
+    'IE': 'EUR',
+    'IN': 'INR',
+    'PK': 'PKR',
+    'MY': 'MYR',
+    'ID': 'IDR',
+    'JP': 'JPY',
+    'CN': 'CNY',
+    'KR': 'KRW',
+    'RU': 'RUB',
+    'BR': 'BRL',
+    'ZA': 'ZAR',
+    'NG': 'NGN',
+    'CA': 'CAD',
+    'AU': 'AUD',
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ جلب كود البلد من الجهاز
+  // ═══════════════════════════════════════════════════════════
+  static String getDeviceCountryCode() {
+    try {
+      final String locale = Platform.localeName; // مثلاً: ar_SA, en_US
+      final parts = locale.split('_');
+      if (parts.length >= 2) {
+        return parts.last.toUpperCase(); // SA, US, EG...
+      }
+    } catch (_) {}
+    return 'SA'; // القيمة الافتراضية
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ جلب كود البلد من الـ Context (أدق)
+  // ═══════════════════════════════════════════════════════════
+  static String getCountryFromContext(BuildContext context) {
+    try {
+      final locale = Localizations.localeOf(context);
+      if (locale.countryCode != null && locale.countryCode!.isNotEmpty) {
+        return locale.countryCode!.toUpperCase();
+      }
+    } catch (_) {}
+    return getDeviceCountryCode();
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ جلب رمز العملة (ر.س، ج.م، $...)
+  // ═══════════════════════════════════════════════════════════
+  static String getCurrencySymbol([String? countryCode]) {
+    final code = countryCode ?? getDeviceCountryCode();
+    return _currencySymbols[code.toUpperCase()] ?? '\$';
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ جلب رمز العملة من الـ Context
+  // ═══════════════════════════════════════════════════════════
+  static String getCurrencySymbolFromContext(BuildContext context) {
+    final code = getCountryFromContext(context);
+    return getCurrencySymbol(code);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ جلب كود العملة الدولي (SAR, EGP, USD...)
+  // ═══════════════════════════════════════════════════════════
+  static String getCurrencyCode([String? countryCode]) {
+    final code = countryCode ?? getDeviceCountryCode();
+    return _currencyCodes[code.toUpperCase()] ?? 'USD';
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ جلب كود العملة الدولي من الـ Context
+  // ═══════════════════════════════════════════════════════════
+  static String getCurrencyCodeFromContext(BuildContext context) {
+    final code = getCountryFromContext(context);
+    return getCurrencyCode(code);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ تنسيق السعر مع العملة
+  // ═══════════════════════════════════════════════════════════
+  static String formatPrice(num price, [String? countryCode]) {
+    final symbol = getCurrencySymbol(countryCode);
+    return '$price $symbol';
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ تنسيق السعر مع العملة من الـ Context
+  // ═══════════════════════════════════════════════════════════
+  static String formatPriceFromContext(BuildContext context, num price) {
+    final symbol = getCurrencySymbolFromContext(context);
+    return '$price $symbol';
+  }
+}

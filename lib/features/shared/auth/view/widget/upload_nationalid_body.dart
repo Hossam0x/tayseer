@@ -176,7 +176,10 @@ class UploadNationalIdBody extends StatelessWidget {
                       onPressed: images.isEmpty
                           ? null
                           : () {
-                              authCubit.addNationalImage();
+                              if (state.addNationalImageState !=
+                                  CubitStates.loading) {
+                                authCubit.addNationalImage();
+                              }
                             },
                     ),
 

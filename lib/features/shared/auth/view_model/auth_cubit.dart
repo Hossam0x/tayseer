@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/core/enum/user_type.dart';
@@ -901,6 +902,90 @@ class AuthCubit extends Cubit<AuthState> {
           errorMessage: e.toString(),
         ),
       );
+    }
+  }
+
+  /// Update the draft text from the UI
+  void updateText(String text) {
+    emit(state.copyWith(draftText: text));
+  }
+
+  ///  🧠✨ Gemini AI Content Generation for Bio
+  Future<void> enhanceTextWithGemini(BuildContext context) async {
+    final currentText = bioController.text;
+
+    if (currentText.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('please_write_text_first'),
+          isError: true,
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(isAiState: CubitStates.loading));
+
+    const apiKey = 'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg';
+
+    try {
+      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
+
+      final prompt =
+          '''
+أنت كاتب محتوى متخصص في كتابة السِّيَر الذاتية (Bio) للمستشارين والمرشدين الأسريين.
+
+المطلوب:
+- اكتب بايو احترافي لمستشار/مرشد في العلاقات الأسرية بناءً على النص اللي هيكتبه المستخدم.
+- البايو يكون مناسب لعرضه في تطبيق استشارات أسرية.
+
+قواعد مهمة:
+1. اكتشف لغة النص المُدخل واكتب البايو بنفس اللغة — لا تترجم أبدًا.
+2. اجعل البايو احترافيًا، مطمئنًا، ويعكس الثقة والخبرة.
+3. أبرز التخصص والخبرة في مجالات الإرشاد الأسري مثل:
+   - الإرشاد الزواجي (الخلافات، التواصل، الثقة، الغيرة، إدارة المال، الخيانة)
+   - الإرشاد قبل الزواج (اختيار الشريك، التوقعات، التوافق، الجاهزية النفسية والمالية)
+   - الإرشاد التربوي والوالدي (أساليب التربية، العناد، الإدمان الرقمي)
+   - مشكلات الأطفال والمراهقين
+   - العلاقات العائلية الممتدة
+   - إدارة الأزمات الأسرية
+   - قضايا الطلاق وما بعده
+   - الصحة النفسية داخل الأسرة
+4. لا تذكر كل التخصصات — ركّز فقط على ما يتناسب مع كلام المستخدم.
+5. اجعل الأسلوب دافئًا وإنسانيًا، يشعر القارئ بالأمان والراحة.
+6. أضف إيموجي مناسبة باعتدال.
+7. اجعل البايو مختصرًا (3-5 أسطر كحد أقصى).
+8. أرجع البايو فقط — بدون أي شرح أو مقدمات أو تعليقات.
+
+النص المُدخل من المستخدم: "$currentText"
+''';
+
+      final content = [Content.text(prompt)];
+      final response = await model.generateContent(content);
+
+      if (response.text != null) {
+        bioController.text = response.text!;
+        emit(
+          state.copyWith(
+            draftText: response.text!,
+            isAiState: CubitStates.success,
+          ),
+        );
+        emit(state.copyWith(isAiState: CubitStates.initial));
+      }
+    } catch (e) {
+      debugPrint('Gemini AI error: $e');
+      emit(state.copyWith(isAiState: CubitStates.failure));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'AI Error: ${e.toString()}',
+          isError: true,
+        ),
+      );
+      emit(state.copyWith(isAiState: CubitStates.initial));
     }
   }
 

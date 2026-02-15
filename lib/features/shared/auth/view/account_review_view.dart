@@ -1,7 +1,25 @@
+// import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
-class AccountReviewView extends StatelessWidget {
+class AccountReviewView extends StatefulWidget {
   const AccountReviewView({super.key});
+
+  @override
+  State<AccountReviewView> createState() => _AccountReviewViewState();
+}
+
+class _AccountReviewViewState extends State<AccountReviewView> {
+  @override
+  void initState() {
+    Future.delayed(Duration(seconds: 5), () {
+      context.pushNamedAndRemoveUntil(
+        predicate: (route) => false,
+        AppRouter.kAdvisorLayoutView,
+      );
+      // context.read<AuthCubit>().close();
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {

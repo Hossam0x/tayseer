@@ -174,6 +174,8 @@ abstract class AssetsData {
       "assets/animations/loading_animations.json";
   static const String kSuccessMarriageAnimationsLottie =
       "assets/animations/success_marriage.json";
+  static const String kLoadingAiAnimationLottie =
+      "assets/animations/Loading_ai_animation.json";
 
   /////////////// Profile assests/////////////////////
   static const String certificatePlaceholder =

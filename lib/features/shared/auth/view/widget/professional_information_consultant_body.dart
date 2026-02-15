@@ -1,15 +1,51 @@
 import 'package:tayseer/core/utils/helper/video_picker_helper.dart';
+import 'package:tayseer/core/widgets/custtom_glass_button.dart';
 import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class ProfessionalInformationAsConsultantBody extends StatelessWidget {
-  ProfessionalInformationAsConsultantBody({super.key});
+class ProfessionalInformationAsConsultantBody extends StatefulWidget {
+  const ProfessionalInformationAsConsultantBody({super.key});
 
+  @override
+  State<ProfessionalInformationAsConsultantBody> createState() =>
+      _ProfessionalInformationAsConsultantBodyState();
+}
+
+class _ProfessionalInformationAsConsultantBodyState
+    extends State<ProfessionalInformationAsConsultantBody> {
   final _formKey = GlobalKey<FormState>();
+
   final _videoPicker = VideoPickerHelper();
 
+  final List<String> specializationKeys = [
+    'marital_counseling',
+    'premarital_counseling',
+    'parenting_counseling',
+    'children_issues',
+    'adolescent_issues',
+    'extended_family_relations',
+    'domestic_violence_protection',
+    'family_crisis_management',
+    'divorce_counseling',
+    'marital_sexual_counseling',
+    'family_addiction',
+    'family_mental_health',
+  ];
+  final List<String> jobLevelKeys = [
+    'junior_counselor',
+    'senior_counselor',
+    'specialist_consultant',
+    'lead_consultant',
+  ];
+
+  final List<String> experienceYearsKeys = [
+    'experience_0_2',
+    'experience_2_5',
+    'experience_5_10',
+    'experience_10_plus',
+  ];
   @override
   Widget build(BuildContext context) {
     final authCubit = getIt<AuthCubit>();
@@ -38,7 +74,7 @@ class ProfessionalInformationAsConsultantBody extends StatelessWidget {
                       /// ➜ Title
                       Text(
                         context.tr('enterProfessionalInfo'),
-                        style: Styles.textStyle18.copyWith(
+                        style: Styles.textStyle18Bold.copyWith(
                           color: AppColors.kscandryTextColor,
                         ),
                       ),
@@ -58,15 +94,17 @@ class ProfessionalInformationAsConsultantBody extends StatelessWidget {
                       CustomDropdownFormField<String>(
                         hint: context.tr('specialization'),
                         value: authCubit.specialization,
-                        items: [
-                          DropdownMenuItem(
-                            value: 'psychology',
-                            child: Text(
-                              'هندسه قسم اتصالات',
-                              style: Styles.textStyle14,
-                            ),
-                          ),
-                        ],
+                        items: specializationKeys
+                            .map(
+                              (key) => DropdownMenuItem(
+                                value: key,
+                                child: Text(
+                                  context.tr(key),
+                                  style: Styles.textStyle14,
+                                ),
+                              ),
+                            )
+                            .toList(),
                         onChanged: authCubit.setSpecialization,
                         validator: (value) =>
                             value == null ? context.tr('required') : null,
@@ -78,22 +116,17 @@ class ProfessionalInformationAsConsultantBody extends StatelessWidget {
                       CustomDropdownFormField<String>(
                         hint: context.tr('jobLevel'),
                         value: authCubit.jobLevel,
-                        items: [
-                          DropdownMenuItem(
-                            value: 'junior',
-                            child: Text(
-                              context.tr('junior'),
-                              style: Styles.textStyle14,
-                            ),
-                          ),
-                          DropdownMenuItem(
-                            value: 'senior',
-                            child: Text(
-                              context.tr('senior'),
-                              style: Styles.textStyle14,
-                            ),
-                          ),
-                        ],
+                        items: jobLevelKeys
+                            .map(
+                              (key) => DropdownMenuItem(
+                                value: key,
+                                child: Text(
+                                  context.tr(key),
+                                  style: Styles.textStyle14,
+                                ),
+                              ),
+                            )
+                            .toList(),
                         onChanged: authCubit.setJobLevel,
                         validator: (value) =>
                             value == null ? context.tr('required') : null,
@@ -105,34 +138,41 @@ class ProfessionalInformationAsConsultantBody extends StatelessWidget {
                       CustomDropdownFormField<String>(
                         hint: context.tr('experienceYears'),
                         value: authCubit.experienceYears,
-                        items: [
-                          DropdownMenuItem(
-                            value: '1',
-                            child: Text('1', style: Styles.textStyle14),
-                          ),
-                          DropdownMenuItem(
-                            value: '2',
-                            child: Text('2', style: Styles.textStyle14),
-                          ),
-                          DropdownMenuItem(
-                            value: '3',
-                            child: Text('3', style: Styles.textStyle14),
-                          ),
-                        ],
+                        items: experienceYearsKeys
+                            .map(
+                              (key) => DropdownMenuItem(
+                                value: key,
+                                child: Text(
+                                  context.tr(key),
+                                  style: Styles.textStyle14,
+                                ),
+                              ),
+                            )
+                            .toList(),
                         onChanged: authCubit.setExperienceYears,
                         validator: (value) =>
                             value == null ? context.tr('required') : null,
                       ),
-
                       const SizedBox(height: 16),
 
                       /// ➜ Bio
                       CustomTextFormField(
                         controller: authCubit.bioController,
+                        onChanged: authCubit.updateText,
                         hintText: context.tr('bio'),
                         maxLines: 8,
                       ),
+                      const SizedBox(height: 16),
 
+                      /// ➜ AI Content Generation Button
+                      CusttomGlassButton(
+                        text: context.tr('generate_ai_content'),
+                        showIcon: state.isAiState == CubitStates.loading,
+
+                        onTap: () {
+                          authCubit.enhanceTextWithGemini(context);
+                        },
+                      ),
                       const SizedBox(height: 24),
 
                       /// ➜ Upload Video
