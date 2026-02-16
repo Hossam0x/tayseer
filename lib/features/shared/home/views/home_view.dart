@@ -15,13 +15,26 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<LayoutCubit, LayoutState>(
-      listenWhen: (previous, current) =>
-          previous.scrollToTopTrigger != current.scrollToTopTrigger,
-      listener: (context, state) {
-        // لما يتغير الـ scrollToTopTrigger نعمل scroll لفوق
-        _homeViewBodyKey.currentState?.scrollToTop();
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<LayoutCubit, LayoutState>(
+          listenWhen: (previous, current) =>
+              previous.scrollToTopTrigger != current.scrollToTopTrigger &&
+              previous.refreshHomeTrigger == current.refreshHomeTrigger,
+          listener: (context, state) {
+            // لما يتغير الـ scrollToTopTrigger بس نعمل scroll لفوق
+            _homeViewBodyKey.currentState?.scrollToTop();
+          },
+        ),
+        BlocListener<LayoutCubit, LayoutState>(
+          listenWhen: (previous, current) =>
+              previous.refreshHomeTrigger != current.refreshHomeTrigger,
+          listener: (context, state) {
+            // لما يتغير الـ refreshHomeTrigger نعمل scroll لفوق + ريفريش
+            _homeViewBodyKey.currentState?.scrollToTopAndRefresh();
+          },
+        ),
+      ],
       child: Scaffold(
         body: AdvisorBackground(
           child: HomeViewBody(key: _homeViewBodyKey, onScroll: widget.onScroll),

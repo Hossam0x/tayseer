@@ -35,6 +35,21 @@ class LayoutCubit extends Cubit<LayoutState> {
     }
   }
 
+  void setHomeAtTop(bool isAtTop) {
+    if (state.isHomeAtTop != isAtTop) {
+      emit(state.copyWith(isHomeAtTop: isAtTop));
+    }
+  }
+
+  void scrollToTopAndRefresh() {
+    emit(
+      state.copyWith(
+        scrollToTopTrigger: state.scrollToTopTrigger + 1,
+        refreshHomeTrigger: state.refreshHomeTrigger + 1,
+      ),
+    );
+  }
+
   void changeUserType(UserTypeEnum userType) {
     emit(state.copyWith(userType: userType, currentIndex: 0));
   }
