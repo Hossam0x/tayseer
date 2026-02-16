@@ -1290,17 +1290,15 @@
   "yes_make_first": "Yes, Make it First",
   "image_reordered_successfully": "Image reordered successfully",
   "error_reordering_image": "Error reordering image",
-  "general":"General",
-  "under_review": "Awaiting review",
-   "by_continuing_you_agree": "By continuing, you agree to our",
+  "general": "General",
+  "by_continuing_you_agree": "By continuing, you agree to our",
   "privacy_policy": "Terms & Privacy Policy",
-  "terms_belong_to_us": ""
-  "under_review": "Awaiting review",
+  "terms_belong_to_us": "",
   "end_of_results_search": "End of search results reached",
-  "see_all": "See All"
+  "see_all": "See All",
   "under_review": "Awaiting review",
   "main_Image": "Main Image",
-   "faith": "Faith",
+  "faith": "Faith",
   "select_faith_title": "Select Faith Activities",
   "faith_description": "Choose the faith activities you practice"
 }

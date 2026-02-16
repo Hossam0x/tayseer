@@ -1288,16 +1288,12 @@
   "app_fees_deduction_note": "سيتم خصم 50% من سعر الجلسة الواحدة رسوم للتطبيق",
   "final_price_after_discount": "السعر النهائي بعد الخصم",
   "get_free_credit_daily_with_gold": "احصل علي رصيد مجانى كل يوم مع الجولد",
-  "delete_main_image": "حذف الصورة الشخصية",
-  "delete_main_image": "حذف الصورة الشخصية",
   "must_upload_new_main_image": "يجب عليك رفع صورة شخصية جديدة قبل حذف الحالية",
   "choose_new_image": "اختر صورة جديدة",
   "max_secondary_images_4": "الحد الأقصى 4 صور ثانوية",
   "add_main_image_required": "يجب إضافة صورة رئيسية",
   "must_add_main_image_before_exit": "لا يمكنك الخروج بدون إضافة صورة رئيسية",
   "add_image": "إضافة صورة",
-  "reorder_image": "إعادة ترتيب الصورة",
-  "reorder_image": "إعادة ترتيب الصورة",
   "reorder_image_question": "هل تريد أن تكون هذه الصورة هي الصورة الثانية بعد الرئيسية؟",
   "yes_make_first": "نعم، اجعلها الأولى",
   "image_reordered_successfully": "تم إعادة ترتيب الصورة بنجاح",
@@ -1305,15 +1301,11 @@
   "by_continuing_you_agree": "بموافقتك على الاستمرار أنت توافق على",
   "privacy_policy": "البنود وسياسة الخصوصية",
   "terms_belong_to_us": "الخاصة بنا",
-  "under_review":"انتظار المراجعة",
-  "general": "عام"
-  "under_review":"انتظار المراجعة",
-  "main_Image":  "الصورة الرئيسية",
-    "faith": "الإيمان",
+  "general": "عام",
+  "main_Image": "الصورة الرئيسية",
+  "faith": "الإيمان",
   "select_faith_title": "اختر أنشطة الإيمان",
-  "faith_description": "اختر الأنشطة الإيمانية التي تمارسها"
-
-
+  "faith_description": "اختر الأنشطة الإيمانية التي تمارسها",
   "under_review": "انتظار المراجعة",
   "end_of_results_search": "تم الوصول لنهاية نتائج البحث",
   "see_all": "عرض الكل"
