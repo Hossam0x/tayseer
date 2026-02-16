@@ -1,13 +1,10 @@
 import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
+import 'package:tayseer/features/advisor/layout/views/widgets/add_post_button.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
-import 'package:tayseer/features/advisor/layout/views/widgets/custom_feb_menu.dart'; // تأكد من الاستدعاء
-import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/advisor/profille/views/profile_view.dart';
-import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/core/enum/user_type.dart';
 
 class ALayOutViewBody extends StatelessWidget {
   const ALayOutViewBody({super.key});
@@ -16,10 +13,15 @@ class ALayOutViewBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<LayoutCubit>();
 
+    final pages = [
+      HomeView(onScroll: cubit.onScroll),
+      const ChatView(),
+      EventView(),
+      ProfileView(),
+    ];
+
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
-        final pages = _getPages(state.userType, cubit);
-
         return Scaffold(
           body: Stack(
             alignment: Alignment.bottomCenter,
@@ -48,9 +50,7 @@ class ALayOutViewBody extends StatelessWidget {
                     duration: const Duration(milliseconds: 300),
                     scale: state.isNavVisible ? 1.0 : 0.0,
                     curve: Curves.easeOutBack,
-                    child: CustomFabMenu(
-                      isVisible: state.isNavVisible && state.currentIndex == 0,
-                    ),
+                    child: AddPostButton(),
                   ),
                 ),
               ),
@@ -59,61 +59,5 @@ class ALayOutViewBody extends StatelessWidget {
         );
       },
     );
-  }
-
-  List<Widget> _getPages(UserTypeEnum userType, LayoutCubit cubit) {
-    switch (userType) {
-      case UserTypeEnum.asConsultant:
-        return [
-          HomeView(onScroll: cubit.onScroll),
-          const ChatView(),
-          EventView(),
-          ProfileView(),
-        ];
-
-      case UserTypeEnum.user:
-        return [
-          GuestLockWidget(
-            message: 'فرص التوافق تبدأ بعد التسجيل',
-            description:
-                'أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.',
-          ),
-          GuestLockWidget(
-            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-            description:
-                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-          ),
-          GuestLockWidget(
-            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-            description:
-                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-          ),
-          GuestLockWidget(
-            message: 'إنشاء ملفك الشخصي أولًا',
-            description:
-                'التسجيل بيسمح لك بإنشاء ملفك وعرض الملفات المناسبة لك.',
-          ),
-        ];
-      case UserTypeEnum.guest:
-        return [
-          HomeView(onScroll: cubit.onScroll),
-          GuestLockWidget(
-            message: 'فرص التوافق تبدأ بعد التسجيل',
-            description:
-                'أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.',
-          ),
-          MySpaceView(),
-          GuestLockWidget(
-            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-            description:
-                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-          ),
-          GuestLockWidget(
-            message: 'إنشاء ملفك الشخصي أولًا',
-            description:
-                'التسجيل بيسمح لك بإنشاء ملفك وعرض الملفات المناسبة لك.',
-          ),
-        ];
-    }
   }
 }
