@@ -163,7 +163,6 @@ class UserProfileOptionsBottomSheet extends StatelessWidget {
       text: "تم نسخ رابط البروفايل",
       isSuccess: true,
     );
-    Navigator.pop(context);
   }
 
   void _showBlockConfirmation(BuildContext context) {

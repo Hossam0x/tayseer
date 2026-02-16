@@ -52,8 +52,6 @@ class UserPublicProfileView extends StatelessWidget {
             ],
           ),
         ),
-
-        // FloatingActionButton الآن داخل BlocProvider
         floatingActionButton: _buildFloatingActionButton(),
       ),
     );
@@ -62,7 +60,6 @@ class UserPublicProfileView extends StatelessWidget {
   Widget _buildFloatingActionButton() {
     return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
       builder: (context, state) {
-        // لا يظهر الزر إذا كان هو نفسه أو إذا لم يتم تحميل البيانات بعد
         if (state.profile?.isMe == true ||
             state.state != CubitStates.success ||
             state.profile == null) {
@@ -84,7 +81,6 @@ class UserPublicProfileView extends StatelessWidget {
             backgroundColor: AppColors.kprimaryColor,
             shape: const CircleBorder(),
             elevation: 4,
-            highlightElevation: 8,
             child: Container(
               width: 56.w,
               height: 56.w,
@@ -98,14 +94,6 @@ class UserPublicProfileView extends StatelessWidget {
                     AppColors.kprimaryColor,
                   ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.kprimaryColor.withOpacity(0.3),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: Padding(
                 padding: EdgeInsets.all(10.w),

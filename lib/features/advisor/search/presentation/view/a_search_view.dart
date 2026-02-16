@@ -44,6 +44,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
 
   late final SearchCubit _searchCubit;
   late final AdvisorSearchUiCubit _uiCubit;
+  late final ScrollController _scrollController;
 
   final List<SearchTab> _tabs = [
     const SearchTab(id: 'all', title: 'all'),
@@ -56,6 +57,8 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     _searchCubit = SearchCubit(
       getIt<SearchRepository>(),
       getIt<HomeRepository>(),
@@ -109,6 +112,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _tabController.removeListener(
       _onTabChanged,
     ); // remove listener if added, though we added anonymous closure above
@@ -119,6 +123,13 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     _searchCubit.close();
     _uiCubit.close();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _searchCubit.loadMore();
+    }
   }
 
   int _getInitialTabIndex() {
@@ -473,13 +484,13 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       case 'all':
         return _buildAllResults(context, state);
       case 'advisors':
-        return _buildAdvisorsList(context, state.advisors);
+        return _buildAdvisorsList(context, state);
       case 'users':
-        return _buildUsersList(context, state.users);
+        return _buildUsersList(context, state);
       case 'posts':
-        return _buildPostsList(context, state.posts);
+        return _buildPostsList(context, state);
       case 'events':
-        return _buildEventsList(state.events);
+        return _buildEventsList(state);
       default:
         return const SizedBox.shrink();
     }
@@ -494,7 +505,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
           if (state.advisors.isNotEmpty) ...[
             _buildSectionHeader(
               title: context.tr("advisors"),
-              count: state.advisors.length,
+              tabId: 'advisors',
             ),
             ...state.advisors.map(
               (advisor) => Padding(
@@ -507,10 +518,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
 
           // المستخدمين
           if (state.users.isNotEmpty) ...[
-            _buildSectionHeader(
-              title: context.tr("users"),
-              count: state.users.length,
-            ),
+            _buildSectionHeader(title: context.tr("users"), tabId: 'users'),
             ...state.users.map(
               (user) => Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
@@ -522,20 +530,14 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
 
           // المنشورات
           if (state.posts.isNotEmpty) ...[
-            _buildSectionHeader(
-              title: context.tr("posts"),
-              count: state.posts.length,
-            ),
+            _buildSectionHeader(title: context.tr("posts"), tabId: 'posts'),
             ...state.posts.map((post) => _buildPostItem(context, post)),
             SizedBox(height: 20.h),
           ],
 
           // الأحداث
           if (state.events.isNotEmpty) ...[
-            _buildSectionHeader(
-              title: context.tr("events"),
-              count: state.events.length,
-            ),
+            _buildSectionHeader(title: context.tr("events"), tabId: 'events'),
             ...state.events.map(
               (event) => Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
@@ -549,31 +551,38 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     );
   }
 
-  Widget _buildAdvisorsList(
-    BuildContext context,
-    List<SearchAdvisor> advisors,
-  ) {
+  Widget _buildAdvisorsList(BuildContext context, SearchState state) {
+    final advisors = state.advisors;
     return ListView.builder(
+      controller: _scrollController,
       padding: EdgeInsets.only(top: 12.h),
-      itemCount: advisors.length,
+      itemCount: advisors.length + 1,
       itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-          child: _buildAdvisorItem(context, advisors[index]),
-        );
+        if (index < advisors.length) {
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+            child: _buildAdvisorItem(context, advisors[index]),
+          );
+        }
+        return _buildPaginationIndicator(state);
       },
     );
   }
 
-  Widget _buildUsersList(BuildContext context, List<SearchUser> users) {
+  Widget _buildUsersList(BuildContext context, SearchState state) {
+    final users = state.users;
     return ListView.builder(
+      controller: _scrollController,
       padding: EdgeInsets.only(top: 12.h),
-      itemCount: users.length,
+      itemCount: users.length + 1,
       itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-          child: _buildUserItem(context, users[index]),
-        );
+        if (index < users.length) {
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+            child: _buildUserItem(context, users[index]),
+          );
+        }
+        return _buildPaginationIndicator(state);
       },
     );
   }
@@ -618,12 +627,17 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     );
   }
 
-  Widget _buildPostsList(BuildContext context, List<PostModel> posts) {
+  Widget _buildPostsList(BuildContext context, SearchState state) {
+    final posts = state.posts;
     return ListView.builder(
+      controller: _scrollController,
       padding: EdgeInsets.zero,
-      itemCount: posts.length,
+      itemCount: posts.length + 1,
       itemBuilder: (context, index) {
-        return _buildPostItem(context, posts[index]);
+        if (index < posts.length) {
+          return _buildPostItem(context, posts[index]);
+        }
+        return _buildPaginationIndicator(state);
       },
     );
   }
@@ -741,20 +755,25 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     );
   }
 
-  Widget _buildEventsList(List<SearchEvent> events) {
+  Widget _buildEventsList(SearchState state) {
+    final events = state.events;
     return ListView.builder(
+      controller: _scrollController,
       padding: EdgeInsets.symmetric(vertical: 12.h),
-      itemCount: events.length,
+      itemCount: events.length + 1,
       itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-          child: _buildEventItem(events[index]),
-        );
+        if (index < events.length) {
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+            child: _buildEventItem(events[index]),
+          );
+        }
+        return _buildPaginationIndicator(state);
       },
     );
   }
 
-  Widget _buildSectionHeader({required String title, required int count}) {
+  Widget _buildSectionHeader({required String title, required String tabId}) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Row(
@@ -766,13 +785,72 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
               color: AppColors.kprimaryColor,
             ),
           ),
-          Text(
-            '$count',
-            style: Styles.textStyle14.copyWith(color: Colors.grey.shade600),
+          GestureDetector(
+            onTap: () {
+              final index = _tabs.indexWhere((tab) => tab.id == tabId);
+              if (index >= 0) {
+                _tabController.animateTo(index);
+                _uiCubit.updateIndex(index);
+                _performSearch();
+              }
+            },
+            child: Row(
+              children: [
+                Text(
+                  context.tr("see_all"),
+                  style: Styles.textStyle14.copyWith(
+                    color: AppColors.kprimaryColor,
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 12.sp,
+                  color: AppColors.kprimaryColor,
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildPaginationIndicator(SearchState state) {
+    if (state.isLoadingMore) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 20.h),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (!state.hasMore && state.lastSearchType != 'all') {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 20.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppImage(AssetsData.postsEndIcon, height: 110.h),
+            Text(
+              context.tr("end_of_results_search"),
+              style: Styles.textStyle14.copyWith(
+                color: Colors.grey.shade500,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Gap(4.h),
+            Container(
+              width: 4.w,
+              height: 4.w,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Gap(32.h),
+          ],
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 
   Widget _buildEventItem(SearchEvent event) {

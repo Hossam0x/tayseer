@@ -23,6 +23,13 @@ class SearchState extends Equatable {
   final List<SearchEvent> events;
   final List<SearchGroup> groups;
 
+  // Pagination Properties
+  final bool hasMore;
+  final bool isLoadingMore;
+  final int currentPage;
+  final int totalPages;
+  final String lastSearchType;
+
   const SearchState({
     this.query = '',
     this.searchStatus = CubitStates.initial,
@@ -34,6 +41,11 @@ class SearchState extends Equatable {
     this.users = const [],
     this.events = const [],
     this.groups = const [],
+    this.hasMore = false,
+    this.isLoadingMore = false,
+    this.currentPage = 1,
+    this.totalPages = 1,
+    this.lastSearchType = 'all',
   });
 
   bool get isEmpty =>
@@ -58,6 +70,11 @@ class SearchState extends Equatable {
     List<SearchUser>? users,
     List<SearchEvent>? events,
     List<SearchGroup>? groups,
+    bool? hasMore,
+    bool? isLoadingMore,
+    int? currentPage,
+    int? totalPages,
+    String? lastSearchType,
   }) {
     return SearchState(
       query: query ?? this.query,
@@ -70,6 +87,11 @@ class SearchState extends Equatable {
       users: users ?? this.users,
       events: events ?? this.events,
       groups: groups ?? this.groups,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      currentPage: currentPage ?? this.currentPage,
+      totalPages: totalPages ?? this.totalPages,
+      lastSearchType: lastSearchType ?? this.lastSearchType,
     );
   }
 
@@ -85,5 +107,10 @@ class SearchState extends Equatable {
     users,
     events,
     groups,
+    hasMore,
+    isLoadingMore,
+    currentPage,
+    totalPages,
+    lastSearchType,
   ];
 }

@@ -609,6 +609,18 @@
   "archived_chats": "المحادثات المؤرشفة",
   "blocked_users": "المحظورات",
   "help_and_support": "المساعدة والدعم",
+  "faqs": "الأسئلة الشائعة (FAQs)",
+  "app_instructions": "تعليمات استخدام التطبيق",
+  "report_problem": "الإبلاغ عن مشكلة",
+  "report_problem_subtitle": "اخبرنا بمشكلتك وسنعود إليك بأسرع وقت!",
+  "problem_details_hint": "ادخل تفاصيل المشكلة",
+  "problem_sent_success": "تم إرسال المشكلة بنجاح",
+  "login_step": "• تسجيل الدخول: أنشئ حسابك أو سجل دخولك.",
+  "booking_step": "• الحجز: اختر الموعد المناسب وحدد الوقت.",
+  "payment_step": "• الدفع: ادفع مباشرة عبر التطبيق.",
+  "access_step": "• الوصول: ادخل الجلسة في موعدها.",
+  "support_step": "• الدعم: تواصل معنا عند أي استفسار.",
+  "faq_answer_placeholder": "هذا نص توضيحي للإجابة الخاصة بالسؤال.",
   "invite_friend": "دعوة",
   "rate_the_app": "تقييم التطبيق",
   "manage_account": "إدارة الحساب",
@@ -1277,12 +1289,14 @@
   "final_price_after_discount": "السعر النهائي بعد الخصم",
   "get_free_credit_daily_with_gold": "احصل علي رصيد مجانى كل يوم مع الجولد",
   "delete_main_image": "حذف الصورة الشخصية",
+  "delete_main_image": "حذف الصورة الشخصية",
   "must_upload_new_main_image": "يجب عليك رفع صورة شخصية جديدة قبل حذف الحالية",
   "choose_new_image": "اختر صورة جديدة",
   "max_secondary_images_4": "الحد الأقصى 4 صور ثانوية",
   "add_main_image_required": "يجب إضافة صورة رئيسية",
   "must_add_main_image_before_exit": "لا يمكنك الخروج بدون إضافة صورة رئيسية",
   "add_image": "إضافة صورة",
+  "reorder_image": "إعادة ترتيب الصورة",
   "reorder_image": "إعادة ترتيب الصورة",
   "reorder_image_question": "هل تريد أن تكون هذه الصورة هي الصورة الثانية بعد الرئيسية؟",
   "yes_make_first": "نعم، اجعلها الأولى",
@@ -1295,4 +1309,7 @@
   "general": "عام"
 
 
+  "under_review": "انتظار المراجعة",
+  "end_of_results_search": "تم الوصول لنهاية نتائج البحث",
+  "see_all": "عرض الكل"
 }
