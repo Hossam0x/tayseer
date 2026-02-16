@@ -1307,6 +1307,11 @@
   "terms_belong_to_us": "الخاصة بنا",
   "under_review":"انتظار المراجعة",
   "general": "عام"
+  "under_review":"انتظار المراجعة",
+  "main_Image":  "الصورة الرئيسية",
+    "faith": "الإيمان",
+  "select_faith_title": "اختر أنشطة الإيمان",
+  "faith_description": "اختر الأنشطة الإيمانية التي تمارسها"
 
 
   "under_review": "انتظار المراجعة",

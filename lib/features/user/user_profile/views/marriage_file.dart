@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/marriage/view/widget/additional_image.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
@@ -398,63 +399,106 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ NEW: Secondary Image Section with proper logic
   // ════════════════════════════════════════════════════════════════
-  Widget _buildSecondaryImageSection(MarriageUserProfileModel profile) {
-    final secondaryImage = _getSecondaryDisplayImage(profile);
 
-    if (secondaryImage == null) {
-      return SliverToBoxAdapter(child: SizedBox.shrink());
-    }
+Widget _buildSecondaryImageSection(MarriageUserProfileModel profile) {
+  final secondaryImage = _getSecondaryDisplayImage(profile);
 
-    return SliverPadding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-      sliver: SliverToBoxAdapter(
-        child: AdditionalImageSection(
-          isHastar: false,
-          imageUrl: secondaryImage,
-        ),
-      ),
-    );
+  if (secondaryImage == null) {
+    return SliverToBoxAdapter(child: SizedBox.shrink());
   }
 
-  Widget _buildViewHeader(MarriageUserProfileModel profile) {
-    final mainImage = _getMainDisplayImage(profile);
-    final totalProgress = _calculateTotalProgress(profile);
-    final progressFraction = totalProgress / 100;
-
-    debugPrint('═══════════════════════════════════════════');
-    debugPrint('📸 [HEADER] Main image: $mainImage');
-    debugPrint('📸 [HEADER] singleImage: ${profile.userMedia?.singleImage}');
-    debugPrint(
-      '📸 [HEADER] images count: ${profile.userMedia?.images.length ?? 0}',
-    );
-    debugPrint('═══════════════════════════════════════════');
-
-    return SliverToBoxAdapter(
-      child: Column(
-        children: [
-          Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              Container(
-                height: 650.h,
-                width: double.infinity,
+  return SliverPadding(
+    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+    sliver: SliverToBoxAdapter(
+      child: GestureDetector(
+        onTap: () {
+          // ✅ Open Full Screen Image
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FullScreenImageView(
+                imageUrl: secondaryImage,
+                heroTag: 'profile_secondary_image',
+                userName: context.tr("my_profile"),
+              ),
+            ),
+          );
+        },
+        child: Hero(
+          tag: 'profile_secondary_image',
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16.r),
+            child: Container(
+              height: 400.h, // يمكنك تعديل الارتفاع حسب الحاجة
+              width: double.infinity,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(secondaryImage),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              // ✅ Add a subtle overlay to indicate it's tappable
+              child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(33.r),
-                  ),
-                  image: DecorationImage(
-                    image: NetworkImage(mainImage),
-                    fit: BoxFit.cover,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.1),
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-        ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
+Widget _buildViewHeader(MarriageUserProfileModel profile) {
+  final mainImage = _getMainDisplayImage(profile);
 
+  return SliverToBoxAdapter(
+    child: Column(
+      children: [
+        GestureDetector(
+          onTap: mainImage != _defaultImageUrl
+              ? () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FullScreenImageView(
+                        imageUrl: mainImage,
+                        heroTag: 'profile_main_image',
+                        userName: context.tr("my_profile"),
+                      ),
+                    ),
+                  );
+                }
+              : null,
+          child: Hero(
+            tag: 'profile_main_image',
+            child: Container(
+              height: 650.h,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(33.r),
+                ),
+                image: DecorationImage(
+                  image: NetworkImage(mainImage),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
   Widget _buildCompletionCard(
     double progress, {
     required MarriageUserProfileModel profile,
