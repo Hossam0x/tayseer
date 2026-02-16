@@ -446,12 +446,12 @@ Future<void> deleteSingleImage() async {
           updatedGoals = currentGoals.copyWith(engagement: value);
           break;
 
-        case 'marry':
+        case 'marriage_intentions':
         case 'communicationTimeline':
           updatedGoals = currentGoals.copyWith(marry: value);
           break;
 
-        case 'familyAcceptance':
+        case 'children':
         case 'dowry':
           updatedGoals = currentGoals.copyWith(children: value);
           break;
@@ -565,9 +565,9 @@ Future<void> deleteSingleImage() async {
     return [
       'engagement',
       'engagementTimeline',
-      'marry',
+      'marriage_intentions',
       'communicationTimeline',
-      'familyAcceptance',
+      'children',
       'dowry',
       'travel',
       'travelPreference'

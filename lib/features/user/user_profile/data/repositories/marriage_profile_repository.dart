@@ -370,7 +370,7 @@ Future<Either<Failure, MarriageUserProfileModel>> updateMarriageProfile(
     }
     if (profile.yourGoals!.marry != null) {
       final cleaned = _cleanValue(profile.yourGoals!.marry);
-      if (cleaned != null) goalsMap['marry'] = cleaned;
+      if (cleaned != null) goalsMap['marriage_intentions'] = cleaned;
     }
     if (profile.yourGoals!.engagement != null) {
       final cleaned = _cleanValue(profile.yourGoals!.engagement);

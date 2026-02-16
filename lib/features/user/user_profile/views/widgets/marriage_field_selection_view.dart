@@ -705,7 +705,7 @@ final Map<String, Map<String, String>> _faithWithCategories = {
         };
 
       case 'communicationTimeline':
-      case 'marry':
+      case 'marriage_intentions':
         return {
           'titleKey': 'select_communication_timeline_title',
           'items': ['timeline_immediate', 'timeline_week', 'timeline_month'],
@@ -738,7 +738,7 @@ final Map<String, Map<String, String>> _faithWithCategories = {
         };
 
       case 'dowry':
-      case 'familyAcceptance':
+      case 'children':
         return {
           'titleKey': 'family',
           'items': ['no_problem_children', 'do_not_want_children'],
@@ -765,7 +765,7 @@ final Map<String, Map<String, String>> _faithWithCategories = {
           'type': 'textarea',
           'maxLength': 500,
         };
-        case 'faith':
+    case 'faith':
   return {
     'titleKey': 'select_faith_title',
     'type': 'multiselect',

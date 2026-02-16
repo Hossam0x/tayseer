@@ -1406,7 +1406,7 @@ Future<void> _reorderImage(
             context.tr('family'),
             _translateValue(profile.yourGoals?.children ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'familyAcceptance', profile.yourGoals?.children);
+              _navigateToFieldSelection(context, cubit, 'children', profile.yourGoals?.children);
             },
           ),
           _buildInfoRow(

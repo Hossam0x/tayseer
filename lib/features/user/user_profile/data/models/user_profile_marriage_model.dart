@@ -578,14 +578,14 @@ class YourGoals {
   factory YourGoals.fromJson(Map<String, dynamic> json) => YourGoals(
         travel: json['travel'] as String?,
         children: json['children'] as String?,
-        marry: json['marry'] as String?,
+        marry: json['marriageIntentions'] as String?,
         engagement: json['engagment'] as String?, // Note: typo in API
       );
 
   Map<String, dynamic> toJson() => {
         'travel': travel,
         'children': children,
-        'marry': marry,
+        'marriageIntentions': marry,
         'engagment': engagement, // Note: typo in API
       };
 
