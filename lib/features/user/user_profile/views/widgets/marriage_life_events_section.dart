@@ -184,29 +184,31 @@ class MarriageLifeEventsSection extends StatelessWidget {
       ],
     );
   }
-
-  // ⭐⭐⭐ FIXED: Convert goal type to display name
-  String _getGoalDisplayName(String? goalType, BuildContext context) {
-    if (goalType == null || goalType.isEmpty) return '';
-    
-    final normalized = goalType.toLowerCase().trim();
-    
-    switch (normalized) {
-      case 'engagement':
-        return context.tr('engagement_profile');
-      case 'marriage_intentions':
-      case 'marriage':
-        return context.tr('marriage_profile');
-      case 'familyacceptance':
-      case 'children':
-        return context.tr('children_profile');
-      case 'travel':
-        return context.tr('travel_profile');
-      default:
-        // If it's already a translated value, return as-is
-        return goalType;
-    }
+String _getGoalDisplayName(String? goalType, BuildContext context) {
+  if (goalType == null || goalType.isEmpty) return '';
+  
+  final normalized = goalType.toLowerCase().trim();
+  
+  switch (normalized) {
+    case 'engagement':
+      return context.tr('engagement_profile');  // 'الخطوبة'
+      
+    case 'marriage_intentions':
+    case 'marriage':
+      return context.tr('marriage_profile');    // 'الزواج'
+      
+    // ✅ الأسرة (familyAcceptance)
+    case 'familyacceptance':
+      return context.tr('family_profile');      // 'الأسرة'
+      
+    // ✅ السفر (intendTravelAbroad)
+    case 'intendtravelabroad':
+      return context.tr('travel_profile');      // 'السفر'
+      
+    default:
+      return goalType;
   }
+}
 }
 
 class TrianglePainter extends CustomPainter {

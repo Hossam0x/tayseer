@@ -1399,7 +1399,7 @@ Future<void> _reorderImage(
             context.tr('marriage'),
             _translateValue(profile.yourGoals?.marry ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'marry', profile.yourGoals?.marry);
+              _navigateToFieldSelection(context, cubit, 'marriage_intentions', profile.yourGoals?.marry);
             },
           ),
           _buildInfoRow(
@@ -1411,9 +1411,9 @@ Future<void> _reorderImage(
           ),
           _buildInfoRow(
             context.tr('travel'),
-            _translateValue(profile.yourGoals?.travel ?? '', context),
+            _translateValue(profile.yourGoals?.intendTravelAbroad ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'travel', profile.yourGoals?.travel);
+              _navigateToFieldSelection(context, cubit, 'intendTravelAbroad', profile.yourGoals?.intendTravelAbroad);
             },
           ),
         ],

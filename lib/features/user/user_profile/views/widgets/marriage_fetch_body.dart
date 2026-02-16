@@ -238,44 +238,51 @@ class _MarriageBodyContent extends StatelessWidget {
   }
 
   // ⭐⭐⭐ FIXED: Timeline Events with correct goal types
-  List<Map<String, dynamic>> _buildTimelineEvents(dynamic yourGoals) {
-    List<Map<String, dynamic>> events = [];
-    
-    // ⭐ Add events in order with GOAL TYPE
-    if (yourGoals.engagement != null && yourGoals.engagement.isNotEmpty) {
-      events.add({
-        'timeLabel': yourGoals.engagement,
-        'goalType': 'engagement', // ⭐ This is the key field
-        'isActive': true,
-      });
-    }
-    
-    if (yourGoals.marry != null && yourGoals.marry.isNotEmpty) {
-      events.add({
-        'timeLabel': yourGoals.marry,
-        'goalType': 'marriage_intentions', // ⭐ This is the key field
-        'isActive': true,
-      });
-    }
-    
-    if (yourGoals.children != null && yourGoals.children.isNotEmpty) {
-      events.add({
-        'timeLabel': yourGoals.children,
-        'goalType': 'children', // ⭐ This is the key field
-        'isActive': true,
-      });
-    }
-    
-    if (yourGoals.travel != null && yourGoals.travel.isNotEmpty) {
-      events.add({
-        'timeLabel': yourGoals.travel,
-        'goalType': 'travel', // ⭐ This is the key field
-        'isActive': true,
-      });
-    }
-    
-    return events;
+// ════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ UPDATED: _buildTimelineEvents في Fetch Body
+// ════════════════════════════════════════════════════════════════
+
+List<Map<String, dynamic>> _buildTimelineEvents(dynamic yourGoals) {
+  List<Map<String, dynamic>> events = [];
+  
+  // 1. الخطوبة
+  if (yourGoals.engagement != null && yourGoals.engagement.isNotEmpty) {
+    events.add({
+      'timeLabel': yourGoals.engagement,
+      'goalType': 'engagement',
+      'isActive': true,
+    });
   }
+  
+  // 2. الزواج
+  if (yourGoals.marry != null && yourGoals.marry.isNotEmpty) {
+    events.add({
+      'timeLabel': yourGoals.marry,
+      'goalType': 'marriage_intentions',
+      'isActive': true,
+    });
+  }
+  
+  // ✅ 3. الأسرة (familyAcceptance)
+  if (yourGoals.familyAcceptance != null && yourGoals.familyAcceptance.isNotEmpty) {
+    events.add({
+      'timeLabel': yourGoals.familyAcceptance,
+      'goalType': 'familyAcceptance',  // ✅ اسم الحقل الصحيح
+      'isActive': true,
+    });
+  }
+  
+  // ✅ 4. السفر (intendTravelAbroad)
+  if (yourGoals.intendTravelAbroad != null && yourGoals.intendTravelAbroad.isNotEmpty) {
+    events.add({
+      'timeLabel': yourGoals.intendTravelAbroad,
+      'goalType': 'intendTravelAbroad',  // ✅ اسم الحقل الصحيح
+      'isActive': true,
+    });
+  }
+  
+  return events;
+}
 
   List<Map<String, dynamic>> _buildHeaderTags(profile) {
     List<Map<String, dynamic>> tags = [];

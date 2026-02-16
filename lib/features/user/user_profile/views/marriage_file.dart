@@ -705,19 +705,14 @@ Widget _buildViewHeader(MarriageUserProfileModel profile) {
   List<Map<String, dynamic>> _buildTimelineEvents(YourGoals goals) {
     final List<Map<String, dynamic>> events = [];
 
-    if (goals.travel != null && goals.travel!.isNotEmpty) {
+    if (goals.intendTravelAbroad != null && goals.intendTravelAbroad!.isNotEmpty) {
       events.add({
-        'timeLabel': _translateValue(goals.travel),
-        'goalType': 'travel',
+        'timeLabel': _translateValue(goals.intendTravelAbroad),
+        'goalType': 'intendTravelAbroad',
       });
     }
 
-    if (goals.children != null && goals.children!.isNotEmpty) {
-      events.add({
-        'timeLabel': _translateValue(goals.children),
-        'goalType': context.tr("children_profile"),
-      });
-    }
+
 
     if (goals.engagement != null && goals.engagement!.isNotEmpty) {
       events.add({

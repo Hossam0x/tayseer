@@ -16,20 +16,20 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   final MarriageProfileRepository _repository;
   final UserProfileModel? initialUserProfile;
 
-  MarriageProfileCubit(
-    this._repository, {
-    this.initialUserProfile,
-  }) : super(const MarriageProfileState());
+  MarriageProfileCubit(this._repository, {this.initialUserProfile})
+    : super(const MarriageProfileState());
 
-// ════════════════════════════════════════════════════════════════
-// ⭐⭐⭐ SIMPLIFIED: استخدم النسبة من السيرفر مباشرة
-// ════════════════════════════════════════════════════════════════
- Future<void> loadProfile() async {
-    emit(state.copyWith(
-      state: CubitStates.loading,
-      isLoading: true,
-      clearMessages: true,
-    ));
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ SIMPLIFIED: استخدم النسبة من السيرفر مباشرة
+  // ════════════════════════════════════════════════════════════════
+  Future<void> loadProfile() async {
+    emit(
+      state.copyWith(
+        state: CubitStates.loading,
+        isLoading: true,
+        clearMessages: true,
+      ),
+    );
 
     debugPrint('🔄 [CUBIT] Loading profile...');
     final result = await _repository.getMarriageProfile();
@@ -37,109 +37,130 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     result.fold(
       (failure) {
         debugPrint('❌ [CUBIT] Load failed: ${failure.message}');
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+            isLoading: false,
+          ),
+        );
       },
       (marriageProfile) {
         // ⭐⭐⭐ احسب النسبة مع الميديا والتوثيق
-        final profileWithProgress = _calculateProgressWithMedia(marriageProfile);
-        
+        final profileWithProgress = _calculateProgressWithMedia(
+          marriageProfile,
+        );
+
         debugPrint('✅ [CUBIT] Profile loaded');
-        debugPrint('📊 Final Progress: ${profileWithProgress.answerCompletedPercentage}%');
-        
-        emit(state.copyWith(
-          state: CubitStates.success,
-          profile: profileWithProgress,
-          isLoading: false,
-        ));
+        debugPrint(
+          '📊 Final Progress: ${profileWithProgress.answerCompletedPercentage}%',
+        );
+
+        emit(
+          state.copyWith(
+            state: CubitStates.success,
+            profile: profileWithProgress,
+            isLoading: false,
+          ),
+        );
       },
     );
   }
 
-// ════════════════════════════════════════════════════════════════
-// ⭐⭐⭐ UPLOAD SINGLE IMAGE
-// ════════════════════════════════════════════════════════════════
-Future<void> uploadSingleImage(File imageFile) async {
-  if (state.profile == null) {
-    debugPrint('⚠️ [CUBIT] No profile for single image upload');
-    return;
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ UPLOAD SINGLE IMAGE
+  // ════════════════════════════════════════════════════════════════
+  Future<void> uploadSingleImage(File imageFile) async {
+    if (state.profile == null) {
+      debugPrint('⚠️ [CUBIT] No profile for single image upload');
+      return;
+    }
+
+    emit(state.copyWith(isLoading: true, clearMessages: true));
+
+    debugPrint('📤 [CUBIT] Uploading single image...');
+
+    final result = await _repository.uploadSingleImage(imageFile);
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ [CUBIT] Single image upload failed: ${failure.message}');
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+            isLoading: false,
+          ),
+        );
+      },
+      (_) async {
+        debugPrint('✅ [CUBIT] Single image uploaded, reloading profile...');
+        await loadProfile();
+      },
+    );
   }
 
-  emit(state.copyWith(isLoading: true, clearMessages: true));
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ DELETE SINGLE IMAGE
+  // ════════════════════════════════════════════════════════════════
+  Future<void> deleteSingleImage() async {
+    final currentSingleImage = state.profile?.userMedia?.singleImage;
 
-  debugPrint('📤 [CUBIT] Uploading single image...');
+    debugPrint(
+      '📸 [CUBIT] Current singleImage before delete: $currentSingleImage',
+    );
 
-  final result = await _repository.uploadSingleImage(imageFile);
+    if (currentSingleImage == null) {
+      debugPrint('⚠️ [CUBIT] No single image to delete');
+      return;
+    }
 
-  result.fold(
-    (failure) {
-      debugPrint('❌ [CUBIT] Single image upload failed: ${failure.message}');
-      emit(state.copyWith(
-        state: CubitStates.failure,
-        errorMessage: failure.message,
-        isLoading: false,
-      ));
-    },
-    (_) async {
-      debugPrint('✅ [CUBIT] Single image uploaded, reloading profile...');
-      await loadProfile();
-    },
-  );
-}
+    emit(state.copyWith(isLoading: true, clearMessages: true));
 
-// ════════════════════════════════════════════════════════════════
-// ⭐⭐⭐ DELETE SINGLE IMAGE
-// ════════════════════════════════════════════════════════════════
-Future<void> deleteSingleImage() async {
-  final currentSingleImage = state.profile?.userMedia?.singleImage;
-  
-  debugPrint('📸 [CUBIT] Current singleImage before delete: $currentSingleImage');
-  
-  if (currentSingleImage == null) {
-    debugPrint('⚠️ [CUBIT] No single image to delete');
-    return;
+    debugPrint('🗑️ [CUBIT] Deleting single image...');
+
+    final result = await _repository.deleteSingleImage(currentSingleImage);
+
+    result.fold(
+      (failure) {
+        debugPrint('❌ [CUBIT] Delete single image failed: ${failure.message}');
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+            isLoading: false,
+          ),
+        );
+      },
+      (_) async {
+        debugPrint('✅ [CUBIT] Single image deleted, reloading profile...');
+        await loadProfile();
+
+        // ⭐ DEBUG: تأكد من القيمة بعد الـ reload
+        final newSingleImage = state.profile?.userMedia?.singleImage;
+        debugPrint(
+          '📸 [CUBIT] After loadProfile - singleImage: $newSingleImage',
+        );
+
+        if (newSingleImage != null) {
+          debugPrint(
+            '⚠️ [CUBIT] WARNING: singleImage is not null after delete!',
+          );
+          debugPrint('⚠️ [CUBIT] This means backend returned: $newSingleImage');
+        }
+      },
+    );
   }
 
-  emit(state.copyWith(isLoading: true, clearMessages: true));
-
-  debugPrint('🗑️ [CUBIT] Deleting single image...');
-
-  final result = await _repository.deleteSingleImage(currentSingleImage);
-
-  result.fold(
-    (failure) {
-      debugPrint('❌ [CUBIT] Delete single image failed: ${failure.message}');
-      emit(state.copyWith(
-        state: CubitStates.failure,
-        errorMessage: failure.message,
-        isLoading: false,
-      ));
-    },
-    (_) async {
-      debugPrint('✅ [CUBIT] Single image deleted, reloading profile...');
-      await loadProfile();
-      
-      // ⭐ DEBUG: تأكد من القيمة بعد الـ reload
-      final newSingleImage = state.profile?.userMedia?.singleImage;
-      debugPrint('📸 [CUBIT] After loadProfile - singleImage: $newSingleImage');
-      
-      if (newSingleImage != null) {
-        debugPrint('⚠️ [CUBIT] WARNING: singleImage is not null after delete!');
-        debugPrint('⚠️ [CUBIT] This means backend returned: $newSingleImage');
-      }
-    },
-  );
-}
   // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ CALCULATE PROGRESS WITH MEDIA
   // ════════════════════════════════════════════════════════════════
-  MarriageUserProfileModel _calculateProgressWithMedia(MarriageUserProfileModel profile) {
+  MarriageUserProfileModel _calculateProgressWithMedia(
+    MarriageUserProfileModel profile,
+  ) {
     // ⭐ البداية دائماً 50% (من الأسئلة)
     int totalProgress = 50;
-    
+
     debugPrint('═══════════════════════════════════════════');
     debugPrint('📊 [PROGRESS] Starting calculation');
     debugPrint('📊 [PROGRESS] Base (Questions): 50%');
@@ -149,8 +170,9 @@ Future<void> deleteSingleImage() async {
     // ════════════════════════════════════════════════════════════════
     final singleImage = profile.userMedia?.singleImage;
     final images = profile.userMedia?.images ?? [];
-    final totalImages = (singleImage != null && singleImage.isNotEmpty ? 1 : 0) + images.length;
-    
+    final totalImages =
+        (singleImage != null && singleImage.isNotEmpty ? 1 : 0) + images.length;
+
     if (totalImages > 0) {
       // كل صورة = 5% (max 5 صور = 25%)
       final imageCount = totalImages > 5 ? 5 : totalImages;
@@ -164,8 +186,9 @@ Future<void> deleteSingleImage() async {
     // ════════════════════════════════════════════════════════════════
     // ⭐ 2. الفيديو (10%)
     // ════════════════════════════════════════════════════════════════
-    final hasVideo = profile.userMedia?.video != null && 
-                     profile.userMedia!.video!.isNotEmpty;
+    final hasVideo =
+        profile.userMedia?.video != null &&
+        profile.userMedia!.video!.isNotEmpty;
     if (hasVideo) {
       totalProgress += 10;
       debugPrint('🎥 [PROGRESS] Video: +10%');
@@ -176,8 +199,9 @@ Future<void> deleteSingleImage() async {
     // ════════════════════════════════════════════════════════════════
     // ⭐ 3. الأوديو (10%)
     // ════════════════════════════════════════════════════════════════
-    final hasAudio = profile.userMedia?.audio != null && 
-                     profile.userMedia!.audio!.isNotEmpty;
+    final hasAudio =
+        profile.userMedia?.audio != null &&
+        profile.userMedia!.audio!.isNotEmpty;
     if (hasAudio) {
       totalProgress += 10;
       debugPrint('🎤 [PROGRESS] Audio: +10%');
@@ -207,42 +231,52 @@ Future<void> deleteSingleImage() async {
 
     return profile.copyWith(answerCompletedPercentage: finalProgress);
   }
- Future<void> saveProfile() async {
+
+  Future<void> saveProfile() async {
     if (state.profile == null) return;
 
-    emit(state.copyWith(
-      state: CubitStates.loading,
-      isUpdating: true,
-      clearMessages: true,
-    ));
+    emit(
+      state.copyWith(
+        state: CubitStates.loading,
+        isUpdating: true,
+        clearMessages: true,
+      ),
+    );
 
     final result = await _repository.updateMarriageProfile(state.profile!);
 
     result.fold(
       (failure) {
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isUpdating: false,
-        ));
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+            isUpdating: false,
+          ),
+        );
       },
       (updatedProfile) {
         // ⭐⭐⭐ احسب النسبة مع الميديا
         final profileWithProgress = _calculateProgressWithMedia(updatedProfile);
-        
-        debugPrint('✅ Saved - New progress: ${profileWithProgress.answerCompletedPercentage}%');
-        
-        emit(state.copyWith(
-          state: CubitStates.success,
-          profile: profileWithProgress,
-          successMessage: 'تم حفظ البيانات بنجاح',
-          isUpdating: false,
-        ));
+
+        debugPrint(
+          '✅ Saved - New progress: ${profileWithProgress.answerCompletedPercentage}%',
+        );
+
+        emit(
+          state.copyWith(
+            state: CubitStates.success,
+            profile: profileWithProgress,
+            successMessage: 'تم حفظ البيانات بنجاح',
+            isUpdating: false,
+          ),
+        );
       },
     );
   }
- // ⭐⭐⭐ أضف الـ function دي هنا
- static const Map<String, String> _countryToNationalityKeyMap = {
+
+  // ⭐⭐⭐ أضف الـ function دي هنا
+  static const Map<String, String> _countryToNationalityKeyMap = {
     'country_saudi': 'nationality_saudi',
     'country_egypt': 'nationality_egyptian',
     'country_emirati': 'nationality_emirati',
@@ -281,7 +315,8 @@ Future<void> deleteSingleImage() async {
     'Morocco': 'nationality_moroccan',
     'Tunisia': 'nationality_tunisian',
   };
-   /// ⭐ دالة التحويل من Country → Nationality
+
+  /// ⭐ دالة التحويل من Country → Nationality
   String _convertCountryToNationality(String country) {
     // أولوية 1: Key-to-Key
     if (_countryToNationalityKeyMap.containsKey(country)) {
@@ -301,7 +336,6 @@ Future<void> deleteSingleImage() async {
   // ════════════════════════════════════════════════════════════════
 
   void updateField(String fieldKey, dynamic value) {
-    
     if (state.profile == null) {
       debugPrint('⚠️ [CUBIT] No profile to update');
       return;
@@ -312,7 +346,9 @@ Future<void> deleteSingleImage() async {
     // ⭐⭐⭐ AUTO-SYNC: إذا كان الحقل "country"، احسب nationality تلقائياً
     if (fieldKey == 'country') {
       final nationalityValue = _convertCountryToNationality(value);
-      debugPrint('🔄 [AUTO-SYNC] Country: $value → Nationality: $nationalityValue');
+      debugPrint(
+        '🔄 [AUTO-SYNC] Country: $value → Nationality: $nationalityValue',
+      );
 
       // تحديث الـ nationality أولاً
       _updateFieldInternal('nationality', nationalityValue);
@@ -385,14 +421,16 @@ Future<void> deleteSingleImage() async {
 
       updatedProfile = profile.copyWith(aboutMe: updatedAbout);
     } else if (_isProfessionalLifeField(fieldKey)) {
-      final currentProfessional = profile.professionalLife ?? ProfessionalLife();
+      final currentProfessional =
+          profile.professionalLife ?? ProfessionalLife();
       ProfessionalLife updatedProfessional;
 
       switch (fieldKey) {
         case 'education_level':
         case 'educationLevel':
-          updatedProfessional =
-              currentProfessional.copyWith(educationLevel: value);
+          updatedProfessional = currentProfessional.copyWith(
+            educationLevel: value,
+          );
           break;
 
         case 'choose_job':
@@ -404,8 +442,9 @@ Future<void> deleteSingleImage() async {
         case 'choose_employer':
         case 'employer':
         case 'chooseEmployer':
-          updatedProfessional =
-              currentProfessional.copyWith(chooseEmployer: value);
+          updatedProfessional = currentProfessional.copyWith(
+            chooseEmployer: value,
+          );
           break;
 
         default:
@@ -446,19 +485,20 @@ Future<void> deleteSingleImage() async {
           updatedGoals = currentGoals.copyWith(engagement: value);
           break;
 
+        case 'marry':
         case 'marriage_intentions':
         case 'communicationTimeline':
           updatedGoals = currentGoals.copyWith(marry: value);
           break;
 
-        case 'children':
-        case 'dowry':
-          updatedGoals = currentGoals.copyWith(children: value);
+        // ✅ familyAcceptance (بدلاً من children/dowry)
+        case 'familyAcceptance':
+          updatedGoals = currentGoals.copyWith(familyAcceptance: value);
           break;
 
-        case 'travel':
-        case 'travelPreference':
-          updatedGoals = currentGoals.copyWith(travel: value);
+        // ✅ intendTravelAbroad (بدلاً من travel/travelPreference)
+        case 'intendTravelAbroad':
+          updatedGoals = currentGoals.copyWith(intendTravelAbroad: value);
           break;
 
         default:
@@ -469,46 +509,45 @@ Future<void> deleteSingleImage() async {
     } else if (fieldKey == 'bio' || fieldKey == 'myDescription') {
       updatedProfile = profile.copyWith(myDescription: value);
     } else if (fieldKey == 'hobbies' || fieldKey == 'interests') {
-    final hobbiesList = (value as String).split(', ');
-    
-    // ⭐ تأكد إنها keys (تبدأ بـ interest_)
-    final validKeys = hobbiesList.where((h) => 
-      h.startsWith('interest_') || h.startsWith('faith_')
-    ).toList();
-    
-    debugPrint('💾 [CUBIT] Saving hobbies keys: $validKeys');
-    
-    updatedProfile = profile.copyWith(hobbies: validKeys);
-    }else if (fieldKey == 'faith') {
-    final currentHobbies = state.profile!.hobbies;
-    
-    // ⭐ خلي الهوايات الموجودة (بدون الإيمان)
-    final interestHobbies = currentHobbies
-        .where((h) => h.startsWith('interest_'))
-        .toList();
-    
-    // ⭐ جيب الإيمانات الجديدة
-    final newFaithHobbies = (value as String)
-        .split(', ')
-        .where((h) => h.startsWith('faith_'))
-        .toList();
-    
-    // ⭐ ادمجهم
-    final allHobbies = [...interestHobbies, ...newFaithHobbies];
-    
-    debugPrint('═══════════════════════════════════════════');
-    debugPrint('🙏 [FAITH UPDATE]');
-    debugPrint('📋 Current Interests: $interestHobbies');
-    debugPrint('🕌 New Faith: $newFaithHobbies');
-    debugPrint('✅ All Hobbies: $allHobbies');
-    debugPrint('═══════════════════════════════════════════');
-    
-    final updatedProfile = state.profile!.copyWith(hobbies: allHobbies);
-    emit(state.copyWith(profile: updatedProfile));
-    debugPrint('✅ [CUBIT] Faith updated successfully');
-    return;
-  }
- else {
+      final hobbiesList = (value as String).split(', ');
+
+      // ⭐ تأكد إنها keys (تبدأ بـ interest_)
+      final validKeys = hobbiesList
+          .where((h) => h.startsWith('interest_') || h.startsWith('faith_'))
+          .toList();
+
+      debugPrint('💾 [CUBIT] Saving hobbies keys: $validKeys');
+
+      updatedProfile = profile.copyWith(hobbies: validKeys);
+    } else if (fieldKey == 'faith') {
+      final currentHobbies = state.profile!.hobbies;
+
+      // ⭐ خلي الهوايات الموجودة (بدون الإيمان)
+      final interestHobbies = currentHobbies
+          .where((h) => h.startsWith('interest_'))
+          .toList();
+
+      // ⭐ جيب الإيمانات الجديدة
+      final newFaithHobbies = (value as String)
+          .split(', ')
+          .where((h) => h.startsWith('faith_'))
+          .toList();
+
+      // ⭐ ادمجهم
+      final allHobbies = [...interestHobbies, ...newFaithHobbies];
+
+      debugPrint('═══════════════════════════════════════════');
+      debugPrint('🙏 [FAITH UPDATE]');
+      debugPrint('📋 Current Interests: $interestHobbies');
+      debugPrint('🕌 New Faith: $newFaithHobbies');
+      debugPrint('✅ All Hobbies: $allHobbies');
+      debugPrint('═══════════════════════════════════════════');
+
+      final updatedProfile = state.profile!.copyWith(hobbies: allHobbies);
+      emit(state.copyWith(profile: updatedProfile));
+      debugPrint('✅ [CUBIT] Faith updated successfully');
+      return;
+    } else {
       updatedProfile = profile;
     }
 
@@ -535,7 +574,7 @@ Future<void> deleteSingleImage() async {
       'smoking',
       'socialStatus',
       'maritalStatus',
-      'age'
+      'age',
     ].contains(fieldKey);
   }
 
@@ -548,7 +587,7 @@ Future<void> deleteSingleImage() async {
       'occupation',
       'choose_employer',
       'employer',
-      'chooseEmployer'
+      'chooseEmployer',
     ].contains(fieldKey);
   }
 
@@ -557,7 +596,7 @@ Future<void> deleteSingleImage() async {
       'hasChildren',
       'childrenNumber',
       'childrenLiveWithYou',
-      'childrenLivingStatus'
+      'childrenLivingStatus',
     ].contains(fieldKey);
   }
 
@@ -565,12 +604,11 @@ Future<void> deleteSingleImage() async {
     return [
       'engagement',
       'engagementTimeline',
+      'marry',
       'marriage_intentions',
       'communicationTimeline',
-      'children',
-      'dowry',
-      'travel',
-      'travelPreference'
+      'familyAcceptance', // ✅ بدلاً من children/dowry
+      'intendTravelAbroad', // ✅ بدلاً من travel/travelPreference
     ].contains(fieldKey);
   }
 
@@ -592,11 +630,13 @@ Future<void> deleteSingleImage() async {
     result.fold(
       (failure) {
         debugPrint('❌ [CUBIT] Image upload failed: ${failure.message}');
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+            isLoading: false,
+          ),
+        );
       },
       (_) async {
         debugPrint('✅ [CUBIT] Image uploaded, reloading profile...');
@@ -623,11 +663,13 @@ Future<void> deleteSingleImage() async {
     result.fold(
       (failure) {
         debugPrint('❌ [CUBIT] Delete failed: ${failure.message}');
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+            isLoading: false,
+          ),
+        );
       },
       (_) async {
         debugPrint('✅ [CUBIT] Image deleted, reloading profile...');
@@ -654,11 +696,13 @@ Future<void> deleteSingleImage() async {
     result.fold(
       (failure) {
         debugPrint('❌ [CUBIT] Video upload failed: ${failure.message}');
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+            isLoading: false,
+          ),
+        );
       },
       (_) async {
         debugPrint('✅ [CUBIT] Video uploaded, reloading profile...');
@@ -685,11 +729,13 @@ Future<void> deleteSingleImage() async {
     result.fold(
       (failure) {
         debugPrint('❌ [CUBIT] Audio upload failed: ${failure.message}');
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+            isLoading: false,
+          ),
+        );
       },
       (_) async {
         debugPrint('✅ [CUBIT] Audio uploaded, reloading profile...');
@@ -717,11 +763,13 @@ Future<void> deleteSingleImage() async {
     result.fold(
       (failure) {
         debugPrint('❌ [CUBIT] Delete video failed: ${failure.message}');
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+            isLoading: false,
+          ),
+        );
       },
       (_) async {
         debugPrint('✅ [CUBIT] Video deleted, reloading profile...');
@@ -749,11 +797,13 @@ Future<void> deleteSingleImage() async {
     result.fold(
       (failure) {
         debugPrint('❌ [CUBIT] Delete audio failed: ${failure.message}');
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-          isLoading: false,
-        ));
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+            isLoading: false,
+          ),
+        );
       },
       (_) async {
         debugPrint('✅ [CUBIT] Audio deleted, reloading profile...');
@@ -761,30 +811,30 @@ Future<void> deleteSingleImage() async {
       },
     );
   }
-/// ⭐⭐⭐ Reorder Images and Save to Server
-Future<void> reorderImages(List<String> newOrderedImages) async {
-  if (state.profile == null) {
-    debugPrint('⚠️ [CUBIT] No profile to reorder images');
-    return;
+
+  /// ⭐⭐⭐ Reorder Images and Save to Server
+  Future<void> reorderImages(List<String> newOrderedImages) async {
+    if (state.profile == null) {
+      debugPrint('⚠️ [CUBIT] No profile to reorder images');
+      return;
+    }
+
+    debugPrint('🔄 [CUBIT] Reordering images...');
+    debugPrint('📋 [CUBIT] New order: $newOrderedImages');
+
+    // تحديث الـ profile محلياً
+    final updatedProfile = state.profile!.copyWith(
+      userMedia: state.profile!.userMedia?.copyWith(images: newOrderedImages),
+    );
+
+    emit(state.copyWith(profile: updatedProfile));
+
+    // ⭐⭐⭐ حفظ في السيرفر
+    await saveProfile();
+
+    debugPrint('✅ [CUBIT] Images reordered and saved to server');
   }
 
-  debugPrint('🔄 [CUBIT] Reordering images...');
-  debugPrint('📋 [CUBIT] New order: $newOrderedImages');
-
-  // تحديث الـ profile محلياً
-  final updatedProfile = state.profile!.copyWith(
-    userMedia: state.profile!.userMedia?.copyWith(
-      images: newOrderedImages,
-    ),
-  );
-
-  emit(state.copyWith(profile: updatedProfile));
-
-  // ⭐⭐⭐ حفظ في السيرفر
-  await saveProfile();
-  
-  debugPrint('✅ [CUBIT] Images reordered and saved to server');
-}
   // ════════════════════════════════════════════════════════════════
   // ⭐ DUMMY PROFILE (FOR TESTING)
   // ════════════════════════════════════════════════════════════════
@@ -806,8 +856,8 @@ Future<void> reorderImages(List<String> newOrderedImages) async {
           job: 'مهندس برمجيات',
         ),
         yourGoals: YourGoals(
-          travel: 'خلال 3 أشهر',
-          children: '50,000 ريال',
+          intendTravelAbroad: 'خلال 3 أشهر',
+          familyAcceptance: '50,000 ريال',
           engagement: 'خلال سنة',
           marry: 'خلال سنتين',
         ),
@@ -828,18 +878,21 @@ Future<void> reorderImages(List<String> newOrderedImages) async {
       // ⭐⭐⭐ حساب النسبة مع الميديا
       final profileWithMedia = _calculateProgressWithMedia(dummyProfile);
 
-      emit(state.copyWith(
-        profile: profileWithMedia,
-        state: CubitStates.success,
-      ));
+      emit(
+        state.copyWith(profile: profileWithMedia, state: CubitStates.success),
+      );
 
-      debugPrint('✅ [CUBIT] Dummy profile loaded with progress: ${profileWithMedia.answerCompletedPercentage}%');
+      debugPrint(
+        '✅ [CUBIT] Dummy profile loaded with progress: ${profileWithMedia.answerCompletedPercentage}%',
+      );
     } catch (e) {
       debugPrint('❌ [CUBIT] Dummy profile failed: $e');
-      emit(state.copyWith(
-        state: CubitStates.failure,
-        errorMessage: 'فشل في تحميل البيانات الوهمية',
-      ));
+      emit(
+        state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: 'فشل في تحميل البيانات الوهمية',
+        ),
+      );
     }
   }
 
