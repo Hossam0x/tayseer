@@ -79,14 +79,14 @@ class CompleteMarriageFile extends StatelessWidget {
                     if (!isVerified) SizedBox(height: 12.h),
 
                     // Images Section (show if less than 5 images)
-                    if (imageCount < 5)
+                    if (imageCount < 4)
                       _buildTaskCard(
                         context,
                         title: context.tr('add_minimum_images'),
                         subtitle: context.tr('add_more_images_description'),
                         buttonText: context.tr('add'),
                         currentCount: imageCount,
-                        requiredCount: 5,
+                        requiredCount: 4,
                         onTap: () {
                           onNavigateToEdit('images');
                         },

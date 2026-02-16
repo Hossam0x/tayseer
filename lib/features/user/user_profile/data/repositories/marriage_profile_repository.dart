@@ -224,6 +224,7 @@ class MarriageProfileRepository {
       }
     }
 
+    // ⭐⭐⭐ HOBBIES (interests only)
     if (profile.hobbies.isNotEmpty) {
       final interestHobbies = profile.hobbies
           .where((h) => h.startsWith('interest_'))
@@ -238,30 +239,14 @@ class MarriageProfileRepository {
       }
     }
 
-    // ⭐⭐⭐ FAITH - ADD TO ANSWERS ARRAY (NOT SEPARATE FIELD)
+    // ⭐⭐⭐ FAITH - ADD TO ANSWERS ARRAY
     if (profile.faith.isNotEmpty) {
       final faithString = profile.faith.join(', ');
       answers.add({'category': 'faith', 'answer': faithString});
       debugPrint('🕌 [CONVERT] Faith in answers: $faithString');
     }
 
-    // ⭐ Build Request Body
-    final Map<String, dynamic> requestBody = {'answers': answers};
-
-    // ⭐ My Description
-    if (profile.myDescription != null) {
-      final cleanedBio = _cleanValue(profile.myDescription);
-      if (cleanedBio != null) {
-        requestBody['mydescription'] = cleanedBio;
-      }
-    }
-
-    // ⭐ Age
-    if (profile.aboutMe?.age != null) {
-      requestBody['age'] = int.tryParse(profile.aboutMe!.age!.trim()) ?? 25;
-    }
-
-    // ⭐⭐⭐ Goals
+    // ⭐⭐⭐ GOALS - حطها هنا قبل requestBody!
     if (profile.yourGoals != null) {
       if (profile.yourGoals!.intendTravelAbroad != null) {
         final cleaned = _cleanValue(profile.yourGoals!.intendTravelAbroad);
@@ -290,6 +275,22 @@ class MarriageProfileRepository {
           answers.add({'category': 'engagment', 'answer': cleaned});
         }
       }
+    }
+
+    // ⭐ Build Request Body
+    final Map<String, dynamic> requestBody = {'answers': answers};
+
+    // ⭐ My Description
+    if (profile.myDescription != null) {
+      final cleanedBio = _cleanValue(profile.myDescription);
+      if (cleanedBio != null) {
+        requestBody['mydescription'] = cleanedBio;
+      }
+    }
+
+    // ⭐ Age
+    if (profile.aboutMe?.age != null) {
+      requestBody['age'] = int.tryParse(profile.aboutMe!.age!.trim()) ?? 25;
     }
 
     // ⭐ Progress percentage
