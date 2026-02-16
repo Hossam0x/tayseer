@@ -144,6 +144,7 @@ class ExplorationState extends State<Exploration> {
       physics:
           const AlwaysScrollableScrollPhysics(), // ✅ Changed to allow pull-to-refresh even when content is short
       slivers: [
+        
         // ✅ Top Spacing
         SliverPadding(
           padding: EdgeInsets.only(top: 16.h),

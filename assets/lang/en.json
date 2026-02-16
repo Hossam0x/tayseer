@@ -1279,5 +1279,9 @@
   "yes_make_first": "Yes, Make it First",
   "image_reordered_successfully": "Image reordered successfully",
   "error_reordering_image": "Error reordering image",
-  "under_review": "Awaiting review"
+  "under_review": "Awaiting review",
+  "main_Image": "Main Image",
+   "faith": "Faith",
+  "select_faith_title": "Select Faith Activities",
+  "faith_description": "Choose the faith activities you practice"
 }

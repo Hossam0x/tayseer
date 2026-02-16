@@ -448,8 +448,33 @@ class _MarriageFieldSelectionViewState
       'interest_chocolate': '🍫',
       'interest_ice_cream': '🍦',
     },
+  
   };
-
+  
+// ⭐⭐⭐ NEW: خريطة الإيمان منفصلة
+final Map<String, Map<String, String>> _faithWithCategories = {
+  // =============== الإيمان ===============
+  'category_faith': {
+    'faith_dua': '🙏',
+    'faith_umrah': '🕋',
+    'faith_charity_work': '💼',
+    'faith_dawah': '📢',
+    'faith_sadaqah': '🤝',
+    'faith_hadith': '📖',
+    'faith_tahajjud': '😊',
+    'faith_dhikr': '📿',
+    'faith_multiple_prayers': '🕌',
+    'faith_sunnah_prayer': '🙏',
+    'faith_nafila_prayer': '🕯️',
+    'faith_hajj': '🕋',
+    'faith_five_prayers': '☪️',
+    'faith_fiqh': '📚',
+    'faith_fasting': '🌙',
+    'faith_tasawwuf': '😇',
+    'faith_good_manners': '🤲',
+    'faith_friday_prayer': '🕌',
+  },
+};
 
     switch (fieldKey) {
       case 'country':
@@ -740,6 +765,12 @@ class _MarriageFieldSelectionViewState
           'type': 'textarea',
           'maxLength': 500,
         };
+        case 'faith':
+  return {
+    'titleKey': 'select_faith_title',
+    'type': 'multiselect',
+    'categorizedItems': _faithWithCategories, // ⭐ الإيمان فقط
+  };
 
       // ⭐⭐⭐ HOBBIES & INTERESTS - NOW WITH CATEGORIZED ITEMS
       case 'interests':

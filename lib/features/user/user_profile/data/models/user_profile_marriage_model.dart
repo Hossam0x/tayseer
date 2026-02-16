@@ -10,13 +10,14 @@ class MarriageUserProfileModel {
   final String? myDescription;
   final int? lastQuestionNumber;
   
+  
   // ⭐⭐⭐ NEW: Progress percentage from API
   final num? answerCompletedPercentage;
     // ⭐⭐⭐ NEW: Statistics fields
   final int? interactionCount;
   final int? regredsCount;
   final bool? inReview;
-
+final bool? isVerified;
   // Additional fields for the "view" format from API
   final ProfileHeader? header;
   final List<TimelineGoal>? timeline;
@@ -36,6 +37,7 @@ class MarriageUserProfileModel {
       this.interactionCount,
     this.regredsCount,
     this.inReview,
+    this.isVerified,
     this.header,
     this.timeline,
     this.religious,
@@ -167,6 +169,7 @@ class MarriageUserProfileModel {
       interactionCount: json['interactionCount'] as int?,
       regredsCount: json['regredsCount'] as int?,
       inReview: json['inReview'] as bool?,
+      isVerified: json['isVerified'] as bool?,
     );
 
   }
@@ -200,10 +203,13 @@ class MarriageUserProfileModel {
     int? interactionCount,
     int? regredsCount,
     bool? inReview,
+   bool? isVerified,
+
     ProfileHeader? header,
     List<TimelineGoal>? timeline,
     ReligiousInfo? religious,
     BioInfo? bio,
+    
   }) {
     return MarriageUserProfileModel(
       aboutMe: aboutMe ?? this.aboutMe,
@@ -222,6 +228,7 @@ class MarriageUserProfileModel {
       timeline: timeline ?? this.timeline,
       religious: religious ?? this.religious,
       bio: bio ?? this.bio,
+      isVerified: isVerified ?? this.isVerified,
     );
   }
 }
