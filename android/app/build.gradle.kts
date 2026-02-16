@@ -16,11 +16,11 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.athr.tayser"
-    compileSdk = 35  // ← غيرها لـ 35 (أكثر استقراراً)
+    compileSdk = 36  // ← غيرها لـ 35 (أكثر استقراراً)
 
     defaultConfig {
         applicationId = "com.athr.tayser"
-        minSdk = 24
+        minSdk = flutter.minSdkVersion
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"

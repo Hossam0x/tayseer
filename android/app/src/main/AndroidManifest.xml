@@ -35,6 +35,40 @@
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
+    <!-- ================= Queries (URL Launcher + Text Processing) ================= -->
+
+    <queries>
+        <!-- ✅ url_launcher: فتح لينكات https -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+
+        <!-- ✅ url_launcher: فتح لينكات http -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+
+        <!-- ✅ url_launcher: فتح الهاتف tel -->
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+            <data android:scheme="tel" />
+        </intent>
+
+        <!-- ✅ url_launcher: فتح الإيميل mailto -->
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+
+        <!-- ✅ Text Processing -->
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+
     <!-- ================= Application ================= -->
 
     <application
@@ -72,13 +106,5 @@
             android:name="flutterEmbedding"
             android:value="2"/>
     </application>
-
-    <!-- Queries -->
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
-        </intent>
-    </queries>
 
 </manifest>

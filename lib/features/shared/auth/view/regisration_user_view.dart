@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/view/listeners/guest_login_listeners.dart';
+import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/auth/view/widget/build_login_button.dart';
 import 'package:tayseer/features/shared/auth/view/widget/last_login_bubble.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
@@ -369,6 +370,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                                     ),
                                   ),
                                 ),
+                                SizedBox(height: context.height * 0.03),
+                                AgreementText(),
                               ],
                             ),
                           ),

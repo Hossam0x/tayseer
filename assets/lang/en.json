@@ -1183,7 +1183,6 @@
   "agreement_prefix": "By continuing, you agree to our ",
   "terms_of_use": "Terms of Use",
   "and": "and",
-  "privacy_policy": "Privacy Policy",
   "first_name_required": "First name is required",
   "first_name_length_error": "First name must be between 4 and 12 characters",
   "first_name_letters_only": "First name can only contain letters",
@@ -1279,5 +1278,8 @@
   "yes_make_first": "Yes, Make it First",
   "image_reordered_successfully": "Image reordered successfully",
   "error_reordering_image": "Error reordering image",
-  "under_review": "Awaiting review"
+  "under_review": "Awaiting review",
+   "by_continuing_you_agree": "By continuing, you agree to our",
+  "privacy_policy": "Terms & Privacy Policy",
+  "terms_belong_to_us": ""
 }

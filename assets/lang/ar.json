@@ -526,11 +526,6 @@
   "interest_music": "الموسيقى",
   "interest_technology": "التكنولوجيا",
   "interest_nature": "الطبيعة",
-
-
-
-
-
   "add_images": "الصور المضافة",
   "add_phone": "ادخل رقم الهاتف",
   "add_phone_desc": "ادخل رقم الهاتف الخاص بك وسنرسل اليك رمز تحقق لاثبات هويتك",
@@ -1171,7 +1166,6 @@
   "agreement_prefix": "بموافقتك على الاستمرار فأنت توافق على ",
   "terms_of_use": "البنود",
   "and": "و",
-  "privacy_policy": "الخصوصية الخاصة بنا",
   "continuation": "استمرار",
   "main_image": "الصورة الرئيسية",
   "basic_plan_title": "خطة اساسية محدودة",
@@ -1282,19 +1276,20 @@
   "app_fees_deduction_note": "سيتم خصم 50% من سعر الجلسة الواحدة رسوم للتطبيق",
   "final_price_after_discount": "السعر النهائي بعد الخصم",
   "get_free_credit_daily_with_gold": "احصل علي رصيد مجانى كل يوم مع الجولد",
-   "delete_main_image": "حذف الصورة الشخصية",
+  "delete_main_image": "حذف الصورة الشخصية",
   "must_upload_new_main_image": "يجب عليك رفع صورة شخصية جديدة قبل حذف الحالية",
   "choose_new_image": "اختر صورة جديدة",
   "max_secondary_images_4": "الحد الأقصى 4 صور ثانوية",
   "add_main_image_required": "يجب إضافة صورة رئيسية",
   "must_add_main_image_before_exit": "لا يمكنك الخروج بدون إضافة صورة رئيسية",
   "add_image": "إضافة صورة",
-    "reorder_image": "إعادة ترتيب الصورة",
+  "reorder_image": "إعادة ترتيب الصورة",
   "reorder_image_question": "هل تريد أن تكون هذه الصورة هي الصورة الثانية بعد الرئيسية؟",
   "yes_make_first": "نعم، اجعلها الأولى",
   "image_reordered_successfully": "تم إعادة ترتيب الصورة بنجاح",
   "error_reordering_image": "حدث خطأ أثناء إعادة ترتيب الصورة",
-  "under_review":"انتظار المراجعة"
-
-
+  "under_review": "انتظار المراجعة",
+  "by_continuing_you_agree": "بموافقتك على الاستمرار أنت توافق على",
+  "privacy_policy": "البنود وسياسة الخصوصية",
+  "terms_belong_to_us": "الخاصة بنا"
 }

@@ -30,6 +30,15 @@
     <key>LSRequiresIPhoneOS</key>
     <true/>
 
+    <!-- ✅ URL Launcher Schemes (NEW) -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>https</string>
+        <string>http</string>
+        <string>tel</string>
+        <string>mailto</string>
+    </array>
+
     <!-- Network -->
     <key>NSAppTransportSecurity</key>
     <dict>
