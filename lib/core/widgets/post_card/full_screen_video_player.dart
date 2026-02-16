@@ -48,12 +48,13 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
 
   // ✅ Local mute state للـ legacy mode
   late bool _localIsMuted;
-  
+
   // ✅ هل نستخدم الـ Global Mute ولا الـ Local؟
   bool get _useGlobalMute => widget.isMuted == null;
 
   // ✅ الـ Mute State الفعلي
-  bool get _isMuted => _useGlobalMute ? _muteManager.isMuted.value : _localIsMuted;
+  bool get _isMuted =>
+      _useGlobalMute ? _muteManager.isMuted.value : _localIsMuted;
 
   @override
   void initState() {
@@ -82,7 +83,9 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
 
   Future<void> _initializeVideo() async {
     try {
-      final cachedFile = await _videoCacheManager.getCachedFile(widget.videoUrl);
+      final cachedFile = await _videoCacheManager.getCachedFile(
+        widget.videoUrl,
+      );
 
       if (!mounted) return;
 
@@ -247,7 +250,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
     if (_useGlobalMute) {
       _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
     }
-    
+
     _controller?.removeListener(_videoListener);
     _controller?.dispose();
     super.dispose();
@@ -322,11 +325,13 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
     final double sliderValue = _isDragging
         ? _dragValue!
         : (duration.inMilliseconds > 0
-            ? position.inMilliseconds / duration.inMilliseconds
-            : 0.0);
+              ? position.inMilliseconds / duration.inMilliseconds
+              : 0.0);
 
     final displayPosition = _isDragging
-        ? Duration(milliseconds: (_dragValue! * duration.inMilliseconds).toInt())
+        ? Duration(
+            milliseconds: (_dragValue! * duration.inMilliseconds).toInt(),
+          )
         : position;
 
     return GestureDetector(
@@ -357,7 +362,10 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                 children: [
                   // Top Bar
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 8.h,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -467,7 +475,10 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
 
                   // Seek Bar
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
                     child: Row(
                       children: [
                         Text(
@@ -486,11 +497,15 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                               thumbShape: RoundSliderThumbShape(
                                 enabledThumbRadius: _isDragging ? 7.r : 5.r,
                               ),
-                              overlayShape: RoundSliderOverlayShape(overlayRadius: 14.r),
+                              overlayShape: RoundSliderOverlayShape(
+                                overlayRadius: 14.r,
+                              ),
                               activeTrackColor: AppColors.kprimaryColor,
                               inactiveTrackColor: Colors.white.withOpacity(0.3),
                               thumbColor: AppColors.kprimaryColor,
-                              overlayColor: AppColors.kprimaryColor.withOpacity(0.2),
+                              overlayColor: AppColors.kprimaryColor.withOpacity(
+                                0.2,
+                              ),
                             ),
                             child: Slider(
                               value: sliderValue.clamp(0.0, 1.0),
@@ -505,7 +520,8 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                               },
                               onChangeEnd: (value) {
                                 final newPosition = Duration(
-                                  milliseconds: (value * duration.inMilliseconds).toInt(),
+                                  milliseconds:
+                                      (value * duration.inMilliseconds).toInt(),
                                 );
                                 _controller!.seekTo(newPosition);
                                 setState(() {

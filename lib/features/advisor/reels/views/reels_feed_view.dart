@@ -1,5 +1,5 @@
 import 'package:preload_page_view/preload_page_view.dart';
-import 'package:tayseer/core/utils/global_mute_manager.dart'; // ✅ أضف هذا
+import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/reels/view_model/cubit/reels_cubit.dart';
@@ -33,21 +33,19 @@ class _ReelsFeedContent extends StatefulWidget {
 class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   PreloadPageController? _pageController;
   final _videoCacheManager = VideoCacheManager();
-  final _muteManager = GlobalMuteManager.instance; // ✅ Reference محلي
-  
+
   int _currentIndex = 0;
-  int _lastKnownReelsCount = 0;
 
   static const int _loadMoreThreshold = 3;
-  static const int _preloadCount = 2; // ✅ Constant للـ preload
+  static const int _preloadCount = 2;
 
   @override
   void initState() {
     super.initState();
     _pageController = PreloadPageController(initialPage: 0);
-    
-    // ✅ إلغاء الـ Mute عند دخول الريلز
-    _muteManager.setMute(false);
+
+    // Unmute when entering reels
+    GlobalMuteManager.instance.setMute(false);
 
     _playInitialController();
   }
@@ -76,7 +74,7 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
 
   void _onPageChanged(int index, List<PostModel> reels) {
     if (_currentIndex == index) return; // ✅ Early return
-    
+
     setState(() => _currentIndex = index);
     _preloadNextVideos(reels, index);
     _checkLoadMore(index, reels.length);
@@ -100,20 +98,30 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: BlocConsumer<ReelsCubit, ReelsState>(
-        listenWhen: _shouldListen,
-        buildWhen: _shouldBuild,
-        listener: _handleStateChanges,
-        builder: _buildContent,
+      body: MultiBlocListener(
+        listeners: [
+          // Listener 1: Preload videos when reels list changes
+          BlocListener<ReelsCubit, ReelsState>(
+            listenWhen: (previous, current) =>
+                previous.reels.length != current.reels.length,
+            listener: (context, state) =>
+                _preloadNextVideos(state.reels, _currentIndex),
+          ),
+
+          // Listener 2: Share action toasts
+          BlocListener<ReelsCubit, ReelsState>(
+            listenWhen: (previous, current) =>
+                previous.shareActionState != current.shareActionState &&
+                current.shareActionState != CubitStates.initial,
+            listener: _handleShareToast,
+          ),
+        ],
+        child: BlocBuilder<ReelsCubit, ReelsState>(
+          buildWhen: _shouldBuild,
+          builder: _buildContent,
+        ),
       ),
     );
-  }
-
-  // ✅ فصل الشروط في دوال منفصلة
-  bool _shouldListen(ReelsState previous, ReelsState current) {
-    return previous.reels.length != current.reels.length ||
-        (previous.shareActionState != current.shareActionState &&
-            current.shareActionState != CubitStates.initial);
   }
 
   bool _shouldBuild(ReelsState previous, ReelsState current) {
@@ -122,23 +130,14 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
         previous.isLoadingMore != current.isLoadingMore;
   }
 
-  void _handleStateChanges(BuildContext context, ReelsState state) {
-    // Handle reels count change
-    if (state.reels.length != _lastKnownReelsCount) {
-      _lastKnownReelsCount = state.reels.length;
-      _preloadNextVideos(state.reels, _currentIndex);
-    }
-
-    // Handle Share Action Toast
-    _handleShareToast(context, state);
-  }
-
-  // ✅ فصل الـ Toast handling
   void _handleShareToast(BuildContext context, ReelsState state) {
     switch (state.shareActionState) {
       case CubitStates.success:
-        final message = state.shareMessage ?? 
-            (state.isShareAdded == true ? 'تمت المشاركة بنجاح' : 'تم إلغاء المشاركة');
+        final message =
+            state.shareMessage ??
+            (state.isShareAdded == true
+                ? 'تمت المشاركة بنجاح'
+                : 'تم إلغاء المشاركة');
         state.isShareAdded == true
             ? AppToast.success(context, message)
             : AppToast.info(context, message);
@@ -167,9 +166,7 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   }
 
   Widget _buildLoading() {
-    return const Center(
-      child: CircularProgressIndicator(color: Colors.white),
-    );
+    return const Center(child: CircularProgressIndicator(color: Colors.white));
   }
 
   Widget _buildError(BuildContext context, String? errorMessage) {
@@ -193,7 +190,7 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
 
   Widget _buildReelsList(ReelsState state) {
     final itemCount = state.reels.length + (state.isLoadingMore ? 1 : 0);
-    
+
     return PreloadPageView.builder(
       controller: _pageController,
       scrollDirection: Axis.vertical,
@@ -223,11 +220,9 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   }
 
   Widget _buildLoadingMoreIndicator() {
-    return Container(
+    return const ColoredBox(
       color: Colors.black,
-      child: const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      ),
+      child: Center(child: CircularProgressIndicator(color: Colors.white)),
     );
   }
 }
