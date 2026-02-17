@@ -239,86 +239,94 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     });
   }
 
-// ⭐⭐⭐ FIX: دالة تنسيق الهوايات مع دعم الترجمة الكامل
-String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
-  List<String> hobbiesList = [];
+  // ⭐⭐⭐ FIX: دالة تنسيق الهوايات مع دعم الترجمة الكامل
+  String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
+    List<String> hobbiesList = [];
 
-  if (hobbyKeys is List) {
-    debugPrint('📋 [FORMAT] Raw List: $hobbyKeys');
-    
-    // ⭐ Loop through list items
-    for (var item in hobbyKeys) {
-      final itemStr = item.toString().trim();
-      if (itemStr.isEmpty) continue;
-      
-      // ⭐⭐⭐ CRITICAL FIX: إذا العنصر فيه فواصل، فصّله!
-      if (itemStr.contains(',')) {
-        debugPrint('  🔄 Splitting item: "$itemStr"');
-        final subItems = itemStr.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
-        hobbiesList.addAll(subItems);
-      } else {
-        hobbiesList.add(itemStr);
+    if (hobbyKeys is List) {
+      debugPrint('📋 [FORMAT] Raw List: $hobbyKeys');
+
+      // ⭐ Loop through list items
+      for (var item in hobbyKeys) {
+        final itemStr = item.toString().trim();
+        if (itemStr.isEmpty) continue;
+
+        // ⭐⭐⭐ CRITICAL FIX: إذا العنصر فيه فواصل، فصّله!
+        if (itemStr.contains(',')) {
+          debugPrint('  🔄 Splitting item: "$itemStr"');
+          final subItems = itemStr
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty);
+          hobbiesList.addAll(subItems);
+        } else {
+          hobbiesList.add(itemStr);
+        }
       }
+
+      debugPrint('📋 [FORMAT] Processed List: $hobbiesList');
+    } else if (hobbyKeys is String) {
+      // ⭐ حالة String
+      hobbiesList = hobbyKeys
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      debugPrint(
+        '📋 [FORMAT] String input: "$hobbyKeys" → parsed: $hobbiesList',
+      );
+    } else {
+      debugPrint('⚠️ [FORMAT] Invalid type: ${hobbyKeys.runtimeType}');
+      return '';
     }
-    
-    debugPrint('📋 [FORMAT] Processed List: $hobbiesList');
-  } else if (hobbyKeys is String) {
-    // ⭐ حالة String
-    hobbiesList = hobbyKeys
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
+
+    // ⭐ فلترة: خلي بس الـ keys الصحيحة
+    hobbiesList = hobbiesList
+        .where((s) => s.startsWith('interest_') || s.startsWith('faith_'))
         .toList();
-    
-    debugPrint('📋 [FORMAT] String input: "$hobbyKeys" → parsed: $hobbiesList');
-  } else {
-    debugPrint('⚠️ [FORMAT] Invalid type: ${hobbyKeys.runtimeType}');
-    return '';
+
+    if (hobbiesList.isEmpty) {
+      debugPrint('⚠️ [FORMAT] No valid hobbies found');
+      return '';
+    }
+
+    final result = hobbiesList
+        .map((key) {
+          final trimmedKey = key.trim();
+          if (trimmedKey.isEmpty) return '';
+
+          final emoji = _hobbyEmojiMap[trimmedKey] ?? '🎵';
+          final text = context.tr(trimmedKey);
+
+          debugPrint('  🎯 $trimmedKey → $emoji $text');
+          return '$emoji $text';
+        })
+        .where((s) => s.isNotEmpty)
+        .join(', ');
+
+    debugPrint('✅ [FORMAT] Final result: "$result"');
+    return result;
   }
 
-  // ⭐ فلترة: خلي بس الـ keys الصحيحة
-  hobbiesList = hobbiesList
-      .where((s) => s.startsWith('interest_') || s.startsWith('faith_'))
-      .toList();
+  // ⭐⭐⭐ NEW: دالة عامة لترجمة أي قيمة تلقائياً
+  String _translateValue(String value, BuildContext context) {
+    // إذا كانت القيمة فاضية أو "اختر"، أرجعها كما هي
+    if (value.isEmpty || value == 'اختر' || value == 'select') {
+      return context.tr('select');
+    }
 
-  if (hobbiesList.isEmpty) {
-    debugPrint('⚠️ [FORMAT] No valid hobbies found');
-    return '';
+    // جرب الترجمة - إذا مافيش ترجمة، هيرجع نفس القيمة
+    final translated = context.tr(value);
+
+    // إذا الترجمة نفس الـ key، يعني مافيش ترجمة → أرجع القيمة الأصلية
+    if (translated == value && !value.contains(' ')) {
+      // لو فيها مسافات، يعني قيمة مترجمة فعلاً مش key
+      return value;
+    }
+
+    return translated;
   }
-
-  final result = hobbiesList.map((key) {
-    final trimmedKey = key.trim();
-    if (trimmedKey.isEmpty) return '';
-    
-    final emoji = _hobbyEmojiMap[trimmedKey] ?? '🎵';
-    final text = context.tr(trimmedKey);
-    
-    debugPrint('  🎯 $trimmedKey → $emoji $text');
-    return '$emoji $text';
-  }).where((s) => s.isNotEmpty).join(', ');
-
-  debugPrint('✅ [FORMAT] Final result: "$result"');
-  return result;
-}
-
-// ⭐⭐⭐ NEW: دالة عامة لترجمة أي قيمة تلقائياً
-String _translateValue(String value, BuildContext context) {
-  // إذا كانت القيمة فاضية أو "اختر"، أرجعها كما هي
-  if (value.isEmpty || value == 'اختر' || value == 'select') {
-    return context.tr('select');
-  }
-
-  // جرب الترجمة - إذا مافيش ترجمة، هيرجع نفس القيمة
-  final translated = context.tr(value);
-  
-  // إذا الترجمة نفس الـ key، يعني مافيش ترجمة → أرجع القيمة الأصلية
-  if (translated == value && !value.contains(' ')) {
-    // لو فيها مسافات، يعني قيمة مترجمة فعلاً مش key
-    return value;
-  }
-  
-  return translated;
-}
 
   @override
   Widget build(BuildContext context) {
@@ -448,289 +456,298 @@ String _translateValue(String value, BuildContext context) {
       ),
     );
   }
-// ⭐⭐⭐ UPDATED: _buildImagesSection with REORDER functionality
-// ⭐⭐⭐ UPDATED: _buildImagesSection with REORDER functionality
-Widget _buildImagesSection(
-  BuildContext context,
-  MarriageProfileCubit cubit,
-  MarriageUserProfileModel profile,
-) {
-  final allImages = profile.userMedia?.images ?? [];
-  final singleImageUrl = profile.userMedia?.singleImage;
-  final secondaryImages = allImages.length > 4 ? allImages.sublist(0, 4) : allImages;
 
-  return Container(
-    padding: EdgeInsets.all(10.w),
-    decoration: BoxDecoration(
-      color: AppColors.kWhiteColor,
-      borderRadius: BorderRadius.circular(12.r),
-      border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${context.tr('images_count')} ( ${(singleImageUrl != null ? 1 : 0) + allImages.length} ${context.tr('images_count')})',
-          style: Styles.textStyle18Meduim,
-        ),
-        Gap(12.h),
-        Directionality(
-          textDirection: TextDirection.rtl,
-          child: GridView.builder(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 0.7,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemCount: 6,
-            itemBuilder: (context, index) {
-              // ⭐ SLOT 0: Main Image
-              if (index == 0) {
-                return ImageSlotCard(
-                  imageUrl: singleImageUrl,
-                  isMain: true,
-                  onTap: singleImageUrl == null 
-                    ? () => _pickSingleImage(context, cubit, profile) 
-                    : null,
-                  onRemove: singleImageUrl != null 
-                    ? () => _removeSingleImage(context, cubit) 
-                    : null,
-                );
-              }
-              
-              // ⭐ SLOT 5: Guidelines
-              if (index == 5) {
-                return GestureDetector(
-                  onTap: () {
-                    ImageGuidelinesBottomSheet.show(context, onNext: () {
-                      context.pop();
-                    });
-                  },
-                  child: Padding(
-                    padding: EdgeInsets.only(top: context.height * 0.06),
-                    child: Column(
-                      children: [
-                        Icon(Icons.info_outline, size: 28, color: AppColors.kscandryTextColor),
-                        SizedBox(height: 8),
-                        Text(
-                          context.tr('photo_guidelines'),
-                          textAlign: TextAlign.center,
-                          style: Styles.textStyle16.copyWith(color: AppColors.kscandryTextColor),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              
-              // ⭐ SLOTS 1-4: Secondary Images
-              int listIndex = index - 1;
-              if (listIndex < secondaryImages.length) {
-                return ImageSlotCard(
-                  imageUrl: secondaryImages[listIndex],
-                  isMain: false,
-                  onTap: () => _showReorderImageDialog(
-                    context, 
-                    cubit, 
-                    listIndex, 
-                    allImages,
-                  ), // ⭐⭐⭐ NEW: Show reorder dialog
-                  onRemove: () => _removeImage(context, cubit, listIndex, allImages),
-                );
-              } else {
-                // Empty slot
-                return ImageSlotCard(
-                  imageUrl: null,
-                  isMain: false,
-                  onTap: allImages.length < 4 
-                    ? () => _pickImage(context, cubit, profile, isMain: false) 
-                    : null,
-                  onRemove: null,
-                );
-              }
-            },
-          ),
-        ),
-      ],
-    ),
-  );
-}
+  // ⭐⭐⭐ UPDATED: _buildImagesSection with REORDER functionality
+  // ⭐⭐⭐ UPDATED: _buildImagesSection with REORDER functionality
+  Widget _buildImagesSection(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    MarriageUserProfileModel profile,
+  ) {
+    final allImages = profile.userMedia?.images ?? [];
+    final singleImageUrl = profile.userMedia?.singleImage;
+    final secondaryImages = allImages.length > 4
+        ? allImages.sublist(0, 4)
+        : allImages;
 
-// ⭐⭐⭐ NEW: Show Reorder Image Dialog
-void _showReorderImageDialog(
-  BuildContext context,
-  MarriageProfileCubit cubit,
-  int currentIndex,
-  List<String> allImages,
-) {
-  // إذا كانت أول صورة، ما فيه داعي للترتيب
-  if (currentIndex == 0) {
-    return;
-  }
-
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20.r),
+    return Container(
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: AppColors.kWhiteColor,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
-      title: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.swap_vert, color: AppColors.primary600, size: 28.w),
-          Gap(12.w),
-          Expanded(
-            child: Text(
-              context.tr('reorder_image'),
-              style: Styles.textStyle18Meduim.copyWith(
-                color: AppColors.primary600,
-              ),
-            ),
-          ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ⭐ عرض الصورة
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12.r),
-            child: Image.network(
-              allImages[currentIndex],
-              height: 200.h,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-          Gap(16.h),
           Text(
-            context.tr('reorder_image_question'),
-            textAlign: TextAlign.center,
-            style: Styles.textStyle16.copyWith(
-              height: 1.5,
+            '${context.tr('images_count')} ( ${(singleImageUrl != null ? 1 : 0) + allImages.length} ${context.tr('images_count')})',
+            style: Styles.textStyle18Meduim,
+          ),
+          Gap(12.h),
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: GridView.builder(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: 6,
+              itemBuilder: (context, index) {
+                // ⭐ SLOT 0: Main Image
+                if (index == 0) {
+                  return ImageSlotCard(
+                    imageUrl: singleImageUrl,
+                    isMain: true,
+                    onTap: singleImageUrl == null
+                        ? () => _pickSingleImage(context, cubit, profile)
+                        : null,
+                    onRemove: singleImageUrl != null
+                        ? () => _removeSingleImage(context, cubit)
+                        : null,
+                  );
+                }
+
+                // ⭐ SLOT 5: Guidelines
+                if (index == 5) {
+                  return GestureDetector(
+                    onTap: () {
+                      ImageGuidelinesBottomSheet.show(
+                        context,
+                        onNext: () {
+                          context.pop();
+                        },
+                      );
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.only(top: context.height * 0.06),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 28,
+                            color: AppColors.kscandryTextColor,
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            context.tr('photo_guidelines'),
+                            textAlign: TextAlign.center,
+                            style: Styles.textStyle16.copyWith(
+                              color: AppColors.kscandryTextColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // ⭐ SLOTS 1-4: Secondary Images
+                int listIndex = index - 1;
+                if (listIndex < secondaryImages.length) {
+                  return ImageSlotCard(
+                    imageUrl: secondaryImages[listIndex],
+                    isMain: false,
+                    onTap: () => _showReorderImageDialog(
+                      context,
+                      cubit,
+                      listIndex,
+                      allImages,
+                    ), // ⭐⭐⭐ NEW: Show reorder dialog
+                    onRemove: () =>
+                        _removeImage(context, cubit, listIndex, allImages),
+                  );
+                } else {
+                  // Empty slot
+                  return ImageSlotCard(
+                    imageUrl: null,
+                    isMain: false,
+                    onTap: allImages.length < 4
+                        ? () =>
+                              _pickImage(context, cubit, profile, isMain: false)
+                        : null,
+                    onRemove: null,
+                  );
+                }
+              },
             ),
           ),
         ],
-      ),
-      actions: [
-        // ⭐ زر الإلغاء
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            context.tr('cancel'),
-            style: TextStyle(
-              color: AppColors.secondary600,
-              fontSize: 16.sp,
-            ),
-          ),
-        ),
-        
-        // ⭐ زر التأكيد
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-            _reorderImage(context, cubit, currentIndex, allImages);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary600,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-          ),
-          child: Text(
-            context.tr('yes_make_first'),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-// ⭐⭐⭐ NEW: Reorder Image (Move to First Position)
-
-Future<void> _reorderImage(
-  BuildContext context,
-  MarriageProfileCubit cubit,
-  int currentIndex,
-  List<String> allImages,
-) async {
-  final List<String> reorderedImages = List<String>.from(allImages);
-  
-  final selectedImage = reorderedImages.removeAt(currentIndex);
-  reorderedImages.insert(0, selectedImage);
-  
-  debugPrint('═══════════════════════════════════════');
-  debugPrint('🔄 [REORDER] Moving image from index $currentIndex to 0');
-  debugPrint('📋 [REORDER] Old order: $allImages');
-  debugPrint('📋 [REORDER] New order: $reorderedImages');
-  debugPrint('═══════════════════════════════════════');
-  
-  // عرض Loading
-  if (mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            SizedBox(
-              width: 20.w,
-              height: 20.w,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-            Gap(12.w),
-            Text(context.tr('saving_changes')),
-          ],
-        ),
-        duration: const Duration(seconds: 2),
-        backgroundColor: AppColors.primary600,
       ),
     );
   }
-  
-  // ⭐⭐⭐ حفظ الترتيب في السيرفر
-  try {
-    await cubit.reorderImages(reorderedImages);
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: context.tr('image_reordered_successfully'),
-          isError: false,
-        ),
-      );
-      
-      setState(() {});
+
+  // ⭐⭐⭐ NEW: Show Reorder Image Dialog
+  void _showReorderImageDialog(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    int currentIndex,
+    List<String> allImages,
+  ) {
+    // إذا كانت أول صورة، ما فيه داعي للترتيب
+    if (currentIndex == 0) {
+      return;
     }
-    
-    debugPrint('✅ [REORDER] Image reordered and saved successfully');
-  } catch (e) {
-    debugPrint('❌ [REORDER] Error: $e');
-    
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.swap_vert, color: AppColors.primary600, size: 28.w),
+            Gap(12.w),
+            Expanded(
+              child: Text(
+                context.tr('reorder_image'),
+                style: Styles.textStyle18Meduim.copyWith(
+                  color: AppColors.primary600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ⭐ عرض الصورة
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12.r),
+              child: Image.network(
+                allImages[currentIndex],
+                height: 200.h,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Gap(16.h),
+            Text(
+              context.tr('reorder_image_question'),
+              textAlign: TextAlign.center,
+              style: Styles.textStyle16.copyWith(height: 1.5),
+            ),
+          ],
+        ),
+        actions: [
+          // ⭐ زر الإلغاء
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              context.tr('cancel'),
+              style: TextStyle(color: AppColors.secondary600, fontSize: 16.sp),
+            ),
+          ),
+
+          // ⭐ زر التأكيد
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _reorderImage(context, cubit, currentIndex, allImages);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary600,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+            ),
+            child: Text(
+              context.tr('yes_make_first'),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ⭐⭐⭐ NEW: Reorder Image (Move to First Position)
+
+  Future<void> _reorderImage(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    int currentIndex,
+    List<String> allImages,
+  ) async {
+    final List<String> reorderedImages = List<String>.from(allImages);
+
+    final selectedImage = reorderedImages.removeAt(currentIndex);
+    reorderedImages.insert(0, selectedImage);
+
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('🔄 [REORDER] Moving image from index $currentIndex to 0');
+    debugPrint('📋 [REORDER] Old order: $allImages');
+    debugPrint('📋 [REORDER] New order: $reorderedImages');
+    debugPrint('═══════════════════════════════════════');
+
+    // عرض Loading
     if (mounted) {
-      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: context.tr('error_reordering_image'),
-          isError: true,
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20.w,
+                height: 20.w,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              Gap(12.w),
+              Text(context.tr('saving_changes')),
+            ],
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: AppColors.primary600,
         ),
       );
+    }
+
+    // ⭐⭐⭐ حفظ الترتيب في السيرفر
+    try {
+      await cubit.reorderImages(reorderedImages);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('image_reordered_successfully'),
+            isError: false,
+          ),
+        );
+
+        setState(() {});
+      }
+
+      debugPrint('✅ [REORDER] Image reordered and saved successfully');
+    } catch (e) {
+      debugPrint('❌ [REORDER] Error: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('error_reordering_image'),
+            isError: true,
+          ),
+        );
+      }
     }
   }
-}
 
   Future<void> _pickSingleImage(
     BuildContext context,
@@ -841,13 +858,24 @@ Future<void> _reorderImage(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(context.tr('professional_info'), style: Styles.textStyle18Meduim),
+          Text(
+            context.tr('professional_info'),
+            style: Styles.textStyle18Meduim,
+          ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('qualification'),
-            _translateValue(profile.professionalLife?.educationLevel ?? '', context),
+            _translateValue(
+              profile.professionalLife?.educationLevel ?? '',
+              context,
+            ),
             () {
-              _navigateToFieldSelection(context, cubit, 'education_level', profile.professionalLife?.educationLevel);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'education_level',
+                profile.professionalLife?.educationLevel,
+              );
             },
           ),
           Gap(12.h),
@@ -855,15 +883,28 @@ Future<void> _reorderImage(
             context.tr('job'),
             _translateValue(profile.professionalLife?.job ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'choose_job', profile.professionalLife?.job);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'choose_job',
+                profile.professionalLife?.job,
+              );
             },
           ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('employer'),
-            _translateValue(profile.professionalLife?.chooseEmployer ?? '', context),
+            _translateValue(
+              profile.professionalLife?.chooseEmployer ?? '',
+              context,
+            ),
             () {
-              _navigateToFieldSelection(context, cubit, 'choose_employer', profile.professionalLife?.chooseEmployer);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'choose_employer',
+                profile.professionalLife?.chooseEmployer,
+              );
             },
           ),
         ],
@@ -904,7 +945,11 @@ Future<void> _reorderImage(
                     color: Colors.red.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.delete_outline, color: Colors.red, size: 20.w),
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 20.w,
+                  ),
                 ),
               ),
             ],
@@ -936,7 +981,10 @@ Future<void> _reorderImage(
             ),
           ),
           Gap(12.w),
-          Text(message, style: Styles.textStyle14.copyWith(color: AppColors.primary200)),
+          Text(
+            message,
+            style: Styles.textStyle14.copyWith(color: AppColors.primary200),
+          ),
         ],
       ),
     );
@@ -960,7 +1008,10 @@ Future<void> _reorderImage(
               children: [
                 Text(context.tr('attach_audio'), style: Styles.textStyle16),
                 Gap(4.h),
-                Text(context.tr('record_or_upload'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                Text(
+                  context.tr('record_or_upload'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
               ],
             ),
             Icon(Icons.mic_none, color: AppColors.primary200, size: 30.w),
@@ -1005,15 +1056,31 @@ Future<void> _reorderImage(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-          title: Text(context.tr('attach_video'), style: Styles.textStyle18Meduim, textAlign: TextAlign.center),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          title: Text(
+            context.tr('attach_video'),
+            style: Styles.textStyle18Meduim,
+            textAlign: TextAlign.center,
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.videocam, color: AppColors.primary200, size: 30.w),
-                title: Text(context.tr('record_video_now'), style: Styles.textStyle16),
-                subtitle: Text(context.tr('record_with_camera'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                leading: Icon(
+                  Icons.videocam,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text(
+                  context.tr('record_video_now'),
+                  style: Styles.textStyle16,
+                ),
+                subtitle: Text(
+                  context.tr('record_with_camera'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickVideoFromCamera(context);
@@ -1021,9 +1088,19 @@ Future<void> _reorderImage(
               ),
               Divider(height: 1, color: AppColors.secondary100),
               ListTile(
-                leading: Icon(Icons.video_library, color: AppColors.primary200, size: 30.w),
-                title: Text(context.tr('choose_from_gallery'), style: Styles.textStyle16),
-                subtitle: Text(context.tr('choose_video_from_gallery'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                leading: Icon(
+                  Icons.video_library,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text(
+                  context.tr('choose_from_gallery'),
+                  style: Styles.textStyle16,
+                ),
+                subtitle: Text(
+                  context.tr('choose_video_from_gallery'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickVideoFromGallery(context);
@@ -1042,7 +1119,11 @@ Future<void> _reorderImage(
       if (cameraStatus.isDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('camera_permission_required'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('camera_permission_required'),
+              isError: true,
+            ),
           );
         }
         return;
@@ -1050,14 +1131,21 @@ Future<void> _reorderImage(
       if (cameraStatus.isPermanentlyDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('enable_camera_from_settings'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('enable_camera_from_settings'),
+              isError: true,
+            ),
           );
           await openAppSettings();
         }
         return;
       }
       final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(source: ImageSource.camera, maxDuration: const Duration(minutes: 2));
+      final XFile? video = await picker.pickVideo(
+        source: ImageSource.camera,
+        maxDuration: const Duration(minutes: 2),
+      );
       if (video != null) {
         await _processVideoFile(context, video);
       }
@@ -1065,7 +1153,11 @@ Future<void> _reorderImage(
       debugPrint('❌ Error picking video from camera: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('error_recording_video'), isError: true),
+          CustomSnackBar(
+            context,
+            text: context.tr('error_recording_video'),
+            isError: true,
+          ),
         );
       }
     }
@@ -1091,7 +1183,11 @@ Future<void> _reorderImage(
       if (status.isDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('gallery_permission_required'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('gallery_permission_required'),
+              isError: true,
+            ),
           );
         }
         return;
@@ -1099,14 +1195,21 @@ Future<void> _reorderImage(
       if (status.isPermanentlyDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('enable_gallery_from_settings'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('enable_gallery_from_settings'),
+              isError: true,
+            ),
           );
           await openAppSettings();
         }
         return;
       }
       final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(source: ImageSource.gallery, maxDuration: const Duration(minutes: 2));
+      final XFile? video = await picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 2),
+      );
       if (video != null) {
         await _processVideoFile(context, video);
       }
@@ -1114,7 +1217,11 @@ Future<void> _reorderImage(
       debugPrint('❌ Error picking video from gallery: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('error_selecting_video'), isError: true),
+          CustomSnackBar(
+            context,
+            text: context.tr('error_selecting_video'),
+            isError: true,
+          ),
         );
       }
     }
@@ -1127,7 +1234,11 @@ Future<void> _reorderImage(
       if (fileSize > 50 * 1024 * 1024) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('video_size_too_large'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('video_size_too_large'),
+              isError: true,
+            ),
           );
         }
         return;
@@ -1148,7 +1259,11 @@ Future<void> _reorderImage(
           _isUploadingVideo = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('error_uploading_video'), isError: true),
+          CustomSnackBar(
+            context,
+            text: context.tr('error_uploading_video'),
+            isError: true,
+          ),
         );
       }
     }
@@ -1159,15 +1274,31 @@ Future<void> _reorderImage(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-          title: Text(context.tr('attach_audio'), style: Styles.textStyle18Meduim, textAlign: TextAlign.center),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          title: Text(
+            context.tr('attach_audio'),
+            style: Styles.textStyle18Meduim,
+            textAlign: TextAlign.center,
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.mic, color: AppColors.primary200, size: 30.w),
-                title: Text(context.tr('record_now'), style: Styles.textStyle16),
-                subtitle: Text(context.tr('record_voice_now'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                leading: Icon(
+                  Icons.mic,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text(
+                  context.tr('record_now'),
+                  style: Styles.textStyle16,
+                ),
+                subtitle: Text(
+                  context.tr('record_voice_now'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _startRecordingInPlace(context);
@@ -1175,9 +1306,19 @@ Future<void> _reorderImage(
               ),
               Divider(height: 1, color: AppColors.secondary100),
               ListTile(
-                leading: Icon(Icons.upload_file, color: AppColors.primary200, size: 30.w),
-                title: Text(context.tr('upload_file'), style: Styles.textStyle16),
-                subtitle: Text(context.tr('choose_audio_file'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                leading: Icon(
+                  Icons.upload_file,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text(
+                  context.tr('upload_file'),
+                  style: Styles.textStyle16,
+                ),
+                subtitle: Text(
+                  context.tr('choose_audio_file'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickAudio(context);
@@ -1216,25 +1357,40 @@ Future<void> _reorderImage(
       if (!mounted) return;
       if (status.isDenied) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('allow_files_access'), isError: true),
+          CustomSnackBar(
+            context,
+            text: context.tr('allow_files_access'),
+            isError: true,
+          ),
         );
         return;
       }
       if (status.isPermanentlyDenied) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('enable_permission_settings'), isError: true),
+          CustomSnackBar(
+            context,
+            text: context.tr('enable_permission_settings'),
+            isError: true,
+          ),
         );
         await openAppSettings();
         return;
       }
-      final result = await FilePicker.platform.pickFiles(type: FileType.audio, allowCompression: false);
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+        allowCompression: false,
+      );
       if (!mounted) return;
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
         if (!await file.exists()) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('file_not_found'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('file_not_found'),
+              isError: true,
+            ),
           );
           return;
         }
@@ -1242,7 +1398,11 @@ Future<void> _reorderImage(
         if (fileSize > 10 * 1024 * 1024) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('file_too_large'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('file_too_large'),
+              isError: true,
+            ),
           );
           return;
         }
@@ -1263,7 +1423,11 @@ Future<void> _reorderImage(
               _isUploadingAudio = false;
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(context, text: context.tr('error_uploading_audio'), isError: true),
+              CustomSnackBar(
+                context,
+                text: context.tr('error_uploading_audio'),
+                isError: true,
+              ),
             );
           }
         }
@@ -1275,7 +1439,11 @@ Future<void> _reorderImage(
           _isUploadingAudio = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: '${context.tr('error_picking_audio')}: ${e.toString()}', isError: true),
+          CustomSnackBar(
+            context,
+            text: '${context.tr('error_picking_audio')}: ${e.toString()}',
+            isError: true,
+          ),
         );
       }
     }
@@ -1342,34 +1510,60 @@ Future<void> _reorderImage(
             context.tr('marital_status'),
             _translateValue(profile.aboutMe?.socialStatus ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'maritalStatus', profile.aboutMe?.socialStatus);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'maritalStatus',
+                profile.aboutMe?.socialStatus,
+              );
             },
           ),
           _buildInfoRow(
             context.tr('has_children'),
             _translateValue(profile.family?.hasChildren ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'hasChildren', profile.family?.hasChildren);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'hasChildren',
+                profile.family?.hasChildren,
+              );
             },
           ),
           _buildInfoRow(
             context.tr('children_count'),
             _translateValue(profile.family?.childrenNumber ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'childrenNumber', profile.family?.childrenNumber);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'childrenNumber',
+                profile.family?.childrenNumber,
+              );
             },
           ),
           _buildInfoRow(
             context.tr('children_live_with_you'),
-            _translateValue(profile.family?.childrenLivingStatus ?? '', context),
+            _translateValue(
+              profile.family?.childrenLivingStatus ?? '',
+              context,
+            ),
             () {
-              _navigateToFieldSelection(context, cubit, 'childrenLiveWithYou', profile.family?.childrenLivingStatus);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'childrenLiveWithYou',
+                profile.family?.childrenLivingStatus,
+              );
             },
           ),
         ],
       ),
     );
   }
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ UPDATED: _buildGoalsSection في Edit View
+  // ════════════════════════════════════════════════════════════════
 
   Widget _buildGoalsSection(
     BuildContext context,
@@ -1388,32 +1582,63 @@ Future<void> _reorderImage(
         children: [
           Text(context.tr('my_goals'), style: Styles.textStyle18Meduim),
           Gap(12.h),
+
+          // 1. الخطوبة
           _buildInfoRow(
             context.tr('engagement'),
             _translateValue(profile.yourGoals?.engagement ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'engagement', profile.yourGoals?.engagement);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'engagement',
+                profile.yourGoals?.engagement,
+              );
             },
           ),
+
+          // 2. الزواج
           _buildInfoRow(
             context.tr('marriage'),
             _translateValue(profile.yourGoals?.marry ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'marriage_intentions', profile.yourGoals?.marry);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'marriage_intentions',
+                profile.yourGoals?.marry,
+              );
             },
           ),
+
+          // ✅ 3. الأسرة (familyAcceptance)
           _buildInfoRow(
-            context.tr('family'),
-            _translateValue(profile.yourGoals?.children ?? '', context),
+            context.tr('family'), // أو 'الأسرة'
+            _translateValue(profile.yourGoals?.familyAcceptance ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'children', profile.yourGoals?.children);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'familyAcceptance', // ✅ اسم الحقل الصحيح
+                profile.yourGoals?.familyAcceptance,
+              );
             },
           ),
+
+          // ✅ 4. السفر (intendTravelAbroad)
           _buildInfoRow(
-            context.tr('travel'),
-            _translateValue(profile.yourGoals?.intendTravelAbroad ?? '', context),
+            context.tr('travel'), // أو 'السفر'
+            _translateValue(
+              profile.yourGoals?.intendTravelAbroad ?? '',
+              context,
+            ),
             () {
-              _navigateToFieldSelection(context, cubit, 'intendTravelAbroad', profile.yourGoals?.intendTravelAbroad);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'intendTravelAbroad', // ✅ اسم الحقل الصحيح
+                profile.yourGoals?.intendTravelAbroad,
+              );
             },
           ),
         ],
@@ -1421,117 +1646,112 @@ Future<void> _reorderImage(
     );
   }
 
-// ⭐⭐⭐ UPDATED: Add Faith Section under Hobbies
-// Replace _buildKnowMeMoreSection with this updated version
+  // ⭐⭐⭐ UPDATED: Add Faith Section under Hobbies
+  // Replace _buildKnowMeMoreSection with this updated version
+  Widget _buildKnowMeMoreSection(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    MarriageUserProfileModel profile,
+  ) {
+    // ✅ FIX: اقرأ من profile.faith المنفصلة، مش من profile.hobbies
+    final faithHobbies = profile.faith; // ✅ مباشرة من faith field
+    final interestHobbies = profile.hobbies; // ✅ hobbies = interests فقط
 
-Widget _buildKnowMeMoreSection(
-  BuildContext context,
-  MarriageProfileCubit cubit,
-  MarriageUserProfileModel profile,
-) {
-  // ⭐ فصل الهوايات عن الإيمان
-  final allHobbies = profile.hobbies;
-  final faithHobbies = allHobbies.where((h) => h.startsWith('faith_')).toList();
-  final interestHobbies = allHobbies.where((h) => h.startsWith('interest_')).toList();
+    return Container(
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: AppColors.kWhiteColor,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(context.tr('know_me_more'), style: Styles.textStyle18Meduim),
+          Gap(12.h),
 
-  return Container(
-    padding: EdgeInsets.all(10.w),
-    decoration: BoxDecoration(
-      color: AppColors.kWhiteColor,
-      borderRadius: BorderRadius.circular(12.r),
-      border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(context.tr('know_me_more'), style: Styles.textStyle18Meduim),
-        Gap(12.h),
-        
-        // ✅ 1. السيرة الذاتية
-        _buildInfoRow(
-          context.tr('my_cv'),
-          profile.myDescription ?? context.tr('select'),
-          () {
-            _navigateToBioEdit(context, cubit, profile.myDescription);
-          },
-        ),
-        
-        // ✅ 2. الهوايات (بدون الإيمان)
-        _buildInfoRow(
-          context.tr('select_hobbies_title'),
-          interestHobbies.isNotEmpty 
-              ? _formatHobbiesForDisplay(interestHobbies, context) 
-              : context.tr('select'),
-          () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'interests',
-              interestHobbies.isNotEmpty ? interestHobbies.join(', ') : null,
+          // 1. السيرة الذاتية
+          _buildInfoRow(
+            context.tr('my_cv'),
+            profile.myDescription ?? context.tr('select'),
+            () => _navigateToBioEdit(context, cubit, profile.myDescription),
+          ),
+
+          // 2. الهوايات
+          _buildInfoRow(
+            context.tr('select_hobbies_title'),
+            interestHobbies.isNotEmpty
+                ? _formatHobbiesForDisplay(interestHobbies, context)
+                : context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'interests',
+                interestHobbies.isNotEmpty ? interestHobbies.join(', ') : null,
+              );
+            },
+          ),
+
+          // 3. الإيمان ✅ من profile.faith مباشرة
+          _buildInfoRow(
+            context.tr('faith'),
+            faithHobbies.isNotEmpty
+                ? _formatHobbiesForDisplay(faithHobbies, context)
+                : context.tr('select'),
+            () {
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'faith',
+                faithHobbies.isNotEmpty
+                    ? faithHobbies.join(', ')
+                    : null, // ✅ من faith مش hobbies
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaveButton(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    MarriageProfileState state,
+  ) {
+    return BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
+      listener: (context, state) {
+        if (state.state == CubitStates.success && !state.isUpdating) {
+          widget.onTabChanged?.call(1);
+        } else if (state.state == CubitStates.failure) {
+          debugPrint('❌ [SAVE] Error: ${state.errorMessage}');
+
+          if (state.errorMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(context, text: state.errorMessage!, isError: true),
             );
-          },
-        ),
-        
-        // ✅ 3. الإيمان (جديد)
-        _buildInfoRow(
-          context.tr('faith'), // أو 'الإيمان' مباشرة
-          faithHobbies.isNotEmpty 
-              ? _formatHobbiesForDisplay(faithHobbies, context) 
-              : context.tr('select'),
-          () {
-            _navigateToFieldSelection(
-              context,
-              cubit,
-              'faith', // ⭐ نفس المنطق، بس هنفلتر في الـ selection view
-              faithHobbies.isNotEmpty ? faithHobbies.join(', ') : null,
-            );
-          },
-        ),
-      ],
-    ),
-  );
-}
-Widget _buildSaveButton(
-  BuildContext context,
-  MarriageProfileCubit cubit,
-  MarriageProfileState state,
-) {
-  return BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
-    listener: (context, state) {
-      if (state.state == CubitStates.success && !state.isUpdating) {
-  
-        
-        widget.onTabChanged?.call(1);
-      } else if (state.state == CubitStates.failure) {
-        debugPrint('❌ [SAVE] Error: ${state.errorMessage}');
-        
-        if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: state.errorMessage!,
-              isError: true,
-            ),
-          );
+          }
         }
-      }
-    },
-    builder: (context, state) {
-      return CustomBotton(
-        title: state.isUpdating ? context.tr('saving') : context.tr('save_changes'),
-        onPressed: state.isUpdating
-            ? null
-            : () {
-                debugPrint('💾 [SAVE] Button pressed');
-                cubit.saveProfile();
-              },
-        width: double.infinity,
-        height: 54.h,
-        useGradient: !state.isUpdating,
-      );
-    },
-  );
-}
+      },
+      builder: (context, state) {
+        return CustomBotton(
+          title: state.isUpdating
+              ? context.tr('saving')
+              : context.tr('save_changes'),
+          onPressed: state.isUpdating
+              ? null
+              : () {
+                  debugPrint('💾 [SAVE] Button pressed');
+                  cubit.saveProfile();
+                },
+          width: double.infinity,
+          height: 54.h,
+          useGradient: !state.isUpdating,
+        );
+      },
+    );
+  }
 
   Widget _buildPersonalInfoSection(
     BuildContext context,
@@ -1554,175 +1774,258 @@ Widget _buildSaveButton(
             context.tr('country'),
             _translateValue(profile.aboutMe?.country ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'country', profile.aboutMe?.country);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'country',
+                profile.aboutMe?.country,
+              );
             },
           ),
           _buildInfoRow(
             context.tr('nationality'),
             _translateValue(profile.aboutMe?.nationality ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'nationality', profile.aboutMe?.nationality);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'nationality',
+                profile.aboutMe?.nationality,
+              );
             },
           ),
           _buildInfoRow(
             context.tr('height'),
             profile.aboutMe?.height ?? context.tr('select'),
             () {
-              _navigateToFieldSelection(context, cubit, 'height', profile.aboutMe?.height);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'height',
+                profile.aboutMe?.height,
+              );
             },
           ),
           _buildInfoRow(
             context.tr('weight'),
             profile.aboutMe?.weight ?? context.tr('select'),
             () {
-              _navigateToFieldSelection(context, cubit, 'weight', profile.aboutMe?.weight);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'weight',
+                profile.aboutMe?.weight,
+              );
             },
           ),
           _buildInfoRow(
             context.tr('skin_color'),
             _translateValue(profile.aboutMe?.skinColor ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'skinColor', profile.aboutMe?.skinColor);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'skinColor',
+                profile.aboutMe?.skinColor,
+              );
             },
           ),
           _buildInfoRow(
             context.tr('select_health_status_title'),
             _translateValue(profile.aboutMe?.healthStatus ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'healthStatus', profile.aboutMe?.healthStatus);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'healthStatus',
+                profile.aboutMe?.healthStatus,
+              );
             },
           ),
           _buildInfoRow(
             context.tr('commitment_to_religion'),
-            _translateValue(profile.aboutMe?.religiousCommitment ?? '', context),
+            _translateValue(
+              profile.aboutMe?.religiousCommitment ?? '',
+              context,
+            ),
             () {
-              _navigateToFieldSelection(context, cubit, 'religiousCommitment', profile.aboutMe?.religiousCommitment);
+              _navigateToFieldSelection(
+                context,
+                cubit,
+                'religiousCommitment',
+                profile.aboutMe?.religiousCommitment,
+              );
             },
           ),
           _buildInfoRow(
             context.tr('smoking'),
             _translateValue(profile.aboutMe?.smoker ?? '', context),
-            () {
-              _navigateToFieldSelection(context, cubit, 'smoker', profile.aboutMe?.smoker);
-            },
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'smoker',
+              profile.aboutMe?.smoker,
+            ),
+          ),
+
+          // ✅ جديد - شرب الكحول
+          _buildInfoRow(
+            context.tr('drink_alcohol'),
+            _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'drinkAlcohol',
+              profile.aboutMe?.drinkAlcohol,
+            ),
+          ),
+
+          // ✅ جديد - الأكل الحلال
+          _buildInfoRow(
+            context.tr('eat_halal_only'),
+            _translateValue(profile.aboutMe?.eatHalalOnly ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'eatHalalOnly',
+              profile.aboutMe?.eatHalalOnly,
+            ),
           ),
         ],
       ),
     );
   }
 
-// ⭐⭐⭐ FIX: دالة _buildInfoRow مع الترجمة التلقائية
-Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
-  final isLongText = value.length > 30;
-  
-  return GestureDetector(
-    onTap: onTap,
-    child: Container(
-      color: AppColors.kWhiteColor,
-      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isLongText) ...[
-            Text(label, style: Styles.textStyle18),
-            Gap(8.h),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    value,
-                    textAlign: TextAlign.left,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                    style: Styles.textStyle16,
-                  ),
-                ),
-                Gap(8.w),
-                Icon(Icons.arrow_forward_ios_rounded, size: 14.w, color: AppColors.secondary400),
-              ],
-            ),
-          ] else ...[
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Text(label, style: Styles.textStyle18, maxLines: 1, overflow: TextOverflow.ellipsis),
-                ),
-                Gap(8.w),
-                Expanded(
-                  flex: 3,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          value,
-                          textAlign: TextAlign.right,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Styles.textStyle16,
-                        ),
-                      ),
-                      Gap(8.w),
-                      Icon(Icons.arrow_forward_ios_rounded, size: 14.w, color: AppColors.secondary400),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-          Gap(8.h),
-          Divider(color: AppColors.secondary100, height: 1),
-        ],
-      ),
-    ),
-  );
-}
+  // ⭐⭐⭐ FIX: دالة _buildInfoRow مع الترجمة التلقائية
+  Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
+    final isLongText = value.length > 30;
 
-void _navigateToFieldSelection(
-  BuildContext context,
-  MarriageProfileCubit cubit,
-  String fieldKey,
-  String? currentValue,
-) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => MarriageFieldSelectionView(
-        fieldName: fieldKey,
-        currentValue: currentValue,
-        onValueSelected: (value) {
-          debugPrint('═══════════════════════════════════════════');
-          debugPrint('🔍 [SELECTION] Field: $fieldKey');
-          debugPrint('🔍 [SELECTION] Value received: "$value"');
-          debugPrint('🔍 [SELECTION] Type: ${value.runtimeType}');
-          
-          if (fieldKey == 'interests' || fieldKey == 'hobbies') {
-            final parts = value.split(', ');
-            debugPrint('🔍 [SELECTION] Split parts: $parts');
-            
-            for (var part in parts) {
-              final isKey = part.startsWith('interest_') || part.startsWith('faith_');
-              debugPrint('  ${isKey ? "✅" : "❌"} $part ${isKey ? "(KEY)" : "(VALUE - WRONG!)"}');
-            }
-          }
-          debugPrint('═══════════════════════════════════════════');
-          
-          cubit.updateField(fieldKey, value);
-        },
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        color: AppColors.kWhiteColor,
+        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isLongText) ...[
+              Text(label, style: Styles.textStyle18),
+              Gap(8.h),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      value,
+                      textAlign: TextAlign.left,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: Styles.textStyle16,
+                    ),
+                  ),
+                  Gap(8.w),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14.w,
+                    color: AppColors.secondary400,
+                  ),
+                ],
+              ),
+            ] else ...[
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      label,
+                      style: Styles.textStyle18,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Gap(8.w),
+                  Expanded(
+                    flex: 3,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            value,
+                            textAlign: TextAlign.right,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Styles.textStyle16,
+                          ),
+                        ),
+                        Gap(8.w),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14.w,
+                          color: AppColors.secondary400,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            Gap(8.h),
+            Divider(color: AppColors.secondary100, height: 1),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+  void _navigateToFieldSelection(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    String fieldKey,
+    String? currentValue,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MarriageFieldSelectionView(
+          fieldName: fieldKey,
+          currentValue: currentValue,
+          onValueSelected: (value) {
+            debugPrint('═══════════════════════════════════════════');
+            debugPrint('🔍 [SELECTION] Field: $fieldKey');
+            debugPrint('🔍 [SELECTION] Value received: "$value"');
+            debugPrint('🔍 [SELECTION] Type: ${value.runtimeType}');
+
+            if (fieldKey == 'interests' || fieldKey == 'hobbies') {
+              final parts = value.split(', ');
+              debugPrint('🔍 [SELECTION] Split parts: $parts');
+
+              for (var part in parts) {
+                final isKey =
+                    part.startsWith('interest_') || part.startsWith('faith_');
+                debugPrint(
+                  '  ${isKey ? "✅" : "❌"} $part ${isKey ? "(KEY)" : "(VALUE - WRONG!)"}',
+                );
+              }
+            }
+            debugPrint('═══════════════════════════════════════════');
+
+            cubit.updateField(fieldKey, value);
+          },
+        ),
+      ),
+    );
+  }
 
   void _navigateToBioEdit(
     BuildContext context,
     MarriageProfileCubit cubit,
     String? currentBio,
   ) {
-    final TextEditingController controller = TextEditingController(text: currentBio);
+    final TextEditingController controller = TextEditingController(
+      text: currentBio,
+    );
     CustomSHowDetailsDialog(
       context,
       title: context.tr('edit_bio'),
@@ -1745,6 +2048,7 @@ void _navigateToFieldSelection(
     );
   }
 }
+
 // ⭐⭐⭐ FIXED: ImageSlotCard - يسمح بالضغط على الصور الموجودة
 class ImageSlotCard extends StatelessWidget {
   final String? imageUrl;
@@ -1777,7 +2081,9 @@ class ImageSlotCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Center(
                   child: Icon(Icons.add, size: 32, color: AppColors.kbinkColor),
                 ),
@@ -1788,7 +2094,10 @@ class ImageSlotCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey.shade300),
-                image: DecorationImage(image: NetworkImage(imageUrl!), fit: BoxFit.cover),
+                image: DecorationImage(
+                  image: NetworkImage(imageUrl!),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           if (isMain && imageUrl != null)
@@ -1832,6 +2141,7 @@ class ImageSlotCard extends StatelessWidget {
     );
   }
 }
+
 class DashedRectPainter extends CustomPainter {
   final double strokeWidth;
   final Color color;
@@ -1865,7 +2175,10 @@ class DashedRectPainter extends CustomPainter {
 
     for (ui.PathMetric pathMetric in path.computeMetrics()) {
       while (distance < pathMetric.length) {
-        dashPath.addPath(pathMetric.extractPath(distance, distance + dashWidth), Offset.zero);
+        dashPath.addPath(
+          pathMetric.extractPath(distance, distance + dashWidth),
+          Offset.zero,
+        );
         distance += dashWidth;
         distance += dashSpace;
       }

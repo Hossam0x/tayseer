@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/user/marriage/view/widget/additional_image.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
@@ -367,7 +366,15 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               if (profile.hobbies.isNotEmpty)
                 _buildSliverPadding(
                   child: InterestsSection(
+                    title:'my_interests',
                     interests: _buildInterestsItems(profile),
+                  ),
+                ),
+                  if (profile.faith.isNotEmpty)
+                _buildSliverPadding(
+                  child: InterestsSection(
+                    title:'choose_faith',
+                    interests: _buildFaithItems(profile),
                   ),
                 ),
               if (profile.myDescription != null &&
@@ -711,7 +718,12 @@ Widget _buildViewHeader(MarriageUserProfileModel profile) {
         'goalType': 'intendTravelAbroad',
       });
     }
-
+  if (goals.familyAcceptance!= null && goals.familyAcceptance!.isNotEmpty) {
+      events.add({
+        'timeLabel': _translateValue(goals.familyAcceptance),
+        'goalType': 'familyAcceptance',
+      });
+    }
 
 
     if (goals.engagement != null && goals.engagement!.isNotEmpty) {
@@ -724,7 +736,7 @@ Widget _buildViewHeader(MarriageUserProfileModel profile) {
     if (goals.marry != null && goals.marry!.isNotEmpty) {
       events.add({
         'timeLabel': _translateValue(goals.marry),
-        'goalType': 'marry',
+        'goalType': 'marriage_intentions',
       });
     }
 
@@ -745,7 +757,66 @@ Widget _buildViewHeader(MarriageUserProfileModel profile) {
         },
     ];
   }
+List<Map<String, dynamic>> _buildFaithItems(profile) {
+  final Map<String, String> _keyToEmojiMap = {
+    'faith_dua': '🙏',
+    'faith_umrah': '🕋',
+    'faith_charity_work': '💼',
+    'faith_dawah': '📢',
+    'faith_sadaqah': '🤝',
+    'faith_hadith': '📖',
+    'faith_tahajjud': '😊',
+    'faith_dhikr': '📿',
+    'faith_multiple_prayers': '🕌',
+    'faith_sunnah_prayer': '🙏',
+    'faith_nafila_prayer': '🕯️',
+    'faith_hajj': '🕋',
+    'faith_five_prayers': '☪️',
+    'faith_fiqh': '📚',
+    'faith_fasting': '🌙',
+    'faith_tasawwuf': '😇',
+    'faith_good_manners': '🤲',
+    'faith_friday_prayer': '🕌',
+  };
 
+  // ⭐ اقرأ من profile.faith مباشرة
+  List<String> faithList = [];
+
+  if (profile.faith is List) {
+    for (var item in profile.faith) {
+      final itemStr = item.toString().trim();
+      if (itemStr.isEmpty) continue;
+
+      if (itemStr.contains(',')) {
+        faithList.addAll(
+          itemStr.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
+        );
+      } else {
+        faithList.add(itemStr);
+      }
+    }
+  } else if (profile.faith is String && (profile.faith as String).isNotEmpty) {
+    faithList = (profile.faith as String)
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
+
+  // ⭐ فلتر - خلي بس faith_ keys
+  faithList = faithList
+      .where((s) => s.startsWith('faith_'))
+      .toList();
+
+  if (faithList.isEmpty) return [];
+
+  return faithList.map<Map<String, dynamic>>((key) {
+    final trimmedKey = key.trim();
+    final emoji = _keyToEmojiMap[trimmedKey] ?? '☪️';
+    final displayText = _translateValue(trimmedKey);
+    return {'icon': AssetsData.kmusicIcon, 'label': '$emoji $displayText'};
+  }).toList();
+}
   // ⭐⭐⭐ FIX: دالة _buildInterestsItems مع الترجمة الكاملة
   List<Map<String, dynamic>> _buildInterestsItems(profile) {
     final Map<String, String> _keyToEmojiMap = {

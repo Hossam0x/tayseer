@@ -3,8 +3,8 @@ import 'package:tayseer/my_import.dart';
 
 class InterestsSection extends StatelessWidget {
   final List<Map<String, dynamic>> interests;
-
-  const InterestsSection({super.key, required this.interests});
+final String ?title;
+  const InterestsSection({super.key, required this.interests,  this.title='my_interests'});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class InterestsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(context.tr('my_interests'), style: Styles.textStyle16Bold),
+        Text(context.tr(title!), style: Styles.textStyle16Bold),
         Gap(10.h),
         Wrap(
           spacing: 10.w,

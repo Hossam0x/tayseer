@@ -168,6 +168,19 @@ class MarriageProfileRepository {
           answers.add({'category': 'smoker', 'answer': cleaned});
         }
       }
+      if (aboutMe.drinkAlcohol != null) {
+        final cleaned = _cleanValue(aboutMe.drinkAlcohol);
+        if (cleaned != null) {
+          answers.add({'category': 'drinkAlcohol', 'answer': cleaned});
+        }
+      }
+
+      if (aboutMe.eatHalalOnly != null) {
+        final cleaned = _cleanValue(aboutMe.eatHalalOnly);
+        if (cleaned != null) {
+          answers.add({'category': 'eatHalalOnly', 'answer': cleaned});
+        }
+      }
       if (aboutMe.religiousCommitment != null) {
         final cleaned = _cleanValue(aboutMe.religiousCommitment);
         if (cleaned != null) {
@@ -241,9 +254,11 @@ class MarriageProfileRepository {
 
     // ⭐⭐⭐ FAITH - ADD TO ANSWERS ARRAY
     if (profile.faith.isNotEmpty) {
-      final faithString = profile.faith.join(', ');
-      answers.add({'category': 'faith', 'answer': faithString});
-      debugPrint('🕌 [CONVERT] Faith in answers: $faithString');
+      answers.add({
+        'category': 'faith',
+        'answer': profile.faith, // ✅ List مباشرة مش String
+      });
+      debugPrint('🕌 [CONVERT] Faith in answers: ${profile.faith}');
     }
 
     // ⭐⭐⭐ GOALS - حطها هنا قبل requestBody!

@@ -386,7 +386,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         case 'weight':
           updatedAbout = currentAbout.copyWith(weight: value);
           break;
+        case 'drinkAlcohol':
+          updatedAbout = currentAbout.copyWith(drinkAlcohol: value);
+          break;
 
+        case 'eatHalalOnly':
+          updatedAbout = currentAbout.copyWith(eatHalalOnly: value);
+          break;
         case 'skinColor':
         case 'ethnicity':
           updatedAbout = currentAbout.copyWith(skinColor: value);
@@ -520,32 +526,22 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
 
       updatedProfile = profile.copyWith(hobbies: validKeys);
     } else if (fieldKey == 'faith') {
-      final currentHobbies = state.profile!.hobbies;
-
-      // ⭐ خلي الهوايات الموجودة (بدون الإيمان)
-      final interestHobbies = currentHobbies
-          .where((h) => h.startsWith('interest_'))
-          .toList();
-
-      // ⭐ جيب الإيمانات الجديدة
       final newFaithHobbies = (value as String)
           .split(', ')
           .where((h) => h.startsWith('faith_'))
           .toList();
 
-      // ⭐ ادمجهم
-      final allHobbies = [...interestHobbies, ...newFaithHobbies];
-
       debugPrint('═══════════════════════════════════════════');
       debugPrint('🙏 [FAITH UPDATE]');
-      debugPrint('📋 Current Interests: $interestHobbies');
-      debugPrint('🕌 New Faith: $newFaithHobbies');
-      debugPrint('✅ All Hobbies: $allHobbies');
+      debugPrint('🕌 New Faith keys: $newFaithHobbies');
       debugPrint('═══════════════════════════════════════════');
 
-      final updatedProfile = state.profile!.copyWith(hobbies: allHobbies);
+      // ✅ حدّث faith field مباشرة في الـ profile
+      final updatedProfile = state.profile!.copyWith(
+        faith: newFaithHobbies, // ✅ هنا الفرق
+      );
       emit(state.copyWith(profile: updatedProfile));
-      debugPrint('✅ [CUBIT] Faith updated successfully');
+      debugPrint('✅ [CUBIT] Faith updated successfully: $newFaithHobbies');
       return;
     } else {
       updatedProfile = profile;
@@ -561,20 +557,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
 
   bool _isAboutMeField(String fieldKey) {
     return [
-      'country',
-      'nationality',
-      'height',
-      'weight',
-      'skinColor',
-      'ethnicity',
-      'healthStatus',
-      'religiousCommitment',
-      'religiosity',
-      'smoker',
-      'smoking',
-      'socialStatus',
-      'maritalStatus',
-      'age',
+      'country', 'nationality', 'height', 'weight',
+      'skinColor', 'ethnicity', 'healthStatus',
+      'religiousCommitment', 'religiosity',
+      'smoker', 'smoking',
+      'socialStatus', 'maritalStatus', 'age',
+      'drinkAlcohol', // ✅ جديد
+      'eatHalalOnly', // ✅ جديد
     ].contains(fieldKey);
   }
 

@@ -545,7 +545,19 @@ class _MarriageFieldSelectionViewState
               ) ??
               170,
         };
+      case 'drinkAlcohol':
+        return {
+          'titleKey': 'drink_alcohol',
+          'items': ['yes', 'no'],
+          'showSearch': false,
+        };
 
+      case 'eatHalalOnly':
+        return {
+          'titleKey': 'eat_halal_only',
+          'items': ['yes', 'no'],
+          'showSearch': false,
+        };
       case 'weight':
         return {
           'titleKey': 'select_weight_title',

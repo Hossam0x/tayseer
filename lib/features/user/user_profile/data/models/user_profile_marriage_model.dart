@@ -278,6 +278,7 @@ class MarriageUserProfileModel {
     ProfessionalLife? professionalLife,
     Family? family,
     List<String>? hobbies,
+      List<String>? faith,
     UserMedia? userMedia,
     YourGoals? yourGoals,
     String? myDescription,
@@ -298,6 +299,7 @@ class MarriageUserProfileModel {
       professionalLife: professionalLife ?? this.professionalLife,
       family: family ?? this.family,
       hobbies: hobbies ?? this.hobbies,
+       faith: faith ?? this.faith,
       userMedia: userMedia ?? this.userMedia,
       yourGoals: yourGoals ?? this.yourGoals,
       myDescription: myDescription ?? this.myDescription,
@@ -419,6 +421,8 @@ class AboutMe {
   final String? healthStatus;
   final String? smoker;
   final String? religiousCommitment;
+  final String? drinkAlcohol;  // ✅ جديد
+  final String? eatHalalOnly;  // ✅ جديد
 
   AboutMe({
     this.weight,
@@ -431,6 +435,8 @@ class AboutMe {
     this.healthStatus,
     this.smoker,
     this.religiousCommitment,
+    this.drinkAlcohol,   // ✅ جديد
+    this.eatHalalOnly,   // ✅ جديد
   });
 
   factory AboutMe.fromJson(Map<String, dynamic> json) => AboutMe(
@@ -444,6 +450,8 @@ class AboutMe {
     healthStatus: json['healthStatus'] as String?,
     smoker: json['smoker'] as String?,
     religiousCommitment: json['religiousCommitment'] as String?,
+    drinkAlcohol: json['drinkAlcohol'] as String?,  // ✅ جديد
+    eatHalalOnly: json['eatHalalOnly'] as String?,  // ✅ جديد
   );
 
   Map<String, dynamic> toJson() => {
@@ -457,6 +465,8 @@ class AboutMe {
     'healthStatus': healthStatus,
     'smoker': smoker,
     'religiousCommitment': religiousCommitment,
+    'drinkAlcohol': drinkAlcohol,   // ✅ جديد
+    'eatHalalOnly': eatHalalOnly,   // ✅ جديد
   };
 
   AboutMe copyWith({
@@ -470,6 +480,8 @@ class AboutMe {
     String? healthStatus,
     String? smoker,
     String? religiousCommitment,
+    String? drinkAlcohol,   // ✅ جديد
+    String? eatHalalOnly,   // ✅ جديد
   }) {
     return AboutMe(
       weight: weight ?? this.weight,
@@ -482,10 +494,11 @@ class AboutMe {
       healthStatus: healthStatus ?? this.healthStatus,
       smoker: smoker ?? this.smoker,
       religiousCommitment: religiousCommitment ?? this.religiousCommitment,
+      drinkAlcohol: drinkAlcohol ?? this.drinkAlcohol,   // ✅ جديد
+      eatHalalOnly: eatHalalOnly ?? this.eatHalalOnly,   // ✅ جديد
     );
   }
 }
-
 // ════════════════════════════════════════════════════════════════
 // ProfessionalLife Model
 // ════════════════════════════════════════════════════════════════

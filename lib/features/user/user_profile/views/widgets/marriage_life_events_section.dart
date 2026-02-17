@@ -199,7 +199,7 @@ String _getGoalDisplayName(String? goalType, BuildContext context) {
       
     // ✅ الأسرة (familyAcceptance)
     case 'familyacceptance':
-      return context.tr('family_profile');      // 'الأسرة'
+      return context.tr('children_profile');      // 'الأسرة'
       
     // ✅ السفر (intendTravelAbroad)
     case 'intendtravelabroad':
