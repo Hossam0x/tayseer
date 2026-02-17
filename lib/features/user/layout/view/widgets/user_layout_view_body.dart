@@ -3,7 +3,6 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
-import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart'; // ✅ إضافة هذا
 import 'package:tayseer/features/user/layout/view/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
@@ -64,10 +63,6 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
         return [
           HomeView(onScroll: cubit.onScroll),
           MarriageView(),
-          // BlocProvider(
-          //   create: (context) => getIt<InteractionsCubit>(),
-          //   child: InteractionBody(key: _interactionsKey), // ✅
-          // ),
           MySpaceView(),
           EventView(),
           const UserProfileView(),

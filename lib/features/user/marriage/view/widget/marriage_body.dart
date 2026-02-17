@@ -101,12 +101,10 @@ class _MarriageBodyState extends State<MarriageBody> {
         }
       },
       builder: (context, state) {
-        // ✅ Loading
         if (state.marriageProfileState == CubitStates.loading) {
           return _buildShimmerScreen();
         }
 
-        // ✅ Error - مع أب بار
         if (state.marriageProfileState == CubitStates.failure) {
           return _buildWithAppBar(
             child: Center(
@@ -118,12 +116,12 @@ class _MarriageBodyState extends State<MarriageBody> {
           );
         }
 
-        final allUsers = state.profile?.data?.users ?? [];
-        final users = widget.personId != null
+        // ✅ النوع الصريح List<UserItem>
+        final List<UserItem> allUsers = state.profile?.data?.users ?? [];
+        final List<UserItem> users = widget.personId != null
             ? allUsers.where((p) => p.user?.id == widget.personId).toList()
             : allUsers;
 
-        // ✅ Empty - أب بار + Toggle ثابت + empty state تحت
         if (users.isEmpty) {
           return AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
@@ -144,15 +142,13 @@ class _MarriageBodyState extends State<MarriageBody> {
         }
         if (_currentIndex >= users.length) _currentIndex = users.length - 1;
 
-        final profile = users[_currentIndex];
-
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: _isMarriageTab
               ? _buildMarriageContent(
                   key: const ValueKey('marriage'),
                   state: state,
-                  profile: profile,
+                  profileIndex: _currentIndex,
                   users: users,
                 )
               : _buildInteractionsContent(key: const ValueKey('interactions')),
@@ -162,7 +158,7 @@ class _MarriageBodyState extends State<MarriageBody> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ APP BAR WRAPPER - للـ Empty و Error
+  // APP BAR WRAPPER
   // ═══════════════════════════════════════════════════════════════
   Widget _buildWithAppBar({Key? key, required Widget child}) {
     return Directionality(
@@ -209,7 +205,7 @@ class _MarriageBodyState extends State<MarriageBody> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ EMPTY MARRIAGE STATE
+  // EMPTY MARRIAGE STATE
   // ═══════════════════════════════════════════════════════════════
   Widget _buildEmptyMarriage() {
     return Center(
@@ -240,14 +236,15 @@ class _MarriageBodyState extends State<MarriageBody> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ MARRIAGE TAB
+  // MARRIAGE TAB
   // ═══════════════════════════════════════════════════════════════
   Widget _buildMarriageContent({
     Key? key,
     required MarriageState state,
-    required dynamic profile,
-    required List<dynamic> users,
+    required int profileIndex,
+    required List<UserItem> users, // ✅ UserItem
   }) {
+    final profile = users[profileIndex];
     final user = profile.user;
     final answers = profile.answers;
     final images = answers?.userMedia?.image ?? [];
@@ -270,6 +267,7 @@ class _MarriageBodyState extends State<MarriageBody> {
               child: CustomScrollView(
                 key: ValueKey<int>(_currentIndex),
                 slivers: [
+                  // 1. Header
                   SliverProfileHeader(
                     images: images,
                     name: user?.name ?? '',
@@ -282,6 +280,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                     height: user?.about?.height,
                     toggleWidget: _buildToggle(),
                   ),
+
+                  // 2. Compatibility
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -306,6 +306,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
+                  // 3. About Me
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -328,6 +330,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
+                  // 4. Education
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -347,6 +351,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
+                  // 5. Life Events
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -380,6 +386,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
+                  // 6. Additional Image
                   if (images.isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -393,6 +401,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                         ),
                       ),
                     ),
+
+                  // 7. Religious
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -409,6 +419,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
+                  // 8. Video
                   if (answers?.userMedia?.video != null)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -421,6 +433,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                         ),
                       ),
                     ),
+
+                  // 9. Interests
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -434,6 +448,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
+                  // 10. Bio + Voice
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -446,6 +462,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
+                  // 11. Message Input
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -458,6 +476,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
+                  // 12. Bottom Actions
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -482,10 +502,13 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
                   SliverToBoxAdapter(child: SizedBox(height: 150.h)),
                 ],
               ),
             ),
+
+            // Floating Buttons
             Positioned(
               bottom: 130.h,
               left: 0,
@@ -549,7 +572,7 @@ class _MarriageBodyState extends State<MarriageBody> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ INTERACTIONS TAB
+  // INTERACTIONS TAB
   // ═══════════════════════════════════════════════════════════════
   Widget _buildInteractionsContent({Key? key}) {
     return Directionality(
@@ -601,7 +624,7 @@ class _MarriageBodyState extends State<MarriageBody> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ HELPERS
+  // HELPERS
   // ═══════════════════════════════════════════════════════════════
   Widget buildCircleButton(
     IconData icon,
