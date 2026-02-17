@@ -2,9 +2,6 @@
 
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
-import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/subscription_prompt_overlay.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/exploration_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/history_screen.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
@@ -46,8 +43,7 @@ class _MarriageBodyState extends State<MarriageBody> {
   final GlobalKey<InteractionBodyState> _interactionBodyKey =
       GlobalKey<InteractionBodyState>();
 
-
- InteractionsCubit get interactionsCubit {
+  InteractionsCubit get interactionsCubit {
     if (_interactionsCubit == null) {
       _interactionsCubit = getIt<InteractionsCubit>();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -645,7 +641,6 @@ class _MarriageBodyState extends State<MarriageBody> {
     );
   }
 
-  
   // ═══════════════════════════════════════════════════════════════
   // HELPERS
   // ═══════════════════════════════════════════════════════════════

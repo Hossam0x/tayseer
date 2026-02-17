@@ -168,8 +168,15 @@ class AddPostBody extends StatelessWidget {
                                     ),
                                     builder: (_, snap) {
                                       if (!snap.hasData) {
-                                        return Container(
-                                          color: Colors.grey.shade300,
+                                        return Center(
+                                          child: SizedBox(
+                                            width: 28,
+                                            height: 28,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: HexColor('4d4d4d'),
+                                            ),
+                                          ),
                                         );
                                       }
                                       return ClipRRect(
@@ -227,6 +234,36 @@ class AddPostBody extends StatelessWidget {
                                     child: Image.file(
                                       imageFile,
                                       fit: BoxFit.cover,
+                                      frameBuilder:
+                                          (
+                                            BuildContext context,
+                                            Widget child,
+                                            int? frame,
+                                            bool wasSynchronouslyLoaded,
+                                          ) {
+                                            if (wasSynchronouslyLoaded)
+                                              return child;
+                                            return AnimatedSwitcher(
+                                              duration: const Duration(
+                                                milliseconds: 200,
+                                              ),
+                                              child: frame == null
+                                                  ? Center(
+                                                      child: SizedBox(
+                                                        width: 28,
+                                                        height: 28,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              strokeWidth: 2.5,
+                                                              color: HexColor(
+                                                                '4d4d4d',
+                                                              ),
+                                                            ),
+                                                      ),
+                                                    )
+                                                  : child,
+                                            );
+                                          },
                                     ),
                                   ),
                                 ),
