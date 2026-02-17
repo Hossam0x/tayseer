@@ -42,9 +42,6 @@ class _MarriageBodyState extends State<MarriageBody> {
   final ScrollController _mainScrollController = ScrollController();
   InteractionsCubit? _interactionsCubit;
 
-  final GlobalKey<ExplorationState> _explorationKey =
-      GlobalKey<ExplorationState>();
-
   // ✅ Key للتحكم في InteractionBody من MarriageBody
   final GlobalKey<InteractionBodyState> _interactionBodyKey =
       GlobalKey<InteractionBodyState>();
@@ -648,25 +645,7 @@ class _MarriageBodyState extends State<MarriageBody> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // SUBSCRIPTION OVERLAY CHECK
-  // ═══════════════════════════════════════════════════════════════
-  bool _shouldShowSubscriptionOverlay(InteractionsState state) {
-    if (state.isSubscribed) return false;
-    if (!state.answerCompleted) return false;
-    if (state.explorationState == CubitStates.loading &&
-        state.explorationData.isEmpty) {
-      return false;
-    }
-    if (state.explorationState == CubitStates.failure &&
-        state.explorationData.isEmpty) {
-      return false;
-    }
-    final hasData = state.explorationData.values.any((list) => list.isNotEmpty);
-    if (!hasData) return false;
-    return true;
-  }
-
+  
   // ═══════════════════════════════════════════════════════════════
   // HELPERS
   // ═══════════════════════════════════════════════════════════════
