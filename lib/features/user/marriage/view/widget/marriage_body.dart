@@ -171,27 +171,38 @@ class _MarriageBodyState extends State<MarriageBody> {
               bottom: false,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        context.pushNamed(AppRouter.kMarriageFilterView);
-                      },
-                      child: CircleAvatar(
-                        backgroundColor: Colors.black12,
-                        child: AppImage(
-                          AssetsData.kfilterIcon,
-                          width: 20,
-                          height: 20,
+                    // ✅ Toggle ثابت في النص دايماً
+                    Center(child: _buildToggle()),
+
+                    // ✅ Filter button (يمين في RTL)
+                    Positioned(
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kMarriageFilterView);
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black12,
+                          child: AppImage(
+                            AssetsData.kfilterIcon,
+                            width: 20,
+                            height: 20,
+                          ),
                         ),
                       ),
                     ),
-                    _buildToggle(),
-                    AnimatedBeFirstButton(
-                      onTap: () {
-                        context.pushNamed(AppRouter.kBoostAccountView);
-                      },
+
+                    // ✅ Boost button (يسار في RTL)
+                    Positioned(
+                      left: 0,
+                      child: AnimatedBeFirstButton(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kBoostAccountView);
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -585,27 +596,38 @@ class _MarriageBodyState extends State<MarriageBody> {
               bottom: false,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        context.pushNamed(AppRouter.kMarriageFilterView);
-                      },
-                      child: CircleAvatar(
-                        backgroundColor: Colors.black12,
-                        child: AppImage(
-                          AssetsData.kfilterIcon,
-                          width: 20,
-                          height: 20,
+                    // ✅ Toggle ثابت في النص
+                    Center(child: _buildToggle()),
+
+                    // ✅ Filter button
+                    Positioned(
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kMarriageFilterView);
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black12,
+                          child: AppImage(
+                            AssetsData.kfilterIcon,
+                            width: 20,
+                            height: 20,
+                          ),
                         ),
                       ),
                     ),
-                    _buildToggle(),
-                    AnimatedBeFirstButton(
-                      onTap: () {
-                        context.pushNamed(AppRouter.kBoostAccountView);
-                      },
+
+                    // ✅ Boost button
+                    Positioned(
+                      left: 0,
+                      child: AnimatedBeFirstButton(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kBoostAccountView);
+                        },
+                      ),
                     ),
                   ],
                 ),
