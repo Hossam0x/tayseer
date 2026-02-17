@@ -1308,5 +1308,9 @@
   "faith_description": "اختر الأنشطة الإيمانية التي تمارسها",
   "under_review": "انتظار المراجعة",
   "end_of_results_search": "تم الوصول لنهاية نتائج البحث",
-  "see_all": "عرض الكل"
+  "see_all": "عرض الكل",
+  "no_marriage_users":"لا يوجد مستخدمين للزواج",
+  "share_app_to_find_users":"شارك التطبيق حتي تجد مستخدمين للتوافق", 
+  "marriage_tab":"الزواج",
+  "interactions_tab":"التفاعلات"
 }

@@ -64,11 +64,11 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
         return [
           HomeView(onScroll: cubit.onScroll),
           MarriageView(),
-          MySpaceView(),
           // BlocProvider(
           //   create: (context) => getIt<InteractionsCubit>(),
           //   child: InteractionBody(key: _interactionsKey), // ✅
           // ),
+          MySpaceView(),
           EventView(),
           const UserProfileView(),
         ];

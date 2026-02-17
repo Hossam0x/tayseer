@@ -85,24 +85,18 @@ class InteractionBodyState extends State<InteractionBody> {
           context.read<InteractionsCubit>().resetActionState();
         }
       },
-      child: CustomBackground(
-        assetsData: AssetsData.userBGImage,
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildFixedHeader(),
-              Expanded(
-                child: IndexedStack(
-                  index: _currentIndex,
-                  children: [
-                    _buildExplorationContent(),
-                    _buildHistoryContent(),
-                  ],
-                ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // _buildFixedHeader(),
+            Expanded(
+              child: IndexedStack(
+                index: _currentIndex,
+                children: [_buildExplorationContent(), _buildHistoryContent()],
               ),
-              SizedBox(height: 90.h),
-            ],
-          ),
+            ),
+            SizedBox(height: 90.h),
+          ],
         ),
       ),
     );
@@ -123,7 +117,7 @@ class InteractionBodyState extends State<InteractionBody> {
                     _currentIndex = 1;
                     selectedTab = "history";
                   });
-                  
+
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     _historyKey.currentState?.scrollToTop();
                   });
@@ -163,7 +157,7 @@ class InteractionBodyState extends State<InteractionBody> {
         ] else ...[
           // ✅ SimpleAppBar for History view
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w,vertical: 10.h),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
             child: SimpleAppBar(
               title: context.tr("history"),
               isLargeTitle: true,
