@@ -7,10 +7,12 @@ import 'package:tayseer/features/shared/home/model/categories_response_model.dar
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/model/comments_response_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/shared/home/model/post_response_model.dart';
 
 abstract class HomeRepository {
-  Future<Either<Failure, List<PostModel>>> fetchPosts({
+  Future<Either<Failure, PostsResponseModel>> fetchPosts({
     required int page,
+    double? nextCursor,
     String? categoryId,
   });
 
