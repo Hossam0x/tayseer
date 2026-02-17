@@ -4,7 +4,7 @@ import 'package:tayseer/features/shared/home/views/image_viewer_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostImagesGrid extends StatelessWidget {
-  final List<ImageModel> images; // ✅ غيرناها
+  final List<ImageModel> images;
   final String postId;
   final PostModel? post;
   final bool isFromPostDetails;
@@ -39,13 +39,11 @@ class PostImagesGrid extends StatelessWidget {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 🖼️ Single Image - مع AspectRatio من الـ API ✅
+  // 🖼️ Single Image
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildSingleImage(BuildContext context) {
     final image = images[0];
     final maxAllowedHeight = context.responsiveHeight(500);
-
-    // ✅ الـ aspect ratio من الـ API مباشرة
     final aspectRatio = image.aspectRatio.clamp(0.5, 2.5);
 
     return GestureDetector(
@@ -59,13 +57,14 @@ class PostImagesGrid extends StatelessWidget {
           constraints: BoxConstraints(maxHeight: maxAllowedHeight),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8.r),
-            // ✅ AspectRatio يحجز المساحة الصحيحة من البداية
             child: AspectRatio(
               aspectRatio: aspectRatio,
               child: CachedNetworkImage(
                 imageUrl: image.image,
                 fit: BoxFit.cover,
                 alignment: Alignment.center,
+                fadeInDuration: Duration.zero, // ✅ جديد
+                fadeOutDuration: Duration.zero, // ✅ جديد
                 placeholder: (context, url) => _buildShimmerPlaceholder(),
                 errorWidget: (context, url, error) => _buildErrorWidget(),
               ),
@@ -149,6 +148,8 @@ class PostImagesGrid extends StatelessWidget {
                 CachedNetworkImage(
                   imageUrl: image.image,
                   fit: BoxFit.cover,
+                  fadeInDuration: Duration.zero, // ✅ جديد
+                  fadeOutDuration: Duration.zero, // ✅ جديد
                   placeholder: (_, __) => _buildShimmerPlaceholder(),
                   errorWidget: (_, __, ___) => _buildErrorWidget(),
                 ),
@@ -179,7 +180,7 @@ class PostImagesGrid extends StatelessWidget {
         opaque: false,
         pageBuilder: (_, __, ___) => ImageViewerView(
           isFromProfile: isFromProfile,
-          images: images.map((e) => e.image).toList(), // ✅ نرجع URLs بس
+          images: images.map((e) => e.image).toList(),
           initialIndex: index,
           postId: postId,
           post: post,

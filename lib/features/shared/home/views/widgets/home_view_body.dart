@@ -125,7 +125,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
           children: [
             CustomScrollView(
               physics: const ClampingScrollPhysics(),
-              cacheExtent: 500.0,
+              cacheExtent: 1000,
               controller: _scrollController,
               slivers: [
                 const HomeAppBar(notificationCount: 3),
