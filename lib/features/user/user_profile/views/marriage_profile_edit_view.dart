@@ -1396,7 +1396,7 @@ bool get _hasUnsavedChanges {
             () => _navigateToFieldSelection(context, cubit, 'maritalStatus', profile.aboutMe?.socialStatus),
           ),
           _buildInfoRow(
-            context.tr('has_children'),
+            context.tr('has_childrens'),
             _translateValue(profile.family?.hasChildren ?? '', context),
             () => _navigateToFieldSelection(context, cubit, 'hasChildren', profile.family?.hasChildren),
           ),

@@ -693,7 +693,7 @@ class _MarriageFieldSelectionViewState
 
       case 'hasChildren':
         return {
-          'titleKey': 'select_has_children_title',
+          'titleKey': 'has_childrens',
           'items': ['yes', 'no'],
           'showSearch': false,
         };
@@ -708,7 +708,7 @@ class _MarriageFieldSelectionViewState
       case 'childrenLiveWithYou':
       case 'childrenLivingStatus':
         return {
-          'titleKey': 'select_children_live_with_you_title',
+          'titleKey': 'children_live_with_you',
           'items': ['yes', 'no', 'not_applicable'],
           'showSearch': false,
         };
