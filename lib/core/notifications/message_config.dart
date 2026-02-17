@@ -49,20 +49,20 @@ class LocalNotification {
 
     // 4️⃣ إعدادات flutter_local_notifications
     const AndroidInitializationSettings initializationSettingsAndroid =
-    AndroidInitializationSettings('@drawable/app_logo_icon');
+        AndroidInitializationSettings('@drawable/app_logo_icon');
 
     final DarwinInitializationSettings initializationSettingsIOS =
-    DarwinInitializationSettings(
-      requestSoundPermission: true,
-      requestBadgePermission: true,
-      requestAlertPermission: true,
-    );
+        DarwinInitializationSettings(
+          requestSoundPermission: true,
+          requestBadgePermission: true,
+          requestAlertPermission: true,
+        );
 
     final InitializationSettings initializationSettings =
-    InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+        InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
     await _flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
@@ -94,7 +94,6 @@ class LocalNotification {
       _handleNotificationClick(null, message.data);
     });
   }
-
 
   // Create notification channel for Android
   Future<void> _createNotificationChannel() async {
