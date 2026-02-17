@@ -19,7 +19,7 @@ class CompleteMarriageFile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      // Calculate verification percentage
+    // Calculate verification percentage
     final List<Map<String, dynamic>> verificationItems = [
       {
         'title': context.tr('photo_verification'),
@@ -29,7 +29,7 @@ class CompleteMarriageFile extends StatelessWidget {
       {
         'title': context.tr('age_verification'),
         'description': context.tr('age_verification_desc'),
-        'isVerified':  true, // Adjust based on your model
+        'isVerified': true, // Adjust based on your model
       },
       {
         'title': context.tr('identity_verification'),
@@ -39,8 +39,12 @@ class CompleteMarriageFile extends StatelessWidget {
     ];
 
     int totalItems = verificationItems.length;
-    int completedItems = verificationItems.where((item) => item['isVerified'] as bool).length;
-    int verificationPercentage = totalItems > 0 ? ((completedItems / totalItems) * 100).round() : 0;
+    int completedItems = verificationItems
+        .where((item) => item['isVerified'] as bool)
+        .length;
+    int verificationPercentage = totalItems > 0
+        ? ((completedItems / totalItems) * 100).round()
+        : 0;
 
     final imageCount = profile.userMedia?.images.length ?? 0;
     final hasVideo =
@@ -74,19 +78,24 @@ class CompleteMarriageFile extends StatelessWidget {
                     SizedBox(height: 20.h),
 
                     // Verification Section
-                    if (!isVerified) _buildVerificationCard(context, verificationPercentage, verificationItems),
+                    if (!isVerified)
+                      _buildVerificationCard(
+                        context,
+                        verificationPercentage,
+                        verificationItems,
+                      ),
 
                     if (!isVerified) SizedBox(height: 12.h),
 
                     // Images Section (show if less than 5 images)
-                    if (imageCount < 5)
+                    if (imageCount < 4)
                       _buildTaskCard(
                         context,
                         title: context.tr('add_minimum_images'),
                         subtitle: context.tr('add_more_images_description'),
                         buttonText: context.tr('add'),
                         currentCount: imageCount,
-                        requiredCount: 5,
+                        requiredCount: 4,
                         onTap: () {
                           onNavigateToEdit('images');
                         },
@@ -130,7 +139,12 @@ class CompleteMarriageFile extends StatelessWidget {
       ),
     );
   }
-  Widget _buildVerificationCard(BuildContext context, int percentage,List<Map<String, dynamic>> items) {
+
+  Widget _buildVerificationCard(
+    BuildContext context,
+    int percentage,
+    List<Map<String, dynamic>> items,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 6.w),
       decoration: BoxDecoration(
@@ -213,9 +227,10 @@ class CompleteMarriageFile extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => VerificationScreen(
-                  verificationItems: items,
-                )),
+                MaterialPageRoute(
+                  builder: (context) =>
+                      VerificationScreen(verificationItems: items),
+                ),
               );
             },
             icon: Icon(
@@ -228,6 +243,7 @@ class CompleteMarriageFile extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildTaskCard(
     BuildContext context, {
     required String title,
@@ -373,7 +389,7 @@ class CompleteMarriageFile extends StatelessWidget {
                                           color: Colors.black.withOpacity(0.1),
                                           blurRadius: 3,
                                           offset: Offset(0, 1),
-                                          ),
+                                        ),
                                       ]
                                     : [],
                               ),

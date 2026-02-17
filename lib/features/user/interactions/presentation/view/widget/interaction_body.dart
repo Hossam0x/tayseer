@@ -1,9 +1,6 @@
-import 'package:tayseer/core/widgets/custom_content_switcher.dart';
-import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/subscription_prompt_overlay.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/default_appbar.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/exploration_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/history_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_FilterChips.dart';
@@ -41,6 +38,19 @@ class InteractionBodyState extends State<InteractionBody> {
     if (selectedFilter.isEmpty) {
       selectedFilter = context.tr("liked_you");
     }
+  }
+
+  void goToHistory() {
+    setState(() {
+      _currentIndex = 1;
+      selectedTab = "history";
+      selectedFilter = context.tr("liked_you");
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _historyKey.currentState?.scrollToTop();
+      });
+    });
   }
 
   @override
@@ -85,110 +95,28 @@ class InteractionBodyState extends State<InteractionBody> {
           context.read<InteractionsCubit>().resetActionState();
         }
       },
-      child: SafeArea(
-        child: Column(
-          children: [
-            // _buildFixedHeader(),
-            Expanded(
-              child: IndexedStack(
-                index: _currentIndex,
-                children: [_buildExplorationContent(), _buildHistoryContent()],
-              ),
-            ),
-            SizedBox(height: 90.h),
-          ],
-        ),
+      child: Column(
+        children: [
+          // ✅ Exploration title فقط
+          _buildExplorationTitle(),
+          Expanded(child: _buildExplorationContent()),
+          SizedBox(height: 90.h),
+        ],
       ),
     );
   }
 
-  // ✅ Header with conditional app bar display
-  Widget _buildFixedHeader() {
-    return Column(
-      children: [
-        // ✅ AppBar (only show in Exploration view)
-        if (_currentIndex == 0) ...[
-          Padding(
-            padding: EdgeInsets.only(right: 10.w),
-            child: DefaultAppBar(
-              trailingWidget: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _currentIndex = 1;
-                    selectedTab = "history";
-                  });
-
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _historyKey.currentState?.scrollToTop();
-                  });
-                },
-                child: AppImage(
-                  AssetsData.archiveIcon,
-                  width: 50.w,
-                  height: 50.h,
-                ),
-              ),
-              title: context.tr("interactions"),
-              leadingWidget: GestureDetector(
-                onTap: () {
-                  context.pushNamed(AppRouter.kMarriageFilterView);
-                },
-                child: Container(
-                  padding: EdgeInsets.all(10.w),
-                  color: Colors.transparent,
-                  child: SvgPicture.asset(
-                    AssetsData.kfilterIcon,
-                    width: 22.w,
-                    height: 22.h,
-                    color: AppColors.secondary600,
-                  ),
-                ),
-              ),
-            ),
+  Widget _buildExplorationTitle() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+      child: Center(
+        child: Text(
+          context.tr("exploration"),
+          style: Styles.textStyle24SemiBold.copyWith(
+            color: AppColors.secondary800,
           ),
-          SizedBox(height: 10.h),
-          // ✅ العنوان للـ Exploration
-          Text(
-            context.tr("exploration"),
-            style: Styles.textStyle24SemiBold.copyWith(
-              color: AppColors.secondary800,
-            ),
-          ),
-        ] else ...[
-          // ✅ SimpleAppBar for History view
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-            child: SimpleAppBar(
-              title: context.tr("history"),
-              isLargeTitle: true,
-              onBack: () {
-                setState(() {
-                  _currentIndex = 0;
-                  selectedTab = "exploration";
-                });
-              },
-            ),
-          ),
-        ],
-
-        SizedBox(height: 10.h),
-
-        // ✅ Filter Chips (بس في History)
-        if (_currentIndex == 1)
-          FilterChips(
-            onFilterChanged: (filterKey) {
-              setState(() {
-                selectedFilter = filterKey;
-              });
-
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  _historyKey.currentState?.scrollToTop();
-                });
-              });
-            },
-          ),
-      ],
+        ),
+      ),
     );
   }
 
@@ -196,7 +124,6 @@ class InteractionBodyState extends State<InteractionBody> {
     return BlocBuilder<InteractionsCubit, InteractionsState>(
       builder: (context, state) {
         final bool shouldShowOverlay = _shouldShowSubscriptionOverlay(state);
-
         return Stack(
           children: [
             Exploration(
@@ -210,6 +137,70 @@ class InteractionBodyState extends State<InteractionBody> {
     );
   }
 
+  // ✅ عنوان "استكشاف" فوق الـ Exploration
+
+  // ✅ History header: title "السجل" + filter chips فقط (بدون AppBar)
+  Widget _buildHistoryHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ✅ Title "السجل" مع back arrow
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+          child: Row(
+            children: [
+              // ✅ Back arrow يرجع للـ Exploration
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _currentIndex = 0;
+                    selectedTab = context.tr("exploration");
+                  });
+                },
+                child: Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 18.w,
+                    color: AppColors.secondary800,
+                  ),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                context.tr("history"),
+                style: Styles.textStyle24SemiBold.copyWith(
+                  color: AppColors.secondary800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 8.h),
+
+        // ✅ Filter Chips
+        FilterChips(
+          onFilterChanged: (filterKey) {
+            setState(() {
+              selectedFilter = filterKey;
+            });
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                _historyKey.currentState?.scrollToTop();
+              });
+            });
+          },
+        ),
+        SizedBox(height: 8.h),
+      ],
+    );
+  }
+
+
   Widget _buildHistoryContent() {
     return Historypage(key: _historyKey, selectedFilter: selectedFilter);
   }
@@ -218,13 +209,11 @@ class InteractionBodyState extends State<InteractionBody> {
     if (state.isSubscribed) return false;
     if (!state.answerCompleted) return false;
     if (state.explorationState == CubitStates.loading &&
-        state.explorationData.isEmpty) {
+        state.explorationData.isEmpty)
       return false;
-    }
     if (state.explorationState == CubitStates.failure &&
-        state.explorationData.isEmpty) {
+        state.explorationData.isEmpty)
       return false;
-    }
     final hasData = state.explorationData.values.any((list) => list.isNotEmpty);
     if (!hasData) return false;
     return true;
