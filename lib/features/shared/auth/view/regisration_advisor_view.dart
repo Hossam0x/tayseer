@@ -1,5 +1,6 @@
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/auth/view/widget/build_login_button.dart';
 import 'package:tayseer/features/shared/auth/view/widget/last_login_bubble.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
@@ -121,7 +122,9 @@ class RegisrationAdvisorView extends StatelessWidget {
                     Column(
                       children: [
                         Align(
-                          alignment: Alignment.centerRight,
+                          alignment: isArabic
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
                           child: IconButton(
                             onPressed: () async {
                               context.pop();
@@ -311,9 +314,9 @@ class RegisrationAdvisorView extends StatelessWidget {
                                           ),
                                           child: LastLoginBubble(
                                             onTap: () {
-                                              authCubit.logInUser(
-                                                email: state.lastLoginEmail,
-                                              );
+                                              // authCubit.logInUser(
+                                              //   email: state.lastLoginEmail,
+                                              // );
                                             },
                                             text: state.lastLoginEmail!,
                                           ),
@@ -341,13 +344,7 @@ class RegisrationAdvisorView extends StatelessWidget {
 
                               SizedBox(height: context.height * 0.01),
 
-                              Text(
-                                context.tr('privacy_policy_title_auth'),
-                                textAlign: TextAlign.center,
-                                style: Styles.textStyle16.copyWith(
-                                  color: AppColors.kgreyColor,
-                                ),
-                              ),
+                              AgreementText(),
                             ],
                           ),
                         ),

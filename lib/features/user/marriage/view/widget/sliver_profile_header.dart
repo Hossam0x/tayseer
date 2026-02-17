@@ -1,3 +1,5 @@
+// lib/features/user/marriage/view/widget/sliver_profile_header.dart
+
 import 'dart:ui';
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
 import 'package:tayseer/features/user/marriage/view/widget/image_viewer_gallery.dart';
@@ -14,6 +16,7 @@ class SliverProfileHeader extends StatelessWidget {
   final String? nationality;
   final String? height;
   final String? transitionKey;
+  final Widget? toggleWidget; // ✅ NEW
 
   const SliverProfileHeader({
     super.key,
@@ -27,6 +30,7 @@ class SliverProfileHeader extends StatelessWidget {
     this.nationality,
     this.height,
     this.transitionKey,
+    this.toggleWidget, // ✅ NEW
   });
 
   @override
@@ -35,7 +39,7 @@ class SliverProfileHeader extends StatelessWidget {
 
     return SliverAppBar(
       expandedHeight: context.height * 0.85,
-      pinned: false,
+      pinned: true, // ✅ CHANGED: الأب بار يفضل ثابت
       floating: false,
       snap: false,
       backgroundColor: Colors.transparent,
@@ -47,6 +51,7 @@ class SliverProfileHeader extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // ✅ Filter button (left)
             GestureDetector(
               onTap: () {
                 context.pushNamed(AppRouter.kMarriageFilterView);
@@ -56,6 +61,11 @@ class SliverProfileHeader extends StatelessWidget {
                 child: AppImage(AssetsData.kfilterIcon, width: 20, height: 20),
               ),
             ),
+
+            // ✅ Toggle switch (center) - NEW
+            if (toggleWidget != null) toggleWidget!,
+
+            // ✅ Boost button (right)
             AnimatedBeFirstButton(
               onTap: () {
                 context.pushNamed(AppRouter.kBoostAccountView);
@@ -86,7 +96,6 @@ class SliverProfileHeader extends StatelessWidget {
                 child: AppImage(coverImage, fit: BoxFit.cover),
               ),
             ),
-
             Positioned(
               bottom: 60.h,
               right: 16.w,

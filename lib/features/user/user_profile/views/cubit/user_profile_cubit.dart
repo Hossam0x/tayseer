@@ -178,9 +178,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           );
         },
         (updatedProfile) {
+          final currentProfile = currentState.userProfile!;
+          final mergedProfile = currentProfile.copyWith(
+            age: updatedProfile.age != 0 ? updatedProfile.age : newAge,
+          );
           emit(
             currentState.copyWith(
-              userProfile: updatedProfile,
+              userProfile: mergedProfile,
               actionMessage: "update_age_success",
               isActionSuccess: true,
               actionTimestamp: DateTime.now().millisecondsSinceEpoch,
@@ -222,9 +226,17 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           );
         },
         (updatedProfile) {
+          final currentProfile = currentState.userProfile!;
+          final mergedProfile = currentProfile.copyWith(
+            gender:
+                updatedProfile.gender != 'male' &&
+                    updatedProfile.gender != 'female'
+                ? (newGender == 'ذكر' ? 'male' : 'female')
+                : updatedProfile.gender,
+          );
           emit(
             currentState.copyWith(
-              userProfile: updatedProfile,
+              userProfile: mergedProfile,
               actionMessage: "update_gender_success",
               isActionSuccess: true,
               actionTimestamp: DateTime.now().millisecondsSinceEpoch,

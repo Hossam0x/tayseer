@@ -579,4 +579,70 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
       ),
     );
   }
+
+  Future<void> voteInPoll({
+    required String postId,
+    required String choiceText,
+  }) async {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final originalPost = state.posts[postIndex];
+    if (originalPost.pollModel == null) return;
+
+    // Check if already voted
+    bool alreadyVoted = originalPost.pollModel!.pollChoices.any(
+      (c) => c.isSelected,
+    );
+    if (alreadyVoted) return;
+
+    // Optimistic Update
+    final updatedChoices = originalPost.pollModel!.pollChoices.map((choice) {
+      if (choice.choice == choiceText) {
+        return choice.copyWith(isSelected: true, votes: choice.votes + 1);
+      }
+      return choice;
+    }).toList();
+
+    final updatedPoll = originalPost.pollModel!.copyWith(
+      pollChoices: updatedChoices,
+      totalPollVotes: originalPost.pollModel!.totalPollVotes + 1,
+    );
+
+    final updatedPost = originalPost.copyWith(pollModel: updatedPoll);
+    _updatePostInList(postId, updatedPost);
+
+    final tappedIndex = originalPost.pollModel!.pollChoices.indexWhere(
+      (c) => c.choice == choiceText,
+    );
+    if (tappedIndex == -1) return;
+
+    final result = await _postsRepository.voteInPoll(
+      postId: postId,
+      choiceIndex: tappedIndex.toString(),
+    );
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        // Rollback on failure
+        _updatePostInList(postId, originalPost);
+        emit(
+          state.copyWith(
+            pollVoteActionState: CubitStates.failure,
+            pollVoteMessage: failure.message,
+          ),
+        );
+      },
+      (_) {
+        emit(
+          state.copyWith(
+            pollVoteActionState: CubitStates.success,
+            pollVoteMessage: null,
+          ),
+        );
+      },
+    );
+  }
 }

@@ -8,13 +8,23 @@ class SearchResponseModel {
   final List<SearchAdvisor> advisors;
   final List<SearchUser> users;
   final List<SearchEvent> events;
+  final int totalCount;
+  final int totalPages;
+  final int currentPage;
+  final int pageSize;
 
   SearchResponseModel({
     required this.posts,
     required this.advisors,
     required this.users,
     required this.events,
+    this.totalCount = 0,
+    this.totalPages = 1,
+    this.currentPage = 1,
+    this.pageSize = 10,
   });
+
+  bool get hasMore => currentPage < totalPages;
 
   factory SearchResponseModel.fromJson(Map<String, dynamic> json, String type) {
     List<PostModel> posts = [];
@@ -22,8 +32,15 @@ class SearchResponseModel {
     List<SearchUser> users = [];
     List<SearchEvent> events = [];
 
+    final data = json['data'] ?? {};
+    final pagination = data['pagination'] ?? {};
+
+    final int totalCount = pagination['totalCount'] ?? 0;
+    final int totalPages = pagination['totalPages'] ?? 1;
+    final int currentPage = pagination['currentPage'] ?? 1;
+    final int pageSize = pagination['pageSize'] ?? 10;
+
     if (type == 'all') {
-      final data = json['data'] ?? {};
       posts =
           (data['posts'] as List?)?.map((e) {
             final Map<String, dynamic> postData = Map<String, dynamic>.from(e);
@@ -74,7 +91,6 @@ class SearchResponseModel {
               .toList() ??
           [];
     } else if (type == 'posts') {
-      final data = json['data'] ?? {};
       posts =
           (data['postsDto'] as List?)?.map((e) {
             final Map<String, dynamic> postData = Map<String, dynamic>.from(e);
@@ -110,21 +126,18 @@ class SearchResponseModel {
           }).toList() ??
           [];
     } else if (type == 'advisors') {
-      final data = json['data'] ?? {};
       advisors =
           (data['advisors'] as List?)
               ?.map((e) => SearchAdvisor.fromJson(e))
               .toList() ??
           [];
     } else if (type == 'users') {
-      final data = json['data'] ?? {};
       users =
           (data['users'] as List?)
               ?.map((e) => SearchUser.fromJson(e))
               .toList() ??
           [];
     } else if (type == 'events') {
-      final data = json['data'] ?? {};
       events =
           (data['events'] as List?)
               ?.map((e) => SearchEvent.fromJson(e))
@@ -137,6 +150,10 @@ class SearchResponseModel {
       advisors: advisors,
       users: users,
       events: events,
+      totalCount: totalCount,
+      totalPages: totalPages,
+      currentPage: currentPage,
+      pageSize: pageSize,
     );
   }
 

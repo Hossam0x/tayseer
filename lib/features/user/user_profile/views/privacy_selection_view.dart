@@ -56,7 +56,7 @@ class _PrivacySelectionViewState extends State<PrivacySelectionView> {
                 child: CustomBotton(
                   height: 53.h,
                   width: double.infinity,
-                  title: 'تأكيد',
+                  title: context.tr('confirm'),
                   useGradient: true,
                   onPressed: () => Navigator.pop(context, selectedValue),
                 ),
@@ -87,7 +87,7 @@ class _PrivacySelectionViewState extends State<PrivacySelectionView> {
                 children: [
                   Text(
                     option['title']!,
-                    textAlign: TextAlign.right,
+                    textAlign: isArabic ? TextAlign.right : TextAlign.left,
                     style: Styles.textStyle16SemiBold.copyWith(
                       color: AppColors.secondary600,
                     ),
@@ -100,7 +100,7 @@ class _PrivacySelectionViewState extends State<PrivacySelectionView> {
                         constraints: BoxConstraints(maxWidth: 220.w),
                         child: Text(
                           option['subtitle']!,
-                          textAlign: TextAlign.right,
+                          textAlign: isArabic ? TextAlign.right : TextAlign.left,
                           style: Styles.textStyle12.copyWith(
                             color: AppColors.secondary400,
                             height: 1.4,

@@ -25,7 +25,7 @@ class SelectDaysBody extends StatelessWidget {
             children: [
               /// Back
               Align(
-                alignment: Alignment.centerRight,
+                alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.pop(),

@@ -1,3 +1,4 @@
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
@@ -18,7 +19,7 @@ class ALayOutViewBody extends StatelessWidget {
 
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
-        final pages = _getPages(state.userType, cubit);
+        final pages = _getPages(state.userType, cubit, context);
 
         return Scaffold(
           body: Stack(
@@ -39,7 +40,7 @@ class ALayOutViewBody extends StatelessWidget {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 bottom: state.isNavVisible
-                    ? MediaQuery.of(context).padding.bottom + 25.h
+                    ? MediaQuery.of(context).padding.bottom + 15.h
                     : -200.h,
                 left: 0,
                 right: 0,
@@ -61,7 +62,11 @@ class ALayOutViewBody extends StatelessWidget {
     );
   }
 
-  List<Widget> _getPages(UserTypeEnum userType, LayoutCubit cubit) {
+  List<Widget> _getPages(
+    UserTypeEnum userType,
+    LayoutCubit cubit,
+    BuildContext context,
+  ) {
     switch (userType) {
       case UserTypeEnum.asConsultant:
         return [
@@ -98,17 +103,38 @@ class ALayOutViewBody extends StatelessWidget {
         return [
           HomeView(onScroll: cubit.onScroll),
           GuestLockWidget(
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+              CachNetwork.removeData(key: ktoken);
+            },
             message: 'فرص التوافق تبدأ بعد التسجيل',
             description:
                 'أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.',
           ),
           MySpaceView(),
           GuestLockWidget(
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+              CachNetwork.removeData(key: ktoken);
+            },
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
           ),
           GuestLockWidget(
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+              CachNetwork.removeData(key: ktoken);
+            },
             message: 'إنشاء ملفك الشخصي أولًا',
             description:
                 'التسجيل بيسمح لك بإنشاء ملفك وعرض الملفات المناسبة لك.',

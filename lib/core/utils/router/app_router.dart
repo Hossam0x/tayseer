@@ -101,6 +101,8 @@ import 'package:tayseer/features/user/user_profile/views/user_account_management
 import 'package:tayseer/features/user/user_profile/views/user_archive_chats_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
+import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import '../../../my_import.dart';
 
 abstract class AppRouter {
@@ -216,6 +218,7 @@ abstract class AppRouter {
   static const kinteractionSubscriptionView = '/interactionSubscriptionView';
   static const kUserArchiveChatsView = '/user-archive-chats';
   static const kUserFollowingsView = '/userFollowingsView';
+  static const kGeneralSettingsView = '/general-settings';
   ///// report screens /////
   static const kReportReasonsScreen = '/ReportReasonsScreen';
   // static String getInitialRoute() {
@@ -394,20 +397,34 @@ abstract class AppRouter {
         );
 
       case AppRouter.kUserPublicProfileView:
-        return MaterialPageRoute(
-          builder: (_) =>
-              UserPublicProfileView(userId: settings.arguments as String),
+        return SlideLeftRoute(
+          page: UserPublicProfileView(userId: settings.arguments as String),
+          routeSettings: settings,
         );
 
       case AppRouter.kUserProfileEditView:
+        final args = settings.arguments as Map<String, dynamic>?;
         return SlideLeftRoute(
-          page: const UserProfileEditView(),
+          page: UserProfileEditView(
+            initialProfile: args?['initialProfile'],
+            onProfileUpdated: args?['onProfileUpdated'],
+          ),
           routeSettings: settings,
         );
 
       case AppRouter.kUserArchiveChatsView:
         return SlideLeftRoute(
           page: const UserArchiveChatsView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kGeneralSettingsView:
+        final cubit = settings.arguments as UserProfileCubit;
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: cubit,
+            child: const GeneralSettingsView(),
+          ),
           routeSettings: settings,
         );
 

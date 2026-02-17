@@ -37,9 +37,11 @@ import 'package:tayseer/features/advisor/stories/data/repository/stories_reposit
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_simple.dart';
 import 'package:tayseer/features/advisor/settings/data/models/service_provider_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/contact_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/story_visibility_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/help_support_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_cubit.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
@@ -253,6 +255,13 @@ Future<void> setupGetIt() async {
 
   getIt.registerLazySingleton<SavedPostsRepository>(
     () => SavedPostsRepositoryImpl(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<ContactRepository>(
+    () => ContactRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<HelpSupportCubit>(
+    () => HelpSupportCubit(getIt<ContactRepository>()),
   );
 
   getIt.registerLazySingleton<UserAdvisorProfileRepository>(

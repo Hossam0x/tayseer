@@ -1,16 +1,27 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/help_support_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
-class HelpSupportView extends StatefulWidget {
+class HelpSupportView extends StatelessWidget {
   const HelpSupportView({super.key});
 
   @override
-  State<HelpSupportView> createState() => _HelpSupportViewState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => getIt<HelpSupportCubit>(),
+      child: const _HelpSupportContent(),
+    );
+  }
 }
 
-class _HelpSupportViewState extends State<HelpSupportView> {
+class _HelpSupportContent extends StatefulWidget {
+  const _HelpSupportContent();
+
+  @override
+  State<_HelpSupportContent> createState() => _HelpSupportContentState();
+}
+
+class _HelpSupportContentState extends State<_HelpSupportContent> {
   final TextEditingController _problemController = TextEditingController();
 
   final List<String> faqs = [
@@ -28,100 +39,109 @@ class _HelpSupportViewState extends State<HelpSupportView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => HelpSupportCubit(),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: AdvisorBackground(
-          child: Stack(
-            children: [
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 110.h,
-                child: Container(
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(AssetsData.homeBarBackgroundImage),
-                      fit: BoxFit.fill,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: AdvisorBackground(
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 110.h,
+              child: Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(AssetsData.homeBarBackgroundImage),
+                    fit: BoxFit.fill,
+                  ),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Column(
+                  children: [
+                    Gap(16.h),
+                    SimpleAppBar(
+                      title: context.tr('help_and_support'),
+                      isLargeTitle: true,
                     ),
-                  ),
-                ),
-              ),
-              SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Column(
-                    children: [
-                      Gap(16.h),
-                      SimpleAppBar(
-                        title: 'المساعدة والدعم',
-                        isLargeTitle: true,
-                      ),
-                      Gap(36.h),
-                      Expanded(
-                        child: ListView(
-                          physics: const BouncingScrollPhysics(),
-                          children: [
-                            _buildFaqs(),
-                            Gap(24.h),
-                            _buildInstructions(),
-                            Gap(24.h),
-                            _buildReportProblem(),
-                            Gap(24.h),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w),
-                              child:
-                                  BlocConsumer<
-                                    HelpSupportCubit,
-                                    HelpSupportState
-                                  >(
-                                    listener: (context, state) {
-                                      if (state.isSuccess) {
-                                        ScaffoldMessenger.of(
+                    Gap(36.h),
+                    Expanded(
+                      child: ListView(
+                        physics: const BouncingScrollPhysics(),
+                        children: [
+                          _buildFaqs(),
+                          Gap(24.h),
+                          _buildInstructions(),
+                          Gap(24.h),
+                          _buildReportProblem(),
+                          Gap(24.h),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w),
+                            child:
+                                BlocConsumer<
+                                  HelpSupportCubit,
+                                  HelpSupportState
+                                >(
+                                  listener: (context, state) {
+                                    if (state.isSuccess) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        CustomSnackBar(
                                           context,
-                                        ).showSnackBar(
-                                          CustomSnackBar(
-                                            context,
-                                            text: 'تم إرسال المشكلة بنجاح',
-                                            isSuccess: true,
+                                          text: context.tr(
+                                            'problem_sent_success',
                                           ),
-                                        );
-                                        _problemController.clear();
-                                      }
-                                    },
-                                    builder: (context, state) {
-                                      return CustomBotton(
-                                        height: 54.h,
-                                        width: double.infinity,
-                                        title: state.isSending
-                                            ? 'جاري الإرسال...'
-                                            : 'إرسال',
-                                        useGradient: true,
-                                        onPressed: state.isSending
-                                            ? null
-                                            : () {
-                                                context
-                                                    .read<HelpSupportCubit>()
-                                                    .sendProblem(
-                                                      _problemController.text,
-                                                    );
-                                              },
+                                          isSuccess: true,
+                                        ),
                                       );
-                                    },
-                                  ),
-                            ),
-                            Gap(40.h),
-                          ],
-                        ),
+                                      _problemController.clear();
+                                    } else if (state.errorMessage != null) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        CustomSnackBar(
+                                          context,
+                                          text: state.errorMessage!,
+                                          isSuccess: false,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  builder: (context, state) {
+                                    return CustomBotton(
+                                      height: 54.h,
+                                      width: double.infinity,
+                                      title: state.isSending
+                                          ? context.tr('sending')
+                                          : context.tr('send'),
+                                      useGradient: true,
+                                      onPressed: state.isSending
+                                          ? null
+                                          : () {
+                                              context
+                                                  .read<HelpSupportCubit>()
+                                                  .sendProblem(
+                                                    _problemController.text,
+                                                  );
+                                            },
+                                    );
+                                  },
+                                ),
+                          ),
+                          Gap(40.h),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -144,7 +164,7 @@ class _HelpSupportViewState extends State<HelpSupportView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'الأسئلة الشائعة (FAQs)',
+                context.tr('faqs'),
                 style: Styles.textStyle18Meduim.copyWith(
                   color: AppColors.primaryText,
                 ),
@@ -201,7 +221,7 @@ class _HelpSupportViewState extends State<HelpSupportView> {
                             bottom: 16.h,
                           ),
                           child: Text(
-                            'هذا نص توضيحي للإجابة الخاصة بالسؤال.',
+                            context.tr('faq_answer_placeholder'),
                             style: Styles.textStyle14.copyWith(
                               color: AppColors.primaryText,
                             ),
@@ -230,7 +250,7 @@ class _HelpSupportViewState extends State<HelpSupportView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'تعليمات استخدام التطبيق',
+            context.tr('app_instructions'),
             style: Styles.textStyle18Meduim.copyWith(
               color: AppColors.primaryText,
             ),
@@ -244,16 +264,12 @@ class _HelpSupportViewState extends State<HelpSupportView> {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                _InstructionItem(
-                  text: '• تسجيل الدخول: أنشئ حسابك أو سجل دخولك.',
-                ),
-                _InstructionItem(
-                  text: '• الحجز: اختر الموعد المناسب وحدد الوقت.',
-                ),
-                _InstructionItem(text: '• الدفع: ادفع مباشرة عبر التطبيق.'),
-                _InstructionItem(text: '• الوصول: ادخل الجلسة في موعدها.'),
-                _InstructionItem(text: '• الدعم: تواصل معنا عند أي استفسار.'),
+              children: [
+                _InstructionItem(text: context.tr('login_step')),
+                _InstructionItem(text: context.tr('booking_step')),
+                _InstructionItem(text: context.tr('payment_step')),
+                _InstructionItem(text: context.tr('access_step')),
+                _InstructionItem(text: context.tr('support_step')),
               ],
             ),
           ),
@@ -273,14 +289,14 @@ class _HelpSupportViewState extends State<HelpSupportView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'الإبلاغ عن مشكلة',
+            context.tr('report_problem'),
             style: Styles.textStyle18Meduim.copyWith(
               color: AppColors.primaryText,
             ),
           ),
           Gap(12.h),
           Text(
-            'اخبرنا بمشكلتك وسنعود إليك بأسرع وقت!',
+            context.tr('report_problem_subtitle'),
             style: Styles.textStyle14,
           ),
           Gap(12.h),
@@ -288,7 +304,7 @@ class _HelpSupportViewState extends State<HelpSupportView> {
             controller: _problemController,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText: 'ادخل تفاصيل المشكلة',
+              hintText: context.tr('problem_details_hint'),
               hintStyle: Styles.textStyle14.copyWith(color: AppColors.hintText),
               filled: true,
               fillColor: AppColors.secondary950,

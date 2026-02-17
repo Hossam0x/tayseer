@@ -64,9 +64,15 @@ class CommentContent extends StatelessWidget {
         children: [
           // Avatar
           GestureDetector(
-            onTap: () => comment.commenter.userType == 'Advisor'
-                ? _navigateToUserAdvisorProfile(context)
-                : _navigateToUserProfile(context),
+            onTap: () {
+              if (comment.commenter.isAnnonymous) {
+                // لا تفعل شيئًا أو أظهر رسالة
+                return;
+              }
+              comment.commenter.userType == 'Advisor'
+                  ? _navigateToUserAdvisorProfile(context)
+                  : _navigateToUserProfile(context);
+            },
             child: CommentAvatar(
               isAnnonymous: comment.commenter.isAnnonymous,
               avatarUrl: comment.commenter.avatar,
@@ -231,17 +237,17 @@ class _CommentText extends StatelessWidget {
 
   double _fontSize() {
     if (!_isEmojiOnly(text)) {
-      return 14; // الحجم العادي
+      return 14.sp; // الحجم العادي
     }
 
     final count = _emojiCount(text);
 
     if (count == 1) {
-      return 40; // إيموجي واحد
+      return 40.sp; // إيموجي واحد
     } else if (count <= 7) {
-      return 28; // من 2 لـ 7
+      return 28.sp; // من 2 لـ 7
     } else {
-      return 14; // كتير
+      return 14.sp; // كتير
     }
   }
 

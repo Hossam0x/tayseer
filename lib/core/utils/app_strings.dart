@@ -48,4 +48,5 @@ class AppStrings {
 
   static const String votes = "votes";
   static const String anonymous = "anonymous";
+  static const String general = "general";
 }

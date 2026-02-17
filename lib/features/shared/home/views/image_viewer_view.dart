@@ -552,7 +552,9 @@ class _ViewerHeader extends StatelessWidget {
                   _buildDots()
                 else
                   const SizedBox(),
-                Icon(Icons.info_outline, color: Colors.white, size: 26.sp),
+                IconButton(onPressed: (){
+                  context.pushNamed(AppRouter.kReportReasonsScreen);
+                },icon: Icon(Icons.info_outline, color: Colors.white, size: 26.sp),),
               ],
             ),
           ),

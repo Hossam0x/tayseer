@@ -561,7 +561,8 @@ class _PostMediaState extends State<_PostMedia> {
         return RealVideoPlayer(
           postId: widget.post.postId,
           videoUrl: widget.post.videoUrl ?? '',
-          isReel: true,
+          videoData: widget.post.videoData,
+
           videoController: widget.sharedController ?? _activeController,
           onControllerCreated: (controller) {
             _activeController = controller;
