@@ -48,28 +48,38 @@ class SliverProfileHeader extends StatelessWidget {
       titleSpacing: 0,
       title: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.w),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            // ✅ Filter button (left)
-            GestureDetector(
-              onTap: () {
-                context.pushNamed(AppRouter.kMarriageFilterView);
-              },
-              child: CircleAvatar(
-                backgroundColor: Colors.black26,
-                child: AppImage(AssetsData.kfilterIcon, width: 20, height: 20),
+            // ✅ Toggle ثابت في النص
+            if (toggleWidget != null) Center(child: toggleWidget!),
+
+            // ✅ Filter button
+            Positioned(
+              right: 0,
+              child: GestureDetector(
+                onTap: () {
+                  context.pushNamed(AppRouter.kMarriageFilterView);
+                },
+                child: CircleAvatar(
+                  backgroundColor: Colors.black26,
+                  child: AppImage(
+                    AssetsData.kfilterIcon,
+                    width: 20,
+                    height: 20,
+                  ),
+                ),
               ),
             ),
 
-            // ✅ Toggle switch (center) - NEW
-            if (toggleWidget != null) toggleWidget!,
-
-            // ✅ Boost button (right)
-            AnimatedBeFirstButton(
-              onTap: () {
-                context.pushNamed(AppRouter.kBoostAccountView);
-              },
+            // ✅ Boost button
+            Positioned(
+              left: 0,
+              child: AnimatedBeFirstButton(
+                onTap: () {
+                  context.pushNamed(AppRouter.kBoostAccountView);
+                },
+              ),
             ),
           ],
         ),
