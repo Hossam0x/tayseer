@@ -660,7 +660,7 @@ class _MarriageFieldSelectionViewState
 
       case 'choose_employer':
         return {
-          'titleKey': 'select_employer',
+          'titleKey': 'employer',
           'items': [
             'employer_government',
             'employer_private',
