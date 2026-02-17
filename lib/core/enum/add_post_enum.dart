@@ -1,1 +1,1 @@
-enum AddPostEnum { post, story, video, reel }
+enum AddPostEnum { post, video, reel }

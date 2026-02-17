@@ -4,12 +4,17 @@ import 'package:tayseer/features/advisor/add_post/view/widget/add_post_body.dart
 import 'package:tayseer/my_import.dart';
 
 class AddPostView extends StatelessWidget {
-  const AddPostView({super.key, this.addPostEnum = AddPostEnum.post , this.post , this.isEdit = false});
+  const AddPostView({
+    super.key,
+    this.addPostEnum = AddPostEnum.post,
+    this.post,
+    this.isEdit = false,
+  });
   final AddPostEnum? addPostEnum;
   final PostModel? post;
-  final bool isEdit ;
+  final bool isEdit;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: AddPostBody(postType: addPostEnum));
+    return Scaffold(body: AddPostBody());
   }
 }
