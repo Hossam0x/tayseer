@@ -112,8 +112,8 @@ class InteractionBodyState extends State<InteractionBody> {
       child: Center(
         child: Text(
           context.tr("exploration"),
-          style: Styles.textStyle24SemiBold.copyWith(
-            color: AppColors.secondary800,
+          style: Styles.textStyle24Meduim.copyWith(
+            color: AppColors.secondary700,
           ),
         ),
       ),
