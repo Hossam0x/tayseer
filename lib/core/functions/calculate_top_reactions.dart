@@ -1,7 +1,9 @@
 import 'package:tayseer/core/models/post_model.dart';
 
-List<ReactionType> calculateTopReactions({
-  required List<ReactionType> currentTopReactions,
+/// ✅ حساب topReactions بناءً على التغيير في الـ reaction
+/// يدعم البنية الجديدة: List<TopReactionModel> مع count لكل نوع
+List<TopReactionModel> calculateTopReactions({
+  required List<TopReactionModel> currentTopReactions,
   required ReactionType? oldReaction,
   required ReactionType? newReaction,
   required int newLikesCount,
@@ -11,35 +13,41 @@ List<ReactionType> calculateTopReactions({
     return [];
   }
 
-  final list = List<ReactionType>.from(currentTopReactions);
+  final updatedList = List<TopReactionModel>.from(currentTopReactions);
 
-  // 2️⃣ حالة الإضافة أو التغيير (Adding / Changing)
+  // 2️⃣ معالجة الـ reaction القديم (إن وُجد)
+  if (oldReaction != null) {
+    final oldIndex = updatedList.indexWhere((r) => r.type == oldReaction);
+    if (oldIndex != -1) {
+      final oldReactionModel = updatedList[oldIndex];
+      if (oldReactionModel.count > 1) {
+        // ✅ لو في ناس تانية مستخدماه: ننقص العدد
+        updatedList[oldIndex] = oldReactionModel.copyWith(
+          count: oldReactionModel.count - 1,
+        );
+      } else {
+        // ❌ لو هو الوحيد: نحذف النوع ده من القائمة
+        updatedList.removeAt(oldIndex);
+      }
+    }
+  }
+
+  // 3️⃣ معالجة الـ reaction الجديد (إن وُجد)
   if (newReaction != null) {
-    // شيله لو موجود عشان نحطه في الأول (تحديث الأولوية)
-    list.remove(newReaction);
-
-    // لو بغير الريأكشن (مثلا من Love لـ Haha)، شيل القديم
-    if (oldReaction != null && oldReaction != newReaction) {
-      list.remove(oldReaction);
-    }
-
-    // ضيف الجديد في الأول دائماً
-    list.insert(0, newReaction);
-  }
-  // 3️⃣ حالة الإزالة (Removing) - هنا حل المشكلة
-  else if (oldReaction != null) {
-    // جرب امسح الريأكشن القديم
-    list.remove(oldReaction);
-
-    // 🚨 هنا اللوجيك الذكي:
-    // لو القائمة فضيت، بس لسه فيه لايكات (newLikesCount > 0)
-    // ده معناه إن اللايكات المتبقية دي أكيد من نفس نوع اللي أنا مسحته (أو غيره بس مش ظاهر).
-    // في الحالة دي، رجع الريأكشن تاني عشان القائمة متبقاش فاضية والرقم شغال.
-    if (list.isEmpty && newLikesCount > 0) {
-      list.add(oldReaction);
+    final newIndex = updatedList.indexWhere((r) => r.type == newReaction);
+    if (newIndex != -1) {
+      // ✅ النوع موجود: نزود العدد
+      final existingReaction = updatedList[newIndex];
+      updatedList[newIndex] = existingReaction.copyWith(
+        count: existingReaction.count + 1,
+      );
+    } else {
+      // ✅ النوع مش موجود: نضيفه
+      updatedList.add(TopReactionModel(type: newReaction, count: 1));
     }
   }
 
-  // 4️⃣ التأكد إننا مش عارضان أكتر من 3
-  return list.take(3).toList();
+  // 4️⃣ ترتيب القائمة بناءً على العدد (الأكثر أولاً) وأخذ أول 3
+  updatedList.sort((a, b) => b.count.compareTo(a.count));
+  return updatedList.take(3).toList();
 }

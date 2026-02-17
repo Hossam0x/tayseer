@@ -352,7 +352,7 @@ class HomeCubit extends Cubit<HomeState> {
       newLikesCount = post.likesCount + 1;
     }
 
-    // حساب التوب ريأكشنز
+    // ✅ حساب التوب ريأكشنز الجديدة
     final newTopReactions = calculateTopReactions(
       currentTopReactions: post.topReactions,
       oldReaction: oldReaction,
