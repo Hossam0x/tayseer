@@ -2,6 +2,10 @@
 
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/subscription_prompt_overlay.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/exploration_page.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/history_screen.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/view/widget/section_toggle.dart';
@@ -35,10 +39,24 @@ class _MarriageBodyState extends State<MarriageBody> {
   UsersMarriageResponse? _lastProfile;
   bool _isMarriageTab = true;
 
+  final ScrollController _mainScrollController = ScrollController();
   InteractionsCubit? _interactionsCubit;
 
-  InteractionsCubit get interactionsCubit {
-    _interactionsCubit ??= getIt<InteractionsCubit>();
+  final GlobalKey<ExplorationState> _explorationKey =
+      GlobalKey<ExplorationState>();
+
+  // ✅ Key للتحكم في InteractionBody من MarriageBody
+  final GlobalKey<InteractionBodyState> _interactionBodyKey =
+      GlobalKey<InteractionBodyState>();
+
+
+ InteractionsCubit get interactionsCubit {
+    if (_interactionsCubit == null) {
+      _interactionsCubit = getIt<InteractionsCubit>();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _interactionsCubit!.fetchHistorySilently();
+      });
+    }
     return _interactionsCubit!;
   }
 
@@ -50,6 +68,7 @@ class _MarriageBodyState extends State<MarriageBody> {
 
   @override
   void dispose() {
+    _mainScrollController.dispose();
     _interactionsCubit?.close();
     super.dispose();
   }
@@ -116,7 +135,6 @@ class _MarriageBodyState extends State<MarriageBody> {
           );
         }
 
-        // ✅ النوع الصريح List<UserItem>
         final List<UserItem> allUsers = state.profile?.data?.users ?? [];
         final List<UserItem> users = widget.personId != null
             ? allUsers.where((p) => p.user?.id == widget.personId).toList()
@@ -174,10 +192,7 @@ class _MarriageBodyState extends State<MarriageBody> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // ✅ Toggle ثابت في النص دايماً
                     Center(child: _buildToggle()),
-
-                    // ✅ Filter button (يمين في RTL)
                     Positioned(
                       right: 0,
                       child: GestureDetector(
@@ -194,8 +209,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                         ),
                       ),
                     ),
-
-                    // ✅ Boost button (يسار في RTL)
                     Positioned(
                       left: 0,
                       child: AnimatedBeFirstButton(
@@ -253,7 +266,7 @@ class _MarriageBodyState extends State<MarriageBody> {
     Key? key,
     required MarriageState state,
     required int profileIndex,
-    required List<UserItem> users, // ✅ UserItem
+    required List<UserItem> users,
   }) {
     final profile = users[profileIndex];
     final user = profile.user;
@@ -278,7 +291,6 @@ class _MarriageBodyState extends State<MarriageBody> {
               child: CustomScrollView(
                 key: ValueKey<int>(_currentIndex),
                 slivers: [
-                  // 1. Header
                   SliverProfileHeader(
                     images: images,
                     name: user?.name ?? '',
@@ -291,8 +303,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                     height: user?.about?.height,
                     toggleWidget: _buildToggle(),
                   ),
-
-                  // 2. Compatibility
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -317,8 +327,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
-                  // 3. About Me
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -341,8 +349,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
-                  // 4. Education
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -362,8 +368,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
-                  // 5. Life Events
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -397,8 +401,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
-                  // 6. Additional Image
                   if (images.isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -412,8 +414,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                         ),
                       ),
                     ),
-
-                  // 7. Religious
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -430,8 +430,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
-                  // 8. Video
                   if (answers?.userMedia?.video != null)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -444,8 +442,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                         ),
                       ),
                     ),
-
-                  // 9. Interests
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -459,8 +455,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
-                  // 10. Bio + Voice
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -473,8 +467,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
-                  // 11. Message Input
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -487,8 +479,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
-                  // 12. Bottom Actions
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -513,7 +503,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
                   SliverToBoxAdapter(child: SizedBox(height: 150.h)),
                 ],
               ),
@@ -599,10 +588,10 @@ class _MarriageBodyState extends State<MarriageBody> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // ✅ Toggle ثابت في النص
+                    // Toggle ثابت في النص
                     Center(child: _buildToggle()),
 
-                    // ✅ Filter button
+                    // Filter button (يمين في RTL)
                     Positioned(
                       right: 0,
                       child: GestureDetector(
@@ -620,13 +609,27 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
 
-                    // ✅ Boost button
+                    // ✅ Archive button بدل AnimatedBeFirstButton
+                    // ✅ Archive button - يفتح السجل مباشرة كـ page جديدة
                     Positioned(
                       left: 0,
-                      child: AnimatedBeFirstButton(
+                      child: GestureDetector(
                         onTap: () {
-                          context.pushNamed(AppRouter.kBoostAccountView);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BlocProvider.value(
+                                value: interactionsCubit,
+                                child: const HistoryScreen(),
+                              ),
+                            ),
+                          );
                         },
+                        child: AppImage(
+                          AssetsData.archiveIcon,
+                          width: 50.w,
+                          height: 50.h,
+                        ),
                       ),
                     ),
                   ],
@@ -636,13 +639,32 @@ class _MarriageBodyState extends State<MarriageBody> {
             Expanded(
               child: BlocProvider.value(
                 value: interactionsCubit,
-                child: const InteractionBody(),
+                child: InteractionBody(key: _interactionBodyKey), // ✅ Key
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SUBSCRIPTION OVERLAY CHECK
+  // ═══════════════════════════════════════════════════════════════
+  bool _shouldShowSubscriptionOverlay(InteractionsState state) {
+    if (state.isSubscribed) return false;
+    if (!state.answerCompleted) return false;
+    if (state.explorationState == CubitStates.loading &&
+        state.explorationData.isEmpty) {
+      return false;
+    }
+    if (state.explorationState == CubitStates.failure &&
+        state.explorationData.isEmpty) {
+      return false;
+    }
+    final hasData = state.explorationData.values.any((list) => list.isNotEmpty);
+    if (!hasData) return false;
+    return true;
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -671,13 +693,13 @@ class _MarriageBodyState extends State<MarriageBody> {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(child: _shimmer(height: context.height * 0.9)),
-            SliverToBoxAdapter(child: SizedBox(height: 20)),
+            SliverToBoxAdapter(child: const SizedBox(height: 20)),
             SliverToBoxAdapter(child: _shimmer(height: 100)),
-            SliverToBoxAdapter(child: SizedBox(height: 20)),
+            SliverToBoxAdapter(child: const SizedBox(height: 20)),
             SliverToBoxAdapter(child: _shimmer(height: 100)),
-            SliverToBoxAdapter(child: SizedBox(height: 20)),
+            SliverToBoxAdapter(child: const SizedBox(height: 20)),
             SliverToBoxAdapter(child: _shimmer(height: 150)),
-            SliverToBoxAdapter(child: SizedBox(height: 150)),
+            SliverToBoxAdapter(child: const SizedBox(height: 150)),
           ],
         ),
       ),

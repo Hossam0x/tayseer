@@ -22,6 +22,24 @@ class InteractionsCubit extends Cubit<InteractionsState> {
     emit(state.copyWith(isSubscribed: isSubscribed));
   }
 
+Future<void> fetchHistorySilently() async {
+  if (state.isSubscribed) return; // مش محتاج لو already subscribed
+
+  final result = await repository.fetchHistoryUsers(
+    filter: "liked_you",
+    page: 1,
+  );
+
+  result.fold(
+    (failure) => null, // ✅ silent - مش بنعمل حاجة عند الفشل
+    (response) {
+      // ✅ update الـ subscription فقط بدون تغيير باقي الـ state
+      if (response.userSubscription != state.isSubscribed) {
+        emit(state.copyWith(isSubscribed: response.userSubscription));
+      }
+    },
+  );
+}
   // ═══════════════════════════════════════════════════════════════════
   // EXPLORATION - ✅ UPDATED WITH REFRESH SUPPORT
   // ═══════════════════════════════════════════════════════════════════
