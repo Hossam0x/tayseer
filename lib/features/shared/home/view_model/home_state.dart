@@ -362,6 +362,7 @@ class CategoryPostsData extends Equatable {
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
+  final double? nextCursor;
 
   const CategoryPostsData({
     this.state = CubitStates.initial,
@@ -370,6 +371,7 @@ class CategoryPostsData extends Equatable {
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
+    this.nextCursor,
   });
 
   /// هل البيانات محملة وجاهزة للعرض
@@ -388,6 +390,7 @@ class CategoryPostsData extends Equatable {
     int? currentPage,
     bool? hasMore,
     bool? isLoadingMore,
+    double? nextCursor,
   }) {
     return CategoryPostsData(
       state: state ?? this.state,
@@ -396,6 +399,7 @@ class CategoryPostsData extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      nextCursor: nextCursor ?? this.nextCursor,
     );
   }
 
@@ -407,5 +411,6 @@ class CategoryPostsData extends Equatable {
     currentPage,
     hasMore,
     isLoadingMore,
+    nextCursor,
   ];
 }
