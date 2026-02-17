@@ -285,25 +285,25 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               _buildSliverPadding(
                 child: (profile.inReview == true)
                     ? Center(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(255, 255, 255, 0.55),
-                          borderRadius: BorderRadius.circular(12.r),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Color.fromRGBO(255, 255, 255, 0.55),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          padding: EdgeInsets.all(5),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AppImage(AssetsData.underreviewIcon, width: 24.w),
+                              Gap(5.w),
+                              Text(
+                                "${context.tr("under_review")}",
+                                style: Styles.textStyle18SemiBold,
+                              ),
+                            ],
+                          ),
                         ),
-                        padding: EdgeInsets.all(5),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AppImage(AssetsData.underreviewIcon, width: 24.w),
-                            Gap(5.w),
-                            Text(
-                              "${context.tr("under_review")}",
-                              style: Styles.textStyle18SemiBold,
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
+                      )
                     : SizedBox.shrink(),
               ),
               // ⭐⭐⭐ Statistics Cards Section with REAL DATA
@@ -311,28 +311,8 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 child: ProfileStatisticsCards(
                   upgradesCount: profile.interactionCount ?? 0, // ⭐ من السيرفر
                   resultsCount: profile.regredsCount ?? 0, // ⭐ من السيرفر
-                  onUpgradesTap: () {
-                    debugPrint('⭐ Upgrades button tapped');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'ترقية الاعجابات المتبقية: ${profile.interactionCount ?? 0}',
-                        ),
-                        backgroundColor: AppColors.primary600,
-                      ),
-                    );
-                  },
-                  onResultsTap: () {
-                    debugPrint('⭐ Results button tapped');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'عرض النتائج: ${profile.regredsCount ?? 0}',
-                        ),
-                        backgroundColor: AppColors.primary600,
-                      ),
-                    );
-                  },
+                  onUpgradesTap: () {},
+                  onResultsTap: () {},
                 ),
               ),
 
@@ -365,14 +345,14 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               if (profile.hobbies.isNotEmpty)
                 _buildSliverPadding(
                   child: InterestsSection(
-                    title:'my_interests',
+                    title: 'my_interests',
                     interests: _buildInterestsItems(profile),
                   ),
                 ),
-                  if (profile.faith.isNotEmpty)
+              if (profile.faith.isNotEmpty)
                 _buildSliverPadding(
                   child: InterestsSection(
-                    title:'choose_faith',
+                    title: 'choose_faith',
                     interests: _buildFaithItems(profile),
                   ),
                 ),
@@ -406,53 +386,54 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   // ⭐⭐⭐ NEW: Secondary Image Section with proper logic
   // ════════════════════════════════════════════════════════════════
 
-Widget _buildSecondaryImageSection(MarriageUserProfileModel profile) {
-  final secondaryImage = _getSecondaryDisplayImage(profile);
+  Widget _buildSecondaryImageSection(MarriageUserProfileModel profile) {
+    final secondaryImage = _getSecondaryDisplayImage(profile);
 
-  if (secondaryImage == null) {
-    return SliverToBoxAdapter(child: SizedBox.shrink());
-  }
+    if (secondaryImage == null) {
+      return SliverToBoxAdapter(child: SizedBox.shrink());
+    }
 
-  return SliverPadding(
-    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-    sliver: SliverToBoxAdapter(
-      child: GestureDetector(
-        onTap: () {
-          // ✅ Open Full Screen Image
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FullScreenImageView(
-                imageUrl: secondaryImage,
-                heroTag: 'profile_secondary_image',
-                userName: context.tr("my_profile"),
-              ),
-            ),
-          );
-        },
-        child: Hero(
-          tag: 'profile_secondary_image',
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16.r),
-            child: Container(
-              height: 400.h, // يمكنك تعديل الارتفاع حسب الحاجة
-              width: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(secondaryImage),
-                  fit: BoxFit.cover,
+    return SliverPadding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+      sliver: SliverToBoxAdapter(
+        child: GestureDetector(
+          onTap: () {
+            // ✅ Open Full Screen Image
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FullScreenImageView(
+                  imageUrl: secondaryImage,
+                  heroTag: 'profile_secondary_image',
+                  userName: context.tr("my_profile"),
                 ),
               ),
-              // ✅ Add a subtle overlay to indicate it's tappable
+            );
+          },
+          child: Hero(
+            tag: 'profile_secondary_image',
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16.r),
               child: Container(
+                height: 400.h, // يمكنك تعديل الارتفاع حسب الحاجة
+                width: double.infinity,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.1),
-                    ],
+                  image: DecorationImage(
+                    image: NetworkImage(secondaryImage),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                // ✅ Add a subtle overlay to indicate it's tappable
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.1),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -460,51 +441,52 @@ Widget _buildSecondaryImageSection(MarriageUserProfileModel profile) {
           ),
         ),
       ),
-    ),
-  );
-}
-Widget _buildViewHeader(MarriageUserProfileModel profile) {
-  final mainImage = _getMainDisplayImage(profile);
+    );
+  }
 
-  return SliverToBoxAdapter(
-    child: Column(
-      children: [
-        GestureDetector(
-          onTap: mainImage != _defaultImageUrl
-              ? () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FullScreenImageView(
-                        imageUrl: mainImage,
-                        heroTag: 'profile_main_image',
-                        userName: context.tr("my_profile"),
+  Widget _buildViewHeader(MarriageUserProfileModel profile) {
+    final mainImage = _getMainDisplayImage(profile);
+
+    return SliverToBoxAdapter(
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: mainImage != _defaultImageUrl
+                ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FullScreenImageView(
+                          imageUrl: mainImage,
+                          heroTag: 'profile_main_image',
+                          userName: context.tr("my_profile"),
+                        ),
                       ),
-                    ),
-                  );
-                }
-              : null,
-          child: Hero(
-            tag: 'profile_main_image',
-            child: Container(
-              height: 650.h,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(33.r),
-                ),
-                image: DecorationImage(
-                  image: NetworkImage(mainImage),
-                  fit: BoxFit.cover,
+                    );
+                  }
+                : null,
+            child: Hero(
+              tag: 'profile_main_image',
+              child: Container(
+                height: 650.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(33.r),
+                  ),
+                  image: DecorationImage(
+                    image: NetworkImage(mainImage),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
+
   Widget _buildCompletionCard(
     double progress, {
     required MarriageUserProfileModel profile,
@@ -677,8 +659,8 @@ Widget _buildViewHeader(MarriageUserProfileModel profile) {
           'icon': AssetsData.kdrawingIcon,
           'label': _translateValue(profile.aboutMe!.socialStatus),
         },
-      if (profile.aboutMe?.weight != null)
-        {'icon': AssetsData.kdrawingIcon, 'label': profile.aboutMe?.weight},
+      if (profile.aboutMe?.age != null)
+        {'icon': AssetsData.kdrawingIcon, 'label':"${context.tr('age')} ${ profile.aboutMe?.age}"},
       if (profile.aboutMe?.skinColor != null)
         {
           'icon': AssetsData.kdrawingIcon,
@@ -711,19 +693,19 @@ Widget _buildViewHeader(MarriageUserProfileModel profile) {
   List<Map<String, dynamic>> _buildTimelineEvents(YourGoals goals) {
     final List<Map<String, dynamic>> events = [];
 
-    if (goals.intendTravelAbroad != null && goals.intendTravelAbroad!.isNotEmpty) {
+    if (goals.intendTravelAbroad != null &&
+        goals.intendTravelAbroad!.isNotEmpty) {
       events.add({
         'timeLabel': _translateValue(goals.intendTravelAbroad),
         'goalType': 'intendTravelAbroad',
       });
     }
-  if (goals.familyAcceptance!= null && goals.familyAcceptance!.isNotEmpty) {
+    if (goals.familyAcceptance != null && goals.familyAcceptance!.isNotEmpty) {
       events.add({
         'timeLabel': _translateValue(goals.familyAcceptance),
         'goalType': 'familyAcceptance',
       });
     }
-
 
     if (goals.engagement != null && goals.engagement!.isNotEmpty) {
       events.add({
@@ -756,66 +738,67 @@ Widget _buildViewHeader(MarriageUserProfileModel profile) {
         },
     ];
   }
-List<Map<String, dynamic>> _buildFaithItems(profile) {
-  final Map<String, String> _keyToEmojiMap = {
-    'faith_dua': '🙏',
-    'faith_umrah': '🕋',
-    'faith_charity_work': '💼',
-    'faith_dawah': '📢',
-    'faith_sadaqah': '🤝',
-    'faith_hadith': '📖',
-    'faith_tahajjud': '😊',
-    'faith_dhikr': '📿',
-    'faith_multiple_prayers': '🕌',
-    'faith_sunnah_prayer': '🙏',
-    'faith_nafila_prayer': '🕯️',
-    'faith_hajj': '🕋',
-    'faith_five_prayers': '☪️',
-    'faith_fiqh': '📚',
-    'faith_fasting': '🌙',
-    'faith_tasawwuf': '😇',
-    'faith_good_manners': '🤲',
-    'faith_friday_prayer': '🕌',
-  };
 
-  // ⭐ اقرأ من profile.faith مباشرة
-  List<String> faithList = [];
+  List<Map<String, dynamic>> _buildFaithItems(profile) {
+    final Map<String, String> _keyToEmojiMap = {
+      'faith_dua': '🙏',
+      'faith_umrah': '🕋',
+      'faith_charity_work': '💼',
+      'faith_dawah': '📢',
+      'faith_sadaqah': '🤝',
+      'faith_hadith': '📖',
+      'faith_tahajjud': '😊',
+      'faith_dhikr': '📿',
+      'faith_multiple_prayers': '🕌',
+      'faith_sunnah_prayer': '🙏',
+      'faith_nafila_prayer': '🕯️',
+      'faith_hajj': '🕋',
+      'faith_five_prayers': '☪️',
+      'faith_fiqh': '📚',
+      'faith_fasting': '🌙',
+      'faith_tasawwuf': '😇',
+      'faith_good_manners': '🤲',
+      'faith_friday_prayer': '🕌',
+    };
 
-  if (profile.faith is List) {
-    for (var item in profile.faith) {
-      final itemStr = item.toString().trim();
-      if (itemStr.isEmpty) continue;
+    // ⭐ اقرأ من profile.faith مباشرة
+    List<String> faithList = [];
 
-      if (itemStr.contains(',')) {
-        faithList.addAll(
-          itemStr.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
-        );
-      } else {
-        faithList.add(itemStr);
+    if (profile.faith is List) {
+      for (var item in profile.faith) {
+        final itemStr = item.toString().trim();
+        if (itemStr.isEmpty) continue;
+
+        if (itemStr.contains(',')) {
+          faithList.addAll(
+            itemStr.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
+          );
+        } else {
+          faithList.add(itemStr);
+        }
       }
+    } else if (profile.faith is String &&
+        (profile.faith as String).isNotEmpty) {
+      faithList = (profile.faith as String)
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
     }
-  } else if (profile.faith is String && (profile.faith as String).isNotEmpty) {
-    faithList = (profile.faith as String)
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
+
+    // ⭐ فلتر - خلي بس faith_ keys
+    faithList = faithList.where((s) => s.startsWith('faith_')).toList();
+
+    if (faithList.isEmpty) return [];
+
+    return faithList.map<Map<String, dynamic>>((key) {
+      final trimmedKey = key.trim();
+      final emoji = _keyToEmojiMap[trimmedKey] ?? '☪️';
+      final displayText = _translateValue(trimmedKey);
+      return {'icon': AssetsData.kmusicIcon, 'label': '$emoji $displayText'};
+    }).toList();
   }
 
-  // ⭐ فلتر - خلي بس faith_ keys
-  faithList = faithList
-      .where((s) => s.startsWith('faith_'))
-      .toList();
-
-  if (faithList.isEmpty) return [];
-
-  return faithList.map<Map<String, dynamic>>((key) {
-    final trimmedKey = key.trim();
-    final emoji = _keyToEmojiMap[trimmedKey] ?? '☪️';
-    final displayText = _translateValue(trimmedKey);
-    return {'icon': AssetsData.kmusicIcon, 'label': '$emoji $displayText'};
-  }).toList();
-}
   // ⭐⭐⭐ FIX: دالة _buildInterestsItems مع الترجمة الكاملة
   List<Map<String, dynamic>> _buildInterestsItems(profile) {
     final Map<String, String> _keyToEmojiMap = {

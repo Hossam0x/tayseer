@@ -40,15 +40,13 @@ class MarriageProfileEditView extends StatefulWidget {
 
 class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   bool _isRecordingInPlace = false;
-  bool _isUploadingVideo = false;
-  bool _isUploadingAudio = false;
+  // ✅ أزلنا _isUploadingVideo و _isUploadingAudio - مفيش upload فوري
 
   final GlobalKey _imagesKey = GlobalKey();
   final GlobalKey _videoKey = GlobalKey();
   final GlobalKey _audioKey = GlobalKey();
   final ScrollController _scrollController = ScrollController();
 
-  // ⭐⭐⭐ EMOJI MAP - MUST BE STATIC CONST
   static const Map<String, String> _hobbyEmojiMap = {
     'interest_baseball': '⚾',
     'interest_running': '🏃',
@@ -186,7 +184,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   @override
   void initState() {
     super.initState();
-
     if (widget.scrollToSection != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToSection(widget.scrollToSection!);
@@ -204,7 +201,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 400), () {
         GlobalKey? targetKey;
-
         switch (section) {
           case 'images':
             targetKey = _imagesKey;
@@ -216,7 +212,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             targetKey = _audioKey;
             break;
         }
-
         if (targetKey?.currentContext != null) {
           Scrollable.ensureVisible(
             targetKey!.currentContext!,
@@ -239,19 +234,13 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     });
   }
 
-  // ⭐⭐⭐ FIX: دالة تنسيق الهوايات مع دعم الترجمة الكامل
   String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
     List<String> hobbiesList = [];
-
     if (hobbyKeys is List) {
       debugPrint('📋 [FORMAT] Raw List: $hobbyKeys');
-
-      // ⭐ Loop through list items
       for (var item in hobbyKeys) {
         final itemStr = item.toString().trim();
         if (itemStr.isEmpty) continue;
-
-        // ⭐⭐⭐ CRITICAL FIX: إذا العنصر فيه فواصل، فصّله!
         if (itemStr.contains(',')) {
           debugPrint('  🔄 Splitting item: "$itemStr"');
           final subItems = itemStr
@@ -263,25 +252,19 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           hobbiesList.add(itemStr);
         }
       }
-
       debugPrint('📋 [FORMAT] Processed List: $hobbiesList');
     } else if (hobbyKeys is String) {
-      // ⭐ حالة String
       hobbiesList = hobbyKeys
           .split(',')
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty)
           .toList();
-
-      debugPrint(
-        '📋 [FORMAT] String input: "$hobbyKeys" → parsed: $hobbiesList',
-      );
+      debugPrint('📋 [FORMAT] String input: "$hobbyKeys" → parsed: $hobbiesList');
     } else {
       debugPrint('⚠️ [FORMAT] Invalid type: ${hobbyKeys.runtimeType}');
       return '';
     }
 
-    // ⭐ فلترة: خلي بس الـ keys الصحيحة
     hobbiesList = hobbiesList
         .where((s) => s.startsWith('interest_') || s.startsWith('faith_'))
         .toList();
@@ -295,10 +278,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         .map((key) {
           final trimmedKey = key.trim();
           if (trimmedKey.isEmpty) return '';
-
           final emoji = _hobbyEmojiMap[trimmedKey] ?? '🎵';
           final text = context.tr(trimmedKey);
-
           debugPrint('  🎯 $trimmedKey → $emoji $text');
           return '$emoji $text';
         })
@@ -309,34 +290,44 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return result;
   }
 
-  // ⭐⭐⭐ NEW: دالة عامة لترجمة أي قيمة تلقائياً
   String _translateValue(String value, BuildContext context) {
-    // إذا كانت القيمة فاضية أو "اختر"، أرجعها كما هي
     if (value.isEmpty || value == 'اختر' || value == 'select') {
       return context.tr('select');
     }
-
-    // جرب الترجمة - إذا مافيش ترجمة، هيرجع نفس القيمة
     final translated = context.tr(value);
-
-    // إذا الترجمة نفس الـ key، يعني مافيش ترجمة → أرجع القيمة الأصلية
     if (translated == value && !value.contains(' ')) {
-      // لو فيها مسافات، يعني قيمة مترجمة فعلاً مش key
       return value;
     }
-
     return translated;
   }
-
+bool get _hasUnsavedChanges {
+    final s = widget.state;
+    return s.pendingSingleImage != null ||
+        s.deletedSingleImageUrl != null ||
+        s.pendingImages.isNotEmpty ||
+        s.deletedImageUrls.isNotEmpty ||
+        s.pendingVideo != null ||
+        s.pendingDeleteVideo ||
+        s.pendingAudio != null ||
+        s.pendingDeleteAudio;}
   @override
   Widget build(BuildContext context) {
+    // ✅ تحقق من الصورة الرئيسية - السيرفر أو pending
     final hasSingleImage =
-        widget.profile.userMedia?.singleImage != null &&
-        widget.profile.userMedia!.singleImage!.isNotEmpty;
+        (widget.profile.userMedia?.singleImage != null &&
+            widget.profile.userMedia!.singleImage!.isNotEmpty) ||
+        widget.state.pendingSingleImage != null;
+
     return WillPopScope(
-      onWillPop: () async {
+     onWillPop: () async {
+        // ⭐ Priority 1: لازم تضيف صورة رئيسية أولاً
         if (!hasSingleImage) {
           _showMustAddImageDialog(context);
+          return false;
+        }
+        // ⭐ Priority 2: لو فيه تغييرات pending، اسأل المستخدم
+        if (_hasUnsavedChanges) {
+          _showUnsavedChangesDialog(context);
           return false;
         }
         return true;
@@ -351,36 +342,20 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 Gap(24.h),
-                _buildPersonalInfoSection(
-                  context,
-                  widget.cubit,
-                  widget.profile,
-                ),
+                _buildPersonalInfoSection(context, widget.cubit, widget.profile),
                 Gap(20.h),
                 Container(
                   key: _imagesKey,
-                  child: _buildImagesSection(
-                    context,
-                    widget.cubit,
-                    widget.profile,
-                  ),
+                  child: _buildImagesSection(context, widget.cubit, widget.profile),
                 ),
                 Gap(24.h),
-                _buildProfessionalInfoSection(
-                  context,
-                  widget.cubit,
-                  widget.profile,
-                ),
+                _buildProfessionalInfoSection(context, widget.cubit, widget.profile),
                 Gap(24.h),
                 Container(key: _videoKey, child: _buildVideoSection(context)),
                 Gap(24.h),
                 Container(key: _audioKey, child: _buildAudioSection(context)),
                 Gap(24.h),
-                _buildFamilyAndPreferencesSection(
-                  context,
-                  widget.cubit,
-                  widget.profile,
-                ),
+                _buildFamilyAndPreferencesSection(context, widget.cubit, widget.profile),
                 Gap(24.h),
                 _buildGoalsSection(context, widget.cubit, widget.profile),
                 Gap(24.h),
@@ -396,10 +371,20 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ✅ VIDEO SECTION - pending video محلياً
+  // ════════════════════════════════════════════════════════════════
   Widget _buildVideoSection(BuildContext context) {
-    final hasVideo =
-        widget.profile.userMedia?.video != null &&
-        widget.profile.userMedia!.video!.isNotEmpty;
+    final serverVideoUrl = widget.profile.userMedia?.video;
+    final pendingVideo = widget.state.pendingVideo;
+    final pendingDeleteVideo = widget.state.pendingDeleteVideo;
+
+    // منطق العرض: pending delete → مفيش | pending file → محلي | غير كده → سيرفر
+    final hasVideo = !pendingDeleteVideo &&
+        (pendingVideo != null ||
+            (serverVideoUrl != null && serverVideoUrl.isNotEmpty));
+
+    final displayVideoUrl = pendingVideo != null ? pendingVideo.path : serverVideoUrl;
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -413,24 +398,30 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         children: [
           Text(context.tr('intro_video'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-          if (_isUploadingVideo)
-            _buildLoadingWidget(context.tr('uploading_video'))
-          else
-            VideoSection(
-              videoUrl: widget.profile.userMedia?.video,
-              onDelete: hasVideo ? () => _deleteVideo(context) : null,
-              onUpload: !hasVideo ? () => _showVideoOptions(context) : null,
-              showControls: true,
-            ),
+          if (pendingVideo != null)
+            _buildPendingBadge(context, context.tr('video_pending_save')),
+          VideoSection(
+            videoUrl: displayVideoUrl,
+            onDelete: hasVideo ? () => _deleteVideo(context) : null,
+            onUpload: !hasVideo ? () => _showVideoOptions(context) : null,
+            showControls: true,
+          ),
         ],
       ),
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ✅ AUDIO SECTION - pending audio محلياً
+  // ════════════════════════════════════════════════════════════════
   Widget _buildAudioSection(BuildContext context) {
-    final hasAudio =
-        widget.profile.userMedia?.audio != null &&
-        widget.profile.userMedia!.audio!.isNotEmpty;
+    final serverAudioUrl = widget.profile.userMedia?.audio;
+    final pendingAudio = widget.state.pendingAudio;
+    final pendingDeleteAudio = widget.state.pendingDeleteAudio;
+
+    final hasAudio = !pendingDeleteAudio &&
+        (pendingAudio != null ||
+            (serverAudioUrl != null && serverAudioUrl.isNotEmpty));
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -444,12 +435,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         children: [
           Text(context.tr('audio_clip'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-          if (_isUploadingAudio)
-            _buildLoadingWidget(context.tr('uploading_audio'))
-          else if (_isRecordingInPlace)
+          if (_isRecordingInPlace)
             _buildRecordingWidget(context)
           else if (hasAudio)
-            _buildAudioPreviewFull(context)
+            _buildAudioPreviewFull(context, pendingAudio: pendingAudio)
           else
             _buildAudioUploadButton(context),
         ],
@@ -457,18 +446,58 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  // ⭐⭐⭐ UPDATED: _buildImagesSection with REORDER functionality
-  // ⭐⭐⭐ UPDATED: _buildImagesSection with REORDER functionality
+  // ✅ Badge يخلي المستخدم يعرف إن في تغيير pending
+  Widget _buildPendingBadge(BuildContext context, String message) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(color: Colors.orange.withOpacity(0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.info_outline, size: 14.w, color: Colors.orange),
+          Gap(4.w),
+          Text(message, style: Styles.textStyle12.copyWith(color: Colors.orange)),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ✅ IMAGES SECTION - pending images محلياً
+  // ════════════════════════════════════════════════════════════════
   Widget _buildImagesSection(
     BuildContext context,
     MarriageProfileCubit cubit,
     MarriageUserProfileModel profile,
   ) {
-    final allImages = profile.userMedia?.images ?? [];
-    final singleImageUrl = profile.userMedia?.singleImage;
-    final secondaryImages = allImages.length > 4
-        ? allImages.sublist(0, 4)
-        : allImages;
+    final serverImages = profile.userMedia?.images ?? [];
+    final serverSingleImage = profile.userMedia?.singleImage;
+
+    final pendingSingle = widget.state.pendingSingleImage;
+    final pendingImgs = widget.state.pendingImages;
+    final deletedSingleUrl = widget.state.deletedSingleImageUrl;
+
+    // ✅ الصورة الرئيسية
+    final displaySingleUrl = deletedSingleUrl != null ? null : serverSingleImage;
+    final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
+
+    // ✅ الصور الثانوية: نفلتر المحذوفة من السيرفر + نضيف الـ pending
+    final filteredServerImages = serverImages
+        .where((url) => !widget.state.deletedImageUrls.contains(url))
+        .toList();
+    final allDisplayImages = [
+      ...filteredServerImages,
+      ...pendingImgs.map((f) => f.path),
+    ];
+    final secondaryImages =
+        allDisplayImages.length > 4 ? allDisplayImages.sublist(0, 4) : allDisplayImages;
+
+    final totalCount = (hasSingleToShow ? 1 : 0) + allDisplayImages.length;
 
     return Container(
       padding: EdgeInsets.all(10.w),
@@ -480,9 +509,16 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${context.tr('images_count')} ( ${(singleImageUrl != null ? 1 : 0) + allImages.length} ${context.tr('images_count')})',
-            style: Styles.textStyle18Meduim,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${context.tr('images_count')} ( $totalCount ${context.tr('images_count')})',
+                style: Styles.textStyle18Meduim,
+              ),
+              if (pendingSingle != null || pendingImgs.isNotEmpty)
+                _buildPendingBadge(context, context.tr('images_pending_save')),
+            ],
           ),
           Gap(12.h),
           Directionality(
@@ -499,47 +535,40 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               ),
               itemCount: 6,
               itemBuilder: (context, index) {
-                // ⭐ SLOT 0: Main Image
+                // ✅ SLOT 0: Main Image
                 if (index == 0) {
                   return ImageSlotCard(
-                    imageUrl: singleImageUrl,
+                    imageUrl: displaySingleUrl,
+                    localFile: pendingSingle,
                     isMain: true,
-                    onTap: singleImageUrl == null
+                    onTap: !hasSingleToShow
                         ? () => _pickSingleImage(context, cubit, profile)
                         : null,
-                    onRemove: singleImageUrl != null
+                    onRemove: hasSingleToShow
                         ? () => _removeSingleImage(context, cubit)
                         : null,
                   );
                 }
 
-                // ⭐ SLOT 5: Guidelines
+                // ✅ SLOT 5: Guidelines
                 if (index == 5) {
                   return GestureDetector(
                     onTap: () {
                       ImageGuidelinesBottomSheet.show(
                         context,
-                        onNext: () {
-                          context.pop();
-                        },
+                        onNext: () => context.pop(),
                       );
                     },
                     child: Padding(
                       padding: EdgeInsets.only(top: context.height * 0.06),
                       child: Column(
                         children: [
-                          Icon(
-                            Icons.info_outline,
-                            size: 28,
-                            color: AppColors.kscandryTextColor,
-                          ),
+                          Icon(Icons.info_outline, size: 28, color: AppColors.kscandryTextColor),
                           SizedBox(height: 8),
                           Text(
                             context.tr('photo_guidelines'),
                             textAlign: TextAlign.center,
-                            style: Styles.textStyle16.copyWith(
-                              color: AppColors.kscandryTextColor,
-                            ),
+                            style: Styles.textStyle16.copyWith(color: AppColors.kscandryTextColor),
                           ),
                         ],
                       ),
@@ -547,29 +576,35 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                   );
                 }
 
-                // ⭐ SLOTS 1-4: Secondary Images
+                // ✅ SLOTS 1-4: Secondary Images
                 int listIndex = index - 1;
                 if (listIndex < secondaryImages.length) {
+                  final isLocal = listIndex >= filteredServerImages.length;
+                  final pendingIndex = listIndex - filteredServerImages.length;
+
                   return ImageSlotCard(
-                    imageUrl: secondaryImages[listIndex],
+                    imageUrl: isLocal ? null : secondaryImages[listIndex],
+                    localFile: isLocal ? pendingImgs[pendingIndex] : null,
                     isMain: false,
-                    onTap: () => _showReorderImageDialog(
-                      context,
-                      cubit,
-                      listIndex,
-                      allImages,
-                    ), // ⭐⭐⭐ NEW: Show reorder dialog
-                    onRemove: () =>
-                        _removeImage(context, cubit, listIndex, allImages),
+                    onTap: isLocal
+                        ? null
+                        : () => _showReorderImageDialog(
+                            context, cubit, listIndex, filteredServerImages),
+                    onRemove: () {
+                      if (isLocal) {
+                        cubit.removePendingImage(pendingIndex);
+                      } else {
+                        _removeImage(context, cubit, listIndex, filteredServerImages);
+                      }
+                    },
                   );
                 } else {
                   // Empty slot
                   return ImageSlotCard(
                     imageUrl: null,
                     isMain: false,
-                    onTap: allImages.length < 4
-                        ? () =>
-                              _pickImage(context, cubit, profile, isMain: false)
+                    onTap: allDisplayImages.length < 4
+                        ? () => _pickImage(context, cubit, profile, isMain: false)
                         : null,
                     onRemove: null,
                   );
@@ -582,24 +617,21 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  // ⭐⭐⭐ NEW: Show Reorder Image Dialog
+  // ════════════════════════════════════════════════════════════════
+  // REORDER - محلي فقط، هيتحفظ مع Save
+  // ════════════════════════════════════════════════════════════════
   void _showReorderImageDialog(
     BuildContext context,
     MarriageProfileCubit cubit,
     int currentIndex,
     List<String> allImages,
   ) {
-    // إذا كانت أول صورة، ما فيه داعي للترتيب
-    if (currentIndex == 0) {
-      return;
-    }
+    if (currentIndex == 0) return;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
         title: Row(
           children: [
             Icon(Icons.swap_vert, color: AppColors.primary600, size: 28.w),
@@ -607,9 +639,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             Expanded(
               child: Text(
                 context.tr('reorder_image'),
-                style: Styles.textStyle18Meduim.copyWith(
-                  color: AppColors.primary600,
-                ),
+                style: Styles.textStyle18Meduim.copyWith(color: AppColors.primary600),
               ),
             ),
           ],
@@ -617,7 +647,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ⭐ عرض الصورة
             ClipRRect(
               borderRadius: BorderRadius.circular(12.r),
               child: Image.network(
@@ -636,7 +665,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           ],
         ),
         actions: [
-          // ⭐ زر الإلغاء
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
@@ -644,27 +672,30 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               style: TextStyle(color: AppColors.secondary600, fontSize: 16.sp),
             ),
           ),
-
-          // ⭐ زر التأكيد
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _reorderImage(context, cubit, currentIndex, allImages);
+              // ✅ محلي فقط - هيتحفظ مع حفظ التغييرات
+              cubit.reorderImageLocally(currentIndex, allImages);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  CustomSnackBar(
+                    context,
+                    text: context.tr('image_reordered_successfully'),
+                    isError: false,
+                  ),
+                );
+                setState(() {});
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary600,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
               padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
             ),
             child: Text(
               context.tr('yes_make_first'),
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -672,83 +703,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  // ⭐⭐⭐ NEW: Reorder Image (Move to First Position)
-
-  Future<void> _reorderImage(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    int currentIndex,
-    List<String> allImages,
-  ) async {
-    final List<String> reorderedImages = List<String>.from(allImages);
-
-    final selectedImage = reorderedImages.removeAt(currentIndex);
-    reorderedImages.insert(0, selectedImage);
-
-    debugPrint('═══════════════════════════════════════');
-    debugPrint('🔄 [REORDER] Moving image from index $currentIndex to 0');
-    debugPrint('📋 [REORDER] Old order: $allImages');
-    debugPrint('📋 [REORDER] New order: $reorderedImages');
-    debugPrint('═══════════════════════════════════════');
-
-    // عرض Loading
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              SizedBox(
-                width: 20.w,
-                height: 20.w,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-              Gap(12.w),
-              Text(context.tr('saving_changes')),
-            ],
-          ),
-          duration: const Duration(seconds: 2),
-          backgroundColor: AppColors.primary600,
-        ),
-      );
-    }
-
-    // ⭐⭐⭐ حفظ الترتيب في السيرفر
-    try {
-      await cubit.reorderImages(reorderedImages);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('image_reordered_successfully'),
-            isError: false,
-          ),
-        );
-
-        setState(() {});
-      }
-
-      debugPrint('✅ [REORDER] Image reordered and saved successfully');
-    } catch (e) {
-      debugPrint('❌ [REORDER] Error: $e');
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('error_reordering_image'),
-            isError: true,
-          ),
-        );
-      }
-    }
-  }
-
+  // ════════════════════════════════════════════════════════════════
+  // ✅ PICK / REMOVE - كلهم pending فقط
+  // ════════════════════════════════════════════════════════════════
   Future<void> _pickSingleImage(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -757,8 +714,126 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      await cubit.uploadSingleImage(File(image.path));
+      cubit.addPendingSingleImage(File(image.path));
+      if (mounted) setState(() {});
     }
+  }
+  // ⭐⭐⭐ NEW: Unsaved Changes Dialog
+  void _showUnsavedChangesDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 36.w,
+              ),
+            ),
+            Gap(12.h),
+            Text(
+              context.tr('unsaved_changes'),
+              textAlign: TextAlign.center,
+              style: Styles.textStyle18Meduim,
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              context.tr('unsaved_changes_message'),
+              textAlign: TextAlign.center,
+              style: Styles.textStyle16.copyWith(
+                color: AppColors.kscandryTextColor,
+                height: 1.5,
+              ),
+            ),
+            Gap(12.h),
+            // _buildPendingChangesSummary(context),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actionsPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                widget.cubit.discardAllPending();
+                Navigator.pop(context);
+              },
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.red.shade300),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+              ),
+              child: Text(
+                context.tr('discard_and_exit'),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height:  8.h),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                widget.cubit.saveProfile();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary300,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+              ),
+              child: Text(
+                context.tr('save_and_exit'),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height:  4.h),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                context.tr('cancel'),
+                style: TextStyle(
+                  color: AppColors.kscandryTextColor,
+                  fontSize: 15.sp,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showMustAddImageDialog(BuildContext context) {
@@ -777,6 +852,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  
   void _removeSingleImage(BuildContext context, MarriageProfileCubit cubit) {
     CustomshowDialogWithImage(
       context,
@@ -788,8 +864,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       bottonText: context.tr('cancel'),
       showCancelButton: true,
       cancelText: context.tr('delete'),
-      onCancel: () async {
-        await cubit.deleteSingleImage();
+      onCancel: () {
+        cubit.markDeleteSingleImage();
+        if (mounted) setState(() {});
       },
       onPressed: () {},
     );
@@ -801,23 +878,23 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     MarriageUserProfileModel profile, {
     bool isMain = false,
   }) async {
-    final currentImageCount = profile.userMedia?.images.length ?? 0;
-    final ImagePicker picker = ImagePicker();
+    // ✅ عدّ السيرفر + pending معاً
+    final serverCount = (profile.userMedia?.images.length ?? 0) -
+        widget.state.deletedImageUrls.length;
+    final totalCount = serverCount + widget.state.pendingImages.length;
 
-    if (currentImageCount >= 4) {
+    if (totalCount >= 4) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: context.tr('max_secondary_images_4'),
-          isError: true,
-        ),
+        CustomSnackBar(context, text: context.tr('max_secondary_images_4'), isError: true),
       );
       return;
     }
 
+    final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      cubit.uploadImage(File(image.path));
+      cubit.addPendingImage(File(image.path));
+      if (mounted) setState(() {});
     }
   }
 
@@ -839,82 +916,302 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       showCancelButton: true,
       cancelText: context.tr('delete'),
       onCancel: () {
-        cubit.deleteImage(imagePath);
+        cubit.markDeleteImage(imagePath);
+        if (mounted) setState(() {});
       },
       onPressed: () {},
     );
   }
 
-  Widget _buildProfessionalInfoSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.tr('professional_info'),
-            style: Styles.textStyle18Meduim,
+  // ════════════════════════════════════════════════════════════════
+  // VIDEO HANDLERS
+  // ════════════════════════════════════════════════════════════════
+  void _showVideoOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          title: Text(context.tr('attach_video'), style: Styles.textStyle18Meduim, textAlign: TextAlign.center),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.videocam, color: AppColors.primary200, size: 30.w),
+                title: Text(context.tr('record_video_now'), style: Styles.textStyle16),
+                subtitle: Text(context.tr('record_with_camera'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickVideoFromCamera(context);
+                },
+              ),
+              Divider(height: 1, color: AppColors.secondary100),
+              ListTile(
+                leading: Icon(Icons.video_library, color: AppColors.primary200, size: 30.w),
+                title: Text(context.tr('choose_from_gallery'), style: Styles.textStyle16),
+                subtitle: Text(context.tr('choose_video_from_gallery'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickVideoFromGallery(context);
+                },
+              ),
+            ],
           ),
-          Gap(12.h),
-          _buildInfoRow(
-            context.tr('qualification'),
-            _translateValue(
-              profile.professionalLife?.educationLevel ?? '',
-              context,
-            ),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'education_level',
-                profile.professionalLife?.educationLevel,
-              );
-            },
-          ),
-          Gap(12.h),
-          _buildInfoRow(
-            context.tr('job'),
-            _translateValue(profile.professionalLife?.job ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'choose_job',
-                profile.professionalLife?.job,
-              );
-            },
-          ),
-          Gap(12.h),
-          _buildInfoRow(
-            context.tr('employer'),
-            _translateValue(
-              profile.professionalLife?.chooseEmployer ?? '',
-              context,
-            ),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'choose_employer',
-                profile.professionalLife?.chooseEmployer,
-              );
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildAudioPreviewFull(BuildContext context) {
+  Future<void> _pickVideoFromCamera(BuildContext context) async {
+    try {
+      final cameraStatus = await Permission.camera.request();
+      if (cameraStatus.isDenied) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(context, text: context.tr('camera_permission_required'), isError: true),
+        );
+        return;
+      }
+      if (cameraStatus.isPermanentlyDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(context, text: context.tr('enable_camera_from_settings'), isError: true),
+          );
+          await openAppSettings();
+        }
+        return;
+      }
+      final ImagePicker picker = ImagePicker();
+      final XFile? video = await picker.pickVideo(
+        source: ImageSource.camera,
+        maxDuration: const Duration(minutes: 2),
+      );
+      if (video != null) await _processVideoFile(context, video);
+    } catch (e) {
+      debugPrint('❌ Error picking video from camera: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(context, text: context.tr('error_recording_video'), isError: true),
+      );
+    }
+  }
+
+  Future<void> _pickVideoFromGallery(BuildContext context) async {
+    try {
+      PermissionStatus status;
+      if (Platform.isIOS) {
+        status = await Permission.photos.request();
+      } else {
+        if (Platform.isAndroid) {
+          final androidInfo = await DeviceInfoPlugin().androidInfo;
+          if (androidInfo.version.sdkInt >= 33) {
+            status = await Permission.videos.request();
+          } else {
+            status = await Permission.storage.request();
+          }
+        } else {
+          status = await Permission.storage.request();
+        }
+      }
+      if (status.isDenied) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(context, text: context.tr('gallery_permission_required'), isError: true),
+        );
+        return;
+      }
+      if (status.isPermanentlyDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(context, text: context.tr('enable_gallery_from_settings'), isError: true),
+          );
+          await openAppSettings();
+        }
+        return;
+      }
+      final ImagePicker picker = ImagePicker();
+      final XFile? video = await picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 2),
+      );
+      if (video != null) await _processVideoFile(context, video);
+    } catch (e) {
+      debugPrint('❌ Error picking video from gallery: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(context, text: context.tr('error_selecting_video'), isError: true),
+      );
+    }
+  }
+
+  Future<void> _processVideoFile(BuildContext context, XFile video) async {
+    try {
+      final file = File(video.path);
+      final fileSize = await file.length();
+      if (fileSize > 50 * 1024 * 1024) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(context, text: context.tr('video_size_too_large'), isError: true),
+        );
+        return;
+      }
+      // ✅ pending فقط - مش upload فوري
+      widget.cubit.addPendingVideo(file);
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('❌ Error processing video file: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(context, text: context.tr('error_uploading_video'), isError: true),
+      );
+    }
+  }
+
+  void _deleteVideo(BuildContext context) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr('delete_video'),
+      supTitle: context.tr('delete_video_confirm'),
+      icon: Icons.close_outlined,
+      iconColor: Colors.red,
+      iconBackgroundColor: Colors.red.withOpacity(0.1),
+      bottonText: context.tr('cancel'),
+      showCancelButton: true,
+      cancelText: context.tr('delete'),
+      onCancel: () {
+        widget.cubit.markDeleteVideo();
+        if (mounted) setState(() {});
+      },
+      onPressed: () {},
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // AUDIO HANDLERS
+  // ════════════════════════════════════════════════════════════════
+  void _showAudioOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          title: Text(context.tr('attach_audio'), style: Styles.textStyle18Meduim, textAlign: TextAlign.center),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.mic, color: AppColors.primary200, size: 30.w),
+                title: Text(context.tr('record_now'), style: Styles.textStyle16),
+                subtitle: Text(context.tr('record_voice_now'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _startRecordingInPlace(context);
+                },
+              ),
+              Divider(height: 1, color: AppColors.secondary100),
+              ListTile(
+                leading: Icon(Icons.upload_file, color: AppColors.primary200, size: 30.w),
+                title: Text(context.tr('upload_file'), style: Styles.textStyle16),
+                subtitle: Text(context.tr('choose_audio_file'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAudio(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _startRecordingInPlace(BuildContext context) {
+    setState(() => _isRecordingInPlace = true);
+  }
+
+  Future<void> _pickAudio(BuildContext context) async {
+    try {
+      PermissionStatus status;
+      if (Platform.isIOS) {
+        status = await Permission.mediaLibrary.request();
+      } else {
+        if (Platform.isAndroid) {
+          final androidInfo = await DeviceInfoPlugin().androidInfo;
+          if (androidInfo.version.sdkInt >= 33) {
+            status = await Permission.audio.request();
+          } else {
+            status = await Permission.storage.request();
+          }
+        } else {
+          status = await Permission.storage.request();
+        }
+      }
+      if (!mounted) return;
+      if (status.isDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(context, text: context.tr('allow_files_access'), isError: true),
+        );
+        return;
+      }
+      if (status.isPermanentlyDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(context, text: context.tr('enable_permission_settings'), isError: true),
+        );
+        await openAppSettings();
+        return;
+      }
+
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['mp3', 'aac', 'wav', 'm4a', 'ogg', 'opus', 'flac'],
+        allowCompression: false,
+      );
+
+      if (!mounted) return;
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        if (!await file.exists()) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(context, text: context.tr('file_not_found'), isError: true),
+          );
+          return;
+        }
+        final fileSize = await file.length();
+        if (fileSize > 10 * 1024 * 1024) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(context, text: context.tr('file_too_large'), isError: true),
+          );
+          return;
+        }
+        // ✅ pending فقط
+        widget.cubit.addPendingAudio(file);
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(context, text: '${context.tr('error_picking_audio')}: ${e.toString()}', isError: true),
+      );
+    }
+  }
+
+  void _deleteAudio(BuildContext context) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr('delete_audio'),
+      supTitle: context.tr('delete_audio_confirm'),
+      icon: Icons.delete_outline,
+      iconColor: Colors.red,
+      iconBackgroundColor: Colors.red.withOpacity(0.1),
+      bottonText: context.tr('cancel'),
+      showCancelButton: true,
+      cancelText: context.tr('delete'),
+      onCancel: () {
+        widget.cubit.markDeleteAudio();
+        if (mounted) setState(() {});
+      },
+      onPressed: () {},
+    );
+  }
+
+  Widget _buildAudioPreviewFull(BuildContext context, {File? pendingAudio}) {
+    final audioPath = pendingAudio?.path ?? widget.profile.userMedia?.audio ?? '';
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -922,11 +1219,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.primary200.withOpacity(0.3)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -947,17 +1240,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                     color: Colors.red.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.delete_outline,
-                    color: Colors.red,
-                    size: 20.w,
-                  ),
+                  child: Icon(Icons.delete_outline, color: Colors.red, size: 20.w),
                 ),
               ),
             ],
           ),
+          if (pendingAudio != null)
+            _buildPendingBadge(context, context.tr('audio_pending_save')),
           Gap(12.h),
-          VoiceSection(audioPath: widget.profile.userMedia?.audio ?? ''),
+          VoiceSection(audioPath: audioPath),
         ],
       ),
     );
@@ -983,10 +1274,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             ),
           ),
           Gap(12.w),
-          Text(
-            message,
-            style: Styles.textStyle14.copyWith(color: AppColors.primary200),
-          ),
+          Text(message, style: Styles.textStyle14.copyWith(color: AppColors.primary200)),
         ],
       ),
     );
@@ -1010,10 +1298,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               children: [
                 Text(context.tr('attach_audio'), style: Styles.textStyle16),
                 Gap(4.h),
-                Text(
-                  context.tr('record_or_upload'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
+                Text(context.tr('record_or_upload'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
               ],
             ),
             Icon(Icons.mic_none, color: AppColors.primary200, size: 30.w),
@@ -1032,464 +1317,55 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         border: Border.all(color: AppColors.primary200, width: 1.w),
       ),
       child: VoiceRecordingWidget(
-        onAudioRecorded: (audioFile) async {
-          setState(() {
-            _isRecordingInPlace = false;
-            _isUploadingAudio = true;
-          });
-          await widget.cubit.uploadAudio(audioFile);
-          if (mounted) {
-            setState(() {
-              _isUploadingAudio = false;
-            });
-          }
+        onAudioRecorded: (audioFile) {
+          setState(() => _isRecordingInPlace = false);
+          // ✅ pending فقط
+          widget.cubit.addPendingAudio(audioFile);
         },
-        onCancel: () {
-          setState(() {
-            _isRecordingInPlace = false;
-          });
-        },
+        onCancel: () => setState(() => _isRecordingInPlace = false),
       ),
     );
   }
 
-  void _showVideoOptions(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
+  // ════════════════════════════════════════════════════════════════
+  // INFO SECTIONS
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildProfessionalInfoSection(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    MarriageUserProfileModel profile,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: AppColors.kWhiteColor,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(context.tr('professional_info'), style: Styles.textStyle18Meduim),
+          Gap(12.h),
+          _buildInfoRow(
+            context.tr('qualification'),
+            _translateValue(profile.professionalLife?.educationLevel ?? '', context),
+            () => _navigateToFieldSelection(context, cubit, 'education_level', profile.professionalLife?.educationLevel),
           ),
-          title: Text(
-            context.tr('attach_video'),
-            style: Styles.textStyle18Meduim,
-            textAlign: TextAlign.center,
+          Gap(12.h),
+          _buildInfoRow(
+            context.tr('job'),
+            _translateValue(profile.professionalLife?.job ?? '', context),
+            () => _navigateToFieldSelection(context, cubit, 'choose_job', profile.professionalLife?.job),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(
-                  Icons.videocam,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text(
-                  context.tr('record_video_now'),
-                  style: Styles.textStyle16,
-                ),
-                subtitle: Text(
-                  context.tr('record_with_camera'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickVideoFromCamera(context);
-                },
-              ),
-              Divider(height: 1, color: AppColors.secondary100),
-              ListTile(
-                leading: Icon(
-                  Icons.video_library,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text(
-                  context.tr('choose_from_gallery'),
-                  style: Styles.textStyle16,
-                ),
-                subtitle: Text(
-                  context.tr('choose_video_from_gallery'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickVideoFromGallery(context);
-                },
-              ),
-            ],
+          Gap(12.h),
+          _buildInfoRow(
+            context.tr('employer'),
+            _translateValue(profile.professionalLife?.chooseEmployer ?? '', context),
+            () => _navigateToFieldSelection(context, cubit, 'choose_employer', profile.professionalLife?.chooseEmployer),
           ),
-        );
-      },
-    );
-  }
-
-  Future<void> _pickVideoFromCamera(BuildContext context) async {
-    try {
-      final cameraStatus = await Permission.camera.request();
-      if (cameraStatus.isDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('camera_permission_required'),
-              isError: true,
-            ),
-          );
-        }
-        return;
-      }
-      if (cameraStatus.isPermanentlyDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('enable_camera_from_settings'),
-              isError: true,
-            ),
-          );
-          await openAppSettings();
-        }
-        return;
-      }
-      final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(
-        source: ImageSource.camera,
-        maxDuration: const Duration(minutes: 2),
-      );
-      if (video != null) {
-        await _processVideoFile(context, video);
-      }
-    } catch (e) {
-      debugPrint('❌ Error picking video from camera: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('error_recording_video'),
-            isError: true,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _pickVideoFromGallery(BuildContext context) async {
-    try {
-      PermissionStatus status;
-      if (Platform.isIOS) {
-        status = await Permission.photos.request();
-      } else {
-        if (Platform.isAndroid) {
-          final androidInfo = await DeviceInfoPlugin().androidInfo;
-          if (androidInfo.version.sdkInt >= 33) {
-            status = await Permission.videos.request();
-          } else {
-            status = await Permission.storage.request();
-          }
-        } else {
-          status = await Permission.storage.request();
-        }
-      }
-      if (status.isDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('gallery_permission_required'),
-              isError: true,
-            ),
-          );
-        }
-        return;
-      }
-      if (status.isPermanentlyDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('enable_gallery_from_settings'),
-              isError: true,
-            ),
-          );
-          await openAppSettings();
-        }
-        return;
-      }
-      final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(
-        source: ImageSource.gallery,
-        maxDuration: const Duration(minutes: 2),
-      );
-      if (video != null) {
-        await _processVideoFile(context, video);
-      }
-    } catch (e) {
-      debugPrint('❌ Error picking video from gallery: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('error_selecting_video'),
-            isError: true,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _processVideoFile(BuildContext context, XFile video) async {
-    try {
-      final file = File(video.path);
-      final fileSize = await file.length();
-      if (fileSize > 50 * 1024 * 1024) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('video_size_too_large'),
-              isError: true,
-            ),
-          );
-        }
-        return;
-      }
-      setState(() {
-        _isUploadingVideo = true;
-      });
-      await widget.cubit.uploadVideo(file);
-      if (mounted) {
-        setState(() {
-          _isUploadingVideo = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('❌ Error processing video file: $e');
-      if (mounted) {
-        setState(() {
-          _isUploadingVideo = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('error_uploading_video'),
-            isError: true,
-          ),
-        );
-      }
-    }
-  }
-
-  void _showAudioOptions(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          title: Text(
-            context.tr('attach_audio'),
-            style: Styles.textStyle18Meduim,
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(
-                  Icons.mic,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text(
-                  context.tr('record_now'),
-                  style: Styles.textStyle16,
-                ),
-                subtitle: Text(
-                  context.tr('record_voice_now'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _startRecordingInPlace(context);
-                },
-              ),
-              Divider(height: 1, color: AppColors.secondary100),
-              ListTile(
-                leading: Icon(
-                  Icons.upload_file,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text(
-                  context.tr('upload_file'),
-                  style: Styles.textStyle16,
-                ),
-                subtitle: Text(
-                  context.tr('choose_audio_file'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAudio(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _startRecordingInPlace(BuildContext context) {
-    setState(() {
-      _isRecordingInPlace = true;
-    });
-  }
-
-  Future<void> _pickAudio(BuildContext context) async {
-    try {
-      PermissionStatus status;
-      if (Platform.isIOS) {
-        status = await Permission.mediaLibrary.request();
-      } else {
-        if (Platform.isAndroid) {
-          final androidInfo = await DeviceInfoPlugin().androidInfo;
-          if (androidInfo.version.sdkInt >= 33) {
-            status = await Permission.audio.request();
-          } else {
-            status = await Permission.storage.request();
-          }
-        } else {
-          status = await Permission.storage.request();
-        }
-      }
-      if (!mounted) return;
-      if (status.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('allow_files_access'),
-            isError: true,
-          ),
-        );
-        return;
-      }
-      if (status.isPermanentlyDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('enable_permission_settings'),
-            isError: true,
-          ),
-        );
-        await openAppSettings();
-        return;
-      }
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.audio,
-        allowCompression: false,
-      );
-      if (!mounted) return;
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        if (!await file.exists()) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('file_not_found'),
-              isError: true,
-            ),
-          );
-          return;
-        }
-        final fileSize = await file.length();
-        if (fileSize > 10 * 1024 * 1024) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('file_too_large'),
-              isError: true,
-            ),
-          );
-          return;
-        }
-        setState(() {
-          _isUploadingAudio = true;
-        });
-        try {
-          await widget.cubit.uploadAudio(file);
-          if (mounted) {
-            setState(() {
-              _isUploadingAudio = false;
-            });
-          }
-        } catch (e) {
-          debugPrint('❌ Upload error: $e');
-          if (mounted) {
-            setState(() {
-              _isUploadingAudio = false;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(
-                context,
-                text: context.tr('error_uploading_audio'),
-                isError: true,
-              ),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ Error picking audio: $e');
-      if (mounted) {
-        setState(() {
-          _isUploadingAudio = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: '${context.tr('error_picking_audio')}: ${e.toString()}',
-            isError: true,
-          ),
-        );
-      }
-    }
-  }
-
-  void _deleteVideo(BuildContext context) {
-    CustomshowDialogWithImage(
-      context,
-      title: context.tr('delete_video'),
-      supTitle: context.tr('delete_video_confirm'),
-      icon: Icons.close_outlined,
-      iconColor: Colors.red,
-      iconBackgroundColor: Colors.red.withOpacity(0.1),
-      bottonText: context.tr('cancel'),
-      showCancelButton: true,
-      cancelText: context.tr('delete'),
-      onCancel: () async {
-        await widget.cubit.deleteVideo();
-        if (mounted) {
-          setState(() {});
-        }
-      },
-      onPressed: () {},
-    );
-  }
-
-  void _deleteAudio(BuildContext context) {
-    CustomshowDialogWithImage(
-      context,
-      title: context.tr('delete_audio'),
-      supTitle: context.tr('delete_audio_confirm'),
-      icon: Icons.delete_outline,
-      iconColor: Colors.red,
-      iconBackgroundColor: Colors.red.withOpacity(0.1),
-      bottonText: context.tr('cancel'),
-      showCancelButton: true,
-      cancelText: context.tr('delete'),
-      onCancel: () async {
-        await widget.cubit.deleteAudio();
-        if (mounted) {
-          setState(() {});
-        }
-      },
-      onPressed: () async {},
+        ],
+      ),
     );
   }
 
@@ -1498,6 +1374,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     MarriageProfileCubit cubit,
     MarriageUserProfileModel profile,
   ) {
+    final hasChildren = profile.family?.hasChildren ?? '';
+    final bool showChildrenDetails =
+        hasChildren.isNotEmpty && hasChildren != 'no' && hasChildren != 'لا';
+
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
@@ -1513,61 +1393,29 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           _buildInfoRow(
             context.tr('marital_status'),
             _translateValue(profile.aboutMe?.socialStatus ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'maritalStatus',
-                profile.aboutMe?.socialStatus,
-              );
-            },
+            () => _navigateToFieldSelection(context, cubit, 'maritalStatus', profile.aboutMe?.socialStatus),
           ),
           _buildInfoRow(
             context.tr('has_children'),
             _translateValue(profile.family?.hasChildren ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'hasChildren',
-                profile.family?.hasChildren,
-              );
-            },
+            () => _navigateToFieldSelection(context, cubit, 'hasChildren', profile.family?.hasChildren),
           ),
-          _buildInfoRow(
-            context.tr('children_count'),
-            _translateValue(profile.family?.childrenNumber ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'childrenNumber',
-                profile.family?.childrenNumber,
-              );
-            },
-          ),
-          _buildInfoRow(
-            context.tr('children_live_with_you'),
-            _translateValue(
-              profile.family?.childrenLivingStatus ?? '',
-              context,
+          if (showChildrenDetails) ...[
+            _buildInfoRow(
+              context.tr('children_count'),
+              _translateValue(profile.family?.childrenNumber ?? '', context),
+              () => _navigateToFieldSelection(context, cubit, 'childrenNumber', profile.family?.childrenNumber),
             ),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'childrenLiveWithYou',
-                profile.family?.childrenLivingStatus,
-              );
-            },
-          ),
+            _buildInfoRow(
+              context.tr('children_live_with_you'),
+              _translateValue(profile.family?.childrenLivingStatus ?? '', context),
+              () => _navigateToFieldSelection(context, cubit, 'childrenLiveWithYou', profile.family?.childrenLivingStatus),
+            ),
+          ],
         ],
       ),
     );
   }
-  // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ UPDATED: _buildGoalsSection في Edit View
-  // ════════════════════════════════════════════════════════════════
 
   Widget _buildGoalsSection(
     BuildContext context,
@@ -1586,80 +1434,38 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         children: [
           Text(context.tr('my_goals'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-
-          // 1. الخطوبة
           _buildInfoRow(
             context.tr('engagement'),
             _translateValue(profile.yourGoals?.engagement ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'engagement',
-                profile.yourGoals?.engagement,
-              );
-            },
+            () => _navigateToFieldSelection(context, cubit, 'engagement', profile.yourGoals?.engagement),
           ),
-
-          // 2. الزواج
           _buildInfoRow(
             context.tr('marriage'),
             _translateValue(profile.yourGoals?.marry ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'marriage_intentions',
-                profile.yourGoals?.marry,
-              );
-            },
+            () => _navigateToFieldSelection(context, cubit, 'marriage_intentions', profile.yourGoals?.marry),
           ),
-
-          // ✅ 3. الأسرة (familyAcceptance)
           _buildInfoRow(
-            context.tr('family'), // أو 'الأسرة'
+            context.tr('family'),
             _translateValue(profile.yourGoals?.familyAcceptance ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'familyAcceptance', // ✅ اسم الحقل الصحيح
-                profile.yourGoals?.familyAcceptance,
-              );
-            },
+            () => _navigateToFieldSelection(context, cubit, 'familyAcceptance', profile.yourGoals?.familyAcceptance),
           ),
-
-          // ✅ 4. السفر (intendTravelAbroad)
           _buildInfoRow(
-            context.tr('travel'), // أو 'السفر'
-            _translateValue(
-              profile.yourGoals?.intendTravelAbroad ?? '',
-              context,
-            ),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'intendTravelAbroad', // ✅ اسم الحقل الصحيح
-                profile.yourGoals?.intendTravelAbroad,
-              );
-            },
+            context.tr('travel'),
+            _translateValue(profile.yourGoals?.intendTravelAbroad ?? '', context),
+            () => _navigateToFieldSelection(context, cubit, 'intendTravelAbroad', profile.yourGoals?.intendTravelAbroad),
           ),
         ],
       ),
     );
   }
 
-  // ⭐⭐⭐ UPDATED: Add Faith Section under Hobbies
-  // Replace _buildKnowMeMoreSection with this updated version
   Widget _buildKnowMeMoreSection(
     BuildContext context,
     MarriageProfileCubit cubit,
     MarriageUserProfileModel profile,
   ) {
-    // ✅ FIX: اقرأ من profile.faith المنفصلة، مش من profile.hobbies
-    final faithHobbies = profile.faith; // ✅ مباشرة من faith field
-    final interestHobbies = profile.hobbies; // ✅ hobbies = interests فقط
+    final faithHobbies = profile.faith;
+    final interestHobbies = profile.hobbies;
 
     return Container(
       padding: EdgeInsets.all(10.w),
@@ -1673,46 +1479,30 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         children: [
           Text(context.tr('know_me_more'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-
-          // 1. السيرة الذاتية
           _buildInfoRow(
             context.tr('my_cv'),
             profile.myDescription ?? context.tr('select'),
             () => _navigateToBioEdit(context, cubit, profile.myDescription),
           ),
-
-          // 2. الهوايات
           _buildInfoRow(
             context.tr('select_hobbies_title'),
             interestHobbies.isNotEmpty
                 ? _formatHobbiesForDisplay(interestHobbies, context)
                 : context.tr('select'),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'interests',
-                interestHobbies.isNotEmpty ? interestHobbies.join(', ') : null,
-              );
-            },
+            () => _navigateToFieldSelection(
+              context, cubit, 'interests',
+              interestHobbies.isNotEmpty ? interestHobbies.join(', ') : null,
+            ),
           ),
-
-          // 3. الإيمان ✅ من profile.faith مباشرة
           _buildInfoRow(
             context.tr('faith'),
             faithHobbies.isNotEmpty
                 ? _formatHobbiesForDisplay(faithHobbies, context)
                 : context.tr('select'),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'faith',
-                faithHobbies.isNotEmpty
-                    ? faithHobbies.join(', ')
-                    : null, // ✅ من faith مش hobbies
-              );
-            },
+            () => _navigateToFieldSelection(
+              context, cubit, 'faith',
+              faithHobbies.isNotEmpty ? faithHobbies.join(', ') : null,
+            ),
           ),
         ],
       ),
@@ -1730,7 +1520,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           widget.onTabChanged?.call(1);
         } else if (state.state == CubitStates.failure) {
           debugPrint('❌ [SAVE] Error: ${state.errorMessage}');
-
           if (state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(context, text: state.errorMessage!, isError: true),
@@ -1740,9 +1529,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       },
       builder: (context, state) {
         return CustomBotton(
-          title: state.isUpdating
-              ? context.tr('saving')
-              : context.tr('save_changes'),
+          title: state.isUpdating ? context.tr('saving') : context.tr('save_changes'),
           onPressed: state.isUpdating
               ? null
               : () {
@@ -1774,136 +1561,33 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         children: [
           Text(context.tr('personal_info'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-          _buildInfoRow(
-            context.tr('country'),
-            _translateValue(profile.aboutMe?.country ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'country',
-                profile.aboutMe?.country,
-              );
-            },
-          ),
-          _buildInfoRow(
-            context.tr('nationality'),
-            _translateValue(profile.aboutMe?.nationality ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'nationality',
-                profile.aboutMe?.nationality,
-              );
-            },
-          ),
-          _buildInfoRow(
-            context.tr('height'),
-            profile.aboutMe?.height ?? context.tr('select'),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'height',
-                profile.aboutMe?.height,
-              );
-            },
-          ),
-          _buildInfoRow(
-            context.tr('weight'),
-            profile.aboutMe?.weight ?? context.tr('select'),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'weight',
-                profile.aboutMe?.weight,
-              );
-            },
-          ),
-          _buildInfoRow(
-            context.tr('skin_color'),
-            _translateValue(profile.aboutMe?.skinColor ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'skinColor',
-                profile.aboutMe?.skinColor,
-              );
-            },
-          ),
-          _buildInfoRow(
-            context.tr('select_health_status_title'),
-            _translateValue(profile.aboutMe?.healthStatus ?? '', context),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'healthStatus',
-                profile.aboutMe?.healthStatus,
-              );
-            },
-          ),
-          _buildInfoRow(
-            context.tr('commitment_to_religion'),
-            _translateValue(
-              profile.aboutMe?.religiousCommitment ?? '',
-              context,
-            ),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'religiousCommitment',
-                profile.aboutMe?.religiousCommitment,
-              );
-            },
-          ),
-          _buildInfoRow(
-            context.tr('smoking'),
-            _translateValue(profile.aboutMe?.smoker ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'smoker',
-              profile.aboutMe?.smoker,
-            ),
-          ),
-
-          // ✅ جديد - شرب الكحول
-          _buildInfoRow(
-            context.tr('drink_alcohol'),
-            _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'drinkAlcohol',
-              profile.aboutMe?.drinkAlcohol,
-            ),
-          ),
-
-          // ✅ جديد - الأكل الحلال
-          _buildInfoRow(
-            context.tr('eat_halal_only'),
-            _translateValue(profile.aboutMe?.eatHalalOnly ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'eatHalalOnly',
-              profile.aboutMe?.eatHalalOnly,
-            ),
-          ),
+          _buildInfoRow(context.tr('country'), _translateValue(profile.aboutMe?.country ?? '', context),
+              () => _navigateToFieldSelection(context, cubit, 'country', profile.aboutMe?.country)),
+          _buildInfoRow(context.tr('nationality'), _translateValue(profile.aboutMe?.nationality ?? '', context),
+              () => _navigateToFieldSelection(context, cubit, 'nationality', profile.aboutMe?.nationality)),
+          _buildInfoRow(context.tr('height'), profile.aboutMe?.height ?? context.tr('select'),
+              () => _navigateToFieldSelection(context, cubit, 'height', profile.aboutMe?.height)),
+          _buildInfoRow(context.tr('weight'), profile.aboutMe?.weight ?? context.tr('select'),
+              () => _navigateToFieldSelection(context, cubit, 'weight', profile.aboutMe?.weight)),
+          _buildInfoRow(context.tr('skin_color'), _translateValue(profile.aboutMe?.skinColor ?? '', context),
+              () => _navigateToFieldSelection(context, cubit, 'skinColor', profile.aboutMe?.skinColor)),
+          _buildInfoRow(context.tr('select_health_status_title'), _translateValue(profile.aboutMe?.healthStatus ?? '', context),
+              () => _navigateToFieldSelection(context, cubit, 'healthStatus', profile.aboutMe?.healthStatus)),
+          _buildInfoRow(context.tr('commitment_to_religion'), _translateValue(profile.aboutMe?.religiousCommitment ?? '', context),
+              () => _navigateToFieldSelection(context, cubit, 'religiousCommitment', profile.aboutMe?.religiousCommitment)),
+          _buildInfoRow(context.tr('smoking'), _translateValue(profile.aboutMe?.smoker ?? '', context),
+              () => _navigateToFieldSelection(context, cubit, 'smoker', profile.aboutMe?.smoker)),
+          _buildInfoRow(context.tr('drink_alcohol'), _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
+              () => _navigateToFieldSelection(context, cubit, 'drinkAlcohol', profile.aboutMe?.drinkAlcohol)),
+          _buildInfoRow(context.tr('eat_halal_only'), _translateValue(profile.aboutMe?.eatHalalOnly ?? '', context),
+              () => _navigateToFieldSelection(context, cubit, 'eatHalalOnly', profile.aboutMe?.eatHalalOnly)),
         ],
       ),
     );
   }
 
-  // ⭐⭐⭐ FIX: دالة _buildInfoRow مع الترجمة التلقائية
   Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
     final isLongText = value.length > 30;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1919,20 +1603,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      value,
-                      textAlign: TextAlign.left,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: Styles.textStyle16,
-                    ),
+                    child: Text(value, textAlign: TextAlign.left, maxLines: 4,
+                        overflow: TextOverflow.ellipsis, style: Styles.textStyle16),
                   ),
                   Gap(8.w),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14.w,
-                    color: AppColors.secondary400,
-                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 14.w, color: AppColors.secondary400),
                 ],
               ),
             ] else ...[
@@ -1940,12 +1615,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: Text(
-                      label,
-                      style: Styles.textStyle18,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: Text(label, style: Styles.textStyle18, maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                   Gap(8.w),
                   Expanded(
@@ -1955,20 +1625,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Flexible(
-                          child: Text(
-                            value,
-                            textAlign: TextAlign.right,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Styles.textStyle16,
-                          ),
+                          child: Text(value, textAlign: TextAlign.right, maxLines: 2,
+                              overflow: TextOverflow.ellipsis, style: Styles.textStyle16),
                         ),
                         Gap(8.w),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 14.w,
-                          color: AppColors.secondary400,
-                        ),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 14.w, color: AppColors.secondary400),
                       ],
                     ),
                   ),
@@ -2000,21 +1661,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             debugPrint('🔍 [SELECTION] Field: $fieldKey');
             debugPrint('🔍 [SELECTION] Value received: "$value"');
             debugPrint('🔍 [SELECTION] Type: ${value.runtimeType}');
-
             if (fieldKey == 'interests' || fieldKey == 'hobbies') {
               final parts = value.split(', ');
               debugPrint('🔍 [SELECTION] Split parts: $parts');
-
               for (var part in parts) {
-                final isKey =
-                    part.startsWith('interest_') || part.startsWith('faith_');
-                debugPrint(
-                  '  ${isKey ? "✅" : "❌"} $part ${isKey ? "(KEY)" : "(VALUE - WRONG!)"}',
-                );
+                final isKey = part.startsWith('interest_') || part.startsWith('faith_');
+                debugPrint('  ${isKey ? "✅" : "❌"} $part ${isKey ? "(KEY)" : "(VALUE - WRONG!)"}');
               }
             }
             debugPrint('═══════════════════════════════════════════');
-
             cubit.updateField(fieldKey, value);
           },
         ),
@@ -2027,9 +1682,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     MarriageProfileCubit cubit,
     String? currentBio,
   ) {
-    final TextEditingController controller = TextEditingController(
-      text: currentBio,
-    );
+    final TextEditingController controller = TextEditingController(text: currentBio);
     CustomSHowDetailsDialog(
       context,
       title: context.tr('edit_bio'),
@@ -2053,9 +1706,12 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 }
 
-// ⭐⭐⭐ FIXED: ImageSlotCard - يسمح بالضغط على الصور الموجودة
+// ════════════════════════════════════════════════════════════════
+// ✅ ImageSlotCard - يدعم local files و network images
+// ════════════════════════════════════════════════════════════════
 class ImageSlotCard extends StatelessWidget {
   final String? imageUrl;
+  final File? localFile; // ✅ للصور المحلية pending
   final bool isMain;
   final VoidCallback? onTap;
   final VoidCallback? onRemove;
@@ -2063,6 +1719,7 @@ class ImageSlotCard extends StatelessWidget {
   const ImageSlotCard({
     super.key,
     this.imageUrl,
+    this.localFile,
     this.isMain = false,
     this.onTap,
     this.onRemove,
@@ -2070,27 +1727,21 @@ class ImageSlotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasImage = imageUrl != null || localFile != null;
+
     return GestureDetector(
-      onTap: onTap, // ⭐⭐⭐ FIX: دائماً استخدم onTap (مش بس لما الصورة مش موجودة)
+      onTap: onTap,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          if (imageUrl == null)
+          if (!hasImage)
             CustomPaint(
-              painter: DashedRectPainter(
-                color: AppColors.kbinkColor,
-                strokeWidth: 1.5,
-                gap: 5.0,
-              ),
+              painter: DashedRectPainter(color: AppColors.kbinkColor, strokeWidth: 1.5, gap: 5.0),
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Icon(Icons.add, size: 32, color: AppColors.kbinkColor),
-                ),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+                child: Center(child: Icon(Icons.add, size: 32, color: AppColors.kbinkColor)),
               ),
             )
           else
@@ -2099,12 +1750,31 @@ class ImageSlotCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey.shade300),
                 image: DecorationImage(
-                  image: NetworkImage(imageUrl!),
+                  // ✅ FileImage للصور المحلية، NetworkImage للسيرفر
+                  image: localFile != null
+                      ? FileImage(localFile!) as ImageProvider
+                      : NetworkImage(imageUrl!),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-          if (isMain && imageUrl != null)
+
+          // ✅ أيقونة صغيرة للصور الـ pending
+          if (localFile != null)
+            Positioned(
+              bottom: 2,
+              left: 3,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Icon(Icons.save_outlined, size: 10, color: Colors.white),
+              ),
+            ),
+
+          if (isMain && hasImage)
             Positioned(
               bottom: 2,
               right: 3,
@@ -2116,26 +1786,20 @@ class ImageSlotCard extends StatelessWidget {
                 ),
                 child: Text(
                   context.tr('main_Image'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-          if (imageUrl != null && onRemove != null)
+
+          if (hasImage && onRemove != null)
             Positioned(
               top: 4,
               left: 4,
               child: GestureDetector(
-                onTap: onRemove, // ⭐ زر الحذف منفصل
+                onTap: onRemove,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                   child: const Icon(Icons.close, size: 14, color: Colors.white),
                 ),
               ),
@@ -2146,6 +1810,9 @@ class ImageSlotCard extends StatelessWidget {
   }
 }
 
+// ════════════════════════════════════════════════════════════════
+// DashedRectPainter
+// ════════════════════════════════════════════════════════════════
 class DashedRectPainter extends CustomPainter {
   final double strokeWidth;
   final Color color;
@@ -2165,12 +1832,10 @@ class DashedRectPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     var path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(0, 0, size.width, size.height),
-          const Radius.circular(12),
-        ),
-      );
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        const Radius.circular(12),
+      ));
 
     Path dashPath = Path();
     double dashWidth = 6.0;
@@ -2191,7 +1856,5 @@ class DashedRectPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return true;
-  }
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
