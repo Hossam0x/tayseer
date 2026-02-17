@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
@@ -8,7 +10,6 @@ import 'package:tayseer/features/user/layout/view/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_view.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserLayOutViewBody extends StatefulWidget {
@@ -30,6 +31,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
         final pages = _getPages(context, cubit);
+
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
@@ -51,13 +53,13 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                         : const Offset(0, 1),
                     child: UserNavBar(
                       onTabReselect: (index) {
-                        // ✅ التحقق من التاب المختار
+                        // ✅ لو ضغط على السوشيال وهو واقف فيها، يعمل scroll to top
                         if (index == 0 && state.currentIndex == 0) {
-                          // لو ضغط على السوشيال وهو واقف فيها، يعمل scroll to top
                           cubit.scrollToTop();
                           cubit.setNavVisibility(true);
-                        } else if (index == 3 && state.currentIndex == 3) {
-                          // Interactions في index 3
+                        }
+                        // ✅ Interactions في index 3
+                        else if (index == 3 && state.currentIndex == 3) {
                           _interactionsKey.currentState?.handleTabReselect();
                         }
                       },
@@ -72,6 +74,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     );
   }
 
+  // ✅ من نسخة صاحبك - التعامل مع زرار الرجوع
   void _handleBackButton(
     BuildContext context,
     LayoutCubit cubit,
@@ -110,10 +113,6 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
           HomeView(onScroll: cubit.onScroll),
           MarriageView(),
           MySpaceView(),
-          // BlocProvider(
-          //   create: (context) => getIt<InteractionsCubit>(),
-          //   child: InteractionBody(key: _interactionsKey), // ✅
-          // ),
           EventView(),
           const UserProfileView(),
         ];
@@ -127,6 +126,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
+              CachNetwork.removeData(key: ktoken);
             },
             message: 'فرص التوافق تبدأ بعد التسجيل',
             description:
@@ -141,6 +141,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
+              CachNetwork.removeData(key: ktoken);
             },
           ),
           GuestLockWidget(
@@ -152,6 +153,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
+              CachNetwork.removeData(key: ktoken);
             },
           ),
           const UserProfileView(),

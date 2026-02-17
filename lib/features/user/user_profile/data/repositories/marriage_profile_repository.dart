@@ -370,7 +370,7 @@ Future<Either<Failure, MarriageUserProfileModel>> updateMarriageProfile(
     }
     if (profile.yourGoals!.marry != null) {
       final cleaned = _cleanValue(profile.yourGoals!.marry);
-      if (cleaned != null) goalsMap['marry'] = cleaned;
+      if (cleaned != null) goalsMap['marriage_intentions'] = cleaned;
     }
     if (profile.yourGoals!.engagement != null) {
       final cleaned = _cleanValue(profile.yourGoals!.engagement);
@@ -629,17 +629,17 @@ Future<Either<Failure, String>> uploadSingleImage(File imageFile) async {
     debugPrint('📤 [UPLOAD_SINGLE_IMAGE] Uploading single cover image...');
 
     final formData = FormData.fromMap({
-      'singleImage': await MultipartFile.fromFile(
+      'image': await MultipartFile.fromFile(  // ⭐⭐⭐ FIX: غير الاسم من singleImage لـ image
         imageFile.path,
         filename: 'single_${DateTime.now().millisecondsSinceEpoch}.jpg',
       ),
     });
 
-  
-      final response = await _apiService.post(
-        endPoint: '/user/add-image',
-        data: formData,
-      );
+    final response = await _apiService.post(
+      endPoint: '/user/add-primary-image',  // ⭐⭐⭐ FIX: استخدم endpoint الصحيح
+      data: formData,
+    );
+
     if (response['success'] == true) {
       debugPrint('✅ [UPLOAD_SINGLE_IMAGE] Single image uploaded successfully');
 
@@ -665,7 +665,6 @@ Future<Either<Failure, String>> uploadSingleImage(File imageFile) async {
     return Left(ServerFailure('خطأ: $e'));
   }
 }
-
 Future<Either<Failure, bool>> deleteSingleImage(String imageUrl) async {
   try {
     debugPrint('🗑️ [DELETE_SINGLE_IMAGE] Deleting: $imageUrl');

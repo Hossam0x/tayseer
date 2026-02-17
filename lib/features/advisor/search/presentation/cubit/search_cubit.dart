@@ -62,15 +62,23 @@ class SearchCubit extends Cubit<SearchState> {
 
   Future<void> _executeSearch(String query, String type) async {
     try {
-      final results = await _searchRepository.search(query: query, type: type);
-
+      final results = await _searchRepository.search(
+        query: query,
+        type: type,
+        page: 1,
+      );
+      if (isClosed) return;
       emit(
         state.copyWith(
           searchStatus: CubitStates.success,
+          lastSearchType: type,
           advisors: results.advisors,
           posts: results.posts,
           users: results.users,
           events: results.events,
+          hasMore: results.hasMore,
+          currentPage: results.currentPage,
+          totalPages: results.totalPages,
           errorMessage: null,
         ),
       );
@@ -81,6 +89,52 @@ class SearchCubit extends Cubit<SearchState> {
           errorMessage: 'حدث خطأ أثناء البحث: $e',
         ),
       );
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (state.searchStatus == CubitStates.loading ||
+        state.isLoadingMore ||
+        !state.hasMore)
+      return;
+
+    if (state.lastSearchType == 'all') return;
+
+    emit(state.copyWith(isLoadingMore: true));
+
+    try {
+      final nextPage = state.currentPage + 1;
+      final results = await _searchRepository.search(
+        query: state.query,
+        type: state.lastSearchType,
+        page: nextPage,
+      );
+
+      if (isClosed) return;
+
+      emit(
+        state.copyWith(
+          isLoadingMore: false,
+          advisors: state.lastSearchType == 'advisors'
+              ? [...state.advisors, ...results.advisors]
+              : state.advisors,
+          posts: state.lastSearchType == 'posts'
+              ? [...state.posts, ...results.posts]
+              : state.posts,
+          users: state.lastSearchType == 'users'
+              ? [...state.users, ...results.users]
+              : state.users,
+          events: state.lastSearchType == 'events'
+              ? [...state.events, ...results.events]
+              : state.events,
+          currentPage: results.currentPage,
+          hasMore: results.hasMore,
+          totalPages: results.totalPages,
+        ),
+      );
+    } catch (e) {
+      if (isClosed) return;
+      emit(state.copyWith(isLoadingMore: false));
     }
   }
 

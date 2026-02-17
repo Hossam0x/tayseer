@@ -16,7 +16,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.athr.tayser"
-    compileSdk = 35  // ← غيرها لـ 35 (أكثر استقراراً)
+    compileSdk = 36  // ← غيرها لـ 35 (أكثر استقراراً)
 
     defaultConfig {
         applicationId = "com.athr.tayser"

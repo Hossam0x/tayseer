@@ -194,7 +194,7 @@ class MarriageLifeEventsSection extends StatelessWidget {
     switch (normalized) {
       case 'engagement':
         return context.tr('engagement_profile');
-      case 'marry':
+      case 'marriage_intentions':
       case 'marriage':
         return context.tr('marriage_profile');
       case 'familyacceptance':

@@ -29,7 +29,7 @@ class _PersonalInfoAsConsultantBodyState
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
                     child: IconButton(
                       onPressed: () => context.pop(),
                       icon: const Icon(Icons.arrow_back),

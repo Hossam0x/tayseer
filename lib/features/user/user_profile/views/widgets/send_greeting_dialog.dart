@@ -171,17 +171,14 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
       if (mounted) {
         Navigator.pop(context);
 
-        // عرض رسالة النجاح في الصفحة الرئيسية
+        // ✅ Show success animation like GreetingProfileCard
         final parentContext = Navigator.of(
           context,
           rootNavigator: true,
         ).context;
+
         if (parentContext.mounted) {
-          showSafeSnackBar(
-            context: parentContext,
-            text: 'تم إرسال التحية بنجاح',
-            isSuccess: true,
-          );
+          _showSuccessAnimation(parentContext);
         }
       }
     } catch (e) {
@@ -197,5 +194,25 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
         setState(() => _isSending = false);
       }
     }
+  }
+
+  void _showSuccessAnimation(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return Opacity(
+          opacity: 0.8,
+          child: Center(
+            child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
+          ),
+        );
+      },
+    );
+    Future.delayed(const Duration(seconds: 4), () {
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    });
   }
 }

@@ -1406,7 +1406,7 @@ Future<void> _reorderImage(
             context.tr('family'),
             _translateValue(profile.yourGoals?.children ?? '', context),
             () {
-              _navigateToFieldSelection(context, cubit, 'familyAcceptance', profile.yourGoals?.children);
+              _navigateToFieldSelection(context, cubit, 'children', profile.yourGoals?.children);
             },
           ),
           _buildInfoRow(
@@ -1421,47 +1421,76 @@ Future<void> _reorderImage(
     );
   }
 
-  Widget _buildKnowMeMoreSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(context.tr('know_me_more'), style: Styles.textStyle18Meduim),
-          Gap(12.h),
-          _buildInfoRow(
-            context.tr('bio'),
-            profile.myDescription ?? context.tr('select'),
-            () {
-              _navigateToBioEdit(context, cubit, profile.myDescription);
-            },
-          ),
-          _buildInfoRow(
-            context.tr('select_hobbies_title'),
-            profile.hobbies.isNotEmpty ? _formatHobbiesForDisplay(profile.hobbies, context) : context.tr('select'),
-            () {
-              _navigateToFieldSelection(
-                context,
-                cubit,
-                'interests',
-                profile.hobbies.isNotEmpty ? profile.hobbies.join(', ') : null,
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-  
+// ⭐⭐⭐ UPDATED: Add Faith Section under Hobbies
+// Replace _buildKnowMeMoreSection with this updated version
+
+Widget _buildKnowMeMoreSection(
+  BuildContext context,
+  MarriageProfileCubit cubit,
+  MarriageUserProfileModel profile,
+) {
+  // ⭐ فصل الهوايات عن الإيمان
+  final allHobbies = profile.hobbies;
+  final faithHobbies = allHobbies.where((h) => h.startsWith('faith_')).toList();
+  final interestHobbies = allHobbies.where((h) => h.startsWith('interest_')).toList();
+
+  return Container(
+    padding: EdgeInsets.all(10.w),
+    decoration: BoxDecoration(
+      color: AppColors.kWhiteColor,
+      borderRadius: BorderRadius.circular(12.r),
+      border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(context.tr('know_me_more'), style: Styles.textStyle18Meduim),
+        Gap(12.h),
+        
+        // ✅ 1. السيرة الذاتية
+        _buildInfoRow(
+          context.tr('my_cv'),
+          profile.myDescription ?? context.tr('select'),
+          () {
+            _navigateToBioEdit(context, cubit, profile.myDescription);
+          },
+        ),
+        
+        // ✅ 2. الهوايات (بدون الإيمان)
+        _buildInfoRow(
+          context.tr('select_hobbies_title'),
+          interestHobbies.isNotEmpty 
+              ? _formatHobbiesForDisplay(interestHobbies, context) 
+              : context.tr('select'),
+          () {
+            _navigateToFieldSelection(
+              context,
+              cubit,
+              'interests',
+              interestHobbies.isNotEmpty ? interestHobbies.join(', ') : null,
+            );
+          },
+        ),
+        
+        // ✅ 3. الإيمان (جديد)
+        _buildInfoRow(
+          context.tr('faith'), // أو 'الإيمان' مباشرة
+          faithHobbies.isNotEmpty 
+              ? _formatHobbiesForDisplay(faithHobbies, context) 
+              : context.tr('select'),
+          () {
+            _navigateToFieldSelection(
+              context,
+              cubit,
+              'faith', // ⭐ نفس المنطق، بس هنفلتر في الـ selection view
+              faithHobbies.isNotEmpty ? faithHobbies.join(', ') : null,
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
 Widget _buildSaveButton(
   BuildContext context,
   MarriageProfileCubit cubit,
@@ -1470,17 +1499,7 @@ Widget _buildSaveButton(
   return BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
     listener: (context, state) {
       if (state.state == CubitStates.success && !state.isUpdating) {
-        debugPrint('✅ [SAVE] Profile saved successfully!');
-        
-        if (state.successMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: state.successMessage!,
-              isError: false,
-            ),
-          );
-        }
+  
         
         widget.onTabChanged?.call(1);
       } else if (state.state == CubitStates.failure) {
@@ -1567,14 +1586,14 @@ Widget _buildSaveButton(
             },
           ),
           _buildInfoRow(
-            context.tr('health_status'),
+            context.tr('select_health_status_title'),
             _translateValue(profile.aboutMe?.healthStatus ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'healthStatus', profile.aboutMe?.healthStatus);
             },
           ),
           _buildInfoRow(
-            context.tr('religious_commitment'),
+            context.tr('commitment_to_religion'),
             _translateValue(profile.aboutMe?.religiousCommitment ?? '', context),
             () {
               _navigateToFieldSelection(context, cubit, 'religiousCommitment', profile.aboutMe?.religiousCommitment);
@@ -1783,7 +1802,7 @@ class ImageSlotCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  "الصورة الرئيسية",
+                  context.tr('main_Image'),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,

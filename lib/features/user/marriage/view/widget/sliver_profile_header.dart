@@ -1,3 +1,5 @@
+// lib/features/user/marriage/view/widget/sliver_profile_header.dart
+
 import 'dart:ui';
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
 import 'package:tayseer/features/user/marriage/view/widget/image_viewer_gallery.dart';
@@ -14,6 +16,7 @@ class SliverProfileHeader extends StatelessWidget {
   final String? nationality;
   final String? height;
   final String? transitionKey;
+  final Widget? toggleWidget; // ✅ NEW
 
   const SliverProfileHeader({
     super.key,
@@ -27,6 +30,7 @@ class SliverProfileHeader extends StatelessWidget {
     this.nationality,
     this.height,
     this.transitionKey,
+    this.toggleWidget, // ✅ NEW
   });
 
   @override
@@ -35,7 +39,7 @@ class SliverProfileHeader extends StatelessWidget {
 
     return SliverAppBar(
       expandedHeight: context.height * 0.85,
-      pinned: false,
+      pinned: true, // ✅ CHANGED: الأب بار يفضل ثابت
       floating: false,
       snap: false,
       backgroundColor: Colors.transparent,
@@ -44,22 +48,38 @@ class SliverProfileHeader extends StatelessWidget {
       titleSpacing: 0,
       title: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.w),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            GestureDetector(
-              onTap: () {
-                context.pushNamed(AppRouter.kMarriageFilterView);
-              },
-              child: CircleAvatar(
-                backgroundColor: Colors.black26,
-                child: AppImage(AssetsData.kfilterIcon, width: 20, height: 20),
+            // ✅ Toggle ثابت في النص
+            if (toggleWidget != null) Center(child: toggleWidget!),
+
+            // ✅ Filter button
+            Positioned(
+              right: 0,
+              child: GestureDetector(
+                onTap: () {
+                  context.pushNamed(AppRouter.kMarriageFilterView);
+                },
+                child: CircleAvatar(
+                  backgroundColor: Colors.black26,
+                  child: AppImage(
+                    AssetsData.kfilterIcon,
+                    width: 20,
+                    height: 20,
+                  ),
+                ),
               ),
             ),
-            AnimatedBeFirstButton(
-              onTap: () {
-                context.pushNamed(AppRouter.kBoostAccountView);
-              },
+
+            // ✅ Boost button
+            Positioned(
+              left: 0,
+              child: AnimatedBeFirstButton(
+                onTap: () {
+                  context.pushNamed(AppRouter.kBoostAccountView);
+                },
+              ),
             ),
           ],
         ),
@@ -86,7 +106,6 @@ class SliverProfileHeader extends StatelessWidget {
                 child: AppImage(coverImage, fit: BoxFit.cover),
               ),
             ),
-
             Positioned(
               bottom: 60.h,
               right: 16.w,

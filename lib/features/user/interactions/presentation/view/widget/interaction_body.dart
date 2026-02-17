@@ -1,4 +1,5 @@
 import 'package:tayseer/core/widgets/custom_content_switcher.dart';
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/subscription_prompt_overlay.dart';
@@ -22,21 +23,18 @@ class InteractionBodyState extends State<InteractionBody> {
 
   final GlobalKey<ExplorationState> _explorationKey =
       GlobalKey<ExplorationState>();
-  final GlobalKey<HistorypageState> _historyKey =
-      GlobalKey<HistorypageState>(); // ✅ Key للـ History
+  final GlobalKey<HistorypageState> _historyKey = GlobalKey<HistorypageState>();
 
-  // ✅ ScrollController للصفحة بالكامل
   final ScrollController _mainScrollController = ScrollController();
- @override
+
+  @override
   void initState() {
     super.initState();
-    // ✅ Initialize with empty strings, will be set in first build
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // ✅ Set initial values when context is available
     if (selectedTab.isEmpty) {
       selectedTab = context.tr("exploration");
     }
@@ -44,16 +42,15 @@ class InteractionBodyState extends State<InteractionBody> {
       selectedFilter = context.tr("liked_you");
     }
   }
+
   @override
   void dispose() {
     _mainScrollController.dispose();
     super.dispose();
   }
 
-  // ✅ دالة للتعامل مع إعادة الضغط على التاب
   void handleTabReselect() {
     if (_currentIndex == 0 && selectedTab == context.tr("exploration")) {
-      // Scroll to top الصفحة كلها
       if (_mainScrollController.hasClients) {
         _mainScrollController.animateTo(
           0,
@@ -88,90 +85,124 @@ class InteractionBodyState extends State<InteractionBody> {
           context.read<InteractionsCubit>().resetActionState();
         }
       },
-      child: CustomBackground(
-        assetsData: AssetsData.userBGImage,
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: IndexedStack(
-                  index: _currentIndex,
-                  children: [
-                    _buildExplorationWithHeader(),
-                    _buildHistoryWithHeader(),
-                  ],
-                ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // _buildFixedHeader(),
+            Expanded(
+              child: IndexedStack(
+                index: _currentIndex,
+                children: [_buildExplorationContent(), _buildHistoryContent()],
               ),
-              SizedBox(height: 90.h),
-            ],
-          ),
+            ),
+            SizedBox(height: 90.h),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildExplorationWithHeader() {
+  // ✅ Header with conditional app bar display
+  Widget _buildFixedHeader() {
+    return Column(
+      children: [
+        // ✅ AppBar (only show in Exploration view)
+        if (_currentIndex == 0) ...[
+          Padding(
+            padding: EdgeInsets.only(right: 10.w),
+            child: DefaultAppBar(
+              trailingWidget: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _currentIndex = 1;
+                    selectedTab = "history";
+                  });
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _historyKey.currentState?.scrollToTop();
+                  });
+                },
+                child: AppImage(
+                  AssetsData.archiveIcon,
+                  width: 50.w,
+                  height: 50.h,
+                ),
+              ),
+              title: context.tr("interactions"),
+              leadingWidget: GestureDetector(
+                onTap: () {
+                  context.pushNamed(AppRouter.kMarriageFilterView);
+                },
+                child: Container(
+                  padding: EdgeInsets.all(10.w),
+                  color: Colors.transparent,
+                  child: SvgPicture.asset(
+                    AssetsData.kfilterIcon,
+                    width: 22.w,
+                    height: 22.h,
+                    color: AppColors.secondary600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 10.h),
+          // ✅ العنوان للـ Exploration
+          Text(
+            context.tr("exploration"),
+            style: Styles.textStyle24SemiBold.copyWith(
+              color: AppColors.secondary800,
+            ),
+          ),
+        ] else ...[
+          // ✅ SimpleAppBar for History view
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+            child: SimpleAppBar(
+              title: context.tr("history"),
+              isLargeTitle: true,
+              onBack: () {
+                setState(() {
+                  _currentIndex = 0;
+                  selectedTab = "exploration";
+                });
+              },
+            ),
+          ),
+        ],
+
+        SizedBox(height: 10.h),
+
+        // ✅ Filter Chips (بس في History)
+        if (_currentIndex == 1)
+          FilterChips(
+            onFilterChanged: (filterKey) {
+              setState(() {
+                selectedFilter = filterKey;
+              });
+
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  _historyKey.currentState?.scrollToTop();
+                });
+              });
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildExplorationContent() {
     return BlocBuilder<InteractionsCubit, InteractionsState>(
       builder: (context, state) {
-        // ✅ Check if we should show the overlay
         final bool shouldShowOverlay = _shouldShowSubscriptionOverlay(state);
 
         return Stack(
           children: [
-            Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(right: 10.w),
-                  child: DefaultAppBar(
-                    title: context.tr("interactions"),
-                    leadingWidget: GestureDetector(
-                      onTap: () {
-                        context.pushNamed(AppRouter.kMarriageFilterView);
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(10.w),
-                        color: Colors.transparent,
-                        child: SvgPicture.asset(
-                          AssetsData.kfilterIcon,
-                          width: 22.w,
-                          height: 22.h,
-                          color: AppColors.secondary600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 10.h),
-                ContentSwitcher(
-                 selectedOption: context.tr(selectedTab),
-                  options: [
-                    context.tr("exploration"), // ✅ "استكشاف" or "Exploration"
-                    context.tr("history"),
-                  ],
-                  onOptionSelected: (String selectedOption) {
-                    setState(() {
-                      if (selectedOption.trim() == context.tr("exploration")) {
-                        selectedTab = "exploration";
-                        _currentIndex = 0;
-                      } else {
-                        selectedTab = "history";
-                        _currentIndex = 1;
-                      }
-                    
-                    });
-                  },
-                ),
-                SizedBox(height: 10.h),
-                Expanded(
-                  child: Exploration(
-                    key: _explorationKey,
-                    mainScrollController: _mainScrollController,
-                  ),
-                ),
-              ],
+            Exploration(
+              key: _explorationKey,
+              mainScrollController: _mainScrollController,
             ),
-
-            // ✅ Only show overlay when conditions are met
             if (shouldShowOverlay) const SubscriptionPromptOverlay(),
           ],
         );
@@ -179,108 +210,23 @@ class InteractionBodyState extends State<InteractionBody> {
     );
   }
 
-  // ✅ Helper method to determine if overlay should be shown
+  Widget _buildHistoryContent() {
+    return Historypage(key: _historyKey, selectedFilter: selectedFilter);
+  }
+
   bool _shouldShowSubscriptionOverlay(InteractionsState state) {
-    // Don't show if user is subscribed
     if (state.isSubscribed) return false;
-
-    // Don't show if profile is incomplete (answerCompleted = false)
     if (!state.answerCompleted) return false;
-
-    // Don't show if loading
     if (state.explorationState == CubitStates.loading &&
         state.explorationData.isEmpty) {
       return false;
     }
-
-    // Don't show if there's an error
     if (state.explorationState == CubitStates.failure &&
         state.explorationData.isEmpty) {
       return false;
     }
-
-    // Don't show if there's no data
     final hasData = state.explorationData.values.any((list) => list.isNotEmpty);
     if (!hasData) return false;
-
-    // Show overlay: user is not subscribed AND has valid data to display
     return true;
   }
-Widget _buildHistoryWithHeader() {
-  return Column(
-    children: [
-      Padding(
-        padding: EdgeInsets.only(right: 10.w),
-        child: DefaultAppBar(
-          title: context.tr("interactions"),
-          leadingWidget: GestureDetector(
-            onTap: () {
-              context.pushNamed(AppRouter.kMarriageFilterView);
-            },
-            child: Container(
-              padding: EdgeInsets.all(10.w),
-              color: Colors.transparent,
-              child: SvgPicture.asset(
-                AssetsData.kfilterIcon,
-                width: 22.w,
-                height: 22.h,
-                color: AppColors.secondary600,
-              ),
-            ),
-          ),
-        ),
-      ),
-      SizedBox(height: 10.h),
-
-      // ✅ FIX: Use translated strings here too!
-      ContentSwitcher(
-       selectedOption: context.tr(selectedTab),
-        options: [
-          context.tr("exploration"),  // ✅ NOT "استكشاف  "
-          context.tr("history"),       // ✅ NOT " السجل "
-        ],
-        onOptionSelected: (String selectedOption) {
-          setState(() {
-            // ✅ تحويل الترجمة إلى مفتاح
-              if (selectedOption.trim() == context.tr("exploration")) {
-                selectedTab = "exploration";
-                _currentIndex = 0;
-              } else {
-                selectedTab = "history";
-                _currentIndex = 1;
-              }
-          });
-
-          if (selectedTab == context.tr("exploration")) {  // ✅ Use translated
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              handleTabReselect();
-            });
-          }
-        },
-      ),
-
-     FilterChips(
-          onFilterChanged: (filterKey) { // ✅ استقبال المفتاح
-            setState(() {
-              selectedFilter = filterKey;
-            });
-
-
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Future.delayed(const Duration(milliseconds: 100), () {
-              _historyKey.currentState?.scrollToTop();
-            });
-          });
-        },
-      ),
-
-      Expanded(
-        child: Historypage(
-          key: _historyKey,
-          selectedFilter: selectedFilter,
-        ),
-      ),
-    ],
-  );
-}
 }

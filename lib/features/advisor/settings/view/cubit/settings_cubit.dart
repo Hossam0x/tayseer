@@ -161,6 +161,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           settings: updatedSettings,
           actionSuccess: "update_language_success",
           isActionKey: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
         ),
       );
     } catch (e) {
@@ -168,6 +169,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         currentState.copyWith(
           actionError: "update_language_error",
           isActionKey: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
         ),
       );
     }
@@ -302,6 +304,7 @@ class SettingsCubit extends Cubit<SettingsState> {
               : "notifications_disabled_success",
           isActionKey: true,
           isNotificationEnabled: value, // Ensure UI reflects state
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
         ),
       );
     } catch (e) {
@@ -309,6 +312,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         currentState.copyWith(
           actionError: "update_settings_error",
           isActionKey: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
         ),
       );
     }
@@ -327,6 +331,7 @@ class SettingsCubit extends Cubit<SettingsState> {
             currentState.copyWith(
               actionError: failure.message,
               isActionKey: false, // Message from API
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
             ),
           );
         },
@@ -335,13 +340,18 @@ class SettingsCubit extends Cubit<SettingsState> {
             currentState.copyWith(
               actionSuccess: "rate_app_success",
               isActionKey: true,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
             ),
           );
         },
       );
     } catch (e) {
       emit(
-        currentState.copyWith(actionError: "rate_app_error", isActionKey: true),
+        currentState.copyWith(
+          actionError: "rate_app_error",
+          isActionKey: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
     }
   }

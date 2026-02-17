@@ -1,11 +1,11 @@
 import 'package:flutter/services.dart';
+import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
+import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/add_post_button.dart';
+import 'package:tayseer/features/advisor/profille/views/profile_view.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
-import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
-import 'package:tayseer/features/advisor/profille/views/profile_view.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
 class ALayOutViewBody extends StatelessWidget {
@@ -14,14 +14,12 @@ class ALayOutViewBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<LayoutCubit>();
-
     final pages = [
       HomeView(onScroll: cubit.onScroll),
       const ChatView(),
       EventView(),
       ProfileView(),
     ];
-
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
         return PopScope(
@@ -78,15 +76,12 @@ class ALayOutViewBody extends StatelessWidget {
     LayoutState state,
   ) {
     if (state.currentIndex != 0) {
-      // لو مش في الهوم، يرجع للهوم
       cubit.changeIndex(0);
       cubit.setNavVisibility(true);
     } else if (!state.isHomeAtTop) {
-      // لو في الهوم بس عامل سكرول لتحت، يطلع فوق ويعمل ريفريش
       cubit.scrollToTop();
       cubit.setNavVisibility(true);
     } else {
-      // لو في الهوم وفوق خلاص، يظهر ديالوج تأكيد الخروج
       CustomshowDialogWithImage(
         context,
         title: context.tr('exit_app_title'),

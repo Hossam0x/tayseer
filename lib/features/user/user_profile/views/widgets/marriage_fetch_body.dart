@@ -253,7 +253,7 @@ class _MarriageBodyContent extends StatelessWidget {
     if (yourGoals.marry != null && yourGoals.marry.isNotEmpty) {
       events.add({
         'timeLabel': yourGoals.marry,
-        'goalType': 'marry', // ⭐ This is the key field
+        'goalType': 'marriage_intentions', // ⭐ This is the key field
         'isActive': true,
       });
     }
@@ -261,7 +261,7 @@ class _MarriageBodyContent extends StatelessWidget {
     if (yourGoals.children != null && yourGoals.children.isNotEmpty) {
       events.add({
         'timeLabel': yourGoals.children,
-        'goalType': 'familyAcceptance', // ⭐ This is the key field
+        'goalType': 'children', // ⭐ This is the key field
         'isActive': true,
       });
     }

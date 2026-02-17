@@ -8,6 +8,7 @@ import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_s
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserPublicPostsTab extends StatelessWidget {
@@ -49,6 +50,12 @@ class UserPublicPostsTab extends StatelessWidget {
               curr.blockUserActionState != CubitStates.initial,
           listener: _handleBlockUserState,
         ),
+        BlocListener<UserPublicProfileCubit, UserPublicProfileState>(
+          listenWhen: (prev, curr) =>
+              prev.pollVoteActionState != curr.pollVoteActionState &&
+              curr.pollVoteActionState == CubitStates.failure,
+          listener: _handlePollVoteState,
+        ),
       ],
       child: BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
         builder: (context, state) {
@@ -72,13 +79,13 @@ class UserPublicPostsTab extends StatelessWidget {
             child: Column(
               children: [
                 _buildPostList(userPosts, state, context, cubit),
-            
+
                 // زر تحميل المزيد أو إند فيد
                 if (state.hasMore)
                   _buildLoadMoreButton(context, state, cubit)
                 else if (userPosts.isNotEmpty)
                   const home_feed.EndOfFeedIndicator(),
-            
+
                 Gap(40.h),
               ],
             ),
@@ -90,39 +97,48 @@ class UserPublicPostsTab extends StatelessWidget {
 
   void _handleSaveState(BuildContext context, UserPublicProfileState state) {
     if (state.saveActionState == CubitStates.success) {
-      AppToast.success(
-        context,
-        state.saveMessage ?? context.tr('saved_success'),
+      showSafeSnackBar(
+        context: context,
+        text: state.saveMessage ?? context.tr('saved_success'),
+        isSuccess: true,
       );
     } else if (state.saveActionState == CubitStates.failure) {
-      AppToast.error(context, state.saveMessage ?? context.tr('save_error'));
+      showSafeSnackBar(
+        context: context,
+        text: state.saveMessage ?? context.tr('save_error'),
+        isError: true,
+      );
     }
   }
 
   void _handleDeleteState(BuildContext context, UserPublicProfileState state) {
     if (state.deletePostActionState == CubitStates.success) {
-      AppToast.success(
-        context,
-        state.deletePostMessage ?? context.tr('delete_success'),
+      showSafeSnackBar(
+        context: context,
+        text: state.deletePostMessage ?? context.tr('delete_success'),
+        isSuccess: true,
       );
     } else if (state.deletePostActionState == CubitStates.failure) {
-      AppToast.error(
-        context,
-        state.deletePostMessage ?? context.tr('delete_error'),
+      showSafeSnackBar(
+        context: context,
+        text: state.deletePostMessage ?? context.tr('delete_error'),
+        isError: true,
       );
     }
   }
 
   void _handleArchiveState(BuildContext context, UserPublicProfileState state) {
     if (state.archivePostActionState == CubitStates.success) {
-      AppToast.success(
-        context,
-        state.archivePostMessage ?? context.tr('archive_success'),
+      showSafeSnackBar(
+        context: context,
+        text: state.archivePostMessage ?? context.tr('archive_success'),
+        isSuccess: true,
       );
     } else if (state.archivePostActionState == CubitStates.failure) {
-      AppToast.error(
-        context,
-        state.archivePostMessage ?? context.tr('archive_error'),
+      showSafeSnackBar(
+        context: context,
+        text: state.archivePostMessage ?? context.tr('archive_error'),
+        isError: true,
       );
     }
   }
@@ -132,14 +148,16 @@ class UserPublicPostsTab extends StatelessWidget {
     UserPublicProfileState state,
   ) {
     if (state.blockUserActionState == CubitStates.success) {
-      AppToast.success(
-        context,
-        state.blockUserMessage ?? context.tr('blocked_successfully'),
+      showSafeSnackBar(
+        context: context,
+        text: state.blockUserMessage ?? context.tr('blocked_successfully'),
+        isSuccess: true,
       );
     } else if (state.blockUserActionState == CubitStates.failure) {
-      AppToast.error(
-        context,
-        state.blockUserMessage ?? context.tr('failed_to_block'),
+      showSafeSnackBar(
+        context: context,
+        text: state.blockUserMessage ?? context.tr('failed_to_block'),
+        isError: true,
       );
     }
   }
@@ -148,16 +166,36 @@ class UserPublicPostsTab extends StatelessWidget {
     final message = state.shareMessage;
     switch (state.shareActionState) {
       case CubitStates.success:
-        state.isShareAdded == true
-            ? AppToast.success(context, message ?? context.tr('shared_success'))
-            : AppToast.info(context, message ?? context.tr('unshared_success'));
+        showSafeSnackBar(
+          context: context,
+          text: state.isShareAdded == true
+              ? (message ?? context.tr('shared_success'))
+              : (message ?? context.tr('unshared_success')),
+          isSuccess: true,
+          duration: const Duration(milliseconds: 1500),
+        );
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? context.tr('shared_error'));
+        showSafeSnackBar(
+          context: context,
+          text: message ?? context.tr('shared_error'),
+          isError: true,
+        );
         break;
       default:
         break;
     }
+  }
+
+  void _handlePollVoteState(
+    BuildContext context,
+    UserPublicProfileState state,
+  ) {
+    showSafeSnackBar(
+      context: context,
+      text: state.pollVoteMessage ?? context.tr('poll_vote_error'),
+      isError: true,
+    );
   }
 
   Widget _buildLoadMoreButton(
@@ -329,7 +367,12 @@ class _PostItemState extends State<_PostItem> {
       onBlock: _blockUser,
       onArchive: _archivePost,
       onEdit: _editPost,
+      onPollVote: _onPollVote,
     );
+  }
+
+  void _onPollVote(String postId, String choiceText) {
+    widget.cubit.voteInPoll(postId: postId, choiceText: choiceText);
   }
 
   void _editPost(PostModel post) {

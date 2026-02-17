@@ -24,41 +24,41 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
 // ════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ SIMPLIFIED: استخدم النسبة من السيرفر مباشرة
 // ════════════════════════════════════════════════════════════════
-Future<void> loadProfile() async {
-  emit(state.copyWith(
-    state: CubitStates.loading,
-    isLoading: true,
-    clearMessages: true,
-  ));
+ Future<void> loadProfile() async {
+    emit(state.copyWith(
+      state: CubitStates.loading,
+      isLoading: true,
+      clearMessages: true,
+    ));
 
-  debugPrint('🔄 [CUBIT] Loading profile...');
-  final result = await _repository.getMarriageProfile();
+    debugPrint('🔄 [CUBIT] Loading profile...');
+    final result = await _repository.getMarriageProfile();
 
-  result.fold(
-    (failure) {
-      debugPrint('❌ [CUBIT] Load failed: ${failure.message}');
-      emit(state.copyWith(
-        state: CubitStates.failure,
-        errorMessage: failure.message,
-        isLoading: false,
-      ));
-    },
-    (marriageProfile) {
-      // ⭐⭐⭐ احسب النسبة مع الميديا
-      final profileWithMedia = _calculateProgressWithMedia(marriageProfile);
-      
-      debugPrint('✅ [CUBIT] Profile loaded');
-      debugPrint('📊 Server Progress: ${marriageProfile.answerCompletedPercentage}%');
-      debugPrint('📊 Final Progress (with media): ${profileWithMedia.answerCompletedPercentage}%');
-      
-      emit(state.copyWith(
-        state: CubitStates.success,
-        profile: profileWithMedia,
-        isLoading: false,
-      ));
-    },
-  );
-}
+    result.fold(
+      (failure) {
+        debugPrint('❌ [CUBIT] Load failed: ${failure.message}');
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isLoading: false,
+        ));
+      },
+      (marriageProfile) {
+        // ⭐⭐⭐ احسب النسبة مع الميديا والتوثيق
+        final profileWithProgress = _calculateProgressWithMedia(marriageProfile);
+        
+        debugPrint('✅ [CUBIT] Profile loaded');
+        debugPrint('📊 Final Progress: ${profileWithProgress.answerCompletedPercentage}%');
+        
+        emit(state.copyWith(
+          state: CubitStates.success,
+          profile: profileWithProgress,
+          isLoading: false,
+        ));
+      },
+    );
+  }
+
 // ════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ UPLOAD SINGLE IMAGE
 // ════════════════════════════════════════════════════════════════
@@ -137,73 +137,110 @@ Future<void> deleteSingleImage() async {
   // ⭐⭐⭐ CALCULATE PROGRESS WITH MEDIA
   // ════════════════════════════════════════════════════════════════
   MarriageUserProfileModel _calculateProgressWithMedia(MarriageUserProfileModel profile) {
-    final serverProgress = profile.answerCompletedPercentage ?? 0;
-    int mediaBonus = 0;
+    // ⭐ البداية دائماً 50% (من الأسئلة)
+    int totalProgress = 50;
+    
+    debugPrint('═══════════════════════════════════════════');
+    debugPrint('📊 [PROGRESS] Starting calculation');
+    debugPrint('📊 [PROGRESS] Base (Questions): 50%');
 
-    // حساب عدد الصور (كل صورة = 5%)
+    // ════════════════════════════════════════════════════════════════
+    // ⭐ 1. الصور (25% للـ 5 صور)
+    // ════════════════════════════════════════════════════════════════
+    final singleImage = profile.userMedia?.singleImage;
     final images = profile.userMedia?.images ?? [];
-    if (images.isNotEmpty) {
-      final imageCount = images.length > 5 ? 5 : images.length; // max 5 images
-      mediaBonus += imageCount * 5; // 5% لكل صورة
-      debugPrint('📸 [CUBIT] Images: $imageCount × 5% = ${imageCount * 5}%');
+    final totalImages = (singleImage != null && singleImage.isNotEmpty ? 1 : 0) + images.length;
+    
+    if (totalImages > 0) {
+      // كل صورة = 5% (max 5 صور = 25%)
+      final imageCount = totalImages > 5 ? 5 : totalImages;
+      final imageBonus = imageCount * 5;
+      totalProgress += imageBonus;
+      debugPrint('📸 [PROGRESS] Images: $totalImages images → +$imageBonus%');
+    } else {
+      debugPrint('📸 [PROGRESS] No images → +0%');
     }
 
-    // فيديو = 25%
+    // ════════════════════════════════════════════════════════════════
+    // ⭐ 2. الفيديو (10%)
+    // ════════════════════════════════════════════════════════════════
     final hasVideo = profile.userMedia?.video != null && 
                      profile.userMedia!.video!.isNotEmpty;
     if (hasVideo) {
-      mediaBonus += 30;
-      debugPrint('🎥 [CUBIT] Video: +25%');
+      totalProgress += 10;
+      debugPrint('🎥 [PROGRESS] Video: +10%');
+    } else {
+      debugPrint('🎥 [PROGRESS] No video → +0%');
     }
 
-    // صوت = 25%
+    // ════════════════════════════════════════════════════════════════
+    // ⭐ 3. الأوديو (10%)
+    // ════════════════════════════════════════════════════════════════
     final hasAudio = profile.userMedia?.audio != null && 
                      profile.userMedia!.audio!.isNotEmpty;
     if (hasAudio) {
-      mediaBonus += 30;
-      debugPrint('🎤 [CUBIT] Audio: +25%');
+      totalProgress += 10;
+      debugPrint('🎤 [PROGRESS] Audio: +10%');
+    } else {
+      debugPrint('🎤 [PROGRESS] No audio → +0%');
     }
 
-    final totalProgress = serverProgress + mediaBonus;
+    // ════════════════════════════════════════════════════════════════
+    // ⭐ 4. التوثيق (5%)
+    // ════════════════════════════════════════════════════════════════
+    // ⚠️ افترض إن profile فيه حقل isVerified (عدّله حسب الـ model بتاعك)
+    final isVerified = profile.isVerified ?? false;
+    if (isVerified) {
+      totalProgress += 5;
+      debugPrint('✅ [PROGRESS] Verified: +5%');
+    } else {
+      debugPrint('⚠️ [PROGRESS] Not verified → +0%');
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // ⭐ النهاية: تأكد إن النسبة ما تتعدى 100%
+    // ════════════════════════════════════════════════════════════════
     final finalProgress = totalProgress > 100 ? 100 : totalProgress;
 
-    debugPrint('📊 [CUBIT] Server: $serverProgress% + Media: $mediaBonus% = $finalProgress%');
+    debugPrint('📊 [PROGRESS] FINAL TOTAL: $finalProgress%');
+    debugPrint('═══════════════════════════════════════════');
 
     return profile.copyWith(answerCompletedPercentage: finalProgress);
   }
+ Future<void> saveProfile() async {
+    if (state.profile == null) return;
 
-Future<void> saveProfile() async {
-  if (state.profile == null) return;
+    emit(state.copyWith(
+      state: CubitStates.loading,
+      isUpdating: true,
+      clearMessages: true,
+    ));
 
-  emit(state.copyWith(
-    state: CubitStates.loading,
-    isUpdating: true,
-    clearMessages: true,
-  ));
+    final result = await _repository.updateMarriageProfile(state.profile!);
 
-  final result = await _repository.updateMarriageProfile(state.profile!);
-
-  result.fold(
-    (failure) {
-      emit(state.copyWith(
-        state: CubitStates.failure,
-        errorMessage: failure.message,
-        isUpdating: false,
-      ));
-    },
-    (updatedProfile) {
-      // ⭐⭐⭐ استخدم الـ profile اللي جاي من السيرفر مباشرة
-      debugPrint('✅ Saved - New progress: ${updatedProfile.answerCompletedPercentage}%');
-      
-      emit(state.copyWith(
-        state: CubitStates.success,
-        profile: updatedProfile, // ⭐ هنا البروفايل الجديد بالنسبة المحدثة
-        successMessage: 'تم حفظ البيانات بنجاح',
-        isUpdating: false,
-      ));
-    },
-  );
-}  // ════════════════════════════════════════════════════════════════
+    result.fold(
+      (failure) {
+        emit(state.copyWith(
+          state: CubitStates.failure,
+          errorMessage: failure.message,
+          isUpdating: false,
+        ));
+      },
+      (updatedProfile) {
+        // ⭐⭐⭐ احسب النسبة مع الميديا
+        final profileWithProgress = _calculateProgressWithMedia(updatedProfile);
+        
+        debugPrint('✅ Saved - New progress: ${profileWithProgress.answerCompletedPercentage}%');
+        
+        emit(state.copyWith(
+          state: CubitStates.success,
+          profile: profileWithProgress,
+          successMessage: 'تم حفظ البيانات بنجاح',
+          isUpdating: false,
+        ));
+      },
+    );
+  }
  // ⭐⭐⭐ أضف الـ function دي هنا
  static const Map<String, String> _countryToNationalityKeyMap = {
     'country_saudi': 'nationality_saudi',
@@ -409,12 +446,12 @@ Future<void> saveProfile() async {
           updatedGoals = currentGoals.copyWith(engagement: value);
           break;
 
-        case 'marry':
+        case 'marriage_intentions':
         case 'communicationTimeline':
           updatedGoals = currentGoals.copyWith(marry: value);
           break;
 
-        case 'familyAcceptance':
+        case 'children':
         case 'dowry':
           updatedGoals = currentGoals.copyWith(children: value);
           break;
@@ -442,7 +479,36 @@ Future<void> saveProfile() async {
     debugPrint('💾 [CUBIT] Saving hobbies keys: $validKeys');
     
     updatedProfile = profile.copyWith(hobbies: validKeys);
-    } else {
+    }else if (fieldKey == 'faith') {
+    final currentHobbies = state.profile!.hobbies;
+    
+    // ⭐ خلي الهوايات الموجودة (بدون الإيمان)
+    final interestHobbies = currentHobbies
+        .where((h) => h.startsWith('interest_'))
+        .toList();
+    
+    // ⭐ جيب الإيمانات الجديدة
+    final newFaithHobbies = (value as String)
+        .split(', ')
+        .where((h) => h.startsWith('faith_'))
+        .toList();
+    
+    // ⭐ ادمجهم
+    final allHobbies = [...interestHobbies, ...newFaithHobbies];
+    
+    debugPrint('═══════════════════════════════════════════');
+    debugPrint('🙏 [FAITH UPDATE]');
+    debugPrint('📋 Current Interests: $interestHobbies');
+    debugPrint('🕌 New Faith: $newFaithHobbies');
+    debugPrint('✅ All Hobbies: $allHobbies');
+    debugPrint('═══════════════════════════════════════════');
+    
+    final updatedProfile = state.profile!.copyWith(hobbies: allHobbies);
+    emit(state.copyWith(profile: updatedProfile));
+    debugPrint('✅ [CUBIT] Faith updated successfully');
+    return;
+  }
+ else {
       updatedProfile = profile;
     }
 
@@ -499,9 +565,9 @@ Future<void> saveProfile() async {
     return [
       'engagement',
       'engagementTimeline',
-      'marry',
+      'marriage_intentions',
       'communicationTimeline',
-      'familyAcceptance',
+      'children',
       'dowry',
       'travel',
       'travelPreference'

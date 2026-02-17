@@ -9,10 +9,12 @@ class SearchRepository {
   Future<SearchResponseModel> search({
     required String query,
     String type = 'all',
+    int page = 1,
+    int limit = 10,
   }) async {
     final response = await _apiService.get(
       endPoint: '/search',
-      query: {'words': query, 'type': type},
+      query: {'words': query, 'type': type, 'page': page, 'limit': limit},
     );
 
     return SearchResponseModel.fromJson(response, type);

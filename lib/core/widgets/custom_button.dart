@@ -49,7 +49,7 @@ class CustomBotton extends StatelessWidget {
             ? SizedBox(
                 width: 24.w,
                 height: 24.h,
-                child:  CircularProgressIndicator(
+                child: CircularProgressIndicator(
                   padding: EdgeInsets.all(2.w),
                   color: Colors.white,
                   strokeWidth: 2.w,
@@ -72,7 +72,7 @@ class CustomBotton extends StatelessWidget {
                           : MainAxisAlignment.spaceEvenly,
                       children: [
                         if (icon != null) icon!,
-                        if (icon != null)  SizedBox(width: 2.w),
+                        if (icon != null) SizedBox(width: 2.w),
                         Text(
                           title,
                           style: Styles.textStyle16Bold.copyWith(

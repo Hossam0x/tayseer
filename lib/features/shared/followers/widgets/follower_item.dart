@@ -72,18 +72,31 @@ class FollowerItem extends StatelessWidget {
                                     color: Colors.grey.shade200,
                                   ),
                                 )
-                              // Fitted Text with width
-                              : ConstrainedBox(
-                                  constraints: BoxConstraints(maxWidth: 170.w),
-                                  child: Text(
-                                    follower.name,
-                                    style: Styles.textStyle16.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                              // Make is verified icon
+                              : Row(
+                                  children: [
+                                    ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: 150.w,
+                                      ),
+                                      child: Text(
+                                        follower.name,
+                                        style: Styles.textStyle16.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false,
+                                      ),
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                    softWrap: false,
-                                  ),
+                                    SizedBox(width: 4.w),
+                                    if (follower.isVerified)
+                                      Icon(
+                                        Icons.verified,
+                                        size: 16.w,
+                                        color: Colors.blue,
+                                      ),
+                                  ],
                                 ),
                         ],
                       ),
