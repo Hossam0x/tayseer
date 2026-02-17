@@ -785,12 +785,13 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       icon: Icons.delete_outline,
       iconColor: Colors.red,
       iconBackgroundColor: Colors.red.withOpacity(0.1),
-      bottonText: context.tr('delete'),
+      bottonText: context.tr('cancel'),
       showCancelButton: true,
-      cancelText: context.tr('cancel'),
-      onPressed: () async {
+      cancelText: context.tr('delete'),
+      onCancel: () async {
         await cubit.deleteSingleImage();
       },
+      onPressed: () {},
     );
   }
 
@@ -834,12 +835,13 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       icon: Icons.delete_outline,
       iconColor: Colors.red,
       iconBackgroundColor: Colors.red.withOpacity(0.1),
-      bottonText: context.tr('delete'),
+      bottonText: context.tr('cancel'),
       showCancelButton: true,
-      cancelText: context.tr('cancel'),
-      onPressed: () {
+      cancelText: context.tr('delete'),
+      onCancel: () {
         cubit.deleteImage(imagePath);
       },
+      onPressed: () {},
     );
   }
 
@@ -1457,15 +1459,16 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       icon: Icons.close_outlined,
       iconColor: Colors.red,
       iconBackgroundColor: Colors.red.withOpacity(0.1),
-      bottonText: context.tr('delete'),
+      bottonText: context.tr('cancel'),
       showCancelButton: true,
-      cancelText: context.tr('cancel'),
-      onPressed: () async {
+      cancelText: context.tr('delete'),
+      onCancel: () async {
         await widget.cubit.deleteVideo();
         if (mounted) {
           setState(() {});
         }
       },
+      onPressed: () {},
     );
   }
 
@@ -1477,15 +1480,16 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       icon: Icons.delete_outline,
       iconColor: Colors.red,
       iconBackgroundColor: Colors.red.withOpacity(0.1),
-      bottonText: context.tr('delete'),
+      bottonText: context.tr('cancel'),
       showCancelButton: true,
-      cancelText: context.tr('cancel'),
-      onPressed: () async {
+      cancelText: context.tr('delete'),
+      onCancel: () async {
         await widget.cubit.deleteAudio();
         if (mounted) {
           setState(() {});
         }
       },
+      onPressed: () async {},
     );
   }
 

@@ -40,7 +40,6 @@ class MarriagefilePage extends StatefulWidget {
 
 class _MarriagefilePageState extends State<MarriagefilePage> {
   late int _selectedTabIndex;
-  final ImagePicker _picker = ImagePicker();
   final int _maxImages = 5;
   String? _scrollToSection;
 
