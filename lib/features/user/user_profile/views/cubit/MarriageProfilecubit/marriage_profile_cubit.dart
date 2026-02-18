@@ -54,6 +54,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     if (state.profile == null) return;
 
     try {
+      
       await _repository.updateMarriageProfile(state.profile!);
       debugPrint('✅ [AUTO-SAVE] Fields saved');
     } catch (e) {
