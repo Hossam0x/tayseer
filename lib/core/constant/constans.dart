@@ -23,3 +23,4 @@ bool get isUser => selectedUserType == UserTypeEnum.user;
 bool get isConsultant => selectedUserType == UserTypeEnum.asConsultant;
 bool get isAdvisor => selectedUserType == UserTypeEnum.asConsultant;
 bool get isGuest => selectedUserType == UserTypeEnum.guest;
+bool get isConsultant => selectedUserType == UserTypeEnum.asConsultant;
