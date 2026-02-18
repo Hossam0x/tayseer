@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/shared/reels/views/widget/reels_overlay.dart';
@@ -123,7 +124,7 @@ class _ReelsItemState extends State<ReelsItem>
             thumbnailUrl: widget.post.videoData?.thumbnail,
             shouldPlay: _shouldPlay,
             onTap: _togglePlay,
-            onDoubleTap: _handleDoubleTap,
+            onDoubleTap: isGuest ? null : _handleDoubleTap,
             showProgressBar: true,
             sharedController: widget.sharedController,
             onControllerCreated: (controller) {
