@@ -9,7 +9,7 @@ import 'package:tayseer/core/widgets/post_card/real_video_player.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/event/view/widget/event_cart_item.dart';
-import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
+import 'package:tayseer/features/shared/reels/views/reels_feed_view.dart';
 import 'package:tayseer/core/widgets/post_card/post_poll_view.dart';
 import 'package:tayseer/my_import.dart';
 
