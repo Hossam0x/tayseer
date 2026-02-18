@@ -20,3 +20,4 @@ String phone = '201009119795';
 bool get isUserAnonymous =>
     CachNetwork.getBoolData(key: kIsUserAnonymous) ?? false;
 bool get isUser => selectedUserType == UserTypeEnum.user;
+bool get isConsultant => selectedUserType == UserTypeEnum.asConsultant;
