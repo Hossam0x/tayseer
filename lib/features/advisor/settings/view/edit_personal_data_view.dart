@@ -432,6 +432,9 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     );
 
     _controllersInitialized = true;
+    if (mounted) {
+      setState(() {});
+    }
 
     final videoUrl = state.videoPreviewUrl;
     if (videoUrl != null &&
@@ -653,15 +656,22 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                             maxLines: 4,
                                           ),
                                           Gap(6.h),
-                                          Text(
-                                            '${_bioController.text.length}/250',
-                                            style: Styles.textStyle14.copyWith(
-                                              color:
-                                                  _bioController.text.length >
-                                                      250
-                                                  ? AppColors.kRedColor
-                                                  : AppColors.secondary400,
-                                            ),
+                                          ValueListenableBuilder(
+                                            valueListenable: _bioController,
+                                            builder: (context, value, child) {
+                                              return Text(
+                                                '${value.text.length}/250',
+                                                style: Styles.textStyle14
+                                                    .copyWith(
+                                                      color:
+                                                          value.text.length >
+                                                              250
+                                                          ? AppColors.kRedColor
+                                                          : AppColors
+                                                                .secondary400,
+                                                    ),
+                                              );
+                                            },
                                           ),
                                           Gap(12.h),
                                           CusttomGlassButton(
