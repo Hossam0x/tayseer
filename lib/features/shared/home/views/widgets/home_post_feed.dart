@@ -8,6 +8,9 @@ import 'package:tayseer/features/shared/post_details/presentation/views/post_det
 import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 import 'package:tayseer/my_import.dart';
 
+// ✅ حد أقصى للبوستات اللي هتفضل حية في الميموري
+const int _kMaxKeepAliveCount = 50;
+
 class HomePostFeed extends StatelessWidget {
   const HomePostFeed({
     super.key,
@@ -26,20 +29,20 @@ class HomePostFeed extends StatelessWidget {
         listeners: [
           // 📢 1. Share Listener
           BlocListener<HomeCubit, HomeState>(
-            listenWhen: _shouldListenToShare, // دالة الشرط
-            listener: _handleShareFeedback, // دالة التنفيذ
+            listenWhen: _shouldListenToShare,
+            listener: _handleShareFeedback,
           ),
 
           // 💾 2. Save Listener
           BlocListener<HomeCubit, HomeState>(
-            listenWhen: _shouldListenToSave, // دالة الشرط
-            listener: _handleSaveFeedback, // دالة التنفيذ
+            listenWhen: _shouldListenToSave,
+            listener: _handleSaveFeedback,
           ),
 
           // 3. delete post Listener
           BlocListener<HomeCubit, HomeState>(
-            listenWhen: _shouldListenToDelete, // دالة الشرط
-            listener: _handleDeleteFeedback, // دالة التنفيذ
+            listenWhen: _shouldListenToDelete,
+            listener: _handleDeleteFeedback,
           ),
 
           // 4. block user Listener
@@ -48,10 +51,11 @@ class HomePostFeed extends StatelessWidget {
                 prev.blockUserActionState != curr.blockUserActionState,
             listener: _handleBlockFeedback,
           ),
+
           // 5. archive post Listener
           BlocListener<HomeCubit, HomeState>(
-            listenWhen: _shouldListenToArchive, // دالة الشرط
-            listener: _handleArchiveFeedback, // دالة التنفيذ
+            listenWhen: _shouldListenToArchive,
+            listener: _handleArchiveFeedback,
           ),
 
           // 6. poll vote Listener
@@ -69,44 +73,38 @@ class HomePostFeed extends StatelessWidget {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 🎧 Listen Conditions (شروط الاستماع)
+  // 🎧 Listen Conditions
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// هل تغيرت حالة الشير؟
   bool _shouldListenToShare(HomeState prev, HomeState curr) {
     return prev.shareActionState != curr.shareActionState &&
         curr.shareActionState != CubitStates.initial;
   }
 
-  /// هل تغيرت حالة الحفظ؟
   bool _shouldListenToSave(HomeState prev, HomeState curr) {
     return prev.saveActionState != curr.saveActionState &&
         curr.saveActionState != CubitStates.initial;
   }
-
-  /// هل تغيرت حالة الحذف؟
 
   bool _shouldListenToDelete(HomeState prev, HomeState curr) {
     return prev.deletePostActionState != curr.deletePostActionState &&
         curr.deletePostActionState != CubitStates.initial;
   }
 
-  /// هل تغيرت حالة الأرشفة؟
   bool _shouldListenToArchive(HomeState prev, HomeState curr) {
     return prev.archivePostActionState != curr.archivePostActionState &&
         curr.archivePostActionState != CubitStates.initial;
   }
 
-  /// هل فشل التصويت في الاستطلاع؟
   bool _shouldListenToPollVote(HomeState prev, HomeState curr) {
     return prev.pollVoteActionState != curr.pollVoteActionState &&
         curr.pollVoteActionState == CubitStates.failure;
   }
+
   // ═══════════════════════════════════════════════════════════════════════════
-  // 🎮 Action Handlers (دوال تنفيذ التوست)
+  // 🎮 Action Handlers
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// التعامل مع توست المشاركة
   void _handleShareFeedback(BuildContext context, HomeState state) {
     final message = state.shareMessage;
     switch (state.shareActionState) {
@@ -123,7 +121,6 @@ class HomePostFeed extends StatelessWidget {
     }
   }
 
-  /// التعامل مع توست الحذف
   void _handleDeleteFeedback(BuildContext context, HomeState state) {
     final message = state.deletePostMessage;
     switch (state.deletePostActionState) {
@@ -138,7 +135,6 @@ class HomePostFeed extends StatelessWidget {
     }
   }
 
-  /// التعامل مع توست الحفظ
   void _handleSaveFeedback(BuildContext context, HomeState state) {
     final message = state.saveMessage;
     switch (state.saveActionState) {
@@ -164,28 +160,22 @@ class HomePostFeed extends StatelessWidget {
   void _handleBlockFeedback(BuildContext context, HomeState state) {
     switch (state.blockUserActionState) {
       case CubitStates.loading:
-        // ✅ اعرض الـ Loading
         CustomloadingApp.show(context);
         break;
-
       case CubitStates.success:
-        // ✅ أغلق الـ Loading واعرض Toast
         CustomloadingApp.hide(context);
         AppToast.success(
           context,
           state.blockUserMessage ?? 'تم حظر المستخدم بنجاح',
         );
         break;
-
       case CubitStates.failure:
-        // ❌ أغلق الـ Loading واعرض Error
         CustomloadingApp.hide(context);
         AppToast.error(
           context,
           state.blockUserMessage ?? 'حدث خطأ أثناء الحظر',
         );
         break;
-
       default:
         break;
     }
@@ -209,18 +199,16 @@ class HomePostFeed extends StatelessWidget {
     AppToast.error(context, state.pollVoteMessage ?? 'حدث خطأ أثناء التصويت');
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🏗️ Build Content
+  // ═══════════════════════════════════════════════════════════════════════════
+
   Widget _buildContent(BuildContext context, _FeedState state) {
-    // حالة التحميل
     if (state.isLoading && state.isEmpty) return _buildShimmerList();
-
-    // حالة الخطأ
     if (state.isError && state.isEmpty) return _buildError(state.error);
-
-    // حالة الـ empty في كاتيجوري معين (مش "الكل")
     if (state.isEmpty && !state.isAllCategory) {
       return _EmptyCategoryIndicator(onViewAllTap: _goToAllCategory);
     }
-
     return _buildPostList(state);
   }
 
@@ -246,30 +234,33 @@ class HomePostFeed extends StatelessWidget {
     ),
   );
 
+  // ✅ التعديل الرئيسي هنا - إضافة index
   Widget _buildPostList(_FeedState state) => SliverList(
-    delegate: SliverChildBuilderDelegate((context, index) {
-      if (index < state.postIds.length) {
-        return _PostItem(
-          key: ValueKey(state.postIds[index]),
-          postId: state.postIds[index],
-          homeCubit: homeCubit,
-          showGap: index < state.postIds.length - 1,
-        );
-      }
+    delegate: SliverChildBuilderDelegate(
+      (context, index) {
+        if (index < state.postIds.length) {
+          return _PostItem(
+            key: ValueKey(state.postIds[index]),
+            postId: state.postIds[index],
+            homeCubit: homeCubit,
+            index: index, // ✅ بنمرر الـ index
+            showGap: index < state.postIds.length - 1,
+          );
+        }
 
-      // آخر عنصر - الـ indicator
-      if (state.isLoadingMore) {
-        return const _LoadingMoreIndicator();
-      }
+        if (state.isLoadingMore) {
+          return const _LoadingMoreIndicator();
+        }
 
-      // لو في "الكل" → الـ indicator العادي
-      if (state.isAllCategory) {
-        return const EndOfFeedIndicator();
-      }
+        if (state.isAllCategory) {
+          return const EndOfFeedIndicator();
+        }
 
-      // لو في كاتيجوري معين → indicator مختلف
-      return _EndOfCategoryIndicator(onViewAllTap: _goToAllCategory);
-    }, childCount: state.postIds.length + 1),
+        return _EndOfCategoryIndicator(onViewAllTap: _goToAllCategory);
+      },
+      childCount: state.postIds.length + 1,
+      addAutomaticKeepAlives: true, // ✅ تأكيد إنها true
+    ),
   );
 }
 
@@ -307,7 +298,7 @@ class _FeedState extends Equatable {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Post Item Widget (Optimized - rebuilds only when its post changes)
+// Post Item Widget ✅ معدّل بالكامل
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _PostItem extends StatefulWidget {
@@ -315,21 +306,29 @@ class _PostItem extends StatefulWidget {
     super.key,
     required this.postId,
     required this.homeCubit,
+    required this.index, // ✅ جديد
     this.showGap = false,
   });
 
   final String postId;
   final HomeCubit homeCubit;
+  final int index; // ✅ جديد
   final bool showGap;
 
   @override
   State<_PostItem> createState() => _PostItemState();
 }
 
-class _PostItemState extends State<_PostItem> {
-  // ✅ Cache stream & callbacks - created once in initState
+class _PostItemState extends State<_PostItem>
+    with AutomaticKeepAliveClientMixin {
+  // ✅ 1️⃣ الـ Mixin
+
   late final Stream<PostModel?> _postStream;
   late final PostCallbacks _callbacks;
+
+  // ✅ 2️⃣ أول 50 بوست بس يتحفظوا في الميموري
+  @override
+  bool get wantKeepAlive => widget.index < _kMaxKeepAliveCount;
 
   @override
   void initState() {
@@ -337,19 +336,16 @@ class _PostItemState extends State<_PostItem> {
     _initializeStreamAndCallbacks();
   }
 
-  // في _initializeStreamAndCallbacks
   void _initializeStreamAndCallbacks() {
-    // ✅ الـ Stream ممكن يرجع null لو البوست اتحذف
     _postStream = widget.homeCubit.stream
         .map(
           (state) =>
               state.posts.where((p) => p.postId == widget.postId).firstOrNull,
-        ) // ✅ يرجع null لو مش موجود
+        )
         .distinct();
 
     _callbacks = PostCallbacks(
-      postUpdatesStream:
-          _postStream, // ✅ Stream<PostModel?> مش Stream<PostModel>
+      postUpdatesStream: _postStream,
       onReactionChanged: _onReaction,
       onShareTap: _onShare,
       onHashtagTap: _onHashtagTap,
@@ -441,6 +437,8 @@ class _PostItemState extends State<_PostItem> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // ✅ 3️⃣ لازم تنادي super.build
+
     return Column(
       children: [
         BlocSelector<HomeCubit, HomeState, PostModel?>(
@@ -512,10 +510,6 @@ class EndOfFeedIndicator extends StatelessWidget {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// End of Category Indicator (لما يوصل لآخر البوستات في كاتيجوري معين)
-// ══════════════════════════════════════════════════════════════════════════════
-
 class _EndOfCategoryIndicator extends StatelessWidget {
   const _EndOfCategoryIndicator({required this.onViewAllTap});
 
@@ -576,10 +570,6 @@ class _EndOfCategoryIndicator extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Empty Category Indicator (لما الكاتيجوري فاضية)
-// ══════════════════════════════════════════════════════════════════════════════
 
 class _EmptyCategoryIndicator extends StatelessWidget {
   const _EmptyCategoryIndicator({required this.onViewAllTap});

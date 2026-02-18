@@ -1,3 +1,4 @@
+import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/models/category_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -20,13 +21,16 @@ class AddPostState {
   final String? errorMessage;
   final bool isAiLoading;
 
+  // ✅ نوع البوست يتحدد تلقائياً من المحتوى
+  final AddPostEnum resolvedPostType;
+
   const AddPostState({
     this.addPostState = CubitStates.initial,
     this.categoryState = CubitStates.initial,
     this.galleryImages = const [],
     this.galleryAlbums = const [],
     this.selectedImages = const [],
-    this.capturedImages = const [], // 🔥
+    this.capturedImages = const [],
     this.capturedVideo,
     this.availableGifs = const [],
     this.galleryVideos = const [],
@@ -38,6 +42,7 @@ class AddPostState {
     this.selectedCategoryId,
     this.categories = const [],
     this.isAiLoading = false,
+    this.resolvedPostType = AddPostEnum.post, // ✅
   });
 
   AddPostState copyWith({
@@ -48,14 +53,14 @@ class AddPostState {
     List<AssetPathEntity>? galleryAlbums,
     List<AssetPathEntity>? galleryVideoAlbums,
     List<AssetEntity>? selectedImages,
-    List<File>? capturedImages, // 🔥
+    List<File>? capturedImages,
     Object? capturedVideo = _capturedVideoSentinel,
-
     bool? loading,
     String? draftText,
     String? errorMessage,
     String? selectedCategoryId,
     bool? isAiLoading,
+    AddPostEnum? resolvedPostType, // ✅
   }) {
     return AddPostState(
       addPostState: addPostState ?? this.addPostState,
@@ -65,15 +70,16 @@ class AddPostState {
       galleryAlbums: galleryAlbums ?? this.galleryAlbums,
       galleryVideoAlbums: galleryVideoAlbums ?? this.galleryVideoAlbums,
       selectedImages: selectedImages ?? this.selectedImages,
-      capturedImages: capturedImages ?? this.capturedImages, // 🔥
+      capturedImages: capturedImages ?? this.capturedImages,
       capturedVideo: identical(capturedVideo, _capturedVideoSentinel)
           ? this.capturedVideo
           : (capturedVideo as XFile?),
-
       loading: loading ?? this.loading,
       draftText: draftText ?? this.draftText,
       selectedCategoryId: selectedCategoryId ?? this.selectedCategoryId,
       errorMessage: errorMessage,
+      isAiLoading: isAiLoading ?? this.isAiLoading,
+      resolvedPostType: resolvedPostType ?? this.resolvedPostType, // ✅
     );
   }
 }

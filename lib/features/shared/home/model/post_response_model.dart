@@ -6,12 +6,14 @@ class PostsResponseModel {
   final String message;
   final List<PostModel> posts;
   final PaginationModel pagination;
+  final double? nextCursor;
 
   PostsResponseModel({
     required this.success,
     required this.message,
     required this.posts,
     required this.pagination,
+    this.nextCursor,
   });
 
   factory PostsResponseModel.fromJson(Map<String, dynamic> json) {
@@ -24,6 +26,7 @@ class PostsResponseModel {
               .toList() ??
           [],
       pagination: PaginationModel.fromJson(json['data']?['pagination'] ?? {}),
+      nextCursor: json['data']?['nextCursor'],
     );
   }
 }

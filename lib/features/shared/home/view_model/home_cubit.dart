@@ -249,6 +249,7 @@ class HomeCubit extends Cubit<HomeState> {
     final result = await homeRepository.fetchPosts(
       page: nextPage,
       categoryId: categoryId,
+      nextCursor: currentData.nextCursor,
     );
 
     result.fold(
@@ -261,14 +262,15 @@ class HomeCubit extends Cubit<HomeState> {
           ),
         ),
       ),
-      (newPosts) => emit(
+      (response) => emit(
         state.updateCategoryPosts(
           categoryId,
           (data) => data.copyWith(
-            posts: [...data.posts, ...newPosts],
+            posts: [...data.posts, ...response.posts],
             currentPage: nextPage,
-            hasMore: newPosts.length >= _pageSize,
+            hasMore: response.posts.length >= _pageSize,
             isLoadingMore: false,
+            nextCursor: response.nextCursor,
           ),
         ),
       ),
@@ -286,6 +288,7 @@ class HomeCubit extends Cubit<HomeState> {
           posts: [],
           currentPage: 1,
           hasMore: true,
+          nextCursor: null,
         ),
       ),
     );
@@ -305,14 +308,15 @@ class HomeCubit extends Cubit<HomeState> {
           ),
         ),
       ),
-      (postsList) => emit(
+      (response) => emit(
         state.updateCategoryPosts(
           categoryId,
           (data) => data.copyWith(
             state: CubitStates.success,
-            posts: postsList,
+            posts: response.posts,
             currentPage: 1,
-            hasMore: postsList.length >= _pageSize,
+            hasMore: response.posts.length >= _pageSize,
+            nextCursor: response.nextCursor,
           ),
         ),
       ),

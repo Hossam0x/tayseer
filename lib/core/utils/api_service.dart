@@ -12,9 +12,7 @@ class ApiService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      final headers = <String, dynamic>{
-        'Accept-Language': selectedLanguage ?? 'ar',
-      };
+      final headers = <String, dynamic>{'lang': selectedLanguage ?? 'ar'};
       headers['Authorization'] =
           'Bearer ${CachNetwork.getStringData(key: 'token')}';
       headers["Accept"] = "application/json";

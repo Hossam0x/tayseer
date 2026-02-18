@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as img;
 
 // =========================================================
 // 1. MODELS & CONFIGURATION
@@ -166,15 +167,48 @@ class MediaPickerController extends ChangeNotifier {
   // 4. الكاميرا
   Future<SelectedMedia?> pickFromCamera() async {
     try {
-      // تحديد نوع الكاميرا بناءً على الإعدادات (فيديو أم صورة)
-      // هنا مثال للصورة فقط للتبسيط
-      final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
-      if (photo != null) {
-        return SelectedMedia(File(photo.path), AssetType.image);
+      if (config.requestType == RequestType.video) {
+        // 🎥 تصوير فيديو
+        final XFile? video = await _picker.pickVideo(
+          source: ImageSource.camera,
+        );
+        if (video != null) {
+          return SelectedMedia(File(video.path), AssetType.video);
+        }
+      } else {
+        // 📷 تصوير صورة
+        final XFile? photo = await _picker.pickImage(
+          source: ImageSource.camera,
+        );
+        if (photo != null) {
+          final File fixedFile = await _fixFrontCameraImage(File(photo.path));
+          return SelectedMedia(fixedFile, AssetType.image);
+        }
       }
     } catch (e) {
       debugPrint("Camera Error: $e");
     }
     return null;
+  }
+
+  /// ✅ تصحيح الصورة المعكوسة من الكاميرا الأمامية
+  Future<File> _fixFrontCameraImage(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final originalImage = img.decodeImage(bytes);
+
+      if (originalImage == null) return imageFile;
+
+      // عكس الصورة أفقياً عشان تظهر زي ما الشخص شايف نفسه
+      final flippedImage = img.flipHorizontal(originalImage);
+
+      final fixedBytes = img.encodeJpg(flippedImage, quality: 95);
+      await imageFile.writeAsBytes(fixedBytes);
+
+      return imageFile;
+    } catch (e) {
+      debugPrint('Fix front camera image error: $e');
+      return imageFile;
+    }
   }
 }

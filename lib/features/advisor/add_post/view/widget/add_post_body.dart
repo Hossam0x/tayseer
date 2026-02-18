@@ -9,21 +9,19 @@ import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_p
 import 'package:tayseer/my_import.dart';
 
 class AddPostBody extends StatelessWidget {
-  const AddPostBody({super.key, required this.postType});
-  final AddPostEnum? postType;
+  const AddPostBody({super.key});
+
   @override
   Widget build(BuildContext context) {
-    // debugPrint('AddPostBody build called with postType: ${postType?.name}');
     return BlocConsumer<AddPostCubit, AddPostState>(
       listenWhen: (previous, current) =>
           previous.addPostState != current.addPostState,
       listener: (context, state) {
         if (state.addPostState == CubitStates.loading) {
-          // Show loading indicator
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (context) => const CustomloadingApp(),
+            builder: (context) => Center(child: const CustomloadingApp()),
           );
         } else if (state.addPostState == CubitStates.success) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -40,7 +38,7 @@ class AddPostBody extends StatelessWidget {
             );
           });
         } else if (state.addPostState == CubitStates.failure) {
-          context.pop(); // Dismiss loading dialog
+          context.pop();
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -54,30 +52,29 @@ class AddPostBody extends StatelessWidget {
       },
       builder: (context, state) {
         final cubit = context.read<AddPostCubit>();
-        // require a selected category id before enabling publish
+
+        // ✅ نوع البوست يتحدد تلقائياً من الـ state
+        final postType = state.resolvedPostType;
+
         final hasCategory =
             state.selectedCategoryId != null &&
             state.selectedCategoryId!.isNotEmpty;
-
-        // Determine required media based on postType
-        final bool requiresImage = postType == AddPostEnum.post;
-        final bool requiresVideo =
-            postType == AddPostEnum.video || postType == AddPostEnum.reel;
 
         final hasImage =
             state.selectedImages.isNotEmpty || state.capturedImages.isNotEmpty;
         final hasVideo =
             state.selectedVideos.isNotEmpty || state.capturedVideo != null;
+        final hasText = state.draftText.trim().isNotEmpty;
 
-        // If postType requires specific media, enforce it.
-        // For `post` we allow text-only posts (text + category) without images/videos.
-        final bool hasRequiredMedia = requiresImage
-            ? (hasImage || state.draftText.trim().isNotEmpty)
-            : requiresVideo
-            ? hasVideo
-            : (hasImage || hasVideo || state.draftText.trim().isNotEmpty);
-
-        final isActive = hasCategory && hasRequiredMedia;
+        // ✅ شروط النشر حسب النوع
+        final bool isActive;
+        if (postType == AddPostEnum.reel) {
+          // reel: لازم فيديو + تصنيف (النص اختياري)
+          isActive = hasCategory && hasVideo;
+        } else {
+          // post: لازم نص أو صورة + تصنيف
+          isActive = hasCategory && (hasText || hasImage);
+        }
 
         return CustomBackground(
           child: Scaffold(
@@ -89,6 +86,13 @@ class AddPostBody extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
                 onPressed: () => context.pop(),
               ),
+              title: Text(
+                postType == AddPostEnum.reel
+                    ? context.tr('create_reel')
+                    : context.tr('create_post'),
+                style: Styles.textStyle18.copyWith(fontWeight: FontWeight.bold),
+              ),
+              centerTitle: true,
               actions: [
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -101,7 +105,7 @@ class AddPostBody extends StatelessWidget {
                     onPressed: isActive
                         ? () => cubit.createPost(
                             categoryId: state.selectedCategoryId!,
-                            postType: postType?.name ?? 'post',
+                            postType: postType.name,
                           )
                         : null,
                   ),
@@ -112,15 +116,17 @@ class AddPostBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ─── Profile Header + Category ───
                   CustomProfileHeader(
-                    name: kCurrentUserData?.name??'elkhamisy',
+                    name: kCurrentUserData?.name ?? 'elkhamisy',
                     initialSubtitle: context.tr('select_group'),
-                    isVerified: true,
+                    isVerified: false,
                     groups: state.categories,
                     onGroupSelectedId: (group) =>
                         cubit.setSelectedCategoryId(group),
                   ),
-                  // TextField
+
+                  // ─── TextField ───
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: TextField(
@@ -128,7 +134,9 @@ class AddPostBody extends StatelessWidget {
                       onChanged: cubit.updateText,
                       maxLines: null,
                       decoration: InputDecoration(
-                        hintText: context.tr('you_like_to_share'),
+                        hintText: postType == AddPostEnum.reel
+                            ? context.tr('add_caption_optional')
+                            : context.tr('you_like_to_share'),
                         border: InputBorder.none,
                         hintStyle: Styles.textStyle16.copyWith(
                           color: AppColors.kgreyColor,
@@ -137,8 +145,9 @@ class AddPostBody extends StatelessWidget {
                     ),
                   ),
 
-                  // Selected Images من الجاليري
-                  if (state.selectedImages.isNotEmpty)
+                  // ─── Gallery Images (فقط لو مش reel) ───
+                  if (state.selectedImages.isNotEmpty &&
+                      postType != AddPostEnum.reel)
                     SizedBox(
                       height: context.height * 0.25,
                       child: ListView.builder(
@@ -159,8 +168,15 @@ class AddPostBody extends StatelessWidget {
                                     ),
                                     builder: (_, snap) {
                                       if (!snap.hasData) {
-                                        return Container(
-                                          color: Colors.grey.shade300,
+                                        return Center(
+                                          child: SizedBox(
+                                            width: 28,
+                                            height: 28,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: HexColor('4d4d4d'),
+                                            ),
+                                          ),
                                         );
                                       }
                                       return ClipRRect(
@@ -196,8 +212,9 @@ class AddPostBody extends StatelessWidget {
                       ),
                     ),
 
-                  // 🔥 Captured Images من الكاميرا
-                  if (state.capturedImages.isNotEmpty)
+                  // ─── Captured Images (فقط لو مش reel) ───
+                  if (state.capturedImages.isNotEmpty &&
+                      postType != AddPostEnum.reel)
                     SizedBox(
                       height: context.height * 0.25,
                       child: ListView.builder(
@@ -217,6 +234,36 @@ class AddPostBody extends StatelessWidget {
                                     child: Image.file(
                                       imageFile,
                                       fit: BoxFit.cover,
+                                      frameBuilder:
+                                          (
+                                            BuildContext context,
+                                            Widget child,
+                                            int? frame,
+                                            bool wasSynchronouslyLoaded,
+                                          ) {
+                                            if (wasSynchronouslyLoaded)
+                                              return child;
+                                            return AnimatedSwitcher(
+                                              duration: const Duration(
+                                                milliseconds: 200,
+                                              ),
+                                              child: frame == null
+                                                  ? Center(
+                                                      child: SizedBox(
+                                                        width: 28,
+                                                        height: 28,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              strokeWidth: 2.5,
+                                                              color: HexColor(
+                                                                '4d4d4d',
+                                                              ),
+                                                            ),
+                                                      ),
+                                                    )
+                                                  : child,
+                                            );
+                                          },
                                     ),
                                   ),
                                 ),
@@ -244,7 +291,7 @@ class AddPostBody extends StatelessWidget {
                       ),
                     ),
 
-                  // Captured Video (single) from Camera or CustomGallerySheet
+                  // ─── Video Preview (فيديو واحد فقط) ───
                   if (state.capturedVideo != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -261,104 +308,120 @@ class AddPostBody extends StatelessWidget {
               ),
             ),
 
-            // Action icons at bottom
+            // ─── Bottom Navigation Bar ───
             bottomNavigationBar: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // AI Banner
                   AiAssistantBanner(
                     isLoading: state.isAiLoading,
                     onTap: () => cubit.enhanceTextWithGemini(context),
                   ),
-                  Divider(color: Colors.grey, thickness: 0.5),
+                  const Divider(color: Colors.grey, thickness: 0.5),
+
+                  // ─── Action Icons ───
                   Row(
                     children: [
+                      // 📷 كاميرا (صور فقط)
                       IconButton(
                         icon: Icon(
                           Icons.camera_alt_outlined,
-                          color: HexColor('4d4d4d'),
+                          color: _hasVideo(state)
+                              ? Colors.grey.shade400
+                              : HexColor('4d4d4d'),
                           size: 28,
                         ),
-                        onPressed: () async {
-                          // choose camera type based on postType
-                          final reqType = postType == AddPostEnum.post
-                              ? RequestType.image
-                              : (postType == AddPostEnum.video ||
-                                    postType == AddPostEnum.reel)
-                              ? RequestType.video
-                              : RequestType.common;
-
-                          final picker = MediaPickerController(
-                            config: PickerConfig(
-                              allowMultiple: false,
-                              maxCount: 1,
-                              requestType: reqType,
-                            ),
-                          );
-                          final SelectedMedia? picked = await picker
-                              .pickFromCamera();
-                          if (picked != null) {
-                            if (picked.type == AssetType.image) {
-                              cubit.addCapturedImage(picked.file);
-                            } else if (picked.type == AssetType.video) {
-                              cubit.addCapturedVideo(XFile(picked.file.path));
-                            }
-                          }
-                        },
-                      ),
-                      GestureDetector(
-                        child: AppImage(AssetsData.kopenGalIcon),
-                        onTap: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => CustomGallerySheet(
-                              config: PickerConfig(
-                                allowMultiple: true,
-                                maxCount: 10,
-                                requestType: postType == AddPostEnum.post
-                                    ? RequestType.image
-                                    : postType == AddPostEnum.video
-                                    ? RequestType.video
-                                    : postType == AddPostEnum.reel
-                                    ? RequestType.video
-                                    : RequestType.common,
-                              ),
-                              onMediaSelected: (list) {
-                                if (list.isEmpty) return;
-
-                                final List<File> imageFiles = [];
-                                final List<File> videoFiles = [];
-
-                                for (var item in list) {
-                                  if (item.type == AssetType.video) {
-                                    // log('Video selected: ${item.file.path}');
-                                    videoFiles.add(item.file);
-                                  } else if (item.type == AssetType.image) {
-                                    // log('Image selected: ${item.file.path}');
-                                    imageFiles.add(item.file);
-                                  }
-                                }
-
-                                // Commit to cubit: captured images/videos
-                                if (imageFiles.isNotEmpty) {
-                                  for (final f in imageFiles) {
-                                    cubit.addCapturedImage(f);
-                                  }
-                                }
-
-                                if (videoFiles.isNotEmpty) {
-                                  // Only allow a single captured video — take the first one
-                                  cubit.addCapturedVideo(
-                                    XFile(videoFiles.first.path),
-                                  );
+                        onPressed: _hasVideo(state)
+                            ? null
+                            : () async {
+                                final picker = MediaPickerController(
+                                  config: PickerConfig(
+                                    allowMultiple: false,
+                                    maxCount: 1,
+                                    requestType: RequestType.image,
+                                  ),
+                                );
+                                final SelectedMedia? picked = await picker
+                                    .pickFromCamera();
+                                if (picked != null &&
+                                    picked.type == AssetType.image) {
+                                  cubit.addCapturedImage(picked.file);
                                 }
                               },
-                            ),
-                          );
-                        },
+                      ),
+
+                      // 🖼 جاليري (صور فقط)
+                      GestureDetector(
+                        onTap: _hasVideo(state)
+                            ? null
+                            : () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (_) => CustomGallerySheet(
+                                    config: PickerConfig(
+                                      allowMultiple: true,
+                                      maxCount: 10,
+                                      requestType: RequestType.image,
+                                    ),
+                                    onMediaSelected: (list) {
+                                      if (list.isEmpty) return;
+                                      for (var item in list) {
+                                        if (item.type == AssetType.image) {
+                                          cubit.addCapturedImage(item.file);
+                                        }
+                                      }
+                                    },
+                                  ),
+                                );
+                              },
+                        child: Opacity(
+                          opacity: _hasVideo(state) ? 0.4 : 1.0,
+                          child: AppImage(AssetsData.kopenGalIcon),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      // 🎥 فيديو (فيديو واحد فقط)
+                      IconButton(
+                        icon: Icon(
+                          Icons.video_library_outlined,
+                          color: _hasImages(state)
+                              ? Colors.grey.shade400
+                              : state.capturedVideo != null
+                              ? AppColors.kprimaryColor
+                              : HexColor('4d4d4d'),
+                          size: 28,
+                        ),
+                        onPressed: _hasImages(state)
+                            ? null
+                            : state.capturedVideo != null
+                            ? null
+                            : () => showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => CustomGallerySheet(
+                                  config: PickerConfig(
+                                    allowMultiple: false,
+                                    maxCount: 1,
+                                    requestType: RequestType.video,
+                                  ),
+                                  onMediaSelected: (list) {
+                                    if (list.isEmpty) return;
+                                    final videoItem = list.first;
+                                    if (videoItem.type == AssetType.video) {
+                                      cubit.addCapturedVideo(
+                                        XFile(videoItem.file.path),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
                       ),
                     ],
                   ),
@@ -369,5 +432,19 @@ class AddPostBody extends StatelessWidget {
         );
       },
     );
+  }
+
+  // ──────────────────────────────────────────────
+  // Helper Methods
+  // ──────────────────────────────────────────────
+
+  /// هل فيه صور محملة؟
+  bool _hasImages(AddPostState state) {
+    return state.selectedImages.isNotEmpty || state.capturedImages.isNotEmpty;
+  }
+
+  /// هل فيه فيديو محمل؟
+  bool _hasVideo(AddPostState state) {
+    return state.selectedVideos.isNotEmpty || state.capturedVideo != null;
   }
 }

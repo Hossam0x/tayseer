@@ -87,10 +87,22 @@ class HomeViewBodyState extends State<HomeViewBody> {
 
     _lastOffset = currentOffset;
 
+    // تحديث حالة السكرول في الـ LayoutCubit
+    context.read<LayoutCubit>().setHomeAtTop(currentOffset <= 0);
+
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
       homeCubit.loadMorePosts();
     }
+  }
+
+  Future<void> scrollToTopAndRefresh() async {
+    scrollToTop();
+    VideoManager.instance.stopAll();
+    await Future.wait([
+      storiesCubit.fetchStories(context: context),
+      homeCubit.refreshHome(),
+    ]);
   }
 
   @override
@@ -113,7 +125,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
           children: [
             CustomScrollView(
               physics: const ClampingScrollPhysics(),
-              cacheExtent: 500.0,
+              cacheExtent: 1000,
               controller: _scrollController,
               slivers: [
                 const HomeAppBar(notificationCount: 3),

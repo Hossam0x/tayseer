@@ -1313,5 +1313,8 @@
   "no_marriage_users":"لا يوجد مستخدمين للزواج",
   "share_app_to_find_users":"شارك التطبيق حتي تجد مستخدمين للتوافق", 
   "marriage_tab":"الزواج",
-  "interactions_tab":"التفاعلات"
+  "interactions_tab":"التفاعلات",
+    "exit_app": "خروج",
+  "exit_app_title": "هل تريد الخروج؟",
+  "exit_app_message": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟"
 }

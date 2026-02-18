@@ -175,7 +175,10 @@
   "certificateAdded": "Certificate added successfully",
   "pleaseUploadCertificate": "Please upload certificate image",
   "invalidYear": "Invalid year",
-  "cancel": "Cancel",
+  "cancel": "Cancel", 
+  "exit_app": "Exit",
+  "exit_app_title": "Do you want to exit?",
+  "exit_app_message": "Are you sure you want to exit the app?",
   "attachNationalId": "Attach your ID",
   "attachNationalIdHint": "Add two clear photos of your ID card\nfront and back",
   "uploadNationalId": "Upload front and back ID file",
@@ -1301,5 +1304,8 @@
   "main_Image": "Main Image",
   "faith": "Faith",
   "select_faith_title": "Select Faith Activities",
-  "faith_description": "Choose the faith activities you practice"
+  "faith_description": "Choose the faith activities you practice",
+  "marriage_tab":"Marriage",
+  "interactions_tab":"Interactions"
+
 }

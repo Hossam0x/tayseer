@@ -49,6 +49,30 @@ PostContentType _parseContentType(String? value) {
   }
 }
 
+// --- Top Reaction Model ---
+class TopReactionModel {
+  final ReactionType type;
+  final int count;
+
+  TopReactionModel({required this.type, required this.count});
+
+  factory TopReactionModel.fromJson(Map<String, dynamic> json) {
+    return TopReactionModel(
+      type: _parseReactionType(json['type']) ?? ReactionType.love,
+      count: json['count'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'type': type.name, 'count': count};
+
+  TopReactionModel copyWith({ReactionType? type, int? count}) {
+    return TopReactionModel(
+      type: type ?? this.type,
+      count: count ?? this.count,
+    );
+  }
+}
+
 // --- Post Model ---
 class PostModel {
   // ✅ Spelling corrected: isHidden
@@ -76,7 +100,7 @@ class PostModel {
   final int commentsCount;
   final int sharesCount;
   final int likesCount;
-  final List<ReactionType> topReactions;
+  final List<TopReactionModel> topReactions;
 
   // User Interaction
   final ReactionType? myReaction;
@@ -109,7 +133,7 @@ class PostModel {
     required this.commentsCount,
     required this.sharesCount,
     required this.likesCount,
-    required this.topReactions,
+    this.topReactions = const [],
     this.myReaction,
     this.repostedBy,
     this.isRepostedByMe = false,
@@ -166,8 +190,7 @@ class PostModel {
       likesCount: json['likesCount'] ?? 0,
       topReactions:
           (json['topReactions'] as List<dynamic>?)
-              ?.map((e) => _parseReactionType(e.toString()))
-              .whereType<ReactionType>()
+              ?.map((e) => TopReactionModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       myReaction: _parseReactionType(json['myReaction']),
@@ -205,7 +228,7 @@ class PostModel {
     int? commentsCount,
     int? sharesCount,
     int? likesCount,
-    List<ReactionType>? topReactions,
+    List<TopReactionModel>? topReactions,
     ReactionType? myReaction,
     bool clearMyReaction = false,
     bool? isRepostedByMe,

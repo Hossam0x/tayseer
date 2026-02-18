@@ -18,17 +18,22 @@ class HomeRepositoryImpl implements HomeRepository {
   // ================= Posts =================
 
   @override
-  Future<Either<Failure, List<PostModel>>> fetchPosts({
+  Future<Either<Failure, PostsResponseModel>> fetchPosts({
     required int page,
+    double? nextCursor,
     String? categoryId,
   }) async {
     try {
       final response = await apiService.get(
         endPoint: ApiEndPoint.posts,
-        query: {'page': page, if (categoryId != null) 'categoryId': categoryId},
+        query: {
+          'page': page,
+          if (categoryId != null) 'categoryId': categoryId,
+          if (nextCursor != null) 'nextCursor': nextCursor,
+        },
       );
       final postsResponse = PostsResponseModel.fromJson(response);
-      return Right(postsResponse.posts);
+      return Right(postsResponse);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
