@@ -2,6 +2,7 @@ import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_actions_menu.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_avatar.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
+import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -195,12 +196,13 @@ class _CommentHeader extends StatelessWidget {
           ),
         ),
         Gap(8.w),
-        CommentActionsMenu(
-          isOwner: comment.isOwner,
-          isReply: isReply,
-          commentId: comment.id,
-          callbacks: callbacks,
-        ),
+        if (!isGuest)
+          CommentActionsMenu(
+            isOwner: comment.isOwner,
+            isReply: isReply,
+            commentId: comment.id,
+            callbacks: callbacks,
+          ),
       ],
     );
   }
@@ -330,7 +332,7 @@ class _LikeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return CustomClick(
       onTap: onTap,
       child: Row(
         children: [
@@ -360,7 +362,7 @@ class _ReplyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return CustomClick(
       onTap: onTap,
       child: Text(
         context.tr(AppStrings.reply),
