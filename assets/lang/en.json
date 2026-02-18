@@ -1311,6 +1311,7 @@
   "select_faith_title": "Select Faith Activities",
   "faith_description": "Choose the faith activities you practice",
   "marriage_tab":"Marriage",
+  "logout_confirmation":"Are you sure you want to logout?",
   "interactions_tab":"Interactions"
 
 }

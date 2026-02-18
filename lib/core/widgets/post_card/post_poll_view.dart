@@ -35,7 +35,30 @@ class PostPollView extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: context.responsiveHeight(10)),
       child: GestureDetector(
-        onTap: () => onVote?.call(choice.choice),
+        onTap: () {
+          if (isGuest) {
+            CustomshowDialogWithImage(
+              context,
+              title: context.tr('joinUs'),
+              supTitle: context.tr("guest_login_first"),
+              icon: Icons.lock_person_outlined,
+              iconColor: AppColors.kprimaryColor,
+              bottonText: context.tr("login"),
+              showCancelButton: true,
+              cancelText: context.tr('skip'),
+              onPressed: () {
+                CachNetwork.removeData(key: ktoken);
+                context.pushNamedAndRemoveUntil(
+                  AppRouter.kRegisrationView,
+                  predicate: (_) => false,
+                );
+              },
+              onCancel: () {},
+            );
+            return;
+          }
+          onVote?.call(choice.choice);
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           height: context.responsiveHeight(48),
