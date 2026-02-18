@@ -290,18 +290,20 @@ class _ImageViewerViewState extends State<ImageViewerView>
             if (!_showOverlaysNotifier.value) {
               _showOverlaysNotifier.value = true;
             }
-            FlyAnimation.flyWidget(
-              context: context,
-              startOffset: tapPosition,
-              endKey: _reactionDestinationKey,
-              child: _buildFlyingHeart(),
-              onComplete: () {
-                widget.callbacks.onReactionChanged?.call(
-                  widget.postId,
-                  ReactionType.love,
-                );
-              },
-            );
+            if (!isGuest) {
+              FlyAnimation.flyWidget(
+                context: context,
+                startOffset: tapPosition,
+                endKey: _reactionDestinationKey,
+                child: _buildFlyingHeart(),
+                onComplete: () {
+                  widget.callbacks.onReactionChanged?.call(
+                    widget.postId,
+                    ReactionType.love,
+                  );
+                },
+              );
+            }
           },
         );
       },
@@ -552,9 +554,19 @@ class _ViewerHeader extends StatelessWidget {
                   _buildDots()
                 else
                   const SizedBox(),
-                IconButton(onPressed: (){
-                  context.pushNamed(AppRouter.kReportReasonsScreen);
-                },icon: Icon(Icons.info_outline, color: Colors.white, size: 26.sp),),
+                if (!isGuest)
+                  IconButton(
+                    onPressed: () {
+                      context.pushNamed(AppRouter.kReportReasonsScreen);
+                    },
+                    icon: Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 26.sp,
+                    ),
+                  )
+                else
+                  SizedBox(width: 24.w),
               ],
             ),
           ),
