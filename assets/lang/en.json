@@ -1304,5 +1304,8 @@
   "main_Image": "Main Image",
   "faith": "Faith",
   "select_faith_title": "Select Faith Activities",
-  "faith_description": "Choose the faith activities you practice"
+  "faith_description": "Choose the faith activities you practice",
+  "marriage_tab":"Marriage",
+  "interactions_tab":"Interactions"
+
 }
