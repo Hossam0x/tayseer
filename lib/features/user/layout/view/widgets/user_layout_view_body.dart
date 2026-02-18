@@ -156,7 +156,18 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
               CachNetwork.removeData(key: ktoken);
             },
           ),
-          const UserProfileView(),
+          GuestLockWidget(
+            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
+            description:
+                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
+            onTap: () {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+              CachNetwork.removeData(key: ktoken);
+            },
+          ),
         ];
 
       case UserTypeEnum.asConsultant:
