@@ -1,4 +1,7 @@
 {
+  "joinUs": "Join US",
+  "guest_login_first": "You must login first to use this feature.",
+  "login": "Login",
   "welcome_text": "Perhaps the love that Allah has written for you... begins here.",
   "login_email": "Login with Email",
   "login_google": "Login with Google",

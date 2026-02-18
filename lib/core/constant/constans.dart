@@ -21,3 +21,4 @@ bool get isUserAnonymous =>
     CachNetwork.getBoolData(key: kIsUserAnonymous) ?? false;
 bool get isUser => selectedUserType == UserTypeEnum.user;
 bool get isAdvisor => selectedUserType == UserTypeEnum.asConsultant;
+bool get isGuest => selectedUserType == UserTypeEnum.guest;

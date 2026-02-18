@@ -1,4 +1,5 @@
 // lib/core/widgets/user_info_header.dart
+import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 // import your styles and assets...
@@ -93,7 +94,7 @@ class UserInfoHeader extends StatelessWidget {
           ),
         ),
         if (onMoreTap != null)
-          InkWell(
+          CustomClick(
             onTap: onMoreTap,
             child: Container(
               width: 40.w,
