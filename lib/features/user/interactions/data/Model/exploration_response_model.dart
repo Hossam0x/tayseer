@@ -1,5 +1,5 @@
 import 'package:tayseer/core/models/pagination_model.dart';
-import 'Iinteraction_usermodel .dart';
+import 'interaction_usermodel .dart';
 
 class ExplorationResponseModel {
   final bool success;
@@ -17,7 +17,7 @@ class ExplorationResponseModel {
 factory ExplorationResponseModel.fromJson(Map<String, dynamic> json) {
   final data = json['data'] as Map<String, dynamic>? ?? {};
   
-  // ✅ مفيش 'users' key - الـ categories موجودة directly في data
+  // ✅ الـ categories الموجودة مباشرة في data
   const categoryMapping = {
     'userIamLikes': 'من ضمن اختياراتك',
     'userIamFavorites': 'من خارج اختياراتك',
@@ -34,10 +34,16 @@ factory ExplorationResponseModel.fromJson(Map<String, dynamic> json) {
     }
   });
 
+  // ✅ الـ recentlyJoined موجود في data['users']['recentlyJoined']
+  final usersMap = data['users'] as Map<String, dynamic>? ?? {};
+  if (usersMap.containsKey('recentlyJoined')) {
+    categoriesMap['منضم حديثاً'] = CategoryData.fromJson(usersMap['recentlyJoined']);
+  }
+
   return ExplorationResponseModel(
     success: json['success'] ?? false,
     message: json['message'] ?? '',
-    answerCompleted: data['answerCompleted'] ?? false,
+    answerCompleted: data['answerCompleted'] ?? true, // ✅ default true مش false
     categories: categoriesMap,
   );
 }

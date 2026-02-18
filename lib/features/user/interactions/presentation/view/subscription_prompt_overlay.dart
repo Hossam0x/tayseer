@@ -81,7 +81,7 @@ class SubscriptionPromptOverlay extends StatelessWidget {
             SizedBox(width: 20.w),
             Text(
               label,
-              style: Styles.textStyle22SemiBold.copyWith(
+              style: Styles.textStyle20SemiBold.copyWith(
                 fontSize: 20.sp,
                 color: Colors.white,
                 fontWeight: FontWeight.w600,

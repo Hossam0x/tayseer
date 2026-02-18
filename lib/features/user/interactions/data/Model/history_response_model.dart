@@ -1,4 +1,4 @@
-import 'Iinteraction_usermodel .dart';
+import 'interaction_usermodel .dart';
 
 class HistoryResponseModel {
   final bool success;

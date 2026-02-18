@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
@@ -163,84 +164,270 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
         getIt<MarriageProfileRepository>(),
         initialUserProfile: widget.userProfile,
       )..loadProfile(),
-      child: Scaffold(
-        body: SafeArea(
-          child: BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
-            listener: (context, state) {
-              if (state.state == CubitStates.success &&
-                  state.successMessage != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  CustomSnackBar(
-                    context,
-                    text: state.successMessage!,
-                    isSuccess: true,
-                  ),
-                );
-              }
-              if (state.state == CubitStates.failure &&
-                  state.errorMessage != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  CustomSnackBar(
-                    context,
-                    text: state.errorMessage!,
-                    isError: true,
-                  ),
-                );
-              }
-            },
-            builder: (context, state) {
-              final cubit = context.read<MarriageProfileCubit>();
+      // ✅ استخدم builder عشان تاخد context جديد يشوف الـ provider
+      child: Builder(
+        // ✅ Builder عادي بدل builder parameter
+        builder: (context) => WillPopScope(
+          onWillPop: () async {
+            // ✅ اشتغل لو المستخدم زار Edit tab في أي وقت (مش لازم يكون فيه دلوقتي)
+            final cubit = context.read<MarriageProfileCubit>();
+            final state = cubit.state;
 
-              if (state.isLoading && state.profile == null) {
-                return Column(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24.h,
-                        vertical: 10.h,
+            final hasSingleImage =
+                (state.profile?.userMedia?.singleImage != null &&
+                    state.profile!.userMedia!.singleImage!.isNotEmpty) ||
+                state.pendingSingleImage != null;
+
+            final hasUnsavedChanges =
+                state.pendingSingleImage != null ||
+                state.deletedSingleImageUrl != null ||
+                state.pendingImages.isNotEmpty ||
+                state.deletedImageUrls.isNotEmpty ||
+                state.pendingVideo != null ||
+                state.pendingDeleteVideo ||
+                state.pendingAudio != null ||
+                state.pendingDeleteAudio;
+
+            // ✅ شيل الشرط _selectedTabIndex == 0
+            // لو فيه تغييرات، اتحقق منها بغض النظر عن الـ tab الحالي
+            if (hasUnsavedChanges || !hasSingleImage) {
+              if (state.profile == null) return true;
+
+              if (!hasSingleImage) {
+                _showMustAddImageDialog(context, cubit, state.profile!);
+                return false;
+              }
+              if (hasUnsavedChanges) {
+                _showUnsavedChangesDialog(context, cubit);
+                return false;
+              }
+            }
+
+            return true;
+          },
+          child: Scaffold(
+            body: SafeArea(
+              child: BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
+                listener: (context, state) {
+                  if (state.state == CubitStates.success &&
+                      state.successMessage != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      CustomSnackBar(
+                        context,
+                        text: state.successMessage!,
+                        isSuccess: true,
                       ),
-                      child: _buildFixedHeader(context),
-                    ),
-                    const Expanded(child: MarriageProfileSkeleton()),
-                  ],
-                );
-              }
+                    );
+                  }
+                  if (state.state == CubitStates.failure &&
+                      state.errorMessage != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      CustomSnackBar(
+                        context,
+                        text: state.errorMessage!,
+                        isError: true,
+                      ),
+                    );
+                  }
+                },
+                builder: (context, state) {
+                  final cubit = context.read<MarriageProfileCubit>();
 
-              if (state.state == CubitStates.failure && state.profile == null) {
-                return _buildError(context, state.errorMessage);
-              }
-
-              final profile = state.profile;
-              if (profile == null) {
-                return Center(child: Text(context.tr("data_load_error")));
-              }
-
-              return Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24.h,
-                      vertical: 10.h,
-                    ),
-                    child: _buildFixedHeader(context),
-                  ),
-                  Expanded(
-                    child: _selectedTabIndex == 1
-                        ? _buildViewContent(profile)
-                        : MarriageProfileEditView(
-                            profile: profile,
-                            state: state,
-                            cubit: cubit,
-                            maxImages: _maxImages,
-                            selectedTabIndex: _selectedTabIndex,
-                            scrollToSection: _scrollToSection,
+                  if (state.isLoading && state.profile == null) {
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24.h,
+                            vertical: 10.h,
                           ),
-                  ),
-                ],
-              );
-            },
+                          child: _buildFixedHeader(context),
+                        ),
+                        const Expanded(child: MarriageProfileSkeleton()),
+                      ],
+                    );
+                  }
+
+                  if (state.state == CubitStates.failure &&
+                      state.profile == null) {
+                    return _buildError(context, state.errorMessage);
+                  }
+
+                  final profile = state.profile;
+                  if (profile == null) {
+                    return Center(child: Text(context.tr("data_load_error")));
+                  }
+
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24.h,
+                          vertical: 10.h,
+                        ),
+                        child: _buildFixedHeader(context),
+                      ),
+                      Expanded(
+                        child: _selectedTabIndex == 1
+                            ? _buildViewContent(profile)
+                            : MarriageProfileEditView(
+                                profile: profile,
+                                state: state,
+                                cubit: cubit,
+                                maxImages: _maxImages,
+                                selectedTabIndex: _selectedTabIndex,
+                                scrollToSection: _scrollToSection,
+                              ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  // في MarriagefilePage
+  void _showMustAddImageDialog(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    MarriageUserProfileModel profile,
+  ) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr('add_main_image_required'),
+      supTitle: context.tr('must_add_main_image_before_exit'),
+      icon: Icons.image_outlined,
+      iconColor: Colors.orange,
+      iconBackgroundColor: Colors.orange.withOpacity(0.1),
+      bottonText: context.tr('add_image'),
+      showCancelButton: false,
+      onPressed: () async {
+        // ✅ اضطر تعمل setState لو الـ tab مش على edit
+        setState(() => _selectedTabIndex = 0);
+      },
+    );
+  }
+
+  void _showUnsavedChangesDialog(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 36.w,
+              ),
+            ),
+            Gap(12.h),
+            Text(
+              context.tr('unsaved_changes'),
+              textAlign: TextAlign.center,
+              style: Styles.textStyle18Meduim,
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              context.tr('unsaved_changes_message'),
+              textAlign: TextAlign.center,
+              style: Styles.textStyle16.copyWith(
+                color: AppColors.kscandryTextColor,
+                height: 1.5,
+              ),
+            ),
+            Gap(12.h),
+            // _buildPendingChangesSummary(context),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actionsPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                cubit.discardAllPending();
+                Navigator.pop(context);
+              },
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.red.shade300),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+              ),
+              child: Text(
+                context.tr('discard_and_exit'),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                cubit.saveProfile();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary300,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+              ),
+              child: Text(
+                context.tr('save_and_exit'),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 4.h),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                context.tr('cancel'),
+                style: TextStyle(
+                  color: AppColors.kscandryTextColor,
+                  fontSize: 15.sp,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -660,7 +847,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           'label': _translateValue(profile.aboutMe!.socialStatus),
         },
       if (profile.aboutMe?.age != null)
-        {'icon': AssetsData.kdrawingIcon, 'label':"${context.tr('age')} ${ profile.aboutMe?.age}"},
+        {
+          'icon': AssetsData.kdrawingIcon,
+          'label': "${context.tr('age')} ${profile.aboutMe?.age}",
+        },
       if (profile.aboutMe?.skinColor != null)
         {
           'icon': AssetsData.kdrawingIcon,

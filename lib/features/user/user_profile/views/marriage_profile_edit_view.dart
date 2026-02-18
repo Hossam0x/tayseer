@@ -300,74 +300,47 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     }
     return translated;
   }
-bool get _hasUnsavedChanges {
-    final s = widget.state;
-    return s.pendingSingleImage != null ||
-        s.deletedSingleImageUrl != null ||
-        s.pendingImages.isNotEmpty ||
-        s.deletedImageUrls.isNotEmpty ||
-        s.pendingVideo != null ||
-        s.pendingDeleteVideo ||
-        s.pendingAudio != null ||
-        s.pendingDeleteAudio;}
+
   @override
   Widget build(BuildContext context) {
     // ✅ تحقق من الصورة الرئيسية - السيرفر أو pending
-    final hasSingleImage =
-        (widget.profile.userMedia?.singleImage != null &&
-            widget.profile.userMedia!.singleImage!.isNotEmpty) ||
-        widget.state.pendingSingleImage != null;
 
-    return WillPopScope(
-     onWillPop: () async {
-        // ⭐ Priority 1: لازم تضيف صورة رئيسية أولاً
-        if (!hasSingleImage) {
-          _showMustAddImageDialog(context);
-          return false;
-        }
-        // ⭐ Priority 2: لو فيه تغييرات pending، اسأل المستخدم
-        if (_hasUnsavedChanges) {
-          _showUnsavedChangesDialog(context);
-          return false;
-        }
-        return true;
-      },
-      child: CustomScrollView(
-        controller: _scrollController,
-        cacheExtent: 3000,
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                Gap(24.h),
-                _buildPersonalInfoSection(context, widget.cubit, widget.profile),
-                Gap(20.h),
-                Container(
-                  key: _imagesKey,
-                  child: _buildImagesSection(context, widget.cubit, widget.profile),
-                ),
-                Gap(24.h),
-                _buildProfessionalInfoSection(context, widget.cubit, widget.profile),
-                Gap(24.h),
-                Container(key: _videoKey, child: _buildVideoSection(context)),
-                Gap(24.h),
-                Container(key: _audioKey, child: _buildAudioSection(context)),
-                Gap(24.h),
-                _buildFamilyAndPreferencesSection(context, widget.cubit, widget.profile),
-                Gap(24.h),
-                _buildGoalsSection(context, widget.cubit, widget.profile),
-                Gap(24.h),
-                _buildKnowMeMoreSection(context, widget.cubit, widget.profile),
-                Gap(32.h),
-                _buildSaveButton(context, widget.cubit, widget.state),
-                Gap(100.h),
-              ]),
-            ),
+
+    return CustomScrollView(
+      controller: _scrollController,
+      cacheExtent: 3000,
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              Gap(24.h),
+              _buildPersonalInfoSection(context, widget.cubit, widget.profile),
+              Gap(20.h),
+              Container(
+                key: _imagesKey,
+                child: _buildImagesSection(context, widget.cubit, widget.profile),
+              ),
+              Gap(24.h),
+              _buildProfessionalInfoSection(context, widget.cubit, widget.profile),
+              Gap(24.h),
+              Container(key: _videoKey, child: _buildVideoSection(context)),
+              Gap(24.h),
+              Container(key: _audioKey, child: _buildAudioSection(context)),
+              Gap(24.h),
+              _buildFamilyAndPreferencesSection(context, widget.cubit, widget.profile),
+              Gap(24.h),
+              _buildGoalsSection(context, widget.cubit, widget.profile),
+              Gap(24.h),
+              _buildKnowMeMoreSection(context, widget.cubit, widget.profile),
+              Gap(32.h),
+              _buildSaveButton(context, widget.cubit, widget.state),
+              Gap(100.h),
+            ]),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

@@ -1,8 +1,9 @@
 
 import 'dart:ui';
 
-import 'package:tayseer/features/user/interactions/data/Model/Iinteraction_usermodel%20.dart';
 import 'package:tayseer/my_import.dart';
+
+import '../../../data/Model/interaction_usermodel .dart';
 
 class RecentlyJoined extends StatelessWidget {
   final InteractionUserModel item;
@@ -105,7 +106,7 @@ class RecentlyJoined extends StatelessWidget {
                     SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
                     if (item.country.isNotEmpty)...[  _buildBadge(
                         text: item.country,
-                        icon: AssetsData.EgyFlagIcon,
+                        icon:"",
                         isCompact: isCompact,
                       ),]else...[
                         _buildBadge(

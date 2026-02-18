@@ -1,7 +1,7 @@
 import 'dart:ui';
+import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/my_import.dart';
 
-import '../../../data/Model/Iinteraction_usermodel .dart';
 import '../../Interactions_cubit/interactions_cubit.dart';
 import '../../Interactions_cubit/interactions_state.dart';
 

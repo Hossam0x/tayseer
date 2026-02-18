@@ -2,10 +2,10 @@
 
 import 'dart:ui';
 
+import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/status_ribbon_widget.dart';
 
 import '../../../../../../my_import.dart';
-import '../../../data/Model/Iinteraction_usermodel .dart';
 import '../../Interactions_cubit/interactions_cubit.dart';
 
 class InteractionProfileCard extends StatefulWidget {
@@ -223,7 +223,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                               Flexible(
                                 child: _buildBadge(
                                   text: widget.item.country,
-                                  icon: AssetsData.EgyFlagIcon,
+                                  icon: "",
                                 ),
                               ),
                             ],

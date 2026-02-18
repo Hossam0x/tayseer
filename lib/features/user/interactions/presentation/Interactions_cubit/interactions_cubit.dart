@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
-import '../../data/Model/Iinteraction_usermodel .dart';
+import '../../data/Model/interaction_usermodel .dart';
 import '../../data/Model/history_response_model.dart';
 import 'interactions_state.dart';
 

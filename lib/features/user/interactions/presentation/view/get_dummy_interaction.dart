@@ -1,4 +1,4 @@
-import '../../data/Model/Iinteraction_usermodel .dart';
+import '../../data/Model/interaction_usermodel .dart';
 
 /// ═══════════════════════════════════════════════════════════════════
 /// Dummy Data Generator for InteractionUserModel
@@ -28,7 +28,7 @@ InteractionUserModel getDummyInteractionUser() {
 /// @param count: Number of dummy items to generate (default: 6)
 /// @param isVerified: All users verified status (default: true)
 List<InteractionUserModel> getDummyInteractionUsers({
-  int count = 6,
+  int count = 7,
   bool isVerified = true,
 }) {
   return List.generate(count, (index) {
@@ -38,14 +38,13 @@ List<InteractionUserModel> getDummyInteractionUsers({
       age: 25 + (index % 10),
       image: _getDummyImage(index),
       country: '',
-
       day: _getDummyDay(index),
       job: "",
-      isverified: isVerified, // ✅ All verified
-      isFavorite: index != 0 && index % 3 == 0,
-      likedHim: index != 0 && index % 5 == 0,
-      likedMe: index != 0 && index % 6 == 0,
-      sentCompliment: index != 0 && index % 7 == 0,
+      isverified: isVerified,
+      isFavorite: false, // ✅ كلهم false
+      likedHim: false, // ✅ كلهم false
+      likedMe: false, // ✅ كلهم false
+      sentCompliment: false,
     );
   });
 }

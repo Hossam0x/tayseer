@@ -3,7 +3,8 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/defa
 import 'package:tayseer/features/user/interactions/presentation/view/widget/greeting_interaction_card.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/recently_joined.dart';
 import 'package:tayseer/my_import.dart';
-import '../../../data/Model/Iinteraction_usermodel .dart';
+
+import '../../../data/Model/interaction_usermodel .dart';
 
 class CategoryDetailPage extends StatelessWidget {
   final String title;

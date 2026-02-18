@@ -9,7 +9,7 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/gree
 import 'package:tayseer/features/user/interactions/presentation/view/widget/recently_joined.dart';
 import 'package:tayseer/my_import.dart';
 
-import '../../../data/Model/Iinteraction_usermodel .dart';
+import '../../../data/Model/interaction_usermodel .dart';
 
 class Exploration extends StatefulWidget {
   const Exploration({super.key, required this.mainScrollController});
