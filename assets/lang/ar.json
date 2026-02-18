@@ -1322,5 +1322,6 @@
   "interactions_tab": "التفاعلات",
   "exit_app": "خروج",
   "exit_app_title": "هل تريد الخروج؟",
+  "logout_confirmation":"هل أنت متأكد من أنك تريد الخروج من التطبيق؟",
   "exit_app_message": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟"
 }

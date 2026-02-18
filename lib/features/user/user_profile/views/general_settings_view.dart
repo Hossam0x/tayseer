@@ -37,6 +37,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
             text: context.tr(state.actionMessage ?? ""),
             isSuccess: state.isActionSuccess ?? false,
             isError: !(state.isActionSuccess ?? true),
+            duration: const Duration(milliseconds: 1000),
           );
         }
       },
