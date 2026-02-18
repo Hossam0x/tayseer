@@ -1,4 +1,3 @@
-
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/marriage_profile_repository.dart';
@@ -24,11 +23,9 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       ),
     );
 
-
     final result = await _repository.getMarriageProfile();
     result.fold(
       (failure) {
-      
         emit(
           state.copyWith(
             state: CubitStates.failure,
@@ -41,7 +38,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         final profileWithProgress = _calculateProgressWithMedia(
           marriageProfile,
         );
-      
+
         emit(
           state.copyWith(
             state: CubitStates.success,
@@ -53,11 +50,21 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     );
   }
 
+  Future<void> autoSaveFields() async {
+    if (state.profile == null) return;
+
+    try {
+      await _repository.updateMarriageProfile(state.profile!);
+      debugPrint('✅ [AUTO-SAVE] Fields saved');
+    } catch (e) {
+      debugPrint('⚠️ [AUTO-SAVE] Error: $e');
+    }
+  }
+
   // ════════════════════════════════════════════════════════════════
   // ✅ PENDING MEDIA - Single Image
   // ════════════════════════════════════════════════════════════════
   void addPendingSingleImage(File file) {
-  
     final existingUrl = state.profile?.userMedia?.singleImage;
     emit(
       state.copyWith(
@@ -70,7 +77,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
 
   void markDeleteSingleImage() {
     final url = state.profile?.userMedia?.singleImage;
-  
 
     // حدّث الـ profile محلياً عشان يختفي من الشاشة فوراً
     MarriageUserProfileModel? updatedProfile;
@@ -90,8 +96,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   }
 
   void discardAllPending() {
-  
-
     // ✅ نرجع الـ profile لحالته الأصلية (reload من السيرفر)
     // الأسهل: نعمل emit بـ clearAllPending: true
     emit(state.copyWith(clearAllPending: true));
@@ -107,17 +111,15 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     final total = serverCount + state.pendingImages.length;
 
     if (total >= 4) {
-    
       return;
     }
 
     final updated = [...state.pendingImages, file];
-  
+
     emit(state.copyWith(pendingImages: updated));
   }
 
   void markDeleteImage(String imageUrl) {
-  
     final updatedDeleted = [...state.deletedImageUrls, imageUrl];
 
     // حدّث الـ profile محلياً عشان الصورة تختفي من الشاشة فوراً
@@ -144,7 +146,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     final updated = List<File>.from(state.pendingImages);
     if (index >= 0 && index < updated.length) {
       updated.removeAt(index);
-    
+
       emit(state.copyWith(pendingImages: updated));
     }
   }
@@ -153,7 +155,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   // ✅ PENDING MEDIA - Video
   // ════════════════════════════════════════════════════════════════
   void addPendingVideo(File file) {
-  
     final existingVideo = state.profile?.userMedia?.video;
     emit(
       state.copyWith(
@@ -165,7 +166,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   }
 
   void markDeleteVideo() {
-
     MarriageUserProfileModel? updatedProfile;
     if (state.profile != null) {
       updatedProfile = state.profile!.copyWith(
@@ -186,7 +186,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   // ✅ PENDING MEDIA - Audio
   // ════════════════════════════════════════════════════════════════
   void addPendingAudio(File file) {
-
     final existingAudio = state.profile?.userMedia?.audio;
     emit(
       state.copyWith(
@@ -198,8 +197,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   }
 
   void markDeleteAudio() {
-  
-
     MarriageUserProfileModel? updatedProfile;
     if (state.profile != null) {
       updatedProfile = state.profile!.copyWith(
@@ -231,7 +228,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     );
 
     emit(state.copyWith(profile: updatedProfile));
-  
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -247,24 +243,21 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         clearMessages: true,
       ),
     );
-      try {
+    try {
       // ════════════════════
       // Step 1: Deletions
       // ════════════════════
       if (state.deletedSingleImageUrl != null) {
-        
         await _repository.deleteSingleImage(state.deletedSingleImageUrl!);
       }
 
       for (final url in state.deletedImageUrls) {
-        
         await _repository.deleteMarriageImage(url);
       }
 
       if (state.pendingDeleteVideo) {
         final videoUrl = state.profile?.userMedia?.video;
         if (videoUrl != null && videoUrl.isNotEmpty) {
-        
           await _repository.deleteVideo(videoUrl);
         }
       }
@@ -272,7 +265,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       if (state.pendingDeleteAudio) {
         final audioUrl = state.profile?.userMedia?.audio;
         if (audioUrl != null && audioUrl.isNotEmpty) {
-        
           await _repository.deleteAudio(audioUrl);
         }
       }
@@ -281,34 +273,29 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       // Step 2: Uploads
       // ════════════════════
       if (state.pendingSingleImage != null) {
-        
         await _repository.uploadSingleImage(state.pendingSingleImage!);
       }
 
       for (int i = 0; i < state.pendingImages.length; i++) {
-      
         await _repository.uploadMarriageImage(state.pendingImages[i]);
       }
 
       if (state.pendingVideo != null) {
-      
         await _repository.uploadVideoAndAudio(videoFile: state.pendingVideo!);
       }
 
       if (state.pendingAudio != null) {
-      
         await _repository.uploadVideoAndAudio(audioFile: state.pendingAudio!);
       }
 
       // ════════════════════
       // Step 3: Save Profile
       // ════════════════════
-    
+
       final result = await _repository.updateMarriageProfile(state.profile!);
 
       result.fold(
         (failure) {
-        
           emit(
             state.copyWith(
               state: CubitStates.failure,
@@ -318,7 +305,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
           );
         },
         (_) async {
-        
           // ✅ Clear all pending
           emit(state.copyWith(clearAllPending: true, isUpdating: false));
           // ✅ Reload لجيب الـ URLs الجديدة من السيرفر
@@ -327,7 +313,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         },
       );
     } catch (e) {
-    
       emit(
         state.copyWith(
           state: CubitStates.failure,
@@ -367,7 +352,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     if (profile.isVerified ?? false) totalProgress += 5;
 
     final finalProgress = totalProgress > 100 ? 100 : totalProgress;
-  
+
     return profile.copyWith(answerCompletedPercentage: finalProgress);
   }
 
@@ -376,7 +361,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   // ════════════════════════════════════════════════════════════════
   void updateField(String fieldKey, dynamic value) {
     if (state.profile == null) return;
-  
 
     // ✅ عند تغيير الدولة، حدّث الجنسية تلقائياً
     if (fieldKey == 'country') {
@@ -521,7 +505,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     }
 
     emit(state.copyWith(profile: updatedProfile));
-  
   }
 
   // ════════════════════════════════════════════════════════════════

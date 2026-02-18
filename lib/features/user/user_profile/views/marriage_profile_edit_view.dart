@@ -1641,6 +1641,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             }
             debugPrint('═══════════════════════════════════════════');
             cubit.updateField(fieldKey, value);
+             cubit.autoSaveFields();
           },
         ),
       ),
@@ -1669,6 +1670,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         final newBio = controller.text.trim();
         if (newBio.isNotEmpty) {
           cubit.updateField('bio', newBio);
+           cubit.autoSaveFields();
           Navigator.pop(context);
         }
       },
