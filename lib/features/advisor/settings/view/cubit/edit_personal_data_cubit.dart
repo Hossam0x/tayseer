@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -268,6 +269,84 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   void clearSuccess() {
     if (state.successMessage != null) {
       emit(state.copyWith(successMessage: null));
+    }
+  }
+
+  ///  🧠✨ Gemini AI Content Generation for Bio
+  Future<void> enhanceTextWithGemini(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final currentText = controller.text;
+
+    if (currentText.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('please_write_text_first'),
+          isError: true,
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(isAiState: CubitStates.loading));
+
+    const apiKey = 'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg';
+
+    try {
+      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
+
+      final prompt =
+          '''
+أنت كاتب محتوى متخصص في كتابة السِّيَر الذاتية (Bio) للمستشارين والمرشدين الأسريين.
+
+المطلوب:
+- اكتب بايو احترافي لمستشار/مرشد في العلاقات الأسرية بناءً على النص اللي هيكتبه المستخدم.
+- البايو يكون مناسب لعرضه في تطبيق استشارات أسرية.
+
+قواعد مهمة:
+1. اكتشف لغة النص المُدخل واكتب البايو بنفس اللغة — لا تترجم أبدًا.
+2. اجعل البايو احترافيًا، مطمئنًا، ويعكس الثقة والخبرة.
+3. أبرز التخصص والخبرة في مجالات الإرشاد الأسري مثل:
+   - الإرشاد الزواجي (الخلافات، التواصل، الثقة، الغيرة، إدارة المال، الخيانة)
+   - الإرشاد قبل الزواج (اختيار الشريك، التوقعات، التوافق، الجاهزية النفسية والمالية)
+   - الإرشاد التربوي والوالدي (أساليب التربية، العناد، الإدمان الرقمي)
+   - مشكلات الأطفال والمراهقين
+   - العلاقات العائلية الممتدة
+   - إدارة الأزمات الأسرية
+   - قضايا الطلاق وما بعده
+   - الصحة النفسية داخل الأسرة
+4. لا تذكر كل التخصصات — ركّز فقط على ما يتناسب مع كلام المستخدم.
+5. اجعل الأسلوب دافئًا وإنسانيًا، يشعر القارئ بالأمان والراحة.
+6. أضف إيموجي مناسبة باعتدال.
+7. اجعل البايو مختصرًا (3-5 أسطر كحد أقصى).
+8. أرجع البايو فقط — بدون أي شرح أو مقدمات أو تعليقات.
+
+النص المُدخل من المستخدم: "$currentText"
+''';
+
+      final content = [Content.text(prompt)];
+      final response = await model.generateContent(content);
+
+      if (response.text != null) {
+        controller.text = response.text!;
+        updateBio(response.text!);
+        emit(state.copyWith(isAiState: CubitStates.success));
+        emit(state.copyWith(isAiState: CubitStates.initial));
+      }
+    } catch (e) {
+      debugPrint('Gemini AI error: $e');
+      emit(state.copyWith(isAiState: CubitStates.failure));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'AI Error: ${e.toString()}',
+          isError: true,
+        ),
+      );
+      emit(state.copyWith(isAiState: CubitStates.initial));
     }
   }
 }
