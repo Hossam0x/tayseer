@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:tayseer/core/utils/animation/fly_animation.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/my_import.dart';
 
 /// ReactionLikeButton - Handles like/reaction functionality with animations
@@ -157,7 +158,7 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
   Widget build(BuildContext context) {
     return CompositedTransformTarget(
       link: _layerLink,
-      child: GestureDetector(
+      child: CustomClick(
         onTap: _onTap,
         onLongPress: _showReactionOverlay,
         child: Container(
