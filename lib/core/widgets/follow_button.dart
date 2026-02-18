@@ -23,7 +23,7 @@ class FollowButton extends StatelessWidget {
             },
             child: Text(
               following ? context.tr("following") : context.tr("follow"),
-              style: Styles.textStyle14.copyWith(
+              style: Styles.textStyle18.copyWith(
                 color: Colors.blueAccent,
                 fontWeight: FontWeight.w600,
               ),
