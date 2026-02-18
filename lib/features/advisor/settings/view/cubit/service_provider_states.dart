@@ -149,6 +149,18 @@ class AppointmentsState extends Equatable {
     );
   }
 
+  bool get isValid {
+    for (final day in weeklyAvailability) {
+      if (day.isEnabled) {
+        if (day.timeSlots.isEmpty) return false;
+        for (final slot in day.timeSlots) {
+          if (slot.start == '00:00' || slot.end == '00:00') return false;
+        }
+      }
+    }
+    return true;
+  }
+
   @override
   List<Object?> get props => [
     state,
