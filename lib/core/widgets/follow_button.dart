@@ -1,4 +1,5 @@
 import 'package:tayseer/core/widgets/cubit/follow_cubit.dart';
+import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/my_import.dart';
 
 class FollowButton extends StatelessWidget {
@@ -13,7 +14,7 @@ class FollowButton extends StatelessWidget {
       create: (context) => FollowCubit(isFollowing),
       child: BlocBuilder<FollowCubit, bool>(
         builder: (context, following) {
-          return GestureDetector(
+          return CustomClick(
             onTap: () {
               if (onTap != null) {
                 onTap!();

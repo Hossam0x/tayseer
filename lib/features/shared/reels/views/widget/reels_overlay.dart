@@ -106,17 +106,18 @@ class ReelsOverlay extends StatelessWidget {
                   onTap: () => context.pop(),
                   child: Icon(Icons.close, color: Colors.white, size: 28.sp),
                 ),
-                IconButton(
-                  onPressed: () {
-                    context.pushNamed(AppRouter.kReportReasonsScreen);
-                  },
+                if (!isGuest)
+                  IconButton(
+                    onPressed: () {
+                      context.pushNamed(AppRouter.kReportReasonsScreen);
+                    },
 
-                  icon: Icon(
-                    Icons.info_outline,
-                    color: Colors.white,
-                    size: 26.sp,
+                    icon: Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 26.sp,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
