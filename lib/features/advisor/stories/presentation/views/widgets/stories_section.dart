@@ -101,7 +101,7 @@ class _StoriesListViewState extends State<_StoriesListView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isUser) ...[
+          if (isAdvisor) ...[
             Padding(
               padding: EdgeInsetsDirectional.only(
                 end: context.responsiveWidth(14),
