@@ -121,7 +121,7 @@ class _FollowingViewState extends State<FollowingView> {
           child: Column(
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                padding: EdgeInsetsDirectional.only(start: 20.w),
                 decoration: BoxDecoration(
                   color: AppColors.whiteCardBack,
                   borderRadius: BorderRadius.circular(12.r),
@@ -156,13 +156,13 @@ class _FollowingViewState extends State<FollowingView> {
                           ),
                           border: InputBorder.none,
                           suffixIcon: state.searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: Icon(
+                              ? GestureDetector(
+                                  onTap: _clearSearch,
+                                  child: Icon(
                                     Icons.clear,
                                     size: 18.w,
                                     color: Colors.grey,
                                   ),
-                                  onPressed: _clearSearch,
                                 )
                               : null,
                         ),

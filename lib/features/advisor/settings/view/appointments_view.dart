@@ -268,10 +268,12 @@ class AppointmentsView extends StatelessWidget {
           : state.hasChanges
           ? context.tr('save_changes')
           : context.tr('no_changes'),
-      onPressed: state.isSaving || !state.hasChanges
+      onPressed: state.isSaving || !state.hasChanges || !state.isValid
           ? null
           : () => cubit.saveChanges(),
-      backGroundcolor: state.hasChanges ? null : AppColors.inactiveColor,
+      backGroundcolor: state.hasChanges && state.isValid
+          ? null
+          : AppColors.inactiveColor,
     );
   }
 }

@@ -281,25 +281,43 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
     final originalAvailability =
         state.originalServiceProvider!.weeklyAvailability;
 
+    if (currentAvailability.length != originalAvailability.length) return true;
+
     for (int i = 0; i < currentAvailability.length; i++) {
-      final current = currentAvailability[i];
-      final original = originalAvailability[i];
+      final current = _normalizeDay(currentAvailability[i]);
+      final original = _normalizeDay(originalAvailability[i]);
 
-      if (current.isEnabled != original.isEnabled) return true;
-      if (current.timeSlots.length != original.timeSlots.length) return true;
-
-      for (int j = 0; j < current.timeSlots.length; j++) {
-        final currentSlot = current.timeSlots[j];
-        final originalSlot = original.timeSlots[j];
-
-        if (currentSlot.start != originalSlot.start ||
-            currentSlot.end != originalSlot.end) {
-          return true;
-        }
-      }
+      if (current != original) return true;
     }
 
     return false;
+  }
+
+  WeeklyAvailabilityModel _normalizeDay(WeeklyAvailabilityModel day) {
+    bool isActuallyEnabled = day.isEnabled;
+    if (isActuallyEnabled) {
+      if (day.timeSlots.isEmpty) {
+        isActuallyEnabled = false;
+      } else {
+        bool hasValidSlot = false;
+        for (final slot in day.timeSlots) {
+          if (slot.start != '00:00' &&
+              slot.start != '' &&
+              slot.end != '00:00' &&
+              slot.end != '') {
+            hasValidSlot = true;
+            break;
+          }
+        }
+        if (!hasValidSlot) isActuallyEnabled = false;
+      }
+    }
+
+    return WeeklyAvailabilityModel(
+      dayOfWeek: day.dayOfWeek,
+      isEnabled: isActuallyEnabled,
+      timeSlots: isActuallyEnabled ? day.timeSlots : [],
+    );
   }
 
   Future<void> saveChanges() async {
@@ -310,10 +328,14 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
     );
 
     final currentProvider = state.serviceProvider;
+    final normalizedAvailability = state.weeklyAvailability
+        .map(_normalizeDay)
+        .toList();
+
     final request = currentProvider != null
         ? ServiceProviderRequest(
             sessionTypes: currentProvider.sessionTypes,
-            weeklyAvailability: state.weeklyAvailability,
+            weeklyAvailability: normalizedAvailability,
             timezone: currentProvider.timezone,
           )
         : ServiceProviderRequest.defaultRequest();

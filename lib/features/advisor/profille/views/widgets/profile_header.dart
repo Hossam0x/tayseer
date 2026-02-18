@@ -153,7 +153,9 @@ class ProfileHeader extends StatelessWidget {
                         final camera = await Permission.camera.request();
 
                         if (context.mounted) {
-                          if (photos.isGranted && camera.isGranted) {
+                          final isPhotosGranted =
+                              photos.isGranted || photos.isLimited;
+                          if (isPhotosGranted && camera.isGranted) {
                             final storiesCubit = context.read<StoriesCubit>();
                             Navigator.push(
                               context,

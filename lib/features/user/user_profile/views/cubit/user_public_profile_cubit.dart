@@ -50,7 +50,10 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
 
   Future<void> _initialize() async {
     if (userId == null) return;
-    await Future.wait([fetchProfile(), fetchPosts()]);
+    await fetchProfile();
+    if (state.profile != null) {
+      await fetchPosts();
+    }
   }
 
   Future<void> fetchProfile() async {
@@ -99,7 +102,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
       final nextPage = state.currentPage + 1;
 
       final result = await _postsRepository.fetchUserPosts(
-        userId: currentUserId,
+        userId: state.profile!.isMe ? currentUserId : state.profile!.id,
         page: nextPage,
       );
 
@@ -140,7 +143,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
       );
 
       final result = await _postsRepository.fetchUserPosts(
-        userId: currentUserId,
+        userId: state.profile!.isMe ? currentUserId : state.profile!.id,
         page: 1,
       );
 
