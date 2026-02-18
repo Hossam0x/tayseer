@@ -4,11 +4,13 @@ import 'package:equatable/equatable.dart';
 class SearchUser extends Equatable {
   final String id;
   final String name;
+  final String? username;
   final String imageUrl;
 
   const SearchUser({
     required this.id,
     required this.name,
+    this.username,
     required this.imageUrl,
   });
 
@@ -16,10 +18,11 @@ class SearchUser extends Equatable {
     return SearchUser(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
+      username: json['username'] ?? json['userName'],
       imageUrl: json['image'] ?? '',
     );
   }
 
   @override
-  List<Object?> get props => [id, name, imageUrl];
+  List<Object?> get props => [id, name, username, imageUrl];
 }

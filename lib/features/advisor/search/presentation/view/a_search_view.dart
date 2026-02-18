@@ -591,7 +591,11 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     final follower = FollowerModel(
       id: user.id,
       name: user.name,
-      username: '',
+      username: user.username != null && user.username!.isNotEmpty
+          ? (user.username!.startsWith('@')
+                ? user.username!
+                : '@${user.username}')
+          : '',
       imageUrl: user.imageUrl,
       isFollowing: false,
       isVerified: false,
@@ -611,7 +615,11 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     final follower = FollowerModel(
       id: advisor.id,
       name: advisor.name,
-      username: '@${advisor.name.replaceAll(' ', '_').toLowerCase()}',
+      username: advisor.username != null && advisor.username!.isNotEmpty
+          ? (advisor.username!.startsWith('@')
+                ? advisor.username!
+                : '@${advisor.username}')
+          : '@${advisor.name.replaceAll(' ', '_').toLowerCase()}',
       imageUrl: advisor.imageUrl,
       isFollowing: advisor.isFollowing,
       isVerified: advisor.isVerified,
