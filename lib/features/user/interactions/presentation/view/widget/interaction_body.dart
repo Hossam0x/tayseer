@@ -3,7 +3,6 @@ import 'package:tayseer/features/user/interactions/presentation/Interactions_cub
 import 'package:tayseer/features/user/interactions/presentation/view/subscription_prompt_overlay.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/exploration_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/history_page.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_FilterChips.dart';
 import 'package:tayseer/my_import.dart';
 
 class InteractionBody extends StatefulWidget {

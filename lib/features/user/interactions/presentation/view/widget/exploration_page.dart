@@ -1,6 +1,4 @@
-import 'dart:ui';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/get_dummy_interaction.dart';
@@ -76,7 +74,7 @@ class ExplorationState extends State<Exploration> {
         }
 
         // ✅ Check if answerCompleted is false
-        if (!state.answerCompleted && kCurrentUserData?.completeData == false) {
+        if (!state.answerCompleted ) {
           return const EmptyExploration();
         }
 

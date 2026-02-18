@@ -306,10 +306,6 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // if (icon != null) ...[
-          //   AppImage(icon, width: 12.w, height: 12.h),
-          //   SizedBox(width: 3.w),
-          // ],
           Flexible(
             child: Text(
               text,

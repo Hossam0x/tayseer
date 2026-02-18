@@ -153,8 +153,7 @@ class MarriageUserProfileModel {
     List<String> parsedHobbies = [];
 
     if (json['hobbies'] != null) {
-      debugPrint('📋 [MODEL] Processing hobbies field...');
-      debugPrint('📋 [MODEL] Raw hobbies: ${json['hobbies']}');
+    
 
       if (json['hobbies'] is String) {
         final hobbiesStr = json['hobbies'] as String;
@@ -171,9 +170,7 @@ class MarriageUserProfileModel {
           if (item is String) {
             // ⭐ إذا العنصر فيه فواصل، فصّله
             if (item.contains(',')) {
-              debugPrint(
-                '  🔄 [MODEL] Splitting comma-separated item: "$item"',
-              );
+        
               final subItems = item
                   .split(',')
                   .map((s) => s.trim())
@@ -187,7 +184,7 @@ class MarriageUserProfileModel {
         }
       }
 
-      debugPrint('✅ [MODEL] Parsed hobbies: $parsedHobbies');
+    
     }
 
     // ⭐⭐⭐ 2. Parse FAITH (separate field) - SEPARATED
@@ -195,7 +192,7 @@ class MarriageUserProfileModel {
     List<String> parsedFaith = [];
 
     if (json['faith'] != null) {
-      debugPrint('🕌 [MODEL] Raw faith from API: ${json['faith']}');
+      
 
       if (json['faith'] is List) {
         // ⭐ لو جاي كـ Array من الـ Backend
@@ -224,7 +221,7 @@ class MarriageUserProfileModel {
         }
       }
 
-      debugPrint('✅ [MODEL] Parsed faith keys: $parsedFaith');
+    
     }
     return MarriageUserProfileModel(
       aboutMe: json['aboutMe'] != null
@@ -639,9 +636,9 @@ class UserMedia {
 }
 
 class YourGoals {
-  final String? intendTravelAbroad; // ✅ اسم الحقل الصحيح
-  final String? familyAcceptance; // ✅ اسم الحقل الصحيح
-  final String? marry;
+  final String? intendTravelAbroad; 
+  final String? familyAcceptance;
+    final String? marry;
   final String? engagement;
 
   YourGoals({
@@ -651,8 +648,6 @@ class YourGoals {
     this.engagement,
   });
 
-  // ⭐⭐⭐ BACKWARD COMPATIBILITY: Getter للـ children
-  // عشان الكود القديم اللي بيستخدم profile.yourGoals?.children
   String? get children => familyAcceptance;
 
   // ⭐⭐⭐ FIX: استقبال الحقول الصحيحة من السيرفر

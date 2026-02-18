@@ -1,6 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════
-// Recently Joined Widget
-// ═══════════════════════════════════════════════════════════════════
+
 import 'dart:ui';
 
 import 'package:tayseer/features/user/interactions/data/Model/Iinteraction_usermodel%20.dart';

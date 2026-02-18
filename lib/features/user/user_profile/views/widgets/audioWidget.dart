@@ -64,7 +64,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         _isInitialized = true;
       });
       
-      debugPrint('✅ Recorder initialized successfully');
+    
     } catch (e) {
       debugPrint('❌ Error initializing recorder: $e');
     }
@@ -122,7 +122,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         sampleRate: 44100,
       );
 
-      debugPrint('✅ Recording started at: $_recordingPath');
+    
 
       setState(() {
         _isRecording = true;
@@ -136,7 +136,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       _startDurationTimer();
       
     } catch (e) {
-      debugPrint('❌ Error starting recording: $e');
+    
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to start recording: $e')),
@@ -168,7 +168,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
         final decibels = event.decibels ?? -160.0;
         
-        debugPrint('📊 Decibels: $decibels');
+        
 
         // ✅ تحويل الـ decibels لـ amplitude (من 0 إلى 1)
         // Decibels عادة من -160 (صامت تماماً) إلى 0 (أقصى صوت)
@@ -198,7 +198,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         }
       },
       onError: (error) {
-        debugPrint('❌ Recorder stream error: $error');
+
       },
       cancelOnError: false,
     );
@@ -232,7 +232,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       setState(() {
         _isPaused = true;
       });
-      debugPrint('⏸️ Recording paused');
+    
     } catch (e) {
       debugPrint('❌ Error pausing recording: $e');
     }
@@ -247,7 +247,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       setState(() {
         _isPaused = false;
       });
-      debugPrint('▶️ Recording resumed');
+      
     } catch (e) {
       debugPrint('❌ Error resuming recording: $e');
     }

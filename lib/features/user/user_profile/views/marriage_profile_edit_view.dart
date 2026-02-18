@@ -1657,13 +1657,10 @@ bool get _hasUnsavedChanges {
           fieldName: fieldKey,
           currentValue: currentValue,
           onValueSelected: (value) {
-            debugPrint('═══════════════════════════════════════════');
-            debugPrint('🔍 [SELECTION] Field: $fieldKey');
-            debugPrint('🔍 [SELECTION] Value received: "$value"');
-            debugPrint('🔍 [SELECTION] Type: ${value.runtimeType}');
+          
             if (fieldKey == 'interests' || fieldKey == 'hobbies') {
               final parts = value.split(', ');
-              debugPrint('🔍 [SELECTION] Split parts: $parts');
+            
               for (var part in parts) {
                 final isKey = part.startsWith('interest_') || part.startsWith('faith_');
                 debugPrint('  ${isKey ? "✅" : "❌"} $part ${isKey ? "(KEY)" : "(VALUE - WRONG!)"}');

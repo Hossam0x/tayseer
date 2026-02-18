@@ -179,10 +179,10 @@ class _VideoSectionState extends State<VideoSection> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('ارفاق فيديو تعريفي', style: Styles.textStyle16),
+                Text(context.tr('video_size_hint'), style: Styles.textStyle16),
                 Gap(4.h),
                 Text(
-                  'الحد الأقصى 50 ميجا',
+                  context.tr('max_video_size'),
                   style: Styles.textStyle12.copyWith(color: Colors.grey),
                 ),
               ],

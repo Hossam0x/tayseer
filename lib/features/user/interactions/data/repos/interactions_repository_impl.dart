@@ -6,7 +6,6 @@ import 'package:tayseer/features/user/interactions/data/Model/history_response_m
 import 'package:tayseer/features/user/interactions/data/Model/exploration_response_model.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 
-import '../Model/Iinteraction_usermodel .dart';
 
 
 class InteractionsRepositoryImpl implements InteractionsRepository {

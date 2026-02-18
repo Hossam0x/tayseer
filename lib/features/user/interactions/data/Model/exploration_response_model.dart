@@ -14,35 +14,33 @@ class ExplorationResponseModel {
     required this.categories,
   });
 
-  factory ExplorationResponseModel.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] as Map<String, dynamic>? ?? {}; // ✅ Get data object
-    final usersData = data['users'] as Map<String, dynamic>? ?? {};
-    
-    final Map<String, CategoryData> categoriesMap = {};
-    
-    // Map API keys to display names
-    const categoryMapping = {
-      'favoritedMe': 'من ضمن اختياراتك',
-      'likesFromOutsideChoices': 'من خارج اختياراتك',
-      'wantToInteract': 'يرغبون في التفاعل معك',
-      "visitedMe": 'الزيارات المحفزة',
-      'recentlyJoined': 'منضم حديثاً',
-      'sentRegards': 'ارسل تحية',
-    };
+factory ExplorationResponseModel.fromJson(Map<String, dynamic> json) {
+  final data = json['data'] as Map<String, dynamic>? ?? {};
+  
+  // ✅ مفيش 'users' key - الـ categories موجودة directly في data
+  const categoryMapping = {
+    'userIamLikes': 'من ضمن اختياراتك',
+    'userIamFavorites': 'من خارج اختياراتك',
+    'userIamEncounteredThem': 'يرغبون في التفاعل معك',
+    'userIamRegards': 'ارسل تحية',
+    'userIamLiked': 'الزيارات المحفزة',
+  };
 
-    categoryMapping.forEach((apiKey, displayName) {
-      if (usersData.containsKey(apiKey)) {
-        categoriesMap[displayName] = CategoryData.fromJson(usersData[apiKey]);
-      }
-    });
+  final Map<String, CategoryData> categoriesMap = {};
+  
+  categoryMapping.forEach((apiKey, displayName) {
+    if (data.containsKey(apiKey)) {
+      categoriesMap[displayName] = CategoryData.fromJson(data[apiKey]);
+    }
+  });
 
-    return ExplorationResponseModel(
-      success: json['success'] ?? false,
-      message: json['message'] ?? '',
-      answerCompleted: data['answerCompleted'] ?? false, // ✅ NEW
-      categories: categoriesMap,
-    );
-  }
+  return ExplorationResponseModel(
+    success: json['success'] ?? false,
+    message: json['message'] ?? '',
+    answerCompleted: data['answerCompleted'] ?? false,
+    categories: categoriesMap,
+  );
+}
 }
 
 class CategoryData {
