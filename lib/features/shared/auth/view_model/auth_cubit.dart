@@ -327,6 +327,7 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     try {
+      await _googleSignIn.signOut();
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
@@ -460,8 +461,9 @@ class AuthCubit extends Cubit<AuthState> {
         accessToken: appleCredential.authorizationCode,
       );
 
-      final userCredential =
-      await _firebaseAuth.signInWithCredential(oauthCredential);
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        oauthCredential,
+      );
 
       final firebaseIdToken = await userCredential.user?.getIdToken();
 
@@ -470,10 +472,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       // ⬅️ Backend login
-      await sendAuthApple(
-        idToken: firebaseIdToken,
-        userType: userType,
-      );
+      await sendAuthApple(idToken: firebaseIdToken, userType: userType);
     } on SignInWithAppleAuthorizationException catch (e) {
       emit(
         state.copyWith(
@@ -522,7 +521,7 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-            (_) {
+        (_) {
           emit(
             state.copyWith(
               authAppleState: CubitStates.success,
@@ -564,7 +563,7 @@ class AuthCubit extends Cubit<AuthState> {
       final response = await _repo.verifyOtp(otp: otp);
 
       response.fold(
-            (failure) {
+        (failure) {
           emit(
             state.copyWith(
               verifyOtpState: CubitStates.failure,
@@ -573,7 +572,7 @@ class AuthCubit extends Cubit<AuthState> {
           );
           emit(state.copyWith(verifyOtpState: CubitStates.initial));
         },
-            (verifyResponse) {
+        (verifyResponse) {
           emit(state.copyWith(verifyOtpState: CubitStates.success));
           emit(state.copyWith(verifyOtpState: CubitStates.initial));
         },

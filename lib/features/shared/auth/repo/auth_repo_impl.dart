@@ -472,8 +472,7 @@ class AuthRepoImpl implements AuthRepo {
         );
         await CachNetwork.setData(
           key: kUserType,
-          value: UserTypeEnum.guest.name
-              ,
+          value: UserTypeEnum.guest.name,
         );
         return right(guestResponse);
       } else {

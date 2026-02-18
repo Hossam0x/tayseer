@@ -1,3 +1,5 @@
+import 'package:flutter/scheduler.dart';
+
 import '../../../../../my_import.dart';
 
 class SelectableListWidget extends StatefulWidget {
@@ -5,7 +7,8 @@ class SelectableListWidget extends StatefulWidget {
   final void Function(String key, String translatedValue)? onChanged;
   final bool showSearch;
   final String? searchHintKey;
-  final String? initialSelectedKey;
+  final String? selectedKey; // ⭐ Controlled by parent
+  final String? initialSelectedKey; // ⭐ Optional for first init
   final Color primaryColor;
 
   const SelectableListWidget({
@@ -14,6 +17,7 @@ class SelectableListWidget extends StatefulWidget {
     this.onChanged,
     this.showSearch = true,
     this.searchHintKey,
+    this.selectedKey,
     this.initialSelectedKey,
     this.primaryColor = Colors.pink,
   });
@@ -23,24 +27,13 @@ class SelectableListWidget extends StatefulWidget {
 }
 
 class _SelectableListWidgetState extends State<SelectableListWidget> {
-  String? _selectedKey;
   String _search = '';
 
   @override
-  void initState() {
-    super.initState();
-    _selectedKey = widget.initialSelectedKey;
-  }
-
-  void _onItemTap(String key, String translatedValue) {
-    setState(() {
-      _selectedKey = key;
-    });
-    widget.onChanged?.call(key, translatedValue);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final currentSelectedKey = widget.selectedKey ?? widget.initialSelectedKey;
+
+    // Filtered list based on search
     final filteredList = widget.items.where((key) {
       final translatedText = context.tr(key).toLowerCase();
       return translatedText.contains(_search.toLowerCase());
@@ -48,10 +41,15 @@ class _SelectableListWidgetState extends State<SelectableListWidget> {
 
     return Column(
       children: [
-        if (widget.showSearch) ...[
+        if (widget.showSearch)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: TextField(
+              onTapOutside: (event) {
+                SchedulerBinding.instance.addPostFrameCallback((_) {
+                  FocusScope.of(context).unfocus();
+                });
+              },
               onChanged: (value) => setState(() => _search = value),
               decoration: InputDecoration(
                 hintText: widget.searchHintKey != null
@@ -62,19 +60,18 @@ class _SelectableListWidgetState extends State<SelectableListWidget> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
-        ],
+        if (widget.showSearch) const SizedBox(height: 20),
         Expanded(
           child: ListView.separated(
             itemCount: filteredList.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final itemKey = filteredList[index];
-              final isSelected = _selectedKey == itemKey;
+              final isSelected = currentSelectedKey == itemKey;
               final translatedValue = context.tr(itemKey);
 
               return GestureDetector(
-                onTap: () => _onItemTap(itemKey, translatedValue),
+                onTap: () => widget.onChanged?.call(itemKey, translatedValue),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,

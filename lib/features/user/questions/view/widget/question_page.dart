@@ -1,5 +1,3 @@
-// lib/features/user/questions/view/widget/question_page.dart
-
 import 'package:tayseer/features/user/questions/view/widget/categorized_multi_select_widget.dart';
 import 'package:tayseer/features/user/questions/view/widget/categorized_single_select_widget.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_ios_picker.dart';
@@ -12,13 +10,33 @@ import 'package:tayseer/features/user/questions/view_model/questions_state.dart'
 
 import '../../../../../my_import.dart';
 
-class QuestionPage extends StatelessWidget {
+class QuestionPage extends StatefulWidget {
   final QuestionPageConfig config;
   final ValueChanged<dynamic> onAnswer;
 
-  QuestionPage({super.key, required this.config, required this.onAnswer});
+  const QuestionPage({super.key, required this.config, required this.onAnswer});
 
-  final ValueNotifier<dynamic> _selectedValue = ValueNotifier<dynamic>(null);
+  @override
+  State<QuestionPage> createState() => _QuestionPageState();
+}
+
+class _QuestionPageState extends State<QuestionPage> {
+  late final ValueNotifier<dynamic> _selectedValue;
+  late final TextEditingController _textController;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedValue = ValueNotifier<dynamic>(null);
+    _textController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _selectedValue.dispose();
+    _textController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,12 +44,11 @@ class QuestionPage extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          // ✅ عرض الـ Subtitle إذا كان موجوداً
-          if (config.subtitleKey != null) ...[
+          if (widget.config.subtitleKey != null) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                context.tr(config.subtitleKey!),
+                context.tr(widget.config.subtitleKey!),
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.kgreyColor,
@@ -54,27 +71,35 @@ class QuestionPage extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
-    switch (config.type) {
+    switch (widget.config.type) {
       case QuestionType.selectableList:
-        return SelectableListWidget(
-          items: config.items ?? [],
-          showSearch: config.showSearch,
-          searchHintKey: config.searchHintKey,
-          primaryColor: AppColors.kprimaryColor,
-          onChanged: (key, value) {
-            _selectedValue.value = {'key': key, 'value': value};
+        return ValueListenableBuilder(
+          valueListenable: _selectedValue,
+          builder: (context, selectedValue, _) {
+            return SelectableListWidget(
+              items: widget.config.items ?? [],
+              selectedKey: selectedValue?['key'],
+              showSearch: widget.config.showSearch,
+              searchHintKey: widget.config.searchHintKey,
+              primaryColor: AppColors.kprimaryColor,
+              onChanged: (key, value) {
+                _selectedValue.value = {'key': key, 'value': value};
+              },
+            );
           },
         );
 
       case QuestionType.picker:
-        final initialVal = (config.initialValue ?? 0).toString();
+        final initialVal = (widget.config.initialValue ?? 0).toString();
         _selectedValue.value = {'key': initialVal, 'value': initialVal};
         return Center(
           child: CustomIosPicker(
-            initialValue: config.initialValue ?? 0,
-            minValue: config.minValue ?? 0,
-            maxValue: config.maxValue ?? 100,
-            unit: config.unit != null ? context.tr(config.unit!) : null,
+            initialValue: widget.config.initialValue ?? 0,
+            minValue: widget.config.minValue ?? 0,
+            maxValue: widget.config.maxValue ?? 100,
+            unit: widget.config.unit != null
+                ? context.tr(widget.config.unit!)
+                : null,
             primaryColor: AppColors.kprimaryColor,
             onSelectedItemChanged: (value) {
               _selectedValue.value = {
@@ -87,12 +112,11 @@ class QuestionPage extends StatelessWidget {
 
       case QuestionType.multiSelectChips:
         return MultiSelectChipsWidget(
-          itemsWithEmoji: config.itemsWithIcons ?? {},
+          itemsWithEmoji: widget.config.itemsWithIcons ?? {},
           primaryColor: AppColors.kprimaryColor,
           onChanged: (List<String> selectedKeys) {
-            // ✅ إضافة الإيموجي مع النص المترجم
             final translatedValuesWithEmoji = selectedKeys.map((key) {
-              final emoji = config.itemsWithIcons?[key] ?? '';
+              final emoji = widget.config.itemsWithIcons?[key] ?? '';
               return '$emoji ${context.tr(key)}';
             }).toList();
 
@@ -109,6 +133,7 @@ class QuestionPage extends StatelessWidget {
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: TextInputQuestion(
+            controller: _textController,
             onChanged: (value) {
               _selectedValue.value = {'key': value, 'value': value};
             },
@@ -117,14 +142,13 @@ class QuestionPage extends StatelessWidget {
 
       case QuestionType.categorizedMultiSelectChips:
         return CategorizedMultiSelectWidget(
-          initialSelected:  [],
-          categorizedItems: config.categorizedItems ?? {},
+          initialSelected: [],
+          categorizedItems: widget.config.categorizedItems ?? {},
           onChanged: (selectedKeys) {
-            // ✅ إضافة الإيموجي مع النص المترجم
             final translatedValuesWithEmoji = selectedKeys.map((key) {
-              // البحث عن الإيموجي في جميع الفئات
               String emoji = '';
-              for (var category in (config.categorizedItems ?? {}).values) {
+              for (var category
+                  in (widget.config.categorizedItems ?? {}).values) {
                 if (category.containsKey(key)) {
                   emoji = category[key] ?? '';
                   break;
@@ -143,14 +167,13 @@ class QuestionPage extends StatelessWidget {
 
       case QuestionType.categorizedSingleSelectChips:
         return CategorizedSingleSelectWidget(
-          categorizedItems: config.categorizedItems ?? {},
+          categorizedItems: widget.config.categorizedItems ?? {},
           onChanged: (selectedItems) {
-            // ✅ إضافة الإيموجي مع النص المترجم لكل فئة
             final valuesWithEmoji = selectedItems.entries.map((entry) {
               final categoryKey = entry.key;
               final itemKey = entry.value;
               final emoji =
-                  config.categorizedItems?[categoryKey]?[itemKey] ?? '';
+                  widget.config.categorizedItems?[categoryKey]?[itemKey] ?? '';
               return '${context.tr(categoryKey)}: $emoji ${context.tr(itemKey)}';
             }).toList();
 
@@ -182,22 +205,24 @@ class QuestionPage extends StatelessWidget {
               } else if (val is List) {
                 isEnabled = val.isNotEmpty;
               } else if (key is Map) {
-                // ✅ للـ categorizedSingleSelectChips
                 final requiredCategories =
-                    config.categorizedItems?.keys.length ?? 0;
+                    widget.config.categorizedItems?.keys.length ?? 0;
                 isEnabled = key.length == requiredCategories;
               }
             }
 
             return Padding(
-              padding:  EdgeInsets.only(bottom: 30),
+              padding: const EdgeInsets.only(bottom: 30),
               child: CustomBotton(
-                width: context.width*0.9,
+                width: context.width * 0.9,
                 title: isLoading ? context.tr('sending') : context.tr('next'),
                 useGradient: isEnabled,
                 backGroundcolor: AppColors.kgreyColor,
                 onPressed: isEnabled && !isLoading
-                    ? () => onAnswer(selectedValue)
+                    ? () {
+                        FocusScope.of(context).unfocus();
+                        widget.onAnswer(selectedValue);
+                      }
                     : null,
               ),
             );
