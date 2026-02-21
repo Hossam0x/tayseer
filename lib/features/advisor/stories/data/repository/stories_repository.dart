@@ -23,4 +23,5 @@ abstract class StoriesRepository {
   });
   Future<Either<Failure, void>> deleteStory({required String storyId});
   Future<Either<Failure, void>> makeStorySpecial({required String storyId});
+  Future<Either<Failure, void>> hideStory({required String storyId});
 }

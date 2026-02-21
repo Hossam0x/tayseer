@@ -187,14 +187,20 @@ class _UserStoryItem extends StatelessWidget {
 
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (newContext) => BlocProvider.value(
-              value: context.read<StoriesCubit>(),
-              child: StoryDetailsView(
-                userStories: chronologicalUserStory,
-                heroTag: 'profile_story_${userStoryModel.userId}',
-              ),
-            ),
+          PageRouteBuilder(
+            opaque: false,
+            pageBuilder: (newContext, animation, secondaryAnimation) =>
+                BlocProvider.value(
+                  value: context.read<StoriesCubit>(),
+                  child: StoryDetailsView(
+                    userStories: chronologicalUserStory,
+                    heroTag: 'profile_story_${userStoryModel.userId}',
+                  ),
+                ),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         );
       },

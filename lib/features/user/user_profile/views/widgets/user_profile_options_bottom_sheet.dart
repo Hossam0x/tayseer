@@ -2,7 +2,6 @@ import 'package:flutter/services.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/report_bottom_sheet.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserProfileOptionsBottomSheet extends StatelessWidget {
@@ -199,8 +198,8 @@ class UserProfileOptionsBottomSheet extends StatelessWidget {
   }
 
   void _showReportConfirmation(BuildContext context) {
-    // افتح الـ ReportBottomSheet
-    UserReportBottomSheet.show(context, reportedId: userId, cubit: cubit);
+    Navigator.pop(context); // Close the option sheet
+    context.pushNamed(AppRouter.kReportReasonsScreen);
   }
 }
 

@@ -226,4 +226,24 @@ class StoriesRepositoryImpl implements StoriesRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> hideStory({required String storyId}) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/hidden/story',
+        query: {'action': 'add'},
+        data: {'storyId': storyId},
+      );
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل إخفاء القصة'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }
