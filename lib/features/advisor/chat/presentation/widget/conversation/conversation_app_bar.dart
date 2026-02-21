@@ -66,9 +66,11 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
       color: const Color(0xFFF9EEFA),
       child: Row(
         children: [
+          // ====== الجزء الأيسر: زر الرجوع + الصورة + الاسم ======
           Expanded(
             child: Row(
               children: [
+                // زر الرجوع لوحده
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: const Icon(
@@ -78,45 +80,52 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                   ),
                 ),
                 SizedBox(width: isMobile ? 8 : 12),
-                GestureDetector(
-                  onTap: widget.onProfileTap,
-                  child: CircleAvatar(
-                    radius: isMobile ? 20 : 24,
-                    backgroundImage: NetworkImage(
-                      widget.userimage ?? 'https://i.pravatar.cc/150?img=5',
-                    ),
-                  ),
-                ),
-                SizedBox(width: isMobile ? 8 : 12),
+
+                // ✅ GestureDetector واحد يلف الصورة + الاسم مع بعض
                 Expanded(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          widget.username ?? "Anna Mary",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: isMobile ? 16 : 18,
-                            color: Colors.blue,
+                  child: GestureDetector(
+                    onTap: widget.onProfileTap,
+                    child: Row(
+                      children: [
+                        // الصورة
+                        CircleAvatar(
+                          radius: isMobile ? 20 : 24,
+                          backgroundImage: NetworkImage(
+                            widget.userimage ??
+                                'https://i.pravatar.cc/150?img=5',
                           ),
                         ),
-                      ),
-                      SizedBox(width: isMobile ? 4 : 6),
-                      // Icon(
-                      //   Icons.verified,
-                      //   color: Colors.blue,
-                      //   size: isMobile ? 14 : 16,
-                      // ),
-                    ],
+                        SizedBox(width: isMobile ? 8 : 12),
+                        // الاسم
+                        Expanded(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  widget.username ?? "Anna Mary",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: isMobile ? 16 : 18,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: isMobile ? 4 : 6),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
+          // ====== الجزء الأيمن: أيقونة الهاتف + القائمة المنبثقة ======
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -149,7 +158,6 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                       : const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
                 ),
               ),
-
               Theme(
                 data: Theme.of(context).copyWith(
                   splashColor: Colors.transparent,
