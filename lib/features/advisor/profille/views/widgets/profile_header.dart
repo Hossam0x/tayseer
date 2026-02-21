@@ -1,5 +1,4 @@
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
@@ -148,35 +147,17 @@ class ProfileHeader extends StatelessWidget {
                 onTap: isUploading
                     ? null
                     : () async {
-                        // Request permissions before entering
-                        final photos = await Permission.photos.request();
-                        final camera = await Permission.camera.request();
-                        final microphone = await Permission.microphone
-                            .request();
-
                         if (context.mounted) {
-                          final isPhotosGranted =
-                              photos.isGranted || photos.isLimited;
-                          if (isPhotosGranted &&
-                              camera.isGranted &&
-                              microphone.isGranted) {
-                            final storiesCubit = context.read<StoriesCubit>();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => BlocProvider.value(
-                                  value: storiesCubit,
-                                  child: const AddStoryView(),
-                                ),
+                          final storiesCubit = context.read<StoriesCubit>();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BlocProvider.value(
+                                value: storiesCubit,
+                                child: const AddStoryView(),
                               ),
-                            );
-                          } else {
-                            SnackBarService().showSnackBar(
-                              context: context,
-                              text: context.tr('permissions_required'),
-                              isError: true,
-                            );
-                          }
+                            ),
+                          );
                         }
                       },
                 child: Stack(
