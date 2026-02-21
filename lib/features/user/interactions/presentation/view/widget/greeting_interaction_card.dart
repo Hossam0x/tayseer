@@ -52,41 +52,43 @@ class GreetingProfileCard extends StatelessWidget {
         child: Row(
           children: [
             // Profile Image
-            GestureDetector(
-                  onTap: () {
-                    context.pushNamed(
-                      AppRouter.kMarriageView,
-                      arguments: {'personId': item.userId},
-                    );
-                  },
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16.r),
-                child: Stack(
-                  children: [
-                    AppImage(
-                      item.image,
-                      width: 130.w,
-                      height: 117.h,
-                      fit: BoxFit.cover,
-                    ),
-                    if (shouldBlur)
-                      Positioned.fill(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16.r),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                            child: Container(
-                              color: Colors.black.withOpacity(0.2),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+        GestureDetector(
+  onTap: () {
+    context.pushNamed(
+      AppRouter.kMarriageView,
+      arguments: {'personId': item.userId},
+    );
+  },
+  child: ClipRRect(
+    borderRadius: BorderRadius.circular(16.r),
+    child: Stack(
+      children: [
+        shouldBlur
+            ? ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: AppImage(
+                  item.image,
+                  width: 130.w,
+                  height: 117.h,
+                  fit: BoxFit.cover,
                 ),
+              )
+            : AppImage(
+                item.image,
+                width: 130.w,
+                height: 117.h,
+                fit: BoxFit.cover,
               ),
+        if (shouldBlur)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.2),
             ),
-
-            SizedBox(width: 12.w),
+          ),
+      ],
+    ),
+  ),
+),  SizedBox(width: 12.w),
 
             // User Info
             Expanded(

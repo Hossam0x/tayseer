@@ -135,12 +135,6 @@ class InteractionBodyState extends State<InteractionBody> {
       },
     );
   }
-
-  // ✅ عنوان "استكشاف" فوق الـ Exploration
-
-  // ✅ History header: title "السجل" + filter chips فقط (بدون AppBar)
-
-
   bool _shouldShowSubscriptionOverlay(InteractionsState state) {
     if (state.isSubscribed) return false;
     if (!state.answerCompleted) return false;

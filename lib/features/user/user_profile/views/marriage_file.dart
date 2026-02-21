@@ -498,8 +498,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 child: ProfileStatisticsCards(
                   upgradesCount: profile.interactionCount ?? 0, // ⭐ من السيرفر
                   resultsCount: profile.regredsCount ?? 0, // ⭐ من السيرفر
-                  onUpgradesTap: () {},
-                  onResultsTap: () {},
+                  onUpgradesTap: () {
+                        context.pushNamed(AppRouter.kinteractionSubscriptionView);
+                  },
+                  onResultsTap: () {
+                        context.pushNamed(AppRouter.kinteractionSubscriptionView);
+                  },
                 ),
               ),
 

@@ -13,11 +13,9 @@ class ExplorationResponseModel {
     required this.answerCompleted, // ✅ NEW
     required this.categories,
   });
-
 factory ExplorationResponseModel.fromJson(Map<String, dynamic> json) {
   final data = json['data'] as Map<String, dynamic>? ?? {};
   
-  // ✅ الـ categories الموجودة مباشرة في data
   const categoryMapping = {
     'userIamLikes': 'من ضمن اختياراتك',
     'userIamFavorites': 'من خارج اختياراتك',
@@ -25,7 +23,7 @@ factory ExplorationResponseModel.fromJson(Map<String, dynamic> json) {
     'userIamRegards': 'ارسل تحية',
     'userIamLiked': 'الزيارات المحفزة',
   };
-
+  
   final Map<String, CategoryData> categoriesMap = {};
   
   categoryMapping.forEach((apiKey, displayName) {
@@ -34,16 +32,22 @@ factory ExplorationResponseModel.fromJson(Map<String, dynamic> json) {
     }
   });
 
-  // ✅ الـ recentlyJoined موجود في data['users']['recentlyJoined']
   final usersMap = data['users'] as Map<String, dynamic>? ?? {};
+  
+  // ✅ recentlyJoined
   if (usersMap.containsKey('recentlyJoined')) {
     categoriesMap['منضم حديثاً'] = CategoryData.fromJson(usersMap['recentlyJoined']);
+  }
+  
+  // ✅ sentRegards - هنا كانت المشكلة
+  if (usersMap.containsKey('sentRegards')) {
+    categoriesMap['ارسل تحية'] = CategoryData.fromJson(usersMap['sentRegards']);
   }
 
   return ExplorationResponseModel(
     success: json['success'] ?? false,
     message: json['message'] ?? '',
-    answerCompleted: data['answerCompleted'] ?? true, // ✅ default true مش false
+    answerCompleted: data['answerCompleted'] ?? true,
     categories: categoriesMap,
   );
 }
