@@ -228,7 +228,8 @@ Future<void> _onRefresh() async {
                           if (index >= data.length) {
                             return _buildLoadingCard();
                           }
-                          return InteractionProfileCard(
+                          return
+                           InteractionProfileCard(
                             item: data[index],
                             showFavoriteIcon: widget.selectedFilter == "favorites",
                             forceBlur: !state.isSubscribed,
