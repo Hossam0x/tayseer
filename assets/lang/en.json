@@ -715,6 +715,8 @@
   "add_rating": "Add Rating",
   "please_select_number_of_stars": "Please select number of stars",
   "rate_app_error": "Error sending rating",
+  "advisor_rated_successfully": "Your rating has been added successfully",
+  "failed_to_rate_advisor": "Failed to add rating",
   "reviews": "Reviews",
   "user": "User",
   "load_more": "Load More",

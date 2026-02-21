@@ -476,8 +476,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       try {
         await _toggleNotificationSetting(id, value);
 
+        // Emit success and get LATEST state from 'state' property not 'currentState'
         emit(
-          currentState.copyWith(
+          (state as SettingsLoaded).copyWith(
             actionMessage: value
                 ? "notifications_enabled_success"
                 : "notifications_disabled_success",
