@@ -121,6 +121,7 @@ class AddPostBody extends StatelessWidget {
                     name: kCurrentUserData?.name ?? 'user',
                     initialSubtitle: context.tr('select_group'),
                     isVerified: false,
+                    imageUrl: kCurrentUserData?.image ?? AssetsData.kUserImage,
                     groups: state.categories,
                     onGroupSelectedId: (group) =>
                         cubit.setSelectedCategoryId(group),
