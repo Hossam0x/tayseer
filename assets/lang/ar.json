@@ -65,8 +65,8 @@
   "kg": "كجم",
   "choose_height": "حدد طولك",
   "cm": "سم",
-  "are_you_smoker": "هل انت مدخن?",
-  "do_you_wear_hijab": "هل ترتدين الحجاب?",
+  "are_you_smoker": "هل انت مدخن؟",
+  "do_you_wear_hijab": "هل ترتدين الحجاب؟",
   "skin_very_light": "فاتحة جدًا",
   "skin_light": "فاتحة",
   "skin_medium": "متوسطه",
@@ -1316,5 +1316,13 @@
   "interactions_tab": "التفاعلات",
   "exit_app": "خروج",
   "exit_app_title": "هل تريد الخروج؟",
-  "exit_app_message": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟"
+  "exit_app_message": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟",
+  "verify_personal_photo": "التحقق من الصورة الشخصية",
+  "verification_done": "تم التحقق",
+  "retry_verification": "إعادة المحاولة",
+  "no_main_image": "لا توجد صورة شخصية للمقارنة",
+  "verification_error": "الرجاء التأكد من أن وجهك في الإطار وأن الإضاءة جيدة",
+  "face_not_matched": "الوجه لا يتطابق مع الصورة المرفوعة",
+  "capture_error": "حدث خطأ أثناء التقاط الصورة",
+  "no_face_detected": "لم يتم اكتشاف وجه - تأكد من أن وجهك واضح في الإطار"
 }

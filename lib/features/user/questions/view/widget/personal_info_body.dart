@@ -292,7 +292,7 @@ class ImageSlotCard extends StatelessWidget {
                 ),
 
                 child: Text(
-                    context.tr('main_image'),
+                  context.tr('main_image'),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10, // Small text like design

@@ -64,7 +64,9 @@ class _ProfessionalInformationAsConsultantBodyState
                     children: [
                       /// ➜ Back
                       Align(
-                        alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
+                        alignment: isArabic
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: IconButton(
                           onPressed: () => context.pop(),
                           icon: const Icon(Icons.arrow_back),
@@ -257,7 +259,9 @@ class _ProfessionalInformationAsConsultantBodyState
                                 ? context.tr('sending')
                                 : context.tr('next'),
                             onPressed: () {
-                              authCubit.submitPersonalDataAsConsultant();
+                              if (_formKey.currentState!.validate()) {
+                                authCubit.submitPersonalDataAsConsultant();
+                              }
                             },
                           );
                         },

@@ -13,7 +13,7 @@ class MarriageView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final completed = kCurrentUserData?.completeData == true;
+    final completed = kCurrentUserData?.compeletedData == true;
 
     return Scaffold(
       body: completed

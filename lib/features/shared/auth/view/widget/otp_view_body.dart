@@ -38,16 +38,42 @@ class _OtpViewBodyState extends State<OtpViewBody> {
             ),
           );
 
-          Future.delayed(const Duration(seconds: 1), () {
-            selectedUserType == UserTypeEnum.asConsultant
-                ? context.pushReplacementNamed(
-                    AppRouter.kPersonalInfoAsConsultantView,
-                  )
-                : context.pushNamedAndRemoveUntil(
-                    AppRouter.kUserLayoutView,
-                    predicate: (route) => false,
-                  );
-          });
+          if (selectedUserType == UserTypeEnum.asConsultant) {
+            if (kCurrentUserData?.compeletedData == true) {
+              context.pushReplacementNamed(AppRouter.kSelectDaysView);
+            } else if (kCurrentUserData?.compeletedData == false &&
+                kCurrentUserData?.lastQuestionNumber == 1) {
+              context.pushReplacementNamed(
+                AppRouter.kPersonalInfoAsConsultantView,
+              );
+            } else if (kCurrentUserData?.compeletedData == false &&
+                kCurrentUserData?.lastQuestionNumber == 2) {
+              context.pushReplacementNamed(
+                AppRouter.kConsultantUploadCertificateView,
+              );
+            } else if (kCurrentUserData?.compeletedData == false &&
+                kCurrentUserData?.lastQuestionNumber == 3) {
+              context.pushReplacementNamed(AppRouter.kUploadNationalidView);
+            } else if (kCurrentUserData?.compeletedData == false &&
+                kCurrentUserData?.lastQuestionNumber == 4) {
+              context.pushReplacementNamed(AppRouter.kSelectLanguagesView);
+            } else if (kCurrentUserData?.compeletedData == false &&
+                kCurrentUserData?.lastQuestionNumber == 5) {
+              context.pushReplacementNamed(AppRouter.kSelectDaysView);
+            } else if (kCurrentUserData?.compeletedData == false &&
+                kCurrentUserData?.lastQuestionNumber == 6) {
+              context.pushReplacementNamed(AppRouter.kSelectDaysView);
+            } else {
+              context.pushReplacementNamed(
+                AppRouter.kPersonalInfoAsConsultantView,
+              );
+            }
+          } else {
+            context.pushNamedAndRemoveUntil(
+              AppRouter.kUserLayoutView,
+              predicate: (route) => false,
+            );
+          }
         } else if (state.verifyOtpState == CubitStates.failure) {
           context.pop();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -95,7 +121,9 @@ class _OtpViewBodyState extends State<OtpViewBody> {
             Padding(
               padding: const EdgeInsets.only(right: 25),
               child: Align(
-                alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
+                alignment: isArabic
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
                 child: IconButton(
                   onPressed: () {
                     context.pop();

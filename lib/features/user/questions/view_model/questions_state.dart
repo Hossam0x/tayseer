@@ -14,17 +14,16 @@ class QuestionsState {
   final LastQuestionNumber? lastQuestionNumberResponse;
   final String? errorMessage;
 
-  // التحقق من الصورة الشخصية
+  // ✅ التحقق من الصورة الشخصية
   final CubitStates faceVerificationState;
   final String? faceVerificationError;
-  final XFile? capturedFaceImage;
 
-  // الصور للسكرين الجديدة
+  // ✅ الصور للسكرين الجديدة
   final File? mainImage;
   final List<File> images;
   final bool blurEnabled;
 
-  // بيانات فلتر البحث عن الشريك
+  // ✅ بيانات فلتر البحث عن الشريك
   final RangeValues partnerAgeRange;
   final String? partnerCountry;
   final String? partnerNationality;
@@ -39,12 +38,14 @@ class QuestionsState {
     this.partnerFilterState = CubitStates.initial,
     this.lastQuestionNumberResponse,
     this.errorMessage,
+    // ✅ Face Verification
     this.faceVerificationState = CubitStates.initial,
     this.faceVerificationError,
-    this.capturedFaceImage,
+    // ✅ Images
     this.mainImage,
     this.images = const [],
     this.blurEnabled = false,
+    // ✅ Partner Filter
     this.partnerAgeRange = const RangeValues(22, 35),
     this.partnerCountry,
     this.partnerNationality,
@@ -60,16 +61,18 @@ class QuestionsState {
     CubitStates? partnerFilterState,
     LastQuestionNumber? lastQuestionNumberResponse,
     String? errorMessage,
+    // ✅ Face Verification
     CubitStates? faceVerificationState,
     String? faceVerificationError,
-    XFile? capturedFaceImage,
+    // ✅ Images
     File? mainImage,
     List<File>? images,
     bool? blurEnabled,
+    // ✅ Partner Filter
     RangeValues? partnerAgeRange,
     String? partnerCountry,
     String? partnerNationality,
-    // ✅ إضافة flags للمسح
+    // ✅ Flags للمسح
     bool clearPartnerCountry = false,
     bool clearPartnerNationality = false,
   }) {
@@ -86,16 +89,17 @@ class QuestionsState {
       lastQuestionNumberResponse:
           lastQuestionNumberResponse ?? this.lastQuestionNumberResponse,
       errorMessage: errorMessage ?? this.errorMessage,
+      // ✅ Face Verification
       faceVerificationState:
           faceVerificationState ?? this.faceVerificationState,
       faceVerificationError:
           faceVerificationError ?? this.faceVerificationError,
-      capturedFaceImage: capturedFaceImage ?? this.capturedFaceImage,
+      // ✅ Images
       mainImage: mainImage ?? this.mainImage,
       images: images ?? this.images,
       blurEnabled: blurEnabled ?? this.blurEnabled,
+      // ✅ Partner Filter
       partnerAgeRange: partnerAgeRange ?? this.partnerAgeRange,
-      // ✅ إذا كان flag المسح true، اجعلها null
       partnerCountry: clearPartnerCountry
           ? null
           : (partnerCountry ?? this.partnerCountry),
@@ -105,14 +109,38 @@ class QuestionsState {
     );
   }
 
-  // Helpers
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ✅ Helpers - Face Verification
+  // ═══════════════════════════════════════════════════════════════════════════
+
   bool get isVerificationLoading =>
       faceVerificationState == CubitStates.loading;
+
   bool get isVerificationSuccess =>
       faceVerificationState == CubitStates.success;
+
   bool get isVerificationFailed => faceVerificationState == CubitStates.failure;
-  bool get hasImage => capturedFaceImage != null;
-  bool get isInitial => faceVerificationState == CubitStates.initial;
+
+  bool get isVerificationInitial =>
+      faceVerificationState == CubitStates.initial;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ✅ Helpers - Images
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  bool get hasMainImage => mainImage != null;
+
+  bool get hasImages => images.isNotEmpty;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ✅ Helpers - Partner Filter
+  // ═══════════════════════════════════════════════════════════════════════════
+
   bool get isPartnerFilterLoading => partnerFilterState == CubitStates.loading;
+
   bool get isPartnerFilterSuccess => partnerFilterState == CubitStates.success;
+
+  bool get isPartnerFilterFailed => partnerFilterState == CubitStates.failure;
+
+  bool get isPartnerFilterInitial => partnerFilterState == CubitStates.initial;
 }

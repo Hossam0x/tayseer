@@ -1,5 +1,7 @@
 // lib/features/user/questions/view_model/questions_cubit.dart
 
+import 'dart:typed_data';
+import 'package:tayseer/core/utils/face%20_verification_service.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -7,13 +9,14 @@ import 'package:tayseer/my_import.dart';
 class QuestionsCubit extends Cubit<QuestionsState> {
   QuestionsCubit(this._repo) : super(const QuestionsState());
   final QuestionsRepo _repo;
+  final FaceVerificationService _faceService = FaceVerificationService();
 
   final phoneController = TextEditingController();
   final countryCodeController = TextEditingController();
   final phoneFormKey = GlobalKey<FormState>();
 
   // -------------------------------------
-  // الصور للسكرين الجديدة
+  // الصور
   // -------------------------------------
 
   void setMainImage(File image) {
@@ -46,7 +49,6 @@ class QuestionsCubit extends Cubit<QuestionsState> {
               errorMessage: failure.message,
             ),
           );
-
           emit(
             state.copyWith(
               uploadPersonalInfoState: CubitStates.initial,
@@ -124,44 +126,55 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   }
 
   // -------------------------------------
-  // verifyFace
+  // ✅ Face Verification - محلي بالكاميرا
   // -------------------------------------
 
-  Future<void> verifyFaceImage({required XFile image}) async {
+  Future<void> verifyFaceLocally({
+    required Uint8List capturedImageBytes,
+  }) async {
+    if (state.mainImage == null) {
+      emit(
+        state.copyWith(
+          faceVerificationState: CubitStates.failure,
+          faceVerificationError: 'no_main_image',
+        ),
+      );
+      return;
+    }
+
     emit(
       state.copyWith(
         faceVerificationState: CubitStates.loading,
-        capturedFaceImage: image,
         faceVerificationError: null,
       ),
     );
 
     try {
-      final response = await _repo.verifyFaceImage(image: image);
-
-      response.fold(
-        (failure) {
-          emit(
-            state.copyWith(
-              faceVerificationState: CubitStates.failure,
-              faceVerificationError: failure.message,
-            ),
-          );
-        },
-        (_) {
-          emit(
-            state.copyWith(
-              faceVerificationState: CubitStates.success,
-              faceVerificationError: null,
-            ),
-          );
-        },
+      final result = await _faceService.matchFaces(
+        liveImageBytes: capturedImageBytes,
+        uploadedImage: state.mainImage!,
       );
+
+      if (result.success) {
+        emit(
+          state.copyWith(
+            faceVerificationState: CubitStates.success,
+            faceVerificationError: null,
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            faceVerificationState: CubitStates.failure,
+            faceVerificationError: result.errorKey,
+          ),
+        );
+      }
     } catch (e) {
       emit(
         state.copyWith(
           faceVerificationState: CubitStates.failure,
-          faceVerificationError: e.toString(),
+          faceVerificationError: 'verification_error',
         ),
       );
     }
@@ -170,27 +183,6 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   void resetFaceVerification() {
     emit(
       state.copyWith(
-        faceVerificationState: CubitStates.initial,
-        faceVerificationError: null,
-        capturedFaceImage: null,
-      ),
-    );
-  }
-
-  void setCapturedFaceImage(XFile? image) {
-    emit(
-      state.copyWith(
-        capturedFaceImage: image,
-        faceVerificationState: CubitStates.initial,
-        faceVerificationError: null,
-      ),
-    );
-  }
-
-  void clearCapturedImage() {
-    emit(
-      state.copyWith(
-        capturedFaceImage: null,
         faceVerificationState: CubitStates.initial,
         faceVerificationError: null,
       ),
@@ -316,7 +308,7 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   }
 
   // -------------------------------------
-  // verify OTP for phone number
+  // verify OTP
   // -------------------------------------
 
   Future<void> verifyOtp({required String otp}) async {
@@ -405,7 +397,6 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     emit(state.copyWith(partnerNationality: nationality));
   }
 
-  // ✅ تعديل: استخدام flags للمسح
   void resetPartnerFilter() {
     emit(
       state.copyWith(

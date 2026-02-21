@@ -71,8 +71,9 @@ class UserModel {
   final String? phone;
   final bool? inreview;
   final int? notifyCount;
+  final int? lastQuestionNumber;
   final bool? active;
-  final bool? completeData;
+  final bool? compeletedData;
   final List<dynamic>? nationalIdImages;
   final String? createdAt;
   final String? updatedAt;
@@ -86,10 +87,11 @@ class UserModel {
     this.gender,
     this.image,
     this.phone,
+    this.lastQuestionNumber,
     this.inreview,
     this.notifyCount,
     this.active,
-    this.completeData,
+    this.compeletedData,
     this.nationalIdImages,
     this.createdAt,
     this.updatedAt,
@@ -134,7 +136,8 @@ class UserModel {
       inreview: json['inreview'],
       notifyCount: json['notifyCount'],
       active: json['active'],
-      completeData: json['completeData'],
+      compeletedData: json['compeletedData'],
+      lastQuestionNumber: json['lastQuestionNumber'] ?? 0,
       nationalIdImages: json['nationalIdImages'] ?? [],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
@@ -152,8 +155,9 @@ class UserModel {
       'phone': phone,
       'inreview': inreview,
       'notifyCount': notifyCount,
+      'lastQuestionNumber': lastQuestionNumber,
       'active': active,
-      'completeData': completeData,
+      'compeletedData': compeletedData,
       'nationalIdImages': nationalIdImages,
       'createdAt': createdAt,
       'updatedAt': updatedAt,

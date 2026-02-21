@@ -7,12 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// لما تعمل mute لأي فيديو، كل الفيديوهات هتتأثر
 class GlobalMuteManager {
   static final GlobalMuteManager instance = GlobalMuteManager._internal();
-  
+
   GlobalMuteManager._internal();
 
   // ✅ ValueNotifier عشان كل الفيديوهات تسمع للتغييرات
-  final ValueNotifier<bool> isMuted = ValueNotifier<bool>(true); // Default muted زي فيسبوك
-  
+  final ValueNotifier<bool> isMuted = ValueNotifier<bool>(
+    true,
+  ); // Default muted زي فيسبوك
+
   static const String _muteKey = 'global_mute_state';
 
   /// تحميل حالة الـ Mute المحفوظة
@@ -23,7 +25,9 @@ class GlobalMuteManager {
       if (savedState != null) {
         isMuted.value = savedState;
       }
-      debugPrint('🔊 GlobalMuteManager initialized: ${isMuted.value ? "Muted" : "Unmuted"}');
+      debugPrint(
+        '🔊 GlobalMuteManager initialized: ${isMuted.value ? "Muted" : "Unmuted"}',
+      );
     } catch (e) {
       debugPrint('❌ Error loading mute state: $e');
     }
@@ -33,7 +37,9 @@ class GlobalMuteManager {
   Future<void> toggleMute() async {
     isMuted.value = !isMuted.value;
     await _saveState();
-    debugPrint('🔊 Global Mute toggled: ${isMuted.value ? "Muted" : "Unmuted"}');
+    debugPrint(
+      '🔊 Global Mute toggled: ${isMuted.value ? "Muted" : "Unmuted"}',
+    );
   }
 
   /// تعيين حالة معينة

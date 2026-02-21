@@ -28,7 +28,9 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
                     children: [
                       /// Back
                       Align(
-                        alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
+                        alignment: isArabic
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: IconButton(
                           onPressed: () => context.pop(),
                           icon: const Icon(Icons.arrow_back),

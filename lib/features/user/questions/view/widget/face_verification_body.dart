@@ -1,3 +1,8 @@
+// lib/features/user/questions/view/widget/face_verification_body.dart
+
+import 'dart:typed_data';
+import 'dart:ui';
+import 'package:camera/camera.dart';
 import 'package:tayseer/my_import.dart';
 import 'face_verification_painters.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
@@ -10,58 +15,84 @@ class FaceVerificationBody extends StatefulWidget {
   State<FaceVerificationBody> createState() => _FaceVerificationBodyState();
 }
 
-class _FaceVerificationBodyState extends State<FaceVerificationBody>
-    with SingleTickerProviderStateMixin {
-  final ImagePicker _picker = ImagePicker();
-  late AnimationController _scanAnimationController;
-  late Animation<double> _scanAnimation;
+class _FaceVerificationBodyState extends State<FaceVerificationBody> {
+  CameraController? _cameraController;
+  bool _isCameraReady = false;
+  bool _isVerifying = false; // ✅ هل ضغط تحقق ولا لسه
 
   @override
   void initState() {
     super.initState();
-    // Reset state when entering the screen
     context.read<QuestionsCubit>().resetFaceVerification();
-
-    // إعداد الـ Animation للخط المتحرك
-    _scanAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-
-    _scanAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _scanAnimationController,
-        curve: Curves.easeInOut,
-      ),
-    );
+    _initCamera();
   }
 
-  @override
-  void dispose() {
-    _scanAnimationController.dispose();
-    super.dispose();
-  }
+  // ═══════════════════════════════════════
+  // Camera Setup
+  // ═══════════════════════════════════════
 
-  Future<void> _captureImage() async {
+  Future<void> _initCamera() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.front,
-        imageQuality: 80,
-        maxWidth: 1024,
-        maxHeight: 1024,
+      final cameras = await availableCameras();
+      final frontCamera = cameras.firstWhere(
+        (cam) => cam.lensDirection == CameraLensDirection.front,
+        orElse: () => cameras.first,
       );
 
-      if (image != null && mounted) {
-        context.read<QuestionsCubit>().setCapturedFaceImage(image);
+      _cameraController = CameraController(
+        frontCamera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
+
+      await _cameraController!.initialize();
+
+      if (mounted) {
+        setState(() {
+          _isCameraReady = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing camera: $e');
+    }
+  }
+
+  // ═══════════════════════════════════════
+  // Actions
+  // ═══════════════════════════════════════
+
+  Future<void> _startVerification() async {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      return;
+    }
+
+    // ✅ شيل الـ Blur وابدأ التحقق
+    setState(() {
+      _isVerifying = true;
+    });
+
+    // // ✅ تأخير بسيط عشان المستخدم يشوف نفسه قبل الالتقاط
+    // await Future.delayed(const Duration(seconds: 2));
+
+    try {
+      final XFile photo = await _cameraController!.takePicture();
+      final Uint8List imageBytes = await photo.readAsBytes();
+
+      if (mounted) {
+        await context.read<QuestionsCubit>().verifyFaceLocally(
+          capturedImageBytes: imageBytes,
+        );
       }
     } catch (e) {
       debugPrint('Error capturing image: $e');
       if (mounted) {
+        setState(() {
+          _isVerifying = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
             context,
-            text: 'حدث خطأ أثناء التقاط الصورة',
+            text: context.tr('capture_error'),
             isError: true,
           ),
         );
@@ -69,92 +100,71 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody>
     }
   }
 
-  Future<void> _verifyImage() async {
-    final state = context.read<QuestionsCubit>().state;
-    if (state.capturedFaceImage != null) {
-      // بدء الـ animation
-      _scanAnimationController.repeat();
-
-      await context.read<QuestionsCubit>().verifyFaceImage(
-        image: state.capturedFaceImage!,
-      );
-
-      // إيقاف الـ animation
-      _scanAnimationController.stop();
-      _scanAnimationController.reset();
-    }
-  }
-
-  void _retryCapture() {
+  void _retryVerification() {
+    setState(() {
+      _isVerifying = false; // ✅ رجّع الـ Blur
+    });
     context.read<QuestionsCubit>().resetFaceVerification();
-    _captureImage();
   }
 
   void _goToNextScreen() {
-    // // غيّر الـ route حسب التطبيق
     context.pushReplacementNamed(AppRouter.kAddedImagesView);
   }
 
   @override
+  void dispose() {
+    _cameraController?.dispose();
+    super.dispose();
+  }
+
+  // ═══════════════════════════════════════
+  // Build
+  // ═══════════════════════════════════════
+
+  @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // clear captured image when leaving screen
-        context.read<QuestionsCubit>().clearCapturedImage();
-        return true;
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          context.read<QuestionsCubit>().resetFaceVerification();
+        }
       },
       child: CustomBackground(
         child: SafeArea(
           child: BlocConsumer<QuestionsCubit, QuestionsState>(
-            listenWhen: (previous, current) {
-              return previous.faceVerificationState !=
-                  current.faceVerificationState;
-            },
+            listenWhen: (previous, current) =>
+                previous.faceVerificationState != current.faceVerificationState,
             listener: (context, state) {
               if (state.isVerificationSuccess) {
                 Future.delayed(const Duration(seconds: 2), () {
-                  if (mounted) {
-                    _goToNextScreen();
-                  }
+                  if (mounted) _goToNextScreen();
                 });
               }
             },
             builder: (context, state) {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    // Header with back button
-                    _buildHeader(context),
-
-                    SizedBox(height: context.height * 0.02),
-
-                    // Title
-                    _buildTitle(context, state),
-
-                    SizedBox(height: context.height * 0.02),
-
-                    // Error message (if verification failed - 400)
-                    if (state.isVerificationFailed &&
-                        state.faceVerificationError != null)
-                      _buildErrorMessage(context, state),
-
-                    SizedBox(height: context.height * 0.08),
-
-                    // Image Frame (constrained height to avoid overly large frame)
-                    SizedBox(
-                      height: context.height * 0.28,
-                      width: context.width * 0.5,
-                      child: Center(child: _buildImageFrame(context, state)),
-                    ),
-
-                    SizedBox(height: context.height * 0.1),
-
-                    // Result Icon or Button
-                    _buildBottomSection(context, state),
-
-                    SizedBox(height: context.height * 0.04),
-                  ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildHeader(context),
+                      SizedBox(height: context.height * 0.02),
+                      _buildTitle(context, state),
+                      SizedBox(height: context.height * 0.02),
+                      if (state.isVerificationFailed &&
+                          state.faceVerificationError != null)
+                        _buildErrorMessage(context, state),
+                      SizedBox(height: context.height * 0.08),
+                      SizedBox(
+                        height: context.height * 0.35,
+                        width: context.width * 0.6,
+                        child: Center(child: _buildCameraFrame(context, state)),
+                      ),
+                      SizedBox(height: context.height * 0.08),
+                      _buildBottomSection(context, state),
+                      SizedBox(height: context.height * 0.04),
+                    ],
+                  ),
                 ),
               );
             },
@@ -164,33 +174,41 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody>
     );
   }
 
+  // ═══════════════════════════════════════
+  // Header
+  // ═══════════════════════════════════════
+
   Widget _buildHeader(BuildContext context) {
     return Align(
       alignment: Alignment.topRight,
       child: IconButton(
         onPressed: () => context.pop(),
-        icon: Icon(Icons.arrow_back, size: 20),
+        icon: const Icon(Icons.arrow_back, size: 20),
       ),
     );
   }
 
-  Widget _buildTitle(BuildContext context, QuestionsState state) {
-    String title;
+  // ═══════════════════════════════════════
+  // Title
+  // ═══════════════════════════════════════
 
-    if (!state.hasImage || state.isInitial) {
-      title = 'التحقق من الصورة الشخصية';
-    } else {
-      title = 'تم التحقق';
-    }
+  Widget _buildTitle(BuildContext context, QuestionsState state) {
+    final String titleKey = state.isVerificationSuccess
+        ? 'verification_done'
+        : 'verify_personal_photo';
 
     return Text(
-      title,
+      context.tr(titleKey),
       style: Styles.textStyle22Bold.copyWith(
         color: AppColors.kscandryTextColor,
       ),
       textAlign: TextAlign.center,
     );
   }
+
+  // ═══════════════════════════════════════
+  // Error Message
+  // ═══════════════════════════════════════
 
   Widget _buildErrorMessage(BuildContext context, QuestionsState state) {
     return Container(
@@ -206,8 +224,7 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody>
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              state.faceVerificationError ??
-                  'الرجاء التأكد من أن وجهك في الإطار وأن الإضاءة جيدة.',
+              context.tr(state.faceVerificationError ?? 'verification_error'),
               style: Styles.textStyle14.copyWith(color: Colors.red.shade700),
               textAlign: TextAlign.right,
             ),
@@ -217,106 +234,87 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody>
     );
   }
 
-  Widget _buildImageFrame(BuildContext context, QuestionsState state) {
-    final frameSize = context.width * 0.65;
+  // ═══════════════════════════════════════
+  // Camera Frame
+  // ═══════════════════════════════════════
 
-    // تحديد لون الإطار بناءً على الحالة
+  Widget _buildCameraFrame(BuildContext context, QuestionsState state) {
+    final frameSize = context.width * 0.6;
+
     Color borderColor;
     if (state.isVerificationSuccess) {
-      // ✅ 200 = أخضر
       borderColor = Colors.green;
     } else if (state.isVerificationFailed) {
-      // ✅ 400 = أحمر
       borderColor = Colors.red;
-    } else if (state.isVerificationLoading) {
-      borderColor = Colors.blue;
     } else {
       borderColor = Colors.grey.shade400;
     }
 
-    return GestureDetector(
-      onTap: !state.hasImage ? _captureImage : null,
-      child: Container(
-        width: frameSize,
-        height: frameSize * 1.1,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: borderColor, width: 4),
-          color: Colors.grey.shade100,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: _buildFrameContent(context, state, frameSize),
-        ),
+    return Container(
+      width: frameSize,
+      height: frameSize * 1.2,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor, width: 4),
+        color: Colors.grey.shade100,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: _buildCameraContent(context, state),
       ),
     );
   }
 
-  Widget _buildFrameContent(
-    BuildContext context,
-    QuestionsState state,
-    double frameSize,
-  ) {
-    // حالة لم يتم التقاط صورة بعد
-    if (!state.hasImage) {
-      return _buildEmptyFrame(context, frameSize);
+  Widget _buildCameraContent(BuildContext context, QuestionsState state) {
+    if (!_isCameraReady ||
+        _cameraController == null ||
+        !_cameraController!.value.isInitialized) {
+      return const Center(child: CircularProgressIndicator());
     }
 
-    // حالة تم التقاط صورة
     return Stack(
       fit: StackFit.expand,
       children: [
-        // الصورة
-        Image.file(File(state.capturedFaceImage!.path), fit: BoxFit.cover),
+        // ✅ Live Camera Preview
+        CameraPreview(_cameraController!),
 
-        // خط المسح (Scanning line) أثناء التحميل
-        if (state.isVerificationLoading)
-          AnimatedBuilder(
-            animation: _scanAnimation,
-            builder: (context, child) {
-              return Positioned(
-                top: _scanAnimation.value * (frameSize * 1.1 - 4),
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 3,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        Colors.blue.withOpacity(0.8),
-                        Colors.transparent,
-                      ],
+        // ✅ Blur Layer - قبل ما يضغط تحقق
+        if (!_isVerifying && state.isVerificationInitial)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                color: Colors.black.withOpacity(0.1),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.visibility_off_outlined,
+                      color: Colors.white.withOpacity(0.8),
+                      size: 40,
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    Text(
+                      context.tr('press_verify_to_start'),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-              );
-            },
+              ),
+            ),
           ),
 
-        // ✅ الخط الأخضر بعد التحقق الناجح (200)
+        // ✅ خط أخضر بعد النجاح
         if (state.isVerificationSuccess) _buildVerificationLine(true),
 
-        // ✅ الخط الأحمر بعد فشل التحقق (400)
+        // ✅ خط أحمر بعد الفشل
         if (state.isVerificationFailed) _buildVerificationLine(false),
-      ],
-    );
-  }
-
-  Widget _buildEmptyFrame(BuildContext context, double frameSize) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Face placeholder icon
-        CustomPaint(
-          size: Size(frameSize * 0.5, frameSize * 0.5),
-          painter: FacePlaceholderPainter(),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'اضغط لالتقاط صورة',
-          style: Styles.textStyle14.copyWith(color: Colors.grey.shade600),
-        ),
       ],
     );
   }
@@ -331,61 +329,43 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody>
     );
   }
 
+  // ═══════════════════════════════════════
+  // Bottom Section
+  // ═══════════════════════════════════════
+
   Widget _buildBottomSection(BuildContext context, QuestionsState state) {
-    if (!state.hasImage) {
-      return _buildCaptureButton(context);
-    }
-
-    // حالة التحميل
     if (state.isVerificationLoading) {
-      return SizedBox(width: 50, height: 50, child: CustomloadingApp());
+      return const SizedBox(width: 50, height: 50, child: CustomloadingApp());
     }
 
-    // ✅ حالة النجاح (200) - أيقونة خضراء
     if (state.isVerificationSuccess) {
       return _buildSuccessIcon();
     }
 
-    // ✅ حالة الفشل (400) - أيقونة حمراء للإعادة
     if (state.isVerificationFailed) {
-      return _buildRetryButton(context);
+      return Column(
+        children: [
+          _buildFailureIcon(),
+          const SizedBox(height: 20),
+          CustomBotton(
+            width: context.width * 0.9,
+            onPressed: _retryVerification,
+            title: context.tr('retry_verification'),
+          ),
+        ],
+      );
     }
 
-    // الحالة الافتراضية - زر التحقق (بعد التقاط الصورة)
-    return _buildVerifyButton(context);
-  }
-
-  Widget _buildCaptureButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _captureImage,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.kprimaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-        ),
-        child: Text(
-          'التقاط صورة',
-          style: Styles.textStyle16.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVerifyButton(BuildContext context) {
     return CustomBotton(
       width: context.width * 0.9,
-      onPressed: _verifyImage,
+      onPressed: _isCameraReady ? _startVerification : null,
       title: context.tr('verify'),
     );
   }
+
+  // ═══════════════════════════════════════
+  // Success Icon
+  // ═══════════════════════════════════════
 
   Widget _buildSuccessIcon() {
     return Container(
@@ -403,37 +383,36 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody>
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // الخلفية المسننة (Badge)
           CustomPaint(
             size: const Size(80, 80),
             painter: BadgePainter(color: Colors.green),
           ),
-          // علامة الصح
           const Icon(Icons.check, color: Colors.white, size: 40),
         ],
       ),
     );
   }
 
-  Widget _buildRetryButton(BuildContext context) {
-    return GestureDetector(
-      onTap: _retryCapture,
-      child: Container(
-        width: context.width * 0.15,
-        height: context.width * 0.15,
-        decoration: BoxDecoration(
-          color: Colors.red,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.red.withOpacity(0.3),
-              blurRadius: 20,
-              spreadRadius: 5,
-            ),
-          ],
-        ),
-        child: const Icon(Icons.close, color: Colors.white, size: 40),
+  // ═══════════════════════════════════════
+  // Failure Icon
+  // ═══════════════════════════════════════
+
+  Widget _buildFailureIcon() {
+    return Container(
+      width: context.width * 0.15,
+      height: context.width * 0.15,
+      decoration: BoxDecoration(
+        color: Colors.red,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withOpacity(0.3),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
       ),
+      child: const Icon(Icons.close, color: Colors.white, size: 40),
     );
   }
 }

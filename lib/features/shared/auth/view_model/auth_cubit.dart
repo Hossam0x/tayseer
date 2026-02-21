@@ -154,13 +154,13 @@ class AuthCubit extends Cubit<AuthState> {
     final sessionTypes = {
       '30min': {
         'duration': 30,
-        'price': 0,
+        'price': int.tryParse(state.price30Min) ?? 0,
         'currency': 'SAR',
         'isEnabled': state.isThirtyMinutesSelected,
       },
       '60min': {
         'duration': 60,
-        'price': 0,
+        'price': int.tryParse(state.price60Min) ?? 0,
         'currency': 'SAR',
         'isEnabled': state.isSixtyMinutesSelected,
       },

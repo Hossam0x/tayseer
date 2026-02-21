@@ -34,7 +34,9 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
             children: [
               /// Back Button
               Align(
-                alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
+                alignment: isArabic
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.pop(),
@@ -224,7 +226,7 @@ class _SessionDurationItem extends StatelessWidget {
                     Gap(context.responsiveWidth(8)),
                     Expanded(
                       child: SizedBox(
-                        height: context.height*0.08,
+                        height: context.height * 0.08,
                         child: CustomTextFormField(
                           autovalidateMode: AutovalidateMode.always,
                           onChanged: onPriceChanged,
