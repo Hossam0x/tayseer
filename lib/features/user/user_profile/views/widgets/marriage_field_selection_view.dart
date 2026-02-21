@@ -266,25 +266,22 @@ class _MarriageFieldSelectionViewState
     debugPrint('🔍 Items count: ${items.length}');
 
     return Expanded(
-      child: Container(
-        color: AppColors.kWhiteColor,
-        child: SelectableListWidget(
-          items: items,
-          showSearch: fieldData['showSearch'] as bool,
-          searchHintKey: fieldData['searchHint'] as String?,
-          initialSelectedKey: initialSelectedKey,
-          primaryColor: AppColors.kprimaryColor,
-          onChanged: (key, translatedValue) {
-            setState(() {
-              // ⭐⭐⭐ CRITICAL: حفظ الـ key مش الترجمة
-              _selectedValue = key;
-
-              debugPrint('💾 Selected Key: $key');
-              debugPrint('💾 Translated Value: $translatedValue');
-            });
-          },
-        ),
+      child:  Container(
+      color: AppColors.kWhiteColor,
+      child: SelectableListWidget(
+        key: ValueKey(_selectedValue),  // ✅ هنا الحل - يعمل rebuild لما تتغير القيمة
+        items: items,
+        showSearch: fieldData['showSearch'] as bool,
+        searchHintKey: fieldData['searchHint'] as String?,
+        initialSelectedKey: _selectedValue ?? initialSelectedKey, // ✅ يعكس الاختيار الحالي
+        primaryColor: AppColors.kprimaryColor,
+        onChanged: (key, translatedValue) {
+          setState(() {
+            _selectedValue = key;
+          });
+        },
       ),
+    ),
     );
   }
 

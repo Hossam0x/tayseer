@@ -1,4 +1,3 @@
-
 import 'dart:ui';
 
 import 'package:tayseer/my_import.dart';
@@ -21,13 +20,13 @@ class RecentlyJoined extends StatelessWidget {
   Widget build(BuildContext context) {
     final shouldBlur = forceBlur || item.isImageBlurred;
 
-    return   GestureDetector(
-                  onTap: () {
-                    context.pushNamed(
-                      AppRouter.kMarriageView,
-                      arguments: {'personId': item.userId},
-                    );
-                  },
+    return GestureDetector(
+      onTap: () {
+        context.pushNamed(
+          AppRouter.kMarriageView,
+          arguments: {'personId': item.userId},
+        );
+      },
       child: Container(
         margin: EdgeInsets.only(top: 10.h, left: 4.w),
         padding: EdgeInsets.all(8.w),
@@ -47,21 +46,30 @@ class RecentlyJoined extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      AppImage(
-                        item.image,
-                        fit: BoxFit.cover,
-                        height: isCompact ? 80.h : 100.h, // ✅ ارتفاع الصورة
-                      ),
+                      shouldBlur
+                          ? ImageFiltered(
+                              imageFilter: ImageFilter.blur(
+                                sigmaX: 15,
+                                sigmaY: 15,
+                              ),
+                              child: AppImage(
+                                item.image,
+                                fit: BoxFit.cover,
+                                height: isCompact ? 80.h : 100.h,
+                              ),
+                            )
+                          : AppImage(
+                              item.image,
+                              fit: BoxFit.cover,
+                              height: isCompact ? 80.h : 100.h,
+                            ),
                       if (shouldBlur)
-                        BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                          child: Container(color: Colors.black.withOpacity(0.2)),
-                        ),
+                        Container(color: Colors.black.withOpacity(0.2)),
                     ],
                   ),
                 ),
               ),
-      
+
               Padding(
                 padding: EdgeInsets.only(
                   top: isCompact ? 6.h : 10.h, // ✅ مسافة مصغرة
@@ -80,7 +88,9 @@ class RecentlyJoined extends StatelessWidget {
                                 child: Text(
                                   item.name,
                                   style: Styles.textStyle14SemiBold.copyWith(
-                                    fontSize: isCompact ? 12.sp : 14.sp, // ✅ حجم خط مصغر
+                                    fontSize: isCompact
+                                        ? 12.sp
+                                        : 14.sp, // ✅ حجم خط مصغر
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -90,7 +100,9 @@ class RecentlyJoined extends StatelessWidget {
                                 Icon(
                                   Icons.verified,
                                   color: Colors.blue,
-                                  size: isCompact ? 13.sp : 16.sp, // ✅ حجم أيقونة مصغر
+                                  size: isCompact
+                                      ? 13.sp
+                                      : 16.sp, // ✅ حجم أيقونة مصغر
                                 ),
                             ],
                           ),
@@ -104,18 +116,15 @@ class RecentlyJoined extends StatelessWidget {
                       isCompact: isCompact,
                     ),
                     SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
-                    if (item.country.isNotEmpty)...[  _buildBadge(
+                    if (item.country.isNotEmpty) ...[
+                      _buildBadge(
                         text: item.country,
-                        icon:"",
+                        icon: "",
                         isCompact: isCompact,
-                      ),]else...[
-                        _buildBadge(
-                          text: "",
-                          icon: "",
-                          isCompact: isCompact,
-                        ),
-                      ]
-                    
+                      ),
+                    ] else ...[
+                      _buildBadge(text: "", icon: "", isCompact: isCompact),
+                    ],
                   ],
                 ),
               ),

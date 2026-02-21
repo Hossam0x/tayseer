@@ -1,5 +1,4 @@
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
@@ -1238,7 +1237,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                context.tr('audio_recording'),
+                context.tr('audio_clip'),
                 style: Styles.textStyle16.copyWith(fontWeight: FontWeight.w600),
               ),
               IconButton(
