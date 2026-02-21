@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/my_import.dart';
 
 class CircularIconButton extends StatelessWidget {
@@ -19,7 +20,7 @@ class CircularIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return CustomClick(
       onTap: onTap,
       child: AnimatedContainer(
         // خليناه Animated عشان تغيير اللون يكون ناعم

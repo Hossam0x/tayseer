@@ -1,4 +1,3 @@
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/model/login_data.dart';
@@ -20,3 +19,6 @@ String phone = '201009119795';
 bool get isUserAnonymous =>
     CachNetwork.getBoolData(key: kIsUserAnonymous) ?? false;
 bool get isUser => selectedUserType == UserTypeEnum.user;
+bool get isAdvisor => selectedUserType == UserTypeEnum.asConsultant;
+bool get isGuest => selectedUserType == UserTypeEnum.guest;
+bool get isConsultant => selectedUserType == UserTypeEnum.asConsultant;

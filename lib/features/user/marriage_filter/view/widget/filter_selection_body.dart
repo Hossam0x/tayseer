@@ -4,7 +4,7 @@ import 'package:tayseer/features/user/questions/view/widget/custom_selectable_li
 import 'package:tayseer/features/user/questions/view/widget/multiselect_chips_widget.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_ios_picker.dart';
 
-class FilterSelectionScreen extends StatelessWidget {
+class FilterSelectionScreen extends StatefulWidget {
   final String fieldKey;
   final dynamic initialValue;
 
@@ -15,9 +15,21 @@ class FilterSelectionScreen extends StatelessWidget {
   });
 
   @override
+  State<FilterSelectionScreen> createState() => _FilterSelectionScreenState();
+}
+
+class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
+  late dynamic tempValue;
+
+  @override
+  void initState() {
+    super.initState();
+    tempValue = widget.initialValue;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final config = _getConfig(context);
-    dynamic tempValue = initialValue;
 
     return Scaffold(
       body: CustomBackground(
@@ -50,13 +62,7 @@ class FilterSelectionScreen extends StatelessWidget {
                 hasScrollBody: true,
                 child: Column(
                   children: [
-                    Expanded(
-                      child: _buildContent(
-                        config,
-                        (val) => tempValue = val,
-                        context,
-                      ),
-                    ),
+                    Expanded(child: _buildContent(config, context)),
 
                     // ===== Confirm Button =====
                     Padding(
@@ -78,39 +84,50 @@ class FilterSelectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(
-    QuestionPageConfig config,
-    ValueChanged<dynamic> onChanged,
-    BuildContext context,
-  ) {
+  Widget _buildContent(QuestionPageConfig config, BuildContext context) {
     switch (config.type) {
       case QuestionType.selectableList:
         return SelectableListWidget(
+          
           items: config.items ?? [],
+          selectedKey: tempValue, // 🔥 التحكم هنا
           showSearch: config.showSearch,
           searchHintKey: config.searchHintKey,
-          onChanged: (key, value) => onChanged(value),
+          onChanged: (key, value) {
+            setState(() {
+              tempValue = key; // نخزن الـ key مش الترجمة
+            });
+          },
         );
+
       case QuestionType.multiSelectChips:
         return MultiSelectChipsWidget(
           itemsWithEmoji: config.itemsWithIcons ?? {},
-          onChanged: (List<String> values) => onChanged(values),
+          onChanged: (List<String> values) {
+            setState(() {
+              tempValue = values;
+            });
+          },
         );
+
       case QuestionType.picker:
         return CustomIosPicker(
-          initialValue: initialValue ?? config.initialValue ?? 160,
+          initialValue: tempValue ?? config.initialValue ?? 160,
           minValue: config.minValue ?? 100,
           maxValue: config.maxValue ?? 220,
           unit: config.unit != null ? context.tr(config.unit!) : null,
-          onSelectedItemChanged: (value) => onChanged(value),
+          onSelectedItemChanged: (value) {
+            tempValue = value;
+          },
         );
+
       default:
         return const SizedBox();
     }
   }
 
   QuestionPageConfig _getConfig(BuildContext context) {
-    switch (fieldKey) {
+    switch (widget.fieldKey) {
       // ============================================
       // قسم العمر والبلد
       // ============================================
@@ -332,9 +349,6 @@ class FilterSelectionScreen extends StatelessWidget {
           items: ['hijab_yes', 'hijab_no', 'no_preference'],
         );
 
-      // ============================================
-      // Default
-      // ============================================
       default:
         return const QuestionPageConfig(
           titleKey: 'select_option',

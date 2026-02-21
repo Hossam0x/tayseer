@@ -1,5 +1,6 @@
 // lib/features/user/questions/view/commitment_screen.dart
 
+import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -170,8 +171,7 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
                   SizedBox(height: context.height * 0.015),
 
                   // نص الموافقة
-                  _buildTermsText(context),
-
+                  AgreementText(),
                   SizedBox(height: context.height * 0.02),
                 ],
               ),
@@ -252,40 +252,6 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
         useGradient: _isButtonEnabled,
         backGroundcolor: AppColors.kgreyColor,
         onPressed: _isButtonEnabled ? _onSubmit : null,
-      ),
-    );
-  }
-
-  Widget _buildTermsText(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: context.width * 0.08),
-      child: Text.rich(
-        TextSpan(
-          style: TextStyle(
-            fontSize: context.width * 0.028,
-            color: Colors.grey[600],
-            height: 1.6,
-          ),
-          children: [
-            TextSpan(text: context.tr('agreement_prefix')),
-            TextSpan(
-              text: context.tr('terms_of_use'),
-              style: TextStyle(
-                color: AppColors.kprimaryColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            TextSpan(text: ' ${context.tr('and')} '),
-            TextSpan(
-              text: context.tr('privacy_policy'),
-              style: TextStyle(
-                color: AppColors.kprimaryColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        textAlign: TextAlign.center,
       ),
     );
   }

@@ -52,7 +52,7 @@ class ChooseGenderBody extends StatelessWidget {
                         /// Title
                         Text(
                           context.tr('choose_identity'),
-                          style: Styles.textStyle22.copyWith(
+                          style: Styles.textStyle20Bold.copyWith(
                             color: AppColors.kscandryTextColor,
                           ),
                         ),

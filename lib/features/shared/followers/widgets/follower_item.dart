@@ -208,7 +208,13 @@ class FollowerItem extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(6.r),
-            onTap: onToggleFollow,
+            onTap: () {
+              if (isGuest) {
+                _navigateToRegistration(context);
+              } else {
+                onToggleFollow();
+              }
+            },
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 10.w),
               child: Center(
@@ -227,13 +233,40 @@ class FollowerItem extends StatelessWidget {
     } else {
       return CustomBotton(
         title: context.tr('follow'),
-        onPressed: onToggleFollow,
+        onPressed: () {
+          if (isGuest) {
+            _navigateToRegistration(context);
+          } else {
+            onToggleFollow();
+          }
+        },
         width: 110.w,
         height: 45.h,
         radius: 10.r,
         useGradient: true,
       );
     }
+  }
+
+  void _navigateToRegistration(BuildContext context) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr('joinUs'),
+      supTitle: context.tr("guest_login_first"),
+      icon: Icons.lock_person_outlined,
+      iconColor: AppColors.kprimaryColor,
+      bottonText: context.tr("login"),
+      showCancelButton: true,
+      cancelText: context.tr('skip'),
+      onPressed: () {
+        CachNetwork.removeData(key: ktoken);
+        context.pushNamedAndRemoveUntil(
+          AppRouter.kRegisrationView,
+          predicate: (_) => false,
+        );
+      },
+      onCancel: () {},
+    );
   }
 }
 

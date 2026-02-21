@@ -53,7 +53,7 @@ class UserAdvisorProfileView extends StatelessWidget {
               ),
 
               Positioned(
-                top: 40.h,
+                top: 55.h,
                 right: isArabic ? 8.w : null,
                 left: !isArabic ? 8.w : null,
                 child: Align(

@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/models/post_model.dart';
 
@@ -34,8 +35,10 @@ class PostPollView extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(bottom: context.responsiveHeight(10)),
-      child: GestureDetector(
-        onTap: () => onVote?.call(choice.choice),
+      child: CustomClick(
+        onTap: () {
+          onVote?.call(choice.choice);
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           height: context.responsiveHeight(48),

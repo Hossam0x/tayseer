@@ -222,24 +222,6 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
       ),
     );
 
-    final currentFollowState = state.profile!.isFollowing;
-    final newFollowerCount = currentFollowState
-        ? (state.profile!.followers - 1).clamp(0, state.profile!.followers)
-        : state.profile!.followers + 1;
-
-    // ⭐ تحديث مؤقت للواجهة
-    final optimisticProfile = state.profile!.copyWith(
-      isFollowing: !currentFollowState,
-      followers: newFollowerCount,
-    );
-
-    emit(
-      state.copyWith(
-        profile: optimisticProfile,
-        followActionState: CubitStates.loading,
-      ),
-    );
-
     // ⭐ استدعاء الـ API
     final result = await _repository.toggleFollowUser(advisorId);
 
@@ -247,21 +229,27 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
 
     result.fold(
       (failure) {
-        // ⭐ الرجوع للحالة السابقة عند الفشل
         emit(
           state.copyWith(
-            profile: state.profile?.copyWith(
-              isFollowing: currentFollowState,
-              followers: state.profile!.followers,
-            ),
             followActionState: CubitStates.failure,
             followMessage: failure.message,
           ),
         );
       },
       (message) {
+        final currentFollowState = state.profile?.isFollowing ?? false;
+        final newFollowerCount = currentFollowState
+            ? (state.profile!.followers - 1).clamp(0, state.profile!.followers)
+            : state.profile!.followers + 1;
+
+        final updatedProfile = state.profile?.copyWith(
+          isFollowing: !currentFollowState,
+          followers: newFollowerCount,
+        );
+
         emit(
           state.copyWith(
+            profile: updatedProfile,
             followActionState: CubitStates.success,
             followMessage: message,
             isFollowAdded: !currentFollowState,
@@ -396,7 +384,13 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     }
 
     // ⭐ إذا لم يكن هناك room، ننشئ واحد
-    emit(state.copyWith(isChatLoading: true));
+    emit(
+      state.copyWith(
+        isChatLoading: true,
+        chatActionState: CubitStates.loading,
+        chatErrorMessage: null,
+      ),
+    );
 
     // ⭐ تنظيف أي listeners سابقين
     socketHelper.off('room_created');
@@ -450,6 +444,8 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
           profile: updatedProfile,
           chatRoomId: chatRoomId,
           isChatLoading: false,
+          chatActionState: CubitStates.success,
+          chatErrorMessage: null,
           shouldNavigateToChat: true,
         ),
       );
@@ -464,7 +460,13 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
       // ⭐ إلغاء الـ timeout
       _chatTimeoutTimer?.cancel();
 
-      emit(state.copyWith(isChatLoading: false));
+      emit(
+        state.copyWith(
+          isChatLoading: false,
+          chatActionState: CubitStates.failure,
+          chatErrorMessage: message,
+        ),
+      );
 
       // ⭐ يمكن إضافة Toast أو snackbar للإخطار
       log('⚠️ Chat room creation failed: $message');

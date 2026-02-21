@@ -114,7 +114,7 @@ class UserPublicProfileBio extends StatelessWidget {
           ],
 
           // حالة الجاهزية للزواج
-          if (!profile.isMe) ...[
+          if (!profile.isMe && !isConsultant) ...[
             profile.availableForMarry
                 ? Padding(
                     padding: EdgeInsets.only(top: 10.h),
@@ -124,6 +124,28 @@ class UserPublicProfileBio extends StatelessWidget {
                       backGroundcolor: AppColors.primary400,
                       title: 'رؤية ملف الزواج',
                       onPressed: () {
+                        if (isGuest) {
+                          CustomshowDialogWithImage(
+                            context,
+                            title: context.tr('joinUs'),
+                            supTitle: context.tr("guest_login_first"),
+                            icon: Icons.lock_person_outlined,
+                            iconColor: AppColors.kprimaryColor,
+                            bottonText: context.tr("login"),
+                            showCancelButton: true,
+                            cancelText: context.tr('skip'),
+                            onPressed: () {
+                              CachNetwork.removeData(key: ktoken);
+                              context.pushNamedAndRemoveUntil(
+                                AppRouter.kRegisrationView,
+                                predicate: (_) => false,
+                              );
+                            },
+                            onCancel: () {},
+                          );
+                          return;
+                        }
+
                         context.pushNamed(
                           AppRouter.kMarriageView,
                           arguments: {'personId': profile.id},

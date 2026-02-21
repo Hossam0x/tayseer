@@ -40,6 +40,9 @@ class UserAdvisorProfileState extends Equatable {
   final CubitStates blockUserActionState;
   final String? blockUserMessage;
 
+  final CubitStates chatActionState;
+  final String? chatErrorMessage;
+
   final CubitStates blockActionState;
   final String? blockMessage;
   final CubitStates reportActionState;
@@ -64,6 +67,8 @@ class UserAdvisorProfileState extends Equatable {
     this.isShareAdded,
     this.shouldNavigateToChat = false,
     this.isChatLoading = false,
+    this.chatActionState = CubitStates.initial,
+    this.chatErrorMessage,
     this.saveActionState = CubitStates.initial,
     this.saveMessage,
     this.deletePostActionState = CubitStates.initial,
@@ -99,6 +104,8 @@ class UserAdvisorProfileState extends Equatable {
     bool? isShareAdded,
     bool? shouldNavigateToChat,
     bool? isChatLoading,
+    CubitStates? chatActionState,
+    String? chatErrorMessage,
     CubitStates? saveActionState,
     String? saveMessage,
     CubitStates? deletePostActionState,
@@ -131,6 +138,8 @@ class UserAdvisorProfileState extends Equatable {
       isShareAdded: isShareAdded ?? this.isShareAdded,
       shouldNavigateToChat: shouldNavigateToChat ?? this.shouldNavigateToChat,
       isChatLoading: isChatLoading ?? this.isChatLoading,
+      chatActionState: chatActionState ?? this.chatActionState,
+      chatErrorMessage: chatErrorMessage ?? this.chatErrorMessage,
       saveActionState: saveActionState ?? this.saveActionState,
       saveMessage: saveMessage ?? this.saveMessage,
       deletePostActionState:
@@ -168,6 +177,8 @@ class UserAdvisorProfileState extends Equatable {
     isShareAdded,
     shouldNavigateToChat,
     isChatLoading,
+    chatActionState,
+    chatErrorMessage,
     saveActionState,
     saveMessage,
     deletePostActionState,

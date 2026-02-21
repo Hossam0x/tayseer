@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
@@ -429,14 +430,13 @@ class _SettingsViewState extends State<SettingsView> {
         debugPrint('⚠️ Error unsubscribing from topics: $e');
       }
 
+      CachNetwork.clearCache();
+      getIt<tayseerSocketHelper>().disconnect();
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRouter.kRegisrationView,
         (route) => false,
       );
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
 
       showSafeSnackBar(
         context: context,

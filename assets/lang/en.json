@@ -1,4 +1,8 @@
 {
+  "joinUs": "Join US",
+  "guest_login_first": "You must login first to use this feature.",
+  "login": "Login",
+ 
   "welcome_text": "Perhaps the love that Allah has written for you... begins here.",
   "login_email": "Login with Email",
   "login_google": "Login with Google",
@@ -175,7 +179,7 @@
   "certificateAdded": "Certificate added successfully",
   "pleaseUploadCertificate": "Please upload certificate image",
   "invalidYear": "Invalid year",
-  "cancel": "Cancel", 
+  "cancel": "Cancel",
   "exit_app": "Exit",
   "exit_app_title": "Do you want to exit?",
   "exit_app_message": "Are you sure you want to exit the app?",
@@ -980,6 +984,8 @@
   "search_country_hint": "Search for country...",
   "choose_country_val": "Choose Country",
   "no_results": "No Results",
+  "changes_saved_successfully": "Changes saved successfully",
+  "session_pricing_title": "Session Pricing",
   "appointments_title": "Appointments",
   "saving_status": "Saving...",
   "no_changes": "No Changes",
@@ -1007,7 +1013,7 @@
   "user_not_found": "User not found",
   "no_stories": "No stories",
   "choose_faith": "Faith",
-  "faith_subtitle": "You can choose up to 8 that describe you best",
+  "faith_subtitle": "You can choose  that describe you best",
   "faith_dua": "Supplication",
   "faith_umrah": "Performing Umrah",
   "faith_charity_work": "Charity Work",
@@ -1306,6 +1312,7 @@
   "select_faith_title": "Select Faith Activities",
   "faith_description": "Choose the faith activities you practice",
   "marriage_tab":"Marriage",
+  "logout_confirmation":"Are you sure you want to logout?",
   "interactions_tab":"Interactions"
 
 }

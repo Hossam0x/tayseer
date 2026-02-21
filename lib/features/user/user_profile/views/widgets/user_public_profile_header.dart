@@ -202,6 +202,28 @@ class UserPublicProfileHeader extends StatelessWidget {
   Widget _buildMoreButton(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        if (isGuest) {
+          CustomshowDialogWithImage(
+            context,
+            title: context.tr('joinUs'),
+            supTitle: context.tr("guest_login_first"),
+            icon: Icons.lock_person_outlined,
+            iconColor: AppColors.kprimaryColor,
+            bottonText: context.tr("login"),
+            showCancelButton: true,
+            cancelText: context.tr('skip'),
+            onPressed: () {
+              CachNetwork.removeData(key: ktoken);
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+            },
+            onCancel: () {},
+          );
+          return;
+        }
+
         final cubit = context.read<UserPublicProfileCubit>();
         final profile = cubit.state.profile;
         final profileId = cubit.userId ?? profile?.id ?? '';

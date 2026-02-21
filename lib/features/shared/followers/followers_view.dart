@@ -120,7 +120,7 @@ class _FollowersViewState extends State<FollowersView> {
           child: Column(
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                padding: EdgeInsetsDirectional.only(start: 20.w),
                 decoration: BoxDecoration(
                   color: AppColors.whiteCardBack,
                   borderRadius: BorderRadius.circular(12.r),
@@ -155,14 +155,16 @@ class _FollowersViewState extends State<FollowersView> {
                           ),
                           border: InputBorder.none,
                           suffixIcon: state.searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: Icon(
-                                    Icons.clear,
-                                    size: 18.w,
-                                    color: Colors.grey,
-                                  ),
-                                  onPressed: _clearSearch,
-                                )
+                              ?
+                              // Make this Container and icon with Gesture detector?
+                              GestureDetector(
+                                onTap: _clearSearch,
+                                child: Icon(
+                                  Icons.clear,
+                                  size: 18.w,
+                                  color: Colors.grey,
+                                ),
+                              )
                               : null,
                         ),
                       ),

@@ -138,8 +138,30 @@ class _EventCardItemState extends State<EventCardItem>
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      onTap: widget.onTap
-         ,
+      onTap: () {
+        if (isGuest) {
+          CustomshowDialogWithImage(
+            context,
+            title: context.tr('joinUs'),
+            supTitle: context.tr("guest_login_first"),
+            icon: Icons.lock_person_outlined,
+            iconColor: AppColors.kprimaryColor,
+            bottonText: context.tr("login"),
+            showCancelButton: true,
+            cancelText: context.tr('skip'),
+            onPressed: () {
+              CachNetwork.removeData(key: ktoken);
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+            },
+            onCancel: () {},
+          );
+        } else {
+          widget.onTap?.call();
+        }
+      },
       onLongPressStart: widget.enableLongPress ? _onLongPressStart : null,
       child: AnimatedBuilder(
         animation: _animationController,

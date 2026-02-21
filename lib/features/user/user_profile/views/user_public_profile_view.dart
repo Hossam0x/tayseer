@@ -37,7 +37,7 @@ class UserPublicProfileView extends StatelessWidget {
               // زر الرجوع
               // According language direction ar or en
               Positioned(
-                top: 40.h,
+                top: 55.h,
                 right: isArabic ? 8.w : null,
                 left: !isArabic ? 8.w : null,
                 child: IconButton(
@@ -70,6 +70,28 @@ class UserPublicProfileView extends StatelessWidget {
           padding: EdgeInsets.only(bottom: 10.h),
           child: FloatingActionButton(
             onPressed: () {
+              if (isGuest) {
+                CustomshowDialogWithImage(
+                  context,
+                  title: context.tr('joinUs'),
+                  supTitle: context.tr("guest_login_first"),
+                  icon: Icons.lock_person_outlined,
+                  iconColor: AppColors.kprimaryColor,
+                  bottonText: context.tr("login"),
+                  showCancelButton: true,
+                  cancelText: context.tr('skip'),
+                  onPressed: () {
+                    CachNetwork.removeData(key: ktoken);
+                    context.pushNamedAndRemoveUntil(
+                      AppRouter.kRegisrationView,
+                      predicate: (_) => false,
+                    );
+                  },
+                  onCancel: () {},
+                );
+                return;
+              }
+
               final cubit = context.read<UserPublicProfileCubit>();
               SendGreetingDialog.show(
                 context,

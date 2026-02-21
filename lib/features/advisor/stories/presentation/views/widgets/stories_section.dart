@@ -101,7 +101,7 @@ class _StoriesListViewState extends State<_StoriesListView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isUser) ...[
+          if (isAdvisor) ...[
             Padding(
               padding: EdgeInsetsDirectional.only(
                 end: context.responsiveWidth(14),
@@ -153,6 +153,28 @@ class _UserStoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        if (isGuest) {
+          CustomshowDialogWithImage(
+            context,
+            title: context.tr('joinUs'),
+            supTitle: context.tr("guest_login_first"),
+            icon: Icons.lock_person_outlined,
+            iconColor: AppColors.kprimaryColor,
+            bottonText: context.tr("login"),
+            showCancelButton: true,
+            cancelText: context.tr('skip'),
+            onPressed: () {
+              CachNetwork.removeData(key: ktoken);
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+            },
+            onCancel: () {},
+          );
+          return;
+        }
+
         // Reverse stories to chronological order (oldest first) before opening
         final chronologicalUserStory = userStoryModel.copyWith(
           stories: userStoryModel.stories.reversed.toList(),
@@ -313,7 +335,9 @@ class _AddStoryItem extends StatelessWidget {
                   final camera = await Permission.camera.request();
 
                   if (context.mounted) {
-                    if (photos.isGranted && camera.isGranted) {
+                    final isPhotosGranted =
+                        photos.isGranted || photos.isLimited;
+                    if (isPhotosGranted && camera.isGranted) {
                       final storiesCubit = context.read<StoriesCubit>();
                       Navigator.push(
                         context,

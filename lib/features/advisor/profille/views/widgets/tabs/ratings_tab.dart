@@ -68,7 +68,30 @@ class _RatingsTabState extends State<RatingsTab>
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 24.w),
       child: ElevatedButton(
-        onPressed: () => _showRateDialog(context),
+        onPressed: () {
+          if (isGuest) {
+            CustomshowDialogWithImage(
+              context,
+              title: context.tr('joinUs'),
+              supTitle: context.tr("guest_login_first"),
+              icon: Icons.lock_person_outlined,
+              iconColor: AppColors.kprimaryColor,
+              bottonText: context.tr("login"),
+              showCancelButton: true,
+              cancelText: context.tr('skip'),
+              onPressed: () {
+                CachNetwork.removeData(key: ktoken);
+                context.pushNamedAndRemoveUntil(
+                  AppRouter.kRegisrationView,
+                  predicate: (_) => false,
+                );
+              },
+              onCancel: () {},
+            );
+          } else {
+            _showRateDialog(context);
+          }
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.kprimaryColor,
           shape: RoundedRectangleBorder(
