@@ -22,7 +22,8 @@ class MessageTimeStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeColor = isOverlay ? Colors.white : ChatColors.timeReceiver;
+    // ✅ اللون أبيض دايماً للنص
+    final timeColor = Colors.white;
     final timeFontSize = isMobile
         ? ChatDimensions.timeFontSizeMobile
         : ChatDimensions.timeFontSizeTablet;
@@ -34,6 +35,7 @@ class MessageTimeStatus extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // ✅ الأيقونة على الناحية التانية (شمال الوقت)
           if (isMe) ...[_buildStatusIcon(), SizedBox(width: spacingH)],
           Text(
             formattedTime,
@@ -49,13 +51,13 @@ class MessageTimeStatus extends StatelessWidget {
   }
 
   Widget _buildStatusIcon() {
-    // Pending state: show clock icon
+    // ✅ Pending state: أيقونة الساعة بيضاء
     if (status == MessageStatusEnum.pending) {
       final pendingIconSize = isMobile ? 12.0 : 16.0;
       return Icon(
         Icons.access_time,
         size: pendingIconSize,
-        color: ChatColors.sentIconColor,
+        color: Colors.white,
       );
     }
 
@@ -69,9 +71,7 @@ class MessageTimeStatus extends StatelessWidget {
           : AssetsData.readMessageIcon,
       width: iconSize,
       height: iconSize,
-      colorFilter: status == MessageStatusEnum.read
-          ? null
-          : const ColorFilter.mode(ChatColors.sentIconColor, BlendMode.srcIn),
+      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
     );
   }
 }
