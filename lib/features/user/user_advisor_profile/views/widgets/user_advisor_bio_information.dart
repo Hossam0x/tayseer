@@ -302,29 +302,40 @@ class UserAdvisorBioInformation extends StatelessWidget {
           previous.isChatLoading != current.isChatLoading ||
           previous.followActionState != current.followActionState,
       builder: (context, state) {
+        final isBlocked = state.profile?.room?.isBlocked ?? false;
         final isFollowing = state.profile?.isFollowing ?? false;
         final isLoadingFollow = state.followActionState == CubitStates.loading;
+        final isLoadingBlock = state.blockActionState == CubitStates.loading;
         final isChatLoading = state.isChatLoading;
         final room = state.profile?.room;
 
         // ⭐ حالة التحميل العامة لتعطيل الأزرار
-        final bool isSomeActionLoading = isLoadingFollow || isChatLoading;
+        final bool isSomeActionLoading =
+            isLoadingFollow || isChatLoading || isLoadingBlock;
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
           child: Row(
             children: [
-              // زر المتابعة
+              // زر المتابعة أو إلغاء الحظر
               Expanded(
                 child: CustomBotton(
                   height: 54.h,
                   width: double.infinity,
-                  title: isFollowing
-                      ? context.tr('following')
-                      : context.tr('follow'),
+                  title: isBlocked
+                      ? context.tr('unblock')
+                      : (isFollowing
+                            ? context.tr('following')
+                            : context.tr('follow')),
                   onPressed: isSomeActionLoading
                       ? null
                       : () {
+                          if (isBlocked) {
+                            context.read<UserAdvisorProfileCubit>().unblockUser(
+                              advisorId: profile.id,
+                            );
+                            return;
+                          }
                           if (isGuest) {
                             CustomshowDialogWithImage(
                               context,
@@ -350,20 +361,20 @@ class UserAdvisorBioInformation extends StatelessWidget {
                                 .toggleFollow();
                           }
                         },
-                  backGroundcolor: isFollowing
+                  backGroundcolor: (isFollowing || isBlocked)
                       ? AppColors.kWhiteColor
                       : AppColors.kprimaryColor,
-                  titleColor: isFollowing
+                  titleColor: (isFollowing || isBlocked)
                       ? AppColors.kprimaryColor
                       : AppColors.kWhiteColor,
                   radius: 10.r,
-                  useGradient: isFollowing ? false : true,
-                  isLoading: isLoadingFollow,
+                  useGradient: (isFollowing || isBlocked) ? false : true,
+                  isLoading: isBlocked ? isLoadingBlock : isLoadingFollow,
                   elevation: 0,
                 ),
               ),
 
-              if (isFollowing) ...[
+              if (!isBlocked && isFollowing) ...[
                 Gap(13.w),
                 GestureDetector(
                   onTap: isSomeActionLoading

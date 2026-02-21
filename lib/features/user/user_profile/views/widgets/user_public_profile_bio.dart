@@ -9,28 +9,68 @@ class UserPublicProfileBio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
-      buildWhen: (previous, current) =>
-          previous.profileState != current.profileState ||
-          previous.profile != current.profile,
-      builder: (context, state) {
-        switch (state.profileState) {
-          case CubitStates.loading:
-            return SliverToBoxAdapter(child: _buildSkeletonBio(context));
-          case CubitStates.failure:
-            return _buildErrorBio(context, state.profileErrorMessage);
-          case CubitStates.success:
-            if (state.profile != null) {
-              return SliverToBoxAdapter(
-                child: _buildBioContent(context, state.profile!),
-              );
-            }
-            return _buildEmptyBio();
-          default:
-            return _buildEmptyBio();
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<UserPublicProfileCubit, UserPublicProfileState>(
+          listenWhen: (previous, current) =>
+              previous.blockActionState != current.blockActionState &&
+              current.blockActionState != CubitStates.initial,
+          listener: _handleBlockState,
+        ),
+      ],
+      child: BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
+        buildWhen: (previous, current) =>
+            previous.profileState != current.profileState ||
+            previous.profile != current.profile,
+        builder: (context, state) {
+          switch (state.profileState) {
+            case CubitStates.loading:
+              return SliverToBoxAdapter(child: _buildSkeletonBio(context));
+            case CubitStates.failure:
+              return _buildErrorBio(context, state.profileErrorMessage);
+            case CubitStates.success:
+              if (state.profile != null) {
+                return SliverToBoxAdapter(
+                  child: _buildBioContent(context, state.profile!),
+                );
+              }
+              return _buildEmptyBio();
+            default:
+              return _buildEmptyBio();
+          }
+        },
+      ),
     );
+  }
+
+  void _handleBlockState(BuildContext context, UserPublicProfileState state) {
+    final message = state.blockMessage;
+    final isBlocked = state.profile?.isBlockedByMe ?? false;
+
+    switch (state.blockActionState) {
+      case CubitStates.success:
+        showSafeSnackBar(
+          context: context,
+          text: isBlocked
+              ? context.tr('user_blocked_successfully')
+              : context.tr('unblocked_successfully'),
+          isSuccess: true,
+        );
+        break;
+      case CubitStates.failure:
+        showSafeSnackBar(
+          context: context,
+          text:
+              message ??
+              (isBlocked
+                  ? context.tr('failed_to_unblock')
+                  : context.tr('failed_to_unblock')), // or generic error
+          isError: true,
+        );
+        break;
+      default:
+        break;
+    }
   }
 
   Widget _buildSkeletonBio(BuildContext context) {
@@ -70,7 +110,7 @@ class UserPublicProfileBio extends StatelessWidget {
             Icon(Icons.info_outline, color: AppColors.kRedColor, size: 32.w),
             Gap(10.h),
             Text(
-              errorMessage ?? 'حدث خطأ في تحميل البيانات',
+              errorMessage ?? context.tr('error_loading_data'),
               style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
               textAlign: TextAlign.center,
             ),
@@ -124,7 +164,7 @@ class UserPublicProfileBio extends StatelessWidget {
                       width: 200.w,
                       height: 40.h,
                       backGroundcolor: AppColors.primary400,
-                      title: 'رؤية ملف الزواج',
+                      title: context.tr('view_marriage_profile'),
                       onPressed: () {
                         if (isGuest) {
                           CustomshowDialogWithImage(
@@ -165,7 +205,7 @@ class UserPublicProfileBio extends StatelessWidget {
                       borderRadius: BorderRadius.circular(34.r),
                     ),
                     child: Text(
-                      'غير متاح',
+                      context.tr('unavailable'),
                       style: Styles.textStyle14.copyWith(
                         color: AppColors.secondary950,
                       ),
@@ -188,11 +228,46 @@ class UserPublicProfileBio extends StatelessWidget {
               ),
             ),
 
-          // زر التواصل (إذا لم يكن المستخدم نفسه وكان جاهز للزواج)
-          // if (!profile.isMe && profile.availableForMarry)
-          // _buildContactButton(context),
+          // زر إلغاء الحظر (إذا كان محظوراً)
+          if (!profile.isMe) _buildActionSection(context, profile),
         ],
       ),
+    );
+  }
+
+  Widget _buildActionSection(BuildContext context, UserProfileModel profile) {
+    return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
+      buildWhen: (previous, current) =>
+          previous.profile?.isBlockedByMe != current.profile?.isBlockedByMe ||
+          previous.blockActionState != current.blockActionState,
+      builder: (context, state) {
+        final isBlocked = state.profile?.isBlockedByMe ?? false;
+        final isLoadingBlock = state.blockActionState == CubitStates.loading;
+
+        if (!isBlocked) return const SizedBox.shrink();
+
+        return Padding(
+          padding: EdgeInsets.symmetric(vertical: 16.h),
+          child: CustomBotton(
+            height: 54.h,
+            width: double.infinity,
+            title: context.tr('unblock'),
+            onPressed: isLoadingBlock
+                ? null
+                : () {
+                    context.read<UserPublicProfileCubit>().unblockUser(
+                      userId: profile.id,
+                    );
+                  },
+            backGroundcolor: AppColors.kWhiteColor,
+            titleColor: AppColors.kprimaryColor,
+            radius: 10.r,
+            useGradient: false,
+            isLoading: isLoadingBlock,
+            elevation: 0,
+          ),
+        );
+      },
     );
   }
 

@@ -43,9 +43,13 @@ class UserProfileOptionsBottomSheet extends StatelessWidget {
         onTap: () => _handleShare(context),
       ),
       OptionItem(
-        text: context.tr(AppStrings.blockUser),
+        text: cubit.state.profile?.isBlockedByMe == true
+            ? context.tr('unblock_user')
+            : context.tr(AppStrings.blockUser),
         icon: Icons.block_outlined,
-        onTap: () => _showBlockConfirmation(context),
+        onTap: () => cubit.state.profile?.isBlockedByMe == true
+            ? _showUnblockConfirmation(context)
+            : _showBlockConfirmation(context),
         isDestructive: true,
         isBlock: true,
       ),
@@ -159,7 +163,7 @@ class UserProfileOptionsBottomSheet extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: profileLink));
     showSafeSnackBar(
       context: context,
-      text: "تم نسخ رابط البروفايل",
+      text: context.tr('profile_copied_success'),
       isSuccess: true,
     );
   }
@@ -172,22 +176,31 @@ class UserProfileOptionsBottomSheet extends StatelessWidget {
       icon: Icons.block,
       bottonText: context.tr(AppStrings.yes),
       onPressed: () async {
-        final scaffoldContext = context;
-
         Navigator.pop(context); // dialog
         Navigator.pop(context); // sheet
 
-        // TODO: Implement block user API call
-        // await cubit.blockUser(userId);
+        await cubit.blockUser(userId: userId);
+      },
+      showCancelButton: true,
+      cancelText: context.tr(AppStrings.no),
+      onCancel: () {
+        Navigator.pop(context);
+      },
+    );
+  }
 
-        // مؤقتًا: عرض رسالة نجاح
-        if (!scaffoldContext.mounted) return;
+  void _showUnblockConfirmation(BuildContext context) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr('unblock_user'),
+      supTitle: context.tr('unblock_user_confirmation'),
+      icon: Icons.lock_open,
+      bottonText: context.tr(AppStrings.yes),
+      onPressed: () async {
+        Navigator.pop(context); // dialog
+        Navigator.pop(context); // sheet
 
-        showSafeSnackBar(
-          context: scaffoldContext,
-          text: "تم حظر المستخدم",
-          isSuccess: true,
-        );
+        await cubit.unblockUser(userId: userId);
       },
       showCancelButton: true,
       cancelText: context.tr(AppStrings.no),

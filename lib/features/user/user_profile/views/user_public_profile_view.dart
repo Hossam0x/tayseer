@@ -60,9 +60,11 @@ class UserPublicProfileView extends StatelessWidget {
   Widget _buildFloatingActionButton() {
     return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
       builder: (context, state) {
+        final isBlocked = state.profile?.isBlockedByMe ?? false;
         if (state.profile?.isMe == true ||
             state.state != CubitStates.success ||
-            state.profile == null) {
+            state.profile == null ||
+            isBlocked) {
           return const SizedBox.shrink();
         }
 
@@ -151,8 +153,6 @@ class _UserPublicProfileContent extends StatelessWidget {
           onRefresh: () => context.read<UserPublicProfileCubit>().refresh(),
           color: AppColors.kprimaryColor,
           backgroundColor: AppColors.kWhiteColor,
-          displacement: 40.h,
-          edgeOffset: 0,
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),

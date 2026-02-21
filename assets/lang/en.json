@@ -2,7 +2,6 @@
   "joinUs": "Join US",
   "guest_login_first": "You must login first to use this feature.",
   "login": "Login",
- 
   "welcome_text": "Perhaps the love that Allah has written for you... begins here.",
   "login_email": "Login with Email",
   "login_google": "Login with Google",
@@ -1311,8 +1310,21 @@
   "faith": "Faith",
   "select_faith_title": "Select Faith Activities",
   "faith_description": "Choose the faith activities you practice",
-  "marriage_tab":"Marriage",
-  "logout_confirmation":"Are you sure you want to logout?",
-  "interactions_tab":"Interactions"
-
+  "marriage_tab": "Marriage",
+  "logout_confirmation": "Are you sure you want to logout?",
+  "interactions_tab": "Interactions",
+  "unblock_user": "Unblock User",
+  "unblock_user_confirmation": "Are you sure you want to unblock this user?",
+  "unblocked_successfully": "User unblocked successfully",
+  "failed_to_unblock": "Failed to unblock user",
+  "blocked_account_title": "You have blocked this account",
+  "blocked_account_message": "You will not be able to see their details or posts in the main feed.",
+  "profile_copied_success": "Profile link copied successfully",
+  "user_blocked_successfully": "User blocked successfully",
+  "view_marriage_profile": "View marriage profile",
+  "unavailable": "Unavailable",
+  "error_loading_posts": "Error loading posts",
+  "please_enter_message": "Please enter a message before sending",
+  "message_too_long_error": "Message must not exceed 500 characters",
+  "error_sending_greeting": "An error occurred while sending the greeting"
 }

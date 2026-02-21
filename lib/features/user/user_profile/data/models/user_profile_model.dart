@@ -136,8 +136,9 @@ class UserProfileModel extends Equatable {
     String? location,
     String? email,
     String? phone,
-    bool? avaliableForMarry,
     bool? dataCompleted,
+    List<dynamic>? isBlocked,
+    Map<String, dynamic>? room,
   }) {
     return UserProfileModel(
       id: id ?? this.id,
@@ -156,11 +157,13 @@ class UserProfileModel extends Equatable {
       location: location ?? this.location,
       email: email ?? this.email,
       phone: phone ?? this.phone,
-      isBlocked: isBlocked,
-      room: room,
+      isBlocked: isBlocked ?? this.isBlocked,
+      room: room ?? this.room,
       dataCompleted: dataCompleted ?? this.dataCompleted,
     );
   }
+
+  bool get isBlockedByMe => isBlocked.isNotEmpty || (room['isBlocked'] == true);
 
   @override
   List<Object?> get props => [
@@ -178,6 +181,8 @@ class UserProfileModel extends Equatable {
     isMe,
     isVerified,
     location,
+    isBlocked,
+    room,
     email,
     phone,
     dataCompleted,

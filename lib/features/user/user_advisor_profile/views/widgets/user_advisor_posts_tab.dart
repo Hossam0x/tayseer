@@ -88,13 +88,13 @@ class UserAdvisorPostsTab extends StatelessWidget {
                     );
                   },
                 ),
-            
+
                 // زر تحميل المزيد (يظهر فقط لو لسه فيه محتوى متبقي)
                 if (state.hasMore)
                   _buildLoadMoreButton(context, state, cubit)
                 else if (userPosts.isNotEmpty)
                   const home_feed.EndOfFeedIndicator(),
-            
+
                 // مسافة تحت عشان الـ scroll يبقى مريح
                 Gap(40.h),
               ],

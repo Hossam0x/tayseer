@@ -29,6 +29,7 @@ abstract class UserAdvisorProfileRepository {
   Future<Either<Failure, String>> deletePost({required String postId});
   void hidePost({required String postId, required bool isHide});
   Future<Either<Failure, String>> archivePost({required String postId});
+  Future<Either<Failure, String>> unblockUser(String advisorId);
   Future<Either<Failure, String>> reportUser({
     required String reportedId,
     required String reason,
@@ -234,6 +235,24 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
     await _apiService.post(
       endPoint: '/posts/toggle-hide-post?postId=$postId&action=$action',
     );
+  }
+
+  @override
+  Future<Either<Failure, String>> unblockUser(String advisorId) async {
+    try {
+      final response = await _apiService.delete(
+        endPoint: ApiEndPoint.unblockuser,
+        data: {"blockedId": advisorId},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم إلغاء الحظر بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override

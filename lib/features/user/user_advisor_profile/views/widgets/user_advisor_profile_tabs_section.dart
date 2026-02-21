@@ -9,7 +9,9 @@ import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_tabs_cubit.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_tabs_state.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/widgets/blocked_profile_placeholder.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_posts_tab.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -195,28 +197,38 @@ class _UserAdvisorProfileTabsSectionState
   }
 
   Widget _buildTabContent(bool isMe) {
-    return BlocBuilder<UserAdvisorTabsCubit, UserAdvisorTabsState>(
+    return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
       buildWhen: (previous, current) =>
-          previous.selectedIndex != current.selectedIndex,
-      builder: (context, state) {
-        switch (state.selectedIndex) {
-          case 0:
-            return UserAdvisorPostsTab(advisorId: widget.advisorId);
-          case 1:
-            return ProfileCertificatesSection(
-              isMe: isMe,
-              key: ValueKey('certificates_${widget.advisorId}'),
-              advisorId: widget.advisorId,
-            );
-          case 2:
-            return RatingsTab(
-              isMe: isMe,
-              key: ValueKey('ratings_${widget.advisorId}'),
-              advisorId: widget.advisorId,
-            );
-          default:
-            return const SizedBox.shrink();
+          previous.profile?.room?.isBlocked != current.profile?.room?.isBlocked,
+      builder: (context, profileState) {
+        final isBlocked = profileState.profile?.room?.isBlocked ?? false;
+        if (isBlocked) {
+          return const BlockedProfilePlaceholder(isSliver: false);
         }
+        return BlocBuilder<UserAdvisorTabsCubit, UserAdvisorTabsState>(
+          buildWhen: (previous, current) =>
+              previous.selectedIndex != current.selectedIndex,
+          builder: (context, state) {
+            switch (state.selectedIndex) {
+              case 0:
+                return UserAdvisorPostsTab(advisorId: widget.advisorId);
+              case 1:
+                return ProfileCertificatesSection(
+                  isMe: isMe,
+                  key: ValueKey('certificates_${widget.advisorId}'),
+                  advisorId: widget.advisorId,
+                );
+              case 2:
+                return RatingsTab(
+                  isMe: isMe,
+                  key: ValueKey('ratings_${widget.advisorId}'),
+                  advisorId: widget.advisorId,
+                );
+              default:
+                return const SizedBox.shrink();
+            }
+          },
+        );
       },
     );
   }

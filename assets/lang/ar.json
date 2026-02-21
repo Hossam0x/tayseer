@@ -1322,6 +1322,20 @@
   "interactions_tab": "التفاعلات",
   "exit_app": "خروج",
   "exit_app_title": "هل تريد الخروج؟",
-  "logout_confirmation":"هل أنت متأكد من أنك تريد الخروج من التطبيق؟",
-  "exit_app_message": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟"
+  "logout_confirmation": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟",
+  "exit_app_message": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟",
+  "unblock_user": "إلغاء حظر المستخدم",
+  "unblock_user_confirmation": "هل أنت متأكد من إلغاء حظر هذا المستخدم؟",
+  "unblocked_successfully": "تم إلغاء الحظر بنجاح",
+  "failed_to_unblock": "فشل إلغاء الحظر",
+  "blocked_account_title": "لقد حظرت هذا الحساب",
+  "blocked_account_message": "لن تتمكن من رؤية تفاصيل عنه أو منشورات له في الصفحة الرئيسية.",
+  "profile_copied_success": "تم نسخ رابط الملف الشخصي بنجاح",
+  "user_blocked_successfully": "تم حظر المستخدم بنجاح",
+  "view_marriage_profile": "رؤية ملف الزواج",
+  "unavailable": "غير متاح",
+  "error_loading_posts": "حدث خطأ في تحميل المنشورات",
+  "please_enter_message": "يرجى كتابة رسالة قبل الإرسال",
+  "message_too_long_error": "يجب ألا تتجاوز الرسالة 500 حرف",
+  "error_sending_greeting": "حدث خطأ أثناء إرسال التحية"
 }
