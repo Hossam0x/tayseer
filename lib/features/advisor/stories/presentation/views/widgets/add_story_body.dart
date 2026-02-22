@@ -79,10 +79,9 @@ class _AddStoryBodyState extends State<AddStoryBody> {
             );
             getIt<StoriesCubit>().fetchStories(context: context);
             // Navigate back to profile after a short delay
+            final nav = Navigator.of(context);
             Future.delayed(const Duration(milliseconds: 500), () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
+              if (nav.canPop()) nav.pop();
             });
           });
         } else if (state.addStoryState == CubitStates.failure) {
@@ -148,26 +147,43 @@ class _AddStoryBodyState extends State<AddStoryBody> {
         centerTitle: true,
         title: state.albums.isEmpty
             ? Text(context.tr('new_story'), style: Styles.textStyle18SemiBold)
-            : DropdownButtonHideUnderline(
-                child: DropdownButton<AssetPathEntity>(
-                  value: state.selectedAlbum,
-                  items: state.albums.map((album) {
-                    return DropdownMenuItem(
-                      value: album,
-                      child: Text(
-                        album.name,
-                        style: Styles.textStyle18SemiBold,
+            : Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: AppColors.kGreyB3.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(24.r),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<AssetPathEntity>(
+                    value: state.selectedAlbum,
+                    borderRadius: BorderRadius.circular(16.r),
+                    dropdownColor: Colors.white,
+                    elevation: 3,
+                    isDense: true,
+                    icon: Padding(
+                      padding: EdgeInsetsDirectional.only(start: 6.w),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: AppColors.kprimaryColor,
+                        size: 22.sp,
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (album) {
-                    if (album != null) {
-                      context.read<AddStoryCubit>().changeAlbum(album);
-                    }
-                  },
-                  icon: const Icon(
-                    Icons.keyboard_arrow_down,
-                    color: Colors.black,
+                    ),
+                    items: state.albums.map((album) {
+                      return DropdownMenuItem(
+                        value: album,
+                        child: Text(
+                          album.name,
+                          style: Styles.textStyle16SemiBold.copyWith(
+                            color: Colors.black87,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (album) {
+                      if (album != null) {
+                        context.read<AddStoryCubit>().changeAlbum(album);
+                      }
+                    },
                   ),
                 ),
               ),

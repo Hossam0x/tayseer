@@ -111,6 +111,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
     String? content,
     List<File>? images,
     List<XFile>? videos,
+    double? videoDuration,
     Function(int sent, int total)? onSendProgress,
   }) async {
     try {
@@ -139,6 +140,8 @@ class StoriesRepositoryImpl implements StoriesRepository {
         if (content != null) 'content': content,
         if (uploadedImages.isNotEmpty) 'images': uploadedImages,
         if (uploadedVideos.isNotEmpty) 'videos': uploadedVideos,
+        if (videoDuration != null && videoDuration > 0)
+          'videoDuration': videoDuration,
       };
 
       final response = await apiService.post(

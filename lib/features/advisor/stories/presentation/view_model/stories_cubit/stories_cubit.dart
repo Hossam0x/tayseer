@@ -337,6 +337,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     String? content,
     List<File>? images,
     List<XFile>? videos,
+    double? videoDuration,
     BuildContext? context,
   }) async {
     emit(
@@ -349,6 +350,7 @@ class StoriesCubit extends Cubit<StoriesState> {
       content: content,
       images: images,
       videos: videos,
+      videoDuration: videoDuration,
       onSendProgress: (sent, total) {
         if (total > 0) {
           final progress = sent / total;

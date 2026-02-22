@@ -715,6 +715,8 @@
   "video_load_error": "تعذر تحميل الفيديو",
   "video_size_error_10mb": "حجم الفيديو أكبر من 10 ميجابايت",
   "video_size_limit_10mb": "الحد الأقصى للفيديو 10 ميجابايت",
+  "video_duration_limit_60s": "لا يمكن أن تتجاوز مدة الفيديو 60 ثانية",
+  "video_size_limit_50mb": "لا يمكن أن يتجاوز حجم الفيديو 50 ميجابايت",
   "enter_username": "اسم المستخدم",
   "bio_hint": "اكتب سيرتك الذاتية هنا...",
   "saving": "جاري الحفظ...",
@@ -1339,5 +1341,6 @@
   "error_loading_posts": "حدث خطأ في تحميل المنشورات",
   "please_enter_message": "يرجى كتابة رسالة قبل الإرسال",
   "message_too_long_error": "يجب ألا تتجاوز الرسالة 500 حرف",
-  "error_sending_greeting": "حدث خطأ أثناء إرسال التحية"
+  "error_sending_greeting": "حدث خطأ أثناء إرسال التحية",
+  "story_special_success": "تم إضافة القصة إلي المميزة بنجاح"
 }

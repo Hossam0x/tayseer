@@ -1,4 +1,6 @@
 import 'package:story_view/story_view.dart';
+import 'package:visibility_detector/visibility_detector.dart';
+import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
@@ -23,25 +25,46 @@ class StoryDetailsView extends StatefulWidget {
   State<StoryDetailsView> createState() => _StoryDetailsViewState();
 }
 
-class _StoryDetailsViewState extends State<StoryDetailsView> {
-  final StoryController _storyController = StoryController();
+class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
+  late StoryController _storyController;
   final List<StoryItem> _storyItems = [];
   DateTime? _currentStoryTime;
   int _currentStoryIndex = 0;
   late List<StoryModel> _reorderedStories;
   double _vOffset = 0;
   bool _isDragging = false;
+  bool _isPopping = false;
 
   @override
   void initState() {
     super.initState();
+    _storyController = StoryController();
     _initStoryItems();
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    videoRouteObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
   void dispose() {
+    videoRouteObserver.unsubscribe(this);
     _storyController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPushNext() {
+    // Called when a new route is pushed and the current route is no longer visible.
+    _storyController.pause();
+  }
+
+  @override
+  void didPopNext() {
+    // Called when the top route is popped and the current route becomes visible again.
+    _storyController.play();
   }
 
   void _initStoryItems() {
@@ -146,11 +169,14 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
     final opacity = (1.0 - (_vOffset / 400)).clamp(0.0, 1.0);
 
     return Scaffold(
-      backgroundColor: Colors.black.withOpacity(opacity),
-      body: GestureDetector(
-        onVerticalDragUpdate: (details) {
+      backgroundColor: Colors.transparent,
+      body: Listener(
+        onPointerMove: (event) {
+          if (!_isDragging && event.delta.dx.abs() > event.delta.dy.abs()) {
+            return; // Ignore horizontal swipes
+          }
           setState(() {
-            _vOffset += details.delta.dy;
+            _vOffset += event.delta.dy;
             if (_vOffset < 0) _vOffset = 0;
             if (_vOffset > 0 && !_isDragging) {
               _isDragging = true;
@@ -158,10 +184,12 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
             }
           });
         },
-        onVerticalDragEnd: (details) {
-          if (_vOffset > 100 || (details.primaryVelocity ?? 0) > 300) {
+        onPointerUp: (event) {
+          if (_isPopping) return;
+          if (_vOffset > 100) {
+            _isPopping = true;
             Navigator.pop(context);
-          } else {
+          } else if (_isDragging || _vOffset > 0) {
             setState(() {
               _vOffset = 0;
               _isDragging = false;
@@ -169,137 +197,153 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
             });
           }
         },
-        child: AnimatedContainer(
-          duration: _isDragging
-              ? Duration.zero
-              : const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()
-            ..translate(0.0, _vOffset, 0.0)
-            ..scale(1 - (_vOffset / 2000).clamp(0.0, 0.2)),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(_isDragging ? 20.r : 0),
-            child: Stack(
-              children: [
-                Directionality(
-                  textDirection: TextDirection.ltr,
-                  child: StoryView(
-                    storyItems: _storyItems,
-                    controller: _storyController,
-                    onComplete: () {
-                      Navigator.pop(context);
-                    },
-                    onVerticalSwipeComplete: (direction) {
-                      if (direction == Direction.down) {
-                        Navigator.pop(context);
-                      }
-                    },
-                    onStoryShow: (StoryItem item, int index) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          setState(() {
-                            if (index < _reorderedStories.length) {
-                              _currentStoryIndex = index;
-                              _currentStoryTime =
-                                  _reorderedStories[index].createdAt;
-                              _markCurrentStoryAsViewed();
+        child: Opacity(
+          opacity: opacity,
+          child: AnimatedContainer(
+            duration: _isDragging
+                ? Duration.zero
+                : const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            transform: Matrix4.identity()
+              ..translate(0.0, _vOffset, 0.0)
+              ..scale(1 - (_vOffset / 2000).clamp(0.0, 0.2)),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(_isDragging ? 20.r : 0),
+              child: Stack(
+                children: [
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: VisibilityDetector(
+                      key: const Key('story-details-visibility'),
+                      onVisibilityChanged: (visibilityInfo) {
+                        if (visibilityInfo.visibleFraction == 0) {
+                          _storyController.pause();
+                        } else if (visibilityInfo.visibleFraction == 1) {
+                          _storyController.play();
+                        }
+                      },
+                      child: StoryView(
+                        storyItems: _storyItems,
+                        controller: _storyController,
+                        onComplete: () {
+                          if (!_isPopping) {
+                            _isPopping = true;
+                            Navigator.pop(context);
+                          }
+                        },
+                        onVerticalSwipeComplete: (direction) {
+                          // Handled by our custom Listener to allow for smooth animation
+                        },
+                        onStoryShow: (StoryItem item, int index) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              setState(() {
+                                if (index < _reorderedStories.length) {
+                                  _currentStoryIndex = index;
+                                  _currentStoryTime =
+                                      _reorderedStories[index].createdAt;
+                                  _markCurrentStoryAsViewed();
+                                }
+                              });
                             }
                           });
-                        }
-                      });
-                    },
-                    progressPosition: ProgressPosition.top,
-                    repeat: false,
-                    inline: false,
+                        },
+                        progressPosition: ProgressPosition.top,
+                        repeat: false,
+                        inline: false,
+                      ),
+                    ),
                   ),
-                ),
-                Positioned(
-                  top: 30.h,
-                  right: 20.w,
-                  left: 20.w,
-                  child: _buildCustomHeader(),
-                ),
-                Positioned(
-                  bottom: 30.h,
-                  child: widget.isArchive
-                      ? BlocBuilder<ArchivedStoriesCubit, ArchivedStoriesState>(
-                          builder: (context, state) {
-                            final updatedUserStory = state.stories.firstWhere(
-                              (userStory) =>
-                                  userStory.userId == widget.userStories.userId,
-                              orElse: () => widget.userStories,
-                            );
+                  Positioned(
+                    top: 30.h,
+                    right: 20.w,
+                    left: 20.w,
+                    child: _buildCustomHeader(),
+                  ),
+                  Positioned(
+                    bottom: 30.h,
+                    child: widget.isArchive
+                        ? BlocBuilder<
+                            ArchivedStoriesCubit,
+                            ArchivedStoriesState
+                          >(
+                            builder: (context, state) {
+                              final updatedUserStory = state.stories.firstWhere(
+                                (userStory) =>
+                                    userStory.userId ==
+                                    widget.userStories.userId,
+                                orElse: () => widget.userStories,
+                              );
 
-                            // Find current story by ID from reordered list
-                            final currentStoryId =
-                                _currentStoryIndex < _reorderedStories.length
-                                ? _reorderedStories[_currentStoryIndex].id
-                                : null;
+                              final currentStoryId =
+                                  _currentStoryIndex < _reorderedStories.length
+                                  ? _reorderedStories[_currentStoryIndex].id
+                                  : null;
 
-                            final currentStory = currentStoryId != null
-                                ? updatedUserStory.stories.firstWhere(
-                                    (s) => s.id == currentStoryId,
-                                    orElse: () =>
-                                        _reorderedStories[_currentStoryIndex],
-                                  )
-                                : null;
+                              final currentStory = currentStoryId != null
+                                  ? updatedUserStory.stories.firstWhere(
+                                      (s) => s.id == currentStoryId,
+                                      orElse: () =>
+                                          _reorderedStories[_currentStoryIndex],
+                                    )
+                                  : null;
 
-                            return _LoveButton(
-                              isLiked: currentStory?.isLiked ?? false,
-                              onTap: () {
-                                if (currentStory != null) {
-                                  context
-                                      .read<ArchivedStoriesCubit>()
-                                      .likeStory(
-                                        storyId: currentStory.id,
-                                        userId: widget.userStories.userId,
-                                      );
-                                }
-                              },
-                            );
-                          },
-                        )
-                      : BlocBuilder<StoriesCubit, StoriesState>(
-                          buildWhen: (previous, current) =>
-                              previous.storiesList != current.storiesList,
-                          builder: (context, state) {
-                            final updatedUserStory = state.storiesList
-                                .firstWhere(
-                                  (userStory) =>
-                                      userStory.userId ==
-                                      widget.userStories.userId,
-                                  orElse: () => widget.userStories,
-                                );
-
-                            // Find current story by ID from reordered list
-                            final currentStoryId =
-                                _currentStoryIndex < _reorderedStories.length
-                                ? _reorderedStories[_currentStoryIndex].id
-                                : null;
-
-                            final currentStory = currentStoryId != null
-                                ? updatedUserStory.stories.firstWhere(
-                                    (s) => s.id == currentStoryId,
-                                    orElse: () =>
-                                        _reorderedStories[_currentStoryIndex],
-                                  )
-                                : null;
-
-                            return _LoveButton(
-                              isLiked: currentStory?.isLiked ?? false,
-                              onTap: () {
-                                if (currentStory != null) {
-                                  context.read<StoriesCubit>().likeStory(
-                                    storyId: currentStory.id,
-                                    userId: widget.userStories.userId,
+                              return _LoveButton(
+                                isLiked: currentStory?.isLiked ?? false,
+                                onTap: () {
+                                  if (currentStory != null) {
+                                    context
+                                        .read<ArchivedStoriesCubit>()
+                                        .likeStory(
+                                          storyId: currentStory.id,
+                                          userId: widget.userStories.userId,
+                                        );
+                                  }
+                                },
+                              );
+                            },
+                          )
+                        : BlocBuilder<StoriesCubit, StoriesState>(
+                            buildWhen: (previous, current) =>
+                                previous.storiesList != current.storiesList,
+                            builder: (context, state) {
+                              final updatedUserStory = state.storiesList
+                                  .firstWhere(
+                                    (userStory) =>
+                                        userStory.userId ==
+                                        widget.userStories.userId,
+                                    orElse: () => widget.userStories,
                                   );
-                                }
-                              },
-                            );
-                          },
-                        ),
-                ),
-              ],
+
+                              final currentStoryId =
+                                  _currentStoryIndex < _reorderedStories.length
+                                  ? _reorderedStories[_currentStoryIndex].id
+                                  : null;
+
+                              final currentStory = currentStoryId != null
+                                  ? updatedUserStory.stories.firstWhere(
+                                      (s) => s.id == currentStoryId,
+                                      orElse: () =>
+                                          _reorderedStories[_currentStoryIndex],
+                                    )
+                                  : null;
+
+                              return _LoveButton(
+                                isLiked: currentStory?.isLiked ?? false,
+                                onTap: () {
+                                  if (currentStory != null) {
+                                    context.read<StoriesCubit>().likeStory(
+                                      storyId: currentStory.id,
+                                      userId: widget.userStories.userId,
+                                    );
+                                  }
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -341,14 +385,20 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                     storyId: currentStory.id,
                     userId: widget.userStories.userId,
                   );
-                  if (mounted) Navigator.pop(context);
+                  if (mounted && !_isPopping) {
+                    _isPopping = true;
+                    Navigator.pop(context);
+                  }
                 } else if (value == 'unarchive') {
                   await cubit.unarchiveStory(
                     context: context,
                     storyId: currentStory.id,
                     userId: widget.userStories.userId,
                   );
-                  if (mounted) Navigator.pop(context);
+                  if (mounted && !_isPopping) {
+                    _isPopping = true;
+                    Navigator.pop(context);
+                  }
                 }
               } else {
                 final cubit = context.read<StoriesCubit>();
@@ -358,7 +408,10 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                     storyId: currentStory.id,
                     userId: widget.userStories.userId,
                   );
-                  if (mounted) Navigator.pop(context);
+                  if (mounted && !_isPopping) {
+                    _isPopping = true;
+                    Navigator.pop(context);
+                  }
                 } else if (value == 'archive') {
                   await cubit.toggleArchiveStory(
                     context: context,
@@ -366,7 +419,10 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                     userId: widget.userStories.userId,
                     isArchive: true,
                   );
-                  if (mounted) Navigator.pop(context);
+                  if (mounted && !_isPopping) {
+                    _isPopping = true;
+                    Navigator.pop(context);
+                  }
                 } else if (value == 'special') {
                   await cubit.makeStorySpecial(
                     context: context,
@@ -381,7 +437,10 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
                     storyId: currentStory.id,
                     userId: widget.userStories.userId,
                   );
-                  if (mounted) Navigator.pop(context);
+                  if (mounted && !_isPopping) {
+                    _isPopping = true;
+                    Navigator.pop(context);
+                  }
                 }
               }
             },
@@ -439,6 +498,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> {
           Expanded(
             child: GestureDetector(
               onTap: () {
+                _storyController.pause();
                 Navigator.push(
                   context,
                   MaterialPageRoute(

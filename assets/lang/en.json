@@ -732,6 +732,8 @@
   "video_load_error": "Failed to load video",
   "video_size_error_10mb": "Video size exceeds 10 MB",
   "video_size_limit_10mb": "Maximum video size is 10 MB",
+  "video_duration_limit_60s": "Video duration cannot exceed 60 seconds",
+  "video_size_limit_50mb": "Video size cannot exceed 50 MB",
   "enter_username": "Username",
   "bio_hint": "Write your bio here...",
   "saving": "Saving...",
@@ -1328,5 +1330,6 @@
   "error_loading_posts": "Error loading posts",
   "please_enter_message": "Please enter a message before sending",
   "message_too_long_error": "Message must not exceed 500 characters",
-  "error_sending_greeting": "An error occurred while sending the greeting"
+  "error_sending_greeting": "An error occurred while sending the greeting",
+  "story_special_success": "Story added to special successfully"
 }
