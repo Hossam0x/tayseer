@@ -1342,9 +1342,7 @@
   "verified_profile_title": "هذا الملف موثق",
   "verified_profile_desc": "تم التأكد من صحة جميع البيانات الشخصية من قبل التطبيق",
   "audio_pending_save": "حفظ الصوت معلق",
-  "video_pending_save": "حفظ الفيديو معلق"
-  "logout_confirmation": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟",
-  "exit_app_message": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟",
+  "video_pending_save": "حفظ الفيديو معلق",
   "unblock_user": "إلغاء حظر المستخدم",
   "unblock_user_confirmation": "هل أنت متأكد من إلغاء حظر هذا المستخدم؟",
   "unblocked_successfully": "تم إلغاء الحظر بنجاح",
