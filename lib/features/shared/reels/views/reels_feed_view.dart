@@ -112,8 +112,18 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
           BlocListener<ReelsCubit, ReelsState>(
             listenWhen: (previous, current) =>
                 previous.shareActionState != current.shareActionState &&
-                current.shareActionState != CubitStates.initial,
+                current.shareActionState == CubitStates.initial,
             listener: _handleShareToast,
+          ),
+
+          //  Listener 3: Follow action
+          BlocListener<ReelsCubit, ReelsState>(
+            listenWhen: (previous, current) =>
+                previous.followActionState != current.followActionState &&
+                current.followActionState == CubitStates.failure,
+            listener: (context, state) {
+              AppToast.error(context, state.followMessage ?? 'حدث خطأ ما ');
+            },
           ),
         ],
         child: BlocBuilder<ReelsCubit, ReelsState>(

@@ -5,11 +5,13 @@ import 'package:tayseer/core/widgets/follow_button.dart';
 import 'package:tayseer/core/widgets/post_card/circular_icon_button.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
+import 'package:tayseer/core/widgets/post_card/post_options_bottom_sheet.dart';
 import 'package:tayseer/core/widgets/post_card/reaction_like_button.dart';
 import 'package:tayseer/core/widgets/post_card/share_button.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
+import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/my_import.dart';
 // تأكد من استيراد AppImage
 
@@ -143,9 +145,19 @@ class ReelsOverlay extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       FollowButton(
+                        key: ValueKey(post.isFollowing),
                         isFollowing: post.isFollowing,
                         onTap: () {
-                          // Call follow/unfollow API
+                          if (context
+                                  .read<ReelsCubit>()
+                                  .state
+                                  .followActionState ==
+                              CubitStates.loading) {
+                            return;
+                          }
+                          context.read<ReelsCubit>().toggleFollowAdvisor(
+                            advisorId: post.advisorId,
+                          );
                         },
                       ),
                       Gap(8.w),
@@ -315,7 +327,7 @@ class ReelsOverlay extends StatelessWidget {
           iconColor: HexColor("#F2A6B5"),
           backgroundColor: const Color(0xFFFCE9ED),
           onTap: () {
-            // Show more options
+            PostOptionsBottomSheet.show(context, post: post);
           },
         ),
       ],

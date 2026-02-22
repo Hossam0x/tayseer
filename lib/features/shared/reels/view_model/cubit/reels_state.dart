@@ -8,11 +8,15 @@ class ReelsState extends Equatable {
   final bool hasMore;
   final bool isLoadingMore;
   final String? errorMessage;
-  
+
   // ✅ Share Action States
   final CubitStates shareActionState;
   final String? shareMessage;
   final bool isShareAdded;
+
+  //  follow states
+  final CubitStates followActionState;
+  final String? followMessage;
 
   const ReelsState({
     this.reelsState = CubitStates.initial,
@@ -24,6 +28,8 @@ class ReelsState extends Equatable {
     this.shareActionState = CubitStates.initial,
     this.shareMessage,
     this.isShareAdded = false,
+    this.followActionState = CubitStates.initial,
+    this.followMessage,
   });
 
   ReelsState copyWith({
@@ -36,6 +42,8 @@ class ReelsState extends Equatable {
     CubitStates? shareActionState,
     String? shareMessage,
     bool? isShareAdded,
+    CubitStates? followActionState,
+    String? followMessage,
   }) {
     return ReelsState(
       reelsState: reelsState ?? this.reelsState,
@@ -47,19 +55,23 @@ class ReelsState extends Equatable {
       shareActionState: shareActionState ?? this.shareActionState,
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
+      followActionState: followActionState ?? this.followActionState,
+      followMessage: followMessage ?? this.followMessage,
     );
   }
 
   @override
   List<Object?> get props => [
-        reelsState,
-        reels,
-        currentPage,
-        hasMore,
-        isLoadingMore,
-        errorMessage,
-        shareActionState,
-        shareMessage,
-        isShareAdded,
-      ];
+    reelsState,
+    reels,
+    currentPage,
+    hasMore,
+    isLoadingMore,
+    errorMessage,
+    shareActionState,
+    shareMessage,
+    isShareAdded,
+    followActionState,
+    followMessage,
+  ];
 }
