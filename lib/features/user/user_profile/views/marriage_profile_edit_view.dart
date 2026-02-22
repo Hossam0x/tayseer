@@ -1735,7 +1735,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
-    final isLongText = value.length > 30;
+    final isLongText = value.length > 20;
     return GestureDetector(
       onTap: onTap,
       child: Container(
