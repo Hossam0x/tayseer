@@ -1317,16 +1317,8 @@
   "verified_profile_desc": "All personal data has been verified by the application.",
   "deactivate_the_marriage_section": "Deactivate the marriage section",
   "audio_pending_save": "audio pending save",
-  "video_pending_save": "audio pending save"
-  "marriage_tab":"Marriage",
-  "logout_confirmation":"Are you sure you want to logout?",
-  "interactions_tab":"Interactions",
-  "verified_profile_title":"Verified Profile",
-"verified_profile_desc":"All personal data has been verified by the application.",
-"deactivate_the_marriage_section":"Deactivate the marriage section",
-"audio_pending_save":"audio pending save",
-"video_pending_save":"audio pending save",
-"unsaved_changes":"unsaved changes"
+  "video_pending_save": "audio pending save",
+  "unsaved_changes":"unsaved changes"
 
 
 }
