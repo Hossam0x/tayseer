@@ -1,4 +1,5 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/comment_avatar.dart';
@@ -252,7 +253,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
                         ),
                         Gap(10.w),
                         // ✅ MODIFIED: زر الإرسال
-                        InkWell(
+                        CustomClick(
                           onTap: _sendComment,
                           child: AppImage(
                             AssetsData.send,

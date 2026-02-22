@@ -1,6 +1,5 @@
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/add_story_view.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
@@ -101,7 +100,7 @@ class _StoriesListViewState extends State<_StoriesListView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isUser) ...[
+          if (isAdvisor) ...[
             Padding(
               padding: EdgeInsetsDirectional.only(
                 end: context.responsiveWidth(14),
@@ -153,6 +152,28 @@ class _UserStoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        if (isGuest) {
+          CustomshowDialogWithImage(
+            context,
+            title: context.tr('joinUs'),
+            supTitle: context.tr("guest_login_first"),
+            icon: Icons.lock_person_outlined,
+            iconColor: AppColors.kprimaryColor,
+            bottonText: context.tr("login"),
+            showCancelButton: true,
+            cancelText: context.tr('skip'),
+            onPressed: () {
+              CachNetwork.removeData(key: ktoken);
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+            },
+            onCancel: () {},
+          );
+          return;
+        }
+
         // Reverse stories to chronological order (oldest first) before opening
         final chronologicalUserStory = userStoryModel.copyWith(
           stories: userStoryModel.stories.reversed.toList(),
@@ -308,29 +329,17 @@ class _AddStoryItem extends StatelessWidget {
           onTap: isUploading
               ? null
               : () async {
-                  // Request permissions before entering
-                  final photos = await Permission.photos.request();
-                  final camera = await Permission.camera.request();
-
                   if (context.mounted) {
-                    if (photos.isGranted && camera.isGranted) {
-                      final storiesCubit = context.read<StoriesCubit>();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BlocProvider.value(
-                            value: storiesCubit,
-                            child: const AddStoryView(),
-                          ),
+                    final storiesCubit = context.read<StoriesCubit>();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BlocProvider.value(
+                          value: storiesCubit,
+                          child: const AddStoryView(),
                         ),
-                      );
-                    } else {
-                      SnackBarService().showSnackBar(
-                        context: context,
-                        text: context.tr('permissions_required'),
-                        isError: true,
-                      );
-                    }
+                      ),
+                    );
                   }
                 },
           child: Column(

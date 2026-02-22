@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:chewie/chewie.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:tayseer/core/widgets/custtom_glass_button.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
@@ -431,6 +432,9 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     );
 
     _controllersInitialized = true;
+    if (mounted) {
+      setState(() {});
+    }
 
     final videoUrl = state.videoPreviewUrl;
     if (videoUrl != null &&
@@ -652,15 +656,38 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                             maxLines: 4,
                                           ),
                                           Gap(6.h),
-                                          Text(
-                                            '${_bioController.text.length}/250',
-                                            style: Styles.textStyle14.copyWith(
-                                              color:
-                                                  _bioController.text.length >
-                                                      250
-                                                  ? AppColors.kRedColor
-                                                  : AppColors.secondary400,
+                                          ValueListenableBuilder(
+                                            valueListenable: _bioController,
+                                            builder: (context, value, child) {
+                                              return Text(
+                                                '${value.text.length}/250',
+                                                style: Styles.textStyle14
+                                                    .copyWith(
+                                                      color:
+                                                          value.text.length >
+                                                              250
+                                                          ? AppColors.kRedColor
+                                                          : AppColors
+                                                                .secondary400,
+                                                    ),
+                                              );
+                                            },
+                                          ),
+                                          Gap(12.h),
+                                          CusttomGlassButton(
+                                            text: context.tr(
+                                              'generate_ai_content',
                                             ),
+                                            showIcon:
+                                                state.isAiState ==
+                                                CubitStates.loading,
+
+                                            onTap: () {
+                                              cubit.enhanceTextWithGemini(
+                                                context,
+                                                _bioController,
+                                              );
+                                            },
                                           ),
                                           Gap(25.h),
 

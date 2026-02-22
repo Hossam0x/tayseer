@@ -93,4 +93,12 @@ class CachNetwork {
     kIsUserGuest = sharedPref.getBool('isUserGuest') ?? false;
     return kIsUserGuest;
   }
+
+  static Future<void> clearCache() async {
+    await sharedPref.clear();
+    kCurrentUserData = null;
+    selectedUserType = UserTypeEnum.user;
+    selectedLanguage = 'ar';
+    kIsUserGuest = false;
+  }
 }

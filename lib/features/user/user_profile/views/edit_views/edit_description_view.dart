@@ -19,7 +19,6 @@ class EditDescriptionView extends StatefulWidget {
 class _EditDescriptionViewState extends State<EditDescriptionView> {
   late TextEditingController _descriptionController;
   late bool _isLoading;
-  bool _isAiGenerated = false;
 
   // متغير لعرض عدد الأحرف الحالي
   int get _currentCharacterCount => _descriptionController.text.length;
@@ -87,14 +86,6 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
     } finally {
       setState(() => _isLoading = false);
     }
-  }
-
-  Future<void> _generateWithAI() async {
-    // هنا يمكنك إضافة منطق توليد النص بالذكاء الاصطناعي
-    setState(() {
-      _descriptionController.text = context.tr('ai_generated_bio');
-      _isAiGenerated = true;
-    });
   }
 
   @override
@@ -165,27 +156,6 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
                         ],
                       ),
                       Gap(32.h),
-
-                      if (!_isAiGenerated)
-                        InkWell(
-                          onTap: _generateWithAI,
-                          child: Container(
-                            padding: EdgeInsets.all(12.w),
-                            margin: EdgeInsets.symmetric(horizontal: 16.w),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16.r),
-                              border: Border.all(color: AppColors.kWhiteColor),
-                            ),
-                            width: double.infinity,
-                            child: Text(
-                              context.tr('write_with_ai'),
-                              textAlign: TextAlign.center,
-                              style: Styles.textStyle16.copyWith(
-                                color: AppColors.primary600,
-                              ),
-                            ),
-                          ),
-                        ),
 
                       Spacer(),
 

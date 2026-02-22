@@ -1,4 +1,7 @@
 {
+  "joinUs": "انضم لنا",
+  "guest_login_first": "يجب عليك تسجيل الدخول أولاً للاستفادة من هذه الميزة.",
+  "login": "تسجيل الدخول",
   "welcome_text": "لعلّ المودة التي كتبها الله لك... تبدأ من هنا.",
   "login_email": "الدخول بالبريد الالكتروني",
   "login_google": "الدخول من خلال جوجل",
@@ -625,6 +628,7 @@
   "invite_friend": "دعوة",
   "rate_the_app": "تقييم التطبيق",
   "manage_account": "إدارة الحساب",
+  "error_loading_data": "حدث خطأ في تحميل البيانات",
   "data_load_error": "حدث خطأ في تحميل البيانات",
   "update_age_failed": "فشل تحديث السن",
   "update_age_success": "تم تحديث السن بنجاح",
@@ -957,6 +961,8 @@
   "search_country_hint": "ابحث عن الدولة...",
   "choose_country_val": "اختر الدولة",
   "no_results": "لا توجد نتائج",
+  "changes_saved_successfully": "تم حفظ التغييرات بنجاح",
+  "session_pricing_title": "أسعار الجلسات",
   "appointments_title": "المواعيد",
   "saving_status": "جاري الحفظ...",
   "no_changes": "لا توجد تغييرات",
@@ -1326,4 +1332,6 @@
   "capture_error": "حدث خطأ أثناء التقاط الصورة",
   "no_face_detected": "لم يتم اكتشاف وجه - تأكد من أن وجهك واضح في الإطار",
   "details_ticket": "تفاصيل"
+  "logout_confirmation":"هل أنت متأكد من أنك تريد الخروج من التطبيق؟",
+  "exit_app_message": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟"
 }

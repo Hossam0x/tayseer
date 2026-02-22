@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import '../media/image_message_widget.dart';
 import '../media/video_message_widget.dart';
 import '../media/audio_message_widget.dart';
+import 'emoji_helper.dart';
 
 class MessageContentBuilder extends StatelessWidget {
   final String messageType;
   final List<String> contentList;
-  final List<String>? localFilePaths; // ✅ New parameter
+  final List<String>? localFilePaths;
   final Color textColor;
   final double fontSize;
   final double maxWidth;
-  final double? uploadProgress; // ✅ Upload progress
+  final double? uploadProgress;
 
   const MessageContentBuilder({
     super.key,
@@ -69,11 +70,21 @@ class MessageContentBuilder extends StatelessWidget {
         );
 
       default:
+        final text = contentList.isNotEmpty ? contentList.first : '';
+
+        // Single emoji → large, no text styling
+        if (EmojiHelper.isSingleEmoji(text)) {
+          return Text(text, style: const TextStyle(fontSize: 50));
+        }
+
+        // Multiple emojis only → slightly larger
+        final bool isAllEmojis = EmojiHelper.isOnlyEmojis(text);
+
         return Text(
-          contentList.isNotEmpty ? contentList.first : '',
+          text,
           style: TextStyle(
             color: textColor,
-            fontSize: fontSize,
+            fontSize: isAllEmojis ? fontSize * 1.7 : fontSize,
             fontFamily: 'Cairo',
             height: 1.4,
           ),
@@ -86,7 +97,6 @@ class MessageContentBuilder extends StatelessWidget {
     int index, {
     bool isLocal = false,
   }) {
-    // Close keyboard before opening image viewer
     FocusScope.of(context).unfocus();
 
     Navigator.of(context).push(

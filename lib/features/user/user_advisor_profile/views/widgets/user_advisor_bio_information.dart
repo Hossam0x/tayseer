@@ -9,11 +9,29 @@ class UserAdvisorBioInformation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
-      listenWhen: (previous, current) =>
-          previous.followActionState != current.followActionState &&
-          current.followActionState != CubitStates.initial,
-      listener: _handleFollowState,
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+          listenWhen: (previous, current) =>
+              previous.followActionState != current.followActionState &&
+              current.followActionState != CubitStates.initial,
+          listener: _handleFollowState,
+        ),
+        BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+          listenWhen: (previous, current) =>
+              previous.chatActionState != current.chatActionState &&
+              current.chatActionState == CubitStates.failure,
+          listener: (context, state) {
+            if (state.chatErrorMessage != null) {
+              showSafeSnackBar(
+                context: context,
+                text: state.chatErrorMessage!,
+                isError: true,
+              );
+            }
+          },
+        ),
+      ],
       child: BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
         buildWhen: (previous, current) =>
             previous.profileState != current.profileState ||
@@ -269,26 +287,14 @@ class UserAdvisorBioInformation extends StatelessWidget {
   ) {
     return BlocConsumer<UserAdvisorProfileCubit, UserAdvisorProfileState>(
       listenWhen: (previous, current) =>
-          previous.followActionState != current.followActionState ||
-          (previous.followMessage != current.followMessage &&
-              current.followMessage != null),
+          previous.profile?.isFollowing != current.profile?.isFollowing ||
+          previous.profile?.room != current.profile?.room ||
+          previous.isChatLoading != current.isChatLoading ||
+          previous.followActionState != current.followActionState,
       listener: (context, state) {
-        // ⭐ معالجة رسائل المتابعة
-        final message = state.followMessage;
-        if (message != null) {
-          switch (state.followActionState) {
-            case CubitStates.success:
-              state.isFollowAdded == true
-                  ? AppToast.success(context, message)
-                  : AppToast.info(context, message);
-              break;
-            case CubitStates.failure:
-              AppToast.error(context, message);
-              break;
-            default:
-              break;
-          }
-        }
+        // ⭐ معالجة رسائل المتابعة (ليست هناك حاجة للتكرار إذا كانت في BlocListener بالأعلى)
+        // لكن بما أنه BlocConsumer يمكننا تركها أو إزالتها.
+        // بما أننا أضفنا BlocListener في الـ build، سنزيل هذا الجزء من هنا لتجنب التكرار.
       },
       buildWhen: (previous, current) =>
           previous.profile?.isFollowing != current.profile?.isFollowing ||
@@ -300,6 +306,9 @@ class UserAdvisorBioInformation extends StatelessWidget {
         final isLoadingFollow = state.followActionState == CubitStates.loading;
         final isChatLoading = state.isChatLoading;
         final room = state.profile?.room;
+
+        // ⭐ حالة التحميل العامة لتعطيل الأزرار
+        final bool isSomeActionLoading = isLoadingFollow || isChatLoading;
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
@@ -313,11 +322,34 @@ class UserAdvisorBioInformation extends StatelessWidget {
                   title: isFollowing
                       ? context.tr('following')
                       : context.tr('follow'),
-                  onPressed: isLoadingFollow
+                  onPressed: isSomeActionLoading
                       ? null
-                      : () => context
-                            .read<UserAdvisorProfileCubit>()
-                            .toggleFollow(),
+                      : () {
+                          if (isGuest) {
+                            CustomshowDialogWithImage(
+                              context,
+                              title: context.tr('joinUs'),
+                              supTitle: context.tr("guest_login_first"),
+                              icon: Icons.lock_person_outlined,
+                              iconColor: AppColors.kprimaryColor,
+                              bottonText: context.tr("login"),
+                              showCancelButton: true,
+                              cancelText: context.tr('skip'),
+                              onPressed: () {
+                                CachNetwork.removeData(key: ktoken);
+                                context.pushNamedAndRemoveUntil(
+                                  AppRouter.kRegisrationView,
+                                  predicate: (_) => false,
+                                );
+                              },
+                              onCancel: () {},
+                            );
+                          } else {
+                            context
+                                .read<UserAdvisorProfileCubit>()
+                                .toggleFollow();
+                          }
+                        },
                   backGroundcolor: isFollowing
                       ? AppColors.kWhiteColor
                       : AppColors.kprimaryColor,
@@ -331,13 +363,34 @@ class UserAdvisorBioInformation extends StatelessWidget {
                 ),
               ),
 
-              Gap(13.w),
-
-              if (isFollowing)
+              if (isFollowing) ...[
+                Gap(13.w),
                 GestureDetector(
-                  onTap: isChatLoading
+                  onTap: isSomeActionLoading
                       ? null
                       : () {
+                          if (isGuest) {
+                            CustomshowDialogWithImage(
+                              context,
+                              title: context.tr('joinUs'),
+                              supTitle: context.tr("guest_login_first"),
+                              icon: Icons.lock_person_outlined,
+                              iconColor: AppColors.kprimaryColor,
+                              bottonText: context.tr("login"),
+                              showCancelButton: true,
+                              cancelText: context.tr('skip'),
+                              onPressed: () {
+                                CachNetwork.removeData(key: ktoken);
+                                context.pushNamedAndRemoveUntil(
+                                  AppRouter.kRegisrationView,
+                                  predicate: (_) => false,
+                                );
+                              },
+                              onCancel: () {},
+                            );
+                            return;
+                          }
+
                           final cubit = context.read<UserAdvisorProfileCubit>();
                           if (profile.hasRoom &&
                               profile.chatRoomId != null &&
@@ -370,6 +423,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
                         : AppImage(AssetsData.chatIconSVG, width: 22.w),
                   ),
                 ),
+              ],
             ],
           ),
         );

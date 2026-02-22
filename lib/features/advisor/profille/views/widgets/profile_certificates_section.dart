@@ -461,25 +461,23 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
   }
 
   Widget _buildNoCertificatesSection() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.school_outlined, color: Colors.grey.shade400, size: 48.w),
-          Gap(16.h),
-          Text(
-            context.tr('no_certificates_yet'),
-            style: Styles.textStyle16Meduim.copyWith(
-              color: Colors.grey.shade600,
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 40.h),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppImage(AssetsData.emptyBoxImage, width: 150.w),
+            Gap(16.h),
+            Text(
+              context.tr('no_certificates_yet'),
+              style: Styles.textStyle16Meduim.copyWith(
+                color: AppColors.kGreyB3,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

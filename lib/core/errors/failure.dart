@@ -25,6 +25,15 @@ class ServerFailure extends Failure {
         return ServerFailure('Request to ApiServer was cancelled');
       case DioExceptionType.connectionError:
         return ServerFailure('تأكد من الاتصال بالانترنت');
+      case DioExceptionType.badResponse:
+        if (error.response != null) {
+          return ServerFailure.fromResponse(
+            statusCode: error.response!.statusCode!,
+            response: error.response!.data,
+          );
+        } else {
+          return ServerFailure('خطأ في الاستجابة من الخادم');
+        }
       case DioExceptionType.unknown:
         if (error.response != null) {
           return ServerFailure.fromResponse(
@@ -34,8 +43,6 @@ class ServerFailure extends Failure {
         } else {
           return ServerFailure('Unknown server error');
         }
-      default:
-        return ServerFailure('Unexpected error occurred');
     }
   }
 
