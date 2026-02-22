@@ -1,6 +1,8 @@
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_posts_tab.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/widgets/blocked_profile_placeholder.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserPublicProfileTabs extends StatefulWidget {
@@ -46,7 +48,22 @@ class _UserPublicProfileTabsState extends State<UserPublicProfileTabs>
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
-      child: Column(children: [_buildTabsHeader(), _buildTabContent()]),
+      child: BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
+        buildWhen: (previous, current) =>
+            previous.profile?.isBlockedByMe != current.profile?.isBlockedByMe,
+        builder: (context, state) {
+          final isBlocked = state.profile?.isBlockedByMe ?? false;
+          return Column(
+            children: [
+              _buildTabsHeader(),
+              if (isBlocked)
+                const BlockedProfilePlaceholder(isSliver: false)
+              else
+                _buildTabContent(),
+            ],
+          );
+        },
+      ),
     );
   }
 

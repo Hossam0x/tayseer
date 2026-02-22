@@ -15,6 +15,7 @@ abstract class StoriesRepository {
     String? content,
     List<File>? images,
     List<XFile>? videos,
+    double? videoDuration,
     Function(int sent, int total)? onSendProgress,
   });
   Future<Either<Failure, void>> toggleArchiveStory({
@@ -23,4 +24,5 @@ abstract class StoriesRepository {
   });
   Future<Either<Failure, void>> deleteStory({required String storyId});
   Future<Either<Failure, void>> makeStorySpecial({required String storyId});
+  Future<Either<Failure, void>> hideStory({required String storyId});
 }

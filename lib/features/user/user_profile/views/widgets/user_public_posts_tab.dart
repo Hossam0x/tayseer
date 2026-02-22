@@ -64,13 +64,13 @@ class UserPublicPostsTab extends StatelessWidget {
           }
 
           if (state.postsState == CubitStates.failure && state.posts.isEmpty) {
-            return _buildErrorState(cubit);
+            return _buildErrorState(context, cubit);
           }
 
           final userPosts = state.posts;
 
           if (userPosts.isEmpty) {
-            return _buildEmptyState();
+            return _buildEmptyState(context);
           }
 
           return RefreshIndicator(
@@ -259,7 +259,7 @@ class UserPublicPostsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorState(UserPublicProfileCubit cubit) {
+  Widget _buildErrorState(BuildContext context, UserPublicProfileCubit cubit) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
       child: Column(
@@ -267,7 +267,7 @@ class UserPublicPostsTab extends StatelessWidget {
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(16.h),
           Text(
-            'حدث خطأ في تحميل المنشورات',
+            context.tr('error_loading_posts'),
             style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
           ),
@@ -282,7 +282,7 @@ class UserPublicPostsTab extends StatelessWidget {
             ),
             onPressed: () => cubit.fetchPosts(),
             child: Text(
-              'إعادة المحاولة',
+              context.tr('retry'),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -293,10 +293,10 @@ class UserPublicPostsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(top: 100.h),
-      child: const SharedEmptyState(title: "لا توجد منشورات حتى الآن"),
+      child: SharedEmptyState(title: context.tr("no_posts_yet")),
     );
   }
 

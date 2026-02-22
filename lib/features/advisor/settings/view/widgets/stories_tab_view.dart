@@ -223,21 +223,34 @@ class StoriesTabView extends StatelessWidget {
 
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (newContext) => MultiBlocProvider(
-                            providers: [
-                              BlocProvider.value(value: getIt<StoriesCubit>()),
-                              BlocProvider.value(
-                                value: context.read<ArchivedStoriesCubit>(),
-                              ),
-                            ],
-                            child: StoryDetailsView(
-                              userStories: tempUserStory,
-                              heroTag: 'archive_${story.id}',
-                              isArchive: true,
-                              initialStoryId: story.id,
-                            ),
-                          ),
+                        PageRouteBuilder(
+                          opaque: false,
+                          pageBuilder:
+                              (newContext, animation, secondaryAnimation) =>
+                                  MultiBlocProvider(
+                                    providers: [
+                                      BlocProvider.value(
+                                        value: getIt<StoriesCubit>(),
+                                      ),
+                                      BlocProvider.value(
+                                        value: context
+                                            .read<ArchivedStoriesCubit>(),
+                                      ),
+                                    ],
+                                    child: StoryDetailsView(
+                                      userStories: tempUserStory,
+                                      heroTag: 'archive_${story.id}',
+                                      isArchive: true,
+                                      initialStoryId: story.id,
+                                    ),
+                                  ),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
                         ),
                       );
                     },

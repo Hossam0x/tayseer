@@ -58,7 +58,7 @@ class _StoryCameraWidgetState extends State<StoryCameraWidget> {
 
       if (mounted) {
         final cubit = context.read<AddStoryCubit>();
-        cubit.setPreviewFile(imageFile, isVideo: false);
+        cubit.setPreviewFile(imageFile, context, isVideo: false);
       }
     } catch (e) {
       debugPrint("Error taking picture: $e");
@@ -78,6 +78,10 @@ class _StoryCameraWidgetState extends State<StoryCameraWidget> {
         if (mounted) {
           setState(() {
             _recordingSeconds++;
+            // Automatic stop at 60 seconds
+            if (_recordingSeconds >= 60) {
+              _stopVideoRecording();
+            }
           });
         }
       });
@@ -101,6 +105,7 @@ class _StoryCameraWidgetState extends State<StoryCameraWidget> {
         final cubit = context.read<AddStoryCubit>();
         cubit.setPreviewFile(
           File(video.path),
+          context,
           isVideo: true,
           isFrontCamera: _isFrontCamera(),
         );

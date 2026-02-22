@@ -1,7 +1,4 @@
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
-import 'package:tayseer/features/user/user_advisor_profile/views/widgets/reposrt_bottom_sheet.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileOptionsBottomSheet extends StatelessWidget {
@@ -46,7 +43,9 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
       ),
       if (!isMe) ...[
         OptionItem(
-          text: context.tr('block'),
+          text: (cubit.state.profile?.room?.isBlocked ?? false)
+              ? context.tr('unblock')
+              : context.tr('block'),
           icon: Icons.block_outlined,
           onTap: () => _showBlockConfirmation(context),
           isDestructive: true,
@@ -169,10 +168,15 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
   }
 
   void _showBlockConfirmation(BuildContext context) {
+    final isBlocked = cubit.state.profile?.room?.isBlocked ?? false;
     CustomshowDialogWithImage(
       context,
-      title: context.tr(AppStrings.blockUser),
-      supTitle: context.tr(AppStrings.blockUserConfirmation),
+      title: isBlocked
+          ? context.tr('unblock_user')
+          : context.tr(AppStrings.blockUser),
+      supTitle: isBlocked
+          ? context.tr('unblock_user_confirmation')
+          : context.tr(AppStrings.blockUserConfirmation),
       icon: Icons.block,
       bottonText: context.tr(AppStrings.yes),
       onPressed: () async {
@@ -181,7 +185,11 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
         Navigator.pop(context); // dialog
         Navigator.pop(context); // sheet
 
-        await cubit.blockUser(advisorId: advisorId);
+        if (isBlocked) {
+          await cubit.unblockUser(advisorId: advisorId);
+        } else {
+          await cubit.blockUser(advisorId: advisorId);
+        }
 
         final state = cubit.state;
 
@@ -190,13 +198,21 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
         if (state.blockActionState == CubitStates.success) {
           showSafeSnackBar(
             context: scaffoldContext,
-            text: state.blockMessage ?? context.tr('blocked_successfully'),
+            text:
+                state.blockMessage ??
+                (isBlocked
+                    ? context.tr('unblocked_successfully')
+                    : context.tr('blocked_successfully')),
             isSuccess: true,
           );
         } else {
           showSafeSnackBar(
             context: scaffoldContext,
-            text: state.blockMessage ?? context.tr('failed_to_block'),
+            text:
+                state.blockMessage ??
+                (isBlocked
+                    ? context.tr('failed_to_unblock')
+                    : context.tr('failed_to_block')),
             isError: true,
           );
         }
@@ -211,8 +227,8 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
 
   // للـ Report: بدلاً من confirmation بسيط، افتح bottom sheet جديدة
   void _showReportConfirmation(BuildContext context) {
-    // افتح الـ ReportBottomSheet الجديدة
-    ReportBottomSheet.show(context, reportedId: advisorId, cubit: cubit);
+    Navigator.pop(context); // Close the option sheet
+    context.pushNamed(AppRouter.kReportReasonsScreen);
   }
 }
 

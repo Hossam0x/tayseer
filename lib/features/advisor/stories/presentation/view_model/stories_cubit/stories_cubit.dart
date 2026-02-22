@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
@@ -15,7 +16,6 @@ class StoriesCubit extends Cubit<StoriesState> {
     bool? isSpecial,
     required BuildContext context,
   }) async {
-    // 1. Identify effective parameters
     final effectiveAdvisorId = advisorId ?? state.advisorId;
     final effectiveIsSpecial = isSpecial ?? state.isSpecial;
 
@@ -60,8 +60,8 @@ class StoriesCubit extends Cubit<StoriesState> {
           storiesState: CubitStates.loading,
           currentPage: 1,
           hasMore: true,
-          advisorId: advisorId, // Overwrite if provided
-          isSpecial: isSpecial, // Overwrite if provided
+          advisorId: advisorId,
+          isSpecial: isSpecial,
         ),
       );
       final result = await storiesRepository.fetchStories(
@@ -96,56 +96,27 @@ class StoriesCubit extends Cubit<StoriesState> {
   }
 
   void markStoryAsViewed({required String storyId, required String userId}) {
-    debugPrint(
-      "StoriesCubit: Attempting to mark story $storyId for user $userId as viewed",
-    );
-
     final currentList = state.storiesList;
     final userStoryIndex = currentList.indexWhere(
       (userStory) => userStory.userId == userId,
     );
 
-    if (userStoryIndex == -1) {
-      debugPrint(
-        "StoriesCubit: User $userId not found in storiesList. Available IDs: ${currentList.map((e) => e.userId).toList()}",
-      );
-      return;
-    }
+    if (userStoryIndex == -1) return;
 
     final userStory = currentList[userStoryIndex];
     final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
 
-    if (storyIndex == -1) {
-      debugPrint(
-        "StoriesCubit: Story $storyId not found for user $userId. Available story IDs: ${userStory.stories.map((e) => e.id).toList()}",
-      );
-      return;
-    }
+    if (storyIndex == -1) return;
 
     final story = userStory.stories[storyIndex];
+    if (story.viewsCount > 0) return;
 
-    // Only mark as viewed if not already viewed
-    if (story.viewsCount > 0) {
-      debugPrint("StoriesCubit: Story $storyId already viewed, skipping");
-      return;
-    }
-
-    // Check if this is the last story
     bool isLastStory = storyIndex == userStory.stories.length - 1;
-
-    // Build updated stories
     final List<StoryModel> updatedStories = List.from(userStory.stories);
-    updatedStories[storyIndex] = story.copyWith(
-      viewsCount: 1, // Set to 1 instead of incrementing
-    );
+    updatedStories[storyIndex] = story.copyWith(viewsCount: 1);
 
-    // Determine allViewed
     final bool allViewedLocally =
         isLastStory || updatedStories.every((s) => s.viewsCount > 0);
-
-    debugPrint(
-      "StoriesCubit: Mark Successful. isLastStory: $isLastStory, allViewed will be: $allViewedLocally",
-    );
 
     final updatedUserStory = userStory.copyWith(
       stories: updatedStories,
@@ -157,47 +128,36 @@ class StoriesCubit extends Cubit<StoriesState> {
     updatedList[userStoryIndex] = updatedUserStory;
 
     emit(state.copyWith(storiesList: updatedList));
-
-    // call API
     storiesRepository.markStoryAsViewed(storyId: storyId);
   }
 
   void likeStory({required String storyId, required String userId}) {
-    // إيجاد index بدلاً من map على القائمة كلها
     final userStoryIndex = state.storiesList.indexWhere(
       (userStory) => userStory.userId == userId,
     );
-
     if (userStoryIndex == -1) return;
 
     final userStory = state.storiesList[userStoryIndex];
     final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
-
     if (storyIndex == -1) return;
 
     final story = userStory.stories[storyIndex];
-
-    // تحديث القصة المحددة فقط
     final updatedStories = List<StoryModel>.from(userStory.stories);
     updatedStories[storyIndex] = story.copyWith(
       isLiked: !story.isLiked,
       likesCount: story.isLiked ? story.likesCount - 1 : story.likesCount + 1,
     );
 
-    // تحديث userStory فقط
     final updatedUserStory = userStory.copyWith(stories: updatedStories);
-
-    // تحديث القائمة الرئيسية - فقط العنصر المتغير
-    final updatedList = List<UserStoriesModel>.from(state.storiesList);
+    final List<UserStoriesModel> updatedList = List.from(state.storiesList);
     updatedList[userStoryIndex] = updatedUserStory;
 
     emit(state.copyWith(storiesList: updatedList));
-
-    // إرسال الطلب للـ backend
     storiesRepository.likeStory(storyId: storyId);
   }
 
   Future<void> deleteStory({
+    required BuildContext context,
     required String storyId,
     required String userId,
   }) async {
@@ -206,9 +166,11 @@ class StoriesCubit extends Cubit<StoriesState> {
     result.fold(
       (failure) {
         emit(state.copyWith(storiesMessage: failure.message));
+        if (context.mounted) {
+          AppToast.error(context, failure.message);
+        }
       },
       (_) {
-        // إزالة القصة محلياً
         final userStoryIndex = state.storiesList.indexWhere(
           (us) => us.userId == userId,
         );
@@ -230,11 +192,15 @@ class StoriesCubit extends Cubit<StoriesState> {
         }
 
         emit(state.copyWith(storiesList: updatedList));
+        if (context.mounted) {
+          AppToast.success(context, context.tr('story_deleted_success'));
+        }
       },
     );
   }
 
   Future<void> toggleArchiveStory({
+    required BuildContext context,
     required String storyId,
     required String userId,
     required bool isArchive,
@@ -247,13 +213,12 @@ class StoriesCubit extends Cubit<StoriesState> {
     result.fold(
       (failure) {
         emit(state.copyWith(storiesMessage: failure.message));
+        if (context.mounted) {
+          AppToast.error(context, failure.message);
+        }
       },
       (_) {
-        // في الـ Home/Profile غالباً بنشيلها لو اتعملها أرشفة (أو بنحدث حالتها)
-        // بس العميل طلب إننا نشيلها لو هي في الـ Archive (unarchive)
-        // هنا المنطق العام للهوم والبروفايل
         if (isArchive) {
-          // لو اتعملها أرشفة من الهوم، ممكن نشيلها من القائمة المعروضة حالياً
           final userStoryIndex = state.storiesList.indexWhere(
             (us) => us.userId == userId,
           );
@@ -274,12 +239,60 @@ class StoriesCubit extends Cubit<StoriesState> {
             );
           }
           emit(state.copyWith(storiesList: updatedList));
+          if (context.mounted) {
+            AppToast.success(context, context.tr('story_archived_success'));
+          }
         }
       },
     );
   }
 
+  Future<Either<Failure, void>> hideStory({
+    required BuildContext context,
+    required String storyId,
+    required String userId,
+  }) async {
+    final result = await storiesRepository.hideStory(storyId: storyId);
+
+    return result.fold(
+      (failure) {
+        emit(state.copyWith(storiesMessage: failure.message));
+        if (context.mounted) {
+          AppToast.error(context, failure.message);
+        }
+        return Left(failure);
+      },
+      (_) {
+        final userStoryIndex = state.storiesList.indexWhere(
+          (us) => us.userId == userId,
+        );
+        if (userStoryIndex != -1) {
+          final userStory = state.storiesList[userStoryIndex];
+          final updatedStories = userStory.stories
+              .where((s) => s.id != storyId)
+              .toList();
+
+          final updatedList = List<UserStoriesModel>.from(state.storiesList);
+          if (updatedStories.isEmpty) {
+            updatedList.removeAt(userStoryIndex);
+          } else {
+            updatedList[userStoryIndex] = userStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
+            );
+          }
+          emit(state.copyWith(storiesList: updatedList));
+        }
+        if (context.mounted) {
+          AppToast.success(context, context.tr('story_hidden_success'));
+        }
+        return const Right(null);
+      },
+    );
+  }
+
   Future<void> makeStorySpecial({
+    required BuildContext context,
     required String storyId,
     required String userId,
   }) async {
@@ -288,6 +301,9 @@ class StoriesCubit extends Cubit<StoriesState> {
     result.fold(
       (failure) {
         emit(state.copyWith(storiesMessage: failure.message));
+        if (context.mounted) {
+          AppToast.error(context, failure.message);
+        }
       },
       (_) {
         final userStoryIndex = state.storiesList.indexWhere(
@@ -304,12 +320,15 @@ class StoriesCubit extends Cubit<StoriesState> {
           isSpecial: true,
         );
 
-        final updatedList = List<UserStoriesModel>.from(state.storiesList);
+        final List<UserStoriesModel> updatedList = List.from(state.storiesList);
         updatedList[userStoryIndex] = userStory.copyWith(
           stories: updatedStories,
         );
 
         emit(state.copyWith(storiesList: updatedList));
+        if (context.mounted) {
+          AppToast.success(context, context.tr('story_special_success'));
+        }
       },
     );
   }
@@ -318,6 +337,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     String? content,
     List<File>? images,
     List<XFile>? videos,
+    double? videoDuration,
     BuildContext? context,
   }) async {
     emit(
@@ -330,10 +350,10 @@ class StoriesCubit extends Cubit<StoriesState> {
       content: content,
       images: images,
       videos: videos,
+      videoDuration: videoDuration,
       onSendProgress: (sent, total) {
         if (total > 0) {
           final progress = sent / total;
-          // Emit only if progress changed significantly to avoid too many emits
           if ((progress - state.uploadProgress).abs() > 0.01 ||
               progress == 1.0) {
             emit(
@@ -358,8 +378,8 @@ class StoriesCubit extends Cubit<StoriesState> {
       },
       (_) {
         emit(state.copyWith(createStoryState: CubitStates.success));
-        // Refresh stories only if context is still valid
         if (context != null && context.mounted) {
+          AppToast.success(context, context.tr('story_created_success'));
           fetchStories(context: context);
         }
       },

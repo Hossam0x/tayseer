@@ -1,6 +1,7 @@
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/navigate_to_chat_listener.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_bio_information.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_profile_header.dart';
@@ -83,43 +84,52 @@ class _UserProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator.adaptive(
-      onRefresh: () => Future.wait([
-        context.read<UserAdvisorProfileCubit>().refresh(),
-        context.read<StoriesCubit>().fetchStories(
-          isSpecial: true,
-          advisorId: advisorId,
-          context: context,
-        ),
-      ]),
-      color: AppColors.kprimaryColor,
-      backgroundColor: AppColors.kWhiteColor,
-      displacement: 40.h,
-      edgeOffset: 0,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        slivers: [
-          // Profile Header
-          const UserAdvisorProfileHeader(),
+    return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+      buildWhen: (previous, current) =>
+          previous.profile?.room?.isBlocked != current.profile?.room?.isBlocked,
+      builder: (context, state) {
+        final isBlocked = state.profile?.room?.isBlocked ?? false;
 
-          // Bio Information
-          const UserAdvisorBioInformation(),
+        return RefreshIndicator.adaptive(
+          onRefresh: () => Future.wait([
+            context.read<UserAdvisorProfileCubit>().refresh(),
+            if (!isBlocked)
+              context.read<StoriesCubit>().fetchStories(
+                isSpecial: true,
+                advisorId: advisorId,
+                context: context,
+              ),
+          ]),
+          color: AppColors.kprimaryColor,
+          backgroundColor: AppColors.kWhiteColor,
+          displacement: 40.h,
+          edgeOffset: 0,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              // Profile Header
+              const UserAdvisorProfileHeader(),
 
-          // Stories Section
-          ProfileStoriesSection(advisorId: advisorId),
+              // Bio Information
+              const UserAdvisorBioInformation(),
 
-          // Spacing
-          SliverToBoxAdapter(child: Gap(20.h)),
+              // Stories Section
+              ProfileStoriesSection(advisorId: advisorId),
 
-          // Posts Tabs Section
-          UserAdvisorProfileTabsSection(advisorId: advisorId),
+              // Spacing
+              SliverToBoxAdapter(child: Gap(20.h)),
 
-          // Bottom padding
-          SliverToBoxAdapter(child: Gap(100.h)),
-        ],
-      ),
+              // Posts Tabs Section
+              UserAdvisorProfileTabsSection(advisorId: advisorId),
+
+              // Bottom padding
+              SliverToBoxAdapter(child: Gap(100.h)),
+            ],
+          ),
+        );
+      },
     );
   }
 }

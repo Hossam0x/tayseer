@@ -715,6 +715,8 @@
   "add_rating": "Add Rating",
   "please_select_number_of_stars": "Please select number of stars",
   "rate_app_error": "Error sending rating",
+  "advisor_rated_successfully": "Your rating has been added successfully",
+  "failed_to_rate_advisor": "Failed to add rating",
   "reviews": "Reviews",
   "user": "User",
   "load_more": "Load More",
@@ -730,6 +732,8 @@
   "video_load_error": "Failed to load video",
   "video_size_error_10mb": "Video size exceeds 10 MB",
   "video_size_limit_10mb": "Maximum video size is 10 MB",
+  "video_duration_limit_60s": "Video duration cannot exceed 60 seconds",
+  "video_size_limit_50mb": "Video size cannot exceed 50 MB",
   "enter_username": "Username",
   "bio_hint": "Write your bio here...",
   "saving": "Saving...",
@@ -1317,8 +1321,23 @@
   "verified_profile_desc": "All personal data has been verified by the application.",
   "deactivate_the_marriage_section": "Deactivate the marriage section",
   "audio_pending_save": "audio pending save",
-  "video_pending_save": "audio pending save",
-  "unsaved_changes":"unsaved changes"
-
-
+  "video_pending_save": "audio pending save"
+  "marriage_tab": "Marriage",
+  "logout_confirmation": "Are you sure you want to logout?",
+  "interactions_tab": "Interactions",
+  "unblock_user": "Unblock User",
+  "unblock_user_confirmation": "Are you sure you want to unblock this user?",
+  "unblocked_successfully": "User unblocked successfully",
+  "failed_to_unblock": "Failed to unblock user",
+  "blocked_account_title": "You have blocked this account",
+  "blocked_account_message": "You will not be able to see their details or posts in the main feed.",
+  "profile_copied_success": "Profile link copied successfully",
+  "user_blocked_successfully": "User blocked successfully",
+  "view_marriage_profile": "View marriage profile",
+  "unavailable": "Unavailable",
+  "error_loading_posts": "Error loading posts",
+  "please_enter_message": "Please enter a message before sending",
+  "message_too_long_error": "Message must not exceed 500 characters",
+  "error_sending_greeting": "An error occurred while sending the greeting",
+  "story_special_success": "Story added to special successfully"
 }

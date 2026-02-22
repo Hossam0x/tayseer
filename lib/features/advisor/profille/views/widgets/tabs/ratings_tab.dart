@@ -4,6 +4,7 @@ import 'package:tayseer/core/cubits/toggle_cubit.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_state.dart';
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -275,7 +276,7 @@ class _RatingsTabState extends State<RatingsTab>
 
         showSafeSnackBar(
           context: context,
-          text: response['message'] ?? context.tr('rate_app_success'),
+          text: response['message'] ?? context.tr('advisor_rated_successfully'),
           isSuccess: true,
         );
 
@@ -291,7 +292,9 @@ class _RatingsTabState extends State<RatingsTab>
         if (dialogContext.mounted) {
           showSafeSnackBar(
             context: dialogContext,
-            text: response['message'] ?? dialogContext.tr('rate_app_error'),
+            text:
+                response['message'] ??
+                dialogContext.tr('failed_to_rate_advisor'),
             isError: true,
           );
         }
@@ -300,7 +303,7 @@ class _RatingsTabState extends State<RatingsTab>
       if (dialogContext.mounted) {
         showSafeSnackBar(
           context: dialogContext,
-          text: dialogContext.tr('rate_app_error'),
+          text: dialogContext.tr('failed_to_rate_advisor'),
           isError: true,
         );
       }
@@ -710,7 +713,8 @@ class _RatingsTabState extends State<RatingsTab>
         'en',
       ).parse(dateString);
 
-      return DateFormat('dd MMMM yyyy', 'ar').format(parsedDate);
+      final lang = context.read<LanguageCubit>().state.languageCode;
+      return DateFormat('dd MMMM yyyy', lang).format(parsedDate);
     } catch (e) {
       return dateString;
     }
