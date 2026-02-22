@@ -1,10 +1,9 @@
 import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostOptionsBottomSheet extends StatelessWidget {
   final PostModel? post;
-
+  final bool isShared;
   final VoidCallback? onShare;
   final VoidCallback? onReport;
   final VoidCallback? onBlock;
@@ -18,6 +17,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
     super.key,
     required this.post,
     this.onShare,
+    this.isShared = false,
     this.onReport,
     this.onBlock,
     this.onHide,
@@ -31,6 +31,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
     BuildContext context, {
     required PostModel post,
     VoidCallback? onShare,
+    bool isShared = false,
     VoidCallback? onReport,
     VoidCallback? onBlock,
     VoidCallback? onHide,
@@ -45,6 +46,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
       isScrollControlled: true,
       builder: (context) => PostOptionsBottomSheet(
         post: post,
+        isShared: isShared,
         onShare: onShare,
         onReport: () {
           context.pushNamed(AppRouter.kReportReasonsScreen);
@@ -66,7 +68,9 @@ class PostOptionsBottomSheet extends StatelessWidget {
     final List<OptionItem> options = post?.isMine ?? false
         ? [
             OptionItem(
-              text: context.tr(AppStrings.share),
+              text: isShared
+                  ? context.tr(AppStrings.unshare)
+                  : context.tr(AppStrings.share),
               icon: Icons.ios_share_rounded,
               onTap: onShare,
             ),
@@ -91,7 +95,9 @@ class PostOptionsBottomSheet extends StatelessWidget {
           ]
         : [
             OptionItem(
-              text: context.tr(AppStrings.share),
+              text: isShared
+                  ? context.tr(AppStrings.unshare)
+                  : context.tr(AppStrings.share),
               icon: Icons.ios_share_rounded,
               onTap: onShare,
             ),

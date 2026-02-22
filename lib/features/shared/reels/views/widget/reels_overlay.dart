@@ -338,7 +338,19 @@ class ReelsOverlay extends StatelessWidget {
           iconColor: HexColor("#F2A6B5"),
           backgroundColor: const Color(0xFFFCE9ED),
           onTap: () {
-            PostOptionsBottomSheet.show(context, post: post);
+            PostOptionsBottomSheet.show(
+              context,
+              post: post,
+              onShare: onShareTapped,
+              isShared: post.isRepostedByMe,
+              // onReport: onReportTapped,
+              // onBlock: onBlockTapped,
+              // onHide: onHideTapped,
+              // onSave: onSaveTapped,
+              // onEdit: onEditTapped,
+              // onArchive: onArchiveTapped,
+              // onDelete: onDeleteTapped,
+            );
           },
         ),
       ],

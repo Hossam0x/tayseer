@@ -19,6 +19,7 @@ class AppStrings {
   static const String noComments = "no_comments";
 
   static const String share = "share";
+  static const String unshare = "unshare";
   static const String archive = "archive";
   static const String delete = "delete";
   static const String block = "block";
