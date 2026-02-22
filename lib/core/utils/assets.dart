@@ -164,6 +164,8 @@ abstract class AssetsData {
   static const String verified2Icon = "assets/icons/verified2.svg";
   static const String underreviewIcon = "assets/icons/underreview.svg";
   static const String verifiedIcon = "assets/icons/verified.svg";
+  static const String verIcon = "assets/icons/ver_icon.svg";
+  static const String ringIcon = "assets/icons/ring.svg";
   static const String krotateCameraIcon =
       "assets/icons/rotate_the_camera_icon.svg";
   static const String kFeature1 = "assets/icons/kFeature1.svg";

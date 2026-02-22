@@ -169,19 +169,13 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         final decibels = event.decibels ?? -160.0;
         
         
-
-        // ✅ تحويل الـ decibels لـ amplitude (من 0 إلى 1)
-        // Decibels عادة من -160 (صامت تماماً) إلى 0 (أقصى صوت)
         double amplitude;
         
         if (decibels <= -80) {
-          // صوت ضعيف جداً أو صمت
+      
           amplitude = 0.01;
         }
-        //  else if (decibels <= -40) {
-        //   // صوت متوسط
-        //   amplitude = ((decibels + 80) / 40).clamp(0.1, 0.6);
-        // } 
+    
         else {
           // صوت عالي
         amplitude = ((decibels + 80) / 100).clamp(0.04, 0.4);

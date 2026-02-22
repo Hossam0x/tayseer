@@ -14,6 +14,7 @@ class SettingsInitial extends UserProfileState {}
 class SettingsLoading extends UserProfileState {}
 
 class SettingsLoaded extends UserProfileState {
+  final bool isMarriageSectionDeactivated; 
   final List<SettingItemModel> settings;
   final UserProfileModel? userProfile;
   final bool isNotificationEnabled;
@@ -30,12 +31,14 @@ class SettingsLoaded extends UserProfileState {
     this.actionMessage,
     this.isActionSuccess,
     this.actionTimestamp = 0,
+    this.isMarriageSectionDeactivated = false
   });
 
   SettingsLoaded copyWith({
     List<SettingItemModel>? settings,
     UserProfileModel? userProfile,
     bool? isNotificationEnabled,
+    bool? isMarriageSectionDeactivated,
     String? actionMessage,
     bool? isActionSuccess,
     int? actionTimestamp,
@@ -45,6 +48,7 @@ class SettingsLoaded extends UserProfileState {
       userProfile: userProfile ?? this.userProfile,
       isNotificationEnabled:
           isNotificationEnabled ?? this.isNotificationEnabled,
+      isMarriageSectionDeactivated: isMarriageSectionDeactivated ?? this.isMarriageSectionDeactivated,    
       actionMessage:
           actionMessage, // Not keeping previous message by default to avoid stale snacks
       isActionSuccess: isActionSuccess,
@@ -56,6 +60,7 @@ class SettingsLoaded extends UserProfileState {
   List<Object?> get props => [
     settings,
     userProfile,
+    isMarriageSectionDeactivated,
     isNotificationEnabled,
     actionMessage,
     isActionSuccess,

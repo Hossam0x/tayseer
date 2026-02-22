@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
@@ -11,6 +10,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecu
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/complete_marriage_file.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/dash_border.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_life_events_section.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_reward_card.dart';
 import 'package:tayseer/my_import.dart';
@@ -484,7 +484,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                               AppImage(AssetsData.underreviewIcon, width: 24.w),
                               Gap(5.w),
                               Text(
-                                "${context.tr("under_review")}",
+                                context.tr("under_review"),
                                 style: Styles.textStyle18SemiBold,
                               ),
                             ],
@@ -499,10 +499,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   upgradesCount: profile.interactionCount ?? 0, // ⭐ من السيرفر
                   resultsCount: profile.regredsCount ?? 0, // ⭐ من السيرفر
                   onUpgradesTap: () {
-                        context.pushNamed(AppRouter.kinteractionSubscriptionView);
+                    context.pushNamed(AppRouter.kinteractionSubscriptionView);
                   },
                   onResultsTap: () {
-                        context.pushNamed(AppRouter.kinteractionSubscriptionView);
+                    context.pushNamed(AppRouter.kinteractionSubscriptionView);
                   },
                 ),
               ),
@@ -555,9 +555,11 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                     audioPath: profile.userMedia?.audio ?? "",
                   ),
                 ),
-              SliverToBoxAdapter(child: SizedBox(height: 50.h)),
+              _buildSliverPadding(child: _buildVerifiedCard()),
+              SliverToBoxAdapter(child: SizedBox(height: 30.h)),
+
               SliverToBoxAdapter(child: MarriageRewardCard()),
-              SliverToBoxAdapter(child: SizedBox(height: 100.h)),
+              SliverToBoxAdapter(child: SizedBox(height: 140.h)),
             ],
           ),
         ),
@@ -573,6 +575,56 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
+  Widget _buildVerifiedCard() {
+    return CustomPaint(
+      painter: DashedBorderPainter(
+        color: Color(0xFFE91E63).withOpacity(0.4),
+        strokeWidth: 1.5,
+        dashWidth: 6,
+        dashSpace: 4,
+        borderRadius: 12.r,
+      ),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: Color(0xFFFFF0F3),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            SvgPicture.asset(AssetsData.verIcon, height: 80.h, ),
+            // SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.tr('verified_profile_title'), // "هذا الملف موثق"
+                    style: Styles.textStyle16Bold.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary400
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    context.tr(
+                      'verified_profile_desc',
+                    ), // "تم التأكد من صحة جميع البيانات الشخصية من قبل التطبيق"
+                    textAlign: TextAlign.right,
+                    style:  Styles.textStyle16Bold.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.secondary400
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ NEW: Secondary Image Section with proper logic
   // ════════════════════════════════════════════════════════════════
@@ -843,7 +895,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  List<Map<String, dynamic>> _buildAboutMeItems(profile) {
+  List<Map<String, dynamic>> _buildAboutMeItems(MarriageUserProfileModel profile) {
     return [
       if (profile.aboutMe?.socialStatus != null)
         {
@@ -869,7 +921,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     ];
   }
 
-  List<Map<String, dynamic>> _buildEducationItems(profile) {
+  List<Map<String, dynamic>> _buildEducationItems(MarriageUserProfileModel profile) {
     return [
       if (profile.professionalLife?.educationLevel != null)
         {
@@ -918,7 +970,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     return events;
   }
 
-  List<Map<String, dynamic>> _buildReligiousTags(profile) {
+  List<Map<String, dynamic>> _buildReligiousTags(MarriageUserProfileModel profile) {
     return [
       if (profile.aboutMe?.religiousCommitment != null)
         {
@@ -933,7 +985,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     ];
   }
 
-  List<Map<String, dynamic>> _buildFaithItems(profile) {
+  List<Map<String, dynamic>> _buildFaithItems(MarriageUserProfileModel profile) {
     final Map<String, String> _keyToEmojiMap = {
       'faith_dua': '🙏',
       'faith_umrah': '🕋',

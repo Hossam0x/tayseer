@@ -1,7 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
@@ -600,12 +598,15 @@ class _UserProfileViewState extends State<UserProfileView> {
     final isInviteItem = setting.id == 'invite';
     final isRateAppItem = setting.id == 'rate_app';
     final isEditMarriageProfile = setting.id == 'edit_marriage_profile';
+    final isDeactiveTheMarriageSection =
+        setting.id == 'deactivate_the_marriage_section';
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
           if (isNotificationsItem) return;
+          if (isDeactiveTheMarriageSection) return;
 
           if (isInviteItem) {
             setting.onTap?.call();
@@ -644,9 +645,11 @@ class _UserProfileViewState extends State<UserProfileView> {
           }
         },
         borderRadius: BorderRadius.circular(16.r),
-        highlightColor: isNotificationsItem ? Colors.transparent : null,
+        highlightColor: isNotificationsItem || isDeactiveTheMarriageSection
+            ? Colors.transparent
+            : null,
         child: Container(
-          padding: isNotificationsItem
+          padding: isNotificationsItem || isDeactiveTheMarriageSection
               ? EdgeInsets.only(top: 12.h, bottom: 12.h, right: 12.w, left: 8.w)
               : EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
           decoration: BoxDecoration(
@@ -674,7 +677,8 @@ class _UserProfileViewState extends State<UserProfileView> {
                     Text(
                       context.tr(setting.title),
                       style: Styles.textStyle16Meduim.copyWith(
-                        color: isNotificationsItem
+                        color:
+                            isNotificationsItem || isDeactiveTheMarriageSection
                             ? AppColors.secondary800.withOpacity(0.9)
                             : AppColors.secondary800,
                       ),
@@ -684,11 +688,20 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
 
               if (setting.hasSwitch)
-                if (setting.id == 'notifications')
+                if (setting.id == 'notifications' ||
+                    setting.id == 'deactivate_the_marriage_section')
                   BlocSelector<UserProfileCubit, UserProfileState, bool>(
                     selector: (state) {
-                      if (state is SettingsLoaded)
-                        return state.isNotificationEnabled;
+                      if (state is SettingsLoaded) {
+                        // ✅ Each switch reads its own state
+                        if (setting.id == 'notifications') {
+                          return state.isNotificationEnabled;
+                        } else if (setting.id ==
+                            'deactivate_the_marriage_section') {
+                          return state
+                              .isMarriageSectionDeactivated; // ⭐ new field
+                        }
+                      }
                       return false;
                     },
                     builder: (context, isEnabled) {
