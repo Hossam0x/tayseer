@@ -11,19 +11,7 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       right: 0,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.white.withOpacity(0.0),
-              Colors.white.withOpacity(0.8),
-              Colors.white.withOpacity(0.95),
-              Colors.white,
-            ],
-            stops: const [0.0, 0.2, 0.5, 1.0],
-          ),
-        ),
+  
         child: SafeArea(
           top: false,
           child: Column(
@@ -68,8 +56,8 @@ class SubscriptionPromptOverlay extends StatelessWidget {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor:
-              Colors.transparent, // Required to show the container gradient
-          shadowColor: Colors.transparent, // Removes shadow to keep it clean
+              Colors.transparent, 
+          shadowColor: Colors.transparent, 
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
           ),
@@ -81,7 +69,7 @@ class SubscriptionPromptOverlay extends StatelessWidget {
             SizedBox(width: 20.w),
             Text(
               label,
-              style: Styles.textStyle22SemiBold.copyWith(
+              style: Styles.textStyle20SemiBold.copyWith(
                 fontSize: 20.sp,
                 color: Colors.white,
                 fontWeight: FontWeight.w600,

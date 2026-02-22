@@ -67,6 +67,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         routeName: '',
       ),
       SettingItemModel(
+        id: 'deactivate_the_marriage_section',
+        title: 'deactivate_the_marriage_section',
+        iconAsset: AssetsData.ringIcon,
+        routeName: '',
+        hasSwitch: true,
+      ),
+      SettingItemModel(
         id: 'settings',
         title: 'general_settings',
         iconAsset: AssetsData.icSettingsProf,
@@ -468,35 +475,53 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     }
   }
 
-  Future<void> updateSwitch(String id, bool value) async {
-    final currentState = state;
-    if (currentState is! SettingsLoaded) return;
+Future<void> updateSwitch(String id, bool value) async {
+  final currentState = state;
+  if (currentState is! SettingsLoaded) return;
 
-    if (id == 'notifications') {
-      try {
-        await _toggleNotificationSetting(id, value);
-
-        emit(
-          currentState.copyWith(
-            actionMessage: value
-                ? "notifications_enabled_success"
-                : "notifications_disabled_success",
-            isActionSuccess: true,
-            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
-          ),
-        );
-      } catch (e) {
-        emit(
-          currentState.copyWith(
-            actionMessage: "update_settings_error",
-            isActionSuccess: false,
-            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
-          ),
-        );
-      }
+  if (id == 'notifications') {
+    try {
+      await _toggleNotificationSetting(id, value);
+      emit(
+        currentState.copyWith(
+          actionMessage: value
+              ? "notifications_enabled_success"
+              : "notifications_disabled_success",
+          isActionSuccess: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+    } catch (e) {
+      emit(
+        currentState.copyWith(
+          actionMessage: "update_settings_error",
+          isActionSuccess: false,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
     }
   }
 
+  // ✅ ADD THIS BLOCK
+  else if (id == 'deactivate_the_marriage_section') {
+    // Optimistic update first
+    emit(currentState.copyWith(isMarriageSectionDeactivated: value));
+
+    try {
+    
+    } catch (e) {
+      // Rollback on error
+      emit(
+        currentState.copyWith(
+          isMarriageSectionDeactivated: !value,
+          actionMessage: "update_marriage_section_error",
+          isActionSuccess: false,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+    }
+  }
+}
   Future<void> _enableNotifications() async {
     try {
       final messaging = FirebaseMessaging.instance;

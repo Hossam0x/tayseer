@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:tayseer/core/widgets/custom_outline_button.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';

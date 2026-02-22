@@ -1,5 +1,5 @@
 import 'package:tayseer/core/models/pagination_model.dart';
-import 'Iinteraction_usermodel .dart';
+import 'interaction_usermodel .dart';
 
 class ExplorationResponseModel {
   final bool success;
@@ -13,36 +13,44 @@ class ExplorationResponseModel {
     required this.answerCompleted, // ✅ NEW
     required this.categories,
   });
+factory ExplorationResponseModel.fromJson(Map<String, dynamic> json) {
+  final data = json['data'] as Map<String, dynamic>? ?? {};
+  
+  const categoryMapping = {
+    'userIamLikes': 'من ضمن اختياراتك',
+    'userIamFavorites': 'من خارج اختياراتك',
+    'userIamEncounteredThem': 'يرغبون في التفاعل معك',
+    'userIamRegards': 'ارسل تحية',
+    'userIamLiked': 'الزيارات المحفزة',
+  };
+  
+  final Map<String, CategoryData> categoriesMap = {};
+  
+  categoryMapping.forEach((apiKey, displayName) {
+    if (data.containsKey(apiKey)) {
+      categoriesMap[displayName] = CategoryData.fromJson(data[apiKey]);
+    }
+  });
 
-  factory ExplorationResponseModel.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] as Map<String, dynamic>? ?? {}; // ✅ Get data object
-    final usersData = data['users'] as Map<String, dynamic>? ?? {};
-    
-    final Map<String, CategoryData> categoriesMap = {};
-    
-    // Map API keys to display names
-    const categoryMapping = {
-      'favoritedMe': 'من ضمن اختياراتك',
-      'likesFromOutsideChoices': 'من خارج اختياراتك',
-      'wantToInteract': 'يرغبون في التفاعل معك',
-      "visitedMe": 'الزيارات المحفزة',
-      'recentlyJoined': 'منضم حديثاً',
-      'sentRegards': 'ارسل تحية',
-    };
-
-    categoryMapping.forEach((apiKey, displayName) {
-      if (usersData.containsKey(apiKey)) {
-        categoriesMap[displayName] = CategoryData.fromJson(usersData[apiKey]);
-      }
-    });
-
-    return ExplorationResponseModel(
-      success: json['success'] ?? false,
-      message: json['message'] ?? '',
-      answerCompleted: data['answerCompleted'] ?? false, // ✅ NEW
-      categories: categoriesMap,
-    );
+  final usersMap = data['users'] as Map<String, dynamic>? ?? {};
+  
+  // ✅ recentlyJoined
+  if (usersMap.containsKey('recentlyJoined')) {
+    categoriesMap['منضم حديثاً'] = CategoryData.fromJson(usersMap['recentlyJoined']);
   }
+  
+  // ✅ sentRegards - هنا كانت المشكلة
+  if (usersMap.containsKey('sentRegards')) {
+    categoriesMap['ارسل تحية'] = CategoryData.fromJson(usersMap['sentRegards']);
+  }
+
+  return ExplorationResponseModel(
+    success: json['success'] ?? false,
+    message: json['message'] ?? '',
+    answerCompleted: data['answerCompleted'] ?? true,
+    categories: categoriesMap,
+  );
+}
 }
 
 class CategoryData {

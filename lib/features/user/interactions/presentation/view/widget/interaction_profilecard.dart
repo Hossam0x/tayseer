@@ -1,11 +1,9 @@
-
-
 import 'dart:ui';
 
+import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/status_ribbon_widget.dart';
 
 import '../../../../../../my_import.dart';
-import '../../../data/Model/Iinteraction_usermodel .dart';
 import '../../Interactions_cubit/interactions_cubit.dart';
 
 class InteractionProfileCard extends StatefulWidget {
@@ -88,9 +86,19 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                               arguments: {'personId': widget.item.userId},
                             );
                           },
-                          child: AppImage(widget.item.image, fit: BoxFit.cover),
+                          child: shouldBlur
+                              ? ImageFiltered(
+                                  imageFilter: ImageFilter.blur(
+                                    sigmaX: 15,
+                                    sigmaY: 15,
+                                  ),
+                                  child: AppImage(
+                                    widget.item.image,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : AppImage(widget.item.image, fit: BoxFit.cover),
                         ),
-
                         if (shouldBlur)
                           GestureDetector(
                             onTap: () {
@@ -99,11 +107,8 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                                 arguments: {'personId': widget.item.userId},
                               );
                             },
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                              child: Container(
-                                color: Colors.black.withOpacity(0.2),
-                              ),
+                            child: Container(
+                              color: Colors.black.withOpacity(0.2),
                             ),
                           ),
 
@@ -223,7 +228,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                               Flexible(
                                 child: _buildBadge(
                                   text: widget.item.country,
-                                  icon: AssetsData.EgyFlagIcon,
+                                  icon: "",
                                 ),
                               ),
                             ],
@@ -237,7 +242,6 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                             icon: AssetsData.workIcon,
                           ),
                           SizedBox(height: 6.h),
-
                         ] else ...[
                           SizedBox(height: 6.h),
                           _buildBadge(
@@ -247,7 +251,6 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                             icon: AssetsData.workIcon,
                           ),
                           SizedBox(height: 6.h),
-
                         ],
                       ],
                     ),
@@ -258,38 +261,39 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
           ),
 
           // ✅ الشعار (Ribbon) مع الترجمة
-        if (widget.showRibbon) ...[
-  if (widget.item.likedHim)
-    Positioned(
-      right: 0, // ✅ دائمًا من اليمين، الـ StatusRibbon يتعامل مع الاتجاه داخليًا
-      top: 0,
-      child: StatusRibbonwidget(
-        statusText: context.tr("you_liked"),
-        topTextPosition: 28.h,
-        rightTextPosition: 1.w,
-      ),
-    )
-  else if (widget.item.sentCompliment)
-    Positioned(
-      right: 0,
-      top: 0,
-      child: StatusRibbonwidget(
-        statusText: context.tr("sent_compliment"),
-        topTextPosition: 26.h,
-        rightTextPosition: -2.w,
-      ),
-    )
-  else if (widget.item.likedMe)
-    Positioned(
-      right: 0,
-      top: 0,
-      child: StatusRibbonwidget(
-        statusText: context.tr("liked_Me"),
-        topTextPosition: 30.h,
-        rightTextPosition: 5.w,
-      ),
-    ),
-],
+          if (widget.showRibbon) ...[
+            if (widget.item.likedHim)
+              Positioned(
+                right:
+                    0, // ✅ دائمًا من اليمين، الـ StatusRibbon يتعامل مع الاتجاه داخليًا
+                top: 0,
+                child: StatusRibbonwidget(
+                  statusText: context.tr("you_liked"),
+                  topTextPosition: 28.h,
+                  rightTextPosition: 1.w,
+                ),
+              )
+            else if (widget.item.sentCompliment)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: StatusRibbonwidget(
+                  statusText: context.tr("sent_compliment"),
+                  topTextPosition: 26.h,
+                  rightTextPosition: -2.w,
+                ),
+              )
+            else if (widget.item.likedMe)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: StatusRibbonwidget(
+                  statusText: context.tr("liked_Me"),
+                  topTextPosition: 30.h,
+                  rightTextPosition: 5.w,
+                ),
+              ),
+          ],
         ],
       ),
     );
@@ -306,10 +310,6 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // if (icon != null) ...[
-          //   AppImage(icon, width: 12.w, height: 12.h),
-          //   SizedBox(width: 3.w),
-          // ],
           Flexible(
             child: Text(
               text,

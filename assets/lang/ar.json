@@ -606,7 +606,8 @@
   "rate_app_success": "شكراً لتقييمك التطبيق!",
   "my_profile": "الملف الشخصى",
   "edit_my_profile": "تعديل الملف الشخصى",
-  "complete_marriage_profile": "إستكمال ملف الزواج",
+  "complete_marriage_profile": "اكمال ملف الزواج",
+  "deactivate_the_marriage_section": "إلغاء تفعيل قسم الزواج",
   "general_settings": "الاعدادات العامة",
   "notifications_settings": "الاشعارات",
   "app_language": "اللغة",
@@ -1333,4 +1334,11 @@
   "no_face_detected": "لم يتم اكتشاف وجه - تأكد من أن وجهك واضح في الإطار",
   "details_ticket": "تفاصيل",
   "logout_confirmation": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟"
+  "logout_confirmation":"هل أنت متأكد من أنك تريد الخروج من التطبيق؟",
+  "exit_app_message": "هل أنت متأكد من أنك تريد الخروج من التطبيق؟",
+  "personal_info":"معلومات عنى",
+"verified_profile_title":"هذا الملف موثق",
+"verified_profile_desc":"تم التأكد من صحة جميع البيانات الشخصية من قبل التطبيق",
+"audio_pending_save":"حفظ الصوت معلق",
+"video_pending_save":"حفظ الفيديو معلق"
 }

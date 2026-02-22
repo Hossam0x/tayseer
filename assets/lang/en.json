@@ -1190,7 +1190,7 @@
   "failed_to_publish_story": "Failed to publish story",
   "exploration": "Exploration",
   "history": "History",
-  "subscribe_to_see_likes": "Subscribe to see your likes",
+  "subscribe_to_see_likes": "Subscribe to see likes",
   "Skin": "skin",
   "back": "back",
   "error_play_video": "Error playing video",
@@ -1313,6 +1313,11 @@
   "faith_description": "Choose the faith activities you practice",
   "marriage_tab":"Marriage",
   "logout_confirmation":"Are you sure you want to logout?",
-  "interactions_tab":"Interactions"
+  "interactions_tab":"Interactions",
+  "verified_profile_title":"Verified Profile",
+"verified_profile_desc":"All personal data has been verified by the application.",
+"deactivate_the_marriage_section":"Deactivate the marriage section",
+"audio_pending_save":"audio pending save",
+"video_pending_save":"audio pending save"
 
 }

@@ -1,12 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/Interaction_ProfileCard.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/default_appbar.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/greeting_interaction_card.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/recently_joined.dart';
 import 'package:tayseer/my_import.dart';
-import '../../../data/Model/Iinteraction_usermodel .dart';
+
+import '../../../data/Model/interaction_usermodel .dart';
 
 class CategoryDetailPage extends StatelessWidget {
   final String title;

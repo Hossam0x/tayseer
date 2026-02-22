@@ -1,5 +1,4 @@
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
@@ -259,7 +258,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty)
           .toList();
-      debugPrint('📋 [FORMAT] String input: "$hobbyKeys" → parsed: $hobbiesList');
+      debugPrint(
+        '📋 [FORMAT] String input: "$hobbyKeys" → parsed: $hobbiesList',
+      );
     } else {
       debugPrint('⚠️ [FORMAT] Invalid type: ${hobbyKeys.runtimeType}');
       return '';
@@ -300,74 +301,58 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     }
     return translated;
   }
-bool get _hasUnsavedChanges {
-    final s = widget.state;
-    return s.pendingSingleImage != null ||
-        s.deletedSingleImageUrl != null ||
-        s.pendingImages.isNotEmpty ||
-        s.deletedImageUrls.isNotEmpty ||
-        s.pendingVideo != null ||
-        s.pendingDeleteVideo ||
-        s.pendingAudio != null ||
-        s.pendingDeleteAudio;}
+
   @override
   Widget build(BuildContext context) {
     // ✅ تحقق من الصورة الرئيسية - السيرفر أو pending
-    final hasSingleImage =
-        (widget.profile.userMedia?.singleImage != null &&
-            widget.profile.userMedia!.singleImage!.isNotEmpty) ||
-        widget.state.pendingSingleImage != null;
 
-    return WillPopScope(
-     onWillPop: () async {
-        // ⭐ Priority 1: لازم تضيف صورة رئيسية أولاً
-        if (!hasSingleImage) {
-          _showMustAddImageDialog(context);
-          return false;
-        }
-        // ⭐ Priority 2: لو فيه تغييرات pending، اسأل المستخدم
-        if (_hasUnsavedChanges) {
-          _showUnsavedChangesDialog(context);
-          return false;
-        }
-        return true;
-      },
-      child: CustomScrollView(
-        controller: _scrollController,
-        cacheExtent: 3000,
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                Gap(24.h),
-                _buildPersonalInfoSection(context, widget.cubit, widget.profile),
-                Gap(20.h),
-                Container(
-                  key: _imagesKey,
-                  child: _buildImagesSection(context, widget.cubit, widget.profile),
+    return CustomScrollView(
+      controller: _scrollController,
+      cacheExtent: 3000,
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              Gap(24.h),
+              _buildPersonalInfoSection(context, widget.cubit, widget.profile),
+              Gap(20.h),
+              Container(
+                key: _imagesKey,
+                child: _buildImagesSection(
+                  context,
+                  widget.cubit,
+                  widget.profile,
                 ),
-                Gap(24.h),
-                _buildProfessionalInfoSection(context, widget.cubit, widget.profile),
-                Gap(24.h),
-                Container(key: _videoKey, child: _buildVideoSection(context)),
-                Gap(24.h),
-                Container(key: _audioKey, child: _buildAudioSection(context)),
-                Gap(24.h),
-                _buildFamilyAndPreferencesSection(context, widget.cubit, widget.profile),
-                Gap(24.h),
-                _buildGoalsSection(context, widget.cubit, widget.profile),
-                Gap(24.h),
-                _buildKnowMeMoreSection(context, widget.cubit, widget.profile),
-                Gap(32.h),
-                _buildSaveButton(context, widget.cubit, widget.state),
-                Gap(100.h),
-              ]),
-            ),
+              ),
+              Gap(24.h),
+              _buildProfessionalInfoSection(
+                context,
+                widget.cubit,
+                widget.profile,
+              ),
+              Gap(24.h),
+              Container(key: _videoKey, child: _buildVideoSection(context)),
+              Gap(24.h),
+              Container(key: _audioKey, child: _buildAudioSection(context)),
+              Gap(24.h),
+              _buildFamilyAndPreferencesSection(
+                context,
+                widget.cubit,
+                widget.profile,
+              ),
+              Gap(24.h),
+              _buildGoalsSection(context, widget.cubit, widget.profile),
+              Gap(24.h),
+              _buildKnowMeMoreSection(context, widget.cubit, widget.profile),
+              Gap(32.h),
+              _buildSaveButton(context, widget.cubit, widget.state),
+              Gap(100.h),
+            ]),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -380,11 +365,14 @@ bool get _hasUnsavedChanges {
     final pendingDeleteVideo = widget.state.pendingDeleteVideo;
 
     // منطق العرض: pending delete → مفيش | pending file → محلي | غير كده → سيرفر
-    final hasVideo = !pendingDeleteVideo &&
+    final hasVideo =
+        !pendingDeleteVideo &&
         (pendingVideo != null ||
             (serverVideoUrl != null && serverVideoUrl.isNotEmpty));
 
-    final displayVideoUrl = pendingVideo != null ? pendingVideo.path : serverVideoUrl;
+    final displayVideoUrl = pendingVideo != null
+        ? pendingVideo.path
+        : serverVideoUrl;
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -419,7 +407,8 @@ bool get _hasUnsavedChanges {
     final pendingAudio = widget.state.pendingAudio;
     final pendingDeleteAudio = widget.state.pendingDeleteAudio;
 
-    final hasAudio = !pendingDeleteAudio &&
+    final hasAudio =
+        !pendingDeleteAudio &&
         (pendingAudio != null ||
             (serverAudioUrl != null && serverAudioUrl.isNotEmpty));
 
@@ -461,7 +450,10 @@ bool get _hasUnsavedChanges {
         children: [
           Icon(Icons.info_outline, size: 14.w, color: Colors.orange),
           Gap(4.w),
-          Text(message, style: Styles.textStyle12.copyWith(color: Colors.orange)),
+          Text(
+            message,
+            style: Styles.textStyle12.copyWith(color: Colors.orange),
+          ),
         ],
       ),
     );
@@ -483,7 +475,9 @@ bool get _hasUnsavedChanges {
     final deletedSingleUrl = widget.state.deletedSingleImageUrl;
 
     // ✅ الصورة الرئيسية
-    final displaySingleUrl = deletedSingleUrl != null ? null : serverSingleImage;
+    final displaySingleUrl = deletedSingleUrl != null
+        ? null
+        : serverSingleImage;
     final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
 
     // ✅ الصور الثانوية: نفلتر المحذوفة من السيرفر + نضيف الـ pending
@@ -494,8 +488,9 @@ bool get _hasUnsavedChanges {
       ...filteredServerImages,
       ...pendingImgs.map((f) => f.path),
     ];
-    final secondaryImages =
-        allDisplayImages.length > 4 ? allDisplayImages.sublist(0, 4) : allDisplayImages;
+    final secondaryImages = allDisplayImages.length > 4
+        ? allDisplayImages.sublist(0, 4)
+        : allDisplayImages;
 
     final totalCount = (hasSingleToShow ? 1 : 0) + allDisplayImages.length;
 
@@ -563,12 +558,18 @@ bool get _hasUnsavedChanges {
                       padding: EdgeInsets.only(top: context.height * 0.06),
                       child: Column(
                         children: [
-                          Icon(Icons.info_outline, size: 28, color: AppColors.kscandryTextColor),
+                          Icon(
+                            Icons.info_outline,
+                            size: 28,
+                            color: AppColors.kscandryTextColor,
+                          ),
                           SizedBox(height: 8),
                           Text(
                             context.tr('photo_guidelines'),
                             textAlign: TextAlign.center,
-                            style: Styles.textStyle16.copyWith(color: AppColors.kscandryTextColor),
+                            style: Styles.textStyle16.copyWith(
+                              color: AppColors.kscandryTextColor,
+                            ),
                           ),
                         ],
                       ),
@@ -589,12 +590,21 @@ bool get _hasUnsavedChanges {
                     onTap: isLocal
                         ? null
                         : () => _showReorderImageDialog(
-                            context, cubit, listIndex, filteredServerImages),
+                            context,
+                            cubit,
+                            listIndex,
+                            filteredServerImages,
+                          ),
                     onRemove: () {
                       if (isLocal) {
                         cubit.removePendingImage(pendingIndex);
                       } else {
-                        _removeImage(context, cubit, listIndex, filteredServerImages);
+                        _removeImage(
+                          context,
+                          cubit,
+                          listIndex,
+                          filteredServerImages,
+                        );
                       }
                     },
                   );
@@ -604,7 +614,8 @@ bool get _hasUnsavedChanges {
                     imageUrl: null,
                     isMain: false,
                     onTap: allDisplayImages.length < 4
-                        ? () => _pickImage(context, cubit, profile, isMain: false)
+                        ? () =>
+                              _pickImage(context, cubit, profile, isMain: false)
                         : null,
                     onRemove: null,
                   );
@@ -631,7 +642,9 @@ bool get _hasUnsavedChanges {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
         title: Row(
           children: [
             Icon(Icons.swap_vert, color: AppColors.primary600, size: 28.w),
@@ -639,7 +652,9 @@ bool get _hasUnsavedChanges {
             Expanded(
               child: Text(
                 context.tr('reorder_image'),
-                style: Styles.textStyle18Meduim.copyWith(color: AppColors.primary600),
+                style: Styles.textStyle18Meduim.copyWith(
+                  color: AppColors.primary600,
+                ),
               ),
             ),
           ],
@@ -690,12 +705,18 @@ bool get _hasUnsavedChanges {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary600,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
               padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
             ),
             child: Text(
               context.tr('yes_make_first'),
-              style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -718,141 +739,7 @@ bool get _hasUnsavedChanges {
       if (mounted) setState(() {});
     }
   }
-  // ⭐⭐⭐ NEW: Unsaved Changes Dialog
-  void _showUnsavedChangesDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        title: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.orange,
-                size: 36.w,
-              ),
-            ),
-            Gap(12.h),
-            Text(
-              context.tr('unsaved_changes'),
-              textAlign: TextAlign.center,
-              style: Styles.textStyle18Meduim,
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              context.tr('unsaved_changes_message'),
-              textAlign: TextAlign.center,
-              style: Styles.textStyle16.copyWith(
-                color: AppColors.kscandryTextColor,
-                height: 1.5,
-              ),
-            ),
-            Gap(12.h),
-            // _buildPendingChangesSummary(context),
-          ],
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actionsPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                widget.cubit.discardAllPending();
-                Navigator.pop(context);
-              },
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.red.shade300),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 14.h),
-              ),
-              child: Text(
-                context.tr('discard_and_exit'),
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height:  8.h),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                widget.cubit.saveProfile();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary300,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 14.h),
-              ),
-              child: Text(
-                context.tr('save_and_exit'),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height:  4.h),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                context.tr('cancel'),
-                style: TextStyle(
-                  color: AppColors.kscandryTextColor,
-                  fontSize: 15.sp,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showMustAddImageDialog(BuildContext context) {
-    CustomshowDialogWithImage(
-      context,
-      title: context.tr('add_main_image_required'),
-      supTitle: context.tr('must_add_main_image_before_exit'),
-      icon: Icons.image_outlined,
-      iconColor: Colors.orange,
-      iconBackgroundColor: Colors.orange.withOpacity(0.1),
-      bottonText: context.tr('add_image'),
-      showCancelButton: false,
-      onPressed: () async {
-        await _pickSingleImage(context, widget.cubit, widget.profile);
-      },
-    );
-  }
-
-  
   void _removeSingleImage(BuildContext context, MarriageProfileCubit cubit) {
     CustomshowDialogWithImage(
       context,
@@ -879,13 +766,18 @@ bool get _hasUnsavedChanges {
     bool isMain = false,
   }) async {
     // ✅ عدّ السيرفر + pending معاً
-    final serverCount = (profile.userMedia?.images.length ?? 0) -
+    final serverCount =
+        (profile.userMedia?.images.length ?? 0) -
         widget.state.deletedImageUrls.length;
     final totalCount = serverCount + widget.state.pendingImages.length;
 
     if (totalCount >= 4) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(context, text: context.tr('max_secondary_images_4'), isError: true),
+        CustomSnackBar(
+          context,
+          text: context.tr('max_secondary_images_4'),
+          isError: true,
+        ),
       );
       return;
     }
@@ -931,15 +823,31 @@ bool get _hasUnsavedChanges {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-          title: Text(context.tr('attach_video'), style: Styles.textStyle18Meduim, textAlign: TextAlign.center),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          title: Text(
+            context.tr('attach_video'),
+            style: Styles.textStyle18Meduim,
+            textAlign: TextAlign.center,
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.videocam, color: AppColors.primary200, size: 30.w),
-                title: Text(context.tr('record_video_now'), style: Styles.textStyle16),
-                subtitle: Text(context.tr('record_with_camera'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                leading: Icon(
+                  Icons.videocam,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text(
+                  context.tr('record_video_now'),
+                  style: Styles.textStyle16,
+                ),
+                subtitle: Text(
+                  context.tr('record_with_camera'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickVideoFromCamera(context);
@@ -947,9 +855,19 @@ bool get _hasUnsavedChanges {
               ),
               Divider(height: 1, color: AppColors.secondary100),
               ListTile(
-                leading: Icon(Icons.video_library, color: AppColors.primary200, size: 30.w),
-                title: Text(context.tr('choose_from_gallery'), style: Styles.textStyle16),
-                subtitle: Text(context.tr('choose_video_from_gallery'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                leading: Icon(
+                  Icons.video_library,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text(
+                  context.tr('choose_from_gallery'),
+                  style: Styles.textStyle16,
+                ),
+                subtitle: Text(
+                  context.tr('choose_video_from_gallery'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickVideoFromGallery(context);
@@ -966,15 +884,24 @@ bool get _hasUnsavedChanges {
     try {
       final cameraStatus = await Permission.camera.request();
       if (cameraStatus.isDenied) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('camera_permission_required'), isError: true),
-        );
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('camera_permission_required'),
+              isError: true,
+            ),
+          );
         return;
       }
       if (cameraStatus.isPermanentlyDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('enable_camera_from_settings'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('enable_camera_from_settings'),
+              isError: true,
+            ),
           );
           await openAppSettings();
         }
@@ -988,9 +915,14 @@ bool get _hasUnsavedChanges {
       if (video != null) await _processVideoFile(context, video);
     } catch (e) {
       debugPrint('❌ Error picking video from camera: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(context, text: context.tr('error_recording_video'), isError: true),
-      );
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('error_recording_video'),
+            isError: true,
+          ),
+        );
     }
   }
 
@@ -1012,15 +944,24 @@ bool get _hasUnsavedChanges {
         }
       }
       if (status.isDenied) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('gallery_permission_required'), isError: true),
-        );
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('gallery_permission_required'),
+              isError: true,
+            ),
+          );
         return;
       }
       if (status.isPermanentlyDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('enable_gallery_from_settings'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('enable_gallery_from_settings'),
+              isError: true,
+            ),
           );
           await openAppSettings();
         }
@@ -1034,9 +975,14 @@ bool get _hasUnsavedChanges {
       if (video != null) await _processVideoFile(context, video);
     } catch (e) {
       debugPrint('❌ Error picking video from gallery: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(context, text: context.tr('error_selecting_video'), isError: true),
-      );
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('error_selecting_video'),
+            isError: true,
+          ),
+        );
     }
   }
 
@@ -1045,9 +991,14 @@ bool get _hasUnsavedChanges {
       final file = File(video.path);
       final fileSize = await file.length();
       if (fileSize > 50 * 1024 * 1024) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('video_size_too_large'), isError: true),
-        );
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('video_size_too_large'),
+              isError: true,
+            ),
+          );
         return;
       }
       // ✅ pending فقط - مش upload فوري
@@ -1055,9 +1006,14 @@ bool get _hasUnsavedChanges {
       if (mounted) setState(() {});
     } catch (e) {
       debugPrint('❌ Error processing video file: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(context, text: context.tr('error_uploading_video'), isError: true),
-      );
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('error_uploading_video'),
+            isError: true,
+          ),
+        );
     }
   }
 
@@ -1088,15 +1044,31 @@ bool get _hasUnsavedChanges {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-          title: Text(context.tr('attach_audio'), style: Styles.textStyle18Meduim, textAlign: TextAlign.center),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          title: Text(
+            context.tr('attach_audio'),
+            style: Styles.textStyle18Meduim,
+            textAlign: TextAlign.center,
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.mic, color: AppColors.primary200, size: 30.w),
-                title: Text(context.tr('record_now'), style: Styles.textStyle16),
-                subtitle: Text(context.tr('record_voice_now'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                leading: Icon(
+                  Icons.mic,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text(
+                  context.tr('record_now'),
+                  style: Styles.textStyle16,
+                ),
+                subtitle: Text(
+                  context.tr('record_voice_now'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _startRecordingInPlace(context);
@@ -1104,9 +1076,19 @@ bool get _hasUnsavedChanges {
               ),
               Divider(height: 1, color: AppColors.secondary100),
               ListTile(
-                leading: Icon(Icons.upload_file, color: AppColors.primary200, size: 30.w),
-                title: Text(context.tr('upload_file'), style: Styles.textStyle16),
-                subtitle: Text(context.tr('choose_audio_file'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                leading: Icon(
+                  Icons.upload_file,
+                  color: AppColors.primary200,
+                  size: 30.w,
+                ),
+                title: Text(
+                  context.tr('upload_file'),
+                  style: Styles.textStyle16,
+                ),
+                subtitle: Text(
+                  context.tr('choose_audio_file'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _pickAudio(context);
@@ -1143,13 +1125,21 @@ bool get _hasUnsavedChanges {
       if (!mounted) return;
       if (status.isDenied) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('allow_files_access'), isError: true),
+          CustomSnackBar(
+            context,
+            text: context.tr('allow_files_access'),
+            isError: true,
+          ),
         );
         return;
       }
       if (status.isPermanentlyDenied) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('enable_permission_settings'), isError: true),
+          CustomSnackBar(
+            context,
+            text: context.tr('enable_permission_settings'),
+            isError: true,
+          ),
         );
         await openAppSettings();
         return;
@@ -1167,7 +1157,11 @@ bool get _hasUnsavedChanges {
         if (!await file.exists()) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('file_not_found'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('file_not_found'),
+              isError: true,
+            ),
           );
           return;
         }
@@ -1175,7 +1169,11 @@ bool get _hasUnsavedChanges {
         if (fileSize > 10 * 1024 * 1024) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('file_too_large'), isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('file_too_large'),
+              isError: true,
+            ),
           );
           return;
         }
@@ -1184,9 +1182,14 @@ bool get _hasUnsavedChanges {
         if (mounted) setState(() {});
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(context, text: '${context.tr('error_picking_audio')}: ${e.toString()}', isError: true),
-      );
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: '${context.tr('error_picking_audio')}: ${e.toString()}',
+            isError: true,
+          ),
+        );
     }
   }
 
@@ -1210,7 +1213,8 @@ bool get _hasUnsavedChanges {
   }
 
   Widget _buildAudioPreviewFull(BuildContext context, {File? pendingAudio}) {
-    final audioPath = pendingAudio?.path ?? widget.profile.userMedia?.audio ?? '';
+    final audioPath =
+        pendingAudio?.path ?? widget.profile.userMedia?.audio ?? '';
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -1219,7 +1223,11 @@ bool get _hasUnsavedChanges {
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.primary200.withOpacity(0.3)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -1229,7 +1237,7 @@ bool get _hasUnsavedChanges {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                context.tr('audio_recording'),
+                context.tr('audio_clip'),
                 style: Styles.textStyle16.copyWith(fontWeight: FontWeight.w600),
               ),
               IconButton(
@@ -1240,7 +1248,11 @@ bool get _hasUnsavedChanges {
                     color: Colors.red.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.delete_outline, color: Colors.red, size: 20.w),
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 20.w,
+                  ),
                 ),
               ),
             ],
@@ -1249,32 +1261,6 @@ bool get _hasUnsavedChanges {
             _buildPendingBadge(context, context.tr('audio_pending_save')),
           Gap(12.h),
           VoiceSection(audioPath: audioPath),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingWidget(String message) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
-      decoration: BoxDecoration(
-        color: AppColors.secondary50,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.primary200, width: 1.w),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 24.w,
-            height: 24.w,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.w,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary200),
-            ),
-          ),
-          Gap(12.w),
-          Text(message, style: Styles.textStyle14.copyWith(color: AppColors.primary200)),
         ],
       ),
     );
@@ -1298,7 +1284,10 @@ bool get _hasUnsavedChanges {
               children: [
                 Text(context.tr('attach_audio'), style: Styles.textStyle16),
                 Gap(4.h),
-                Text(context.tr('record_or_upload'), style: Styles.textStyle12.copyWith(color: Colors.grey)),
+                Text(
+                  context.tr('record_or_upload'),
+                  style: Styles.textStyle12.copyWith(color: Colors.grey),
+                ),
               ],
             ),
             Icon(Icons.mic_none, color: AppColors.primary200, size: 30.w),
@@ -1345,24 +1334,48 @@ bool get _hasUnsavedChanges {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(context.tr('professional_info'), style: Styles.textStyle18Meduim),
+          Text(
+            context.tr('professional_info'),
+            style: Styles.textStyle18Meduim,
+          ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('qualification'),
-            _translateValue(profile.professionalLife?.educationLevel ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'education_level', profile.professionalLife?.educationLevel),
+            _translateValue(
+              profile.professionalLife?.educationLevel ?? '',
+              context,
+            ),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'education_level',
+              profile.professionalLife?.educationLevel,
+            ),
           ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('job'),
             _translateValue(profile.professionalLife?.job ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'choose_job', profile.professionalLife?.job),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'choose_job',
+              profile.professionalLife?.job,
+            ),
           ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('employer'),
-            _translateValue(profile.professionalLife?.chooseEmployer ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'choose_employer', profile.professionalLife?.chooseEmployer),
+            _translateValue(
+              profile.professionalLife?.chooseEmployer ?? '',
+              context,
+            ),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'choose_employer',
+              profile.professionalLife?.chooseEmployer,
+            ),
           ),
         ],
       ),
@@ -1393,23 +1406,46 @@ bool get _hasUnsavedChanges {
           _buildInfoRow(
             context.tr('marital_status'),
             _translateValue(profile.aboutMe?.socialStatus ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'maritalStatus', profile.aboutMe?.socialStatus),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'maritalStatus',
+              profile.aboutMe?.socialStatus,
+            ),
           ),
           _buildInfoRow(
             context.tr('has_childrens'),
             _translateValue(profile.family?.hasChildren ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'hasChildren', profile.family?.hasChildren),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'hasChildren',
+              profile.family?.hasChildren,
+            ),
           ),
           if (showChildrenDetails) ...[
             _buildInfoRow(
               context.tr('children_count'),
               _translateValue(profile.family?.childrenNumber ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'childrenNumber', profile.family?.childrenNumber),
+              () => _navigateToFieldSelection(
+                context,
+                cubit,
+                'childrenNumber',
+                profile.family?.childrenNumber,
+              ),
             ),
             _buildInfoRow(
               context.tr('children_live_with_you'),
-              _translateValue(profile.family?.childrenLivingStatus ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'childrenLiveWithYou', profile.family?.childrenLivingStatus),
+              _translateValue(
+                profile.family?.childrenLivingStatus ?? '',
+                context,
+              ),
+              () => _navigateToFieldSelection(
+                context,
+                cubit,
+                'childrenLiveWithYou',
+                profile.family?.childrenLivingStatus,
+              ),
             ),
           ],
         ],
@@ -1437,22 +1473,45 @@ bool get _hasUnsavedChanges {
           _buildInfoRow(
             context.tr('engagement'),
             _translateValue(profile.yourGoals?.engagement ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'engagement', profile.yourGoals?.engagement),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'engagement',
+              profile.yourGoals?.engagement,
+            ),
           ),
           _buildInfoRow(
             context.tr('marriage'),
             _translateValue(profile.yourGoals?.marry ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'marriage_intentions', profile.yourGoals?.marry),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'marriage_intentions',
+              profile.yourGoals?.marry,
+            ),
           ),
           _buildInfoRow(
             context.tr('family'),
             _translateValue(profile.yourGoals?.familyAcceptance ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'familyAcceptance', profile.yourGoals?.familyAcceptance),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'familyAcceptance',
+              profile.yourGoals?.familyAcceptance,
+            ),
           ),
           _buildInfoRow(
             context.tr('travel'),
-            _translateValue(profile.yourGoals?.intendTravelAbroad ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'intendTravelAbroad', profile.yourGoals?.intendTravelAbroad),
+            _translateValue(
+              profile.yourGoals?.intendTravelAbroad ?? '',
+              context,
+            ),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'intendTravelAbroad',
+              profile.yourGoals?.intendTravelAbroad,
+            ),
           ),
         ],
       ),
@@ -1490,7 +1549,9 @@ bool get _hasUnsavedChanges {
                 ? _formatHobbiesForDisplay(interestHobbies, context)
                 : context.tr('select'),
             () => _navigateToFieldSelection(
-              context, cubit, 'interests',
+              context,
+              cubit,
+              'interests',
               interestHobbies.isNotEmpty ? interestHobbies.join(', ') : null,
             ),
           ),
@@ -1500,7 +1561,9 @@ bool get _hasUnsavedChanges {
                 ? _formatHobbiesForDisplay(faithHobbies, context)
                 : context.tr('select'),
             () => _navigateToFieldSelection(
-              context, cubit, 'faith',
+              context,
+              cubit,
+              'faith',
               faithHobbies.isNotEmpty ? faithHobbies.join(', ') : null,
             ),
           ),
@@ -1529,7 +1592,9 @@ bool get _hasUnsavedChanges {
       },
       builder: (context, state) {
         return CustomBotton(
-          title: state.isUpdating ? context.tr('saving') : context.tr('save_changes'),
+          title: state.isUpdating
+              ? context.tr('saving')
+              : context.tr('save_changes'),
           onPressed: state.isUpdating
               ? null
               : () {
@@ -1561,26 +1626,109 @@ bool get _hasUnsavedChanges {
         children: [
           Text(context.tr('personal_info'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-          _buildInfoRow(context.tr('country'), _translateValue(profile.aboutMe?.country ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'country', profile.aboutMe?.country)),
-          _buildInfoRow(context.tr('nationality'), _translateValue(profile.aboutMe?.nationality ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'nationality', profile.aboutMe?.nationality)),
-          _buildInfoRow(context.tr('height'), profile.aboutMe?.height ?? context.tr('select'),
-              () => _navigateToFieldSelection(context, cubit, 'height', profile.aboutMe?.height)),
-          _buildInfoRow(context.tr('weight'), profile.aboutMe?.weight ?? context.tr('select'),
-              () => _navigateToFieldSelection(context, cubit, 'weight', profile.aboutMe?.weight)),
-          _buildInfoRow(context.tr('skin_color'), _translateValue(profile.aboutMe?.skinColor ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'skinColor', profile.aboutMe?.skinColor)),
-          _buildInfoRow(context.tr('select_health_status_title'), _translateValue(profile.aboutMe?.healthStatus ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'healthStatus', profile.aboutMe?.healthStatus)),
-          _buildInfoRow(context.tr('commitment_to_religion'), _translateValue(profile.aboutMe?.religiousCommitment ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'religiousCommitment', profile.aboutMe?.religiousCommitment)),
-          _buildInfoRow(context.tr('smoking'), _translateValue(profile.aboutMe?.smoker ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'smoker', profile.aboutMe?.smoker)),
-          _buildInfoRow(context.tr('drink_alcohol'), _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'drinkAlcohol', profile.aboutMe?.drinkAlcohol)),
-          _buildInfoRow(context.tr('eat_halal_only'), _translateValue(profile.aboutMe?.eatHalalOnly ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'eatHalalOnly', profile.aboutMe?.eatHalalOnly)),
+          _buildInfoRow(
+            context.tr('country'),
+            _translateValue(profile.aboutMe?.country ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'country',
+              profile.aboutMe?.country,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('nationality'),
+            _translateValue(profile.aboutMe?.nationality ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'nationality',
+              profile.aboutMe?.nationality,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('height'),
+            profile.aboutMe?.height ?? context.tr('select'),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'height',
+              profile.aboutMe?.height,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('weight'),
+            profile.aboutMe?.weight ?? context.tr('select'),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'weight',
+              profile.aboutMe?.weight,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('skin_color'),
+            _translateValue(profile.aboutMe?.skinColor ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'skinColor',
+              profile.aboutMe?.skinColor,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('select_health_status_title'),
+            _translateValue(profile.aboutMe?.healthStatus ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'healthStatus',
+              profile.aboutMe?.healthStatus,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('commitment_to_religion'),
+            _translateValue(
+              profile.aboutMe?.religiousCommitment ?? '',
+              context,
+            ),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'religiousCommitment',
+              profile.aboutMe?.religiousCommitment,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('smoking'),
+            _translateValue(profile.aboutMe?.smoker ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'smoker',
+              profile.aboutMe?.smoker,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('drink_alcohol'),
+            _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'drinkAlcohol',
+              profile.aboutMe?.drinkAlcohol,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('eat_halal_only'),
+            _translateValue(profile.aboutMe?.eatHalalOnly ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'eatHalalOnly',
+              profile.aboutMe?.eatHalalOnly,
+            ),
+          ),
         ],
       ),
     );
@@ -1603,11 +1751,20 @@ bool get _hasUnsavedChanges {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(value, textAlign: TextAlign.left, maxLines: 4,
-                        overflow: TextOverflow.ellipsis, style: Styles.textStyle16),
+                    child: Text(
+                      value,
+                      textAlign: TextAlign.left,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: Styles.textStyle16,
+                    ),
                   ),
                   Gap(8.w),
-                  Icon(Icons.arrow_forward_ios_rounded, size: 14.w, color: AppColors.secondary400),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14.w,
+                    color: AppColors.secondary400,
+                  ),
                 ],
               ),
             ] else ...[
@@ -1615,7 +1772,12 @@ bool get _hasUnsavedChanges {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: Text(label, style: Styles.textStyle18, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      label,
+                      style: Styles.textStyle18,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   Gap(8.w),
                   Expanded(
@@ -1625,11 +1787,20 @@ bool get _hasUnsavedChanges {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Flexible(
-                          child: Text(value, textAlign: TextAlign.right, maxLines: 2,
-                              overflow: TextOverflow.ellipsis, style: Styles.textStyle16),
+                          child: Text(
+                            value,
+                            textAlign: TextAlign.right,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Styles.textStyle16,
+                          ),
                         ),
                         Gap(8.w),
-                        Icon(Icons.arrow_forward_ios_rounded, size: 14.w, color: AppColors.secondary400),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14.w,
+                          color: AppColors.secondary400,
+                        ),
                       ],
                     ),
                   ),
@@ -1657,20 +1828,20 @@ bool get _hasUnsavedChanges {
           fieldName: fieldKey,
           currentValue: currentValue,
           onValueSelected: (value) {
-            debugPrint('═══════════════════════════════════════════');
-            debugPrint('🔍 [SELECTION] Field: $fieldKey');
-            debugPrint('🔍 [SELECTION] Value received: "$value"');
-            debugPrint('🔍 [SELECTION] Type: ${value.runtimeType}');
             if (fieldKey == 'interests' || fieldKey == 'hobbies') {
               final parts = value.split(', ');
-              debugPrint('🔍 [SELECTION] Split parts: $parts');
+
               for (var part in parts) {
-                final isKey = part.startsWith('interest_') || part.startsWith('faith_');
-                debugPrint('  ${isKey ? "✅" : "❌"} $part ${isKey ? "(KEY)" : "(VALUE - WRONG!)"}');
+                final isKey =
+                    part.startsWith('interest_') || part.startsWith('faith_');
+                debugPrint(
+                  '  ${isKey ? "✅" : "❌"} $part ${isKey ? "(KEY)" : "(VALUE - WRONG!)"}',
+                );
               }
             }
             debugPrint('═══════════════════════════════════════════');
             cubit.updateField(fieldKey, value);
+            cubit.autoSaveFields();
           },
         ),
       ),
@@ -1682,7 +1853,9 @@ bool get _hasUnsavedChanges {
     MarriageProfileCubit cubit,
     String? currentBio,
   ) {
-    final TextEditingController controller = TextEditingController(text: currentBio);
+    final TextEditingController controller = TextEditingController(
+      text: currentBio,
+    );
     CustomSHowDetailsDialog(
       context,
       title: context.tr('edit_bio'),
@@ -1699,6 +1872,7 @@ bool get _hasUnsavedChanges {
         final newBio = controller.text.trim();
         if (newBio.isNotEmpty) {
           cubit.updateField('bio', newBio);
+            cubit.autoSaveFields();
           Navigator.pop(context);
         }
       },
@@ -1736,12 +1910,20 @@ class ImageSlotCard extends StatelessWidget {
         children: [
           if (!hasImage)
             CustomPaint(
-              painter: DashedRectPainter(color: AppColors.kbinkColor, strokeWidth: 1.5, gap: 5.0),
+              painter: DashedRectPainter(
+                color: AppColors.kbinkColor,
+                strokeWidth: 1.5,
+                gap: 5.0,
+              ),
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-                child: Center(child: Icon(Icons.add, size: 32, color: AppColors.kbinkColor)),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Icon(Icons.add, size: 32, color: AppColors.kbinkColor),
+                ),
               ),
             )
           else
@@ -1770,7 +1952,11 @@ class ImageSlotCard extends StatelessWidget {
                   color: Colors.orange.withOpacity(0.85),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Icon(Icons.save_outlined, size: 10, color: Colors.white),
+                child: const Icon(
+                  Icons.save_outlined,
+                  size: 10,
+                  color: Colors.white,
+                ),
               ),
             ),
 
@@ -1786,7 +1972,11 @@ class ImageSlotCard extends StatelessWidget {
                 ),
                 child: Text(
                   context.tr('main_Image'),
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -1799,7 +1989,10 @@ class ImageSlotCard extends StatelessWidget {
                 onTap: onRemove,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
                   child: const Icon(Icons.close, size: 14, color: Colors.white),
                 ),
               ),
@@ -1832,10 +2025,12 @@ class DashedRectPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     var path = Path()
-      ..addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        const Radius.circular(12),
-      ));
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          const Radius.circular(12),
+        ),
+      );
 
     Path dashPath = Path();
     double dashWidth = 6.0;

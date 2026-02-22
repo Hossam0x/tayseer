@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
-import '../../data/Model/Iinteraction_usermodel .dart';
+import '../../data/Model/interaction_usermodel .dart';
 import '../../data/Model/history_response_model.dart';
 import 'interactions_state.dart';
 
@@ -22,24 +22,25 @@ class InteractionsCubit extends Cubit<InteractionsState> {
     emit(state.copyWith(isSubscribed: isSubscribed));
   }
 
-Future<void> fetchHistorySilently() async {
-  if (state.isSubscribed) return; // مش محتاج لو already subscribed
+  Future<void> fetchHistorySilently() async {
+    if (state.isSubscribed) return; // مش محتاج لو already subscribed
 
-  final result = await repository.fetchHistoryUsers(
-    filter: "liked_you",
-    page: 1,
-  );
+    final result = await repository.fetchHistoryUsers(
+      filter: "liked_you",
+      page: 1,
+    );
 
-  result.fold(
-    (failure) => null, // ✅ silent - مش بنعمل حاجة عند الفشل
-    (response) {
-      // ✅ update الـ subscription فقط بدون تغيير باقي الـ state
-      if (response.userSubscription != state.isSubscribed) {
-        emit(state.copyWith(isSubscribed: response.userSubscription));
-      }
-    },
-  );
-}
+    result.fold(
+      (failure) => null, // ✅ silent - مش بنعمل حاجة عند الفشل
+      (response) {
+        // ✅ update الـ subscription فقط بدون تغيير باقي الـ state
+        if (response.userSubscription != state.isSubscribed) {
+          emit(state.copyWith(isSubscribed: response.userSubscription));
+        }
+      },
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════════════
   // EXPLORATION - ✅ UPDATED WITH REFRESH SUPPORT
   // ═══════════════════════════════════════════════════════════════════
@@ -65,10 +66,12 @@ Future<void> fetchHistorySilently() async {
     );
 
     result.fold(
-      (failure) => emit(state.copyWith(
-        explorationState: CubitStates.failure,
-        explorationErrorMessage: failure.message,
-      )),
+      (failure) => emit(
+        state.copyWith(
+          explorationState: CubitStates.failure,
+          explorationErrorMessage: failure.message,
+        ),
+      ),
       (response) {
         // ✅ Convert CategoryData to List<InteractionUserModel>
         final Map<String, List<InteractionUserModel>> explorationData = {};
@@ -77,13 +80,15 @@ Future<void> fetchHistorySilently() async {
           explorationData[displayName] = categoryData.users;
         });
 
-        emit(state.copyWith(
-          explorationState: CubitStates.success,
-          answerCompleted: response.answerCompleted,
-          explorationData: explorationData,
-          explorationCurrentPage: 1,
-          explorationHasMore: false,
-        ));
+        emit(
+          state.copyWith(
+            explorationState: CubitStates.success,
+            answerCompleted: response.answerCompleted,
+            explorationData: explorationData,
+            explorationCurrentPage: 1,
+            explorationHasMore: false,
+          ),
+        );
       },
     );
   }
@@ -103,39 +108,43 @@ Future<void> fetchHistorySilently() async {
   Future<void> fetchHistory({required String filter}) async {
     emit(state.copyWith(historyState: CubitStates.loading));
 
-    final result = await repository.fetchHistoryUsers(
-      filter: filter,
-      page: 1,
-    );
+    final result = await repository.fetchHistoryUsers(filter: filter, page: 1);
 
     result.fold(
-      (failure) => emit(state.copyWith(
-        historyState: CubitStates.failure,
-        historyErrorMessage: failure.message,
-      )),
+      (failure) => emit(
+        state.copyWith(
+          historyState: CubitStates.failure,
+          historyErrorMessage: failure.message,
+        ),
+      ),
       (response) {
         updateSubscriptionStatus(response.userSubscription);
 
         final section = response.sections[filter];
 
         if (section == null) {
-          emit(state.copyWith(
-            historyState: CubitStates.success,
-            historyData: {filter: []},
-            historyCurrentPage: {filter: 1},
-            historyHasMore: {filter: false},
-            historyPagination: {filter: null},
-          ));
+          emit(
+            state.copyWith(
+              historyState: CubitStates.success,
+              historyData: {filter: []},
+              historyCurrentPage: {filter: 1},
+              historyHasMore: {filter: false},
+              historyPagination: {filter: null},
+            ),
+          );
           return;
         }
 
-        final Map<String, List<InteractionUserModel>> newData =
-            Map.from(state.historyData);
-        final Map<String, int> newCurrentPage =
-            Map.from(state.historyCurrentPage);
+        final Map<String, List<InteractionUserModel>> newData = Map.from(
+          state.historyData,
+        );
+        final Map<String, int> newCurrentPage = Map.from(
+          state.historyCurrentPage,
+        );
         final Map<String, bool> newHasMore = Map.from(state.historyHasMore);
-        final Map<String, PaginationModel?> newPagination =
-            Map.from(state.historyPagination);
+        final Map<String, PaginationModel?> newPagination = Map.from(
+          state.historyPagination,
+        );
 
         List<InteractionUserModel> filteredUsers = section.users.map((user) {
           if (_pendingRemovalFavorites.contains(user.userId)) {
@@ -159,13 +168,15 @@ Future<void> fetchHistorySilently() async {
 
         newPagination[filter] = section.pagination;
 
-        emit(state.copyWith(
-          historyState: CubitStates.success,
-          historyData: newData,
-          historyCurrentPage: newCurrentPage,
-          historyHasMore: newHasMore,
-          historyPagination: newPagination,
-        ));
+        emit(
+          state.copyWith(
+            historyState: CubitStates.success,
+            historyData: newData,
+            historyCurrentPage: newCurrentPage,
+            historyHasMore: newHasMore,
+            historyPagination: newPagination,
+          ),
+        );
       },
     );
   }
@@ -200,13 +211,14 @@ Future<void> fetchHistorySilently() async {
         log('Load more failed: ${failure.message}');
       },
       (response) {
-        final currentData =
-            Map<String, List<InteractionUserModel>>.from(state.historyData);
-        final currentPageMap =
-            Map<String, int>.from(state.historyCurrentPage);
+        final currentData = Map<String, List<InteractionUserModel>>.from(
+          state.historyData,
+        );
+        final currentPageMap = Map<String, int>.from(state.historyCurrentPage);
         final currentHasMoreMap = Map<String, bool>.from(state.historyHasMore);
-        final currentPaginationMap =
-            Map<String, PaginationModel?>.from(state.historyPagination);
+        final currentPaginationMap = Map<String, PaginationModel?>.from(
+          state.historyPagination,
+        );
 
         final section = response.sections[filter];
         if (section != null) {
@@ -227,7 +239,8 @@ Future<void> fetchHistorySilently() async {
           currentPageMap[filter] = section.pagination?.currentPage ?? nextPage;
 
           if (section.pagination != null) {
-            currentHasMoreMap[filter] = section.pagination!.currentPage <
+            currentHasMoreMap[filter] =
+                section.pagination!.currentPage <
                 section.pagination!.totalPages;
           } else {
             currentHasMoreMap[filter] = false;
@@ -236,12 +249,14 @@ Future<void> fetchHistorySilently() async {
           currentPaginationMap[filter] = section.pagination;
         }
 
-        emit(state.copyWith(
-          historyData: currentData,
-          historyCurrentPage: currentPageMap,
-          historyHasMore: currentHasMoreMap,
-          historyPagination: currentPaginationMap,
-        ));
+        emit(
+          state.copyWith(
+            historyData: currentData,
+            historyCurrentPage: currentPageMap,
+            historyHasMore: currentHasMoreMap,
+            historyPagination: currentPaginationMap,
+          ),
+        );
 
         log('Successfully loaded page $nextPage for $filter');
       },
@@ -254,17 +269,11 @@ Future<void> fetchHistorySilently() async {
 
   Future<void> refreshFavorites() async {
     for (String userId in _pendingRemovalFavorites) {
-      await repository.toggleFavorite(
-        userId: userId,
-        isAdd: false,
-      );
+      await repository.toggleFavorite(userId: userId, isAdd: false);
     }
 
     for (String userId in _pendingAddFavorites) {
-      await repository.toggleFavorite(
-        userId: userId,
-        isAdd: true,
-      );
+      await repository.toggleFavorite(userId: userId, isAdd: true);
     }
 
     _pendingRemovalFavorites.clear();
@@ -277,26 +286,35 @@ Future<void> fetchHistorySilently() async {
   // TOGGLE FAVORITE
   // ═══════════════════════════════════════════════════════════════════
 
-  void toggleFavorite({
+  Future<void> toggleFavorite({
     required String userId,
     required bool isAdd,
-  }) {
-    if (isAdd) {
-      _pendingAddFavorites.add(userId);
-      _pendingRemovalFavorites.remove(userId);
-    } else {
-      _pendingRemovalFavorites.add(userId);
-      _pendingAddFavorites.remove(userId);
-    }
-
+  }) async {
+    // ✅ Update UI فوراً (Optimistic Update)
     _updateUserFavoriteStatusInUI(userId, isAdd);
 
-    log('Toggled favorite for $userId - isAdd: $isAdd (pending state)');
+    // ✅ بعت للـ API فوراً
+    final result = await repository.toggleFavorite(
+      userId: userId,
+      isAdd: isAdd,
+    );
+
+    result.fold(
+      (failure) {
+        // ❌ لو فشل، ارجع التغيير
+        log('Toggle favorite failed: ${failure.message}');
+        _updateUserFavoriteStatusInUI(userId, !isAdd); // Revert
+      },
+      (message) {
+        log('Toggle favorite success: $message');
+      },
+    );
   }
 
   void _updateUserFavoriteStatusInUI(String userId, bool isFavorite) {
-    final updatedHistory =
-        Map<String, List<InteractionUserModel>>.from(state.historyData);
+    final updatedHistory = Map<String, List<InteractionUserModel>>.from(
+      state.historyData,
+    );
 
     updatedHistory.forEach((filter, users) {
       updatedHistory[filter] = users.map((user) {
@@ -318,15 +336,15 @@ Future<void> fetchHistorySilently() async {
     result.fold(
       (failure) {
         log('Send Compliment Failed: ${failure.message}');
-        emit(state.copyWith(
-          actionState: CubitStates.failure,
-          actionMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            actionState: CubitStates.failure,
+            actionMessage: failure.message,
+          ),
+        );
       },
       (message) {
-        emit(state.copyWith(
-          actionState: CubitStates.success,
-        ));
+        emit(state.copyWith(actionState: CubitStates.success));
       },
     );
   }
@@ -339,25 +357,26 @@ Future<void> fetchHistorySilently() async {
     result.fold(
       (failure) {
         log('Like User Failed: ${failure.message}');
-        emit(state.copyWith(
-          actionState: CubitStates.failure,
-          actionMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            actionState: CubitStates.failure,
+            actionMessage: failure.message,
+          ),
+        );
       },
       (message) {
         log('Like User Success: $message');
-        emit(state.copyWith(
-          actionState: CubitStates.success,
-          actionMessage: message,
-        ));
+        emit(
+          state.copyWith(
+            actionState: CubitStates.success,
+            actionMessage: message,
+          ),
+        );
       },
     );
   }
 
   void resetActionState() {
-    emit(state.copyWith(
-      actionState: CubitStates.initial,
-      actionMessage: null,
-    ));
+    emit(state.copyWith(actionState: CubitStates.initial, actionMessage: null));
   }
 }

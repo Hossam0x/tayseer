@@ -1,7 +1,7 @@
 import 'dart:ui';
+import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/my_import.dart';
 
-import '../../../data/Model/Iinteraction_usermodel .dart';
 import '../../Interactions_cubit/interactions_cubit.dart';
 import '../../Interactions_cubit/interactions_state.dart';
 
@@ -52,90 +52,108 @@ class GreetingProfileCard extends StatelessWidget {
         child: Row(
           children: [
             // Profile Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16.r),
-              child: Stack(
-                children: [
-                  AppImage(
-                    item.image,
-                    width: 130.w,
-                    height: 117.h,
-                    fit: BoxFit.cover,
-                  ),
-                  if (shouldBlur)
-                    Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16.r),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                          child: Container(
-                            color: Colors.black.withOpacity(0.2),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+        GestureDetector(
+  onTap: () {
+    context.pushNamed(
+      AppRouter.kMarriageView,
+      arguments: {'personId': item.userId},
+    );
+  },
+  child: ClipRRect(
+    borderRadius: BorderRadius.circular(16.r),
+    child: Stack(
+      children: [
+        shouldBlur
+            ? ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: AppImage(
+                  item.image,
+                  width: 130.w,
+                  height: 117.h,
+                  fit: BoxFit.cover,
+                ),
+              )
+            : AppImage(
+                item.image,
+                width: 130.w,
+                height: 117.h,
+                fit: BoxFit.cover,
               ),
+        if (shouldBlur)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.2),
             ),
-
-            SizedBox(width: 12.w),
+          ),
+      ],
+    ),
+  ),
+),  SizedBox(width: 12.w),
 
             // User Info
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                '${item.name},',
-                                style: Styles.textStyle16SemiBold,
-                                overflow: TextOverflow.ellipsis,
+              child: GestureDetector(
+                  onTap: () {
+                    context.pushNamed(
+                      AppRouter.kMarriageView,
+                      arguments: {'personId': item.userId},
+                    );
+                  },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  '${item.name},',
+                                  style: Styles.textStyle16SemiBold,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                            Text(
-                              ' ${item.age} ${context.tr('age')}',
-                              style: Styles.textStyle16.copyWith(
-                                fontWeight: FontWeight.w400,
+                              Text(
+                                ' ${item.age} ${context.tr('age')}',
+                                style: Styles.textStyle16.copyWith(
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 5.w),
-                            if (item.isverified)
-                              Icon(
-                                Icons.verified,
-                                color: Colors.blue,
-                                size: 16.sp,
-                              ),
-                          ],
+                              SizedBox(width: 5.w),
+                              if (item.isverified)
+                                Icon(
+                                  Icons.verified,
+                                  color: Colors.blue,
+                                  size: 16.sp,
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 8.h),
-
-                  Row(
-                    children: [
-                      _buildBadge(text: item.day),
-                      SizedBox(width: 4.w),
-                      if (item.country.isNotEmpty)
-                        _buildBadge(
-                          text: item.country,
-                          icon: AssetsData.EgyFlagIcon,
-                        ),
-                    ],
-                  ),
-
-                  SizedBox(height: 4.h),
-
-                  if (item.job.isNotEmpty)
-                    _buildBadge(text: item.job, icon: AssetsData.workIcon),
-                ],
+                      ],
+                    ),
+                
+                    SizedBox(height: 8.h),
+                
+                    Row(
+                      children: [
+                        _buildBadge(text: item.day),
+                        SizedBox(width: 4.w),
+                        if (item.country.isNotEmpty)
+                          _buildBadge(
+                            text: item.country,
+                            icon: AssetsData.EgyFlagIcon,
+                          ),
+                      ],
+                    ),
+                
+                    SizedBox(height: 4.h),
+                
+                    if (item.job.isNotEmpty)
+                      _buildBadge(text: item.job, icon: AssetsData.workIcon),
+                  ],
+                ),
               ),
             ),
 

@@ -19,8 +19,6 @@ class MarriageProfileRepository {
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, MarriageUserProfileModel>> getMarriageProfile() async {
     try {
-      debugPrint('📥 [GET] Fetching Marriage Profile...');
-
       final response = await _apiService.get(
         endPoint: '/user/marry-profile-for-update',
       );
@@ -28,35 +26,20 @@ class MarriageProfileRepository {
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
 
-        debugPrint('═══════════════════════════════════════════');
-        debugPrint('📥 [GET] Raw API Response:');
-        debugPrint(
-          '   answerCompletedPercentage: ${data['answerCompletedPercentage']}',
-        );
-        debugPrint('   Full data keys: ${data.keys.toList()}');
-        debugPrint('═══════════════════════════════════════════');
-
         final profile = MarriageUserProfileModel.fromJson(data);
 
-        debugPrint(
-          '✅ [GET] Profile loaded - Progress: ${profile.answerCompletedPercentage}%',
-        );
         await _saveProfileLocally(profile);
         return Right(profile);
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل جلب البيانات'));
     } on DioException catch (e) {
-      debugPrint('❌ [GET] DioException: ${e.message}');
-
       final localProfile = await _loadProfileLocally();
       if (localProfile != null) {
-        debugPrint('✅ [GET] Loaded from local storage');
         return Right(localProfile);
       }
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      debugPrint('❌ [GET] Error: $e');
       return Left(ServerFailure('حدث خطأ: $e'));
     }
   }
@@ -68,8 +51,6 @@ class MarriageProfileRepository {
     MarriageUserProfileModel profile,
   ) async {
     try {
-      debugPrint('💾 [UPDATE] Updating profile...');
-
       final requestData = _convertToServerFormat(profile);
       final response = await _apiService.patch(
         endPoint: '/user/update-marry-profile',
@@ -77,15 +58,10 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        debugPrint('✅ [UPDATE] Profile updated successfully');
-
         // ⭐⭐⭐ جيب البروفايل المحدث من السيرفر
         final fetchResult = await getMarriageProfile();
 
         return fetchResult.fold((failure) => Left(failure), (updatedProfile) {
-          debugPrint(
-            '✅ [UPDATE] New Progress: ${updatedProfile.answerCompletedPercentage}%',
-          );
           return Right(updatedProfile);
         });
       }
@@ -248,7 +224,6 @@ class MarriageProfileRepository {
       if (interestHobbies.isNotEmpty) {
         final cleanedInterests = interestHobbies.join(', ');
         answers.add({'category': 'hobbies', 'answer': cleanedInterests});
-        debugPrint('📋 [CONVERT] Hobbies (keys): $cleanedInterests');
       }
     }
 
@@ -258,7 +233,6 @@ class MarriageProfileRepository {
         'category': 'faith',
         'answer': profile.faith, // ✅ List مباشرة مش String
       });
-      debugPrint('🕌 [CONVERT] Faith in answers: ${profile.faith}');
     }
 
     // ⭐⭐⭐ GOALS - حطها هنا قبل requestBody!
@@ -312,13 +286,7 @@ class MarriageProfileRepository {
     if (profile.answerCompletedPercentage != null) {
       requestBody['answerCompletedPercentage'] =
           profile.answerCompletedPercentage;
-      debugPrint(
-        '📊 [CONVERT] Sending progress: ${profile.answerCompletedPercentage}%',
-      );
     }
-
-    debugPrint('✅ [CONVERT] Prepared ${answers.length} answers');
-    debugPrint('📤 [CONVERT] Request body keys: ${requestBody.keys.toList()}');
 
     return requestBody;
   }
@@ -328,8 +296,6 @@ class MarriageProfileRepository {
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, String>> uploadMarriageImage(File imageFile) async {
     try {
-      debugPrint('📤 [UPLOAD_IMAGE] Uploading image...');
-
       final formData = FormData.fromMap({
         'image': await MultipartFile.fromFile(
           imageFile.path,
@@ -343,21 +309,15 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        debugPrint('✅ [UPLOAD_IMAGE] Image uploaded successfully');
-
         // ⭐⭐⭐ نعمل reload عشان نجيب النسبة المحدثة
-        debugPrint('🔄 [UPLOAD_IMAGE] Reloading profile...');
+
         final profileResult = await getMarriageProfile();
 
         return profileResult.fold(
           (failure) {
-            debugPrint('⚠️ [UPLOAD_IMAGE] Could not reload profile');
             return const Right('uploaded');
           },
           (profile) {
-            debugPrint(
-              '✅ [UPLOAD_IMAGE] Profile reloaded - Progress: ${profile.answerCompletedPercentage}%',
-            );
             return const Right('uploaded');
           },
         );
@@ -365,7 +325,6 @@ class MarriageProfileRepository {
 
       return Left(ServerFailure(response['message'] ?? 'فشل رفع الصورة'));
     } catch (e) {
-      debugPrint('❌ [UPLOAD_IMAGE] Error: $e');
       return Left(ServerFailure('خطأ: $e'));
     }
   }
@@ -375,20 +334,14 @@ class MarriageProfileRepository {
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteMarriageImage(String imageUrl) async {
     try {
-      debugPrint('🗑️ [DELETE_IMAGE] Deleting: $imageUrl');
-
       final response = await _apiService.delete(
         endPoint: '/user/delete-media',
         data: {'link': imageUrl},
       );
 
-      debugPrint('📥 [DELETE_IMAGE] Response: ${jsonEncode(response)}');
-
       if (response['success'] == true) {
-        debugPrint('✅ [DELETE_IMAGE] Image deleted successfully');
-
         // ⭐⭐⭐ نعمل reload عشان نجيب النسبة المحدثة
-        debugPrint('🔄 [DELETE_IMAGE] Reloading profile...');
+
         await getMarriageProfile();
 
         return const Right(true);
@@ -396,10 +349,8 @@ class MarriageProfileRepository {
 
       return Left(ServerFailure(response['message'] ?? 'فشل حذف الصورة'));
     } on DioException catch (e) {
-      debugPrint('❌ [DELETE_IMAGE] DioException: ${e.response?.data}');
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      debugPrint('❌ [DELETE_IMAGE] Error: $e');
       return Left(ServerFailure('خطأ: $e'));
     }
   }
@@ -412,8 +363,6 @@ class MarriageProfileRepository {
     File? audioFile,
   }) async {
     try {
-      debugPrint('📤 [UPLOAD_MEDIA] Uploading video/audio...');
-
       final Map<String, dynamic> data = {};
 
       if (audioFile != null) {
@@ -422,7 +371,6 @@ class MarriageProfileRepository {
           filename: 'audio_${DateTime.now().millisecondsSinceEpoch}.mp3',
           contentType: DioMediaType('audio', 'mpeg'),
         );
-        debugPrint('📤 [UPLOAD_MEDIA] Audio file added');
       }
 
       if (videoFile != null) {
@@ -430,7 +378,6 @@ class MarriageProfileRepository {
           videoFile.path,
           filename: videoFile.path.split('/').last,
         );
-        debugPrint('📤 [UPLOAD_MEDIA] Video file added');
       }
 
       final formData = FormData.fromMap(data);
@@ -441,10 +388,8 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        debugPrint('✅ [UPLOAD_MEDIA] Media uploaded successfully');
-
         // ⭐⭐⭐ نعمل reload عشان نجيب النسبة المحدثة
-        debugPrint('🔄 [UPLOAD_MEDIA] Reloading profile...');
+
         await getMarriageProfile();
 
         return Right({
@@ -455,7 +400,6 @@ class MarriageProfileRepository {
 
       return Left(ServerFailure(response['message'] ?? 'فشل الرفع'));
     } catch (e) {
-      debugPrint('❌ [UPLOAD_MEDIA] Error: $e');
       return Left(ServerFailure('خطأ في الرفع: $e'));
     }
   }
@@ -465,18 +409,12 @@ class MarriageProfileRepository {
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteVideo(String videoUrl) async {
     try {
-      debugPrint('🗑️ [DELETE_VIDEO] Deleting: $videoUrl');
-
       final response = await _apiService.delete(
         endPoint: '/user/delete-media',
         data: {'link': videoUrl},
       );
 
       if (response['success'] == true) {
-        debugPrint('✅ [DELETE_VIDEO] Video deleted successfully');
-
-        // ⭐⭐⭐ نعمل reload عشان نجيب النسبة المحدثة
-        debugPrint('🔄 [DELETE_VIDEO] Reloading profile...');
         await getMarriageProfile();
 
         return const Right(true);
@@ -484,10 +422,8 @@ class MarriageProfileRepository {
 
       return Left(ServerFailure(response['message'] ?? 'فشل حذف الفيديو'));
     } on DioException catch (e) {
-      debugPrint('❌ [DELETE_VIDEO] DioException: ${e.response?.data}');
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      debugPrint('❌ [DELETE_VIDEO] Error: $e');
       return Left(ServerFailure('خطأ: $e'));
     }
   }
@@ -497,18 +433,14 @@ class MarriageProfileRepository {
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteAudio(String audioUrl) async {
     try {
-      debugPrint('🗑️ [DELETE_AUDIO] Deleting: $audioUrl');
-
       final response = await _apiService.delete(
         endPoint: '/user/delete-media',
         data: {'link': audioUrl},
       );
 
       if (response['success'] == true) {
-        debugPrint('✅ [DELETE_AUDIO] Audio deleted successfully');
-
         // ⭐⭐⭐ نعمل reload عشان نجيب النسبة المحدثة
-        debugPrint('🔄 [DELETE_AUDIO] Reloading profile...');
+
         await getMarriageProfile();
 
         return const Right(true);
@@ -518,10 +450,8 @@ class MarriageProfileRepository {
         ServerFailure(response['message'] ?? 'فشل حذف التسجيل الصوتي'),
       );
     } on DioException catch (e) {
-      debugPrint('❌ [DELETE_AUDIO] DioException: ${e.response?.data}');
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      debugPrint('❌ [DELETE_AUDIO] Error: $e');
       return Left(ServerFailure('خطأ: $e'));
     }
   }
@@ -531,8 +461,6 @@ class MarriageProfileRepository {
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, String>> uploadSingleImage(File imageFile) async {
     try {
-      debugPrint('📤 [UPLOAD_SINGLE_IMAGE] Uploading single cover image...');
-
       final formData = FormData.fromMap({
         'image': await MultipartFile.fromFile(
           imageFile.path,
@@ -546,23 +474,15 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        debugPrint(
-          '✅ [UPLOAD_SINGLE_IMAGE] Single image uploaded successfully',
-        );
-
         // ⭐ Reload profile to get updated progress
-        debugPrint('🔄 [UPLOAD_SINGLE_IMAGE] Reloading profile...');
+
         final profileResult = await getMarriageProfile();
 
         return profileResult.fold(
           (failure) {
-            debugPrint('⚠️ [UPLOAD_SINGLE_IMAGE] Could not reload profile');
             return const Right('uploaded');
           },
           (profile) {
-            debugPrint(
-              '✅ [UPLOAD_SINGLE_IMAGE] Profile reloaded - Progress: ${profile.answerCompletedPercentage}%',
-            );
             return const Right('uploaded');
           },
         );
@@ -570,7 +490,6 @@ class MarriageProfileRepository {
 
       return Left(ServerFailure(response['message'] ?? 'فشل رفع الصورة'));
     } catch (e) {
-      debugPrint('❌ [UPLOAD_SINGLE_IMAGE] Error: $e');
       return Left(ServerFailure('خطأ: $e'));
     }
   }
@@ -580,49 +499,29 @@ class MarriageProfileRepository {
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteSingleImage(String imageUrl) async {
     try {
-      debugPrint('🗑️ [DELETE_SINGLE_IMAGE] Deleting: $imageUrl');
-
       final response = await _apiService.delete(
         endPoint: '/user/delete-media',
         data: {'link': imageUrl},
       );
 
       if (response['success'] == true) {
-        debugPrint('✅ [DELETE_SINGLE_IMAGE] Single image deleted successfully');
-
         // ⭐ Reload profile to get updated progress
-        debugPrint('🔄 [DELETE_SINGLE_IMAGE] Reloading profile...');
+
         final reloadResult = await getMarriageProfile();
 
-        reloadResult.fold(
-          (failure) {
-            debugPrint(
-              '⚠️ [DELETE_SINGLE_IMAGE] Failed to reload: ${failure.message}',
-            );
-          },
-          (profile) {
-            final newSingleImage = profile.userMedia?.singleImage;
-            debugPrint(
-              '📸 [DELETE_SINGLE_IMAGE] After reload - singleImage: $newSingleImage',
-            );
+        reloadResult.fold((failure) {}, (profile) {
+          final newSingleImage = profile.userMedia?.singleImage;
 
-            if (newSingleImage != null) {
-              debugPrint(
-                '⚠️ [DELETE_SINGLE_IMAGE] WARNING: singleImage should be null!',
-              );
-            }
-          },
-        );
+          if (newSingleImage != null) {}
+        });
 
         return const Right(true);
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل حذف الصورة'));
     } on DioException catch (e) {
-      debugPrint('❌ [DELETE_SINGLE_IMAGE] DioException: ${e.response?.data}');
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      debugPrint('❌ [DELETE_SINGLE_IMAGE] Error: $e');
       return Left(ServerFailure('خطأ: $e'));
     }
   }
@@ -634,9 +533,9 @@ class MarriageProfileRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_storageKey, jsonEncode(profile.toJson()));
-      debugPrint('💾 [STORAGE] Saved locally');
+    
     } catch (e) {
-      debugPrint('⚠️ [STORAGE] Save failed: $e');
+      
     }
   }
 
@@ -645,7 +544,7 @@ class MarriageProfileRepository {
       final prefs = await SharedPreferences.getInstance();
       final data = prefs.getString(_storageKey);
       if (data != null) {
-        debugPrint('📂 [STORAGE] Loading from local...');
+      
         return MarriageUserProfileModel.fromJson(jsonDecode(data));
       }
     } catch (e) {
@@ -658,7 +557,7 @@ class MarriageProfileRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_storageKey);
-      debugPrint('🗑️ [STORAGE] Cleared');
+    
     } catch (e) {
       debugPrint('⚠️ [STORAGE] Clear failed: $e');
     }

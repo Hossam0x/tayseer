@@ -16,10 +16,9 @@ class StatusRibbonwidget extends StatelessWidget {
       children: [
         // المثلث الصغير (Vector 4) الذي يظهر الالتفاف الخلفي
         Positioned(
-          // top: 3.h,
+
           left: 0,
-          // left: isArabic ? null : 0, // المسافة تعتمد على طول الشريط
-          // right: isArabic ? 0 : null,
+      
           child: AppImage(AssetsData.vector4, width: 10.w, height: 9.h),
         ),
 
@@ -33,7 +32,7 @@ class StatusRibbonwidget extends StatelessWidget {
                 AssetsData.sentGreetingRibbon, // صورة الشريط الوردي فقط بدون نص
                 width: 100.w,
               ),
-              // النص مكتوب برمجياً لضمان الجودة
+        
               Positioned(
                 top:topTextPosition,
                 // bottom: 33.h,
@@ -53,8 +52,7 @@ class StatusRibbonwidget extends StatelessWidget {
                                 .w // عرض الحد
                             ..color = AppColors.primary300,
                         ),
-                      ),
-                      // Text with fill (النص الأساسي)
+                      ),                  // Text with fill (النص الأساسي)
                       Text(
                         statusText,
                         style: Styles.textStyle14Bold.copyWith(
