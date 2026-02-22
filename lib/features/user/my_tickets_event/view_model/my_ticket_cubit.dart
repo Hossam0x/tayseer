@@ -55,13 +55,6 @@ class MyTicketCubit extends Cubit<MyTicketState> {
               errorMessage: failure.message,
             ),
           );
-
-          emit(
-            state.copyWith(
-              reservationDetailsState: CubitStates.initial,
-              errorMessage: null,
-            ),
-          );
         },
         (data) {
           emit(

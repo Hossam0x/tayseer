@@ -15,24 +15,23 @@ class MyEventsContent extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: Styles.textStyle14.copyWith(color: AppColors.kgreyColor),
-              children: [
-                TextSpan(text: '${context.tr('free_events')},'),
-                TextSpan(
-                  text: context.tr('subscribe_now'),
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.kprimaryColor,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
+          // RichText(
+          //   textAlign: TextAlign.center,
+          //   text: TextSpan(
+          //     style: Styles.textStyle14.copyWith(color: AppColors.kgreyColor),
+          //     children: [
+          //       TextSpan(text: '${context.tr('free_events')},'),
+          //       TextSpan(
+          //         text: context.tr('subscribe_now'),
+          //         style: Styles.textStyle14.copyWith(
+          //           color: AppColors.kprimaryColor,
+          //           fontWeight: FontWeight.bold,
+          //           decoration: TextDecoration.underline,
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
           BlocBuilder<EventsCubit, EventsState>(
             builder: (context, state) {
               return Stack(

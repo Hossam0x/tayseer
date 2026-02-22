@@ -1358,7 +1358,17 @@
   "message_too_long_error": "يجب ألا تتجاوز الرسالة 500 حرف",
   "error_sending_greeting": "حدث خطأ أثناء إرسال التحية",
   "story_special_success": "تم إضافة القصة إلي المميزة بنجاح",
-  "session_title_ticket": "جلسة : ",
   "price_dit": "تفاصيل السعر",
-  "payment_method": "طريقة الدفع"
+  "session_title_ticket": "عنوان الجلسة : ",
+  "price_di": "تفاصيل السعر",
+  "payment_method": "طريقة الدفع",
+  "ticket_price": "سعر التذاكر",
+  "fees": "الرسوم",
+  "tax": "الضريبة",
+  "discount": "الخصم",
+  "total": "الإجمالي",
+  "error_occurred": "حدث خطأ",
+  "ticket_my": "تذكرتي",
+  "no_tickets": "لا يوجد تذاكر حالياً",
+  "publishing_post": "جاري نشر المنشور..."
 }

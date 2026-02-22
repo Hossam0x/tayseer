@@ -1,6 +1,7 @@
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dart';
+import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo_impl.dart';
@@ -378,5 +379,11 @@ Future<void> setupGetIt() async {
 
   getIt.registerLazySingleton<MyTicketsRepo>(
     () => MyTicketsRepoImpl(apiService: getIt<ApiService>()),
+  );
+
+  // UploadPostCubit
+  // ─────────────────────────────────────────
+  getIt.registerLazySingleton<UploadPostCubit>(
+    () => UploadPostCubit(getIt<PostsRepository>()),
   );
 }

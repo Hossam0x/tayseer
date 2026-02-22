@@ -14,8 +14,8 @@ class MyTicketsBody extends StatelessWidget {
         builder: (context, state) {
           return CustomScrollView(
             slivers: [
-              const CustomSliverAppBarEvent(
-                title: "تذكرتي",
+              CustomSliverAppBarEvent(
+                title: context.tr("ticket_my"),
                 showBackButton: true,
               ),
 
@@ -26,11 +26,42 @@ class MyTicketsBody extends StatelessWidget {
               /// ❌ ERROR
               if (state.myReservationsState == CubitStates.failure)
                 SliverToBoxAdapter(
-                  child: Center(child: Text(state.errorMessage ?? "حدث خطأ")),
+                  child: Center(
+                    child: Text(
+                      state.errorMessage ?? context.tr("error_occurred"),
+                    ),
+                  ),
                 ),
 
               /// ✅ SUCCESS
-              if (state.myReservationsState == CubitStates.success)
+              if (state.myReservationsState == CubitStates.success &&
+                  state.myReservations.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AppImage(
+                          AssetsData.emptyBoxImage,
+                          width: context.responsiveWidth(150),
+                          height: context.responsiveHeight(150),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          context.tr("no_tickets"),
+                          style: Styles.textStyle16SemiBold.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              /// ✅ SUCCESS + DATA
+              if (state.myReservationsState == CubitStates.success &&
+                  state.myReservations.isNotEmpty)
                 SliverPadding(
                   padding: EdgeInsets.symmetric(
                     horizontal: context.responsiveWidth(16),
