@@ -6,6 +6,7 @@ import 'package:tayseer/core/widgets/post_card/circular_icon_button.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
 import 'package:tayseer/core/widgets/post_card/post_options_bottom_sheet.dart';
+import 'package:tayseer/core/utils/video_download_service.dart';
 import 'package:tayseer/core/widgets/post_card/reaction_like_button.dart';
 import 'package:tayseer/core/widgets/post_card/share_button.dart';
 import 'package:tayseer/core/models/post_model.dart';
@@ -351,6 +352,12 @@ class ReelsOverlay extends StatelessWidget {
               // onBlock: onBlockTapped,
               // onHide: onHideTapped,
               onSave: onSaveTapped,
+              onDownload: () {
+                VideoDownloadService().downloadVideo(
+                  context: context,
+                  videoUrl: post.videoUrl ?? '',
+                );
+              },
               // onEdit: onEditTapped,
               // onArchive: onArchiveTapped,
               // onDelete: onDeleteTapped,

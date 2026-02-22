@@ -13,6 +13,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onArchive;
   final VoidCallback? onDelete;
+  final VoidCallback? onDownload;
 
   const PostOptionsBottomSheet({
     super.key,
@@ -27,12 +28,14 @@ class PostOptionsBottomSheet extends StatelessWidget {
     this.onEdit,
     this.onArchive,
     this.onDelete,
+    this.onDownload,
   });
 
   static void show(
     BuildContext context, {
     required PostModel post,
     VoidCallback? onShare,
+    VoidCallback? onDownload,
     bool isShared = false,
     bool isFromReels = false,
     VoidCallback? onReport,
@@ -61,6 +64,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
         onEdit: onEdit,
         onArchive: onArchive,
         onDelete: onDelete,
+        onDownload: onDownload,
       ),
     );
   }
@@ -90,6 +94,11 @@ class PostOptionsBottomSheet extends StatelessWidget {
                   : Icons.bookmark_border_rounded,
               color: isSaved ? AppColors.kprimaryColor : null,
               onTap: onSave,
+            ),
+            OptionItem(
+              text: context.tr(AppStrings.download),
+              icon: Icons.download_rounded,
+              onTap: onDownload,
             ),
           ]
         : post?.isMine ?? false

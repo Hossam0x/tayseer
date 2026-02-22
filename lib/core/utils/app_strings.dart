@@ -59,4 +59,21 @@ class AppStrings {
   static const String reelSavedSuccess = "reel_saved_success";
   static const String reelUnsavedSuccess = "reel_unsaved_success";
   static const String reelSaveError = "reel_save_error";
+
+  // Video Download
+  static const String download = "download";
+  static const String downloadingVideo = "downloading_video";
+  static const String downloadComplete = "download_complete";
+  static const String downloadFailed = "download_failed";
+  static const String successGallery = "success_gallery";
+  static const String errorDownload = "error_download";
+  static const String downloadInProgress = "download_in_progress";
+  static const String noVideoToDownload = "no_video_to_download";
+  static const String allowGallery = "allow_gallery";
+  static const String downloading = "downloading";
+  static const String failedDownloadFile = "failed_download_file";
+  static const String processing = "processing";
+  static const String videoSavedSuccess = "video_saved_success";
+  static const String failedSaveVideo = "failed_save_video";
+  static const String errorDownloadingVideo = "error_downloading_video";
 }
