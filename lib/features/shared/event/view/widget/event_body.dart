@@ -42,7 +42,10 @@ class _EventBodyState extends State<EventBody> {
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
         // ✅ الـ AppBar يظهر دايمًا
-        CustomSliverAppBarEvent(title: context.tr('event_title')),
+        CustomSliverAppBarEvent(
+          isUserTicket: _isUser,
+          title: context.tr('event_title'),
+        ),
 
         // ✅ الـ ContentSwitcher يظهر بس لو مستشار
         if (!_isUser)

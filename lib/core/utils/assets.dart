@@ -171,6 +171,7 @@ abstract class AssetsData {
   static const String kFeature1 = "assets/icons/kFeature1.svg";
   static const String kFeature2 = "assets/icons/kFeature2.svg";
   static const String kFeature3 = "assets/icons/kFeature3.svg";
+  static const String kTicketIcon = "assets/icons/tickt_icon.svg";
 
   ////////////////////////Lottie//////////////////////
   static const String kloadingAnimationsLottie =

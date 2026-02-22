@@ -47,12 +47,12 @@ class _StoriesGalleryGridState extends State<StoriesGalleryGrid> {
             return false;
           },
           child: GridView.builder(
-            padding: const EdgeInsets.all(2),
+            padding: const EdgeInsets.all(12),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              crossAxisSpacing: 2,
-              mainAxisSpacing: 2,
-              childAspectRatio: 0.65,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1.0,
             ),
             itemCount: state.galleryAssets.length + 1,
             itemBuilder: (context, index) {
@@ -73,19 +73,24 @@ class _StoriesGalleryGridState extends State<StoriesGalleryGrid> {
 
   Widget _buildShimmerGrid() {
     return GridView.builder(
-      padding: const EdgeInsets.all(2),
+      padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-        childAspectRatio: 0.65,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.0,
       ),
       itemCount: 15,
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
           baseColor: Colors.grey[300]!,
           highlightColor: Colors.grey[100]!,
-          child: Container(color: Colors.white),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
         );
       },
     );
@@ -95,17 +100,22 @@ class _StoriesGalleryGridState extends State<StoriesGalleryGrid> {
     return GestureDetector(
       onTap: widget.onCameraTap,
       child: Container(
-        color: Colors.black,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.white, width: 2),
+        ),
         child: widget.isInitialized && widget.controller != null
             ? ClipRRect(
+                borderRadius: BorderRadius.circular(13),
                 child: Center(
                   child: AspectRatio(
-                    aspectRatio: 0.65,
+                    aspectRatio: 1.0,
                     child: CameraPreview(widget.controller!),
                   ),
                 ),
               )
-            : const Icon(Icons.camera_alt, size: 40, color: Colors.white),
+            : Icon(Icons.camera_alt, size: 30, color: AppColors.kprimaryColor),
       ),
     );
   }
@@ -137,35 +147,57 @@ class _GalleryItemState extends State<_GalleryItem> {
 
     return GestureDetector(
       onTap: widget.onTap,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          FutureBuilder<Uint8List?>(
-            future: _thumbnailFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done &&
-                  snapshot.data != null) {
-                return Image.memory(snapshot.data!, fit: BoxFit.cover);
-              }
-              return Container(color: AppColors.kgreyColor.withOpacity(0.1));
-            },
-          ),
-
-          // Video indicator
-          if (isVideo)
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: Container(
-                padding: EdgeInsets.all(4.r),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(4.r),
-                ),
-                child: Icon(Icons.videocam, color: Colors.white, size: 16.sp),
-              ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            FutureBuilder<Uint8List?>(
+              future: _thumbnailFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done &&
+                    snapshot.data != null) {
+                  return Image.memory(
+                    snapshot.data!,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                  );
+                }
+                return Container(color: Colors.grey.withOpacity(0.2));
+              },
             ),
-        ],
+
+            // Video indicator
+            if (isVideo)
+              Positioned(
+                bottom: 5,
+                right: 5,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        "${widget.asset.duration ~/ 60}:${(widget.asset.duration % 60).toString().padLeft(2, '0')}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.videocam, color: Colors.white, size: 10),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

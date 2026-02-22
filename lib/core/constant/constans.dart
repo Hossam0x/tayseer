@@ -1,6 +1,6 @@
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
-import 'package:tayseer/features/shared/auth/model/login_data.dart';
+import 'package:tayseer/core/models/login_data.dart';
 import 'package:tayseer/my_import.dart';
 
 const kAppNameAr = 'تيسير';

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:tayseer/core/constant/constans_keys.dart';
-import 'package:tayseer/features/shared/auth/model/login_data.dart';
+import 'package:tayseer/core/models/login_data.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';

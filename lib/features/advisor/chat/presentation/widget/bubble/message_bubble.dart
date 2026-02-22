@@ -1,4 +1,6 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:tayseer/core/enum/message_status_enum.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/message_model.dart';
@@ -7,8 +9,9 @@ import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart
 import 'reply_preview_bubble.dart';
 import 'message_time_status.dart';
 import 'message_content_builder.dart';
+import 'emoji_helper.dart';
 
-class MessageBubble extends StatelessWidget {
+class MessageBubble extends StatefulWidget {
   final Message? oldMessage;
   final ChatMessage? chatMessage;
   final bool isOverlay;
@@ -23,6 +26,14 @@ class MessageBubble extends StatelessWidget {
     this.isHighlighted = false,
     this.onReplyTap,
   });
+
+  @override
+  State<MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<MessageBubble> {
+  bool _isExpanded = false;
+  static const int _maxLines = 10;
 
   String _formatTime(String timeString) {
     try {
@@ -44,44 +55,32 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
+  bool _isTextExceedsMaxLines(String text, double maxWidth, TextStyle style) {
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: _maxLines,
+      textDirection: ui.TextDirection.rtl,
+    );
+    textPainter.layout(maxWidth: maxWidth);
+    return textPainter.didExceedMaxLines;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool isMe = chatMessage?.isMe ?? oldMessage?.isMe ?? false;
+    final bool isMe =
+        widget.chatMessage?.isMe ?? widget.oldMessage?.isMe ?? false;
     final List<String> contentList =
-        chatMessage?.contentList ??
-        (oldMessage?.text != null ? [oldMessage!.text] : []);
-    final String time = chatMessage?.createdAt ?? oldMessage?.time ?? '';
+        widget.chatMessage?.contentList ??
+        (widget.oldMessage?.text != null ? [widget.oldMessage!.text] : []);
+    final String time =
+        widget.chatMessage?.createdAt ?? widget.oldMessage?.time ?? '';
     final MessageStatusEnum status =
-        chatMessage?.status ?? MessageStatusEnum.sent;
-    final String messageType = chatMessage?.messageType ?? 'text';
-    final ReplyInfo? reply = chatMessage?.reply;
-
-    final screenSize = MediaQuery.of(context).size;
-    final isMobile = screenSize.width < 600;
-    final isTablet = screenSize.width >= 600 && screenSize.width < 1200;
+        widget.chatMessage?.status ?? MessageStatusEnum.sent;
+    final String messageType = widget.chatMessage?.messageType ?? 'text';
+    final ReplyInfo? reply = widget.chatMessage?.reply;
 
     final bgColor = isMe ? ChatColors.bubbleSender : ChatColors.bubbleReceiver;
     final textColor = isMe ? ChatColors.textSender : ChatColors.textReceiver;
-
-    double maxWidth = isMobile
-        ? ChatDimensions.bubbleMaxWidthMobile
-        : (isTablet
-              ? ChatDimensions.bubbleMaxWidthTablet
-              : ChatDimensions.bubbleMaxWidthDesktop);
-    maxWidth = screenSize.width * ChatDimensions.bubbleWidthRatio > maxWidth
-        ? maxWidth
-        : screenSize.width * ChatDimensions.bubbleWidthRatio;
-
-    final paddingH = isMobile
-        ? ChatDimensions.paddingHorizontalMobile
-        : ChatDimensions.paddingHorizontalTablet;
-    final paddingV = isMobile
-        ? ChatDimensions.paddingVerticalMobile
-        : ChatDimensions.paddingVerticalTablet;
-    final fontSize = isMobile
-        ? ChatDimensions.fontSizeMobile
-        : ChatDimensions.fontSizeTablet;
-    final spacingV = isMobile ? 6.0 : 8.0;
 
     final bool isMediaMessage =
         messageType == 'image' || messageType == 'video';
@@ -91,92 +90,109 @@ class MessageBubble extends StatelessWidget {
         reply?.replyMessage != null &&
         reply!.replyMessage!.isNotEmpty;
 
+    final String fullText = contentList.join('\n');
+    final bool isTextMessage = messageType == 'text';
+    final bool isSingleEmoji =
+        isTextMessage && EmojiHelper.isSingleEmoji(fullText);
+    final textStyle = TextStyle(color: textColor, fontSize: 14.sp, height: 1.4);
+    final double maxBubbleWidth = 260.w;
+    final double contentMaxWidth = maxBubbleWidth - 24.w;
+    final bool needsExpansion =
+        isTextMessage &&
+        !_isExpanded &&
+        _isTextExceedsMaxLines(fullText, contentMaxWidth, textStyle);
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: isMe
-            ? CrossAxisAlignment.start
-            : CrossAxisAlignment.end,
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           AnimatedContainer(
             duration: ChatAnimations.messageEntryDuration,
             decoration: BoxDecoration(
-              color: isHighlighted
+              color: widget.isHighlighted
                   ? ChatColors.highlightColor
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(20.r),
             ),
-            padding: isHighlighted
-                ? const EdgeInsets.symmetric(horizontal: 4, vertical: 2)
+            padding: widget.isHighlighted
+                ? EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h)
                 : EdgeInsets.zero,
             child: Container(
-              padding: isMediaMessage && !hasReply
-                  ? const EdgeInsets.all(4)
-                  : EdgeInsets.only(
-                      top: paddingV,
-                      right: paddingH,
-                      bottom: paddingV,
-                      left: paddingH,
+              constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+              padding: isSingleEmoji
+                  ? EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h)
+                  : (isMediaMessage && !hasReply
+                        ? EdgeInsets.all(4.r)
+                        : EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 10.h,
+                          )),
+              decoration: isSingleEmoji
+                  ? null
+                  : BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.only(
+                        topLeft: isMe
+                            ? Radius.circular(ChatDimensions.bubbleRadiusLarge)
+                            : Radius.zero,
+                        topRight: isMe
+                            ? Radius.zero
+                            : Radius.circular(ChatDimensions.bubbleRadiusLarge),
+                        bottomRight: Radius.circular(
+                          ChatDimensions.bubbleRadiusLarge,
+                        ),
+                        bottomLeft: Radius.circular(
+                          ChatDimensions.bubbleRadiusLarge,
+                        ),
+                      ),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: isMe ? Colors.black12 : Colors.grey.shade200,
+                          width: 1,
+                        ),
+                      ),
+                      boxShadow: widget.isOverlay
+                          ? [
+                              const BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ]
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 2,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
                     ),
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: isMe
-                      ? const Radius.circular(ChatDimensions.bubbleRadiusLarge)
-                      : Radius.zero,
-                  topRight: isMe
-                      ? Radius.zero
-                      : const Radius.circular(ChatDimensions.bubbleRadiusLarge),
-                  bottomRight: const Radius.circular(
-                    ChatDimensions.bubbleRadiusLarge,
-                  ),
-                  bottomLeft: const Radius.circular(
-                    ChatDimensions.bubbleRadiusLarge,
-                  ),
-                ),
-                border: Border(
-                  bottom: BorderSide(
-                    color: isMe ? Colors.black12 : Colors.grey.shade200,
-                    width: 1,
-                  ),
-                ),
-                boxShadow: isOverlay
-                    ? [
-                        const BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 10,
-                          spreadRadius: 2,
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 2,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // ====== الرد ======
                   if (hasReply)
                     ReplyPreviewBubble(
                       replyMessage: reply.replyMessage!,
                       replyMessageId: reply.replyMessageId,
                       isMe: isMe,
-                      maxWidth: maxWidth,
+                      maxWidth: maxBubbleWidth,
                       onTap: () {
                         if (reply.replyMessageId != null) {
-                          onReplyTap?.call(reply.replyMessageId);
+                          widget.onReplyTap?.call(reply.replyMessageId);
                         }
                       },
                     ),
+
+                  // ====== محتوى الرسالة ======
                   if (isMediaMessage && hasReply)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: EdgeInsets.only(top: 8.h),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(
                           ChatDimensions.bubbleRadiusSmall,
@@ -184,42 +200,165 @@ class MessageBubble extends StatelessWidget {
                         child: MessageContentBuilder(
                           messageType: messageType,
                           contentList: contentList,
-                          localFilePaths:
-                              chatMessage?.localFilePaths, // ✅ Pass local paths
-                          uploadProgress: chatMessage
-                              ?.uploadProgress, // ✅ Pass upload progress
+                          localFilePaths: widget.chatMessage?.localFilePaths,
+                          uploadProgress: widget.chatMessage?.uploadProgress,
                           textColor: textColor,
-                          fontSize: fontSize,
-                          maxWidth: maxWidth - paddingH * 2,
+                          fontSize: 14.sp,
+                          maxWidth: 236.w,
                         ),
                       ),
+                    )
+                  else if (needsExpansion)
+                    // ✅ رسالة نصية طويلة - عرض مقتطع مع "عرض المزيد"
+                    _buildCollapsedText(
+                      fullText: fullText,
+                      textStyle: textStyle,
+                      textColor: textColor,
+                      isMe: isMe,
+                      maxWidth: contentMaxWidth,
                     )
                   else
                     MessageContentBuilder(
                       messageType: messageType,
                       contentList: contentList,
-                      localFilePaths:
-                          chatMessage?.localFilePaths, // ✅ Pass local paths
-                      uploadProgress:
-                          chatMessage?.uploadProgress, // ✅ Pass upload progress
+                      localFilePaths: widget.chatMessage?.localFilePaths,
+                      uploadProgress: widget.chatMessage?.uploadProgress,
                       textColor: textColor,
-                      fontSize: fontSize,
-                      maxWidth: maxWidth,
+                      fontSize: 14.sp,
+                      maxWidth: maxBubbleWidth,
                     ),
+
+                  SizedBox(height: 4.h),
+                  // ✅ لو النص مفتوح وطويل - زر "عرض أقل"
+                  if (isTextMessage &&
+                      _isExpanded &&
+                      _isTextExceedsMaxLines(
+                        fullText,
+                        contentMaxWidth,
+                        textStyle,
+                      ))
+                    _buildShowLessButton(isMe),
+
+                  Align(
+                    alignment: isMe
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: isSingleEmoji
+                        ? Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 2.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: bgColor,
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: MessageTimeStatus(
+                              formattedTime: _formatTime(time),
+                              isMe: isMe,
+                              status: status,
+                              isOverlay: widget.isOverlay,
+                            ),
+                          )
+                        : MessageTimeStatus(
+                            formattedTime: _formatTime(time),
+                            isMe: isMe,
+                            status: status,
+                            isOverlay: widget.isOverlay,
+                          ),
+                  ),
                 ],
               ),
             ),
           ),
-          SizedBox(height: spacingV),
-          MessageTimeStatus(
-            formattedTime: _formatTime(time),
-            isMe: isMe,
-            status: status,
-            isOverlay: isOverlay,
-            isMobile: isMobile,
-          ),
-          SizedBox(height: spacingV),
+          SizedBox(height: 6.h),
         ],
+      ),
+    );
+  }
+
+  /// ✅ النص المقتطع مع "عرض المزيد" - بدون LayoutBuilder
+  Widget _buildCollapsedText({
+    required String fullText,
+    required TextStyle textStyle,
+    required Color textColor,
+    required bool isMe,
+    required double maxWidth,
+  }) {
+    final showMoreText = ' عرض المزيد';
+    final showMoreStyle = TextStyle(
+      color: isMe ? Colors.white70 : ChatColors.bubbleSender,
+      fontSize: 13.sp,
+      fontWeight: FontWeight.bold,
+      height: 1.4,
+    );
+
+    // حساب عرض "عرض المزيد"
+    final showMoreSpanPainter = TextPainter(
+      text: TextSpan(text: showMoreText, style: showMoreStyle),
+      textDirection: ui.TextDirection.rtl,
+    );
+    showMoreSpanPainter.layout();
+    final showMoreWidth = showMoreSpanPainter.width + 8;
+
+    // حساب النص اللي يتقطع عنده
+    final textPainter = TextPainter(
+      text: TextSpan(text: fullText, style: textStyle),
+      maxLines: _maxLines,
+      textDirection: ui.TextDirection.rtl,
+    );
+    textPainter.layout(maxWidth: maxWidth);
+
+    // الحصول على موضع نهاية السطر العاشر
+    final endOfLastLine = textPainter
+        .getPositionForOffset(Offset(showMoreWidth, textPainter.height))
+        .offset;
+
+    // قطع النص مع ترك مساحة لـ "عرض المزيد"
+    final truncatedText = fullText.substring(
+      0,
+      endOfLastLine.clamp(0, fullText.length),
+    );
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isExpanded = true;
+        });
+      },
+      child: RichText(
+        textDirection: ui.TextDirection.rtl,
+        text: TextSpan(
+          children: [
+            TextSpan(text: '$truncatedText...', style: textStyle),
+            TextSpan(text: showMoreText, style: showMoreStyle),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ✅ زر "عرض أقل"
+  Widget _buildShowLessButton(bool isMe) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 4.h),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _isExpanded = false;
+          });
+        },
+        child: Align(
+          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+          child: Text(
+            'عرض أقل',
+            style: TextStyle(
+              color: isMe ? Colors.white70 : ChatColors.bubbleSender,
+              fontSize: 13.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }

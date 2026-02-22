@@ -5,8 +5,6 @@ import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart
 import 'package:tayseer/features/advisor/chat/presentation/widget/bubble/message_bubble.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/conversation_context_menu.dart';
 
-/// Overlay widget for displaying context menu
-/// Follows Single Responsibility Principle
 class ChatContextMenuOverlay extends StatelessWidget {
   final ChatMessage selectedMessage;
   final Offset messagePosition;
@@ -16,6 +14,7 @@ class ChatContextMenuOverlay extends StatelessWidget {
   final double safeTopPadding;
   final VoidCallback onDismiss;
   final VoidCallback onReply;
+  final VoidCallback onCopy; // ✅ نسخ
   final VoidCallback onDetails;
   final VoidCallback onSelect;
   final VoidCallback onDeleteForMe;
@@ -31,6 +30,7 @@ class ChatContextMenuOverlay extends StatelessWidget {
     required this.safeTopPadding,
     required this.onDismiss,
     required this.onReply,
+    required this.onCopy, // ✅ نسخ
     required this.onDetails,
     required this.onSelect,
     required this.onDeleteForMe,
@@ -59,7 +59,6 @@ class ChatContextMenuOverlay extends StatelessWidget {
     );
   }
 
-  /// Build message bubble
   Widget _buildMessageBubble(bool isMyMessage, double top) {
     return Positioned(
       top: top,
@@ -72,7 +71,6 @@ class ChatContextMenuOverlay extends StatelessWidget {
     );
   }
 
-  /// Build context menu
   Widget _buildContextMenu(bool isMyMessage, double top) {
     return Positioned(
       top: top,
@@ -82,7 +80,9 @@ class ChatContextMenuOverlay extends StatelessWidget {
           : null,
       child: ConversationContextMenu(
         isMyMessage: isMyMessage,
+        messageType: selectedMessage.messageType, // ✅ نمرر نوع الرسالة
         onReply: onReply,
+        onCopy: onCopy, // ✅ نسخ
         onDetails: onDetails,
         onSelect: onSelect,
         onDeleteForMe: onDeleteForMe,
@@ -91,9 +91,15 @@ class ChatContextMenuOverlay extends StatelessWidget {
     );
   }
 
-  /// Calculate menu positions
   _MenuPositions _calculateMenuPositions(bool isMyMessage) {
-    final menuItemCount = isMyMessage ? 5 : 3;
+    // ✅ عدد العناصر بيتغير حسب نوع الرسالة
+    int menuItemCount;
+    if (isMyMessage) {
+      menuItemCount = (selectedMessage.messageType == 'text') ? 6 : 5;
+    } else {
+      menuItemCount = (selectedMessage.messageType == 'text') ? 4 : 3;
+    }
+
     const menuItemHeight = 44.0;
     const menuPadding = 16.0;
     final estimatedMenuHeight = (menuItemCount * menuItemHeight) + menuPadding;
@@ -122,7 +128,6 @@ class ChatContextMenuOverlay extends StatelessWidget {
   }
 }
 
-/// Helper class for menu positions
 class _MenuPositions {
   final double messageTop;
   final double menuTop;

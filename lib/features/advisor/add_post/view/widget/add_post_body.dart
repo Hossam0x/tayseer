@@ -86,12 +86,12 @@ class AddPostBody extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
                 onPressed: () => context.pop(),
               ),
-              title: Text(
-                postType == AddPostEnum.reel
-                    ? context.tr('create_reel')
-                    : context.tr('create_post'),
-                style: Styles.textStyle18.copyWith(fontWeight: FontWeight.bold),
-              ),
+              // title: Text(
+              //   postType == AddPostEnum.reel
+              //       ? context.tr('create_reel')
+              //       : context.tr('create_post'),
+              //   style: Styles.textStyle18.copyWith(fontWeight: FontWeight.bold),
+              // ),
               centerTitle: true,
               actions: [
                 Padding(
@@ -118,9 +118,10 @@ class AddPostBody extends StatelessWidget {
                 children: [
                   // ─── Profile Header + Category ───
                   CustomProfileHeader(
-                    name: kCurrentUserData?.name ?? 'elkhamisy',
+                    name: kCurrentUserData?.name ?? 'user',
                     initialSubtitle: context.tr('select_group'),
                     isVerified: false,
+                    imageUrl: kCurrentUserData?.image ?? AssetsData.kUserImage,
                     groups: state.categories,
                     onGroupSelectedId: (group) =>
                         cubit.setSelectedCategoryId(group),

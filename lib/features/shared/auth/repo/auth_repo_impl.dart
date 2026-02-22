@@ -5,7 +5,7 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/features/shared/auth/model/guest_response_model.dart';
 import 'package:tayseer/features/shared/auth/model/last_login_model.dart';
-import 'package:tayseer/features/shared/auth/model/login_data.dart';
+import 'package:tayseer/core/models/login_data.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dartz/dartz.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -489,7 +489,7 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   @override
-  Future<Either<Failure, void>> addServiceProvider({
+  Future<Either<Failure, RegisterResponse>> addServiceProvider({
     required Map<String, dynamic> body,
   }) async {
     try {
@@ -499,9 +499,15 @@ class AuthRepoImpl implements AuthRepo {
       );
 
       final success = response['success'] ?? false;
-      debugPrint('addServiceProvider response: $response');
       if (success) {
-        return right(null);
+        final registerResponse = RegisterResponse.fromJson(response);
+        await CachNetwork.setData(
+          key: kuserData,
+          value: jsonEncode(registerResponse.data?.user?.toJson()),
+        );
+        kCurrentUserData = registerResponse.data?.user;
+
+        return right(registerResponse);
       } else {
         final message = response['message'] ?? 'فشل في إضافة إعدادات الخدمة';
         return left(ServerFailure(message));

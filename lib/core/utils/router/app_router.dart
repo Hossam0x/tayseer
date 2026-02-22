@@ -60,6 +60,7 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/inte
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/marriage_filter/view/marriage_filter_view.dart';
+import 'package:tayseer/features/user/my_tickets_event/view/my_tickets_view.dart';
 import 'package:tayseer/features/user/questions/view/account_review_view.dart';
 import 'package:tayseer/features/user/questions/view/add_phone_view.dart';
 import 'package:tayseer/features/user/questions/view/added_images_view.dart';
@@ -171,6 +172,7 @@ abstract class AppRouter {
   static const kCommitmentView = '/CommitmentView';
   static const kAccountReviewUserView = '/AccountReviewUserView';
   static const kSubscriptionView = '/SubscriptionView';
+  static const kMyTicketsView = '/MyTicketsView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -904,6 +906,11 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => AccountReviewUserView(),
+        );
+      case kMyTicketsView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const MyTicketsView(),
         );
 
       case kMarriageView:

@@ -1,6 +1,5 @@
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/add_story_view.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
@@ -330,31 +329,17 @@ class _AddStoryItem extends StatelessWidget {
           onTap: isUploading
               ? null
               : () async {
-                  // Request permissions before entering
-                  final photos = await Permission.photos.request();
-                  final camera = await Permission.camera.request();
-
                   if (context.mounted) {
-                    final isPhotosGranted =
-                        photos.isGranted || photos.isLimited;
-                    if (isPhotosGranted && camera.isGranted) {
-                      final storiesCubit = context.read<StoriesCubit>();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BlocProvider.value(
-                            value: storiesCubit,
-                            child: const AddStoryView(),
-                          ),
+                    final storiesCubit = context.read<StoriesCubit>();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BlocProvider.value(
+                          value: storiesCubit,
+                          child: const AddStoryView(),
                         ),
-                      );
-                    } else {
-                      SnackBarService().showSnackBar(
-                        context: context,
-                        text: context.tr('permissions_required'),
-                        isError: true,
-                      );
-                    }
+                      ),
+                    );
                   }
                 },
           child: Column(

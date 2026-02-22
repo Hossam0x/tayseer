@@ -18,16 +18,20 @@ class ContextMenuOption {
 
 class ConversationContextMenu extends StatelessWidget {
   final bool isMyMessage;
+  final String messageType; // ✅ عشان نعرف لو الرسالة نص نعرض نسخ
   final VoidCallback? onReply;
+  final VoidCallback? onCopy; // ✅ نسخ الرسالة
   final VoidCallback? onDetails;
   final VoidCallback? onSelect;
-  final VoidCallback? onDeleteForMe; // ✅ حذف لدي
-  final VoidCallback? onDeleteForAll; // ✅ حذف لدى الجميع
+  final VoidCallback? onDeleteForMe;
+  final VoidCallback? onDeleteForAll;
 
   const ConversationContextMenu({
     super.key,
     required this.isMyMessage,
+    this.messageType = 'text',
     this.onReply,
+    this.onCopy,
     this.onDetails,
     this.onSelect,
     this.onDeleteForMe,
@@ -42,6 +46,14 @@ class ConversationContextMenu extends StatelessWidget {
         hasBorder: true,
         onTap: onReply,
       ),
+      // ✅ نسخ الرسالة - يظهر فقط لو الرسالة نص
+      if (messageType == 'text')
+        ContextMenuOption(
+          icon: Icons.copy_rounded,
+          label: "نسخ",
+          hasBorder: true,
+          onTap: onCopy,
+        ),
       if (isMyMessage)
         ContextMenuOption(
           icon: Icons.info_outline,
@@ -55,15 +67,13 @@ class ConversationContextMenu extends StatelessWidget {
         hasBorder: true,
         onTap: onSelect,
       ),
-      // ✅ حذف لدي (للجميع)
       ContextMenuOption(
         icon: Icons.delete_outline,
         label: "حذف لديّ",
         color: Colors.red,
-        hasBorder: isMyMessage, // ✅ لو رسالتي، في border لأن في خيار تاني
+        hasBorder: isMyMessage,
         onTap: onDeleteForMe,
       ),
-      // ✅ حذف لدى الجميع (فقط لرسائلي)
       if (isMyMessage)
         ContextMenuOption(
           icon: Icons.delete_forever_outlined,
@@ -79,7 +89,7 @@ class ConversationContextMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isMobile = screenSize.width < 600;
-    final containerWidth = isMobile ? 180.0 : 220.0; // ✅ زودنا العرض شوية
+    final containerWidth = isMobile ? 180.0 : 220.0;
 
     final options = _getMenuOptions();
 
@@ -141,7 +151,7 @@ class ConversationContextMenu extends StatelessWidget {
                   color: color,
                   fontWeight: FontWeight.w600,
                   fontFamily: 'Cairo',
-                  fontSize: isMobile ? 13.0 : 15.0, // ✅ صغرنا شوية للنص الطويل
+                  fontSize: isMobile ? 13.0 : 15.0,
                 ),
               ),
             ),

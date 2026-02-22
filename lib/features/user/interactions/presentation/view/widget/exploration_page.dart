@@ -74,7 +74,7 @@ class ExplorationState extends State<Exploration> {
         }
 
         // ✅ Check if answerCompleted is false
-        if (!state.answerCompleted ) {
+        if (!state.answerCompleted && kCurrentUserData?.compeletedData == false) {
           return const EmptyExploration();
         }
 
