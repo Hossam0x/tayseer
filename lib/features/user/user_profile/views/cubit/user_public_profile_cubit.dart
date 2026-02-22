@@ -491,13 +491,54 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
           );
         } else {
           // التعامل مع الحظر من البروفايل
+          final updatedProfile = state.profile?.copyWith(
+            room: Map<String, dynamic>.from(state.profile?.room ?? {})
+              ..['isBlocked'] = true,
+            isBlocked: [{}], // Add dummy entry to indicate blocked status
+          );
           emit(
             state.copyWith(
+              profile: updatedProfile,
               blockActionState: CubitStates.success,
               blockMessage: message,
             ),
           );
         }
+      },
+    );
+  }
+
+  Future<void> unblockUser({required String userId}) async {
+    if (isClosed) return;
+
+    emit(state.copyWith(blockActionState: CubitStates.loading));
+
+    final result = await _profileRepository.unblockUser(userId);
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.failure,
+            blockMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        final updatedProfile = state.profile?.copyWith(
+          room: Map<String, dynamic>.from(state.profile?.room ?? {})
+            ..['isBlocked'] = false,
+          isBlocked: [], // Clear blocked list
+        );
+        emit(
+          state.copyWith(
+            profile: updatedProfile,
+            blockActionState: CubitStates.success,
+            blockMessage: message,
+          ),
+        );
       },
     );
   }

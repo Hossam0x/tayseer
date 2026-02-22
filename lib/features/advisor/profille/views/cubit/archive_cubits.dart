@@ -91,12 +91,15 @@ class ArchivedChatsCubit extends Cubit<ArchivedChatsState> {
     }
   }
 
-  Future<void> unarchiveChat(String chatId) async {
+  Future<void> unarchiveChat(BuildContext context, String chatId) async {
     final result = await _archiveRepository.unarchiveChat(chatId);
 
     result.fold(
       (failure) {
         emit(state.copyWith(errorMessage: failure.message));
+        if (context.mounted) {
+          AppToast.error(context, failure.message);
+        }
       },
       (_) {
         // إزالة المحادثة من القائمة
@@ -104,6 +107,9 @@ class ArchivedChatsCubit extends Cubit<ArchivedChatsState> {
             .where((chat) => chat.id != chatId)
             .toList();
         emit(state.copyWith(chatRooms: updatedChats));
+        if (context.mounted) {
+          AppToast.success(context, context.tr('chat_unarchived_success'));
+        }
       },
     );
   }
@@ -494,13 +500,19 @@ class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
   }
 
   Future<void> deleteStory({
+    required BuildContext context,
     required String storyId,
     required String userId,
   }) async {
     final result = await _storiesRepository.deleteStory(storyId: storyId);
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) {
+        emit(state.copyWith(errorMessage: failure.message));
+        if (context.mounted) {
+          AppToast.error(context, failure.message);
+        }
+      },
       (_) {
         final userStoryIndex = state.stories.indexWhere(
           (us) => us.userId == userId,
@@ -522,11 +534,15 @@ class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
           );
         }
         emit(state.copyWith(stories: updatedList));
+        if (context.mounted) {
+          AppToast.success(context, context.tr('story_deleted_success'));
+        }
       },
     );
   }
 
   Future<void> unarchiveStory({
+    required BuildContext context,
     required String storyId,
     required String userId,
   }) async {
@@ -536,7 +552,12 @@ class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
     );
 
     result.fold(
-      (failure) => emit(state.copyWith(errorMessage: failure.message)),
+      (failure) {
+        emit(state.copyWith(errorMessage: failure.message));
+        if (context.mounted) {
+          AppToast.error(context, failure.message);
+        }
+      },
       (_) {
         final userStoryIndex = state.stories.indexWhere(
           (us) => us.userId == userId,
@@ -558,6 +579,9 @@ class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
           );
         }
         emit(state.copyWith(stories: updatedList));
+        if (context.mounted) {
+          AppToast.success(context, context.tr('story_unarchived_success'));
+        }
       },
     );
   }

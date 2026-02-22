@@ -272,7 +272,7 @@ class _ChatsTabViewBody extends StatelessWidget {
         );
       },
       onDismissed: (direction) {
-        context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
+        context.read<ArchivedChatsCubit>().unarchiveChat(context, chatRoom.id);
         AppToast.success(
           context,
           '${context.tr('unarchived_chat')} $displayName',

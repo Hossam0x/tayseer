@@ -682,13 +682,56 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
           );
         } else {
           // التعامل مع الحظر من البروفايل
+          final updatedProfile = state.profile?.copyWith(
+            room:
+                state.profile?.room?.copyWith(isBlocked: true) ??
+                const RoomInfoModel(
+                  chatRoomId: '',
+                  isBlocked: true,
+                  isHaveSession: false,
+                ),
+          );
           emit(
             state.copyWith(
+              profile: updatedProfile,
               blockActionState: CubitStates.success,
               blockMessage: message,
             ),
           );
         }
+      },
+    );
+  }
+
+  Future<void> unblockUser({required String advisorId}) async {
+    if (isClosed) return;
+
+    emit(state.copyWith(blockActionState: CubitStates.loading));
+
+    final result = await _repository.unblockUser(advisorId);
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.failure,
+            blockMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        final updatedProfile = state.profile?.copyWith(
+          room: state.profile?.room?.copyWith(isBlocked: false),
+        );
+        emit(
+          state.copyWith(
+            profile: updatedProfile,
+            blockActionState: CubitStates.success,
+            blockMessage: message,
+          ),
+        );
       },
     );
   }

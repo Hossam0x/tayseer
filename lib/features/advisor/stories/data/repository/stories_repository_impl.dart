@@ -111,6 +111,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
     String? content,
     List<File>? images,
     List<XFile>? videos,
+    double? videoDuration,
     Function(int sent, int total)? onSendProgress,
   }) async {
     try {
@@ -139,6 +140,8 @@ class StoriesRepositoryImpl implements StoriesRepository {
         if (content != null) 'content': content,
         if (uploadedImages.isNotEmpty) 'images': uploadedImages,
         if (uploadedVideos.isNotEmpty) 'videos': uploadedVideos,
+        if (videoDuration != null && videoDuration > 0)
+          'videoDuration': videoDuration,
       };
 
       final response = await apiService.post(
@@ -219,6 +222,26 @@ class StoriesRepositoryImpl implements StoriesRepository {
         return Left(
           ServerFailure(response['message'] ?? 'فشل تمييز القصة كـ Special'),
         );
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> hideStory({required String storyId}) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/hidden/story',
+        query: {'action': 'add'},
+        data: {'storyId': storyId},
+      );
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل إخفاء القصة'));
       }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));

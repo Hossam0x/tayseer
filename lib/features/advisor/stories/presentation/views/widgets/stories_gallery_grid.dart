@@ -62,7 +62,8 @@ class _StoriesGalleryGridState extends State<StoriesGalleryGrid> {
               final asset = state.galleryAssets[index - 1];
               return _GalleryItem(
                 asset: asset,
-                onTap: () => context.read<AddStoryCubit>().selectAsset(asset),
+                onTap: () =>
+                    context.read<AddStoryCubit>().selectAsset(asset, context),
               );
             },
           ),

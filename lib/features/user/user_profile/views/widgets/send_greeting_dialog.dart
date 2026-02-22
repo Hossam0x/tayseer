@@ -80,7 +80,7 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
                 Padding(
                   padding: EdgeInsets.only(top: 30.h),
                   child: Text(
-                    'ارسال تحية',
+                    context.tr('send_greeting'),
                     style: Styles.textStyle16SemiBold.copyWith(
                       color: AppColors.primary800,
                     ),
@@ -108,7 +108,7 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
                   color: AppColors.secondary800,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'اكتب رسالتك هنا...',
+                  hintText: context.tr('type_your_message'),
                   hintStyle: Styles.textStyle16.copyWith(
                     color: AppColors.secondary400,
                   ),
@@ -123,7 +123,7 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
             ),
             Gap(32.h),
             CustomBotton(
-              title: _isSending ? 'جاري الارسال...' : 'ارسال',
+              title: _isSending ? context.tr('sending') : context.tr('send'),
               onPressed: _isSending ? null : () => _sendGreeting(),
               useGradient: true,
             ),
@@ -141,7 +141,7 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
       if (mounted) {
         showSafeSnackBar(
           context: context,
-          text: 'يرجى كتابة رسالة قبل الإرسال',
+          text: context.tr('please_enter_message'),
           isError: true,
         );
       }
@@ -152,7 +152,7 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
       if (mounted) {
         showSafeSnackBar(
           context: context,
-          text: 'يجب ألا تتجاوز الرسالة 500 حرف',
+          text: context.tr('message_too_long_error'),
           isError: true,
         );
       }
@@ -185,7 +185,7 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
       if (mounted) {
         showSafeSnackBar(
           context: context,
-          text: 'حدث خطأ أثناء إرسال التحية',
+          text: context.tr('error_sending_greeting'),
           isError: true,
         );
       }

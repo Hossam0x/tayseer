@@ -133,7 +133,12 @@ class SettingsCubit extends Cubit<SettingsState> {
         ),
       ];
 
-      emit(SettingsLoaded(settings: settings));
+      emit(
+        SettingsLoaded(
+          settings: settings,
+          isNotificationEnabled: notificationStatus,
+        ),
+      );
     } catch (e) {
       emit(SettingsError(message: 'settings_load_error'));
     }
@@ -194,13 +199,24 @@ class SettingsCubit extends Cubit<SettingsState> {
     }
   }
 
-  /// التحكم في الاشعارات (فتح/قفل)
   Future<void> _toggleNotificationSetting(String id, bool newValue) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
-    // Emit optimistic update for notification toggle
-    emit(currentState.copyWith(isNotificationEnabled: newValue));
+    // Update both the specific field and the settings list for consistency
+    final updatedSettings = currentState.settings.map((item) {
+      if (item.id == id) {
+        return item.copyWith(switchValue: newValue);
+      }
+      return item;
+    }).toList();
+
+    emit(
+      currentState.copyWith(
+        settings: updatedSettings,
+        isNotificationEnabled: newValue,
+      ),
+    );
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -297,13 +313,15 @@ class SettingsCubit extends Cubit<SettingsState> {
     try {
       await _toggleNotificationSetting(id, value);
 
+      // Re-fetch current state as it might have been updated by _toggleNotificationSetting
+      final latestState = state as SettingsLoaded;
+
       emit(
-        currentState.copyWith(
+        latestState.copyWith(
           actionSuccess: value
               ? "notifications_enabled_success"
               : "notifications_disabled_success",
           isActionKey: true,
-          isNotificationEnabled: value, // Ensure UI reflects state
           actionTimestamp: DateTime.now().millisecondsSinceEpoch,
         ),
       );

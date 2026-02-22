@@ -333,7 +333,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
         );
       },
       onDismissed: (direction) {
-        context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
+        context.read<ArchivedChatsCubit>().unarchiveChat(context, chatRoom.id);
 
         showSafeSnackBar(
           context: context,

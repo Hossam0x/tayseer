@@ -1,3 +1,4 @@
+import 'package:video_player/video_player.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_state.dart';
@@ -102,11 +103,27 @@ class AddStoryCubit extends Cubit<AddStoryState> {
     loadGalleryAssets(refresh: true);
   }
 
-  void selectAsset(AssetEntity asset) async {
+  void selectAsset(AssetEntity asset, BuildContext context) async {
     final file = await asset.file;
     if (file != null) {
       // Check if it's a video
       final isVideo = asset.type == AssetType.video;
+
+      if (isVideo) {
+        // Limit: 60 seconds
+        if (asset.duration > 60) {
+          AppToast.error(context, context.tr('video_duration_limit_60s'));
+          return;
+        }
+
+        // Limit: 50MB
+        final size = await file.length();
+        if (size > 50 * 1024 * 1024) {
+          AppToast.error(context, context.tr('video_size_limit_50mb'));
+          return;
+        }
+      }
+
       emit(
         state.copyWith(
           selectedAsset: asset,
@@ -118,21 +135,23 @@ class AddStoryCubit extends Cubit<AddStoryState> {
   }
 
   void resetSelection() {
-    emit(
-      state.copyWith(
-        selectedAsset: null,
-        previewFile: null,
-        isVideoPreview: false,
-        isFrontCamera: false,
-      ),
-    );
+    emit(state.clearSelection());
   }
 
   void setPreviewFile(
-    File file, {
+    File file,
+    BuildContext context, {
     bool isVideo = false,
     bool isFrontCamera = false,
-  }) {
+  }) async {
+    if (isVideo) {
+      final size = await file.length();
+      if (size > 50 * 1024 * 1024) {
+        AppToast.error(context, context.tr('video_size_limit_50mb'));
+        return;
+      }
+    }
+
     emit(
       state.copyWith(
         previewFile: file,
@@ -206,10 +225,25 @@ class AddStoryCubit extends Cubit<AddStoryState> {
       }
     }
 
+    double? videoDuration;
+    if (videoFiles.isNotEmpty) {
+      try {
+        final controller = VideoPlayerController.file(
+          File(videoFiles.first.path),
+        );
+        await controller.initialize();
+        videoDuration = controller.value.duration.inMilliseconds / 1000.0;
+        await controller.dispose();
+      } catch (e) {
+        debugPrint("Error getting video duration: $e");
+      }
+    }
+
     final result = await storiesRepository.createStories(
       content: contentController.text,
       images: imageFiles,
       videos: videoFiles,
+      videoDuration: videoDuration,
     );
 
     if (isClosed) return;

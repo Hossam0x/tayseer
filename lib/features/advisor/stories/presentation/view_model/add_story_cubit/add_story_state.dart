@@ -106,4 +106,27 @@ class AddStoryState extends Equatable {
     draftText,
     isAiLoading,
   ];
+
+  AddStoryState clearSelection() {
+    return AddStoryState(
+      albums: albums,
+      selectedAlbum: selectedAlbum,
+      galleryAssets: galleryAssets,
+      isLoadingAssets: isLoadingAssets,
+      hasMoreAssets: hasMoreAssets,
+      currentAssetsPage: currentAssetsPage,
+      addStoryState: addStoryState,
+      errorMessage: errorMessage,
+      selectedImages: selectedImages,
+      capturedImages: capturedImages,
+      selectedVideos: selectedVideos,
+      capturedVideo: capturedVideo,
+      draftText: draftText,
+      isAiLoading: isAiLoading,
+      selectedAsset: null,
+      previewFile: null,
+      isVideoPreview: false,
+      isFrontCamera: false,
+    );
+  }
 }

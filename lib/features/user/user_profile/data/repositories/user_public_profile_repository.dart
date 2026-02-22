@@ -10,6 +10,7 @@ abstract class UserPublicProfileRepository {
   );
   Future<Either<Failure, String>> deleteUserAccount();
   Future<Either<Failure, String>> blockUser(String userId);
+  Future<Either<Failure, String>> unblockUser(String userId);
   Future<Either<Failure, String>> reportUser({
     required String reportedId,
     required String reason,
@@ -79,6 +80,24 @@ class UserPublicProfileRepositoryImpl implements UserPublicProfileRepository {
       );
       if (response['success'] == true || response['status'] == 'success') {
         return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> unblockUser(String userId) async {
+    try {
+      final response = await _apiService.delete(
+        endPoint: ApiEndPoint.unblockuser,
+        data: {"blockedId": userId},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم إلغاء الحظر بنجاح');
       }
       return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
     } on DioException catch (e) {
