@@ -216,19 +216,30 @@ class ReelsOverlay extends StatelessWidget {
 
             Gap(10.w),
 
-            Container(
-              width: 45.w,
-              height: 45.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
-              ),
-              child: ClipOval(
-                child: AppImage(
-                  post.avatar,
-                  width: 45.w,
-                  height: 45.w,
-                  fit: BoxFit.cover,
+            GestureDetector(
+              onTap: () {
+                context.pushNamed(
+                  AppRouter.kUserProfileView,
+                  arguments: {
+                    'advisorId': post.advisorId,
+                    'advisorName': post.name,
+                  },
+                );
+              },
+              child: Container(
+                width: 45.w,
+                height: 45.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                child: ClipOval(
+                  child: AppImage(
+                    post.avatar,
+                    width: 45.w,
+                    height: 45.w,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
