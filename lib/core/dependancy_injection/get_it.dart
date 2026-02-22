@@ -55,6 +55,8 @@ import 'package:tayseer/features/user/marriage/repositories/marriage_repository.
 import 'package:tayseer/features/user/marriage/repositories/marriage_repository_impl.dart';
 import 'package:tayseer/features/user/marriage_filter/repo/marriage_filter_repo.dart';
 import 'package:tayseer/features/user/marriage_filter/repo/marriage_filter_repo_impl.dart';
+import 'package:tayseer/features/user/my_tickets_event/repo/my_tickets_repo.dart';
+import 'package:tayseer/features/user/my_tickets_event/repo/my_tickets_repo_impl.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo_impl.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
@@ -370,5 +372,11 @@ Future<void> setupGetIt() async {
 
   getIt.registerLazySingleton<MarriageFilterRepo>(
     () => MarriageFilterRepoImpl(getIt<ApiService>()),
+  );
+
+  /// MyTicketCubit and Repo
+
+  getIt.registerLazySingleton<MyTicketsRepo>(
+    () => MyTicketsRepoImpl(apiService: getIt<ApiService>()),
   );
 }

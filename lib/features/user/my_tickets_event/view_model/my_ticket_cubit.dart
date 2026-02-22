@@ -3,9 +3,9 @@ import 'package:tayseer/features/user/my_tickets_event/view_model/my_ticket_stat
 import 'package:tayseer/my_import.dart';
 
 class MyTicketCubit extends Cubit<MyTicketState> {
-  MyTicketCubit(this._repo) : super(const MyTicketState());
+  MyTicketCubit() : super(const MyTicketState());
 
-  final MyTicketsRepo _repo;
+  MyTicketsRepo get _repo => getIt<MyTicketsRepo>();
 
   Future<void> getMyReservations() async {
     emit(state.copyWith(myReservationsState: CubitStates.loading));
@@ -21,13 +21,6 @@ class MyTicketCubit extends Cubit<MyTicketState> {
               errorMessage: failure.message,
             ),
           );
-
-          emit(
-            state.copyWith(
-              myReservationsState: CubitStates.initial,
-              errorMessage: null,
-            ),
-          );
         },
         (data) {
           emit(
@@ -36,8 +29,6 @@ class MyTicketCubit extends Cubit<MyTicketState> {
               myReservations: data,
             ),
           );
-
-          emit(state.copyWith(myReservationsState: CubitStates.initial));
         },
       );
     } catch (e) {

@@ -5,7 +5,7 @@ import 'package:tayseer/my_import.dart';
 class MyTicketState {
   final CubitStates myReservationsState;
   final CubitStates reservationDetailsState;
-  final List<BookingEvent>? myReservations;
+  final List<BookingEvent> myReservations;
   final ReservationDetails? reservationDetails;
   final String? errorMessage;
 

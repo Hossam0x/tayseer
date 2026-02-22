@@ -24,7 +24,7 @@ class TicketItem extends StatelessWidget {
         bgColor: Colors.white, // لون الكارت
       ),
       child: Container(
-        height: context.responsiveHeight(190),
+        height: context.responsiveHeight(200),
         padding: const EdgeInsets.all(16), // مسافة عشان المحتوى ميمسش الحواف
         child: Row(
           children: [
@@ -42,11 +42,13 @@ class TicketItem extends StatelessWidget {
                     // عنوان الجلسة
                     RichText(
                       textDirection: TextDirection.rtl,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
                       text: TextSpan(
                         style: Styles.textStyle16SemiBold,
                         children: [
                           TextSpan(
-                            text: "جلسة : ",
+                            text: context.tr('session_title_ticket'),
                             style: Styles.textStyle14SemiBold,
                           ),
                           TextSpan(
@@ -114,6 +116,69 @@ class TicketItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class MyTicketShimmerItem extends StatelessWidget {
+  const MyTicketShimmerItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: TicketPainter(
+        borderColor: Colors.grey.shade300,
+        bgColor: Colors.white,
+      ),
+      child: Container(
+        height: context.responsiveHeight(190),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            /// النصوص
+            Expanded(
+              flex: 7,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  ShimmerBox(width: double.infinity, height: 16),
+                  ShimmerBox(width: double.infinity, height: 12),
+                  ShimmerBox(width: double.infinity, height: 12),
+                  ShimmerBox(width: 150, height: 12),
+                ],
+              ),
+            ),
+
+            /// الزرار
+            Expanded(
+              flex: 3,
+              child: Center(
+                child: ShimmerBox(width: double.infinity, height: 60),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ShimmerBox extends StatelessWidget {
+  final double width;
+  final double height;
+
+  const ShimmerBox({super.key, required this.width, required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(8),
+      ),
     );
   }
 }

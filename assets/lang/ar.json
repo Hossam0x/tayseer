@@ -1357,5 +1357,8 @@
   "please_enter_message": "يرجى كتابة رسالة قبل الإرسال",
   "message_too_long_error": "يجب ألا تتجاوز الرسالة 500 حرف",
   "error_sending_greeting": "حدث خطأ أثناء إرسال التحية",
-  "story_special_success": "تم إضافة القصة إلي المميزة بنجاح"
+  "story_special_success": "تم إضافة القصة إلي المميزة بنجاح",
+  "session_title_ticket": "جلسة : ",
+  "price_dit": "تفاصيل السعر",
+  "payment_method": "طريقة الدفع"
 }
