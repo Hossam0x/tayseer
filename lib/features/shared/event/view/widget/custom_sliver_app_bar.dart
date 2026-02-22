@@ -5,10 +5,11 @@ class CustomSliverAppBarEvent extends StatelessWidget {
     super.key,
     required this.title,
     this.showBackButton = false,
+    this.isUserTicket = false,
   });
   final String title;
   final bool showBackButton;
-
+  final bool isUserTicket;
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
@@ -21,37 +22,62 @@ class CustomSliverAppBarEvent extends StatelessWidget {
             fit: BoxFit.fill,
           ),
         ),
-        child:
-            showBackButton == true
-                ? Row(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
+        child: showBackButton == true
+            ? Stack(
+                children: [
+                  Positioned(
+                    top: context.responsiveHeight(50),
+                    bottom: 0,
+                    right: 1,
+                    child: Center(
                       child: IconButton(
                         onPressed: () => context.pop(),
                         icon: Icon(Icons.arrow_back),
                       ),
                     ),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            top: context.height * 0.1,
-                            left: context.width * 0.1,
+                  ),
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: context.height * 0.1),
+                      child: Text(title, style: Styles.textStyle20Bold),
+                    ),
+                  ),
+                ],
+              )
+            : Stack(
+                children: [
+                  if (isUserTicket == true)
+                    Positioned(
+                      right: context.responsiveWidth(12),
+                      top: 0,
+                      bottom: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kMyTicketsView);
+                        },
+                        child: Center(
+                          child: Container(
+                            padding: EdgeInsets.all(
+                              context.responsiveWidth(12),
+                            ),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.primary100,
+                            ),
+                            child: AppImage(AssetsData.kTicketIcon),
                           ),
-                          child: Text(title, style: Styles.textStyle20Bold),
                         ),
                       ),
                     ),
-                  ],
-                )
-                : Center(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: context.height * 0.1),
-                    child: Text(title, style: Styles.textStyle20Bold),
+
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: context.height * 0.01),
+                      child: Text(title, style: Styles.textStyle20Bold),
+                    ),
                   ),
-                ),
+                ],
+              ),
       ),
     );
   }

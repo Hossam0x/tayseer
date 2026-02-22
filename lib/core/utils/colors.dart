@@ -145,7 +145,7 @@ abstract class AppColors {
 
   static Color pendingColor = Color.fromRGBO(246, 181, 81, 1);
   static Color alertColor = Color.fromRGBO(229, 69, 69, 1);
-
+  
   // Success Colors - تدرجات اللون الأخضر للنجاح
   static Color success50 = Color.fromRGBO(236, 253, 245, 1); // أخضر فاتح جداً
   static Color success100 = Color.fromRGBO(209, 250, 229, 1); // أخضر فاتح
@@ -170,4 +170,6 @@ abstract class AppColors {
   static Color error700 = Color.fromRGBO(185, 28, 28, 1); // أحمر داكن جداً
   static Color error800 = Color.fromRGBO(153, 27, 27, 1); // أحمر غامق
   static Color error900 = Color.fromRGBO(127, 29, 29, 1); // أحمر غامق جداً
+
+
 }
