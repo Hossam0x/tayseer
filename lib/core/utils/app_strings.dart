@@ -50,4 +50,13 @@ class AppStrings {
   static const String votes = "votes";
   static const String anonymous = "anonymous";
   static const String general = "general";
+
+  static const String followError = "follow_error";
+  static const String sharedSuccess = "shared_success";
+  static const String unsharedSuccess = "unshared_success";
+  static const String sharedError = "shared_error";
+  static const String error = "error";
+  static const String reelSavedSuccess = "reel_saved_success";
+  static const String reelUnsavedSuccess = "reel_unsaved_success";
+  static const String reelSaveError = "reel_save_error";
 }

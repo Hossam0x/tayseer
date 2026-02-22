@@ -201,6 +201,11 @@ class _ReelsItemState extends State<ReelsItem>
                     postId: widget.post.postId,
                   );
                 },
+                onSaveTapped: () {
+                  context.read<ReelsCubit>().toggleSaveReel(
+                    postId: widget.post.postId,
+                  );
+                },
               );
             },
           ),

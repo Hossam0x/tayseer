@@ -19,6 +19,7 @@ class ReelsOverlay extends StatelessWidget {
   final PostModel post;
   final dynamic Function(ReactionType?) onReactionChanged;
   final VoidCallback onShareTapped;
+  final VoidCallback? onSaveTapped;
   final VideoPlayerController? cachedController;
   final GlobalKey? likeButtonKey;
 
@@ -27,6 +28,7 @@ class ReelsOverlay extends StatelessWidget {
     required this.post,
     required this.onReactionChanged,
     required this.onShareTapped,
+    required this.onSaveTapped,
     this.cachedController,
     this.likeButtonKey,
   });
@@ -343,10 +345,12 @@ class ReelsOverlay extends StatelessWidget {
               post: post,
               onShare: onShareTapped,
               isShared: post.isRepostedByMe,
+              isFromReels: true,
+
               // onReport: onReportTapped,
               // onBlock: onBlockTapped,
               // onHide: onHideTapped,
-              // onSave: onSaveTapped,
+              onSave: onSaveTapped,
               // onEdit: onEditTapped,
               // onArchive: onArchiveTapped,
               // onDelete: onDeleteTapped,

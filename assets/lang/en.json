@@ -1337,5 +1337,8 @@
   "please_enter_message": "Please enter a message before sending",
   "message_too_long_error": "Message must not exceed 500 characters",
   "error_sending_greeting": "An error occurred while sending the greeting",
-  "story_special_success": "Story added to special successfully"
+  "story_special_success": "Story added to special successfully",
+  "reel_saved_success": "Reel saved successfully",
+  "reel_unsaved_success": "Reel unsaved",
+  "reel_save_error": "Error saving reel"
 }

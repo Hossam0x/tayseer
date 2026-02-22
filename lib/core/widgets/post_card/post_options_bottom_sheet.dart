@@ -4,6 +4,7 @@ import 'package:tayseer/my_import.dart';
 class PostOptionsBottomSheet extends StatelessWidget {
   final PostModel? post;
   final bool isShared;
+  final bool isFromReels;
   final VoidCallback? onShare;
   final VoidCallback? onReport;
   final VoidCallback? onBlock;
@@ -17,6 +18,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
     super.key,
     required this.post,
     this.onShare,
+    this.isFromReels = false,
     this.isShared = false,
     this.onReport,
     this.onBlock,
@@ -32,6 +34,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
     required PostModel post,
     VoidCallback? onShare,
     bool isShared = false,
+    bool isFromReels = false,
     VoidCallback? onReport,
     VoidCallback? onBlock,
     VoidCallback? onHide,
@@ -47,6 +50,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
       builder: (context) => PostOptionsBottomSheet(
         post: post,
         isShared: isShared,
+        isFromReels: isFromReels,
         onShare: onShare,
         onReport: () {
           context.pushNamed(AppRouter.kReportReasonsScreen);
@@ -65,7 +69,30 @@ class PostOptionsBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isSaved = post?.isSaved ?? false;
 
-    final List<OptionItem> options = post?.isMine ?? false
+    final List<OptionItem> options = isFromReels
+        ? [
+            OptionItem(
+              text: isShared
+                  ? context.tr(AppStrings.unshare)
+                  : context.tr(AppStrings.share),
+              icon: Icons.ios_share_rounded,
+              onTap: onShare,
+            ),
+            OptionItem(
+              text: context.tr(AppStrings.report),
+              icon: Icons.error_outline_rounded,
+              onTap: onReport,
+            ),
+            OptionItem(
+              text: context.tr(AppStrings.save),
+              icon: isSaved
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_border_rounded,
+              color: isSaved ? AppColors.kprimaryColor : null,
+              onTap: onSave,
+            ),
+          ]
+        : post?.isMine ?? false
         ? [
             OptionItem(
               text: isShared
@@ -110,8 +137,8 @@ class PostOptionsBottomSheet extends StatelessWidget {
               text: context.tr(AppStrings.block),
               icon: Icons.block_outlined,
               onTap: onBlock,
-              isDestructive: true, // ✅ خليناه destructive عشان يبقى أحمر
-              isBlock: true, // ✅ أضفنا isBlock
+              isDestructive: true,
+              isBlock: true,
             ),
             OptionItem(
               text: context.tr(AppStrings.hide),

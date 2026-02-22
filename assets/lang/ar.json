@@ -1358,5 +1358,8 @@
   "please_enter_message": "يرجى كتابة رسالة قبل الإرسال",
   "message_too_long_error": "يجب ألا تتجاوز الرسالة 500 حرف",
   "error_sending_greeting": "حدث خطأ أثناء إرسال التحية",
-  "story_special_success": "تم إضافة القصة إلي المميزة بنجاح"
+  "story_special_success": "تم إضافة القصة إلي المميزة بنجاح",
+  "reel_saved_success": "تم حفظ الريل بنجاح",
+  "reel_unsaved_success": "تم إلغاء حفظ الريل",
+  "reel_save_error": "حدث خطأ أثناء حفظ الريل"
 }

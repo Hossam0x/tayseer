@@ -18,6 +18,9 @@ class ReelsState extends Equatable {
   final CubitStates followActionState;
   final String? followMessage;
 
+  //  save states
+  final CubitStates saveActionState;
+  final String? saveMessage;
   const ReelsState({
     this.reelsState = CubitStates.initial,
     this.reels = const [],
@@ -30,6 +33,8 @@ class ReelsState extends Equatable {
     this.isShareAdded = false,
     this.followActionState = CubitStates.initial,
     this.followMessage,
+    this.saveActionState = CubitStates.initial,
+    this.saveMessage,
   });
 
   ReelsState copyWith({
@@ -44,6 +49,9 @@ class ReelsState extends Equatable {
     bool? isShareAdded,
     CubitStates? followActionState,
     String? followMessage,
+
+    CubitStates? saveActionState,
+    String? saveMessage,
   }) {
     return ReelsState(
       reelsState: reelsState ?? this.reelsState,
@@ -57,6 +65,8 @@ class ReelsState extends Equatable {
       isShareAdded: isShareAdded ?? this.isShareAdded,
       followActionState: followActionState ?? this.followActionState,
       followMessage: followMessage ?? this.followMessage,
+      saveActionState: saveActionState ?? this.saveActionState,
+      saveMessage: saveMessage ?? this.saveMessage,
     );
   }
 
@@ -73,5 +83,7 @@ class ReelsState extends Equatable {
     isShareAdded,
     followActionState,
     followMessage,
+    saveActionState,
+    saveMessage,
   ];
 }
