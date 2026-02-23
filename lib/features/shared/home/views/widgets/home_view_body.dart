@@ -1,4 +1,7 @@
 import 'package:tayseer/core/utils/video_playback_manager.dart';
+import 'package:tayseer/features/advisor/add_post/view/widget/upload_post_banner.dart';
+import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
+import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_state.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_app_bar.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_filter_section.dart';
@@ -28,7 +31,9 @@ class HomeViewBodyState extends State<HomeViewBody> {
   final StoriesCubit storiesCubit = getIt<StoriesCubit>();
   final HomeCubit homeCubit = getIt<HomeCubit>();
 
-  // Key للـ Filter Section عشان نعمل scroll ليها
+  // ✅ الـ UploadPostCubit من GetIt
+  final UploadPostCubit uploadPostCubit = getIt<UploadPostCubit>();
+
   final GlobalKey _filterSectionKey = GlobalKey();
 
   @override
@@ -51,9 +56,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
     }
   }
 
-  /// Scroll للـ Filter Section + الليست الأفقية
   void scrollToFilterSection() {
-    // 1. Scroll الصفحة للـ Filter Section
     final context = _filterSectionKey.currentContext;
     if (context != null) {
       Scrollable.ensureVisible(
@@ -64,7 +67,6 @@ class HomeViewBodyState extends State<HomeViewBody> {
       );
     }
 
-    // 2. Scroll الليست الأفقية لأول عنصر (الكل)
     if (_filterScrollController.hasClients) {
       _filterScrollController.animateTo(
         0,
@@ -86,8 +88,6 @@ class HomeViewBodyState extends State<HomeViewBody> {
     }
 
     _lastOffset = currentOffset;
-
-    // تحديث حالة السكرول في الـ LayoutCubit
     context.read<LayoutCubit>().setHomeAtTop(currentOffset <= 0);
 
     if (_scrollController.position.pixels >=
@@ -111,6 +111,8 @@ class HomeViewBodyState extends State<HomeViewBody> {
       providers: [
         BlocProvider.value(value: storiesCubit),
         BlocProvider.value(value: homeCubit),
+        // ✅ إضافة الـ UploadPostCubit
+        BlocProvider.value(value: uploadPostCubit),
       ],
       child: RefreshIndicator(
         color: AppColors.kprimaryColor,
@@ -130,11 +132,25 @@ class HomeViewBodyState extends State<HomeViewBody> {
               slivers: [
                 const HomeAppBar(notificationCount: 3),
                 const HomeSearchBar(),
-
-                // // ✅ كل اللوجيك بقى جوه، هنا بننده عليها بس
-                // if (isUser)
-                //   const SliverToBoxAdapter(child: AnonymousModeBanner()),
                 const StoriesSection(),
+
+                // ────────────────────────────────────
+                // ✅ شريط رفع البوست (يظهر بين الستوريز والفلتر)
+                // ────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: BlocConsumer<UploadPostCubit, UploadPostProgressState>(
+                    listener: (context, state) {
+                      // ✅ لما ينجح الرفع → نعمل ريفرش للبوستات
+                      if (state.status == UploadPostStatus.success) {
+                        homeCubit.refreshHome();
+                      }
+                    },
+                    builder: (context, state) {
+                      return const UploadPostBanner();
+                    },
+                  ),
+                ),
+
                 HomeFilterSection(
                   key: _filterSectionKey,
                   scrollController: _filterScrollController,

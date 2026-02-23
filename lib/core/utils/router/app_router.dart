@@ -61,6 +61,7 @@ import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/marriage_filter/view/marriage_filter_view.dart';
 import 'package:tayseer/features/user/my_tickets_event/view/my_tickets_view.dart';
+import 'package:tayseer/features/user/my_tickets_event/view/ticket_details_view.dart';
 import 'package:tayseer/features/user/questions/view/account_review_view.dart';
 import 'package:tayseer/features/user/questions/view/add_phone_view.dart';
 import 'package:tayseer/features/user/questions/view/added_images_view.dart';
@@ -173,6 +174,7 @@ abstract class AppRouter {
   static const kAccountReviewUserView = '/AccountReviewUserView';
   static const kSubscriptionView = '/SubscriptionView';
   static const kMyTicketsView = '/MyTicketsView';
+  static const kTicketDetailsView = '/TicketDetailsView';
 
   // advisor routes
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
@@ -911,6 +913,13 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const MyTicketsView(),
+        );
+      case kTicketDetailsView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) =>
+              TicketDetailsView(ticketId: args?['ticketId'] as String? ?? ''),
         );
 
       case kMarriageView:
