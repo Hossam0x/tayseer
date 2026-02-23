@@ -147,22 +147,23 @@ class ReelsOverlay extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      FollowButton(
-                        key: ValueKey(post.isFollowing),
-                        isFollowing: post.isFollowing,
-                        onTap: () {
-                          if (context
-                                  .read<ReelsCubit>()
-                                  .state
-                                  .followActionState ==
-                              CubitStates.loading) {
-                            return;
-                          }
-                          context.read<ReelsCubit>().toggleFollowAdvisor(
-                            advisorId: post.advisorId,
-                          );
-                        },
-                      ),
+                      if (!post.isMine)
+                        FollowButton(
+                          key: ValueKey(post.isFollowing),
+                          isFollowing: post.isFollowing,
+                          onTap: () {
+                            if (context
+                                    .read<ReelsCubit>()
+                                    .state
+                                    .followActionState ==
+                                CubitStates.loading) {
+                              return;
+                            }
+                            context.read<ReelsCubit>().toggleFollowAdvisor(
+                              advisorId: post.advisorId,
+                            );
+                          },
+                        ),
                       Gap(8.w),
                       if (post.isVerified)
                         Icon(Icons.verified, color: Colors.blue, size: 16.sp),
