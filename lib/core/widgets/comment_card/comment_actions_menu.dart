@@ -22,31 +22,35 @@ class CommentActionsMenu extends StatelessWidget {
   });
 
   void _handleAction(CommentMenuAction action) {
-    switch (action) {
-      case CommentMenuAction.edit:
-        callbacks.onEditToggle?.call(commentId);
-        break;
-      case CommentMenuAction.delete:
-        if (isReply) {
-          callbacks.onDeleteReply?.call(commentId);
-        } else {
-          callbacks.onDeleteComment?.call(commentId);
-        }
-        break;
-      case CommentMenuAction.reply:
-        callbacks.onReplyToggle?.call(commentId);
-        break;
-      case CommentMenuAction.report:
-        callbacks.onReport?.call(commentId);
-        break;
-      case CommentMenuAction.hide:
-        if (isReply) {
-          callbacks.onHideReply?.call(commentId);
-        } else {
-          callbacks.onHideComment?.call(commentId);
-        }
-        break;
-    }
+    // Use Future.delayed to allow the popup menu to finish closing
+    // before triggering state changes that rebuild the layout
+    Future.delayed(const Duration(milliseconds: 100), () {
+      switch (action) {
+        case CommentMenuAction.edit:
+          callbacks.onEditToggle?.call(commentId);
+          break;
+        case CommentMenuAction.delete:
+          if (isReply) {
+            callbacks.onDeleteReply?.call(commentId);
+          } else {
+            callbacks.onDeleteComment?.call(commentId);
+          }
+          break;
+        case CommentMenuAction.reply:
+          callbacks.onReplyToggle?.call(commentId);
+          break;
+        case CommentMenuAction.report:
+          callbacks.onReport?.call(commentId);
+          break;
+        case CommentMenuAction.hide:
+          if (isReply) {
+            callbacks.onHideReply?.call(commentId);
+          } else {
+            callbacks.onHideComment?.call(commentId);
+          }
+          break;
+      }
+    });
   }
 
   @override

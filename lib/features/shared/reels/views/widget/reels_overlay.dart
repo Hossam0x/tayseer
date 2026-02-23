@@ -168,15 +168,26 @@ class ReelsOverlay extends StatelessWidget {
                         Icon(Icons.verified, color: Colors.blue, size: 16.sp),
                       Gap(4.w),
                       Flexible(
-                        child: Text(
-                          post.name,
-                          style: Styles.textStyle16.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
+                        child: GestureDetector(
+                          onTap: () {
+                            context.pushNamed(
+                              AppRouter.kUserProfileView,
+                              arguments: {
+                                'advisorId': post.advisorId,
+                                'advisorName': post.name,
+                              },
+                            );
+                          },
+                          child: Text(
+                            post.name,
+                            style: Styles.textStyle16.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.end,
                         ),
                       ),
                     ],
@@ -197,9 +208,9 @@ class ReelsOverlay extends StatelessWidget {
                       Gap(context.responsiveWidth(5)),
                       Icon(Icons.public, color: Colors.white70, size: 12.sp),
                       Gap(context.responsiveWidth(5)),
-                      Directionality(
-                        textDirection: TextDirection.ltr,
-                        child: Flexible(
+                      Flexible(
+                        child: Directionality(
+                          textDirection: TextDirection.ltr,
                           child: Text(
                             post.userName,
                             style: Styles.textStyle12.copyWith(

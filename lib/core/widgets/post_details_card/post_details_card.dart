@@ -252,9 +252,9 @@ class _CommentsList extends StatelessWidget {
               child: _CommentItem(
                 callbacks: commentCallbacks, // ✅ تمرير الـ Bundle
                 comment: comment,
-                isEditing: editingCommentId == comment.id,
+                editingCommentId: editingCommentId,
                 isReplying: activeReplyId == comment.id,
-                isEditLoading: editingCommentId == comment.id && isEditLoading,
+                isEditLoading: isEditLoading,
                 isReplyLoading: activeReplyId == comment.id && isReplyLoading,
                 getReplyKey: getCommentKey,
 
@@ -308,7 +308,7 @@ class _CommentsList extends StatelessWidget {
 
 class _CommentItem extends StatefulWidget {
   final CommentModel comment;
-  final bool isEditing;
+  final String? editingCommentId;
   final bool isReplying;
   final bool isEditLoading;
   final bool isReplyLoading;
@@ -328,7 +328,7 @@ class _CommentItem extends StatefulWidget {
   const _CommentItem({
     required this.comment,
     required this.callbacks,
-    this.isEditing = false,
+    this.editingCommentId,
     this.isReplying = false,
     this.isEditLoading = false,
     this.isReplyLoading = false,
@@ -352,7 +352,7 @@ class _CommentItem extends StatefulWidget {
 class _CommentItemState extends State<_CommentItem> {
   CommentCard? _cachedWidget;
   CommentModel? _lastComment;
-  bool? _lastIsEditing;
+  String? _lastEditingCommentId;
   bool? _lastIsReplying;
   bool? _lastIsEditLoading;
   bool? _lastIsReplyLoading;
@@ -366,7 +366,7 @@ class _CommentItemState extends State<_CommentItem> {
     final shouldRebuild =
         _cachedWidget == null ||
         widget.comment != _lastComment ||
-        widget.isEditing != _lastIsEditing ||
+        widget.editingCommentId != _lastEditingCommentId ||
         widget.isReplying != _lastIsReplying ||
         widget.isEditLoading != _lastIsEditLoading ||
         widget.isReplyLoading != _lastIsReplyLoading ||
@@ -374,7 +374,7 @@ class _CommentItemState extends State<_CommentItem> {
 
     if (shouldRebuild) {
       _lastComment = widget.comment;
-      _lastIsEditing = widget.isEditing;
+      _lastEditingCommentId = widget.editingCommentId;
       _lastIsReplying = widget.isReplying;
       _lastIsEditLoading = widget.isEditLoading;
       _lastIsReplyLoading = widget.isReplyLoading;
@@ -383,7 +383,7 @@ class _CommentItemState extends State<_CommentItem> {
       _cachedWidget = CommentCard(
         comment: widget.comment,
         callbacks: widget.callbacks, // ✅ تمرير الـ Bundle
-        isEditing: widget.isEditing,
+        editingCommentId: widget.editingCommentId,
         isReplying: widget.isReplying,
         isEditLoading: widget.isEditLoading,
         isReplyLoading: widget.isReplyLoading,
@@ -402,7 +402,7 @@ class _CommentItemState extends State<_CommentItem> {
         child: CommentCard(
           comment: widget.comment,
           isReply: false,
-          isEditing: false,
+          editingCommentId: null,
           isReplying: false,
           isEditLoading: false,
           isReplyLoading: false,
