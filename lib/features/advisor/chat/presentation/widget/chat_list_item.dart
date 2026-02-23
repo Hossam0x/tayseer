@@ -36,7 +36,7 @@ class ChatListItem extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(left: leftPadding, top: 6, bottom: 6),
       child: Slidable(
-        key: ValueKey(index),
+        key: ValueKey(chatRoom.id),
 
         startActionPane: ActionPane(
           motion: const ScrollMotion(),
@@ -44,6 +44,7 @@ class ChatListItem extends StatelessWidget {
           children: [
             CustomSlidableAction(
               onPressed: (context) {
+                Slidable.of(context)?.close();
                 context.read<ChatListCubit>().archiveChatRoom(chatRoom.id);
                 AppToast.success(context, 'تم أرشفة المحادثة بنجاح');
               },
@@ -97,8 +98,10 @@ class ChatListItem extends StatelessWidget {
           extentRatio: 0.6,
           children: [
             CustomSlidableAction(
-              onPressed: (context) {},
-              autoClose: false,
+              onPressed: (context) {
+                Slidable.of(context)?.close();
+              },
+              autoClose: true,
               backgroundColor: Colors.transparent,
               padding: EdgeInsets.zero,
               child: ClipRRect(

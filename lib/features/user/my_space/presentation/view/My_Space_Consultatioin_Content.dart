@@ -147,26 +147,6 @@ class _MySpaceConsultationContentState
     );
   }
 
-  // Widget _buildEmptyWidget() {
-  //   return Center(
-  //     child: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         Icon(
-  //           Icons.chat_bubble_outline,
-  //           size: 64.sp,
-  //           color: Colors.grey.shade400,
-  //         ),
-  //         SizedBox(height: 16.h),
-  //         Text(
-  //           'لا توجد استشارات حتى الآن',
-  //           style: TextStyle(fontSize: 16.sp, color: Colors.grey.shade600),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   void _showDeleteDialog(BuildContext context, String chatId) {
     final cubit = context.read<MySpaceCubit>();
     showDialog(
