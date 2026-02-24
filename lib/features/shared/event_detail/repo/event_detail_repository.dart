@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/features/shared/event_detail/model/event_people_model.dart';
 import 'package:tayseer/my_import.dart';
 import '../model/event_detail_model.dart';
 
@@ -22,5 +23,9 @@ abstract class EventDetailRepository {
     required String latitude,
     required String longitude,
     required String location,
+  });
+
+  Future<Either<Failure, List<EventPeopleModel>>> getEventPeople({
+    required String eventId,
   });
 }

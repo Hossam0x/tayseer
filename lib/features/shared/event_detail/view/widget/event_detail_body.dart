@@ -159,6 +159,12 @@ class EventDetailBody extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: FloatingInfoCard(
+                          onShowDetails: () {
+                            context.pushNamed(
+                              AppRouter.kEventReservationPeopleView,
+                              arguments: event?.id,
+                            );
+                          },
                           title: event?.title ?? context.tr('session_title'),
                           location:
                               event?.location ?? context.tr('session_location'),
@@ -169,7 +175,7 @@ class EventDetailBody extends StatelessWidget {
                               '${event?.date ?? ''} ${event?.startTime ?? ''} - ${event?.endTime ?? ''}',
                           attendeesLabel: context.tr('attendees_label'),
                           attendeesCount: event?.numberOfReservations ?? 0,
-                          showAttendeesImages: true,
+                          showAttendeesImages: event?.isMyEvent ?? false,
 
                           attendeesImages: event?.reservationsImages,
                         ),

@@ -292,9 +292,9 @@ class _EventCardItemState extends State<EventCardItem>
                     ),
                     const SizedBox(width: 8),
                     SizedBox(
-                      height: 35,
+                      height: 40,
                       width:
-                          35.0 +
+                          38.0 +
                           ((widget.attendeesImages.take(3).length - 1) * 20),
                       child: Stack(
                         children: List.generate(

@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/features/shared/event_detail/model/event_people_model.dart';
 import 'package:tayseer/my_import.dart';
 import '../model/event_detail_model.dart';
 import 'event_detail_repository.dart';
@@ -84,6 +85,30 @@ class EventDetailRepositoryImpl implements EventDetailRepository {
       );
     } catch (e) {
       debugPrint('Error updating event: $e');
+      return Left(ServerFailure('حدث خطأ أثناء الاتصال بالخادم'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<EventPeopleModel>>> getEventPeople({
+    required String eventId,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        endPoint: '/event/getEventReservationPeople/$eventId',
+      );
+      final peopleJson = response['data'];
+      List<EventPeopleModel> results = (peopleJson as List)
+          .map((e) => EventPeopleModel.fromJson(e))
+          .toList();
+
+      debugPrint('get Event People: $results');
+
+      return Right(results);
+    } on DioException catch (error) {
+      return left(error.response?.data['message']);
+    } catch (e) {
+      debugPrint('Error fetching get Event People: $e');
       return Left(ServerFailure('حدث خطأ أثناء الاتصال بالخادم'));
     }
   }
