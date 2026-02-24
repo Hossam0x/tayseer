@@ -16,7 +16,6 @@ class UserNavBar extends StatelessWidget {
           selectedUserType ?? UserTypeEnum.user,
         );
 
-        // ⭐ فلتر الـ items: لو marriage مخفي، شيل index 1
         final visibleNavItems = <({int originalIndex, dynamic item})>[];
         for (int i = 0; i < allNavItems.length; i++) {
           if (i == 1 && !state.isMarriageVisible) continue; // ⭐ اخفي marriage tab
