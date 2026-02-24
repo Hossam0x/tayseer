@@ -1426,8 +1426,8 @@
   "consultancy_session": "جلسة استشارية",
   "event_booking": "حجز حدث",
   "transaction": "معاملة",
-  "detils_attendees": "تفاصيل الحاضرين",
   "unsaved_changes": "تغييرات غير محفوظة",
   "images_pending_save": "حفظ الصور معلق",
-  "file_not_found": "الملف غير موجود"
+  "file_not_found": "الملف غير موجود",
+  "detils_attendees": "تفاصيل الحاضرين"
 }

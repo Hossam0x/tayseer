@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -951,7 +952,18 @@ class AuthCubit extends Cubit<AuthState> {
 
     emit(state.copyWith(isAiState: CubitStates.loading));
 
-    const apiKey = 'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg';
+    final apiKey = dotenv.env['GEMINI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      emit(state.copyWith(isAiState: CubitStates.failure));
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'Missing AI API key. Configure GEMINI_API_KEY in your .env',
+          isError: true,
+        ),
+      );
+      return;
+    }
 
     try {
       final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);

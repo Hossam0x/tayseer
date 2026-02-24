@@ -1,6 +1,7 @@
 // lib/features/user/questions/view_model/questions_cubit.dart
 
 import 'dart:typed_data';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/core/utils/face%20_verification_service.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
@@ -470,7 +471,18 @@ class QuestionsCubit extends Cubit<QuestionsState> {
 
     emit(state.copyWith(isAiLoading: true));
 
-    const apiKey = 'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg';
+    final apiKey = dotenv.env['GEMINI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      emit(state.copyWith(isAiLoading: false));
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'Missing AI API key. Configure GEMINI_API_KEY in your .env',
+          isError: true,
+        ),
+      );
+      return;
+    }
 
     try {
       final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
