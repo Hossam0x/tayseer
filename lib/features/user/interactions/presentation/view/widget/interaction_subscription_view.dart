@@ -2,8 +2,8 @@ import 'package:tayseer/features/advisor/profille/views/cubit/boost_account_cubi
 import 'package:tayseer/features/advisor/profille/views/widgets/subscription_card.dart';
 import 'package:tayseer/my_import.dart';
 
-class interactionSubscriptionView extends StatelessWidget {
-  const interactionSubscriptionView({super.key});
+class InteractionSubscriptionView extends StatelessWidget {
+  const InteractionSubscriptionView({super.key});
 
   @override
   Widget build(BuildContext context) {
