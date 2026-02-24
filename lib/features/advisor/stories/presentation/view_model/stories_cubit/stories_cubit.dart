@@ -14,6 +14,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     bool loadMore = false,
     String? advisorId,
     bool? isSpecial,
+    bool isSilent = false,
     required BuildContext context,
   }) async {
     final effectiveAdvisorId = advisorId ?? state.advisorId;
@@ -55,15 +56,17 @@ class StoriesCubit extends Cubit<StoriesState> {
         },
       );
     } else {
-      emit(
-        state.copyWith(
-          storiesState: CubitStates.loading,
-          currentPage: 1,
-          hasMore: true,
-          advisorId: advisorId,
-          isSpecial: isSpecial,
-        ),
-      );
+      if (!isSilent) {
+        emit(
+          state.copyWith(
+            storiesState: CubitStates.loading,
+            currentPage: 1,
+            hasMore: true,
+            advisorId: advisorId,
+            isSpecial: isSpecial,
+          ),
+        );
+      }
       final result = await storiesRepository.fetchStories(
         page: 1,
         advisorId: effectiveAdvisorId,
@@ -380,7 +383,7 @@ class StoriesCubit extends Cubit<StoriesState> {
         emit(state.copyWith(createStoryState: CubitStates.success));
         if (context != null && context.mounted) {
           AppToast.success(context, context.tr('story_created_success'));
-          fetchStories(context: context);
+          fetchStories(context: context, isSilent: true);
         }
       },
     );

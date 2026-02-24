@@ -1417,5 +1417,6 @@
   "no_attendees_yet": "No attendees yet",
   "no_attendees_description": "No one has booked tickets for this event yet",
   "something_went_wrong": "Something went wrong",
-  "detils_attendees": "Attendees Details"
+  "detils_attendees": "Attendees Details",
+  "story_deleted_success": "Story deleted successfully"
 }

@@ -128,7 +128,7 @@ class BioInformation extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(
+        Flexible(
           child: Text(
             profile.name,
             style: Styles.textStyle20SemiBold.copyWith(

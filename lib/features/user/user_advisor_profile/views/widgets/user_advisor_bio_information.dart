@@ -174,10 +174,14 @@ class UserAdvisorBioInformation extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          profile.name,
-          style: Styles.textStyle20SemiBold.copyWith(color: AppColors.blueText),
-          overflow: TextOverflow.ellipsis,
+        Flexible(
+          child: Text(
+            profile.name,
+            style: Styles.textStyle20SemiBold.copyWith(
+              color: AppColors.blueText,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         if (profile.isVerified) ...[
           Gap(8.w),
