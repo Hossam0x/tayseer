@@ -385,4 +385,8 @@ class SettingsCubit extends Cubit<SettingsState> {
   void refresh() {
     _loadSettings();
   }
+
+  void logoutFromSever() {
+    _userProfileRepository.logout(isAdvisor: true);
+  }
 }

@@ -475,9 +475,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     }
   }
 
-Future<void> updateSwitch(String id, bool value) async {
-  final currentState = state;
-  if (currentState is! SettingsLoaded) return;
+  Future<void> updateSwitch(String id, bool value) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
 
     if (id == 'notifications') {
       try {
@@ -597,11 +597,8 @@ Future<void> updateSwitch(String id, bool value) async {
     final currentState = state;
 
     try {
-      try {
-        await FirebaseMessaging.instance.unsubscribeFromTopic("all");
-      } catch (e) {}
-
       await _notificationService.clearAllNotifications();
+      _userProfileRepository.logout();
 
       CachNetwork.clearCache();
       getIt<tayseerSocketHelper>().disconnect();

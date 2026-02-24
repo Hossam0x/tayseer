@@ -18,6 +18,7 @@ abstract class UserProfileRepository {
   Future<Either<Failure, void>> toggleMarriageStatus(bool enable);
   Future<Either<Failure, void>> updateImageBlur(bool blurEnabled);
   Future<Either<Failure, void>> rateApp(int rating);
+  void logout({bool? isAdvisor = false});
 }
 
 class UserProfileRepositoryImpl implements UserProfileRepository {
@@ -195,5 +196,12 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  @override
+  void logout({bool? isAdvisor = false}) {
+    _apiService.post(
+      endPoint: isAdvisor == true ? '/advisor/logout' : '/auth/logout',
+    );
   }
 }
