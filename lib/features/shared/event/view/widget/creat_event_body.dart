@@ -103,6 +103,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
 
                     /// 3. التاريخ والوقت
                     DatePickerField(
+                      allowPastDates: false,
                       validator: (value) {
                         if (value == null) {
                           return context.tr('required');

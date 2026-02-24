@@ -7,6 +7,7 @@ class DatePickerField extends FormField<DateTime> {
     super.initialValue,
     required String placeholder,
     bool enabled = true,
+    bool allowPastDates = true, // ← الإضافة الجديدة
     super.validator,
     ValueChanged<DateTime?>? onDateChanged,
   }) : super(
@@ -14,15 +15,20 @@ class DatePickerField extends FormField<DateTime> {
            return Column(
              crossAxisAlignment: CrossAxisAlignment.start,
              children: [
-                GestureDetector(
+               GestureDetector(
                  onTap: enabled
                      ? () async {
                          final picked = await pickDate(
                            state.context,
                            initialDate: state.value ?? DateTime.now(),
-                           firstDate: DateTime.now(),
-                           lastDate: DateTime.now().add(const Duration(days: 3650)),
+
+                           firstDate: allowPastDates
+                               ? DateTime(1900)
+                               : DateTime.now(),
+
+                           lastDate: DateTime.now().add(Duration(days: 3650)),
                          );
+
                          if (picked != null) {
                            state.didChange(picked);
                            onDateChanged?.call(picked);
