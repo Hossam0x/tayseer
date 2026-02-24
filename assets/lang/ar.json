@@ -1417,8 +1417,11 @@
   "no_attendees_yet": "لا يوجد حاضرين حتى الآن",
   "no_attendees_description": "لم يقم أحد بحجز تذاكر لهذا الحدث بعد",
   "something_went_wrong": "حدث خطأ ما",
-  "detils_attendees": "تفاصيل الحاضرين"
-
   "detils_attendees": "تفاصيل الحاضرين",
+  "order_management": "إدارة الطلبات",
+  "receive_orders_sessions": "استقبل الطلبات وحجوزات الجلسات",
+  "stop_orders_sessions_temporarily": "إيقاف الطلبات والجلسات مؤقتًا",
+  "orders_receive_success": "تم تفعيل استقبال الطلبات والجلسات بنجاح",
+  "orders_stop_success": "تم إيقاف استقبال الطلبات والجلسات بنجاح",
   "story_deleted_success": "تم حذف القصة بنجاح"
 }
