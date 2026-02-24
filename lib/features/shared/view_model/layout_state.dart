@@ -5,6 +5,7 @@ class LayoutState {
   final int currentIndex;
   final bool isNavVisible;
   final UserTypeEnum userType;
+   final bool isMarriageVisible;
   final int
   scrollToTopTrigger; // يزيد كل ما المستخدم يضغط على الهوم وهو بالفعل في الهوم
   final bool isHomeAtTop; // هل الهوم فوق خالص
@@ -17,6 +18,7 @@ class LayoutState {
     this.scrollToTopTrigger = 0,
     this.isHomeAtTop = true,
     this.refreshHomeTrigger = 0,
+    this.isMarriageVisible = true,
   });
 
   LayoutState copyWith({
@@ -26,6 +28,7 @@ class LayoutState {
     int? scrollToTopTrigger,
     bool? isHomeAtTop,
     int? refreshHomeTrigger,
+     bool? isMarriageVisible, 
   }) {
     return LayoutState(
       currentIndex: currentIndex ?? this.currentIndex,
@@ -34,6 +37,7 @@ class LayoutState {
       scrollToTopTrigger: scrollToTopTrigger ?? this.scrollToTopTrigger,
       isHomeAtTop: isHomeAtTop ?? this.isHomeAtTop,
       refreshHomeTrigger: refreshHomeTrigger ?? this.refreshHomeTrigger,
+     isMarriageVisible: isMarriageVisible ?? this.isMarriageVisible,
     );
   }
 }

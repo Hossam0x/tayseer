@@ -1,4 +1,5 @@
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
@@ -45,141 +46,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   final GlobalKey _videoKey = GlobalKey();
   final GlobalKey _audioKey = GlobalKey();
   final ScrollController _scrollController = ScrollController();
-
-  static const Map<String, String> _hobbyEmojiMap = {
-    'interest_baseball': '⚾',
-    'interest_running': '🏃',
-    'interest_weightlifting': '🏋️',
-    'interest_gymnastics': '🤸',
-    'interest_golf': '⛳',
-    'interest_tennis': '🎾',
-    'interest_swimming': '🏊',
-    'interest_dancing': '💃',
-    'interest_skating': '⛸️',
-    'interest_yoga': '🧘',
-    'interest_flying_disc': '🥏',
-    'interest_badminton': '🏸',
-    'interest_skiing': '⛷️',
-    'interest_cycling': '🚴',
-    'interest_basketball': '🏀',
-    'interest_football': '⚽',
-    'interest_karate': '🥋',
-    'interest_boxing': '🥊',
-    'interest_archery': '🏹',
-    'interest_horse_riding': '🏇',
-    'interest_theater': '🎭',
-    'interest_magic': '🪄',
-    'interest_music': '🎵',
-    'interest_painting': '🎨',
-    'interest_photography': '📷',
-    'interest_cinema': '🎬',
-    'interest_reading': '📚',
-    'interest_writing': '✍️',
-    'interest_poetry': '📝',
-    'interest_history': '🏛️',
-    'interest_languages': '🗣️',
-    'interest_museums': '🖼️',
-    'interest_calligraphy': '🖋️',
-    'interest_sculpture': '🗿',
-    'interest_design': '🎯',
-    'interest_fashion': '👗',
-    'interest_volunteering': '🤝',
-    'interest_charity': '💝',
-    'interest_teaching': '👨‍🏫',
-    'interest_mentoring': '🧑‍🤝‍🧑',
-    'interest_elderly_care': '👴',
-    'interest_children_care': '👶',
-    'interest_environment': '🌱',
-    'interest_animal_care': '🐾',
-    'interest_blood_donation': '🩸',
-    'interest_community_events': '🎉',
-    'interest_social_work': '💼',
-    'interest_human_rights': '⚖️',
-    'interest_programming': '💻',
-    'interest_gaming': '🎮',
-    'interest_ai': '🤖',
-    'interest_web_dev': '🌐',
-    'interest_mobile_apps': '📱',
-    'interest_cybersecurity': '🔒',
-    'interest_data_science': '📊',
-    'interest_electronics': '🔌',
-    'interest_robotics': '🦾',
-    'interest_vr_ar': '🥽',
-    'interest_3d_printing': '🖨️',
-    'interest_drones': '🚁',
-    'interest_smart_home': '🏠',
-    'interest_blockchain': '⛓️',
-    'interest_hiking': '🥾',
-    'interest_camping': '🏕️',
-    'interest_fishing': '🎣',
-    'interest_beach': '🏖️',
-    'interest_mountain_climbing': '🏔️',
-    'interest_gardening': '🌻',
-    'interest_picnic': '🧺',
-    'interest_bird_watching': '🦅',
-    'interest_stargazing': '🌟',
-    'interest_road_trips': '🚗',
-    'interest_sailing': '⛵',
-    'interest_diving': '🤿',
-    'interest_surfing': '🏄',
-    'interest_kayaking': '🛶',
-    'interest_rock_climbing': '🧗',
-    'interest_paragliding': '🪂',
-    'interest_cooking': '👨‍🍳',
-    'interest_baking': '🧁',
-    'interest_grilling': '🍖',
-    'interest_coffee': '☕',
-    'interest_tea': '🍵',
-    'interest_smoothies': '🥤',
-    'interest_sushi': '🍣',
-    'interest_pizza': '🍕',
-    'interest_desserts': '🍰',
-    'interest_healthy_food': '🥗',
-    'interest_street_food': '🌮',
-    'interest_fine_dining': '🍽️',
-    'interest_food_photography': '📸',
-    'interest_chocolate': '🍫',
-    'interest_ice_cream': '🍦',
-    'faith_dua': '🙏',
-    'faith_umrah': '🕋',
-    'faith_charity_work': '💼',
-    'faith_dawah': '📢',
-    'faith_sadaqah': '🤝',
-    'faith_hadith': '📖',
-    'faith_tahajjud': '😊',
-    'faith_dhikr': '📿',
-    'faith_multiple_prayers': '🕌',
-    'faith_sunnah_prayer': '🙏',
-    'faith_nafila_prayer': '🕯️',
-    'faith_hajj': '🕋',
-    'faith_five_prayers': '☪️',
-    'faith_fiqh': '📚',
-    'faith_fasting': '🌙',
-    'faith_tasawwuf': '😇',
-    'faith_good_manners': '🤲',
-    'faith_friday_prayer': '🕌',
-    'interest_singing': '🎤',
-    'interest_dancing_ballroom': '💃',
-    'interest_opera': '🎭',
-    'interest_ballet': '🩰',
-    'interest_acting': '🎬',
-    'interest_filmmaking': '🎥',
-    'interest_journalism': '📰',
-    'interest_blogging': '✍️',
-    'interest_podcasting': '🎙️',
-    'interest_storytelling': '📖',
-    'interest_archeology': '🏺',
-    'interest_astronomy': '🔭',
-    'interest_philosophy': '🤔',
-    'interest_literature': '📚',
-    'interest_crafts': '✂️',
-    'interest_knitting': '🧶',
-    'interest_sewing': '🧵',
-    'interest_pottery': '🏺',
-    'interest_woodworking': '🪵',
-    'interest_origami': '📄',
-  };
-
   @override
   void initState() {
     super.initState();
@@ -232,65 +98,16 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       });
     });
   }
+String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
+  final List<String> hobbiesList = MarriageConstants.parseKeysFromRaw(hobbyKeys);
+  if (hobbiesList.isEmpty) return '';
 
-  String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
-    List<String> hobbiesList = [];
-    if (hobbyKeys is List) {
-      debugPrint('📋 [FORMAT] Raw List: $hobbyKeys');
-      for (var item in hobbyKeys) {
-        final itemStr = item.toString().trim();
-        if (itemStr.isEmpty) continue;
-        if (itemStr.contains(',')) {
-          debugPrint('  🔄 Splitting item: "$itemStr"');
-          final subItems = itemStr
-              .split(',')
-              .map((s) => s.trim())
-              .where((s) => s.isNotEmpty);
-          hobbiesList.addAll(subItems);
-        } else {
-          hobbiesList.add(itemStr);
-        }
-      }
-      debugPrint('📋 [FORMAT] Processed List: $hobbiesList');
-    } else if (hobbyKeys is String) {
-      hobbiesList = hobbyKeys
-          .split(',')
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList();
-      debugPrint(
-        '📋 [FORMAT] String input: "$hobbyKeys" → parsed: $hobbiesList',
-      );
-    } else {
-      debugPrint('⚠️ [FORMAT] Invalid type: ${hobbyKeys.runtimeType}');
-      return '';
-    }
-
-    hobbiesList = hobbiesList
-        .where((s) => s.startsWith('interest_') || s.startsWith('faith_'))
-        .toList();
-
-    if (hobbiesList.isEmpty) {
-      debugPrint('⚠️ [FORMAT] No valid hobbies found');
-      return '';
-    }
-
-    final result = hobbiesList
-        .map((key) {
-          final trimmedKey = key.trim();
-          if (trimmedKey.isEmpty) return '';
-          final emoji = _hobbyEmojiMap[trimmedKey] ?? '🎵';
-          final text = context.tr(trimmedKey);
-          debugPrint('  🎯 $trimmedKey → $emoji $text');
-          return '$emoji $text';
-        })
-        .where((s) => s.isNotEmpty)
-        .join(', ');
-
-    debugPrint('✅ [FORMAT] Final result: "$result"');
-    return result;
-  }
-
+  return hobbiesList.map((key) {
+    final emoji = MarriageConstants.getEmoji(key);
+    final text = context.tr(key);
+    return '$emoji $text';
+  }).join(', ');
+}
   String _translateValue(String value, BuildContext context) {
     if (value.isEmpty || value == 'اختر' || value == 'select') {
       return context.tr('select');
