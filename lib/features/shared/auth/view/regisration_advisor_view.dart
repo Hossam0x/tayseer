@@ -1,4 +1,3 @@
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/auth/view/widget/build_login_button.dart';
@@ -86,9 +85,16 @@ class RegisrationAdvisorView extends StatelessWidget {
                     ),
                   );
                   if (selectedUserType == UserTypeEnum.asConsultant) {
-                    context.pushReplacementNamed(
-                      AppRouter.kPersonalInfoAsConsultantView,
-                    );
+                    if (kCurrentUserData?.compeletedData == true) {
+                      context.pushNamedAndRemoveUntil(
+                        predicate: (route) => false,
+                        AppRouter.kAdvisorLayoutView,
+                      );
+                    } else {
+                      context.pushReplacementNamed(
+                        AppRouter.kPersonalInfoAsConsultantView,
+                      );
+                    }
                   }
                   context.read<AuthCubit>().resetAuthStates();
                 }
@@ -108,9 +114,16 @@ class RegisrationAdvisorView extends StatelessWidget {
                   );
 
                   if (selectedUserType == UserTypeEnum.asConsultant) {
-                    context.pushReplacementNamed(
-                      AppRouter.kPersonalInfoAsConsultantView,
-                    );
+                    if (kCurrentUserData?.compeletedData == true) {
+                      context.pushNamedAndRemoveUntil(
+                        predicate: (route) => false,
+                        AppRouter.kAdvisorLayoutView,
+                      );
+                    } else {
+                      context.pushReplacementNamed(
+                        AppRouter.kPersonalInfoAsConsultantView,
+                      );
+                    }
                   }
                   context.read<AuthCubit>().resetAuthStates();
                 }

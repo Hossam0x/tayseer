@@ -1,9 +1,11 @@
+import 'package:tayseer/core/utils/helper/currency_helper.dart';
 import 'package:tayseer/core/utils/helper/video_picker_helper.dart';
 import 'package:tayseer/core/utils/helper/image_picker_helper.dart';
 import 'package:tayseer/core/widgets/custtom_time_pic.dart';
 import 'package:tayseer/core/widgets/custom_date_picker_field.dart';
 import 'package:tayseer/features/shared/event/view/widget/custom_sliver_app_bar.dart';
 import 'package:tayseer/features/shared/event/view/widget/custom_upload_image.dart';
+import 'package:tayseer/features/shared/event/view/widget/discount_price_container.dart';
 import 'package:tayseer/features/shared/event/view_model/events_cubit.dart';
 import 'package:tayseer/features/shared/event/view_model/events_state.dart';
 import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
@@ -17,6 +19,13 @@ class CreatEventBody extends StatefulWidget {
 }
 
 class _CreatEventBodyState extends State<CreatEventBody> {
+  @override
+  initState() {
+    super.initState();
+    final eventsCubit = context.read<EventsCubit>();
+    eventsCubit.discountEvent();
+  }
+
   final _videoPicker = VideoPickerHelper();
   final _imagePicker = ImagePickerHelper();
 
@@ -52,7 +61,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (context) => const CustomloadingApp(),
+            builder: (context) => Center(child: const CustomloadingApp()),
           );
         }
       },
@@ -121,6 +130,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                         }
                         return null;
                       },
+                      minDateForTime: state.eventDate,
                     ),
                     Gap(context.responsiveHeight(16)),
 
@@ -283,10 +293,11 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            context.tr('currency_rs'),
-                            style: Styles.textStyle14.copyWith(
-                              color: AppColors.kprimaryColor.withOpacity(0.5),
-                              fontWeight: FontWeight.bold,
+                            CurrencyHelper.getCurrencySymbolFromContext(
+                              context,
+                            ),
+                            style: Styles.textStyle14Bold.copyWith(
+                              color: Colors.grey,
                             ),
                           ),
                         ],
@@ -301,10 +312,11 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            context.tr('currency_rs'),
-                            style: Styles.textStyle14.copyWith(
-                              color: AppColors.kprimaryColor.withOpacity(0.5),
-                              fontWeight: FontWeight.bold,
+                            CurrencyHelper.getCurrencySymbolFromContext(
+                              context,
+                            ),
+                            style: Styles.textStyle14Bold.copyWith(
+                              color: Colors.grey,
                             ),
                           ),
                         ],
@@ -313,33 +325,29 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: Text(
-                        context.tr('application_rate'),
+                        state.discountResult != null
+                            ? '${context.tr('application_rate')}: ${state.discountResult!.percentage}%'
+                            : '',
                         style: Styles.textStyle12,
                       ),
                     ),
                     Gap(context.responsiveHeight(16)),
+                    DiscountPriceContainer(
+                      controller: eventsCubit.eventPriceAfterDiscountController,
+                      discountPercentage: state.discountResult?.percentage ?? 0,
+                    ),
+                    Gap(context.responsiveHeight(16)),
 
-                    /// 7. عدد الحضور (Dropdown)
-                    CustomDropdownFormField<String>(
-                      hint: context.tr('attendees_count'),
-                      items: [
-                        DropdownMenuItem(
-                          value: '2000',
-                          child: Text('2000', style: Styles.textStyle14),
-                        ),
-                        DropdownMenuItem(
-                          value: '3000',
-                          child: Text('3000', style: Styles.textStyle14),
-                        ),
-                        DropdownMenuItem(
-                          value: '10000',
-                          child: Text('10000', style: Styles.textStyle14),
-                        ),
-                      ],
-
+                    /// 7. عدد الحضور (Text field)
+                    CustomTextFormField(
+                      isNumber: true,
+                      controller: eventsCubit.numberOfAttendeesController,
+                      hintText: context.tr('attendees_count'),
                       onChanged: (val) => eventsCubit.numberOfffAttendees(val),
                       validator: (value) =>
-                          value == null ? context.tr('required') : null,
+                          (value == null || value.trim().isEmpty)
+                          ? context.tr('required')
+                          : null,
                     ),
                     Gap(context.responsiveHeight(24)),
 

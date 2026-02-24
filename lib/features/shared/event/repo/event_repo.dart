@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tayseer/core/errors/failure.dart';
+import 'package:tayseer/features/shared/event/model/discount_result_models.dart';
 import 'package:tayseer/features/shared/event/model/my_event_model.dart';
 
 abstract class EventRepo {
@@ -22,4 +23,6 @@ abstract class EventRepo {
     required String location,
   });
   Future<Either<Failure, void>> deleteEvent({required String id});
+
+  Future<Either<Failure, DiscountResultModel>> discountEvent();
 }

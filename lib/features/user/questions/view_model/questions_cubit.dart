@@ -1,6 +1,7 @@
 // lib/features/user/questions/view_model/questions_cubit.dart
 
 import 'dart:typed_data';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/core/utils/face%20_verification_service.dart';
 import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
@@ -447,6 +448,77 @@ class QuestionsCubit extends Cubit<QuestionsState> {
         ),
       );
       emit(state.copyWith(partnerFilterState: CubitStates.initial));
+    }
+  }
+
+  Future<void> enhanceTextWithGemini(
+    BuildContext context,
+    String contentController,
+  ) async {
+    final currentText = contentController;
+
+    if (currentText.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('please_write_text_first'),
+          isError: true,
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(isAiLoading: true));
+
+    const apiKey = 'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg';
+
+    try {
+      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
+      final prompt =
+          '''
+You are a professional profile writer.
+
+TASK:
+Write a marriage CV (personal profile) for someone who intends to get married.
+
+IMPORTANT RULES:
+1. Detect the language of the input text.
+2. Write the CV in THE SAME LANGUAGE as the input.
+3. Make it respectful, sincere, and well-structured.
+4. Include:
+   - Brief personal introduction
+   - Personality traits
+   - Values and principles
+   - Future goals and ambitions
+   - Vision for marriage and family life
+5. Make it emotionally intelligent and mature.
+6. Do NOT translate the language.
+7. Return ONLY the final CV text without explanations.
+
+Use this information about the person:
+"$currentText"
+''';
+
+      final content = [Content.text(prompt)];
+      final response = await model.generateContent(content);
+
+      if (response.text != null) {
+        contentController = response.text!;
+        emit(
+          state.copyWith(aiGeneratedText: response.text!, isAiLoading: false),
+        );
+      }
+    } catch (e) {
+      debugPrint('Gemini AI error: $e');
+      emit(state.copyWith(isAiLoading: false));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'AI Error: ${e.toString()}',
+          isError: true,
+        ),
+      );
     }
   }
 

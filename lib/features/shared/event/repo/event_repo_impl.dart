@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
+import 'package:tayseer/features/shared/event/model/discount_result_models.dart';
 import 'package:tayseer/features/shared/event/model/my_event_model.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo.dart';
 import 'package:tayseer/my_import.dart';
@@ -145,6 +146,36 @@ class EventRepoImpl implements EventRepo {
       );
     } catch (e) {
       debugPrint('Error deleting event: $e');
+      return Left(ServerFailure('حدث خطأ أثناء الاتصال بالخادم'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, DiscountResultModel>> discountEvent() async {
+    try {
+      final response = await apiService.get(
+        endPoint: '/discount-event-percentage',
+      );
+
+      final List resultsList = response['data']['result'];
+
+      if (resultsList.isEmpty) {
+        return Left(ServerFailure('لا توجد بيانات'));
+      }
+
+      final DiscountResultModel result = DiscountResultModel.fromJson(
+        resultsList.first,
+      );
+
+      debugPrint('Event fetched: ${result.toJson()}');
+
+      return Right(result);
+    } on DioException catch (error) {
+      return Left(
+        ServerFailure(error.response?.data['message'] ?? 'حدث خطأ غير متوقع'),
+      );
+    } catch (e) {
+      debugPrint('Error fetching events: $e');
       return Left(ServerFailure('حدث خطأ أثناء الاتصال بالخادم'));
     }
   }

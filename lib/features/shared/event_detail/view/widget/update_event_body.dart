@@ -116,6 +116,7 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                           placeholder: context.tr('start_time'),
                           validator: (value) =>
                               value == null ? context.tr('required') : null,
+                          minDateForTime: state.eventDate,
                         ),
                         Gap(context.responsiveHeight(16)),
 
@@ -208,26 +209,15 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                         Gap(context.responsiveHeight(16)),
 
                         /// 8. عدد الحضور
-                        CustomDropdownFormField<String>(
-                          hint: context.tr('attendees_count'),
-                          value: state.numberOfAttendees,
-                          items: [
-                            DropdownMenuItem(
-                              value: '2000',
-                              child: Text('2000', style: Styles.textStyle12),
-                            ),
-                            DropdownMenuItem(
-                              value: '3000',
-                              child: Text('3000', style: Styles.textStyle12),
-                            ),
-                            DropdownMenuItem(
-                              value: '10000',
-                              child: Text('10000', style: Styles.textStyle12),
-                            ),
-                          ],
+                        CustomTextFormField(
+                          isNumber: true,
+                          controller: cubit.numberOfAttendeesController,
+                          hintText: context.tr('attendees_count'),
                           onChanged: (val) => cubit.setNumberOfAttendees(val),
                           validator: (value) =>
-                              value == null ? context.tr('required') : null,
+                              (value == null || value.trim().isEmpty)
+                                  ? context.tr('required')
+                                  : null,
                         ),
                         Gap(context.responsiveHeight(24)),
 
