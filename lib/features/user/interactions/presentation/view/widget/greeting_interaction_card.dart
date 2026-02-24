@@ -15,6 +15,7 @@ class GreetingProfileCard extends StatelessWidget {
     this.forceBlur = false,
   });
 
+
   @override
   Widget build(BuildContext context) {
     final shouldBlur = forceBlur || item.isImageBlurred;
