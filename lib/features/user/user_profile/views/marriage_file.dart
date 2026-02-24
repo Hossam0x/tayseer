@@ -22,7 +22,6 @@ import 'package:tayseer/features/user/marriage/view/widget/interests_section.dar
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 import 'widgets/MarriageProfileSkeleton .dart';
 import 'widgets/profile_statistics_cards.dart';
-
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
   final int initialTabIndex;

@@ -111,9 +111,7 @@ class _MarriageFieldSelectionViewState
   ) {
     final initialValue = fieldData['currentValue'] as int;
 
-    if (_selectedPickerValue == null) {
-      _selectedPickerValue = initialValue;
-    }
+    _selectedPickerValue ??= initialValue;
 
     return Expanded(
       child: Center(
