@@ -174,14 +174,10 @@ class UserAdvisorBioInformation extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Flexible(
-          child: Text(
-            profile.name,
-            style: Styles.textStyle20SemiBold.copyWith(
-              color: AppColors.blueText,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
+        Text(
+          profile.name,
+          style: Styles.textStyle20SemiBold.copyWith(color: AppColors.blueText),
+          overflow: TextOverflow.ellipsis,
         ),
         if (profile.isVerified) ...[
           Gap(8.w),
@@ -206,13 +202,41 @@ class UserAdvisorBioInformation extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    String specializationText = '';
+    if (hasSpecialization) {
+      specializationText = context.tr(displaySpecialization);
+      // ⭐ تكبير أول حرف من كل كلمة في اللغة الإنجليزية
+      if (!context.isArabicLang) {
+        specializationText = specializationText
+            .split(' ')
+            .map(
+              (word) => word.isNotEmpty
+                  ? '${word[0].toUpperCase()}${word.substring(1)}'
+                  : '',
+            )
+            .join(' ');
+      }
+    }
+
+    String experienceText = '';
+    if (hasYearsExperience) {
+      experienceText = context.tr(displayYearsExperience);
+      if (context.isArabicLang) {
+        experienceText =
+            '${experienceText.replaceAll('-', 'الي')} ${context.tr('years_experience')}';
+      } else {
+        experienceText =
+            '${experienceText.replaceAll('-', 'to')} ${context.tr('years_experience')}';
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ⭐ عرض التخصص إذا كان موجوداً
+        // ⭐ عرض التخصص
         if (hasSpecialization)
           Text(
-            displaySpecialization,
+            specializationText,
             style: Styles.textStyle14.copyWith(
               color: AppColors.secondary800,
               fontWeight: FontWeight.w600,
@@ -225,7 +249,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
         // ⭐ عرض سنوات الخبرة إذا كانت موجودة
         if (hasYearsExperience)
           Text(
-            '$displayYearsExperience ${context.tr('years_experience')}',
+            experienceText,
             style: Styles.textStyle14Meduim.copyWith(
               color: AppColors.secondary800,
             ),
