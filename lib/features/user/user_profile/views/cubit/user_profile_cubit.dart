@@ -157,10 +157,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           settings: settings,
           userProfile: profile,
           isNotificationEnabled: isNotificationEnabled,
-          isMarriageSectionDeactivated: isMarriageDeactivated,
         ),
       );
-      // getIt<LayoutCubit>().updateMarriageVisibility(!isMarriageDeactivated);
     } catch (e) {
       emit(SettingsError(message: 'error_loading_data'));
     }
