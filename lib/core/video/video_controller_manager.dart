@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:video_player/video_player.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
@@ -24,7 +25,7 @@ class VideoControllerManager {
   final ValueNotifier<String?> currentlyPlayingVideoId = ValueNotifier(null);
 
   // الحد الأقصى للتحميل المسبق
-  static const int _maxPreloadCount = 2;
+  static const int _maxPreloadCount = 3;
 
   // حالة التهيئة
   bool _isInitialized = false;
@@ -43,15 +44,25 @@ class VideoControllerManager {
   String? get activeVideoId => _activeVideoId;
 
   /// تشغيل فيديو معين
+  // منع recursive retry لا نهائي
+  int _retryDepth = 0;
+  static const int _maxRetryDepth = 3;
+
   Future<VideoPlayerController?> playVideo(String videoId, String url) async {
     // نفس الفيديو؟ فقط تأكد أنه يعمل
     if (_activeVideoId == videoId && _activeController != null) {
-      if (_activeController!.value.isInitialized) {
-        if (!_activeController!.value.isPlaying) {
-          await _activeController!.play();
+      try {
+        if (_activeController!.value.isInitialized) {
+          if (!_activeController!.value.isPlaying) {
+            await _activeController!.play();
+          }
+          currentlyPlayingVideoId.value = videoId;
+          return _activeController;
         }
-        currentlyPlayingVideoId.value = videoId;
-        return _activeController;
+      } catch (e) {
+        debugPrint('⚠️ Active controller disposed, re-creating');
+        _activeController = null;
+        _activeVideoId = null;
       }
     }
 
@@ -67,15 +78,25 @@ class VideoControllerManager {
       _activeController = preloaded.controller;
       _activeVideoId = videoId;
 
-      if (_activeController!.value.isInitialized) {
-        // استرجاع آخر موضع
-        await _restoreVideoPosition(videoId);
+      try {
+        if (_activeController!.value.isInitialized) {
+          // استرجاع آخر موضع
+          await _restoreVideoPosition(videoId);
 
-        await _activeController!.play();
-        currentlyPlayingVideoId.value = videoId;
-        _stateManager.markAsLoaded(videoId);
-        debugPrint('▶️ Playing preloaded video: $videoId');
-        return _activeController;
+          await _activeController!.play();
+          currentlyPlayingVideoId.value = videoId;
+          _stateManager.markAsLoaded(videoId);
+          debugPrint('▶️ Playing preloaded video: $videoId');
+          _retryDepth = 0;
+          return _activeController;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Preloaded controller error: $e');
+        try {
+          _activeController?.dispose();
+        } catch (_) {}
+        _activeController = null;
+        _activeVideoId = null;
       }
     }
 
@@ -94,15 +115,19 @@ class VideoControllerManager {
         debugPrint('▶️ Playing new video: $videoId');
       }
 
+      _retryDepth = 0;
       return _activeController;
     } catch (e) {
       debugPrint('❌ Error playing video: $e');
 
-      // تسجيل الخطأ وإعادة المحاولة إذا ممكن
-      if (_stateManager.recordError(videoId)) {
-        debugPrint('🔄 Retrying video: $videoId');
+      // تسجيل الخطأ وإعادة المحاولة مع حماية من التكرار اللانهائي
+      if (_retryDepth < _maxRetryDepth && _stateManager.recordError(videoId)) {
+        _retryDepth++;
+        debugPrint('🔄 Retrying video (depth $_retryDepth): $videoId');
+        await Future.delayed(Duration(milliseconds: 500 * _retryDepth));
         return playVideo(videoId, url);
       }
+      _retryDepth = 0;
       return null;
     }
   }
@@ -146,7 +171,7 @@ class VideoControllerManager {
         controller = VideoPlayerController.file(
           cachedFile,
           videoPlayerOptions: VideoPlayerOptions(
-            mixWithOthers: false,
+            mixWithOthers: true,
             allowBackgroundPlayback: false,
           ),
         );
@@ -156,13 +181,13 @@ class VideoControllerManager {
         controller = VideoPlayerController.networkUrl(
           Uri.parse(url),
           videoPlayerOptions: VideoPlayerOptions(
-            mixWithOthers: false,
+            mixWithOthers: true,
             allowBackgroundPlayback: false,
           ),
         );
         debugPrint('🌐 Loading from network: $videoId');
 
-        // بدء التحميل في الخلفية للكاش
+        // بدء التحميل في الخلفية للكاش بالتوازي
         _cacheManager.preloadVideoInBackground(url);
       }
 
@@ -254,9 +279,9 @@ class VideoControllerManager {
     final toRemove = <String>[];
 
     _preloadedControllers.forEach((id, preloaded) {
-      // إزالة إذا لم يعد في القائمة القادمة أو أقدم من 30 ثانية
+      // إزالة إذا لم يعد في القائمة القادمة أو أقدم من 60 ثانية
       final isOld =
-          DateTime.now().difference(preloaded.createdAt).inSeconds > 30;
+          DateTime.now().difference(preloaded.createdAt).inSeconds > 60;
       if (!upcomingIds.contains(id) || isOld) {
         toRemove.add(id);
       }
@@ -275,19 +300,30 @@ class VideoControllerManager {
 
   /// إيقاف الفيديو الحالي (بدون تدمير)
   void pauseCurrent() {
-    if (_activeController != null && _activeController!.value.isPlaying) {
-      _activeController!.pause();
-      debugPrint('⏸️ Paused current video');
+    if (_activeController != null) {
+      try {
+        if (_activeController!.value.isPlaying) {
+          _activeController!.pause();
+          debugPrint('⏸️ Paused current video');
+        }
+      } catch (e) {
+        debugPrint('⚠️ Cannot pause, controller disposed: $e');
+      }
     }
   }
 
   /// استئناف الفيديو الحالي
   void resumeCurrent() {
-    if (_activeController != null &&
-        _activeController!.value.isInitialized &&
-        !_activeController!.value.isPlaying) {
-      _activeController!.play();
-      debugPrint('▶️ Resumed current video');
+    if (_activeController != null) {
+      try {
+        if (_activeController!.value.isInitialized &&
+            !_activeController!.value.isPlaying) {
+          _activeController!.play();
+          debugPrint('▶️ Resumed current video');
+        }
+      } catch (e) {
+        debugPrint('⚠️ Cannot resume, controller disposed: $e');
+      }
     }
   }
 
