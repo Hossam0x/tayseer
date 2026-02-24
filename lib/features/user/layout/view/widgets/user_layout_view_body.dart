@@ -30,7 +30,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
 
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
-        final pages = _getPages(context, cubit);
+        final pages = _getPages(context, cubit, state);
 
         return PopScope(
           canPop: false,
@@ -106,12 +106,12 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     }
   }
 
-  List<Widget> _getPages(BuildContext context, LayoutCubit cubit) {
+  List<Widget> _getPages(BuildContext context, LayoutCubit cubit,LayoutState state) {
     switch (selectedUserType) {
       case UserTypeEnum.user:
         return [
           HomeView(onScroll: cubit.onScroll),
-          MarriageView(),
+          state.isMarriageVisible ? MarriageView() : const SizedBox.shrink(),
           MySpaceView(),
           EventView(),
           const UserProfileView(),

@@ -4,7 +4,17 @@ import 'package:tayseer/my_import.dart';
 
 class LayoutCubit extends Cubit<LayoutState> {
   LayoutCubit({UserTypeEnum userType = UserTypeEnum.asConsultant})
-    : super(LayoutState(userType: userType));
+    : super(LayoutState(userType: userType)) {
+    _loadMarriageVisibility();
+  }
+  Future<void> _loadMarriageVisibility() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDeactivated =
+        prefs.getBool('marriage_section_deactivated') ?? false;
+    if (isDeactivated) {
+      emit(state.copyWith(isMarriageVisible: false));
+    }
+  }
 
   void changeIndex(int index) {
     // لو المستخدم بالفعل في نفس الصفحة وضغط عليها تاني (زي فيسبوك)
@@ -52,5 +62,12 @@ class LayoutCubit extends Cubit<LayoutState> {
 
   void changeUserType(UserTypeEnum userType) {
     emit(state.copyWith(userType: userType, currentIndex: 0));
+  }
+
+  void updateMarriageVisibility(bool isVisible) {
+    final newIndex = (!isVisible && state.currentIndex == 1)
+        ? 0
+        : state.currentIndex;
+    emit(state.copyWith(isMarriageVisible: isVisible, currentIndex: newIndex));
   }
 }

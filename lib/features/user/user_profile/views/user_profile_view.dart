@@ -52,10 +52,20 @@ class _UserProfileViewState extends State<UserProfileView> {
             AdvisorBackground(
               child: BlocListener<UserProfileCubit, UserProfileState>(
                 listenWhen: (previous, current) {
+                  // ⭐ اسمع لما يتحول من loading/initial لـ loaded (initial load)
+                  if (previous is! SettingsLoaded &&
+                      current is SettingsLoaded) {
+                    return true; // ⭐ ده هيمسك الـ initial load
+                  }
+
                   if (current is SettingsLoaded && previous is SettingsLoaded) {
+                    if (previous.isMarriageSectionDeactivated !=
+                        current.isMarriageSectionDeactivated) {
+                      return true;
+                    }
                     return current.actionTimestamp != previous.actionTimestamp;
                   }
-                  // If we transitioned from non-loaded to loaded with action (unlikely case for actions but possible)
+
                   if (current is SettingsLoaded &&
                       current.actionMessage != null) {
                     return true;
@@ -63,7 +73,15 @@ class _UserProfileViewState extends State<UserProfileView> {
                   return false;
                 },
                 listener: (context, state) {
-                  if (state is SettingsLoaded && state.actionMessage != null) {
+                  if (state is SettingsLoaded) {
+                    final layoutCubit = context.read<LayoutCubit>();
+                    if (layoutCubit.state.isMarriageVisible ==
+                        state.isMarriageSectionDeactivated) {
+                      layoutCubit.updateMarriageVisibility(
+                        !state.isMarriageSectionDeactivated,
+                      );
+                    }
+                    if (state.actionMessage == null) return;
                     final isLogout = state.actionMessage == 'logout_success';
                     final isLogoutError = state.actionMessage == 'logout_error';
 

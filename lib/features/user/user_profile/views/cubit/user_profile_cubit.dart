@@ -9,7 +9,6 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_profil
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
-
 class UserProfileCubit extends Cubit<UserProfileState> {
   final LocalNotification _notificationService = LocalNotification();
   final UserProfileRepository _userProfileRepository;
@@ -150,14 +149,18 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final settings = await _loadSettings();
       final profile = await _fetchUserProfile();
       final isNotificationEnabled = await _getNotificationStatus();
+      final isMarriageDeactivated = await _getMarriageSectionDeactivated();
 
       emit(
         SettingsLoaded(
           settings: settings,
           userProfile: profile,
           isNotificationEnabled: isNotificationEnabled,
+         isMarriageSectionDeactivated: isMarriageDeactivated,
+          
         ),
       );
+        // getIt<LayoutCubit>().updateMarriageVisibility(!isMarriageDeactivated);
     } catch (e) {
       emit(SettingsError(message: 'error_loading_data'));
     }
@@ -474,16 +477,28 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       rethrow;
     }
   }
+  // ════════════════════════════════════════════════════════════════
+  // ⭐ LOCAL CACHE HELPERS
+  // ════════════════════════════════════════════════════════════════
 
-Future<void> updateSwitch(String id, bool value) async {
-  final currentState = state;
-  if (currentState is! SettingsLoaded) return;
+  Future<bool> _getMarriageSectionDeactivated() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(kMarriageSectionDeactivatedKey) ?? false;
+  }
+
+  Future<void> _saveMarriageSectionDeactivated(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kMarriageSectionDeactivatedKey, value);
+  }
+
+  Future<void> updateSwitch(String id, bool value) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
 
     if (id == 'notifications') {
       try {
         await _toggleNotificationSetting(id, value);
 
-        // Emit success and get LATEST state from 'state' property not 'currentState'
         emit(
           (state as SettingsLoaded).copyWith(
             actionMessage: value
@@ -503,7 +518,30 @@ Future<void> updateSwitch(String id, bool value) async {
         );
       }
     }
+    // ⭐⭐⭐ ADD THIS PART ⭐⭐⭐
+ else if (id == 'deactivate_the_marriage_section') {
+      // value = true  → قسم الزواج معطّل  → marriage tab مخفي
+      // value = false → قسم الزواج مفعّل  → marriage tab ظاهر
+
+      // 1️⃣ حدّث الـ state فوراً
+      emit(
+        currentState.copyWith(
+          isMarriageSectionDeactivated: value,
+        ),
+      );
+
+      // 2️⃣ احفظ في الـ cache
+      await _saveMarriageSectionDeactivated(value);
+
+      // 3️⃣ أبلّغ LayoutCubit عشان يخفي/يظهر الـ tab
+
+
+      debugPrint(
+        '✅ Marriage section ${value ? "deactivated" : "activated"} locally',
+      );
+    }
   }
+  
 
   Future<void> _enableNotifications() async {
     try {
