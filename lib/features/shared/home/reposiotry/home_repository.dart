@@ -93,4 +93,9 @@ abstract class HomeRepository {
     required String postId,
     required String choiceIndex,
   });
+
+  Future<Either<Failure, String>> followAdvisor({
+    required String advisorId,
+    required bool isAdding,
+  });
 }

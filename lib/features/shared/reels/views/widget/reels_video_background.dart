@@ -5,6 +5,7 @@ import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/video/video_state_manager.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tayseer/core/utils/router/route_observers.dart';
 
 class ReelsVideoBackground extends StatefulWidget {
   final String videoUrl;
@@ -34,7 +35,8 @@ class ReelsVideoBackground extends StatefulWidget {
   State<ReelsVideoBackground> createState() => _ReelsVideoBackgroundState();
 }
 
-class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
+class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
+    with WidgetsBindingObserver, RouteAware {
   VideoPlayerController? _controller;
   final _videoCacheManager = VideoCacheManager();
   final _stateManager = VideoStateManager();
@@ -57,8 +59,18 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _muteManager.isMuted.addListener(_onGlobalMuteChanged);
     _initializeVideo();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final modalRoute = ModalRoute.of(context);
+    if (modalRoute != null) {
+      videoRouteObserver.subscribe(this, modalRoute);
+    }
   }
 
   void _onGlobalMuteChanged() {
@@ -243,10 +255,42 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      if (_controller?.value.isPlaying == true) {
+        _controller?.pause();
+        _savePosition();
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (widget.shouldPlay && _controller?.value.isInitialized == true) {
+        _controller?.play();
+      }
+    }
+  }
+
+  @override
+  void didPushNext() {
+    if (_controller?.value.isPlaying == true) {
+      _controller?.pause();
+      _savePosition();
+    }
+  }
+
+  @override
+  void didPopNext() {
+    if (widget.shouldPlay && _controller?.value.isInitialized == true) {
+      _controller?.play();
+    }
+  }
+
+  @override
   void dispose() {
     _isDisposed = true;
     _savePosition();
     _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
+    videoRouteObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
 
     final controller = _controller;
     if (controller != null) {

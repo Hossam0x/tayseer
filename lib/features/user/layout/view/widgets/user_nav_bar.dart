@@ -4,8 +4,7 @@ import 'package:tayseer/features/advisor/layout/views/widgets/nav_bar_config.dar
 import 'package:tayseer/my_import.dart';
 
 class UserNavBar extends StatelessWidget {
-
- final Function(int)? onTabReselect;
+  final Function(int)? onTabReselect;
   const UserNavBar({super.key, this.onTabReselect});
   @override
   Widget build(BuildContext context) {
@@ -119,48 +118,56 @@ class _NavItemState extends State<_NavItem>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: Opacity(
-              opacity: widget.isActive ? 1.0 : _fadeAnimation.value,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AppImage(
-                    widget.isActive ? widget.activeIcon : widget.icon,
-                    width: context.responsiveWidth(widget.isActive ? 26 : 24),
-                    height: context.responsiveHeight(widget.isActive ? 26 : 24),
-                    fit: BoxFit.contain,
-                  ),
-                  Gap(context.responsiveHeight(6)),
-                  AnimatedDefaultTextStyle(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOut,
-                    style: widget.isActive
-                        ? Styles.textStyle14SemiBold
-                        : Styles.textStyle12.copyWith(
-                            color: AppColors.kTextGrey,
-                          ),
-                    child: widget.isActive
-                        ? GradientText(
-                            text: widget.label,
-                            style: Styles.textStyle14,
-                          )
-                        : Text(
-                            widget.label,
-                            style: Styles.textStyle12.copyWith(
+      child: Container(
+        color: Colors.transparent, // منطقة ضغط أوسع
+        padding: EdgeInsets.symmetric(horizontal: 4.w),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value,
+              child: Opacity(
+                opacity: widget.isActive ? 1.0 : _fadeAnimation.value,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Gap(8.h),
+                    AppImage(
+                      widget.isActive ? widget.activeIcon : widget.icon,
+                      width: context.responsiveWidth(widget.isActive ? 26 : 24),
+                      height: context.responsiveHeight(
+                        widget.isActive ? 26 : 24,
+                      ),
+                      fit: BoxFit.contain,
+                    ),
+                    Gap(context.responsiveHeight(6)),
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      style: widget.isActive
+                          ? Styles.textStyle14SemiBold
+                          : Styles.textStyle12.copyWith(
                               color: AppColors.kTextGrey,
                             ),
-                          ),
-                  ),
-                ],
+                      child: widget.isActive
+                          ? GradientText(
+                              text: widget.label,
+                              style: Styles.textStyle14,
+                            )
+                          : Text(
+                              widget.label,
+                              style: Styles.textStyle12.copyWith(
+                                color: AppColors.kTextGrey,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

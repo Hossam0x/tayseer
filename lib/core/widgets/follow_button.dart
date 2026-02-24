@@ -21,12 +21,18 @@ class FollowButton extends StatelessWidget {
               }
               context.read<FollowCubit>().toggle();
             },
-            child: Text(
-              following ? context.tr("following") : context.tr("follow"),
-              style: Styles.textStyle18.copyWith(
-                color: Colors.blueAccent,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Row(
+              children: [
+                if (following)
+                  Icon(Icons.check, color: Colors.blueAccent, size: 20.sp),
+                Text(
+                  following ? context.tr("following") : context.tr("follow"),
+                  style: Styles.textStyle18.copyWith(
+                    color: Colors.blueAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           );
         },

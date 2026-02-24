@@ -112,8 +112,29 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
           BlocListener<ReelsCubit, ReelsState>(
             listenWhen: (previous, current) =>
                 previous.shareActionState != current.shareActionState &&
-                current.shareActionState != CubitStates.initial,
+                current.shareActionState == CubitStates.initial,
             listener: _handleShareToast,
+          ),
+
+          //  Listener 3: Follow action
+          BlocListener<ReelsCubit, ReelsState>(
+            listenWhen: (previous, current) =>
+                previous.followActionState != current.followActionState &&
+                current.followActionState == CubitStates.failure,
+            listener: (context, state) {
+              AppToast.error(
+                context,
+                state.followMessage ?? context.tr(AppStrings.followError),
+              );
+            },
+
+            // Listener 4: save action toasts
+            child: BlocListener<ReelsCubit, ReelsState>(
+              listenWhen: (previous, current) =>
+                  previous.saveActionState != current.saveActionState &&
+                  current.saveActionState == CubitStates.initial,
+              listener: _handleSaveToast,
+            ),
           ),
         ],
         child: BlocBuilder<ReelsCubit, ReelsState>(
@@ -136,14 +157,36 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
         final message =
             state.shareMessage ??
             (state.isShareAdded == true
-                ? 'تمت المشاركة بنجاح'
-                : 'تم إلغاء المشاركة');
+                ? context.tr(AppStrings.sharedSuccess)
+                : context.tr(AppStrings.unsharedSuccess));
         state.isShareAdded == true
             ? AppToast.success(context, message)
             : AppToast.info(context, message);
         break;
       case CubitStates.failure:
-        AppToast.error(context, state.shareMessage ?? 'حدث خطأ أثناء المشاركة');
+        AppToast.error(
+          context,
+          state.shareMessage ?? context.tr(AppStrings.sharedError),
+        );
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _handleSaveToast(BuildContext context, ReelsState state) {
+    switch (state.saveActionState) {
+      case CubitStates.success:
+        final String? message = state.saveMessage;
+        if (message != null) {
+          AppToast.success(context, message);
+        }
+        break;
+      case CubitStates.failure:
+        AppToast.error(
+          context,
+          state.saveMessage ?? context.tr(AppStrings.reelSaveError),
+        );
         break;
       default:
         break;
@@ -175,13 +218,13 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            errorMessage ?? 'حدث خطأ',
+            errorMessage ?? context.tr(AppStrings.error),
             style: const TextStyle(color: Colors.white),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () => context.read<ReelsCubit>().fetchReels(),
-            child: const Text('إعادة المحاولة'),
+            child: Text(context.tr(AppStrings.retry)),
           ),
         ],
       ),

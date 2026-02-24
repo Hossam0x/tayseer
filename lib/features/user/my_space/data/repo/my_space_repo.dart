@@ -242,4 +242,52 @@ class MySpaceRepo {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  Future<Either<Failure, bool>> deleteChatRoom(String chatRoomId) async {
+    try {
+      final response = await apiService.delete(
+        endPoint: ApiEndPoint.deleteChatRoom(chatRoomId),
+      );
+      if (response['success'] == true) {
+        return const Right(true);
+      } else {
+        return Left(
+          ServerFailure(response['message'] ?? 'فشل في حذف المحادثة'),
+        );
+      }
+    } on DioError catch (e) {
+      if (e.response != null && e.response!.data != null) {
+        final message = e.response!.data['message'] ?? 'فشل في حذف المحادثة';
+        return Left(ServerFailure(message));
+      } else {
+        return Left(ServerFailure(e.message ?? 'Connection error'));
+      }
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  Future<Either<Failure, bool>> archiveChatRoom(String chatRoomId) async {
+    try {
+      final response = await apiService.patch(
+        endPoint: ApiEndPoint.archiveChatRoom(chatRoomId),
+      );
+      if (response['success'] == true) {
+        return const Right(true);
+      } else {
+        return Left(
+          ServerFailure(response['message'] ?? 'فشل في أرشفة المحادثة'),
+        );
+      }
+    } on DioError catch (e) {
+      if (e.response != null && e.response!.data != null) {
+        final message = e.response!.data['message'] ?? 'فشل في أرشفة المحادثة';
+        return Left(ServerFailure(message));
+      } else {
+        return Left(ServerFailure(e.message ?? 'Connection error'));
+      }
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }
