@@ -896,6 +896,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(guestLoginState: CubitStates.loading));
 
     try {
+      CachNetwork.clearCache();
       final response = await _repo.guestLogin();
 
       response.fold(
