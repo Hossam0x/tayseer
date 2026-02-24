@@ -376,19 +376,15 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   // ═══════════════════════════════════════════════════════════
 
   void toggleReply(String commentId) {
-    if (state.activeReplyId == commentId) {
-      emit(state.copyWith(clearActiveReplyId: true));
-    } else {
-      emit(
-        state.copyWith(
-          activeReplyId: commentId,
-          clearEditingCommentId: true,
-          // ✅ NEW: Scroll للكومنت اللي هنرد عليه
-          scrollToCommentId: commentId,
-          scrollTrigger: state.scrollTrigger + 1,
-        ),
-      );
-    }
+    emit(
+      state.copyWith(
+        activeReplyId: commentId,
+        clearEditingCommentId: true,
+        // ✅ NEW: Scroll للكومنت اللي هنرد عليه
+        scrollToCommentId: commentId,
+        scrollTrigger: state.scrollTrigger + 1,
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -545,13 +541,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   }
 
   void toggleEdit(String commentId) {
-    if (state.editingCommentId == commentId) {
-      emit(state.copyWith(clearEditingCommentId: true));
-    } else {
-      emit(
-        state.copyWith(editingCommentId: commentId, clearActiveReplyId: true),
-      );
-    }
+    emit(state.copyWith(editingCommentId: commentId, clearActiveReplyId: true));
   }
 
   void cancelEdit() {

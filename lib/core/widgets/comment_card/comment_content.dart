@@ -27,36 +27,6 @@ class CommentContent extends StatelessWidget {
     this.callbacks = CommentCallbacks.empty,
   });
 
-  void _navigateToUserAdvisorProfile(BuildContext context) {
-    // التحقق من أن هذا ليس بروفايل المستخدم الحالي
-    // يمكنك استخدام getIt أو أي طريقة أخرى للتحقق من الـ current user id
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            UserAdvisorProfileView(advisorId: comment.commenter.id),
-      ),
-    );
-  }
-
-  void _navigateToUserProfile(BuildContext context) {
-    // ⭐ التحقق من وجود الـ ID
-    if (comment.commenter.id.isEmpty) {
-      // ⭐ يمكنك إظهار رسالة خطأ أو عدم القيام بأي شيء
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => UserPublicProfileView(
-          userId: comment.commenter.id, // ⭐ استخدام ! بعد التأكد
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return IntrinsicHeight(
@@ -64,16 +34,10 @@ class CommentContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Avatar
-          GestureDetector(
-            onTap: () {
-              if (comment.commenter.isAnnonymous) {
-                // لا تفعل شيئًا أو أظهر رسالة
-                return;
-              }
-              comment.commenter.userType == 'Advisor'
-                  ? _navigateToUserAdvisorProfile(context)
-                  : _navigateToUserProfile(context);
-            },
+          NavToProfile(
+            isAnnonymous: comment.commenter.isAnnonymous,
+            userType: comment.commenter.userType,
+            userId: comment.commenter.id,
             child: CommentAvatar(
               isAnnonymous: comment.commenter.isAnnonymous,
               avatarUrl: comment.commenter.avatar,
@@ -143,12 +107,17 @@ class _CommentHeader extends StatelessWidget {
               Row(
                 children: [
                   Flexible(
-                    child: Text(
-                      comment.commenter.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Styles.textStyle16SemiBold.copyWith(
-                        color: const Color(0xFF19295C),
+                    child: NavToProfile(
+                      isAnnonymous: comment.commenter.isAnnonymous,
+                      userType: comment.commenter.userType,
+                      userId: comment.commenter.id,
+                      child: Text(
+                        comment.commenter.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Styles.textStyle16SemiBold.copyWith(
+                          color: const Color(0xFF19295C),
+                        ),
                       ),
                     ),
                   ),
@@ -403,6 +372,63 @@ class _Separator extends StatelessWidget {
         const Text('•', style: TextStyle(color: Colors.black)),
         Gap(10.w),
       ],
+    );
+  }
+}
+
+class NavToProfile extends StatelessWidget {
+  final Widget child;
+  final bool isAnnonymous;
+  final String userType;
+  final String userId;
+  const NavToProfile({
+    super.key,
+    required this.child,
+    required this.isAnnonymous,
+    required this.userType,
+    required this.userId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        if (isAnnonymous) {
+          // لا تفعل شيئًا أو أظهر رسالة
+          return;
+        }
+        userType == 'Advisor'
+            ? _navigateToUserAdvisorProfile(context)
+            : _navigateToUserProfile(context);
+      },
+      child: child,
+    );
+  }
+
+  void _navigateToUserAdvisorProfile(BuildContext context) {
+    // التحقق من أن هذا ليس بروفايل المستخدم الحالي
+    // يمكنك استخدام getIt أو أي طريقة أخرى للتحقق من الـ current user id
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserAdvisorProfileView(
+          advisorId: userId,
+        ), // تأكد من أن userId ليس null
+      ),
+    );
+  }
+
+  void _navigateToUserProfile(BuildContext context) {
+    if (userId.isEmpty) {
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserPublicProfileView(userId: userId),
+      ),
     );
   }
 }

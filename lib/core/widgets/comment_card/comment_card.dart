@@ -8,8 +8,8 @@ import 'package:tayseer/my_import.dart';
 class CommentCard extends StatelessWidget {
   final CommentModel comment;
   final CommentCallbacks callbacks;
+  final String? editingCommentId;
   final bool isReply,
-      isEditing,
       isReplying,
       isEditLoading,
       isReplyLoading,
@@ -20,7 +20,7 @@ class CommentCard extends StatelessWidget {
     required this.comment,
     required this.callbacks,
     this.isReply = false,
-    this.isEditing = false,
+    this.editingCommentId,
     this.isReplying = false,
     this.isEditLoading = false,
     this.isReplyLoading = false,
@@ -43,14 +43,15 @@ class CommentCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildCommentBody(context),
-        if (isReplying && !isEditing) _buildReplyInput(context),
+        if (isReplying && editingCommentId != comment.id)
+          _buildReplyInput(context),
         _buildRepliesList(context),
       ],
     );
   }
 
   Widget _buildCommentBody(BuildContext context) {
-    if (isEditing) {
+    if (editingCommentId == comment.id) {
       return CommentInputEditor(
         initialText: comment.comment,
         buttonText: context.tr(AppStrings.saveEdit),
@@ -101,6 +102,8 @@ class CommentCard extends StatelessWidget {
               itemBuilder: (_, index) => _ReplyItem(
                 reply: comment.replies[index],
                 callbacks: callbacks,
+                editingCommentId: editingCommentId,
+                isEditLoading: isEditLoading,
               ),
             ),
             if (comment.hasMoreReplies)
@@ -246,10 +249,14 @@ class _HiddenCommentWidget extends StatelessWidget {
 class _ReplyItem extends StatelessWidget {
   final CommentModel reply;
   final CommentCallbacks callbacks;
+  final String? editingCommentId;
+  final bool isEditLoading;
 
   const _ReplyItem({
     required this.reply,
     this.callbacks = CommentCallbacks.empty,
+    this.editingCommentId,
+    this.isEditLoading = false,
   });
 
   @override
@@ -260,6 +267,16 @@ class _ReplyItem extends StatelessWidget {
         isReply: true,
         comment: reply,
         onUnhide: () => callbacks.onHideReply?.call(reply.id),
+      );
+    }
+
+    if (editingCommentId == reply.id) {
+      return CommentInputEditor(
+        initialText: reply.comment,
+        buttonText: context.tr(AppStrings.saveEdit),
+        isLoading: isEditLoading,
+        onCancel: () => callbacks.onCancelEdit?.call(),
+        onSubmit: (text) => callbacks.onSaveEdit?.call(reply.id, text, true),
       );
     }
 

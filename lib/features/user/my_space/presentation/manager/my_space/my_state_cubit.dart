@@ -159,7 +159,7 @@ class MySpaceCubit extends Cubit<MySpaceState> {
   /// Update last message in a chat room
   void _updateChatRoomLastMessage({
     required String chatRoomId,
-    required String messageId, 
+    required String messageId,
     required String content,
     required String createdAt,
     required String updatedAt,
@@ -321,6 +321,96 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     socketHelper.send('mark_messages_read', {'chatRoomId': chatRoomId}, (ack) {
       log('✅ [$_listenerId] mark_messages_read ACK: $ack');
     });
+  }
+
+  /// Delete chat room (optimistic update)
+  Future<bool> deleteChatRoom(String chatRoomId) async {
+    final currentChatData = state.advisorChatModel?.data;
+    if (currentChatData == null) return false;
+
+    // Optimistic: remove immediately from list
+    final originalRooms = currentChatData.chatRooms;
+    final updatedRooms = originalRooms
+        .where((r) => r.id != chatRoomId)
+        .toList();
+    _safeEmit(
+      state.copyWith(
+        advisorChatModel: AdvisorChatModel(
+          success: state.advisorChatModel!.success,
+          message: state.advisorChatModel!.message,
+          data: AdvisorChatData(
+            chatRooms: updatedRooms,
+            pagination: currentChatData.pagination,
+          ),
+        ),
+        lastUpdateTime: DateTime.now(),
+      ),
+    );
+
+    final result = await mySpaceRepo.deleteChatRoom(chatRoomId);
+    return result.fold((failure) {
+      // Revert on failure
+      _safeEmit(
+        state.copyWith(
+          advisorChatModel: AdvisorChatModel(
+            success: state.advisorChatModel!.success,
+            message: state.advisorChatModel!.message,
+            data: AdvisorChatData(
+              chatRooms: originalRooms,
+              pagination: currentChatData.pagination,
+            ),
+          ),
+          lastUpdateTime: DateTime.now(),
+          errorMessage: failure.message,
+        ),
+      );
+      return false;
+    }, (_) => true);
+  }
+
+  /// Archive chat room (optimistic update)
+  Future<bool> archiveChatRoom(String chatRoomId) async {
+    final currentChatData = state.advisorChatModel?.data;
+    if (currentChatData == null) return false;
+
+    // Optimistic: remove immediately from list
+    final originalRooms = currentChatData.chatRooms;
+    final updatedRooms = originalRooms
+        .where((r) => r.id != chatRoomId)
+        .toList();
+    _safeEmit(
+      state.copyWith(
+        advisorChatModel: AdvisorChatModel(
+          success: state.advisorChatModel!.success,
+          message: state.advisorChatModel!.message,
+          data: AdvisorChatData(
+            chatRooms: updatedRooms,
+            pagination: currentChatData.pagination,
+          ),
+        ),
+        lastUpdateTime: DateTime.now(),
+      ),
+    );
+
+    final result = await mySpaceRepo.archiveChatRoom(chatRoomId);
+    return result.fold((failure) {
+      // Revert on failure
+      _safeEmit(
+        state.copyWith(
+          advisorChatModel: AdvisorChatModel(
+            success: state.advisorChatModel!.success,
+            message: state.advisorChatModel!.message,
+            data: AdvisorChatData(
+              chatRooms: originalRooms,
+              pagination: currentChatData.pagination,
+            ),
+          ),
+          lastUpdateTime: DateTime.now(),
+          errorMessage: failure.message,
+        ),
+      );
+      return false;
+    }, (_) => true);
   }
 
   /// Reset State

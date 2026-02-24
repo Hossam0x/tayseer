@@ -5,11 +5,14 @@ import 'package:tayseer/core/widgets/follow_button.dart';
 import 'package:tayseer/core/widgets/post_card/circular_icon_button.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
+import 'package:tayseer/core/widgets/post_card/post_options_bottom_sheet.dart';
+import 'package:tayseer/core/utils/video_download_service.dart';
 import 'package:tayseer/core/widgets/post_card/reaction_like_button.dart';
 import 'package:tayseer/core/widgets/post_card/share_button.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
+import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/my_import.dart';
 // تأكد من استيراد AppImage
 
@@ -17,6 +20,7 @@ class ReelsOverlay extends StatelessWidget {
   final PostModel post;
   final dynamic Function(ReactionType?) onReactionChanged;
   final VoidCallback onShareTapped;
+  final VoidCallback? onSaveTapped;
   final VideoPlayerController? cachedController;
   final GlobalKey? likeButtonKey;
 
@@ -25,6 +29,7 @@ class ReelsOverlay extends StatelessWidget {
     required this.post,
     required this.onReactionChanged,
     required this.onShareTapped,
+    required this.onSaveTapped,
     this.cachedController,
     this.likeButtonKey,
   });
@@ -142,26 +147,48 @@ class ReelsOverlay extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      FollowButton(
-                        isFollowing: post.isFollowing,
-                        onTap: () {
-                          // Call follow/unfollow API
-                        },
-                      ),
+                      if (!post.isMine)
+                        FollowButton(
+                          key: ValueKey(post.isFollowing),
+                          isFollowing: post.isFollowing,
+                          onTap: () {
+                            if (context
+                                    .read<ReelsCubit>()
+                                    .state
+                                    .followActionState ==
+                                CubitStates.loading) {
+                              return;
+                            }
+                            context.read<ReelsCubit>().toggleFollowAdvisor(
+                              advisorId: post.advisorId,
+                            );
+                          },
+                        ),
                       Gap(8.w),
                       if (post.isVerified)
                         Icon(Icons.verified, color: Colors.blue, size: 16.sp),
                       Gap(4.w),
                       Flexible(
-                        child: Text(
-                          post.name,
-                          style: Styles.textStyle16.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
+                        child: GestureDetector(
+                          onTap: () {
+                            context.pushNamed(
+                              AppRouter.kUserProfileView,
+                              arguments: {
+                                'advisorId': post.advisorId,
+                                'advisorName': post.name,
+                              },
+                            );
+                          },
+                          child: Text(
+                            post.name,
+                            style: Styles.textStyle16.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.end,
                         ),
                       ),
                     ],
@@ -182,9 +209,9 @@ class ReelsOverlay extends StatelessWidget {
                       Gap(context.responsiveWidth(5)),
                       Icon(Icons.public, color: Colors.white70, size: 12.sp),
                       Gap(context.responsiveWidth(5)),
-                      Directionality(
-                        textDirection: TextDirection.ltr,
-                        child: Flexible(
+                      Flexible(
+                        child: Directionality(
+                          textDirection: TextDirection.ltr,
                           child: Text(
                             post.userName,
                             style: Styles.textStyle12.copyWith(
@@ -204,19 +231,30 @@ class ReelsOverlay extends StatelessWidget {
 
             Gap(10.w),
 
-            Container(
-              width: 45.w,
-              height: 45.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
-              ),
-              child: ClipOval(
-                child: AppImage(
-                  post.avatar,
-                  width: 45.w,
-                  height: 45.w,
-                  fit: BoxFit.cover,
+            GestureDetector(
+              onTap: () {
+                context.pushNamed(
+                  AppRouter.kUserProfileView,
+                  arguments: {
+                    'advisorId': post.advisorId,
+                    'advisorName': post.name,
+                  },
+                );
+              },
+              child: Container(
+                width: 45.w,
+                height: 45.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                child: ClipOval(
+                  child: AppImage(
+                    post.avatar,
+                    width: 45.w,
+                    height: 45.w,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
@@ -315,7 +353,27 @@ class ReelsOverlay extends StatelessWidget {
           iconColor: HexColor("#F2A6B5"),
           backgroundColor: const Color(0xFFFCE9ED),
           onTap: () {
-            // Show more options
+            PostOptionsBottomSheet.show(
+              context,
+              post: post,
+              onShare: onShareTapped,
+              isShared: post.isRepostedByMe,
+              isFromReels: true,
+
+              // onReport: onReportTapped,
+              // onBlock: onBlockTapped,
+              // onHide: onHideTapped,
+              onSave: onSaveTapped,
+              onDownload: () {
+                VideoDownloadService().downloadVideo(
+                  context: context,
+                  videoUrl: post.videoUrl ?? '',
+                );
+              },
+              // onEdit: onEditTapped,
+              // onArchive: onArchiveTapped,
+              // onDelete: onDeleteTapped,
+            );
           },
         ),
       ],

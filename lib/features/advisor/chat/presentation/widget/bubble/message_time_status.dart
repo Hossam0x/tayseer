@@ -22,8 +22,7 @@ class MessageTimeStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ اللون أبيض دايماً للنص
-    final timeColor = Colors.white;
+    final timeColor = !isMe ? Colors.black : Colors.white;
     final timeFontSize = isMobile
         ? ChatDimensions.timeFontSizeMobile
         : ChatDimensions.timeFontSizeTablet;
@@ -35,7 +34,6 @@ class MessageTimeStatus extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ✅ الأيقونة على الناحية التانية (شمال الوقت)
           if (isMe) ...[_buildStatusIcon(), SizedBox(width: spacingH)],
           Text(
             formattedTime,
@@ -57,7 +55,7 @@ class MessageTimeStatus extends StatelessWidget {
       return Icon(
         Icons.access_time,
         size: pendingIconSize,
-        color: Colors.white,
+        color: isMe ? Colors.black : Colors.white,
       );
     }
 

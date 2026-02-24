@@ -1,10 +1,10 @@
 import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostOptionsBottomSheet extends StatelessWidget {
   final PostModel? post;
-
+  final bool isShared;
+  final bool isFromReels;
   final VoidCallback? onShare;
   final VoidCallback? onReport;
   final VoidCallback? onBlock;
@@ -13,11 +13,14 @@ class PostOptionsBottomSheet extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onArchive;
   final VoidCallback? onDelete;
+  final VoidCallback? onDownload;
 
   const PostOptionsBottomSheet({
     super.key,
     required this.post,
     this.onShare,
+    this.isFromReels = false,
+    this.isShared = false,
     this.onReport,
     this.onBlock,
     this.onHide,
@@ -25,12 +28,16 @@ class PostOptionsBottomSheet extends StatelessWidget {
     this.onEdit,
     this.onArchive,
     this.onDelete,
+    this.onDownload,
   });
 
   static void show(
     BuildContext context, {
     required PostModel post,
     VoidCallback? onShare,
+    VoidCallback? onDownload,
+    bool isShared = false,
+    bool isFromReels = false,
     VoidCallback? onReport,
     VoidCallback? onBlock,
     VoidCallback? onHide,
@@ -45,6 +52,8 @@ class PostOptionsBottomSheet extends StatelessWidget {
       isScrollControlled: true,
       builder: (context) => PostOptionsBottomSheet(
         post: post,
+        isShared: isShared,
+        isFromReels: isFromReels,
         onShare: onShare,
         onReport: () {
           context.pushNamed(AppRouter.kReportReasonsScreen);
@@ -55,6 +64,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
         onEdit: onEdit,
         onArchive: onArchive,
         onDelete: onDelete,
+        onDownload: onDownload,
       ),
     );
   }
@@ -63,10 +73,40 @@ class PostOptionsBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isSaved = post?.isSaved ?? false;
 
-    final List<OptionItem> options = post?.isMine ?? false
+    final List<OptionItem> options = isFromReels
         ? [
             OptionItem(
-              text: context.tr(AppStrings.share),
+              text: isShared
+                  ? context.tr(AppStrings.unshare)
+                  : context.tr(AppStrings.share),
+              icon: Icons.ios_share_rounded,
+              onTap: onShare,
+            ),
+            OptionItem(
+              text: context.tr(AppStrings.report),
+              icon: Icons.error_outline_rounded,
+              onTap: onReport,
+            ),
+            OptionItem(
+              text: context.tr(AppStrings.save),
+              icon: isSaved
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_border_rounded,
+              color: isSaved ? AppColors.kprimaryColor : null,
+              onTap: onSave,
+            ),
+            OptionItem(
+              text: context.tr(AppStrings.download),
+              icon: Icons.download_rounded,
+              onTap: onDownload,
+            ),
+          ]
+        : post?.isMine ?? false
+        ? [
+            OptionItem(
+              text: isShared
+                  ? context.tr(AppStrings.unshare)
+                  : context.tr(AppStrings.share),
               icon: Icons.ios_share_rounded,
               onTap: onShare,
             ),
@@ -91,7 +131,9 @@ class PostOptionsBottomSheet extends StatelessWidget {
           ]
         : [
             OptionItem(
-              text: context.tr(AppStrings.share),
+              text: isShared
+                  ? context.tr(AppStrings.unshare)
+                  : context.tr(AppStrings.share),
               icon: Icons.ios_share_rounded,
               onTap: onShare,
             ),
@@ -104,8 +146,8 @@ class PostOptionsBottomSheet extends StatelessWidget {
               text: context.tr(AppStrings.block),
               icon: Icons.block_outlined,
               onTap: onBlock,
-              isDestructive: true, // ✅ خليناه destructive عشان يبقى أحمر
-              isBlock: true, // ✅ أضفنا isBlock
+              isDestructive: true,
+              isBlock: true,
             ),
             OptionItem(
               text: context.tr(AppStrings.hide),

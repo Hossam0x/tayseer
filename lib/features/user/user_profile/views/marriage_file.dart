@@ -14,14 +14,12 @@ import 'package:tayseer/features/user/user_profile/views/widgets/dash_border.dar
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_life_events_section.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_reward_card.dart';
 import 'package:tayseer/my_import.dart';
-
 // ⭐⭐⭐ Import sections
 import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
 import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/education.dart';
 import 'package:tayseer/features/user/marriage/view/widget/interests_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
-
 import 'widgets/MarriageProfileSkeleton .dart';
 import 'widgets/profile_statistics_cards.dart';
 
@@ -555,7 +553,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                     audioPath: profile.userMedia?.audio ?? "",
                   ),
                 ),
-              _buildSliverPadding(child: _buildVerifiedCard()),
+              // _buildSliverPadding(child: _buildVerifiedCard()),
               SliverToBoxAdapter(child: SizedBox(height: 30.h)),
 
               SliverToBoxAdapter(child: MarriageRewardCard()),

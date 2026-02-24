@@ -92,16 +92,14 @@ class _MySpaceConsultationContentState
                           },
                         )
                         .then((_) {
-                          // عند العودة من الشات، نصفر الشات النشط
                           if (context.mounted) {
                             cubit.setActiveChatRoom(null);
-                            // وكمان ممكن نعمل getAdvisorChat عشان نحدث القائمة بالكامل تأكيداً
                             cubit.getAdvisorChat();
                           }
                         });
                   },
                   onArchive: () {
-                    AppToast.success(context, 'تم أرشفة الاستشارة بنجاح');
+                    _showArchiveDialog(context, chatRoom.id);
                   },
                   onDelete: () {
                     _showDeleteDialog(context, chatRoom.id);
@@ -128,46 +126,29 @@ class _MySpaceConsultationContentState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AppImage(AssetsData.errorIcon , width: 150.w,) ,
+            AppImage(AssetsData.errorIcon, width: 150.w),
             SizedBox(height: 16.h),
             Text(
-               'حدث خطأ ما',
+              'حدث خطأ ما',
               style: Styles.textStyle18,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16.h),
             CustomBotton(
               width: 200.w,
-                title: "إعاده المحاوله", onPressed:(){
-              context.read<MySpaceCubit>().getAdvisorChat() ;
-            } )
+              title: "إعاده المحاوله",
+              onPressed: () {
+                context.read<MySpaceCubit>().getAdvisorChat();
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
-  // Widget _buildEmptyWidget() {
-  //   return Center(
-  //     child: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         Icon(
-  //           Icons.chat_bubble_outline,
-  //           size: 64.sp,
-  //           color: Colors.grey.shade400,
-  //         ),
-  //         SizedBox(height: 16.h),
-  //         Text(
-  //           'لا توجد استشارات حتى الآن',
-  //           style: TextStyle(fontSize: 16.sp, color: Colors.grey.shade600),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   void _showDeleteDialog(BuildContext context, String chatId) {
+    final cubit = context.read<MySpaceCubit>();
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -179,11 +160,55 @@ class _MySpaceConsultationContentState
             child: const Text('إلغاء'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(dialogContext);
-              // TODO: تنفيذ الحذف
+              final success = await cubit.deleteChatRoom(chatId);
+              if (context.mounted) {
+                if (success) {
+                  AppToast.success(context, 'تم حذف المحادثة بنجاح');
+                } else {
+                  AppToast.error(context, 'فشل في حذف المحادثة، حاول مرة أخرى');
+                }
+              }
             },
             child: const Text('حذف', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showArchiveDialog(BuildContext context, String chatId) {
+    final cubit = context.read<MySpaceCubit>();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('أرشفة المحادثة'),
+        content: const Text('هل أنت متأكد من أرشفة هذه المحادثة؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              final success = await cubit.archiveChatRoom(chatId);
+              if (context.mounted) {
+                if (success) {
+                  AppToast.success(context, 'تم أرشفة الاستشارة بنجاح');
+                } else {
+                  AppToast.error(
+                    context,
+                    'فشل في أرشفة المحادثة، حاول مرة أخرى',
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'أرشفة',
+              style: TextStyle(color: Color(0xFFA12042)),
+            ),
           ),
         ],
       ),
@@ -204,7 +229,6 @@ class _MySpaceConsultationContentState
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              // TODO: تنفيذ الإبلاغ
             },
             child: const Text('إبلاغ', style: TextStyle(color: Colors.orange)),
           ),

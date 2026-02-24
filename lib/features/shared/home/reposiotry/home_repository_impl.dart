@@ -385,4 +385,20 @@ class HomeRepositoryImpl implements HomeRepository {
       return Left(ServerFailure.fromDioError(e));
     }
   }
+
+  @override
+  Future<Either<Failure, String>> followAdvisor({
+    required String advisorId,
+    required bool isAdding,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: "${ApiEndPoint.followAdvisor}$advisorId",
+        query: {'action': isAdding ? 'add' : 'remove'},
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
 }

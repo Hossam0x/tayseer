@@ -279,30 +279,59 @@ class ReelsCubit extends Cubit<ReelsState> {
   // ✅ يحدث كل الريلز اللي للـ Advisor ده
   // ═══════════════════════════════════════════════════════════
 
-  void toggleFollowAdvisor({required String advisorId}) {
-    // ✅ تحديث كل الريلز اللي للـ Advisor ده
+  Future<void> toggleFollowAdvisor({required String advisorId}) async {
+    // 1️⃣ حفظ الـ reference القديمة للـ Rollback (PostModel immutable لا داعي للـ copy)
+    final originalReels = state.reels;
+    _safeEmit(state.copyWith(followActionState: CubitStates.loading));
+    // 2️⃣ تحديد الحالة الحالية قبل التغيير
+    final currentReel = state.reels.firstWhere(
+      (r) => r.advisorId == advisorId,
+      orElse: () => throw StateError('No reel found for advisor $advisorId'),
+    );
+    final isAdding =
+        !currentReel.isFollowing; // true = follow, false = unfollow
+
+    // 3️⃣ Optimistic Update - تحديث لوكال فوراً
     final updatedReels = state.reels.map((reel) {
       if (reel.advisorId == advisorId) {
-        return reel.copyWith(isFollowing: !reel.isFollowing);
+        return reel.copyWith(isFollowing: isAdding);
       }
       return reel;
     }).toList();
 
     _safeEmit(state.copyWith(reels: updatedReels));
 
-    // ✅ لوج لمعرفة كام ريل اتحدث
-    final affectedCount = state.reels
+    final affectedCount = updatedReels
         .where((r) => r.advisorId == advisorId)
         .length;
-    final isNowFollowing = updatedReels
-        .firstWhere((r) => r.advisorId == advisorId)
-        .isFollowing;
+
     log(
-      '🎬 ${isNowFollowing ? "Followed" : "Unfollowed"} Advisor: $advisorId ($affectedCount reels updated)',
+      '🎬 [Optimistic] ${isAdding ? "Followed" : "Unfollowed"} Advisor: $advisorId ($affectedCount reels updated)',
     );
 
-    // 🔜 TODO: API Call
-    // homeRepo.toggleFollowAdvisor(advisorId: advisorId);
+    // 4️⃣ API Call
+    final result = await homeRepo.followAdvisor(
+      advisorId: advisorId,
+      isAdding: isAdding,
+    );
+
+    result.fold(
+      (failure) {
+        // ❌ فشل - Rollback للحالة القديمة
+        _safeEmit(
+          state.copyWith(
+            reels: originalReels,
+            followActionState: CubitStates.failure,
+            followMessage: failure.message,
+          ),
+        );
+        log('❌ Follow Advisor Failed: ${failure.message} - Rolled back');
+      },
+      (message) {
+        // ✅ نجح - خلي التغييرات اللوكال زي ما هي
+        log('✅ Follow Advisor Success: $message');
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
