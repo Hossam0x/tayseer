@@ -60,23 +60,23 @@ class FloatingInfoCard extends StatelessWidget {
 
           const Gap(16),
 
-          if (showAttendeesImages && attendeesImages != null)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    _buildStackedImages(),
-                    const Gap(6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  _buildStackedImages(),
+                  const Gap(6),
 
-                    Text(
-                      "$attendeesCount $attendeesLabel",
-                      style: Styles.textStyle10,
-                    ),
-                  ],
-                ),
+                  Text(
+                    "$attendeesCount $attendeesLabel",
+                    style: Styles.textStyle10,
+                  ),
+                ],
+              ),
 
-                /// زر عرض التفاصيل
+              /// زر عرض التفاصيل
+              if (showAttendeesImages && attendeesImages != null)
                 GestureDetector(
                   onTap: onShowDetails,
                   child: Container(
@@ -91,7 +91,7 @@ class FloatingInfoCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      "عرض التفاصيل",
+                      context.tr('show_details'),
                       style: Styles.textStyle10Bold.copyWith(
                         color: Colors.white,
                       ),
@@ -99,9 +99,9 @@ class FloatingInfoCard extends StatelessWidget {
                   ),
                 ),
 
-                /// عداد + صور
-              ],
-            ),
+              /// عداد + صور
+            ],
+          ),
         ],
       ),
     );

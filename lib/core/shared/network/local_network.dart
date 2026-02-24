@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/login_data.dart';
 import 'package:tayseer/my_import.dart';
@@ -26,6 +25,7 @@ class CachNetwork {
     }
 
     debugPrint("kCurrentUserData is  :::::::::::: $kCurrentUserData");
+    debugPrint(" id user is  :::::::::::: ${kCurrentUserData?.id}");
 
     final userTypeString = await CachNetwork.getData(key: kUserType);
     if (userTypeString != null && userTypeString.isNotEmpty) {

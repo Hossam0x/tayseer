@@ -1412,9 +1412,10 @@
   "jordan": "الأردن",
   "selected": "محدد",
   "delete_main_image": "حذف الصورة الشخصية",
-  "reorder_image": "إعادة ترتيب الصورة"
-  "reel_save_error": "حدث خطأ أثناء حفظ الريل",
-  "publishing_post": "جاري نشر المنشور...",
-  "add_caption_optional": "إضافة تعليق (اختياري)",
-  "after_application_discount": "السعر بعد خصم التطبيق"
+  "reorder_image": "إعادة ترتيب الصورة",
+  "tickets_count": "عدد التذاكر",
+  "no_attendees_yet": "لا يوجد حاضرين حتى الآن",
+  "no_attendees_description": "لم يقم أحد بحجز تذاكر لهذا الحدث بعد",
+  "something_went_wrong": "حدث خطأ ما",
+  "detils_attendees": "تفاصيل الحاضرين"
 }

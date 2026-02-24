@@ -101,6 +101,7 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
 
                         /// 3. التاريخ
                         DatePickerField(
+                          allowPastDates: false,
                           validator: (value) =>
                               value == null ? context.tr('required') : null,
                           initialValue: state.eventDate,
