@@ -1,7 +1,7 @@
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/utils/helper/picker_helper.dart';
+import 'package:tayseer/core/widgets/custtom_glass_button.dart';
 import 'package:tayseer/core/widgets/pick_image_bottom_sheet.dart';
-import 'package:tayseer/features/advisor/add_post/view/widget/ai_assistant_banner.dart';
 import 'package:tayseer/features/advisor/add_post/view/widget/custom_profile_header.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_state.dart';
@@ -293,10 +293,19 @@ class AddPostBody extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AiAssistantBanner(
-            isLoading: state.isAiLoading,
-            onTap: () => cubit.enhanceTextWithGemini(context),
+          CusttomGlassButton(
+            text: context.tr('generate_ai_content'),
+            showIcon: state.isAiLoading,
+
+            onTap: () {
+              cubit.enhanceTextWithGemini(context);
+            },
           ),
+
+          // AiAssistantBanner(
+          //   isLoading: state.isAiLoading,
+          //   onTap: () => cubit.enhanceTextWithGemini(context),
+          // ),
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             children: [

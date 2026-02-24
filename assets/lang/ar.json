@@ -339,7 +339,7 @@
   "event_location": "مكان الحدث",
   "event_price_before_discount": "سعر الحدث قبل الخصم",
   "event_price_after_discount": "سعر الحدث بعد الخصم",
-  "application_rate": "التطبيق له ٢٥٪ من التيكت",
+  "application_rate": "نسبه خصم التطبيق",
   "attendees_count": "عدد الحضور",
   "add_event_image": "اضف صورة الحدث",
   "add_4_images_hint": "اضف 4 صور تعبر عن الحدث",
@@ -1370,5 +1370,7 @@
   "error_occurred": "حدث خطأ",
   "ticket_my": "تذكرتي",
   "no_tickets": "لا يوجد تذاكر حالياً",
-  "publishing_post": "جاري نشر المنشور..."
+  "publishing_post": "جاري نشر المنشور...",
+  "add_caption_optional": "إضافة تعليق (اختياري)",
+  "after_application_discount": "السعر بعد خصم التطبيق"
 }

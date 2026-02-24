@@ -185,6 +185,7 @@ class EventDetailBody extends StatelessWidget {
       bottomSheet: BlocBuilder<EventDetailCubit, EventDetailState>(
         builder: (context, state) {
           return EventBottomBar(
+            isMyEvent: state.event?.isMyEvent ?? false,
             priceAfterDiscount:
                 state.event?.priceAfterDiscount.toString() ?? '',
 
