@@ -1416,4 +1416,10 @@
   "selected": "محدد",
   "delete_main_image": "حذف الصورة الشخصية",
   "reorder_image": "إعادة ترتيب الصورة"
+  "reorder_image": "إعادة ترتيب الصورة",
+  "tickets_count": "عدد التذاكر",
+  "no_attendees_yet": "لا يوجد حاضرين حتى الآن",
+  "no_attendees_description": "لم يقم أحد بحجز تذاكر لهذا الحدث بعد",
+  "something_went_wrong": "حدث خطأ ما",
+  "detils_attendees": "تفاصيل الحاضرين"
 }

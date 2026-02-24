@@ -32,6 +32,7 @@ import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dar
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
+import 'package:tayseer/features/shared/event_detail/view/event_reservation_people_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/update_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/advisor/map/map_view.dart';
@@ -223,6 +224,7 @@ abstract class AppRouter {
   static const kUserArchiveChatsView = '/user-archive-chats';
   static const kUserFollowingsView = '/userFollowingsView';
   static const kGeneralSettingsView = '/general-settings';
+  static const kEventReservationPeopleView = '/EventReservationPeopleView';
   ///// report screens /////
   static const kReportReasonsScreen = '/ReportReasonsScreen';
   // static String getInitialRoute() {
@@ -442,6 +444,16 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const HomeView(),
+        );
+      case kEventReservationPeopleView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<EventDetailCubit>(),
+            child: EventReservationPeopleView(
+              eventId: settings.arguments as String,
+            ),
+          ),
         );
 
       case kSplashView:

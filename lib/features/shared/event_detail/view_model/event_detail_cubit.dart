@@ -100,6 +100,27 @@ class EventDetailCubit extends Cubit<EventDetailState> {
     );
   }
 
+  Future<void> fetchEventPeople(String eventId) async {
+    emit(state.copyWith(eventPeopleStatus: CubitStates.loading));
+
+    final result = await repo.getEventPeople(eventId: eventId);
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          eventPeopleStatus: CubitStates.failure,
+          errorMessage: failure.message,
+        ),
+      ),
+      (people) => emit(
+        state.copyWith(
+          eventPeopleStatus: CubitStates.success,
+          eventPeople: people,
+        ),
+      ),
+    );
+  }
+
   //============ Setters ============//
 
   void setEventDate(DateTime date) => emit(state.copyWith(eventDate: date));

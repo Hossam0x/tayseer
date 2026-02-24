@@ -1412,5 +1412,10 @@
   "publishing_post": "Publishing post...",
   "no_events_title_user": "No events currently",
   "no_events_sub_title_user": "No consultants have created events yet. Wait and they will appear automatically.",
-  "book_ticket": "Book Ticket"
+  "book_ticket": "Book Ticket", 
+  "tickets_count": "Tickets Count",
+  "no_attendees_yet": "No attendees yet",
+  "no_attendees_description": "No one has booked tickets for this event yet",
+  "something_went_wrong": "Something went wrong",
+  "detils_attendees": "Attendees Details"
 }

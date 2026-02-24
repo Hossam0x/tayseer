@@ -40,7 +40,7 @@ class _OtpViewBodyState extends State<OtpViewBody> {
 
           if (selectedUserType == UserTypeEnum.asConsultant) {
             if (kCurrentUserData?.compeletedData == true) {
-              context.pushReplacementNamed(AppRouter.kSelectDaysView);
+              context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
             } else if (kCurrentUserData?.compeletedData == false &&
                 kCurrentUserData?.lastQuestionNumber == 1) {
               context.pushReplacementNamed(
