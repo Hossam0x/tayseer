@@ -6,14 +6,22 @@ import 'package:tayseer/my_import.dart';
 class UserNavBar extends StatelessWidget {
   final Function(int)? onTabReselect;
   const UserNavBar({super.key, this.onTabReselect});
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<LayoutCubit, LayoutState>(
       builder: (context, state) {
         final cubit = context.read<LayoutCubit>();
-        final navItems = NavBarConfig.getNavItems(
+        final allNavItems = NavBarConfig.getNavItems(
           selectedUserType ?? UserTypeEnum.user,
         );
+
+        // ⭐ فلتر الـ items: لو marriage مخفي، شيل index 1
+        final visibleNavItems = <({int originalIndex, dynamic item})>[];
+        for (int i = 0; i < allNavItems.length; i++) {
+          if (i == 1 && !state.isMarriageVisible) continue; // ⭐ اخفي marriage tab
+          visibleNavItems.add((originalIndex: i, item: allNavItems[i]));
+        }
 
         return Container(
           padding: EdgeInsets.only(top: context.responsiveHeight(16)),
@@ -23,22 +31,26 @@ class UserNavBar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: List.generate(
-                navItems.length,
-                (index) => _NavItem(
-                  icon: navItems[index].icon,
-                  activeIcon: navItems[index].activeIcon,
-                  label: context.tr(navItems[index].labelKey),
-                  isActive: state.currentIndex == index,
-                  onTap: () {
-                    // ✅ التحقق من إعادة الضغط على نفس التاب
-                    if (index == state.currentIndex) {
-                      onTabReselect?.call(index);
-                    } else {
-                      cubit.changeIndex(index);
-                    }
-                    // cubit.changeIndex(index);
-                  },
-                ),
+                visibleNavItems.length,
+                (visibleIndex) {
+                  final entry = visibleNavItems[visibleIndex];
+                  final originalIndex = entry.originalIndex;
+                  final navItem = entry.item;
+
+                  return _NavItem(
+                    icon: navItem.icon,
+                    activeIcon: navItem.activeIcon,
+                    label: context.tr(navItem.labelKey),
+                    isActive: state.currentIndex == originalIndex, // ⭐ قارن بالـ original index
+                    onTap: () {
+                      if (originalIndex == state.currentIndex) {
+                        onTabReselect?.call(originalIndex);
+                      } else {
+                        cubit.changeIndex(originalIndex); // ⭐ استخدم الـ original index
+                      }
+                    },
+                  );
+                },
               ),
             ),
           ),
@@ -119,7 +131,7 @@ class _NavItemState extends State<_NavItem>
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
-        color: Colors.transparent, // منطقة ضغط أوسع
+        color: Colors.transparent,
         padding: EdgeInsets.symmetric(horizontal: 4.w),
         child: AnimatedBuilder(
           animation: _controller,

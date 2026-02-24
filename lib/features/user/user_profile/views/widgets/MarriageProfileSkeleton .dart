@@ -1,7 +1,4 @@
 // lib/features/user/user_profile/views/widgets/marriage_profile_skeleton.dart
-
-import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageProfileSkeleton extends StatelessWidget {

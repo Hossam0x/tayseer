@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
@@ -22,7 +23,6 @@ import 'package:tayseer/features/user/marriage/view/widget/interests_section.dar
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 import 'widgets/MarriageProfileSkeleton .dart';
 import 'widgets/profile_statistics_cards.dart';
-
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
   final int initialTabIndex;
@@ -97,9 +97,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
 
     double totalProgress = questionProgress + mediaBonus;
 
-    debugPrint('📊 Question Progress: $questionProgress%');
-    debugPrint('📊 Media Bonus: $mediaBonus%');
-    debugPrint('📊 Total: $totalProgress%');
 
     return totalProgress;
   }
@@ -984,276 +981,28 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   }
 
   List<Map<String, dynamic>> _buildFaithItems(MarriageUserProfileModel profile) {
-    final Map<String, String> _keyToEmojiMap = {
-      'faith_dua': '🙏',
-      'faith_umrah': '🕋',
-      'faith_charity_work': '💼',
-      'faith_dawah': '📢',
-      'faith_sadaqah': '🤝',
-      'faith_hadith': '📖',
-      'faith_tahajjud': '😊',
-      'faith_dhikr': '📿',
-      'faith_multiple_prayers': '🕌',
-      'faith_sunnah_prayer': '🙏',
-      'faith_nafila_prayer': '🕯️',
-      'faith_hajj': '🕋',
-      'faith_five_prayers': '☪️',
-      'faith_fiqh': '📚',
-      'faith_fasting': '🌙',
-      'faith_tasawwuf': '😇',
-      'faith_good_manners': '🤲',
-      'faith_friday_prayer': '🕌',
-    };
+  final faithList = MarriageConstants.parseKeysFromRaw(profile.faith)
+      .where((s) => s.startsWith('faith_'))
+      .toList();
 
-    // ⭐ اقرأ من profile.faith مباشرة
-    List<String> faithList = [];
+  if (faithList.isEmpty) return [];
 
-    if (profile.faith is List) {
-      for (var item in profile.faith) {
-        final itemStr = item.toString().trim();
-        if (itemStr.isEmpty) continue;
-
-        if (itemStr.contains(',')) {
-          faithList.addAll(
-            itemStr.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
-          );
-        } else {
-          faithList.add(itemStr);
-        }
-      }
-    } else if (profile.faith is String &&
-        (profile.faith as String).isNotEmpty) {
-      faithList = (profile.faith as String)
-          .split(',')
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList();
-    }
-
-    // ⭐ فلتر - خلي بس faith_ keys
-    faithList = faithList.where((s) => s.startsWith('faith_')).toList();
-
-    if (faithList.isEmpty) return [];
-
-    return faithList.map<Map<String, dynamic>>((key) {
-      final trimmedKey = key.trim();
-      final emoji = _keyToEmojiMap[trimmedKey] ?? '☪️';
-      final displayText = _translateValue(trimmedKey);
-      return {'icon': AssetsData.kmusicIcon, 'label': '$emoji $displayText'};
-    }).toList();
-  }
-
+  return faithList.map<Map<String, dynamic>>((key) {
+    final emoji = MarriageConstants.getEmoji(key);
+    return {'icon': AssetsData.kmusicIcon, 'label': '$emoji ${_translateValue(key)}'};
+  }).toList();
+}
   // ⭐⭐⭐ FIX: دالة _buildInterestsItems مع الترجمة الكاملة
-  List<Map<String, dynamic>> _buildInterestsItems(profile) {
-    final Map<String, String> _keyToEmojiMap = {
-      // Sports
-      'interest_baseball': '⚾',
-      'interest_running': '🏃',
-      'interest_weightlifting': '🏋️',
-      'interest_gymnastics': '🤸',
-      'interest_golf': '⛳',
-      'interest_tennis': '🎾',
-      'interest_swimming': '🏊',
-      'interest_dancing': '💃',
-      'interest_skating': '⛸️',
-      'interest_yoga': '🧘',
-      'interest_flying_disc': '🥏',
-      'interest_badminton': '🏸',
-      'interest_skiing': '⛷️',
-      'interest_cycling': '🚴',
-      'interest_basketball': '🏀',
-      'interest_football': '⚽',
-      'interest_karate': '🥋',
-      'interest_boxing': '🥊',
-      'interest_archery': '🏹',
-      'interest_horse_riding': '🏇',
 
-      // Arts & Culture
-      'interest_theater': '🎭',
-      'interest_magic': '🪄',
-      'interest_music': '🎵',
-      'interest_painting': '🎨',
-      'interest_photography': '📷',
-      'interest_cinema': '🎬',
-      'interest_reading': '📚',
-      'interest_writing': '✍️',
-      'interest_poetry': '📝',
-      'interest_history': '🏛️',
-      'interest_languages': '🗣️',
-      'interest_museums': '🖼️',
-      'interest_calligraphy': '🖋️',
-      'interest_sculpture': '🗿',
-      'interest_design': '🎯',
-      'interest_fashion': '👗',
+List<Map<String, dynamic>> _buildInterestsItems(profile) {
+  final hobbiesList = MarriageConstants.parseKeysFromRaw(profile.hobbies);
+  if (hobbiesList.isEmpty) return [];
 
-      // Community
-      'interest_volunteering': '🤝',
-      'interest_charity': '💝',
-      'interest_teaching': '👨‍🏫',
-      'interest_mentoring': '🧑‍🤝‍🧑',
-      'interest_elderly_care': '👴',
-      'interest_children_care': '👶',
-      'interest_environment': '🌱',
-      'interest_animal_care': '🐾',
-      'interest_blood_donation': '🩸',
-      'interest_community_events': '🎉',
-      'interest_social_work': '💼',
-      'interest_human_rights': '⚖️',
-
-      // Technology
-      'interest_programming': '💻',
-      'interest_gaming': '🎮',
-      'interest_ai': '🤖',
-      'interest_web_dev': '🌐',
-      'interest_mobile_apps': '📱',
-      'interest_cybersecurity': '🔒',
-      'interest_data_science': '📊',
-      'interest_electronics': '🔌',
-      'interest_robotics': '🦾',
-      'interest_vr_ar': '🥽',
-      'interest_3d_printing': '🖨️',
-      'interest_drones': '🚁',
-      'interest_smart_home': '🏠',
-      'interest_blockchain': '⛓️',
-
-      // Outdoors
-      'interest_hiking': '🥾',
-      'interest_camping': '🏕️',
-      'interest_fishing': '🎣',
-      'interest_beach': '🏖️',
-      'interest_mountain_climbing': '🏔️',
-      'interest_gardening': '🌻',
-      'interest_picnic': '🧺',
-      'interest_bird_watching': '🦅',
-      'interest_stargazing': '🌟',
-      'interest_road_trips': '🚗',
-      'interest_sailing': '⛵',
-      'interest_diving': '🤿',
-      'interest_surfing': '🏄',
-      'interest_kayaking': '🛶',
-      'interest_rock_climbing': '🧗',
-      'interest_paragliding': '🪂',
-
-      // Food & Drinks
-      'interest_cooking': '👨‍🍳',
-      'interest_baking': '🧁',
-      'interest_grilling': '🍖',
-      'interest_coffee': '☕',
-      'interest_tea': '🍵',
-      'interest_smoothies': '🥤',
-      'interest_sushi': '🍣',
-      'interest_pizza': '🍕',
-      'interest_desserts': '🍰',
-      'interest_healthy_food': '🥗',
-      'interest_street_food': '🌮',
-      'interest_fine_dining': '🍽️',
-      'interest_food_photography': '📸',
-      'interest_chocolate': '🍫',
-      'interest_ice_cream': '🍦',
-
-      // Faith
-      'faith_dua': '🙏',
-      'faith_umrah': '🕋',
-      'faith_charity_work': '💼',
-      'faith_dawah': '📢',
-      'faith_sadaqah': '🤝',
-      'faith_hadith': '📖',
-      'faith_tahajjud': '😊',
-      'faith_dhikr': '📿',
-      'faith_multiple_prayers': '🕌',
-      'faith_sunnah_prayer': '🙏',
-      'faith_nafila_prayer': '🕯️',
-      'faith_hajj': '🕋',
-      'faith_five_prayers': '☪️',
-      'faith_fiqh': '📚',
-      'faith_fasting': '🌙',
-      'faith_tasawwuf': '😇',
-      'faith_good_manners': '🤲',
-      'faith_friday_prayer': '🕌',
-
-      // More Arts
-      'interest_singing': '🎤',
-      'interest_dancing_ballroom': '💃',
-      'interest_opera': '🎭',
-      'interest_ballet': '🩰',
-      'interest_acting': '🎬',
-      'interest_filmmaking': '🎥',
-      'interest_journalism': '📰',
-      'interest_blogging': '✍️',
-      'interest_podcasting': '🎙️',
-      'interest_storytelling': '📖',
-      'interest_archeology': '🏺',
-      'interest_astronomy': '🔭',
-      'interest_philosophy': '🤔',
-      'interest_literature': '📚',
-      'interest_crafts': '✂️',
-      'interest_knitting': '🧶',
-      'interest_sewing': '🧵',
-      'interest_pottery': '🏺',
-      'interest_woodworking': '🪵',
-      'interest_origami': '📄',
-    };
-
-    // ⭐⭐⭐ SAME LOGIC AS edit view
-    List<String> hobbiesList = [];
-
-    if (profile.hobbies is String) {
-      hobbiesList = (profile.hobbies as String)
-          .split(',')
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList();
-
-      debugPrint(
-        '📋 [INTERESTS] String input: "${profile.hobbies}" → parsed: $hobbiesList',
-      );
-    } else if (profile.hobbies is List) {
-      debugPrint('📋 [INTERESTS] Raw List: ${profile.hobbies}');
-
-      for (var item in profile.hobbies) {
-        final itemStr = item.toString().trim();
-        if (itemStr.isEmpty) continue;
-
-        if (itemStr.contains(',')) {
-          debugPrint('  🔄 Splitting item: "$itemStr"');
-          final subItems = itemStr
-              .split(',')
-              .map((s) => s.trim())
-              .where((s) => s.isNotEmpty);
-          hobbiesList.addAll(subItems);
-        } else {
-          hobbiesList.add(itemStr);
-        }
-      }
-
-      debugPrint('📋 [INTERESTS] Processed List: $hobbiesList');
-    } else {
-      debugPrint('⚠️ [INTERESTS] Invalid type: ${profile.hobbies.runtimeType}');
-      hobbiesList = [];
-    }
-
-    hobbiesList = hobbiesList
-        .where((s) => s.startsWith('interest_') || s.startsWith('faith_'))
-        .toList();
-
-    if (hobbiesList.isEmpty) {
-      debugPrint('⚠️ [INTERESTS] No valid hobbies found');
-      return [];
-    }
-
-    return hobbiesList.map<Map<String, dynamic>>((hobbyKey) {
-      final trimmedKey = hobbyKey.trim();
-      final emoji = _keyToEmojiMap[trimmedKey] ?? '🎵';
-      final displayText = _translateValue(trimmedKey);
-
-      debugPrint(
-        '🎯 Hobby: key="$trimmedKey", emoji="$emoji", display="$displayText"',
-      );
-
-      return {'icon': AssetsData.kmusicIcon, 'label': '$emoji $displayText'};
-    }).toList();
-  }
-
+  return hobbiesList.map<Map<String, dynamic>>((key) {
+    final emoji = MarriageConstants.getEmoji(key);
+    return {'icon': AssetsData.kmusicIcon, 'label': '$emoji ${_translateValue(key)}'};
+  }).toList();
+}
   Widget _buildError(BuildContext context, String? message) {
     return Center(
       child: Column(
