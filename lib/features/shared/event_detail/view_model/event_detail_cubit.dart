@@ -14,6 +14,7 @@ class EventDetailCubit extends Cubit<EventDetailState> {
   final descriptionController = TextEditingController();
   final priceBeforeDiscountController = TextEditingController();
   final priceAfterDiscountController = TextEditingController();
+  final numberOfAttendeesController = TextEditingController();
 
   String? _eventId;
 
@@ -56,10 +57,12 @@ class EventDetailCubit extends Cubit<EventDetailState> {
         eventDate: _parseDate(event.date),
         startTime: _parseTime(event.startTime),
         duration: event.duration, // 👈 مباشرة
-        // numberOfAttendees: event.numberOfReservations.toString(), // 👈 مباشرة
+        numberOfAttendees: event.numberOfReservations.toString(), // 👈 مباشرة
         // existingImages: event.images ?? [],
       ),
     );
+    // keep controller in sync
+    numberOfAttendeesController.text = event.numberOfReservations.toString();
   }
 
   //============ Update ============//
@@ -105,8 +108,12 @@ class EventDetailCubit extends Cubit<EventDetailState> {
 
   void setDuration(String? val) => emit(state.copyWith(duration: val));
 
-  void setNumberOfAttendees(String? val) =>
-      emit(state.copyWith(numberOfAttendees: val));
+  void setNumberOfAttendees(String? val) {
+    if (val != null && numberOfAttendeesController.text != val) {
+      numberOfAttendeesController.text = val;
+    }
+    emit(state.copyWith(numberOfAttendees: val));
+  }
 
   //============ Images ============//
 
@@ -184,6 +191,7 @@ class EventDetailCubit extends Cubit<EventDetailState> {
     descriptionController.dispose();
     priceBeforeDiscountController.dispose();
     priceAfterDiscountController.dispose();
+    numberOfAttendeesController.dispose();
     return super.close();
   }
 }

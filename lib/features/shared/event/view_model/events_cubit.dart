@@ -36,6 +36,7 @@ class EventsCubit extends Cubit<EventsState> {
   final eventDescriptionController = TextEditingController();
   final eventPriceBeforeDiscountController = TextEditingController();
   final eventPriceAfterDiscountController = TextEditingController();
+  final numberOfAttendeesController = TextEditingController();
 
   static const gmaps.LatLng _defaultPosition = gmaps.LatLng(30.0444, 31.2357);
 
@@ -114,6 +115,10 @@ class EventsCubit extends Cubit<EventsState> {
   String? get numberOfAttendees => state.numberOfAttendees;
 
   void setnumberOfAttendees(String? val) {
+    // Keep controller text in sync when setting programmatically
+    if (val != null && numberOfAttendeesController.text != val) {
+      numberOfAttendeesController.text = val;
+    }
     emit(state.copyWith(numberOfAttendees: val));
   }
 
@@ -482,6 +487,43 @@ class EventsCubit extends Cubit<EventsState> {
     }
   }
 
+  ////discount event
+  Future<void> discountEvent() async {
+    try {
+      emit(state.copyWith(discountEventState: CubitStates.loading));
+
+      final either = await getIt<EventRepo>().discountEvent();
+
+      either.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              discountEventState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (discountResult) {
+          emit(
+            state.copyWith(
+              discountResult: discountResult,
+              discountEventState: CubitStates.success,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          discountEventState: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+  }
+
+
+
   Future _clearForm() async {
     eventTitleController.clear();
     eventDescriptionController.clear();
@@ -513,7 +555,6 @@ class EventsCubit extends Cubit<EventsState> {
 
   @override
   Future<void> close() {
-  
     _debounce?.cancel();
 
     return super.close();

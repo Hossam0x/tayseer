@@ -354,7 +354,7 @@
   "event_location": "مكان الحدث",
   "event_price_before_discount": "سعر الحدث قبل الخصم",
   "event_price_after_discount": "سعر الحدث بعد الخصم",
-  "application_rate": "التطبيق له ٢٥٪ من التيكت",
+  "application_rate": "نسبه خصم التطبيق",
   "attendees_count": "عدد الحضور",
   "add_event_image": "اضف صورة الحدث",
   "add_4_images_hint": "اضف 4 صور تعبر عن الحدث",
@@ -1389,5 +1389,8 @@
   "publishing_post": "جاري نشر المنشور...",
   "reel_saved_success": "تم حفظ الريل بنجاح",
   "reel_unsaved_success": "تم إلغاء حفظ الريل",
-  "reel_save_error": "حدث خطأ أثناء حفظ الريل"
+  "reel_save_error": "حدث خطأ أثناء حفظ الريل",
+  "publishing_post": "جاري نشر المنشور...",
+  "add_caption_optional": "إضافة تعليق (اختياري)",
+  "after_application_discount": "السعر بعد خصم التطبيق"
 }

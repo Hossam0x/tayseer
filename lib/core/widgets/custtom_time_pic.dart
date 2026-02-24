@@ -9,6 +9,7 @@ class TimePickerFormField extends FormField<TimeOfDay> {
     bool enabled = true,
     super.validator,
     ValueChanged<TimeOfDay?>? onChanged,
+    DateTime? minDateForTime,
   }) : super(
          builder: (FormFieldState<TimeOfDay> state) {
            return Column(
@@ -17,7 +18,10 @@ class TimePickerFormField extends FormField<TimeOfDay> {
                GestureDetector(
                  onTap: enabled
                      ? () async {
-                         final picked = await pickTime(state.context);
+                        final picked = await pickTime(
+                          state.context,
+                          minDate: minDateForTime,
+                        );
                          if (picked != null) {
                            state.didChange(picked);
                            onChanged?.call(picked);

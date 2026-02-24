@@ -27,7 +27,9 @@ class QuestionsState {
   final RangeValues partnerAgeRange;
   final String? partnerCountry;
   final String? partnerNationality;
-
+  // Ai
+  final bool isAiLoading;
+  final String? aiGeneratedText;
   const QuestionsState({
     this.answerQuestionsState = CubitStates.initial,
     this.uploadPersonalInfoState = CubitStates.initial,
@@ -49,6 +51,9 @@ class QuestionsState {
     this.partnerAgeRange = const RangeValues(22, 35),
     this.partnerCountry,
     this.partnerNationality,
+    // Ai
+    this.isAiLoading = false,
+    this.aiGeneratedText,
   });
 
   QuestionsState copyWith({
@@ -74,7 +79,10 @@ class QuestionsState {
     String? partnerNationality,
     // ✅ Flags للمسح
     bool clearPartnerCountry = false,
-    bool clearPartnerNationality = false,
+    bool clearPartnerNationality = false, 
+    // Ai
+    bool? isAiLoading,
+    String? aiGeneratedText,
   }) {
     return QuestionsState(
       answerQuestionsState: answerQuestionsState ?? this.answerQuestionsState,
@@ -106,7 +114,11 @@ class QuestionsState {
       partnerNationality: clearPartnerNationality
           ? null
           : (partnerNationality ?? this.partnerNationality),
+      // Ai
+      isAiLoading: isAiLoading ?? this.isAiLoading,
+      aiGeneratedText: aiGeneratedText ?? this.aiGeneratedText,
     );
+
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

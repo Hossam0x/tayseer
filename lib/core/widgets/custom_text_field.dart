@@ -20,7 +20,7 @@ class CustomTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: context.width * .8,
-      height: context.height * .5,
+      height: context.height * .3,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.kWhiteColor,

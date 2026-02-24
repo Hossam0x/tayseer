@@ -18,7 +18,7 @@ class EventDetailModel {
 
   /// 🆕 Added duration
   final String duration;
-
+  final bool isMyEvent;
   EventDetailModel({
     required this.id,
     required this.title,
@@ -37,6 +37,7 @@ class EventDetailModel {
     required this.location,
     required this.images,
     required this.duration,
+    required this.isMyEvent,
   });
 
   factory EventDetailModel.fromJson(Map<String, dynamic> json) {
@@ -52,10 +53,20 @@ class EventDetailModel {
         final startParts = start.split(':');
         final endParts = end.split(':');
 
-        final startDt = DateTime(0, 0, 0,
-            int.parse(startParts[0]), int.parse(startParts[1]));
-        final endDt = DateTime(0, 0, 0,
-            int.parse(endParts[0]), int.parse(endParts[1]));
+        final startDt = DateTime(
+          0,
+          0,
+          0,
+          int.parse(startParts[0]),
+          int.parse(startParts[1]),
+        );
+        final endDt = DateTime(
+          0,
+          0,
+          0,
+          int.parse(endParts[0]),
+          int.parse(endParts[1]),
+        );
 
         final diff = endDt.difference(startDt);
         durationStr =
@@ -70,8 +81,10 @@ class EventDetailModel {
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       date: json['date']?.toString() ?? '',
-      numberOfReservations: int.tryParse(json['numberOfReservations']?.toString() ?? '0') ?? 0,
-      numberOfTickets: int.tryParse(json['numberOfTickets']?.toString() ?? '0') ?? 0,
+      numberOfReservations:
+          int.tryParse(json['numberOfReservations']?.toString() ?? '0') ?? 0,
+      numberOfTickets:
+          int.tryParse(json['numberOfTickets']?.toString() ?? '0') ?? 0,
       advisor: json['advisor']?.toString() ?? '',
       startTime: start,
       endTime: end,
@@ -80,36 +93,41 @@ class EventDetailModel {
       reservationsImages: reservations == null
           ? []
           : reservations
-              .map((e) => (e as Map<String, dynamic>)['image']?.toString() ?? '')
-              .where((s) => s.isNotEmpty)
-              .toList(),
+                .map(
+                  (e) => (e as Map<String, dynamic>)['image']?.toString() ?? '',
+                )
+                .where((s) => s.isNotEmpty)
+                .toList(),
       priceAfterDiscount:
           double.tryParse(json['priceAfterDiscount']?.toString() ?? '0') ?? 0.0,
       priceBeforeDiscount:
-          double.tryParse(json['priceBeforeDiscount']?.toString() ?? '0') ?? 0.0,
+          double.tryParse(json['priceBeforeDiscount']?.toString() ?? '0') ??
+          0.0,
       location: json['location']?.toString() ?? '',
       images: json['images']?.toString() ?? '',
       duration: durationStr,
+      isMyEvent: json['isMyEvent'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'description': description,
-        'date': date,
-        'numberOfReservations': numberOfReservations,
-        'numberOfTickets': numberOfTickets,
-        'advisor': advisor,
-        'startTime': startTime,
-        'endTime': endTime,
-        'latitude': latitude,
-        'longitude': longitude,
-        'reservations': reservationsImages.map((i) => {'image': i}).toList(),
-        'priceAfterDiscount': priceAfterDiscount,
-        'priceBeforeDiscount': priceBeforeDiscount,
-        'location': location,
-        'images': images,
-        'duration': duration, // 🆕 Added
-      };
+    'id': id,
+    'title': title,
+    'description': description,
+    'date': date,
+    'numberOfReservations': numberOfReservations,
+    'numberOfTickets': numberOfTickets,
+    'advisor': advisor,
+    'startTime': startTime,
+    'endTime': endTime,
+    'latitude': latitude,
+    'longitude': longitude,
+    'reservations': reservationsImages.map((i) => {'image': i}).toList(),
+    'priceAfterDiscount': priceAfterDiscount,
+    'priceBeforeDiscount': priceBeforeDiscount,
+    'location': location,
+    'images': images,
+    'duration': duration, // 🆕 Added
+    'isMyEvent': isMyEvent,
+  };
 }

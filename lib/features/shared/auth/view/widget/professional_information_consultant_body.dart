@@ -96,17 +96,13 @@ class _ProfessionalInformationAsConsultantBodyState
                       CustomDropdownFormField<String>(
                         hint: context.tr('specialization'),
                         value: authCubit.specialization,
-                        items: specializationKeys
-                            .map(
-                              (key) => DropdownMenuItem(
-                                value: key,
-                                child: Text(
-                                  context.tr(key),
-                                  style: Styles.textStyle14,
-                                ),
-                              ),
-                            )
-                            .toList(),
+                        items: specializationKeys.map((key) {
+                          final translated = context.tr(key);
+                          return DropdownMenuItem(
+                            value: translated, // 👈 النص المترجم
+                            child: Text(translated, style: Styles.textStyle14),
+                          );
+                        }).toList(),
                         onChanged: authCubit.setSpecialization,
                         validator: (value) =>
                             value == null ? context.tr('required') : null,
@@ -118,17 +114,13 @@ class _ProfessionalInformationAsConsultantBodyState
                       CustomDropdownFormField<String>(
                         hint: context.tr('jobLevel'),
                         value: authCubit.jobLevel,
-                        items: jobLevelKeys
-                            .map(
-                              (key) => DropdownMenuItem(
-                                value: key,
-                                child: Text(
-                                  context.tr(key),
-                                  style: Styles.textStyle14,
-                                ),
-                              ),
-                            )
-                            .toList(),
+                        items: jobLevelKeys.map((key) {
+                          final translated = context.tr(key);
+                          return DropdownMenuItem(
+                            value: translated, // 👈 النص المترجم
+                            child: Text(translated, style: Styles.textStyle14),
+                          );
+                        }).toList(),
                         onChanged: authCubit.setJobLevel,
                         validator: (value) =>
                             value == null ? context.tr('required') : null,
@@ -140,17 +132,13 @@ class _ProfessionalInformationAsConsultantBodyState
                       CustomDropdownFormField<String>(
                         hint: context.tr('experienceYears'),
                         value: authCubit.experienceYears,
-                        items: experienceYearsKeys
-                            .map(
-                              (key) => DropdownMenuItem(
-                                value: key,
-                                child: Text(
-                                  context.tr(key),
-                                  style: Styles.textStyle14,
-                                ),
-                              ),
-                            )
-                            .toList(),
+                        items: experienceYearsKeys.map((key) {
+                          final translated = context.tr(key);
+                          return DropdownMenuItem(
+                            value: translated, // 👈 النص المترجم
+                            child: Text(translated, style: Styles.textStyle14),
+                          );
+                        }).toList(),
                         onChanged: authCubit.setExperienceYears,
                         validator: (value) =>
                             value == null ? context.tr('required') : null,

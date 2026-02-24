@@ -1,6 +1,7 @@
 // lib/features/advisor/event/view_model/events_state.dart
 
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+import 'package:tayseer/features/shared/event/model/discount_result_models.dart';
 import 'package:tayseer/features/shared/event/model/my_event_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -12,9 +13,11 @@ class EventsState {
   final CubitStates advisorEventsState;
   final CubitStates allEventsState;
   final CubitStates deleteEventStatus;
+  final CubitStates discountEventState;
   final String? errorMessage;
   final List<EventModel> advisorEvents;
   final List<EventModel> allEvents;
+  final DiscountResultModel? discountResult;
 
   // ==================== Media ====================
   final List<XFile> pickedImages;
@@ -44,9 +47,11 @@ class EventsState {
     this.advisorEventsState = CubitStates.initial,
     this.allEventsState = CubitStates.initial,
     this.deleteEventStatus = CubitStates.initial,
+    this.discountEventState = CubitStates.initial,
     this.errorMessage,
     this.advisorEvents = const [],
     this.allEvents = const [],
+    this.discountResult,
     // Media
     this.pickedImages = const [],
     this.pickedVideo,
@@ -77,9 +82,11 @@ class EventsState {
     CubitStates? advisorEventsState,
     CubitStates? allEventsState,
     CubitStates? deleteEventStatus,
+    CubitStates? discountEventState,
     String? errorMessage,
     List<EventModel>? advisorEvents,
     List<EventModel>? allEvents,
+    DiscountResultModel? discountResult,
     // Media
     List<XFile>? pickedImages,
     Object? pickedVideo = _sentinel,
@@ -106,9 +113,11 @@ class EventsState {
       advisorEventsState: advisorEventsState ?? this.advisorEventsState,
       allEventsState: allEventsState ?? this.allEventsState,
       deleteEventStatus: deleteEventStatus ?? this.deleteEventStatus,
+      discountEventState: discountEventState ?? this.discountEventState,
       errorMessage: errorMessage ?? this.errorMessage,
       advisorEvents: advisorEvents ?? this.advisorEvents,
       allEvents: allEvents ?? this.allEvents,
+      discountResult: discountResult ?? this.discountResult,
       // Media
       pickedImages: pickedImages ?? this.pickedImages,
       pickedVideo: pickedVideo == _sentinel
