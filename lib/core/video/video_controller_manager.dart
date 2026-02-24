@@ -24,8 +24,8 @@ class VideoControllerManager {
   // نستخدم ValueNotifier لنخبر الجميع من هو البوست الذي يعمل حالياً
   final ValueNotifier<String?> currentlyPlayingVideoId = ValueNotifier(null);
 
-  // الحد الأقصى للتحميل المسبق
-  static const int _maxPreloadCount = 3;
+  // الحد الأقصى للتحميل المسبق — 1 فقط لتجنب استنزاف hardware decoders
+  static const int _maxPreloadCount = 1;
 
   // حالة التهيئة
   bool _isInitialized = false;

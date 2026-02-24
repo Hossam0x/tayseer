@@ -2,7 +2,6 @@ import 'package:preload_page_view/preload_page_view.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/core/video/video_controller_manager.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/shared/reels/views/widget/reels_item.dart';
 import 'package:tayseer/my_import.dart';
@@ -38,7 +37,7 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   int _currentIndex = 0;
 
   static const int _loadMoreThreshold = 3;
-  static const int _preloadCount = 3;
+  static const int _preloadCount = 2;
 
   @override
   void initState() {
@@ -62,30 +61,16 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   }
 
   void _preloadNextVideos(List<PostModel> reels, int currentIndex) {
-    final urlsToPreload = <String>[];
-    final controllersToPreload = <VideoItem>[];
-
+    // نحمل ملفات الكاش فقط — بدون إنشاء controllers
+    // لأن كل controller يحجز hardware decoder slot
     for (int i = 1; i <= _preloadCount; i++) {
       final nextIndex = currentIndex + i;
       if (nextIndex < reels.length) {
         final videoUrl = reels[nextIndex].videoUrl;
         if (videoUrl != null && videoUrl.isNotEmpty) {
-          urlsToPreload.add(videoUrl);
-          controllersToPreload.add(
-            VideoItem(id: reels[nextIndex].postId, url: videoUrl),
-          );
+          _videoCacheManager.preloadVideoInBackground(videoUrl);
         }
       }
-    }
-
-    // تحميل الملفات في الكاش
-    if (urlsToPreload.isNotEmpty) {
-      _videoCacheManager.preloadVideosInBackground(urlsToPreload);
-    }
-
-    // تحميل الـ controllers مسبقاً — Facebook-style
-    if (controllersToPreload.isNotEmpty) {
-      VideoControllerManager().preloadVideos(controllersToPreload);
     }
   }
 

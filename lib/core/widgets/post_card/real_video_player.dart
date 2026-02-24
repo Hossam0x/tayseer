@@ -51,6 +51,9 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   // Auto-retry timer للفشل الصامت
   Timer? _autoRetryTimer;
 
+  // Delayed disposal timer — ينتظر 2 ثانية قبل dispose عند الخروج من الشاشة
+  Timer? _disposeDelayTimer;
+
   @override
   void initState() {
     super.initState();
@@ -119,6 +122,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   void dispose() {
     _isDisposed = true;
     _autoRetryTimer?.cancel();
+    _disposeDelayTimer?.cancel();
     _savePosition();
     VideoManager.instance.currentlyPlayingPostId.removeListener(
       _videoManagerListener,
@@ -409,6 +413,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     final visibleFraction = info.visibleFraction;
 
     if (visibleFraction > 0.7) {
+      // ألغِ أي timer dispose — الفيديو رجع للشاشة
+      _disposeDelayTimer?.cancel();
+      _disposeDelayTimer = null;
+
       if (_controller == null && !_hasError) {
         _initializeVideo().then((_) {
           if (mounted && !_isDisposed && _isInitialized) {
@@ -431,11 +439,23 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       }
     } else if (visibleFraction > 0.0) {
       // ظاهر جزئياً — إيقاف مؤقت فقط بدون dispose
+      _disposeDelayTimer?.cancel();
+      _disposeDelayTimer = null;
       _pauseAndSave();
     } else {
-      // خرج من الشاشة — إيقاف مؤقت فقط، بدون dispose الـ controller
-      // هذا هو التحسين الأساسي: نحتفظ بالـ controller جاهز
+      // خرج من الشاشة تماماً — إيقاف مؤقت + dispose بعد 2 ثانية
+      // لتحرير hardware decoder slot
       _pauseAndSave();
+      _disposeDelayTimer?.cancel();
+      _disposeDelayTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted && !_isDisposed && _controller != null) {
+          debugPrint('♻️ Delayed dispose for ${widget.postId}');
+          _savePosition();
+          _disposeLocalController();
+          _initCompleter = null;
+          if (mounted && !_isDisposed) setState(() {});
+        }
+      });
     }
   }
 
