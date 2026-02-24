@@ -799,7 +799,7 @@ abstract class AppRouter {
         );
       case AppRouter.kinteractionSubscriptionView:
         return SlideLeftRoute(
-          page: const interactionSubscriptionView(),
+          page: const InteractionSubscriptionView(),
           routeSettings: settings,
         );
 
