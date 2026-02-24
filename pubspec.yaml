@@ -2,7 +2,7 @@ name: tayseer
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.2+2
+version: 1.0.3+3
 
 environment:
   sdk: ">=3.8.1 <4.0.0"
@@ -45,6 +45,7 @@ dependencies:
   geolocator: ^14.0.2
   get_it: ^9.2.0
   google_generative_ai: ^0.4.7
+  flutter_dotenv: ^5.0.2
   google_maps_flutter: ^2.14.0
   google_sign_in: ^6.2.2
   hexcolor: ^3.0.2
@@ -104,6 +105,7 @@ flutter:
     - assets/icons/
     - assets/lang/
     - assets/sounds/
+    - .env.example
 
   fonts:
     - family: ibmp
