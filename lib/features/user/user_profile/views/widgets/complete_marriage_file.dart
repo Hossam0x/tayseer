@@ -23,7 +23,7 @@ class CompleteMarriageFile extends StatelessWidget {
       {
         'title': context.tr('photo_verification'),
         'description': context.tr('photo_verification_desc'),
-        'isVerified': false, // Adjust based on your model
+        'isVerified': true, // Adjust based on your model
       },
       {
         'title': context.tr('age_verification'),
@@ -33,7 +33,7 @@ class CompleteMarriageFile extends StatelessWidget {
       {
         'title': context.tr('identity_verification'),
         'description': context.tr('identity_verification_desc'),
-        'isVerified': true, // Adjust based on your model
+        'isVerified': false, // Adjust based on your model
       },
     ];
 
@@ -77,12 +77,13 @@ class CompleteMarriageFile extends StatelessWidget {
                     SizedBox(height: 20.h),
 
                     // Verification Section
-                    if (!isVerified)
-                      _buildVerificationCard(
-                        context,
-                        verificationPercentage,
-                        verificationItems,
-                      ),
+                     profile.isVerified == true
+                        ? const SizedBox.shrink()
+                        : _buildVerificationCard(
+                            context,
+                            verificationPercentage,
+                            verificationItems,
+                          ),
 
                     if (!isVerified) SizedBox(height: 12.h),
 
@@ -190,7 +191,7 @@ class CompleteMarriageFile extends StatelessWidget {
                     ),
                     child: Text(
                       "$percentage%",
-                      style: Styles.textStyle14.copyWith(
+                      style: Styles.textStyle12.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary200,
                       ),

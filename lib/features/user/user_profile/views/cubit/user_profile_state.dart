@@ -23,7 +23,7 @@ class SettingsLoaded extends UserProfileState {
   isActionSuccess; // Simple boolean for success/failure of last action
   final int
   actionTimestamp; // To force listener to react even if message is same
-
+  final bool isMarriageProfileComplete;
   const SettingsLoaded({
     required this.settings,
     this.userProfile,
@@ -31,7 +31,8 @@ class SettingsLoaded extends UserProfileState {
     this.actionMessage,
     this.isActionSuccess,
     this.actionTimestamp = 0,
-    this.isMarriageSectionDeactivated = false
+    this.isMarriageSectionDeactivated = false,
+    this.isMarriageProfileComplete = false,
   });
 
   SettingsLoaded copyWith({
@@ -42,13 +43,16 @@ class SettingsLoaded extends UserProfileState {
     String? actionMessage,
     bool? isActionSuccess,
     int? actionTimestamp,
+     bool? isMarriageProfileComplete,
   }) {
     return SettingsLoaded(
       settings: settings ?? this.settings,
       userProfile: userProfile ?? this.userProfile,
       isNotificationEnabled:
           isNotificationEnabled ?? this.isNotificationEnabled,
-      isMarriageSectionDeactivated: isMarriageSectionDeactivated ?? this.isMarriageSectionDeactivated,    
+      isMarriageSectionDeactivated: isMarriageSectionDeactivated ?? this.isMarriageSectionDeactivated,   
+      isMarriageProfileComplete: isMarriageProfileComplete ?? this.isMarriageProfileComplete, // ⭐
+ 
       actionMessage:
           actionMessage, // Not keeping previous message by default to avoid stale snacks
       isActionSuccess: isActionSuccess,
@@ -61,6 +65,7 @@ class SettingsLoaded extends UserProfileState {
     settings,
     userProfile,
     isMarriageSectionDeactivated,
+    isMarriageProfileComplete,
     isNotificationEnabled,
     actionMessage,
     isActionSuccess,
