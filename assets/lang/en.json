@@ -1422,12 +1422,12 @@
   "stop_orders_sessions_temporarily": "Temporarily suspend orders and sessions",
   "orders_receive_success": "Orders and sessions have been activated successfully",
   "orders_stop_success": "Orders and sessions have been suspended successfully",
-  "story_deleted_success": "Story deleted successfully",
-  "consultancy_session": "Consultancy Session",
-  "event_booking": "Event Booking",
-  "transaction": "Transaction",
   "detils_attendees": "Attendees Details",
   "unsaved_changes": "Unsaved Changes",
   "images_pending_save": "Images pending save",
-  "file_not_found": "File not found"
+  "file_not_found": "File not found",
+  "story_deleted_success": "Story deleted successfully",
+  "consultancy_session": "Consultancy Session",
+  "event_booking": "Event Booking",
+  "transaction": "Transaction"
 }
