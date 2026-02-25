@@ -1,7 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_state.dart';
-import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stories_gallery_grid.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/story_camera_widget.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/story_preview_view.dart';
@@ -83,20 +82,6 @@ class _AddStoryBodyState extends State<AddStoryBody> {
             // 3. Navigate back immediately
             final nav = Navigator.of(context);
             if (nav.canPop()) nav.pop();
-
-            // 4. Silently re-fetch stories after a short delay using getIt
-            //    (No context needed — StoriesCubit from GetIt + a dummy context-free fetch)
-            //    We pass the root navigator context captured before pop via getIt.
-            final storiesCubit = getIt<StoriesCubit>();
-            Future.delayed(const Duration(milliseconds: 1500), () {
-              // StoriesCubit.fetchStories needs a BuildContext only for error toasts.
-              // We call it anyway; if context is stale the toasts simply won't fire.
-              try {
-                storiesCubit.fetchStoriesSilent();
-              } catch (e) {
-                debugPrint('Silent fetch after add story failed: $e');
-              }
-            });
           });
         } else if (state.addStoryState == CubitStates.failure) {
           WidgetsBinding.instance.addPostFrameCallback((_) {

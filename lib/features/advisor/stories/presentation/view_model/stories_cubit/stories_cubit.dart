@@ -412,9 +412,14 @@ class StoriesCubit extends Cubit<StoriesState> {
       },
       (_) {
         emit(state.copyWith(createStoryState: CubitStates.success));
+
+        // Refetch stories after a delay to allow backend processing
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          fetchStoriesSilent();
+        });
+
         if (context != null && context.mounted) {
           AppToast.success(context, context.tr('story_created_success'));
-          fetchStories(context: context, isSilent: true);
         }
       },
     );

@@ -391,7 +391,7 @@ class _AddStoryItem extends StatelessWidget {
                       value: storyState.uploadProgress > 0
                           ? storyState.uploadProgress
                           : null,
-                      strokeWidth: 3.sp,
+                      strokeWidth: 2.sp,
                       color: AppColors.kprimaryColor,
                       backgroundColor: AppColors.secondary200,
                     ),
