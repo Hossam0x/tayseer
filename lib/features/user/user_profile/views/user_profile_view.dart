@@ -1014,15 +1014,18 @@ class _UserProfileViewState extends State<UserProfileView> {
       context,
       MaterialPageRoute(
         builder: (context) => Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.transparent,
           body: Stack(
             children: [
               Positioned.fill(
-                child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
+                child: Image.asset(
+                  AssetsData.homeBarBackgroundImage,
+                  fit: BoxFit.cover,
+                ),
               ),
-              AdvisorBackground(
-                child: MarriagefilePage(userProfile: state.userProfile),
-              ),
+              MarriagefilePage(
+                userProfile: state.userProfile,
+              ), // ← remove AdvisorBackground
             ],
           ),
         ),

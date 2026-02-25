@@ -884,7 +884,7 @@
   "remove_favorite_confirm": "Do you want to remove this user from favorites?",
   "you_liked": "You liked",
   "liked_Me": "Liked you",
-  "complete_profile_100_percent": "You must complete data 100%.",
+  "complete_profile_100_percent": " data completed to ",
   "complete_profile_description": "Enter complete personal data to\nfind your suitable partner",
   "married_through_tayseer": "Did you get married through",
   "contact_us_for_reward": "Contact us and get a financial reward",
@@ -1417,5 +1417,9 @@
   "no_attendees_yet": "No attendees yet",
   "no_attendees_description": "No one has booked tickets for this event yet",
   "something_went_wrong": "Something went wrong",
-  "detils_attendees": "Attendees Details"
+  "detils_attendees": "Attendees Details",
+  "unsaved_changes": "Unsaved Changes",
+"images_pending_save": "Images pending save",
+"file_not_found": "File not found"
+
 }

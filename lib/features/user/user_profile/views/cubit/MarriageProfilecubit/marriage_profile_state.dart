@@ -16,6 +16,7 @@ class MarriageProfileState extends Equatable {
   final List<File> pendingImages;
   final File? pendingVideo;
   final File? pendingAudio;
+  final bool hasUnsavedFields;
 
   // ⭐ Deleted Media (URLs to delete on save)
   final String? deletedSingleImageUrl;
@@ -25,6 +26,7 @@ class MarriageProfileState extends Equatable {
 
   const MarriageProfileState({
     this.state = CubitStates.initial,
+    this.hasUnsavedFields = false,
     this.profile,
     this.errorMessage,
     this.successMessage,
@@ -58,6 +60,7 @@ class MarriageProfileState extends Equatable {
     CubitStates? state,
     MarriageUserProfileModel? profile,
     String? errorMessage,
+    bool? hasUnsavedFields,
     String? successMessage,
     bool? isLoading,
     bool? isUpdating,
@@ -83,7 +86,7 @@ class MarriageProfileState extends Equatable {
           clearMessages ? null : (successMessage ?? this.successMessage),
       isLoading: isLoading ?? this.isLoading,
       isUpdating: isUpdating ?? this.isUpdating,
-
+      hasUnsavedFields: hasUnsavedFields ?? this.hasUnsavedFields,
       // ⭐ Pending Media
       pendingSingleImage: clearAllPending || clearPendingSingleImage
           ? null
