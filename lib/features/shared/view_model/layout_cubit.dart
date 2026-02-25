@@ -15,6 +15,7 @@ class LayoutCubit extends Cubit<LayoutState> {
       emit(state.copyWith(isMarriageVisible: false));
     }
   }
+  
 
   void changeIndex(int index) {
     // لو المستخدم بالفعل في نفس الصفحة وضغط عليها تاني (زي فيسبوك)

@@ -1,9 +1,6 @@
 import 'dart:ui';
-
 import 'package:tayseer/my_import.dart';
-
 import '../../../data/Model/interaction_usermodel .dart';
-
 class RecentlyJoined extends StatelessWidget {
   final InteractionUserModel item;
   final bool forceBlur;
