@@ -107,6 +107,7 @@ import 'package:tayseer/features/user/user_profile/views/user_public_profile_vie
 import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import '../../../my_import.dart';
+import 'package:tayseer/features/advisor/settings/view/order_management_view.dart';
 
 abstract class AppRouter {
   // shared routes
@@ -225,6 +226,7 @@ abstract class AppRouter {
   static const kUserFollowingsView = '/userFollowingsView';
   static const kGeneralSettingsView = '/general-settings';
   static const kEventReservationPeopleView = '/EventReservationPeopleView';
+  static const kOrderManagementView = '/order_management_view';
   ///// report screens /////
   static const kReportReasonsScreen = '/ReportReasonsScreen';
   // static String getInitialRoute() {
@@ -940,6 +942,11 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) =>
               MarriageView(personId: args?['personId'] as String? ?? ''),
+        );
+      case AppRouter.kOrderManagementView:
+        return SlideLeftRoute(
+          page: const OrderManagementView(),
+          routeSettings: settings,
         );
       /////  report screens ///////
       case kReportReasonsScreen:

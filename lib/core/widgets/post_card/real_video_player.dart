@@ -540,14 +540,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
                   if (_hasError) _buildErrorState(),
 
-                  if (!_isInitialized && !_hasError)
-                    const Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    ),
-
+                  // لا نظهر loading indicator — الـ thumbnail يكفي (زي فيسبوك)
                   if (_isInitialized && _isBuffering)
                     _buildBufferingIndicator(),
 

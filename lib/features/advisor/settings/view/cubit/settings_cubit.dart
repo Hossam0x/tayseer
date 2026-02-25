@@ -65,6 +65,12 @@ class SettingsCubit extends Cubit<SettingsState> {
           routeName: AppRouter.kLanguageSelectionView,
         ),
         SettingItemModel(
+          id: 'order_management',
+          title: 'order_management',
+          iconAsset: AssetsData.icOrderManagment,
+          routeName: AppRouter.kOrderManagementView,
+        ),
+        SettingItemModel(
           id: 'packages',
           title: 'packages',
           iconAsset: AssetsData.icPackesSettinngs,

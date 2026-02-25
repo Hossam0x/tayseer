@@ -64,7 +64,9 @@ class UserPublicProfileView extends StatelessWidget {
         if (state.profile?.isMe == true ||
             state.state != CubitStates.success ||
             state.profile == null ||
-            isBlocked) {
+            isBlocked ||
+            isConsultant ||
+            state.profile?.gender == kCurrentUserData?.gender) {
           return const SizedBox.shrink();
         }
 

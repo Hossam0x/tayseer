@@ -66,33 +66,29 @@ class VideoDownloadService {
   bool _notificationsInitialized = false;
 
   Future<void> _initNotifications() async {
+    // على iOS الإشعارات بتتكرر ومش بتشتغل صح، فبنكتفي بالـ Overlay بس
+    if (Platform.isIOS) return;
     if (_notificationsInitialized) return;
 
     const androidSettings = AndroidInitializationSettings(
       '@drawable/app_logo_icon',
     );
-    const iosSettings = DarwinInitializationSettings();
-    const settings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
+    const settings = InitializationSettings(android: androidSettings);
     await _notificationsPlugin.initialize(settings);
 
-    if (Platform.isAndroid) {
-      const channel = AndroidNotificationChannel(
-        _channelId,
-        _channelName,
-        description: _channelDescription,
-        importance: Importance.low,
-        playSound: false,
-        enableVibration: false,
-      );
-      await _notificationsPlugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >()
-          ?.createNotificationChannel(channel);
-    }
+    const channel = AndroidNotificationChannel(
+      _channelId,
+      _channelName,
+      description: _channelDescription,
+      importance: Importance.low,
+      playSound: false,
+      enableVibration: false,
+    );
+    await _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(channel);
 
     _notificationsInitialized = true;
   }
@@ -101,6 +97,8 @@ class VideoDownloadService {
     int progress,
     String notificationTitle,
   ) async {
+    if (Platform.isIOS) return;
+
     final androidDetails = AndroidNotificationDetails(
       _channelId,
       _channelName,
@@ -127,6 +125,7 @@ class VideoDownloadService {
   }
 
   Future<void> _cancelNotification() async {
+    if (Platform.isIOS) return;
     await _notificationsPlugin.cancel(_notificationId);
   }
 
