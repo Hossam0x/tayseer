@@ -1422,12 +1422,12 @@
   "stop_orders_sessions_temporarily": "إيقاف الطلبات والجلسات مؤقتًا",
   "orders_receive_success": "تم تفعيل استقبال الطلبات والجلسات بنجاح",
   "orders_stop_success": "تم إيقاف استقبال الطلبات والجلسات بنجاح",
-  "unsaved_changes": "تغييرات غير محفوظة",
-  "images_pending_save": "حفظ الصور معلق",
-  "detils_attendees": "تفاصيل الحاضرين",
-  "file_not_found": "الملف غير موجود",
   "story_deleted_success": "تم حذف القصة بنجاح",
   "consultancy_session": "جلسة استشارية",
   "event_booking": "حجز حدث",
-  "transaction": "معاملة"
+  "transaction": "معاملة",
+  "detils_attendees": "تفاصيل الحاضرين",
+  "unsaved_changes": "تغييرات غير محفوظة",
+  "images_pending_save": "حفظ الصور معلق",
+  "file_not_found": "الملف غير موجود"
 }
