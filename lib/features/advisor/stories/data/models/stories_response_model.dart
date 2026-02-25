@@ -131,6 +131,7 @@ class StoryModel extends Equatable {
   final DateTime updatedAt;
 
   final double? videoDuration;
+  final List<StoryUserModel>? likedBy;
 
   const StoryModel({
     required this.id,
@@ -143,6 +144,7 @@ class StoryModel extends Equatable {
     required this.viewsCount,
     required this.likesCount,
     required this.isLiked,
+    this.likedBy,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -181,6 +183,11 @@ class StoryModel extends Equatable {
       viewsCount: viewsCount,
       likesCount: json['likesCount'] ?? 0,
       isLiked: json['isLiked'] ?? false,
+      likedBy: json['likedBy'] != null
+          ? List<StoryUserModel>.from(
+              json['likedBy'].map((x) => StoryUserModel.fromJson(x)),
+            )
+          : null,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
@@ -203,6 +210,7 @@ class StoryModel extends Equatable {
     int? viewsCount,
     int? likesCount,
     bool? isLiked,
+    List<StoryUserModel>? likedBy,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -217,6 +225,7 @@ class StoryModel extends Equatable {
       viewsCount: viewsCount ?? this.viewsCount,
       likesCount: likesCount ?? this.likesCount,
       isLiked: isLiked ?? this.isLiked,
+      likedBy: likedBy ?? this.likedBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -234,6 +243,7 @@ class StoryModel extends Equatable {
     viewsCount,
     likesCount,
     isLiked,
+    likedBy,
     createdAt,
     updatedAt,
   ];
@@ -243,14 +253,21 @@ class StoryUserModel {
   final String id;
   final String name;
   final String image;
+  final String userType; // 'User' or 'Advisor'
 
-  StoryUserModel({required this.id, required this.name, required this.image});
+  StoryUserModel({
+    required this.id,
+    required this.name,
+    required this.image,
+    required this.userType,
+  });
 
   factory StoryUserModel.fromJson(Map<String, dynamic> json) {
     return StoryUserModel(
-      id: json['_id'],
-      name: json['name'],
-      image: json['image'],
+      id: json['id'] ?? json['_id'] ?? '',
+      name: json['name'] ?? '',
+      image: json['image'] ?? '',
+      userType: json['userType'] ?? 'User',
     );
   }
 }

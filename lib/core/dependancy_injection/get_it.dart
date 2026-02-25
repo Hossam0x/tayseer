@@ -74,6 +74,8 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_public
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/order_management_repository.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/order_management_cubit.dart';
 
 import '../../my_import.dart';
 
@@ -250,6 +252,14 @@ Future<void> setupGetIt() async {
 
   getIt.registerLazySingleton<AccountManagementRepository>(
     () => AccountManagementRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerLazySingleton<OrderManagementRepository>(
+    () => OrderManagementRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<OrderManagementCubit>(
+    () => OrderManagementCubit(getIt<OrderManagementRepository>()),
   );
 
   getIt.registerFactory<AccountManagementCubit>(

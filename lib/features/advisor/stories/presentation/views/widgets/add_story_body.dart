@@ -77,7 +77,10 @@ class _AddStoryBodyState extends State<AddStoryBody> {
                 text: context.tr('story_published_success'),
               ),
             );
-            getIt<StoriesCubit>().fetchStories(context: context);
+            getIt<StoriesCubit>().fetchStories(
+              context: context,
+              isSilent: true,
+            );
             // Navigate back to profile after a short delay
             final nav = Navigator.of(context);
             Future.delayed(const Duration(milliseconds: 500), () {

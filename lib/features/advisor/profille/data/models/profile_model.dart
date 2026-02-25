@@ -105,51 +105,42 @@ class ProfileModel extends Equatable {
 
 // إضافة Extension للتحويل
 extension ProfileModelExtension on ProfileModel {
-  // خريطة تحويل التخصصات
-  static const Map<String, String> _specializationMapping = {
-    "doctor": "طبيب نفسي",
-    "psychology": "استشاري نفسي وعلاقات زوجية",
-    "psychiatrist": "طبيب نفسي",
-    "psychologist": "أخصائي نفسي",
-    "life_coach": "مدرب حياة",
-    "family_counselor": "مستشار أسري",
-  };
+  String _mapExperienceKey(String? value) {
+    if (value == null || value.isEmpty) return '';
+    if (value.startsWith('experience_')) return value;
 
-  // خريطة تحويل المناصب
-  static const Map<String, String> _jobGradeMapping = {
-    "advisor": "استشاري",
-    "junior": "أخصائي",
-    "trainer": "مدرب",
-    "lecturer": "محاضر",
-  };
+    // Map numeric or bound-based values to keys
+    if (value == '2' || value == '0' || value == '0-2') return 'experience_0_2';
+    if (value == '5' || value == '3' || value == '2-5') return 'experience_2_5';
+    if (value == '10' || value == '5-10') return 'experience_5_10';
+    if (value == '11' || value == '10+') return 'experience_10_plus';
 
-  // الحصول على التخصص للعرض
+    return value;
+  }
+
+  // الحصول على التخصص للعرض (يرجع المفتاح للترجمة)
   String? get displaySpecialization {
     if (professionalSpecialization == null ||
         professionalSpecialization!.isEmpty) {
       return null;
     }
-
-    return _specializationMapping[professionalSpecialization] ??
-        professionalSpecialization;
+    return professionalSpecialization;
   }
 
-  // الحصول على المنصب للعرض
+  // الحصول على المنصب للعرض (يرجع المفتاح للترجمة)
   String? get displayJobGrade {
     if (jobGrade == null || jobGrade!.isEmpty) {
       return null;
     }
-
-    return _jobGradeMapping[jobGrade] ?? jobGrade;
+    return jobGrade;
   }
 
-  // تنظيف نص سنوات الخبرة
+  // الحصول على سنوات الخبرة للعرض (يرجع المفتاح للترجمة)
   String? get displayYearsExperience {
     if (yearsOfExperience == null || yearsOfExperience!.isEmpty) {
       return null;
     }
-
-    return yearsOfExperience!.replaceAll(" من الخبرة", "");
+    return _mapExperienceKey(yearsOfExperience);
   }
 
   // التحقق مما إذا كان هناك بيانات للعرض
