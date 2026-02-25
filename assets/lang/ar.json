@@ -882,7 +882,7 @@
   "remove_favorite_confirm": "هل تريد إزالة هذا المستخدم من المفضلة؟",
   "you_liked": "نال أعجابك",
   "liked_Me": "اُعجب بك",
-  "complete_profile_100_percent": "يجب إكمال البيانات بنسبة 100%.",
+  "complete_profile_100_percent": "تم اكتمال البيانات بنسبة ",
   "complete_profile_description": "ادخل البيانات الشخصية كاملة حتى تتمكن من \nإيجاد شريكك المناسب",
   "married_through_tayseer": "هل تزوجت بواسطة",
   "contact_us_for_reward": "تواصل معنا واحصل علي مكافأة مالية",
@@ -1417,7 +1417,6 @@
   "no_attendees_yet": "لا يوجد حاضرين حتى الآن",
   "no_attendees_description": "لم يقم أحد بحجز تذاكر لهذا الحدث بعد",
   "something_went_wrong": "حدث خطأ ما",
-  "detils_attendees": "تفاصيل الحاضرين",
   "order_management": "إدارة الطلبات",
   "receive_orders_sessions": "استقبل الطلبات وحجوزات الجلسات",
   "stop_orders_sessions_temporarily": "إيقاف الطلبات والجلسات مؤقتًا",
@@ -1426,5 +1425,9 @@
   "story_deleted_success": "تم حذف القصة بنجاح",
   "consultancy_session": "جلسة استشارية",
   "event_booking": "حجز حدث",
-  "transaction": "معاملة"
+  "transaction": "معاملة",
+  "detils_attendees": "تفاصيل الحاضرين",
+  "unsaved_changes": "تغييرات غير محفوظة",
+  "images_pending_save": "حفظ الصور معلق",
+  "file_not_found": "الملف غير موجود"
 }

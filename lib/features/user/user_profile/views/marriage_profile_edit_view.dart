@@ -1658,7 +1658,7 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
             }
             debugPrint('═══════════════════════════════════════════');
             cubit.updateField(fieldKey, value);
-            cubit.autoSaveFields();
+            // cubit.autoSaveFields();
           },
         ),
       ),
@@ -1689,7 +1689,7 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
         final newBio = controller.text.trim();
         if (newBio.isNotEmpty) {
           cubit.updateField('bio', newBio);
-            cubit.autoSaveFields();
+            // cubit.autoSaveFields();
           Navigator.pop(context);
         }
       },

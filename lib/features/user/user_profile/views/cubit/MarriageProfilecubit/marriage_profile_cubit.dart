@@ -54,7 +54,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     if (state.profile == null) return;
 
     try {
-      
       await _repository.updateMarriageProfile(state.profile!);
       debugPrint('✅ [AUTO-SAVE] Fields saved');
     } catch (e) {
@@ -307,7 +306,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         },
         (_) async {
           // ✅ Clear all pending
-          emit(state.copyWith(clearAllPending: true, isUpdating: false));
+          emit(
+            state.copyWith(
+              clearAllPending: true,
+              isUpdating: false,
+              hasUnsavedFields: false, // ← أضف
+            ),
+          );
           // ✅ Reload لجيب الـ URLs الجديدة من السيرفر
           await loadProfile();
           emit(state.copyWith(state: CubitStates.success, isUpdating: false));
@@ -499,13 +504,23 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
           .split(', ')
           .where((h) => h.startsWith('faith_'))
           .toList();
-      emit(state.copyWith(profile: state.profile!.copyWith(faith: newFaith)));
+      emit(
+        state.copyWith(
+          profile: state.profile!.copyWith(faith: newFaith),
+          hasUnsavedFields: true, // ← أضف
+        ),
+      );
       return;
     } else {
       updatedProfile = profile;
     }
 
-    emit(state.copyWith(profile: updatedProfile));
+    emit(
+      state.copyWith(
+        profile: updatedProfile,
+        hasUnsavedFields: true, // ← أضف
+      ),
+    );
   }
 
   // ════════════════════════════════════════════════════════════════
