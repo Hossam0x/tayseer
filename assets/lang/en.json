@@ -1423,5 +1423,8 @@
   "stop_orders_sessions_temporarily": "Temporarily suspend orders and sessions",
   "orders_receive_success": "Orders and sessions have been activated successfully",
   "orders_stop_success": "Orders and sessions have been suspended successfully",
-  "story_deleted_success": "Story deleted successfully"
+  "story_deleted_success": "Story deleted successfully",
+  "consultancy_session": "Consultancy Session",
+  "event_booking": "Event Booking",
+  "transaction": "Transaction"
 }

@@ -1423,5 +1423,8 @@
   "stop_orders_sessions_temporarily": "إيقاف الطلبات والجلسات مؤقتًا",
   "orders_receive_success": "تم تفعيل استقبال الطلبات والجلسات بنجاح",
   "orders_stop_success": "تم إيقاف استقبال الطلبات والجلسات بنجاح",
-  "story_deleted_success": "تم حذف القصة بنجاح"
+  "story_deleted_success": "تم حذف القصة بنجاح",
+  "consultancy_session": "جلسة استشارية",
+  "event_booking": "حجز حدث",
+  "transaction": "معاملة"
 }
