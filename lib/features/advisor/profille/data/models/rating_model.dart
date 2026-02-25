@@ -15,10 +15,13 @@ class RatingSummaryModel extends Equatable {
     final starsBreakdown = Map<String, dynamic>.from(json['starsBreakdown']);
 
     return RatingSummaryModel(
-      averageRating: (json['averageRating'] as num).toDouble(),
-      totalRatings: json['totalRatings'] as int,
+      averageRating: double.tryParse(json['averageRating'].toString()) ?? 0.0,
+      totalRatings: int.tryParse(json['totalRatings'].toString()) ?? 0,
       starsBreakdown: starsBreakdown.map(
-        (key, value) => MapEntry(int.parse(key), value as int),
+        (key, value) => MapEntry(
+          int.tryParse(key.toString()) ?? 0,
+          int.tryParse(value.toString()) ?? 0,
+        ),
       ),
     );
   }
@@ -48,7 +51,7 @@ class RatingUserModel extends Equatable {
 
 class RatingModel extends Equatable {
   final String id;
-  final int rating;
+  final double rating;
   final String review;
   final String createdAt;
   final bool isOwner;
@@ -66,7 +69,7 @@ class RatingModel extends Equatable {
   factory RatingModel.fromJson(Map<String, dynamic> json) {
     return RatingModel(
       id: json['id'] as String,
-      rating: json['rating'] as int,
+      rating: double.tryParse(json['rating'].toString()) ?? 0.0,
       review: json['review'] as String,
       createdAt: json['createdAt'] as String,
       isOwner: json['isOwner'] as bool,
@@ -111,10 +114,12 @@ class RatingsResponseModel extends Equatable {
     return RatingsResponseModel(
       summary: summary,
       ratings: ratingsList,
-      currentPage: pagination['currentPage'] as int,
-      totalPages: pagination['totalPages'] as int,
-      totalCount: pagination['totalCount'] as int,
-      hasMore: pagination['currentPage'] < pagination['totalPages'],
+      currentPage: int.tryParse(pagination['currentPage'].toString()) ?? 1,
+      totalPages: int.tryParse(pagination['totalPages'].toString()) ?? 1,
+      totalCount: int.tryParse(pagination['totalCount'].toString()) ?? 0,
+      hasMore:
+          (int.tryParse(pagination['currentPage'].toString()) ?? 1) <
+          (int.tryParse(pagination['totalPages'].toString()) ?? 1),
     );
   }
 

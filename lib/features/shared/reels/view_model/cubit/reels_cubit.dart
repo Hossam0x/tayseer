@@ -259,7 +259,7 @@ class ReelsCubit extends Cubit<ReelsState> {
   // 📌 SAVE REEL
   // ═══════════════════════════════════════════════════════════
 
-  void toggleSaveReel({required String postId}) {
+  Future<void> toggleSaveReel({required String postId}) async {
     final reelIndex = state.reels.indexWhere((reel) => reel.postId == postId);
     if (reelIndex == -1) return;
 
@@ -270,8 +270,35 @@ class ReelsCubit extends Cubit<ReelsState> {
 
     log('🎬 ${updatedReel.isSaved ? "Saved" : "Unsaved"} Reel: $postId');
 
-    // 🔜 TODO: API Call
-    // homeRepo.toggleSavePost(postId: postId, isSaved: updatedReel.isSaved);
+    // 3. استدعاء السيرفر
+    final result = await homeRepo.savedPost(
+      postId: postId,
+      isRemove: !updatedReel.isSaved,
+    );
+
+    // 4. التعامل مع النتيجة
+    result.fold(
+      (failure) {
+        log('❌ Save Reel Failed: ${failure.message}');
+        _updateReelInList(postId, reel); // Rollback
+        _safeEmit(
+          state.copyWith(
+            saveActionState: CubitStates.failure,
+            saveMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        log('>>>>>>>>>>>>>>>>> Save Post Success: $message');
+
+        _safeEmit(
+          state.copyWith(
+            saveActionState: CubitStates.success,
+            saveMessage: message,
+          ),
+        );
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -333,7 +360,6 @@ class ReelsCubit extends Cubit<ReelsState> {
       },
     );
   }
-
   // ═══════════════════════════════════════════════════════════
   // 📌 HELPER METHODS
   // ═══════════════════════════════════════════════════════════

@@ -238,7 +238,8 @@ class StoriesTabView extends StatelessWidget {
                                       ),
                                     ],
                                     child: StoryDetailsView(
-                                      userStories: tempUserStory,
+                                      usersStories: [tempUserStory],
+                                      initialUserIndex: 0,
                                       heroTag: 'archive_${story.id}',
                                       isArchive: true,
                                       initialStoryId: story.id,

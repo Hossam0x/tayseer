@@ -1,17 +1,12 @@
-import 'dart:io';
 import 'package:chewie/chewie.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:tayseer/core/widgets/custtom_glass_button.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_ui_cubit.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:video_player/video_player.dart';
 
 class EditPersonalDataView extends StatefulWidget {
   const EditPersonalDataView({super.key});
@@ -27,118 +22,62 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   late TextEditingController _usernameController;
   late EditPersonalDataUiCubit _uiCubit;
 
-  // ⭐ خرائط تحويل للمناصب
-  final Map<String, String> _positionMapping = {
-    "advisor": "job_consultant_title",
-    "senior": "job_senior",
-    "junior": "job_specialist",
-    "trainer": "job_trainer",
-    "lecturer": "job_lecturer",
-  };
-
-  // ⭐ خرائط تحويل للتخصصات
-  final Map<String, String> _specializationMapping = {
-    "doctor": "spec_psychiatrist",
-    "psychology": "spec_psych_counseling",
-    "psychiatrist": "spec_psychiatrist",
-    "psychologist": "spec_psychologist",
-    "life_coach": "spec_life_coach",
-    "family_counselor": "spec_family_counselor",
-    "specialist": "spec_specialist",
-    "consultant": "spec_consultant",
-  };
-
-  final List<String> _positions = [
-    "job_consultant_title",
-    "job_senior",
-    "job_specialist",
-    "job_trainer",
-    "job_lecturer",
+  final List<String> specializationKeys = [
+    'marital_counseling',
+    'premarital_counseling',
+    'parenting_counseling',
+    'children_issues',
+    'adolescent_issues',
+    'extended_family_relations',
+    'domestic_violence_protection',
+    'family_crisis_management',
+    'divorce_counseling',
+    'marital_sexual_counseling',
+    'family_addiction',
+    'family_mental_health',
   ];
 
-  final Map<String, String> _experienceMapping = {
-    "2": "exp_2_years",
-    "3": "exp_3_years",
-    "5": "exp_5_years",
-    "10": "exp_10_years",
-    "11": "exp_more_than_10_years",
-  };
-
-  final List<String> _specializations = [
-    "spec_psych_counseling",
-    "spec_psychiatrist",
-    "spec_psychologist",
-    "spec_life_coach",
-    "spec_family_counselor",
+  final List<String> jobLevelKeys = [
+    'junior_counselor',
+    'senior_counselor',
+    'specialist_consultant',
+    'lead_consultant',
   ];
 
-  final List<Map<String, String>> _experienceOptions = [
-    {"display": "exp_2_years", "value": "2"},
-    {"display": "exp_3_years", "value": "3"},
-    {"display": "exp_5_years", "value": "5"},
-    {"display": "exp_10_years", "value": "10"},
-    {"display": "exp_more_than_10_years", "value": "11"},
+  final List<String> experienceYearsKeys = [
+    'experience_0_2',
+    'experience_2_5',
+    'experience_5_10',
+    'experience_10_plus',
   ];
 
-  String? _mapFromBackend(String? backendValue, Map<String, String> mapping) {
-    if (backendValue == null) return null;
-    if (mapping.containsKey(backendValue)) {
-      return mapping[backendValue];
+  String? _mapFromBackend(String? backendValue, List<String> allowedKeys) {
+    if (backendValue == null || backendValue.isEmpty) return null;
+    if (allowedKeys.contains(backendValue)) {
+      return backendValue;
     }
-    final matchingEntry = mapping.entries.firstWhere(
-      (entry) => entry.value == backendValue,
-      orElse: () => const MapEntry("", ""),
-    );
-    if (matchingEntry.key.isNotEmpty) {
-      return matchingEntry.value;
+
+    // Map numeric or bound-based values to keys for experience
+    if (allowedKeys == experienceYearsKeys) {
+      if (backendValue == '2' || backendValue == '0' || backendValue == '0-2') {
+        return 'experience_0_2';
+      }
+      if (backendValue == '5' || backendValue == '3' || backendValue == '2-5') {
+        return 'experience_2_5';
+      }
+      if (backendValue == '10' || backendValue == '5-10') {
+        return 'experience_5_10';
+      }
+      if (backendValue == '11' || backendValue == '10+') {
+        return 'experience_10_plus';
+      }
     }
-    return backendValue;
+
+    return backendValue; // Fallback
   }
 
-  String? _mapToBackend(String? displayValue, Map<String, String> mapping) {
-    if (displayValue == null) return null;
-    final matchingEntry = mapping.entries.firstWhere(
-      (entry) => entry.value == displayValue,
-      orElse: () => const MapEntry("", ""),
-    );
-    if (matchingEntry.key.isNotEmpty) {
-      return matchingEntry.key;
-    }
-    final directMatch = mapping.entries.firstWhere(
-      (entry) => entry.key == displayValue,
-      orElse: () => const MapEntry("", ""),
-    );
-    return directMatch.key.isNotEmpty ? directMatch.key : displayValue;
-  }
-
-  String? _normalizeExperienceFromBackend(String? backendValue) {
-    if (backendValue == null) return null;
-    final normalized = backendValue.replaceAll(" من الخبرة", "");
-    if (_experienceMapping.values.contains(normalized)) {
-      return normalized;
-    }
-    final match = RegExp(r'(\d+)').firstMatch(backendValue);
-    if (match != null) {
-      final years = match.group(1);
-      return _experienceMapping[years] ?? backendValue;
-    }
-    return backendValue;
-  }
-
-  String _getValueFromExperience(String displayValue) {
-    if (displayValue == "exp_2_years" || displayValue.contains("سنتين"))
-      return "2";
-    if (displayValue == "exp_3_years" || displayValue.contains("3 سنوات"))
-      return "3";
-    if (displayValue == "exp_5_years" || displayValue.contains("5 سنوات"))
-      return "5";
-    if (displayValue == "exp_10_years" || displayValue.contains("10 سنوات"))
-      return "10";
-    if (displayValue == "exp_more_than_10_years" ||
-        displayValue.contains("أكثر من"))
-      return "11";
-    final match = RegExp(r'(\d+)').firstMatch(displayValue);
-    return match?.group(1) ?? displayValue;
+  String? _mapToBackend(String? displayValue) {
+    return displayValue; // Since display is the key now
   }
 
   VideoPlayerController? _videoPlayerController;
@@ -395,40 +334,26 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         ? username.substring(1)
         : username;
 
-    String? jobGradeDisplay;
-    final jobGrade = state.currentData.jobGrade;
-    if (jobGrade != null && jobGrade.isNotEmpty) {
-      jobGradeDisplay = _mapFromBackend(jobGrade, _positionMapping);
-      if (jobGradeDisplay == null || jobGradeDisplay.isEmpty) {
-        jobGradeDisplay = jobGrade;
-      }
-    }
+    String? jobGradeDisplay = _mapFromBackend(
+      state.currentData.jobGrade,
+      jobLevelKeys,
+    );
 
-    String? specializationDisplay;
-    final specialization = state.currentData.professionalSpecialization;
-    if (specialization != null && specialization.isNotEmpty) {
-      specializationDisplay = _mapFromBackend(
-        specialization,
-        _specializationMapping,
-      );
-      if (specializationDisplay == null || specializationDisplay.isEmpty) {
-        specializationDisplay = specialization;
-      }
-    }
+    String? specializationDisplay = _mapFromBackend(
+      state.currentData.professionalSpecialization,
+      specializationKeys,
+    );
 
-    String? experienceDisplay;
-    String? experienceValue;
-    final yearsExp = state.currentData.yearsOfExperience;
-    if (yearsExp != null && yearsExp.isNotEmpty) {
-      experienceDisplay = _normalizeExperienceFromBackend(yearsExp);
-      experienceValue = _getValueFromExperience(experienceDisplay!);
-    }
+    String? experienceDisplay = _mapFromBackend(
+      state.currentData.yearsOfExperience,
+      experienceYearsKeys,
+    );
 
     _uiCubit.initializeFields(
       position: jobGradeDisplay,
       specialization: specializationDisplay,
       experienceDisplay: experienceDisplay,
-      experienceValue: experienceValue,
+      experienceValue: experienceDisplay, // Fixed to same key
     );
 
     _controllersInitialized = true;
@@ -1395,14 +1320,11 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         return _buildDropdown(
           context: context,
           value: uiState.selectedSpecialization,
-          items: _specializations,
+          items: specializationKeys,
           onChanged: (displayValue) {
             _uiCubit.updateSelectedSpecialization(displayValue);
             if (displayValue != null) {
-              final backendValue = _mapToBackend(
-                displayValue,
-                _specializationMapping,
-              );
+              final backendValue = _mapToBackend(displayValue);
               cubit.updateSpecialization(backendValue ?? displayValue);
             }
           },
@@ -1415,21 +1337,14 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   Widget _buildPositionDropdown(EditPersonalDataCubit cubit) {
     return BlocBuilder<EditPersonalDataUiCubit, EditPersonalDataUiState>(
       builder: (context, uiState) {
-        // Effective items logic in drop down takes care of it? No, need to pass it.
-        // Wait, the dropdown widget handles effective items if I kept that logic.
-        // Let's rely on _buildDropdown logic I wrote above.
-        // But I need to handle effective items in _buildDropdown.
         return _buildDropdown(
           context: context,
           value: uiState.selectedPosition,
-          items: _positions,
+          items: jobLevelKeys,
           onChanged: (displayValue) {
             _uiCubit.updateSelectedPosition(displayValue);
             if (displayValue != null) {
-              final backendValue = _mapToBackend(
-                displayValue,
-                _positionMapping,
-              );
+              final backendValue = _mapToBackend(displayValue);
               cubit.updatePosition(backendValue ?? displayValue);
             }
           },
@@ -1446,19 +1361,12 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         return _buildDropdown(
           context: context,
           value: uiState.selectedExperienceDisplay,
-          items: _experienceOptions.map((e) => e["display"]!).toList(),
+          items: experienceYearsKeys,
           onChanged: (displayValue) {
-            final selected = _experienceOptions.firstWhere(
-              (e) => e["display"] == displayValue,
-              orElse: () => {
-                "value": _getValueFromExperience(displayValue ?? ""),
-              },
-            );
-            final val = selected["value"];
-            _uiCubit.updateSelectedExperience(displayValue, val);
+            _uiCubit.updateSelectedExperience(displayValue, displayValue);
 
-            if (val != null && val.isNotEmpty) {
-              cubit.updateExperience(val);
+            if (displayValue != null && displayValue.isNotEmpty) {
+              cubit.updateExperience(displayValue);
             }
           },
           hint: 'select_experience_years',

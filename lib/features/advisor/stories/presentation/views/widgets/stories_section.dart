@@ -117,8 +117,9 @@ class _StoriesListViewState extends State<_StoriesListView> {
               child: _AddStoryItem(myStory: myStory),
             ),
           ],
-          ...reversedStories.map(
-            (userStory) => Padding(
+          ...List.generate(reversedStories.length, (index) {
+            final userStory = reversedStories[index];
+            return Padding(
               key: ValueKey(userStory.userId),
               padding: EdgeInsetsDirectional.only(
                 end: context.responsiveWidth(14),
@@ -128,9 +129,11 @@ class _StoriesListViewState extends State<_StoriesListView> {
                   'story_${userStory.userId}_${userStory.allViewed}',
                 ),
                 userStoryModel: userStory,
+                allStories: reversedStories,
+                userIndex: index,
               ),
-            ),
-          ),
+            );
+          }),
           BlocBuilder<StoriesCubit, StoriesState>(
             buildWhen: (previous, current) =>
                 previous.isLoadingMore != current.isLoadingMore,
@@ -154,8 +157,15 @@ class _StoriesListViewState extends State<_StoriesListView> {
 
 class _UserStoryItem extends StatelessWidget {
   final UserStoriesModel userStoryModel;
+  final List<UserStoriesModel> allStories;
+  final int userIndex;
 
-  const _UserStoryItem({super.key, required this.userStoryModel});
+  const _UserStoryItem({
+    super.key,
+    required this.userStoryModel,
+    required this.allStories,
+    required this.userIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -183,10 +193,9 @@ class _UserStoryItem extends StatelessWidget {
           return;
         }
 
-        // Reverse stories to chronological order (oldest first) before opening
-        final chronologicalUserStory = userStoryModel.copyWith(
-          stories: userStoryModel.stories.reversed.toList(),
-        );
+        final chronologicalUsersStories = allStories.map((us) {
+          return us.copyWith(stories: us.stories.reversed.toList());
+        }).toList();
 
         Navigator.push(
           context,
@@ -195,7 +204,10 @@ class _UserStoryItem extends StatelessWidget {
             pageBuilder: (newContext, animation, secondaryAnimation) =>
                 BlocProvider.value(
                   value: context.read<StoriesCubit>(),
-                  child: StoryDetailsView(userStories: chronologicalUserStory),
+                  child: StoryDetailsView(
+                    usersStories: chronologicalUsersStories,
+                    initialUserIndex: userIndex,
+                  ),
                 ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
@@ -378,7 +390,8 @@ class _AddStoryItem extends StatelessWidget {
                                   BlocProvider.value(
                                     value: context.read<StoriesCubit>(),
                                     child: StoryDetailsView(
-                                      userStories: chronologicalUserStory,
+                                      usersStories: [chronologicalUserStory],
+                                      initialUserIndex: 0,
                                     ),
                                   ),
                           transitionsBuilder:

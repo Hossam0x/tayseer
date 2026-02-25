@@ -44,15 +44,15 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
     super.initState();
     _pageController = PreloadPageController(initialPage: 0);
 
-    // Unmute when entering reels
-    GlobalMuteManager.instance.setMute(false);
-
     _playInitialController();
   }
 
   // ✅ فصل اللوجيك في دالة منفصلة
   void _playInitialController() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Unmute here (not in initState) to avoid setState-during-build
+      GlobalMuteManager.instance.setMute(false);
+
       final controller = widget.initialController;
       if (controller != null && controller.value.isInitialized) {
         controller.play();
@@ -61,6 +61,8 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   }
 
   void _preloadNextVideos(List<PostModel> reels, int currentIndex) {
+    // نحمل ملفات الكاش فقط — بدون إنشاء controllers
+    // لأن كل controller يحجز hardware decoder slot
     for (int i = 1; i <= _preloadCount; i++) {
       final nextIndex = currentIndex + i;
       if (nextIndex < reels.length) {

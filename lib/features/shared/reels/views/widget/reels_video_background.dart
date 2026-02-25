@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -50,9 +51,15 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   bool _isSpeedUp = false;
   bool _showSpeedIndicator = false;
 
+  // Completer لمنع التهيئة المتكررة
+  Completer<void>? _initCompleter;
+
   int _retryCount = 0;
   int _lastSavedSecond = -1;
-  static const int _maxRetries = 3;
+  static const int _maxRetries = 5;
+
+  // Auto-retry timer
+  Timer? _autoRetryTimer;
 
   String get _videoId => widget.videoId ?? widget.videoUrl.hashCode.toString();
 
@@ -90,33 +97,56 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   Future<void> _initializeVideo() async {
     if (_isDisposed) return;
 
+    // Completer guard — لو التهيئة شغالة بالفعل، استنى عليها
+    if (_initCompleter != null && !_initCompleter!.isCompleted) {
+      return _initCompleter!.future;
+    }
+
+    if (_controller != null && _isInitialized) return;
+
+    _initCompleter = Completer<void>();
+
     // Shared Controller
     if (widget.sharedController != null) {
       _controller = widget.sharedController;
-      await _controller!.setVolume(_volume);
+      try {
+        await _controller!.setVolume(_volume);
 
-      if (!mounted || _controller == null || _isDisposed) return;
+        if (!mounted || _controller == null || _isDisposed) {
+          _initCompleter?.complete();
+          return;
+        }
 
-      if (_controller!.value.isInitialized) {
-        _isInitialized = true;
-        _hasError = false;
-        await _controller!.setLooping(true);
-        await _restorePosition();
-        if (widget.shouldPlay) _controller!.play();
+        if (_controller!.value.isInitialized) {
+          _isInitialized = true;
+          _hasError = false;
+          await _controller!.setLooping(true);
+          await _restorePosition();
+          if (widget.shouldPlay) _controller!.play();
+        }
+        _controller!.addListener(_videoListener);
+        widget.onControllerCreated?.call(_controller!);
+        if (mounted && !_isDisposed) setState(() {});
+      } catch (e) {
+        debugPrint('⚠️ Error setting up shared controller: $e');
       }
-      _controller!.addListener(_videoListener);
-      widget.onControllerCreated?.call(_controller!);
-      if (mounted && !_isDisposed) setState(() {});
+      _initCompleter?.complete();
       return;
     }
 
     try {
-      if (widget.videoUrl.isEmpty) return;
+      if (widget.videoUrl.isEmpty) {
+        _initCompleter?.complete();
+        return;
+      }
 
       final cachedFile = await _videoCacheManager.getCachedFile(
         widget.videoUrl,
       );
-      if (!mounted || _isDisposed) return;
+      if (!mounted || _isDisposed) {
+        _initCompleter?.complete();
+        return;
+      }
 
       _controller = cachedFile != null
           ? VideoPlayerController.file(cachedFile)
@@ -125,20 +155,26 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
               videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
             );
 
+      // ابدأ تحميل الكاش بالتوازي
       if (cachedFile == null) {
         _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
       }
 
-      _controller!.addListener(_videoListener);
+      // Initialize أولاً ثم أضف الـ listener بعد النجاح
       await _controller!.initialize();
-      await _controller!.setLooping(true);
-      await _controller!.setVolume(_volume);
 
       if (!mounted || _isDisposed) {
         _controller?.dispose();
         _controller = null;
+        _initCompleter?.complete();
         return;
       }
+
+      // أضف الـ listener بعد النجاح فقط — لتجنب false errors
+      _controller!.addListener(_videoListener);
+
+      await _controller!.setLooping(true);
+      await _controller!.setVolume(_volume);
 
       widget.onControllerCreated?.call(_controller!);
       await _restorePosition();
@@ -150,22 +186,46 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
       _stateManager.markAsLoaded(_videoId);
       _retryCount = 0;
+      _autoRetryTimer?.cancel();
 
       if (widget.shouldPlay) _controller!.play();
+
+      _initCompleter?.complete();
     } catch (e) {
       debugPrint('❌ Error initializing video: $e');
-      if (!mounted || _isDisposed) return;
+      if (!mounted || _isDisposed) {
+        _initCompleter?.complete();
+        return;
+      }
+
+      // تخلص من الـ controller الفاشل
+      try {
+        _controller?.removeListener(_videoListener);
+        _controller?.dispose();
+      } catch (_) {}
+      _controller = null;
+      _isInitialized = false;
 
       if (_retryCount < _maxRetries && _stateManager.canRetry(_videoId)) {
         _retryCount++;
         _stateManager.recordError(_videoId);
-        await Future.delayed(Duration(milliseconds: 500 * _retryCount));
-        if (mounted && !_isDisposed) _initializeVideo();
+        _initCompleter?.complete();
+
+        // Auto-retry صامت — بدون إظهار خط أ للمستخدم
+        final delay = Duration(milliseconds: 800 * _retryCount);
+        _autoRetryTimer?.cancel();
+        _autoRetryTimer = Timer(delay, () {
+          if (mounted && !_isDisposed) {
+            _initCompleter = null;
+            _initializeVideo();
+          }
+        });
       } else {
         _scheduleSetState(() {
           _hasError = true;
           _isInitialized = false;
         });
+        _initCompleter?.complete();
       }
     }
   }
@@ -182,7 +242,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
         final duration = _controller!.value.duration;
         if (lastPosition < duration - const Duration(seconds: 2)) {
           await _controller!.seekTo(lastPosition);
-          debugPrint('📍 Restored reel position: ${lastPosition.inSeconds}s');
         }
       }
     } catch (e) {
@@ -212,6 +271,13 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     try {
       final value = controller.value;
 
+      // كشف خطأ أثناء التشغيل — auto-retry صامت
+      if (value.hasError && !_hasError) {
+        debugPrint('⚠️ Reel video error: ${value.errorDescription}');
+        _handleSilentRetry();
+        return;
+      }
+
       if (value.isBuffering != _isBuffering) {
         _scheduleSetState(() => _isBuffering = value.isBuffering);
       }
@@ -228,6 +294,40 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
       }
     } catch (e) {
       debugPrint('⚠️ Controller disposed in listener');
+    }
+  }
+
+  /// Auto-retry صامت بدون إظهار خطأ للمستخدم
+  void _handleSilentRetry() {
+    if (_isDisposed || !mounted) return;
+
+    if (_retryCount < _maxRetries) {
+      _retryCount++;
+      debugPrint('🔄 Silent reel auto-retry #$_retryCount for $_videoId');
+
+      // تخلص من الـ controller الحالي وأعد التهيئة
+      try {
+        _controller?.removeListener(_videoListener);
+        if (widget.sharedController == null) {
+          _controller?.dispose();
+        }
+      } catch (_) {}
+      _controller = null;
+      _isInitialized = false;
+      _initCompleter = null;
+
+      final delay = Duration(milliseconds: 800 * _retryCount);
+      _autoRetryTimer?.cancel();
+      _autoRetryTimer = Timer(delay, () {
+        if (mounted && !_isDisposed) {
+          _initializeVideo();
+        }
+      });
+    } else {
+      _scheduleSetState(() {
+        _hasError = true;
+        _isInitialized = false;
+      });
     }
   }
 
@@ -263,6 +363,8 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
         _savePosition();
       }
     } else if (state == AppLifecycleState.resumed) {
+      // عند العودة للتطبيق — أعد تعيين كل حالات الفشل
+      _videoCacheManager.resetAllFailedStatuses();
       if (widget.shouldPlay && _controller?.value.isInitialized == true) {
         _controller?.play();
       }
@@ -287,6 +389,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   @override
   void dispose() {
     _isDisposed = true;
+    _autoRetryTimer?.cancel();
     _savePosition();
     _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
     videoRouteObserver.unsubscribe(this);
@@ -310,6 +413,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     _stateManager.resetErrorCount(_videoId);
     _videoCacheManager.resetFailedStatus(widget.videoUrl);
     _retryCount = 0;
+    _initCompleter = null;
 
     setState(() {
       _hasError = false;
@@ -404,20 +508,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
                   ),
                 ),
 
-              // Loading
-              if (!_isInitialized && !_hasError)
-                const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-
-              // Buffering
-              if (_isInitialized && _isBuffering && widget.shouldPlay)
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                ),
+              // لا نظهر loading أو buffering indicator — الـ thumbnail يكفي (زي فيسبوك)
 
               // Speed Indicator (2x)
               if (_showSpeedIndicator)

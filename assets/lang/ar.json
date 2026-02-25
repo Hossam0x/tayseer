@@ -882,7 +882,7 @@
   "remove_favorite_confirm": "هل تريد إزالة هذا المستخدم من المفضلة؟",
   "you_liked": "نال أعجابك",
   "liked_Me": "اُعجب بك",
-  "complete_profile_100_percent": "يجب إكمال البيانات بنسبة 100%.",
+  "complete_profile_100_percent": "تم اكتمال البيانات بنسبة ",
   "complete_profile_description": "ادخل البيانات الشخصية كاملة حتى تتمكن من \nإيجاد شريكك المناسب",
   "married_through_tayseer": "هل تزوجت بواسطة",
   "contact_us_for_reward": "تواصل معنا واحصل علي مكافأة مالية",
@@ -1176,7 +1176,7 @@
   "intend_travel_abroad": "أنوي السفر إلى الخارج",
   "do_not_intend_travel": "لا أنوي السفر إلى الخارج",
   "eat_halal_only": "هل تأكل الطعام الحلال فقط؟",
-  "drink_alcohol": "هل تشرب الخمر؟",
+  "drink_alcohol": "هل تشرب الخمر ",
   "use_high_quality_photos": "استخدم صورًا عالية الجودة",
   "avoid_these_mistakes": "تجنب هذه الأخطاء",
   "show_yourself_only": "اظهر نفسك فقط",
@@ -1417,5 +1417,15 @@
   "no_attendees_yet": "لا يوجد حاضرين حتى الآن",
   "no_attendees_description": "لم يقم أحد بحجز تذاكر لهذا الحدث بعد",
   "something_went_wrong": "حدث خطأ ما",
-  "detils_attendees": "تفاصيل الحاضرين"
+  "detils_attendees": "تفاصيل الحاضرين",
+  "order_management": "إدارة الطلبات",
+  "receive_orders_sessions": "استقبل الطلبات وحجوزات الجلسات",
+  "stop_orders_sessions_temporarily": "إيقاف الطلبات والجلسات مؤقتًا",
+  "orders_receive_success": "تم تفعيل استقبال الطلبات والجلسات بنجاح",
+  "orders_stop_success": "تم إيقاف استقبال الطلبات والجلسات بنجاح",
+  "story_deleted_success": "تم حذف القصة بنجاح",
+  "unsaved_changes": "تغييرات غير محفوظة",
+  "images_pending_save": "حفظ الصور معلق",
+  "file_not_found": "الملف غير موجود"
+
 }

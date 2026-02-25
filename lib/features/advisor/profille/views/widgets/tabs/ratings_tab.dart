@@ -45,7 +45,7 @@ class _RatingsTabState extends State<RatingsTab>
           ),
           child: Column(
             children: [
-              if (!isMe) _buildAddRatingButton(context),
+              if (!isMe && isUser) _buildAddRatingButton(context),
               Padding(
                 padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
                 child: Column(

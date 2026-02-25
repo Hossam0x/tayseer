@@ -9,6 +9,7 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_profil
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
+
 class UserProfileCubit extends Cubit<UserProfileState> {
   final LocalNotification _notificationService = LocalNotification();
   final UserProfileRepository _userProfileRepository;
@@ -156,11 +157,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           settings: settings,
           userProfile: profile,
           isNotificationEnabled: isNotificationEnabled,
-         isMarriageSectionDeactivated: isMarriageDeactivated,
-          
         ),
       );
-        // getIt<LayoutCubit>().updateMarriageVisibility(!isMarriageDeactivated);
     } catch (e) {
       emit(SettingsError(message: 'error_loading_data'));
     }
@@ -519,29 +517,23 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       }
     }
     // ⭐⭐⭐ ADD THIS PART ⭐⭐⭐
- else if (id == 'deactivate_the_marriage_section') {
+    else if (id == 'deactivate_the_marriage_section') {
       // value = true  → قسم الزواج معطّل  → marriage tab مخفي
       // value = false → قسم الزواج مفعّل  → marriage tab ظاهر
 
       // 1️⃣ حدّث الـ state فوراً
-      emit(
-        currentState.copyWith(
-          isMarriageSectionDeactivated: value,
-        ),
-      );
+      emit(currentState.copyWith(isMarriageSectionDeactivated: value));
 
       // 2️⃣ احفظ في الـ cache
       await _saveMarriageSectionDeactivated(value);
 
       // 3️⃣ أبلّغ LayoutCubit عشان يخفي/يظهر الـ tab
 
-
       debugPrint(
         '✅ Marriage section ${value ? "deactivated" : "activated"} locally',
       );
     }
   }
-  
 
   Future<void> _enableNotifications() async {
     try {
@@ -635,11 +627,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     final currentState = state;
 
     try {
-      try {
-        await FirebaseMessaging.instance.unsubscribeFromTopic("all");
-      } catch (e) {}
-
       await _notificationService.clearAllNotifications();
+      _userProfileRepository.logout();
 
       CachNetwork.clearCache();
       getIt<tayseerSocketHelper>().disconnect();
