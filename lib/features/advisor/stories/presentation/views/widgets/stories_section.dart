@@ -41,15 +41,13 @@ class StoriesSection extends StatelessWidget {
         );
       case CubitStates.success:
       case CubitStates.initial:
-        return _StoriesListView(stories: state.storiesList);
+        return const _StoriesListView();
     }
   }
 }
 
 class _StoriesListView extends StatefulWidget {
-  final List<UserStoriesModel> stories;
-
-  const _StoriesListView({required this.stories});
+  const _StoriesListView();
 
   @override
   State<_StoriesListView> createState() => _StoriesListViewState();
@@ -89,168 +87,181 @@ class _StoriesListViewState extends State<_StoriesListView> {
 
   @override
   Widget build(BuildContext context) {
-    // Reverse the stories list so oldest appears first (on the right in RTL)
-    final reversedStories = widget.stories.toList();
+    return BlocSelector<StoriesCubit, StoriesState, String>(
+      selector: (state) => state.storiesList.map((s) => s.userId).join(','),
+      builder: (context, userIdsString) {
+        final userIds = userIdsString.isEmpty
+            ? <String>[]
+            : userIdsString.split(',');
+        final myUserId = kCurrentUserData?.id;
+        final listWithoutMe = userIds.where((id) => id != myUserId).toList();
 
-    UserStoriesModel? myStory;
-    final myUserId = kCurrentUserData?.id;
-    if (myUserId != null) {
-      final myStoryIndex = reversedStories.indexWhere(
-        (s) => s.userId == myUserId,
-      );
-      if (myStoryIndex != -1) {
-        myStory = reversedStories.removeAt(myStoryIndex);
-      }
-    }
-
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isAdvisor) ...[
-            Padding(
-              padding: EdgeInsetsDirectional.only(
-                end: context.responsiveWidth(14),
-              ),
-              child: _AddStoryItem(myStory: myStory),
-            ),
-          ],
-          ...List.generate(reversedStories.length, (index) {
-            final userStory = reversedStories[index];
-            return Padding(
-              key: ValueKey(userStory.userId),
-              padding: EdgeInsetsDirectional.only(
-                end: context.responsiveWidth(14),
-              ),
-              child: _UserStoryItem(
-                key: ValueKey(
-                  'story_${userStory.userId}_${userStory.allViewed}',
-                ),
-                userStoryModel: userStory,
-                allStories: reversedStories,
-                userIndex: index,
-              ),
-            );
-          }),
-          BlocBuilder<StoriesCubit, StoriesState>(
-            buildWhen: (previous, current) =>
-                previous.isLoadingMore != current.isLoadingMore,
-            builder: (context, state) {
-              if (state.isLoadingMore) {
-                return Padding(
+        return SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isAdvisor) ...[
+                Padding(
                   padding: EdgeInsetsDirectional.only(
                     end: context.responsiveWidth(14),
                   ),
-                  child: const _StoriesLoadingShimmer(count: 1),
+                  child: const _AddStoryItem(),
+                ),
+              ],
+              ...List.generate(listWithoutMe.length, (index) {
+                final userId = listWithoutMe[index];
+                return Padding(
+                  key: ValueKey(userId),
+                  padding: EdgeInsetsDirectional.only(
+                    end: context.responsiveWidth(14),
+                  ),
+                  child: _UserStoryItem(
+                    key: ValueKey('story_$userId'),
+                    userId: userId,
+                    userIndex: index,
+                  ),
                 );
-              }
-              return const SizedBox.shrink();
-            },
+              }),
+              BlocBuilder<StoriesCubit, StoriesState>(
+                buildWhen: (previous, current) =>
+                    previous.isLoadingMore != current.isLoadingMore,
+                builder: (context, state) {
+                  if (state.isLoadingMore) {
+                    return Padding(
+                      padding: EdgeInsetsDirectional.only(
+                        end: context.responsiveWidth(14),
+                      ),
+                      child: const _StoriesLoadingShimmer(count: 1),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
 class _UserStoryItem extends StatelessWidget {
-  final UserStoriesModel userStoryModel;
-  final List<UserStoriesModel> allStories;
+  final String userId;
   final int userIndex;
 
   const _UserStoryItem({
     super.key,
-    required this.userStoryModel,
-    required this.allStories,
+    required this.userId,
     required this.userIndex,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        if (isGuest) {
-          CustomshowDialogWithImage(
-            context,
-            title: context.tr('joinUs'),
-            supTitle: context.tr("guest_login_first"),
-            icon: Icons.lock_person_outlined,
-            iconColor: AppColors.kprimaryColor,
-            bottonText: context.tr("login"),
-            showCancelButton: true,
-            cancelText: context.tr('skip'),
-            onPressed: () {
-              CachNetwork.removeData(key: ktoken);
-              context.pushNamedAndRemoveUntil(
-                AppRouter.kRegisrationView,
-                predicate: (_) => false,
-              );
-            },
-            onCancel: () {},
-          );
-          return;
+    return BlocSelector<StoriesCubit, StoriesState, UserStoriesModel?>(
+      selector: (state) {
+        try {
+          return state.storiesList.firstWhere((s) => s.userId == userId);
+        } catch (_) {
+          return null;
         }
+      },
+      builder: (context, userStoryModel) {
+        if (userStoryModel == null) return const SizedBox.shrink();
 
-        final chronologicalUsersStories = allStories.map((us) {
-          return us.copyWith(stories: us.stories.reversed.toList());
-        }).toList();
+        return GestureDetector(
+          onTap: () {
+            if (isGuest) {
+              CustomshowDialogWithImage(
+                context,
+                title: context.tr('joinUs'),
+                supTitle: context.tr("guest_login_first"),
+                icon: Icons.lock_person_outlined,
+                iconColor: AppColors.kprimaryColor,
+                bottonText: context.tr("login"),
+                showCancelButton: true,
+                cancelText: context.tr('skip'),
+                onPressed: () {
+                  CachNetwork.removeData(key: ktoken);
+                  context.pushNamedAndRemoveUntil(
+                    AppRouter.kRegisrationView,
+                    predicate: (_) => false,
+                  );
+                },
+                onCancel: () {},
+              );
+              return;
+            }
 
-        Navigator.push(
-          context,
-          PageRouteBuilder(
-            opaque: false,
-            pageBuilder: (newContext, animation, secondaryAnimation) =>
-                BlocProvider.value(
-                  value: context.read<StoriesCubit>(),
-                  child: StoryDetailsView(
-                    usersStories: chronologicalUsersStories,
-                    initialUserIndex: userIndex,
+            final myUserId = kCurrentUserData?.id;
+            final allStories = context
+                .read<StoriesCubit>()
+                .state
+                .storiesList
+                .where((us) => us.userId != myUserId)
+                .toList();
+
+            final chronologicalUsersStories = allStories.map((us) {
+              return us.copyWith(stories: us.stories.reversed.toList());
+            }).toList();
+
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                opaque: false,
+                pageBuilder: (newContext, animation, secondaryAnimation) =>
+                    BlocProvider.value(
+                      value: context.read<StoriesCubit>(),
+                      child: StoryDetailsView(
+                        usersStories: chronologicalUsersStories,
+                        initialUserIndex: userIndex,
+                      ),
+                    ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+              ),
+            );
+          },
+          child: Column(
+            children: [
+              Hero(
+                tag: userStoryModel.userId,
+                child: Container(
+                  width: context.responsiveWidth(76),
+                  height: context.responsiveWidth(76),
+                  padding: EdgeInsets.all(3.r),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: userStoryModel.allViewed
+                          ? AppColors.kGreyB3
+                          : AppColors.kprimaryColor,
+                      width: 2.sp,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: AppImage(userStoryModel.image, fit: BoxFit.cover),
                   ),
                 ),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
+              ),
+              Gap(context.responsiveHeight(6)),
+              SizedBox(
+                width: context.responsiveWidth(76),
+                child: Text(
+                  userStoryModel.name,
+                  textAlign: TextAlign.center,
+                  style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         );
       },
-      child: Column(
-        children: [
-          Hero(
-            tag: userStoryModel.userId,
-            child: Container(
-              width: context.responsiveWidth(76),
-              height: context.responsiveWidth(76),
-              padding: EdgeInsets.all(3.r),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: userStoryModel.allViewed
-                      ? AppColors.kGreyB3
-                      : AppColors.kprimaryColor,
-                  width: 2.sp,
-                ),
-              ),
-              child: ClipOval(
-                child: AppImage(userStoryModel.image, fit: BoxFit.cover),
-              ),
-            ),
-          ),
-          Gap(context.responsiveHeight(6)),
-          SizedBox(
-            width: context.responsiveWidth(76),
-            child: Text(
-              userStoryModel.name,
-              textAlign: TextAlign.center,
-              style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -341,16 +352,29 @@ class _StoriesErrorWidget extends StatelessWidget {
 }
 
 class _AddStoryItem extends StatelessWidget {
-  final UserStoriesModel? myStory;
-  const _AddStoryItem({this.myStory});
+  const _AddStoryItem();
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<StoriesCubit, StoriesState>(
-      buildWhen: (previous, current) =>
-          previous.createStoryState != current.createStoryState ||
-          previous.uploadProgress != current.uploadProgress,
+      buildWhen: (previous, current) {
+        final myUserId = kCurrentUserData?.id;
+        final prevMyStory = previous.storiesList
+            .where((s) => s.userId == myUserId)
+            .firstOrNull;
+        final currentMyStory = current.storiesList
+            .where((s) => s.userId == myUserId)
+            .firstOrNull;
+
+        return previous.createStoryState != current.createStoryState ||
+            previous.uploadProgress != current.uploadProgress ||
+            prevMyStory != currentMyStory;
+      },
       builder: (context, storyState) {
+        final myUserId = kCurrentUserData?.id;
+        final myStory = storyState.storiesList
+            .where((s) => s.userId == myUserId)
+            .firstOrNull;
         final isUploading = storyState.createStoryState == CubitStates.loading;
 
         return Column(
@@ -378,8 +402,8 @@ class _AddStoryItem extends StatelessWidget {
                     if (isUploading) return;
                     if (myStory != null) {
                       // Open my story
-                      final chronologicalUserStory = myStory!.copyWith(
-                        stories: myStory!.stories.reversed.toList(),
+                      final chronologicalUserStory = myStory.copyWith(
+                        stories: myStory.stories.reversed.toList(),
                       );
                       Navigator.push(
                         context,
@@ -420,7 +444,7 @@ class _AddStoryItem extends StatelessWidget {
                     }
                   },
                   child: Hero(
-                    tag: myStory != null ? myStory!.userId : 'add_story_hero',
+                    tag: myStory != null ? myStory.userId : 'add_story_hero',
                     child: Container(
                       width: context.responsiveWidth(76),
                       height: context.responsiveWidth(76),
@@ -429,7 +453,7 @@ class _AddStoryItem extends StatelessWidget {
                           ? BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: myStory!.allViewed
+                                color: myStory.allViewed
                                     ? AppColors.kGreyB3
                                     : AppColors.kprimaryColor,
                                 width: 2.sp,
@@ -487,7 +511,7 @@ class _AddStoryItem extends StatelessWidget {
                 if (isUploading)
                   Container(
                     padding: EdgeInsets.symmetric(
-                      horizontal: 6.w,
+                      horizontal: 2.w,
                       vertical: 2.h,
                     ),
                     decoration: BoxDecoration(

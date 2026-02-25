@@ -530,17 +530,20 @@ class _UserStoryPageState extends State<_UserStoryPage> {
               },
               child: Row(
                 children: [
-                  Hero(
-                    tag: widget.heroTag ?? widget.userStories.userId,
-                    child: Container(
-                      width: 45.w,
-                      height: 45.w,
-                      decoration: const BoxDecoration(shape: BoxShape.circle),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(1000.r),
-                        child: AppImage(
-                          widget.userStories.image,
-                          fit: BoxFit.cover,
+                  HeroMode(
+                    enabled: widget.isActive,
+                    child: Hero(
+                      tag: widget.heroTag ?? widget.userStories.userId,
+                      child: Container(
+                        width: 45.w,
+                        height: 45.w,
+                        decoration: const BoxDecoration(shape: BoxShape.circle),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(1000.r),
+                          child: AppImage(
+                            widget.userStories.image,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
