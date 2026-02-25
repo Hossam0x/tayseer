@@ -508,20 +508,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
                   ),
                 ),
 
-              // Loading
-              if (!_isInitialized && !_hasError)
-                const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-
-              // Buffering
-              if (_isInitialized && _isBuffering && widget.shouldPlay)
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                ),
+              // لا نظهر loading أو buffering indicator — الـ thumbnail يكفي (زي فيسبوك)
 
               // Speed Indicator (2x)
               if (_showSpeedIndicator)
