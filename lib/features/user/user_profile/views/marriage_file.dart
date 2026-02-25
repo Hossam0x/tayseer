@@ -42,7 +42,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   late int _selectedTabIndex;
   final int _maxImages = 5;
   String? _scrollToSection;
-
+  bool _hasAutoSwitchedToEdit = false;
   // ⭐⭐⭐ DEFAULT IMAGE URL
   static const String _defaultImageUrl =
       "https://cdn-icons-png.flaticon.com/512/149/149071.png";
@@ -71,9 +71,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ CALCULATE TOTAL PROGRESS (Server + Media)
   // ════════════════════════════════════════════════════════════════
- double _calculateTotalProgress(MarriageUserProfileModel profile) {
+  double _calculateTotalProgress(MarriageUserProfileModel profile) {
     // Questions: max 25%
-    double questionProgress = (profile.answerCompletedPercentage ?? 0).toDouble();
+    double questionProgress = (profile.answerCompletedPercentage ?? 0)
+        .toDouble();
     questionProgress = questionProgress.clamp(0, 25);
 
     // Images: كل صورة 5%, max 20% (4 صور)
@@ -99,10 +100,15 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     if (hasAudio) audioBonus = 25;
 
     // Verification: 5%
-    int verificationBonus = (profile.isVerified == true) ? 5 : 0;
+    // int verificationBonus = (profile.isVerified == true) ? 5 : 0;
+    int verificationBonus = true ? 5 : 0;
 
     double totalProgress =
-        questionProgress + imageBonus + videoBonus + audioBonus + verificationBonus;
+        questionProgress +
+        imageBonus +
+        videoBonus +
+        audioBonus +
+        verificationBonus;
 
     // لا تتعدى 100
     return totalProgress.clamp(0, 100);
@@ -164,9 +170,8 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 state.pendingVideo != null ||
                 state.pendingDeleteVideo ||
                 state.pendingAudio != null ||
-                  state.hasUnsavedFields||
+                state.hasUnsavedFields ||
                 state.pendingDeleteAudio;
-
 
             // ✅ شيل الشرط _selectedTabIndex == 0
             // لو فيه تغييرات، اتحقق منها بغض النظر عن الـ tab الحالي
@@ -178,11 +183,15 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 return false;
               }
               if (hasUnsavedChanges) {
-                _showUnsavedChangesDialog(context, cubit);
+                _showUnsavedChangesDialog(context, cubit, state);
                 return false;
               }
             }
-
+            if (state.profile != null) {
+              final progress = _calculateTotalProgress(state.profile!);
+              Navigator.pop(context, progress);
+              return false;
+            }
             return true;
           },
           child: Scaffold(
@@ -295,6 +304,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   void _showUnsavedChangesDialog(
     BuildContext context,
     MarriageProfileCubit cubit,
+    MarriageProfileState state,
   ) {
     showDialog(
       context: context,
@@ -349,7 +359,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               onPressed: () {
                 Navigator.pop(dialogContext);
                 cubit.discardAllPending();
-                Navigator.pop(context);
+                final progress = state.profile != null
+                    ? _calculateTotalProgress(cubit.state.profile!)
+                    : 0.0;
+                Navigator.pop(context, progress);
               },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: Colors.red.shade300),
@@ -374,7 +387,15 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             child: ElevatedButton(
               onPressed: () {
                 Navigator.pop(dialogContext);
-                cubit.saveProfile();
+                cubit.saveProfile().then((_) {
+                  // ⭐ بعد الحفظ ارجع النسبة
+                  if (context.mounted) {
+                    final progress = cubit.state.profile != null
+                        ? _calculateTotalProgress(cubit.state.profile!)
+                        : 0.0;
+                    Navigator.pop(context, progress);
+                  }
+                });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary300,
@@ -437,7 +458,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-Widget _buildViewContent(MarriageUserProfileModel profile) {
+  Widget _buildViewContent(MarriageUserProfileModel profile) {
     final totalProgress = _calculateTotalProgress(profile);
     final progressFraction = totalProgress / 100;
 
@@ -577,6 +598,7 @@ Widget _buildViewContent(MarriageUserProfileModel profile) {
       ),
     );
   }
+
   Widget _buildVerifiedCard() {
     return CustomPaint(
       painter: DashedBorderPainter(
@@ -631,7 +653,7 @@ Widget _buildViewContent(MarriageUserProfileModel profile) {
   // ⭐⭐⭐ NEW: Secondary Image Section with proper logic
   // ════════════════════════════════════════════════════════════════
 
-   Widget _buildImageSection(String imageUrl, String heroTag) {
+  Widget _buildImageSection(String imageUrl, String heroTag) {
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       sliver: SliverToBoxAdapter(
@@ -768,7 +790,7 @@ Widget _buildViewContent(MarriageUserProfileModel profile) {
                 Row(
                   children: [
                     Padding(
-                      padding:  EdgeInsets.symmetric(horizontal:  8.w),
+                      padding: EdgeInsets.symmetric(horizontal: 8.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

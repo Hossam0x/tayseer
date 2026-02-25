@@ -18,7 +18,19 @@ class UserNavBar extends StatelessWidget {
 
         final visibleNavItems = <({int originalIndex, dynamic item})>[];
         for (int i = 0; i < allNavItems.length; i++) {
-          if (i == 1 && !state.isMarriageVisible) continue; // ⭐ اخفي marriage tab
+          if (i == 1 && !state.isMarriageVisible) {
+            // ⭐ بدل ما تخفيه، غير الـ item لاستشارة
+            visibleNavItems.add((
+              originalIndex: i,
+              item: NavBarItem(
+                // أو اللي عندك من class
+                icon: AssetsData.consultationIcon,
+                activeIcon: AssetsData.consultationIcon,
+                labelKey: 'consultation',
+              ),
+            ));
+            continue;
+          }
           visibleNavItems.add((originalIndex: i, item: allNavItems[i]));
         }
 
@@ -29,28 +41,29 @@ class UserNavBar extends StatelessWidget {
             top: false,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(
-                visibleNavItems.length,
-                (visibleIndex) {
-                  final entry = visibleNavItems[visibleIndex];
-                  final originalIndex = entry.originalIndex;
-                  final navItem = entry.item;
+              children: List.generate(visibleNavItems.length, (visibleIndex) {
+                final entry = visibleNavItems[visibleIndex];
+                final originalIndex = entry.originalIndex;
+                final navItem = entry.item;
 
-                  return _NavItem(
-                    icon: navItem.icon,
-                    activeIcon: navItem.activeIcon,
-                    label: context.tr(navItem.labelKey),
-                    isActive: state.currentIndex == originalIndex, // ⭐ قارن بالـ original index
-                    onTap: () {
-                      if (originalIndex == state.currentIndex) {
-                        onTabReselect?.call(originalIndex);
-                      } else {
-                        cubit.changeIndex(originalIndex); // ⭐ استخدم الـ original index
-                      }
-                    },
-                  );
-                },
-              ),
+                return _NavItem(
+                  icon: navItem.icon,
+                  activeIcon: navItem.activeIcon,
+                  label: context.tr(navItem.labelKey),
+                  isActive:
+                      state.currentIndex ==
+                      originalIndex, // ⭐ قارن بالـ original index
+                  onTap: () {
+                    if (originalIndex == state.currentIndex) {
+                      onTabReselect?.call(originalIndex);
+                    } else {
+                      cubit.changeIndex(
+                        originalIndex,
+                      ); // ⭐ استخدم الـ original index
+                    }
+                  },
+                );
+              }),
             ),
           ),
         );

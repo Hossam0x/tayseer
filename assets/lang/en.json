@@ -1428,6 +1428,10 @@
   "transaction": "Transaction",
   "detils_attendees": "Attendees Details",
   "unsaved_changes": "Unsaved Changes",
-  "images_pending_save": "Images pending save",
-  "file_not_found": "File not found"
+  "edit_marriage_profile": "Edit Marriage Profile",
+  "activate_marriage_subtitle": "To make your journey towards marriage easier and smoother, we are here to help you every step of the way!",
+  "activate_marriage_title": "Do you want to explore the marriage section in Tayseer?",
+  "deactivate_marriage_title": "Do you want to disable the marriage section in Tayseer?",
+  "consultation": "Consultation",
+  "Consulting": "Consulting"
 }

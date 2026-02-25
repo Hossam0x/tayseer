@@ -10,6 +10,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_stat
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 
+
 class UserProfileCubit extends Cubit<UserProfileState> {
   final LocalNotification _notificationService = LocalNotification();
   final UserProfileRepository _userProfileRepository;
@@ -48,7 +49,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     }
   }
 
-  Future<List<SettingItemModel>> _loadSettings() async {
+  Future<List<SettingItemModel>> _loadSettings({
+    bool isProfileComplete = false,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final savedLanguage = prefs.getString('app_language') ?? 'ar';
     final notificationStatus = await _getNotificationStatus();
@@ -62,7 +65,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       ),
       SettingItemModel(
         id: 'edit_marriage_profile',
-        title: 'complete_marriage_profile',
+        title: isProfileComplete
+            ? 'edit_marriage_profile'
+            : 'complete_marriage_profile',
         iconAsset: AssetsData.icManagementSettings,
         routeName: '',
       ),
@@ -143,25 +148,72 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     ];
   }
 
+  static const String _kMarriageCompleteKey = 'marriage_profile_complete';
+
+  Future<bool> _getMarriageComplete() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_kMarriageCompleteKey) ?? false;
+  }
+
+  Future<void> _saveMarriageComplete(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kMarriageCompleteKey, value);
+  }
+
   Future<void> _loadInitialData() async {
     emit(SettingsLoading());
-
     try {
-      final settings = await _loadSettings();
       final profile = await _fetchUserProfile();
       final isNotificationEnabled = await _getNotificationStatus();
       final isMarriageDeactivated = await _getMarriageSectionDeactivated();
 
+      // ⭐ اقرأ من SharedPreferences مش من dataCompleted
+      final isMarriageComplete = await _getMarriageComplete();
+
+      final settings = await _loadSettings(
+        isProfileComplete: isMarriageComplete,
+      );
+
       emit(
         SettingsLoaded(
           settings: settings,
-          userProfile: profile,
+          userProfile: profile, // ⭐ profile كما هو بدون تعديل dataCompleted
           isNotificationEnabled: isNotificationEnabled,
+          isMarriageSectionDeactivated: isMarriageDeactivated,
+          isMarriageProfileComplete: isMarriageComplete, // ⭐
         ),
       );
     } catch (e) {
       emit(SettingsError(message: 'error_loading_data'));
     }
+  }
+
+  Future<void> updateMarriageProgress(bool isComplete) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded || currentState.userProfile == null)
+      return;
+
+    await _saveMarriageComplete(isComplete);
+
+    final updatedSettings = currentState.settings.map((item) {
+      if (item.id == 'edit_marriage_profile') {
+        return item.copyWith(
+          title: isComplete
+              ? 'edit_marriage_profile'
+              : 'complete_marriage_profile',
+        );
+      }
+      return item;
+    }).toList();
+
+    // ⭐⭐⭐ تأكد إن isMarriageProfileComplete بتتبعت صح
+    emit(
+      currentState.copyWith(
+        settings: updatedSettings,
+        isMarriageProfileComplete: isComplete,
+        // ⭐ مش بتبعت actionMessage عشان متشغلش الـ listener
+      ),
+    );
   }
 
   // ⭐ وظيفة جديدة: تحديث السن
@@ -522,6 +574,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       // value = false → قسم الزواج مفعّل  → marriage tab ظاهر
 
       // 1️⃣ حدّث الـ state فوراً
+      emit(currentState.copyWith(isMarriageSectionDeactivated: value));
       emit(currentState.copyWith(isMarriageSectionDeactivated: value));
 
       // 2️⃣ احفظ في الـ cache
