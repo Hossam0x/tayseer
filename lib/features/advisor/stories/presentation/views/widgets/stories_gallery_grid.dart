@@ -2,8 +2,6 @@ import 'dart:typed_data';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_state.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:shimmer/shimmer.dart';
-
 import 'package:camera/camera.dart';
 
 class StoriesGalleryGrid extends StatefulWidget {

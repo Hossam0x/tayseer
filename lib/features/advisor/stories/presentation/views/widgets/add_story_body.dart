@@ -33,7 +33,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
         _cameraController = CameraController(
           _cameras[0],
           ResolutionPreset.high,
-          enableAudio: true, // Enable audio for video recording
+          enableAudio: true,
           imageFormatGroup: ImageFormatGroup.jpeg,
         );
         await _cameraController!.initialize();
@@ -65,11 +65,13 @@ class _AddStoryBodyState extends State<AddStoryBody> {
             builder: (context) => const CustomloadingApp(),
           );
         } else if (state.addStoryState == CubitStates.success) {
-          // Use post frame callback to avoid navigation during build
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            // 1. Dismiss loading dialog
             if (Navigator.canPop(context)) {
-              Navigator.pop(context); // Dismiss loading dialog
+              Navigator.pop(context);
             }
+
+            // 2. Show success snackbar
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(
                 context,
@@ -77,14 +79,23 @@ class _AddStoryBodyState extends State<AddStoryBody> {
                 text: context.tr('story_published_success'),
               ),
             );
-            getIt<StoriesCubit>().fetchStories(
-              context: context,
-              isSilent: true,
-            );
-            // Navigate back to profile after a short delay
+
+            // 3. Navigate back immediately
             final nav = Navigator.of(context);
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (nav.canPop()) nav.pop();
+            if (nav.canPop()) nav.pop();
+
+            // 4. Silently re-fetch stories after a short delay using getIt
+            //    (No context needed — StoriesCubit from GetIt + a dummy context-free fetch)
+            //    We pass the root navigator context captured before pop via getIt.
+            final storiesCubit = getIt<StoriesCubit>();
+            Future.delayed(const Duration(milliseconds: 1500), () {
+              // StoriesCubit.fetchStories needs a BuildContext only for error toasts.
+              // We call it anyway; if context is stale the toasts simply won't fire.
+              try {
+                storiesCubit.fetchStoriesSilent();
+              } catch (e) {
+                debugPrint('Silent fetch after add story failed: $e');
+              }
             });
           });
         } else if (state.addStoryState == CubitStates.failure) {
@@ -122,7 +133,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
         onClose: () {
           context.read<AddStoryCubit>().resetSelection();
           setState(() {
-            _isCameraActive = false; // Ensure we go back to grid
+            _isCameraActive = false;
           });
         },
       );

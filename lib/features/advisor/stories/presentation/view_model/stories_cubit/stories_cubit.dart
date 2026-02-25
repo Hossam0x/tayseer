@@ -98,6 +98,37 @@ class StoriesCubit extends Cubit<StoriesState> {
     }
   }
 
+  /// Silent fetch that doesn't require a [BuildContext].
+  /// Used after adding a story when the original context is already popped.
+  Future<void> fetchStoriesSilent() async {
+    final effectiveAdvisorId = state.advisorId;
+    final effectiveIsSpecial = state.isSpecial;
+
+    final result = await storiesRepository.fetchStoriesSilent(
+      page: 1,
+      advisorId: effectiveAdvisorId,
+      isSpecial: effectiveIsSpecial,
+    );
+
+    result.fold(
+      (failure) {
+        debugPrint('Silent story fetch failed: ${failure.message}');
+      },
+      (storiesList) {
+        emit(
+          state.copyWith(
+            storiesState: CubitStates.success,
+            storiesList: storiesList,
+            currentPage: 1,
+            hasMore: storiesList.length >= pageSize,
+            advisorId: effectiveAdvisorId,
+            isSpecial: effectiveIsSpecial,
+          ),
+        );
+      },
+    );
+  }
+
   void markStoryAsViewed({required String storyId, required String userId}) {
     final currentList = state.storiesList;
     final userStoryIndex = currentList.indexWhere(

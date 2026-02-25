@@ -665,7 +665,7 @@
   "blur_enabled": "تم تفعيل تمويه الصورة",
   "blur_disabled": "تم إلغاء تمويه الصورة",
   "update_blur_error": "حدث خطأ في تحديث إعدادات الصورة",
-  "update_language_success": "تم تحديث اللغة إلى",
+  "update_language_success": "تم تحديث اللغة",
   "update_language_error": "حدث خطأ في تحديث اللغة ⚠️",
   "share_app_message": "جرب تطبيق تيسير الآن! 😊\n",
   "share_app_subject": "دعوة لتطبيق تيسير",

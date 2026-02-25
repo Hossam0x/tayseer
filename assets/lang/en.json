@@ -666,7 +666,7 @@
   "blur_enabled": "Image blur enabled",
   "blur_disabled": "Image blur disabled",
   "update_blur_error": "Error updating image settings",
-  "update_language_success": "Language updated to",
+  "update_language_success": "Language updated",
   "update_language_error": "Error updating language ⚠️",
   "share_app_message": "Try Tayseer app now! 😊\n",
   "share_app_subject": "Invitation to Tayseer app",
