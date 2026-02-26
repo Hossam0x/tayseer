@@ -713,14 +713,21 @@ class _UserProfileViewState extends State<UserProfileView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      context.tr(setting.title),
-                      style: Styles.textStyle16Meduim.copyWith(
-                        color:
-                            isNotificationsItem || isDeactiveTheMarriageSection
-                            ? AppColors.secondary800.withOpacity(0.9)
-                            : AppColors.secondary800,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        String title = setting.title;
+
+                        return Text(
+                          context.tr(title),
+                          style: Styles.textStyle16Meduim.copyWith(
+                            color:
+                                isNotificationsItem ||
+                                    isDeactiveTheMarriageSection
+                                ? AppColors.secondary800.withOpacity(0.9)
+                                : AppColors.secondary800,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -754,10 +761,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                             activeColor: const Color(0xFFF06C88),
                             trackColor: AppColors.dropDownArrow,
                             onChanged: (value) {
-                              context.read<UserProfileCubit>().updateSwitch(
-                                setting.id,
-                                value,
-                              );
+                              _showDeactivateMarriageDialog(context, value);
                             },
                           ),
                         ),
@@ -1019,17 +1023,16 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   void _openMarriageEditProfile(BuildContext context, UserProfileState state) {
-    if (state is! SettingsLoaded || state.userProfile == null) {
-      return;
-    }
+    if (state is! SettingsLoaded || state.userProfile == null) return;
 
     final isDataCompleted = state.userProfile!.dataCompleted ?? false;
-
     if (!isDataCompleted) {
       final layoutCubit = context.read<LayoutCubit>();
       layoutCubit.changeIndex(1);
       return;
     }
+
+    final isProfileComplete = state.isMarriageProfileComplete;
 
     Navigator.push(
       context,
@@ -1046,11 +1049,43 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
               MarriagefilePage(
                 userProfile: state.userProfile,
-              ), // ← remove AdvisorBackground
+                initialTabIndex: isProfileComplete ? 0 : 1,
+              ),
             ],
           ),
         ),
       ),
+    ).then((result) {
+      if (!context.mounted) return;
+      if (result != null && result is double) {
+        final isComplete = result >= 100;
+        context.read<UserProfileCubit>().updateMarriageProgress(isComplete);
+      }
+    });
+  }
+
+  void _showDeactivateMarriageDialog(BuildContext context, bool value) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr(
+        value ? "deactivate_marriage_title" : "activate_marriage_title",
+      ),
+
+      supTitle: context.tr(
+        value ? "activate_marriage_subtitle" : "activate_marriage_subtitle",
+      ),
+      imageUrl: AssetsData.marriageRingIcon,
+      bottonText: context.tr("نعم"),
+      cancelText: context.tr("لا"),
+      showCancelButton: true,
+      onPressed: () {
+      
+        context.read<UserProfileCubit>().updateSwitch(
+          'deactivate_the_marriage_section',
+          value,
+        );
+      },
+      onCancel: () {},
     );
   }
 
