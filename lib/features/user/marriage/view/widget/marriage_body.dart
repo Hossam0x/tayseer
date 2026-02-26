@@ -1,6 +1,3 @@
-// lib/features/user/marriage/view/widget/marriage_body.dart
-
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/history_screen.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
@@ -24,24 +21,30 @@ import 'package:tayseer/features/user/marriage/view/widget/life_event_section.da
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 
 class MarriageBody extends StatefulWidget {
-  const MarriageBody({super.key, this.personId});
+  const MarriageBody({super.key, this.personId, this.onScroll});
   final String? personId;
+  final Function(bool isScrollingDown)? onScroll;
 
   @override
-  State<MarriageBody> createState() => _MarriageBodyState();
+  State<MarriageBody> createState() => MarriageBodyState();
 }
 
-class _MarriageBodyState extends State<MarriageBody> {
-  int _currentIndex = 0;
-  UsersMarriageResponse? _lastProfile;
-  bool _isMarriageTab = true;
-
+class MarriageBodyState extends State<MarriageBody> {
   final ScrollController _mainScrollController = ScrollController();
   InteractionsCubit? _interactionsCubit;
 
-  // ✅ Key للتحكم في InteractionBody من MarriageBody
   final GlobalKey<InteractionBodyState> _interactionBodyKey =
       GlobalKey<InteractionBodyState>();
+
+  // ════════════════════════════════════════════════════
+  // ✅ متغيرات الـ Scroll
+  // ════════════════════════════════════════════════════
+  double _lastOffset = 0;
+  double _scrollDelta = 0;
+  static const double _scrollThreshold = 20.0;
+
+  // ✅ متغير للتحكم في موقع الـ Floating Buttons
+  // Note: scrolling flag moved to cubit state; local tracking variables remain.
 
   InteractionsCubit get interactionsCubit {
     if (_interactionsCubit == null) {
@@ -56,24 +59,67 @@ class _MarriageBodyState extends State<MarriageBody> {
   @override
   void initState() {
     super.initState();
+    _mainScrollController.addListener(_scrollListener);
     context.read<MarriageCubit>().fetchMarriageProfile();
   }
 
   @override
   void dispose() {
+    _mainScrollController.removeListener(_scrollListener);
     _mainScrollController.dispose();
     _interactionsCubit?.close();
     super.dispose();
   }
 
+  // ════════════════════════════════════════════════════
+  // ✅ Scroll Listener
+  // ════════════════════════════════════════════════════
+  void _scrollListener() {
+    final currentOffset = _mainScrollController.offset;
+    final delta = currentOffset - _lastOffset;
+
+    _scrollDelta += delta;
+
+    if (_scrollDelta.abs() >= _scrollThreshold) {
+      final isDown = _scrollDelta > 0;
+
+      // ✅ تحديث حالة الـ Floating Buttons
+      final cubit = context.read<MarriageCubit>();
+      if (cubit.state.isScrollingDown != isDown) {
+        cubit.setScrollingDown(isDown);
+      }
+
+      // ✅ إبلاغ الـ Layout بالسكرول (لإخفاء NavBar)
+      widget.onScroll?.call(isDown);
+      _scrollDelta = 0;
+    }
+
+    _lastOffset = currentOffset;
+  }
+
+  // ✅ Scroll to Top
+  void scrollToTop() {
+    if (_mainScrollController.hasClients) {
+      _mainScrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  // ✅ Reset scroll tracking
+  void _resetScrollTracking() {
+    _lastOffset = 0;
+    _scrollDelta = 0;
+    context.read<MarriageCubit>().setScrollingDown(false);
+  }
+
   Widget _buildToggle() {
+    final cubit = context.read<MarriageCubit>();
     return SectionToggle(
-      isMarriage: _isMarriageTab,
-      onChanged: (value) {
-        setState(() {
-          _isMarriageTab = value;
-        });
-      },
+      isMarriage: cubit.state.isMarriageTab,
+      onChanged: (value) => cubit.setMarriageTab(value),
     );
   }
 
@@ -136,7 +182,7 @@ class _MarriageBodyState extends State<MarriageBody> {
         if (users.isEmpty) {
           return AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
-            child: _isMarriageTab
+            child: state.isMarriageTab
                 ? _buildWithAppBar(
                     key: const ValueKey('empty_marriage'),
                     child: _buildEmptyMarriage(),
@@ -147,19 +193,23 @@ class _MarriageBodyState extends State<MarriageBody> {
           );
         }
 
-        if (state.profile != _lastProfile) {
-          _lastProfile = state.profile;
-          _currentIndex = 0;
+        int profileIndex = state.currentIndex;
+        if (profileIndex >= users.length) {
+          profileIndex = users.length - 1;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<MarriageCubit>().clampCurrentIndex(
+              usersLength: users.length,
+            );
+          });
         }
-        if (_currentIndex >= users.length) _currentIndex = users.length - 1;
 
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
-          child: _isMarriageTab
+          child: state.isMarriageTab
               ? _buildMarriageContent(
                   key: const ValueKey('marriage'),
                   state: state,
-                  profileIndex: _currentIndex,
+                  profileIndex: profileIndex,
                   users: users,
                 )
               : _buildInteractionsContent(key: const ValueKey('interactions')),
@@ -253,7 +303,7 @@ class _MarriageBodyState extends State<MarriageBody> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // MARRIAGE TAB
+  // MARRIAGE TAB (✅ مع Animated Floating Buttons)
   // ═══════════════════════════════════════════════════════════════
   Widget _buildMarriageContent({
     Key? key,
@@ -282,7 +332,8 @@ class _MarriageBodyState extends State<MarriageBody> {
                 return SlideTransition(position: offsetAnimation, child: child);
               },
               child: CustomScrollView(
-                key: ValueKey<int>(_currentIndex),
+                key: ValueKey<int>(profileIndex),
+                controller: _mainScrollController,
                 slivers: [
                   SliverProfileHeader(
                     images: images,
@@ -320,6 +371,19 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+                  if (images.length > 1 && images[1].isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: AdditionalImageSection(
+                          personId: user?.id ?? '',
+                          imageUrl: images[1],
+                        ),
+                      ),
+                    ),
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -342,6 +406,20 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
+                  if (images.length > 2 && images[2].isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: AdditionalImageSection(
+                          personId: user?.id ?? '',
+                          imageUrl: images[2],
+                        ),
+                      ),
+                    ),
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -361,6 +439,20 @@ class _MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
+
+                  if (images.length > 3 && images[3].isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: AdditionalImageSection(
+                          personId: user?.id ?? '',
+                          imageUrl: images[3],
+                        ),
+                      ),
+                    ),
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -435,6 +527,20 @@ class _MarriageBodyState extends State<MarriageBody> {
                         ),
                       ),
                     ),
+
+                  if (images.length > 4 && images[4].isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: AdditionalImageSection(
+                          personId: user?.id ?? '',
+                          imageUrl: images[4],
+                        ),
+                      ),
+                    ),
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -501,14 +607,19 @@ class _MarriageBodyState extends State<MarriageBody> {
               ),
             ),
 
-            // Floating Buttons
-            Positioned(
-              bottom: 130.h,
+            // ════════════════════════════════════════════════════
+            // ✅ Animated Floating Buttons
+            // ════════════════════════════════════════════════════
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+              bottom: state.isScrollingDown ? 50.h : 100.h,
               left: 0,
               right: 0,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
+                  // ❤️ Like Button
                   buildCircleButton(
                     onTap: () {
                       context.read<MarriageCubit>().userInteraction(
@@ -516,17 +627,18 @@ class _MarriageBodyState extends State<MarriageBody> {
                         interactionType: 'like',
                       );
                       if (widget.personId == null && users.length > 1) {
-                        setState(() {
-                          _currentIndex = (_currentIndex + 1) >= users.length
-                              ? 0
-                              : (_currentIndex + 1);
-                        });
+                        context.read<MarriageCubit>().advanceProfile(
+                          usersLength: users.length,
+                        );
+                        _resetScrollTracking();
+                        scrollToTop();
                       }
                     },
                     Icons.favorite_outline,
                     AppColors.kprimaryTextColor,
                     HexColor('f8d3da'),
                   ),
+                  // ⭐ Star/Regard Button
                   buildCircleButton(
                     onTap: () {
                       context.read<MarriageCubit>().sendRegard(
@@ -537,6 +649,7 @@ class _MarriageBodyState extends State<MarriageBody> {
                     Colors.white,
                     HexColor('cccab3'),
                   ),
+                  // ✖️ Dislike Button
                   buildCircleButton(
                     onTap: () {
                       context.read<MarriageCubit>().userInteraction(
@@ -544,11 +657,11 @@ class _MarriageBodyState extends State<MarriageBody> {
                         interactionType: 'dislike',
                       );
                       if (widget.personId == null && users.length > 1) {
-                        setState(() {
-                          _currentIndex = (_currentIndex + 1) >= users.length
-                              ? 0
-                              : (_currentIndex + 1);
-                        });
+                        context.read<MarriageCubit>().advanceProfile(
+                          usersLength: users.length,
+                        );
+                        _resetScrollTracking();
+                        scrollToTop();
                       }
                     },
                     Icons.close,
@@ -581,10 +694,7 @@ class _MarriageBodyState extends State<MarriageBody> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Toggle ثابت في النص
                     Center(child: _buildToggle()),
-
-                    // Filter button (يمين في RTL)
                     Positioned(
                       right: 0,
                       child: GestureDetector(
@@ -601,9 +711,6 @@ class _MarriageBodyState extends State<MarriageBody> {
                         ),
                       ),
                     ),
-
-                    // ✅ Archive button بدل AnimatedBeFirstButton
-                    // ✅ Archive button - يفتح السجل مباشرة كـ page جديدة
                     Positioned(
                       left: 0,
                       child: GestureDetector(
@@ -632,7 +739,7 @@ class _MarriageBodyState extends State<MarriageBody> {
             Expanded(
               child: BlocProvider.value(
                 value: interactionsCubit,
-                child: InteractionBody(key: _interactionBodyKey), // ✅ Key
+                child: InteractionBody(key: _interactionBodyKey),
               ),
             ),
           ],

@@ -85,7 +85,9 @@ class _ImageViewerGalleryState extends State<ImageViewerGallery> {
                       ),
 
                       IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          context.pushNamed(AppRouter.kReportReasonsScreen);
+                        },
                         icon: const Icon(
                           Icons.report_gmailerrorred,
                           color: Colors.white,

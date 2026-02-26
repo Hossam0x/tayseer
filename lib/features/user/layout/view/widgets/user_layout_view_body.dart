@@ -6,6 +6,7 @@ import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
 import 'package:tayseer/features/user/layout/view/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
+import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -18,9 +19,12 @@ class UserLayOutViewBody extends StatefulWidget {
 }
 
 class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
-  // ✅ Now using the public InteractionBodyState class
   final GlobalKey<InteractionBodyState> _interactionsKey =
       GlobalKey<InteractionBodyState>();
+
+  // ✅ إضافة Key للـ MarriageBody للتحكم في الـ Scroll
+  final GlobalKey<MarriageBodyState> _marriageKey =
+      GlobalKey<MarriageBodyState>();
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +55,17 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                         : const Offset(0, 1),
                     child: UserNavBar(
                       onTabReselect: (index) {
-                        // ✅ لو ضغط على السوشيال وهو واقف فيها، يعمل scroll to top
+                        // ✅ Home tab - scroll to top
                         if (index == 0 && state.currentIndex == 0) {
                           cubit.scrollToTop();
                           cubit.setNavVisibility(true);
                         }
-                        // ✅ Interactions في index 3
+                        // ✅ Marriage tab - scroll to top
+                        else if (index == 1 && state.currentIndex == 1) {
+                          _marriageKey.currentState?.scrollToTop();
+                          cubit.setNavVisibility(true);
+                        }
+                        // ✅ Interactions tab
                         else if (index == 3 && state.currentIndex == 3) {
                           _interactionsKey.currentState?.handleTabReselect();
                         }
@@ -72,22 +81,18 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     );
   }
 
-  // ✅ من نسخة صاحبك - التعامل مع زرار الرجوع
   void _handleBackButton(
     BuildContext context,
     LayoutCubit cubit,
     LayoutState state,
   ) {
     if (state.currentIndex != 0) {
-      // لو مش في السوشيال (Home)، يرجع للسوشيال
       cubit.changeIndex(0);
       cubit.setNavVisibility(true);
     } else if (!state.isHomeAtTop) {
-      // لو في السوشيال بس عامل سكرول لتحت، يطلع فوق
       cubit.scrollToTop();
       cubit.setNavVisibility(true);
     } else {
-      // لو في السوشيال وفوق خلاص، يظهر ديالوج تأكيد الخروج
       CustomshowDialogWithImage(
         context,
         title: context.tr('exit_app_title'),
@@ -104,12 +109,18 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     }
   }
 
-  List<Widget> _getPages(BuildContext context, LayoutCubit cubit,LayoutState state) {
+  List<Widget> _getPages(
+    BuildContext context,
+    LayoutCubit cubit,
+    LayoutState state,
+  ) {
     switch (selectedUserType) {
       case UserTypeEnum.user:
         return [
           HomeView(onScroll: cubit.onScroll),
-          state.isMarriageVisible ? MarriageView() : const SizedBox.shrink(),
+          state.isMarriageVisible
+              ? MarriageView(key: _marriageKey, onScroll: cubit.onScroll)
+              : const SizedBox.shrink(),
           MySpaceView(),
           EventView(),
           const UserProfileView(),

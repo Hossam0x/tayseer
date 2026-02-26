@@ -26,9 +26,39 @@ class MarriageCubit extends Cubit<MarriageState> {
         state.copyWith(
           marriageProfileState: CubitStates.success,
           profile: profile,
+          currentIndex: 0,
         ),
       ),
     );
+  }
+
+  /// Advance current profile index (wraps to 0 when reaches [usersLength]).
+  void advanceProfile({required int usersLength}) {
+    if (usersLength <= 0) return;
+    final next = (state.currentIndex + 1) >= usersLength
+        ? 0
+        : (state.currentIndex + 1);
+    emit(state.copyWith(currentIndex: next));
+  }
+
+  /// Clamp current index to valid range when users length changed.
+  void clampCurrentIndex({required int usersLength}) {
+    if (usersLength <= 0) return;
+    if (state.currentIndex >= usersLength) {
+      emit(state.copyWith(currentIndex: usersLength - 1));
+    }
+  }
+
+  /// Update scrolling flag used by the UI for floating buttons.
+  void setScrollingDown(bool isDown) {
+    if (state.isScrollingDown == isDown) return;
+    emit(state.copyWith(isScrollingDown: isDown));
+  }
+
+  /// Toggle which tab is shown (marriage vs interactions).
+  void setMarriageTab(bool isMarriage) {
+    if (state.isMarriageTab == isMarriage) return;
+    emit(state.copyWith(isMarriageTab: isMarriage));
   }
 
   Future<void> userInteraction({
