@@ -721,111 +721,111 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   Future<void> _pickVideoFromCamera(BuildContext context) async {
-    try {
+  try {
+    // ✅ iOS: ImagePicker بيتعامل مع الـ permission داخلياً
+    if (Platform.isAndroid) {
       final cameraStatus = await Permission.camera.request();
+      if (!mounted) return;
+      
       if (cameraStatus.isDenied) {
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('camera_permission_required'),
-              isError: true,
-            ),
-          );
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('camera_permission_required'),
+            isError: true,
+          ),
+        );
         return;
       }
       if (cameraStatus.isPermanentlyDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('enable_camera_from_settings'),
-              isError: true,
-            ),
-          );
-          await openAppSettings();
-        }
-        return;
-      }
-      final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(
-        source: ImageSource.camera,
-        maxDuration: const Duration(minutes: 2),
-      );
-      if (video != null) await _processVideoFile(context, video);
-    } catch (e) {
-      debugPrint('❌ Error picking video from camera: $e');
-      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
             context,
-            text: context.tr('error_recording_video'),
+            text: context.tr('enable_camera_from_settings'),
             isError: true,
           ),
         );
-    }
-  }
-
-  Future<void> _pickVideoFromGallery(BuildContext context) async {
-    try {
-      PermissionStatus status;
-      if (Platform.isIOS) {
-        status = await Permission.photos.request();
-      } else {
-        if (Platform.isAndroid) {
-          final androidInfo = await DeviceInfoPlugin().androidInfo;
-          if (androidInfo.version.sdkInt >= 33) {
-            status = await Permission.videos.request();
-          } else {
-            status = await Permission.storage.request();
-          }
-        } else {
-          status = await Permission.storage.request();
-        }
+        await openAppSettings();
+        return;
       }
+    }
+
+    // ✅ iOS و Android: فتح الكاميرا مباشرة
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(
+      source: ImageSource.camera,
+      maxDuration: const Duration(minutes: 2),
+    );
+    if (video != null) await _processVideoFile(context, video);
+    
+  } catch (e) {
+    debugPrint('❌ Error picking video from camera: $e');
+    if (mounted)
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('error_recording_video'),
+          isError: true,
+        ),
+      );
+  }
+}
+  Future<void> _pickVideoFromGallery(BuildContext context) async {
+  try {
+    // ✅ iOS: ImagePicker مش محتاج permission - بيفتح Photos مباشرة
+    if (Platform.isAndroid) {
+      PermissionStatus status;
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      if (androidInfo.version.sdkInt >= 33) {
+        status = await Permission.videos.request();
+      } else {
+        status = await Permission.storage.request();
+      }
+
+      if (!mounted) return;
       if (status.isDenied) {
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('gallery_permission_required'),
-              isError: true,
-            ),
-          );
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('gallery_permission_required'),
+            isError: true,
+          ),
+        );
         return;
       }
       if (status.isPermanentlyDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('enable_gallery_from_settings'),
-              isError: true,
-            ),
-          );
-          await openAppSettings();
-        }
-        return;
-      }
-      final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(
-        source: ImageSource.gallery,
-        maxDuration: const Duration(minutes: 2),
-      );
-      if (video != null) await _processVideoFile(context, video);
-    } catch (e) {
-      debugPrint('❌ Error picking video from gallery: $e');
-      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
             context,
-            text: context.tr('error_selecting_video'),
+            text: context.tr('enable_gallery_from_settings'),
             isError: true,
           ),
         );
+        await openAppSettings();
+        return;
+      }
     }
-  }
 
+    // ✅ iOS و Android: فتح ImagePicker مباشرة
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 2),
+    );
+    if (video != null) await _processVideoFile(context, video);
+    
+  } catch (e) {
+    debugPrint('❌ Error picking video from gallery: $e');
+    if (mounted)
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('error_selecting_video'),
+          isError: true,
+        ),
+      );
+  }
+}
   Future<void> _processVideoFile(BuildContext context, XFile video) async {
     try {
       final file = File(video.path);
@@ -941,10 +941,40 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  void _startRecordingInPlace(BuildContext context) {
-    setState(() => _isRecordingInPlace = true);
+void _startRecordingInPlace(BuildContext context) async {
+  // ✅ اطلب permission الميكروفون الأول
+  final status = await Permission.microphone.request();
+  
+  if (status.isDenied) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('microphone_permission_required'),
+          isError: true,
+        ),
+      );
+    }
+    return;
   }
-
+  
+  if (status.isPermanentlyDenied) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('enable_microphone_from_settings'),
+          isError: true,
+        ),
+      );
+      await openAppSettings();
+    }
+    return;
+  }
+  
+  // ✅ بعد الحصول على الـ permission
+  setState(() => _isRecordingInPlace = true);
+}
 Future<void> _pickAudio(BuildContext context) async {
   try {
     // ✅ iOS: FilePicker مش محتاج permission - بيفتح Files app مباشرة
