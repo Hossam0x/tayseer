@@ -1,4 +1,3 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
@@ -424,12 +423,7 @@ class _SettingsViewState extends State<SettingsView> {
     );
 
     try {
-      try {
-        await FirebaseMessaging.instance.unsubscribeFromTopic("all");
-      } catch (e) {
-        debugPrint('⚠️ Error unsubscribing from topics: $e');
-      }
-
+      context.read<SettingsCubit>().logoutFromSever();
       CachNetwork.clearCache();
       getIt<tayseerSocketHelper>().disconnect();
       Navigator.pushNamedAndRemoveUntil(

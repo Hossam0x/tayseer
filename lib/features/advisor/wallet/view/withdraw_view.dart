@@ -1,5 +1,6 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/withdraw_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/withdraw_state.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/withdraw_model.dart';
 import 'package:tayseer/features/advisor/wallet/view/widgets/balance_card.dart';
@@ -10,8 +11,11 @@ class WithdrawView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => WithdrawCubit(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => WithdrawCubit()),
+        BlocProvider(create: (context) => getIt<WalletCubit>()..getWallet()),
+      ],
       child: Scaffold(
         backgroundColor: AppColors.kScaffoldColor,
         body: AdvisorBackground(

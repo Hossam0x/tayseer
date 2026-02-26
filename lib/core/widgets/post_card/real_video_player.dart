@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
@@ -40,9 +41,18 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   bool _isEnded = false;
   bool _isDisposed = false;
 
+  // Completer لمنع التهيئة المتكررة
+  Completer<void>? _initCompleter;
+
   int _retryCount = 0;
   int _lastSavedSecond = -1;
-  static const int _maxRetries = 3;
+  static const int _maxRetries = 5;
+
+  // Auto-retry timer للفشل الصامت
+  Timer? _autoRetryTimer;
+
+  // Delayed disposal timer — ينتظر 2 ثانية قبل dispose عند الخروج من الشاشة
+  Timer? _disposeDelayTimer;
 
   @override
   void initState() {
@@ -111,6 +121,8 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   @override
   void dispose() {
     _isDisposed = true;
+    _autoRetryTimer?.cancel();
+    _disposeDelayTimer?.cancel();
     _savePosition();
     VideoManager.instance.currentlyPlayingPostId.removeListener(
       _videoManagerListener,
@@ -187,21 +199,37 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   }
 
   Future<void> _initializeVideo() async {
-    if (_controller != null || _isDisposed) return;
+    if (_isDisposed) return;
+
+    // Completer guard — لو التهيئة شغالة بالفعل، استنى عليها
+    if (_initCompleter != null && !_initCompleter!.isCompleted) {
+      return _initCompleter!.future;
+    }
+
+    if (_controller != null && _isInitialized) return;
+
+    _initCompleter = Completer<void>();
 
     try {
       if (widget.videoController != null) {
         _controller = widget.videoController;
         _setupController();
+        _initCompleter?.complete();
         return;
       }
 
-      if (widget.videoUrl.isEmpty) return;
+      if (widget.videoUrl.isEmpty) {
+        _initCompleter?.complete();
+        return;
+      }
 
       final cachedFile = await _videoCacheManager.getCachedFile(
         widget.videoUrl,
       );
-      if (!mounted || _isDisposed) return;
+      if (!mounted || _isDisposed) {
+        _initCompleter?.complete();
+        return;
+      }
 
       _controller = cachedFile != null
           ? VideoPlayerController.file(cachedFile)
@@ -213,6 +241,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
               ),
             );
 
+      // ابدأ تحميل الكاش في الخلفية بالتوازي
       if (cachedFile == null) {
         _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
       }
@@ -221,6 +250,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       if (!mounted || _isDisposed) {
         _controller?.dispose();
         _controller = null;
+        _initCompleter?.complete();
         return;
       }
 
@@ -232,21 +262,44 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
       _stateManager.markAsLoaded(widget.postId);
       _retryCount = 0;
+      _autoRetryTimer?.cancel();
 
       if (VideoManager.instance.currentlyPlayingPostId.value == widget.postId) {
         _controller!.play();
       }
+
+      _initCompleter?.complete();
     } catch (e) {
       debugPrint("❌ Error initializing video: $e");
-      if (!mounted || _isDisposed) return;
+      if (!mounted || _isDisposed) {
+        _initCompleter?.complete();
+        return;
+      }
+
+      // التخلص من الـ controller الفاشل
+      try {
+        _controller?.dispose();
+      } catch (_) {}
+      _controller = null;
+      _isInitialized = false;
 
       if (_retryCount < _maxRetries && _stateManager.canRetry(widget.postId)) {
         _retryCount++;
         _stateManager.recordError(widget.postId);
-        await Future.delayed(Duration(milliseconds: 500 * _retryCount));
-        if (mounted && !_isDisposed) _initializeVideo();
+        _initCompleter?.complete();
+
+        // Auto-retry صامت — بدون إظهار خطأ للمستخدم
+        final delay = Duration(milliseconds: 800 * _retryCount);
+        _autoRetryTimer?.cancel();
+        _autoRetryTimer = Timer(delay, () {
+          if (mounted && !_isDisposed) {
+            _initializeVideo();
+          }
+        });
       } else {
+        // بعد استنفاد كل المحاولات فقط، أظهر الخطأ
         _scheduleSetState(() => _hasError = true);
+        _initCompleter?.complete();
       }
     }
   }
@@ -277,6 +330,13 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     try {
       final value = controller.value;
 
+      // كشف خطأ أثناء التشغيل — auto-retry صامت
+      if (value.hasError && !_hasError) {
+        debugPrint('⚠️ Video error during playback: ${value.errorDescription}');
+        _handleSilentRetry();
+        return;
+      }
+
       if (value.isBuffering != _isBuffering) {
         _scheduleSetState(() => _isBuffering = value.isBuffering);
       }
@@ -305,6 +365,37 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     }
   }
 
+  /// Auto-retry صامت بدون إظهار خطأ للمستخدم
+  void _handleSilentRetry() {
+    if (_isDisposed || !mounted) return;
+
+    if (_retryCount < _maxRetries) {
+      _retryCount++;
+      debugPrint('🔄 Silent auto-retry #$_retryCount for ${widget.postId}');
+
+      // تخلص من الـ controller الحالي وأعد التهيئة
+      try {
+        _controller?.removeListener(_videoListener);
+        if (widget.videoController == null) {
+          _controller?.dispose();
+        }
+      } catch (_) {}
+      _controller = null;
+      _isInitialized = false;
+      _initCompleter = null;
+
+      final delay = Duration(milliseconds: 800 * _retryCount);
+      _autoRetryTimer?.cancel();
+      _autoRetryTimer = Timer(delay, () {
+        if (mounted && !_isDisposed) {
+          _initializeVideo();
+        }
+      });
+    } else {
+      _scheduleSetState(() => _hasError = true);
+    }
+  }
+
   void _scheduleSetState(VoidCallback fn) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isDisposed) setState(fn);
@@ -322,6 +413,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     final visibleFraction = info.visibleFraction;
 
     if (visibleFraction > 0.7) {
+      // ألغِ أي timer dispose — الفيديو رجع للشاشة
+      _disposeDelayTimer?.cancel();
+      _disposeDelayTimer = null;
+
       if (_controller == null && !_hasError) {
         _initializeVideo().then((_) {
           if (mounted && !_isDisposed && _isInitialized) {
@@ -343,13 +438,24 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
         }
       }
     } else if (visibleFraction > 0.0) {
+      // ظاهر جزئياً — إيقاف مؤقت فقط بدون dispose
+      _disposeDelayTimer?.cancel();
+      _disposeDelayTimer = null;
       _pauseAndSave();
     } else {
+      // خرج من الشاشة تماماً — إيقاف مؤقت + dispose بعد 2 ثانية
+      // لتحرير hardware decoder slot
       _pauseAndSave();
-      if (widget.videoController == null) {
-        _disposeLocalController();
-        _scheduleSetState(() => _isInitialized = false);
-      }
+      _disposeDelayTimer?.cancel();
+      _disposeDelayTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted && !_isDisposed && _controller != null) {
+          debugPrint('♻️ Delayed dispose for ${widget.postId}');
+          _savePosition();
+          _disposeLocalController();
+          _initCompleter = null;
+          if (mounted && !_isDisposed) setState(() {});
+        }
+      });
     }
   }
 
@@ -361,6 +467,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     _retryCount = 0;
     _lastSavedSecond = -1;
     _isEnded = false;
+    _initCompleter = null;
 
     setState(() {
       _hasError = false;
@@ -433,14 +540,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
                   if (_hasError) _buildErrorState(),
 
-                  if (!_isInitialized && !_hasError)
-                    const Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    ),
-
+                  // لا نظهر loading indicator — الـ thumbnail يكفي (زي فيسبوك)
                   if (_isInitialized && _isBuffering)
                     _buildBufferingIndicator(),
 

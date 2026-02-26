@@ -65,4 +65,8 @@ class ApiEndPoint {
   // static const String likeUser = '/interactions/like';
   static const String rateApp = '/app-rate/rate';
   static const String followAdvisor = '/advisor/toggle-follow/';
+  static const String changeIsAvaliableForSessions =
+      '/advisor/changeIsAvaliableForSessions';
+  static const String wallet = '/wallet/';
+  static const String walletTransactions = '/wallet/transactions';
 }

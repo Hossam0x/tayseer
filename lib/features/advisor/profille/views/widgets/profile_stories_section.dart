@@ -136,8 +136,9 @@ class _StoriesListViewState extends State<_StoriesListView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ...widget.stories.map(
-            (userStory) => Padding(
+          ...List.generate(widget.stories.length, (index) {
+            final userStory = widget.stories[index];
+            return Padding(
               key: ValueKey('story_profile_${userStory.userId}'),
               padding: EdgeInsetsDirectional.only(
                 end: context.responsiveWidth(14),
@@ -147,9 +148,11 @@ class _StoriesListViewState extends State<_StoriesListView> {
                   'story_profile_${userStory.userId}_${userStory.allViewed}',
                 ),
                 userStoryModel: userStory,
+                allStories: widget.stories,
+                userIndex: index,
               ),
-            ),
-          ),
+            );
+          }),
           BlocBuilder<StoriesCubit, StoriesState>(
             buildWhen: (previous, current) =>
                 previous.isLoadingMore != current.isLoadingMore,
@@ -173,17 +176,23 @@ class _StoriesListViewState extends State<_StoriesListView> {
 
 class _UserStoryItem extends StatelessWidget {
   final UserStoriesModel userStoryModel;
+  final List<UserStoriesModel> allStories;
+  final int userIndex;
 
-  const _UserStoryItem({super.key, required this.userStoryModel});
+  const _UserStoryItem({
+    super.key,
+    required this.userStoryModel,
+    required this.allStories,
+    required this.userIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // Reverse stories to chronological order (oldest first) before opening
-        final chronologicalUserStory = userStoryModel.copyWith(
-          stories: userStoryModel.stories.reversed.toList(),
-        );
+        final chronologicalUsersStories = allStories.map((us) {
+          return us.copyWith(stories: us.stories.reversed.toList());
+        }).toList();
 
         Navigator.push(
           context,
@@ -193,7 +202,8 @@ class _UserStoryItem extends StatelessWidget {
                 BlocProvider.value(
                   value: context.read<StoriesCubit>(),
                   child: StoryDetailsView(
-                    userStories: chronologicalUserStory,
+                    usersStories: chronologicalUsersStories,
+                    initialUserIndex: userIndex,
                     heroTag: 'profile_story_${userStoryModel.userId}',
                   ),
                 ),

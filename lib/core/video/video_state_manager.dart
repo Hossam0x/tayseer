@@ -18,16 +18,24 @@ class VideoStateManager {
   // تخزين timestamp آخر تحميل ناجح
   final Map<String, DateTime> _lastSuccessfulLoad = {};
 
-  static const int _maxRetries = 3;
+  static const int _maxRetries = 5;
 
-  // مدة صلاحية الحالة المخزنة (5 دقائق)
-  static const Duration _stateValidityDuration = Duration(minutes: 5);
+  // مدة صلاحية الحالة المخزنة (15 دقيقة)
+  static const Duration _stateValidityDuration = Duration(minutes: 15);
+
+  // الحد الأقصى لعدد المواضع المخزنة
+  static const int _maxPositionEntries = 200;
 
   /// حفظ موضع الفيديو قبل الـ dispose
   void savePosition(String videoId, Duration position) {
     if (position.inSeconds > 0) {
       _videoPositions[videoId] = position;
-      debugPrint('💾 Saved position for $videoId: ${position.inSeconds}s');
+
+      // FIFO eviction لمنع تراكم الذاكرة
+      if (_videoPositions.length > _maxPositionEntries) {
+        final firstKey = _videoPositions.keys.first;
+        _videoPositions.remove(firstKey);
+      }
     }
   }
 

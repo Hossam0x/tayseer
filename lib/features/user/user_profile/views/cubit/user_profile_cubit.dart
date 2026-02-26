@@ -678,11 +678,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     final currentState = state;
 
     try {
-      try {
-        await FirebaseMessaging.instance.unsubscribeFromTopic("all");
-      } catch (e) {}
-
       await _notificationService.clearAllNotifications();
+      _userProfileRepository.logout();
 
       CachNetwork.clearCache();
       getIt<tayseerSocketHelper>().disconnect();

@@ -1,7 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_state.dart';
-import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stories_gallery_grid.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/story_camera_widget.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/story_preview_view.dart';
@@ -33,7 +32,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
         _cameraController = CameraController(
           _cameras[0],
           ResolutionPreset.high,
-          enableAudio: true, // Enable audio for video recording
+          enableAudio: true,
           imageFormatGroup: ImageFormatGroup.jpeg,
         );
         await _cameraController!.initialize();
@@ -65,11 +64,13 @@ class _AddStoryBodyState extends State<AddStoryBody> {
             builder: (context) => const CustomloadingApp(),
           );
         } else if (state.addStoryState == CubitStates.success) {
-          // Use post frame callback to avoid navigation during build
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            // 1. Dismiss loading dialog
             if (Navigator.canPop(context)) {
-              Navigator.pop(context); // Dismiss loading dialog
+              Navigator.pop(context);
             }
+
+            // 2. Show success snackbar
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(
                 context,
@@ -77,12 +78,10 @@ class _AddStoryBodyState extends State<AddStoryBody> {
                 text: context.tr('story_published_success'),
               ),
             );
-            getIt<StoriesCubit>().fetchStories(context: context);
-            // Navigate back to profile after a short delay
+
+            // 3. Navigate back immediately
             final nav = Navigator.of(context);
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (nav.canPop()) nav.pop();
-            });
+            if (nav.canPop()) nav.pop();
           });
         } else if (state.addStoryState == CubitStates.failure) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -119,7 +118,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
         onClose: () {
           context.read<AddStoryCubit>().resetSelection();
           setState(() {
-            _isCameraActive = false; // Ensure we go back to grid
+            _isCameraActive = false;
           });
         },
       );

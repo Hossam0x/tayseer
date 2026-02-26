@@ -14,6 +14,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     bool loadMore = false,
     String? advisorId,
     bool? isSpecial,
+    bool isSilent = false,
     required BuildContext context,
   }) async {
     final effectiveAdvisorId = advisorId ?? state.advisorId;
@@ -55,15 +56,17 @@ class StoriesCubit extends Cubit<StoriesState> {
         },
       );
     } else {
-      emit(
-        state.copyWith(
-          storiesState: CubitStates.loading,
-          currentPage: 1,
-          hasMore: true,
-          advisorId: advisorId,
-          isSpecial: isSpecial,
-        ),
-      );
+      if (!isSilent) {
+        emit(
+          state.copyWith(
+            storiesState: CubitStates.loading,
+            currentPage: 1,
+            hasMore: true,
+            advisorId: advisorId,
+            isSpecial: isSpecial,
+          ),
+        );
+      }
       final result = await storiesRepository.fetchStories(
         page: 1,
         advisorId: effectiveAdvisorId,
@@ -93,6 +96,37 @@ class StoriesCubit extends Cubit<StoriesState> {
         },
       );
     }
+  }
+
+  /// Silent fetch that doesn't require a [BuildContext].
+  /// Used after adding a story when the original context is already popped.
+  Future<void> fetchStoriesSilent() async {
+    final effectiveAdvisorId = state.advisorId;
+    final effectiveIsSpecial = state.isSpecial;
+
+    final result = await storiesRepository.fetchStoriesSilent(
+      page: 1,
+      advisorId: effectiveAdvisorId,
+      isSpecial: effectiveIsSpecial,
+    );
+
+    result.fold(
+      (failure) {
+        debugPrint('Silent story fetch failed: ${failure.message}');
+      },
+      (storiesList) {
+        emit(
+          state.copyWith(
+            storiesState: CubitStates.success,
+            storiesList: storiesList,
+            currentPage: 1,
+            hasMore: storiesList.length >= pageSize,
+            advisorId: effectiveAdvisorId,
+            isSpecial: effectiveIsSpecial,
+          ),
+        );
+      },
+    );
   }
 
   void markStoryAsViewed({required String storyId, required String userId}) {
@@ -378,9 +412,14 @@ class StoriesCubit extends Cubit<StoriesState> {
       },
       (_) {
         emit(state.copyWith(createStoryState: CubitStates.success));
+
+        // Refetch stories after a delay to allow backend processing
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          fetchStoriesSilent();
+        });
+
         if (context != null && context.mounted) {
           AppToast.success(context, context.tr('story_created_success'));
-          fetchStories(context: context);
         }
       },
     );

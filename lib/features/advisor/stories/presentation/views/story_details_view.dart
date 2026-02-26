@@ -1,21 +1,23 @@
 import 'package:story_view/story_view.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart' hide Direction;
 
 class StoryDetailsView extends StatefulWidget {
-  final UserStoriesModel userStories;
+  final List<UserStoriesModel> usersStories;
+  final int initialUserIndex;
   final String? heroTag;
   final bool isArchive;
   final String? initialStoryId;
 
   const StoryDetailsView({
     super.key,
-    required this.userStories,
+    required this.usersStories,
+    required this.initialUserIndex,
     this.heroTag,
     this.isArchive = false,
     this.initialStoryId,
@@ -26,11 +28,8 @@ class StoryDetailsView extends StatefulWidget {
 }
 
 class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
-  late StoryController _storyController;
-  final List<StoryItem> _storyItems = [];
-  DateTime? _currentStoryTime;
-  int _currentStoryIndex = 0;
-  late List<StoryModel> _reorderedStories;
+  late PageController _pageController;
+  late int _currentUserIndex;
   double _vOffset = 0;
   bool _isDragging = false;
   bool _isPopping = false;
@@ -38,8 +37,8 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
   @override
   void initState() {
     super.initState();
-    _storyController = StoryController();
-    _initStoryItems();
+    _currentUserIndex = widget.initialUserIndex;
+    _pageController = PageController(initialPage: widget.initialUserIndex);
   }
 
   @override
@@ -51,121 +50,18 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
   @override
   void dispose() {
     videoRouteObserver.unsubscribe(this);
-    _storyController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   @override
-  void didPushNext() {
-    // Called when a new route is pushed and the current route is no longer visible.
-    _storyController.pause();
-  }
+  void didPushNext() {}
 
   @override
-  void didPopNext() {
-    // Called when the top route is popped and the current route becomes visible again.
-    _storyController.play();
-  }
-
-  void _initStoryItems() {
-    // Force chronological order (Oldest -> Newest)
-    final chronologicalStories = widget.userStories.stories.toList()
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-
-    _reorderedStories = chronologicalStories;
-
-    // Determine start index
-    int startIndex = 0;
-
-    if (widget.initialStoryId != null) {
-      // If a specific story ID is provided, start from there
-      final index = chronologicalStories.indexWhere(
-        (s) => s.id == widget.initialStoryId,
-      );
-      if (index != -1) {
-        startIndex = index;
-      }
-    } else {
-      // Find the first unviewed story index as default
-      final firstUnviewedIndex = chronologicalStories.indexWhere(
-        (story) => !story.isViewed,
-      );
-      startIndex = firstUnviewedIndex != -1 ? firstUnviewedIndex : 0;
-    }
-
-    if (_reorderedStories.isNotEmpty) {
-      _currentStoryTime = _reorderedStories[startIndex].createdAt;
-      _currentStoryIndex = startIndex;
-    }
-
-    for (var story in _reorderedStories) {
-      // Check if the story has a video URL
-      final hasVideo = story.video != null && story.video!.isNotEmpty;
-
-      if (hasVideo) {
-        // Add video story
-        final duration =
-            (story.videoDuration != null && story.videoDuration! > 0)
-            ? Duration(milliseconds: (story.videoDuration! * 1000).round())
-            : const Duration(seconds: 15);
-
-        _storyItems.add(
-          StoryItem.pageVideo(
-            story.video!,
-            controller: _storyController,
-            duration: duration,
-            key: Key(story.id),
-          ),
-        );
-      } else {
-        // Add image story
-        _storyItems.add(
-          StoryItem.pageImage(
-            url: story.image,
-            controller: _storyController,
-            imageFit: BoxFit.contain,
-            duration: const Duration(seconds: 5),
-            key: Key(story.id),
-          ),
-        );
-      }
-    }
-
-    // Jump to the first unviewed story after the widget builds
-    if (startIndex > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (mounted) {
-          // Small delay to ensure StoryView is ready
-          await Future.delayed(const Duration(milliseconds: 100));
-          if (!mounted) return;
-
-          // Jump to the story at startIndex
-          for (int i = 0; i < startIndex; i++) {
-            _storyController.next();
-          }
-        }
-      });
-    }
-  }
-
-  void _markCurrentStoryAsViewed() {
-    if (_currentStoryIndex < _reorderedStories.length) {
-      final currentStory = _reorderedStories[_currentStoryIndex];
-      // Note: We removed the !isMine check so the user can see their own border update locally.
-      if (widget.isArchive) {
-        // Archived stories view marking logic if needed
-      } else {
-        context.read<StoriesCubit>().markStoryAsViewed(
-          storyId: currentStory.id,
-          userId: widget.userStories.userId,
-        );
-      }
-    }
-  }
+  void didPopNext() {}
 
   @override
   Widget build(BuildContext context) {
-    // Calculate opacity based on drag distance
     final opacity = (1.0 - (_vOffset / 400)).clamp(0.0, 1.0);
 
     return Scaffold(
@@ -173,14 +69,13 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
       body: Listener(
         onPointerMove: (event) {
           if (!_isDragging && event.delta.dx.abs() > event.delta.dy.abs()) {
-            return; // Ignore horizontal swipes
+            return;
           }
           setState(() {
             _vOffset += event.delta.dy;
             if (_vOffset < 0) _vOffset = 0;
             if (_vOffset > 0 && !_isDragging) {
               _isDragging = true;
-              _storyController.pause();
             }
           });
         },
@@ -193,7 +88,6 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
             setState(() {
               _vOffset = 0;
               _isDragging = false;
-              _storyController.play();
             });
           }
         },
@@ -209,144 +103,400 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
               ..scale(1 - (_vOffset / 2000).clamp(0.0, 0.2)),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(_isDragging ? 20.r : 0),
-              child: Stack(
-                children: [
-                  Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: VisibilityDetector(
-                      key: const Key('story-details-visibility'),
-                      onVisibilityChanged: (visibilityInfo) {
-                        if (visibilityInfo.visibleFraction == 0) {
-                          _storyController.pause();
-                        } else if (visibilityInfo.visibleFraction == 1) {
-                          _storyController.play();
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: widget.usersStories.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentUserIndex = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return _UserStoryPage(
+                    userStories: widget.usersStories[index],
+                    isArchive: widget.isArchive,
+                    heroTag: index == widget.initialUserIndex
+                        ? widget.heroTag
+                        : null,
+                    initialStoryId: index == widget.initialUserIndex
+                        ? widget.initialStoryId
+                        : null,
+                    isActive: _currentUserIndex == index,
+                    isDragging: _isDragging,
+                    onAllStoriesComplete: () {
+                      if (_currentUserIndex < widget.usersStories.length - 1) {
+                        _pageController.nextPage(
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeInOut,
+                        );
+                      } else {
+                        if (!_isPopping) {
+                          _isPopping = true;
+                          Navigator.pop(context);
                         }
+                      }
+                    },
+                    onDraggingChanged: (dragging) {},
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Custom Story Controller — guards play() so inactive pages can't play
+// ─────────────────────────────────────────────────────────────────────────────
+class CustomStoryController extends StoryController {
+  bool isAllowedToPlay = false;
+
+  @override
+  void play() {
+    if (isAllowedToPlay) {
+      super.play();
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Individual User Stories Page
+// ─────────────────────────────────────────────────────────────────────────────
+class _UserStoryPage extends StatefulWidget {
+  final UserStoriesModel userStories;
+  final bool isArchive;
+  final String? initialStoryId;
+  final String? heroTag;
+  final VoidCallback onAllStoriesComplete;
+  final ValueChanged<bool> onDraggingChanged;
+  final bool isActive;
+  final bool isDragging;
+
+  const _UserStoryPage({
+    required this.userStories,
+    required this.isArchive,
+    this.initialStoryId,
+    this.heroTag,
+    required this.onAllStoriesComplete,
+    required this.onDraggingChanged,
+    this.isActive = false,
+    this.isDragging = false,
+  });
+
+  @override
+  State<_UserStoryPage> createState() => _UserStoryPageState();
+}
+
+class _UserStoryPageState extends State<_UserStoryPage> {
+  late CustomStoryController _storyController;
+  final List<StoryItem> _storyItems = [];
+  late List<StoryModel> _reorderedStories;
+  int _currentStoryIndex = 0;
+  DateTime? _currentStoryTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _storyController = CustomStoryController();
+    // Only the active page is allowed to trigger play
+    _storyController.isAllowedToPlay = widget.isActive;
+    _initStoryItems();
+
+    // Immediately pause inactive pages so the media loader doesn't fire play
+    if (!widget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _storyController.pause();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _UserStoryPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Page became active — allow and start playing
+    if (widget.isActive && !oldWidget.isActive) {
+      _storyController.isAllowedToPlay = true;
+      if (!widget.isDragging) {
+        _storyController.play();
+      }
+      _markCurrentStoryAsViewed();
+    }
+
+    // Page became inactive — disallow and pause immediately
+    if (!widget.isActive && oldWidget.isActive) {
+      _storyController.isAllowedToPlay = false;
+      _storyController.pause();
+    }
+
+    // Handle drag-to-dismiss pause/resume
+    if (widget.isDragging && !oldWidget.isDragging && widget.isActive) {
+      _storyController.pause();
+    } else if (!widget.isDragging && oldWidget.isDragging && widget.isActive) {
+      _storyController.play();
+    }
+  }
+
+  @override
+  void dispose() {
+    _storyController.dispose();
+    super.dispose();
+  }
+
+  void _initStoryItems() {
+    final chronologicalStories = widget.userStories.stories.toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    _reorderedStories = chronologicalStories;
+
+    int startIndex = 0;
+    if (widget.initialStoryId != null) {
+      final index = chronologicalStories.indexWhere(
+        (s) => s.id == widget.initialStoryId,
+      );
+      if (index != -1) startIndex = index;
+    } else {
+      final firstUnviewedIndex = chronologicalStories.indexWhere(
+        (story) => !story.isViewed,
+      );
+      startIndex = firstUnviewedIndex != -1 ? firstUnviewedIndex : 0;
+    }
+
+    if (_reorderedStories.isNotEmpty) {
+      _currentStoryTime = _reorderedStories[startIndex].createdAt;
+      _currentStoryIndex = startIndex;
+    }
+
+    for (var story in _reorderedStories) {
+      final hasVideo = story.video != null && story.video!.isNotEmpty;
+      if (hasVideo) {
+        final duration =
+            (story.videoDuration != null && story.videoDuration! > 0)
+            ? Duration(milliseconds: (story.videoDuration! * 1000).round())
+            : const Duration(seconds: 15);
+        _storyItems.add(
+          StoryItem.pageVideo(
+            story.video!,
+            controller: _storyController,
+            duration: duration,
+          ),
+        );
+      } else {
+        _storyItems.add(
+          StoryItem.pageImage(
+            url: story.image,
+            controller: _storyController,
+            imageFit: BoxFit.contain,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+
+    if (startIndex > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          for (int i = 0; i < startIndex; i++) {
+            _storyController.next();
+          }
+        }
+      });
+    }
+  }
+
+  void _markCurrentStoryAsViewed() {
+    if (!widget.isActive) return;
+    if (_currentStoryIndex < _reorderedStories.length) {
+      final currentStory = _reorderedStories[_currentStoryIndex];
+      if (!widget.isArchive) {
+        context.read<StoriesCubit>().markStoryAsViewed(
+          storyId: currentStory.id,
+          userId: widget.userStories.userId,
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = context.isArabicLang;
+
+    return Stack(
+      children: [
+        // ── StoryView directionality determines bar fill direction ──────────
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()..scale(isArabic ? -1.0 : 1.0, 1.0),
+            child: StoryView(
+              storyItems: _storyItems,
+              controller: _storyController,
+              onComplete: widget.onAllStoriesComplete,
+              onStoryShow: (item, index) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    setState(() {
+                      if (index < _reorderedStories.length) {
+                        _currentStoryIndex = index;
+                        _currentStoryTime = _reorderedStories[index].createdAt;
+                        _markCurrentStoryAsViewed();
+                      }
+                    });
+                  }
+                });
+              },
+              progressPosition: ProgressPosition.top,
+              repeat: false,
+              inline: false,
+              // Adjust indicator padding based on direction
+              indicatorOuterPadding: EdgeInsets.fromLTRB(
+                isArabic ? 16.w : 0.w, // Standard 16w
+                20.h,
+                isArabic ? 0.w : 16.w,
+                8.h,
+              ),
+            ),
+          ),
+        ),
+
+        // ── RTL Gesture interceptor ─────────────────────────────────────────
+        // The stock StoryView has: right 70% = next, left 70px = previous.
+        // In Arabic UI we flip it: left 75% = next, right 25% = previous.
+        if (isArabic)
+          Positioned.fill(
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Row(
+                children: [
+                  // LEFT area (75%) → NEXT story
+                  Expanded(
+                    flex: 3,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (_) {
+                        if (widget.isActive) _storyController.pause();
                       },
-                      child: StoryView(
-                        storyItems: _storyItems,
-                        controller: _storyController,
-                        onComplete: () {
-                          if (!_isPopping) {
-                            _isPopping = true;
-                            Navigator.pop(context);
-                          }
-                        },
-                        onVerticalSwipeComplete: (direction) {
-                          // Handled by our custom Listener to allow for smooth animation
-                        },
-                        onStoryShow: (StoryItem item, int index) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) {
-                              setState(() {
-                                if (index < _reorderedStories.length) {
-                                  _currentStoryIndex = index;
-                                  _currentStoryTime =
-                                      _reorderedStories[index].createdAt;
-                                  _markCurrentStoryAsViewed();
-                                }
-                              });
-                            }
-                          });
-                        },
-                        progressPosition: ProgressPosition.top,
-                        repeat: false,
-                        inline: false,
-                      ),
+                      onTapCancel: () {
+                        if (widget.isActive) _storyController.play();
+                      },
+                      onTapUp: (_) {
+                        if (!widget.isActive) return;
+                        _storyController.play();
+                        _storyController.next();
+                      },
                     ),
                   ),
-                  Positioned(
-                    top: 30.h,
-                    right: 20.w,
-                    left: 20.w,
-                    child: _buildCustomHeader(),
-                  ),
-                  Positioned(
-                    bottom: 30.h,
-                    child: widget.isArchive
-                        ? BlocBuilder<
-                            ArchivedStoriesCubit,
-                            ArchivedStoriesState
-                          >(
-                            builder: (context, state) {
-                              final updatedUserStory = state.stories.firstWhere(
-                                (userStory) =>
-                                    userStory.userId ==
-                                    widget.userStories.userId,
-                                orElse: () => widget.userStories,
-                              );
-
-                              final currentStoryId =
-                                  _currentStoryIndex < _reorderedStories.length
-                                  ? _reorderedStories[_currentStoryIndex].id
-                                  : null;
-
-                              final currentStory = currentStoryId != null
-                                  ? updatedUserStory.stories.firstWhere(
-                                      (s) => s.id == currentStoryId,
-                                      orElse: () =>
-                                          _reorderedStories[_currentStoryIndex],
-                                    )
-                                  : null;
-
-                              return _LoveButton(
-                                isLiked: currentStory?.isLiked ?? false,
-                                onTap: () {
-                                  if (currentStory != null) {
-                                    context
-                                        .read<ArchivedStoriesCubit>()
-                                        .likeStory(
-                                          storyId: currentStory.id,
-                                          userId: widget.userStories.userId,
-                                        );
-                                  }
-                                },
-                              );
-                            },
-                          )
-                        : BlocBuilder<StoriesCubit, StoriesState>(
-                            buildWhen: (previous, current) =>
-                                previous.storiesList != current.storiesList,
-                            builder: (context, state) {
-                              final updatedUserStory = state.storiesList
-                                  .firstWhere(
-                                    (userStory) =>
-                                        userStory.userId ==
-                                        widget.userStories.userId,
-                                    orElse: () => widget.userStories,
-                                  );
-
-                              final currentStoryId =
-                                  _currentStoryIndex < _reorderedStories.length
-                                  ? _reorderedStories[_currentStoryIndex].id
-                                  : null;
-
-                              final currentStory = currentStoryId != null
-                                  ? updatedUserStory.stories.firstWhere(
-                                      (s) => s.id == currentStoryId,
-                                      orElse: () =>
-                                          _reorderedStories[_currentStoryIndex],
-                                    )
-                                  : null;
-
-                              return _LoveButton(
-                                isLiked: currentStory?.isLiked ?? false,
-                                onTap: () {
-                                  if (currentStory != null) {
-                                    context.read<StoriesCubit>().likeStory(
-                                      storyId: currentStory.id,
-                                      userId: widget.userStories.userId,
-                                    );
-                                  }
-                                },
-                              );
-                            },
-                          ),
+                  // RIGHT area (25%) → PREVIOUS story
+                  Expanded(
+                    flex: 1,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (_) {
+                        if (widget.isActive) _storyController.pause();
+                      },
+                      onTapCancel: () {
+                        if (widget.isActive) _storyController.play();
+                      },
+                      onTapUp: (_) {
+                        if (!widget.isActive) return;
+                        _storyController.play();
+                        _storyController.previous();
+                      },
+                    ),
                   ),
                 ],
               ),
             ),
           ),
+
+        // ── Header (avatar + name + time + menu) ───────────────────────────
+        Positioned(
+          top: 30.h,
+          right: 20.w,
+          left: 20.w,
+          child: _buildCustomHeader(),
         ),
+
+        // ── Bottom (like / views) ───────────────────────────────────────────
+        Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomSection()),
+      ],
+    );
+  }
+
+  Widget _buildBottomSection() {
+    final currentStoryId = _currentStoryIndex < _reorderedStories.length
+        ? _reorderedStories[_currentStoryIndex].id
+        : null;
+    final currentStory = currentStoryId != null
+        ? _reorderedStories[_currentStoryIndex]
+        : null;
+
+    if (currentStory != null && currentStory.isMine) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: 30.h),
+        child: _buildMyStoryBottomActions(currentStory),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: 30.h),
+      child: Align(
+        alignment: AlignmentDirectional.bottomEnd,
+        child: widget.isArchive
+            ? BlocBuilder<ArchivedStoriesCubit, ArchivedStoriesState>(
+                builder: (context, state) {
+                  final updatedUserStory = state.stories.firstWhere(
+                    (us) => us.userId == widget.userStories.userId,
+                    orElse: () => widget.userStories,
+                  );
+                  final storyData = currentStoryId != null
+                      ? updatedUserStory.stories.firstWhere(
+                          (s) => s.id == currentStoryId,
+                          orElse: () => currentStory!,
+                        )
+                      : null;
+                  return _LoveButton(
+                    isLiked: storyData?.isLiked ?? false,
+                    onTap: () {
+                      if (storyData != null) {
+                        context.read<ArchivedStoriesCubit>().likeStory(
+                          storyId: storyData.id,
+                          userId: widget.userStories.userId,
+                        );
+                      }
+                    },
+                  );
+                },
+              )
+            : BlocBuilder<StoriesCubit, StoriesState>(
+                buildWhen: (prev, curr) => prev.storiesList != curr.storiesList,
+                builder: (context, state) {
+                  final updatedUserStory = state.storiesList.firstWhere(
+                    (us) => us.userId == widget.userStories.userId,
+                    orElse: () => widget.userStories,
+                  );
+                  final storyData = currentStoryId != null
+                      ? updatedUserStory.stories.firstWhere(
+                          (s) => s.id == currentStoryId,
+                          orElse: () => currentStory!,
+                        )
+                      : null;
+                  return _LoveButton(
+                    isLiked: storyData?.isLiked ?? false,
+                    onTap: () {
+                      if (storyData != null) {
+                        context.read<StoriesCubit>().likeStory(
+                          storyId: storyData.id,
+                          userId: widget.userStories.userId,
+                        );
+                      }
+                    },
+                  );
+                },
+              ),
       ),
     );
   }
@@ -355,16 +505,81 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
     final currentStory = _currentStoryIndex < _reorderedStories.length
         ? _reorderedStories[_currentStoryIndex]
         : null;
-
     final bool isMine = currentStory?.isMine ?? false;
 
     return SafeArea(
       bottom: false,
-      right: false,
-      left: false,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Avatar + Name + Time (tap → advisor profile)
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                _storyController.pause();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserAdvisorProfileView(
+                      advisorId: widget.userStories.userId,
+                    ),
+                  ),
+                ).then((_) {
+                  if (mounted && widget.isActive) _storyController.play();
+                });
+              },
+              child: Row(
+                children: [
+                  HeroMode(
+                    enabled: widget.isActive,
+                    child: Hero(
+                      tag: widget.heroTag ?? widget.userStories.userId,
+                      child: Container(
+                        width: 45.w,
+                        height: 45.w,
+                        decoration: const BoxDecoration(shape: BoxShape.circle),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(1000.r),
+                          child: AppImage(
+                            widget.userStories.image,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Gap(10.w),
+                  Flexible(
+                    child: Text(
+                      widget.userStories.name,
+                      style: Styles.textStyle16SemiBold.copyWith(
+                        color: Colors.white,
+                        shadows: const [
+                          Shadow(color: Colors.black45, blurRadius: 5),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Gap(6.w),
+                  Text(
+                    getTimeAgo(context, _currentStoryTime),
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w500,
+                      shadows: [
+                        const Shadow(color: Colors.black45, blurRadius: 5),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Gap(8.w),
+          // Popup menu
           PopupMenuButton<String>(
             color: Colors.white,
             shape: RoundedRectangleBorder(
@@ -372,11 +587,12 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
             ),
             icon: Icon(Icons.more_vert, color: Colors.white, size: 32.sp),
             onOpened: () => _storyController.pause(),
-            onCanceled: () => _storyController.play(),
+            onCanceled: () {
+              if (widget.isActive) _storyController.play();
+            },
             onSelected: (value) async {
-              _storyController.play();
+              if (widget.isActive) _storyController.play();
               if (currentStory == null) return;
-
               if (widget.isArchive) {
                 final cubit = context.read<ArchivedStoriesCubit>();
                 if (value == 'delete') {
@@ -385,20 +601,14 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
                     storyId: currentStory.id,
                     userId: widget.userStories.userId,
                   );
-                  if (mounted && !_isPopping) {
-                    _isPopping = true;
-                    Navigator.pop(context);
-                  }
+                  if (mounted) Navigator.pop(context);
                 } else if (value == 'unarchive') {
                   await cubit.unarchiveStory(
                     context: context,
                     storyId: currentStory.id,
                     userId: widget.userStories.userId,
                   );
-                  if (mounted && !_isPopping) {
-                    _isPopping = true;
-                    Navigator.pop(context);
-                  }
+                  if (mounted) Navigator.pop(context);
                 }
               } else {
                 final cubit = context.read<StoriesCubit>();
@@ -408,10 +618,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
                     storyId: currentStory.id,
                     userId: widget.userStories.userId,
                   );
-                  if (mounted && !_isPopping) {
-                    _isPopping = true;
-                    Navigator.pop(context);
-                  }
+                  if (mounted) Navigator.pop(context);
                 } else if (value == 'archive') {
                   await cubit.toggleArchiveStory(
                     context: context,
@@ -419,10 +626,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
                     userId: widget.userStories.userId,
                     isArchive: true,
                   );
-                  if (mounted && !_isPopping) {
-                    _isPopping = true;
-                    Navigator.pop(context);
-                  }
+                  if (mounted) Navigator.pop(context);
                 } else if (value == 'special') {
                   await cubit.makeStorySpecial(
                     context: context,
@@ -437,10 +641,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
                     storyId: currentStory.id,
                     userId: widget.userStories.userId,
                   );
-                  if (mounted && !_isPopping) {
-                    _isPopping = true;
-                    Navigator.pop(context);
-                  }
+                  if (mounted) Navigator.pop(context);
                 }
               }
             },
@@ -456,7 +657,6 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
                       widget.isArchive ? Icons.unarchive : Icons.archive,
                     ),
                   ),
-                  // Only show special option if not archive and story is not already special
                   if (!widget.isArchive &&
                       currentStory != null &&
                       !currentStory.isSpecial)
@@ -495,70 +695,6 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
               ];
             },
           ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                _storyController.pause();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => UserAdvisorProfileView(
-                      advisorId: widget.userStories.userId,
-                    ),
-                  ),
-                );
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    getTimeAgo(context, _currentStoryTime),
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w500,
-                      shadows: [Shadow(color: Colors.black45, blurRadius: 5)],
-                    ),
-                  ),
-                  Gap(8.w),
-                  // الاسم
-                  Flexible(
-                    child: Text(
-                      widget.userStories.name,
-                      textAlign: TextAlign.end,
-                      style: Styles.textStyle16SemiBold.copyWith(
-                        color: Colors.white,
-                        shadows: const [
-                          Shadow(color: Colors.black45, blurRadius: 5),
-                        ],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Gap(12.w),
-                  // الصورة آخر حاجة (هتظهر في اليمين)
-                  Hero(
-                    tag: widget.heroTag ?? widget.userStories.userId,
-                    child: Container(
-                      width: 45.w,
-                      height: 45.w,
-                      decoration: const BoxDecoration(shape: BoxShape.circle),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          1000.r,
-                        ), // نص الـ width عشان يبقى دايرة كاملة
-                        child: AppImage(
-                          widget.userStories.image,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -577,6 +713,86 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
       ],
     );
   }
+
+  Widget _buildMyStoryBottomActions(StoryModel currentStory) {
+    return GestureDetector(
+      onTap: () {
+        _storyController.pause();
+        _showViewersBottomSheet(context, currentStory).then((_) {
+          if (mounted && widget.isActive) _storyController.play();
+        });
+      },
+      child: Container(
+        color: Colors.transparent,
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.remove_red_eye_outlined,
+              color: Colors.white,
+              size: 22.sp,
+            ),
+            Gap(6.w),
+            Text(
+              '${currentStory.viewsCount}',
+              style: Styles.textStyle14Bold.copyWith(color: Colors.white),
+            ),
+            Gap(16.w),
+            Icon(Icons.favorite, color: Colors.red, size: 22.sp),
+            Gap(6.w),
+            Text(
+              '${currentStory.likesCount}',
+              style: Styles.textStyle14Bold.copyWith(color: Colors.white),
+            ),
+            const Spacer(),
+            if (currentStory.likedBy != null &&
+                currentStory.likedBy!.isNotEmpty)
+              _buildStackedAvatars(currentStory.likedBy!),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStackedAvatars(List<StoryUserModel> likers) {
+    final count = likers.length.clamp(0, 3);
+    return SizedBox(
+      width: (18.w * (count - 1)) + 28.w,
+      height: 28.h,
+      child: Stack(
+        alignment: Alignment.centerRight,
+        children: List.generate(count, (i) {
+          return Positioned(
+            right: i * 18.w,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2.w),
+              ),
+              child: CircleAvatar(
+                radius: 12.r,
+                backgroundImage: NetworkImage(likers[i].image),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Future<void> _showViewersBottomSheet(
+    BuildContext context,
+    StoryModel story,
+  ) async {
+    final likers = story.likedBy ?? [];
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _LikersBottomSheet(likers: likers),
+    );
+  }
 }
 
 class _LoveButton extends StatelessWidget {
@@ -587,13 +803,157 @@ class _LoveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      padding: EdgeInsets.symmetric(horizontal: 30.w),
-      onPressed: onTap,
-      icon: Icon(
-        isLiked ? Icons.favorite : Icons.favorite_border,
-        color: isLiked ? Colors.red : Colors.white,
-        size: 30.sp,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 45.w,
+          height: 45.w,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.24),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isLiked ? Icons.favorite : Icons.favorite_border,
+            color: isLiked ? Colors.red : Colors.white,
+            size: 26.sp,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Likers Bottom Sheet — with pagination & profile navigation
+// ─────────────────────────────────────────────────────────────────────────────
+class _LikersBottomSheet extends StatefulWidget {
+  final List<StoryUserModel> likers;
+
+  const _LikersBottomSheet({required this.likers});
+
+  @override
+  State<_LikersBottomSheet> createState() => _LikersBottomSheetState();
+}
+
+class _LikersBottomSheetState extends State<_LikersBottomSheet> {
+  static const int _pageSize = 15;
+  int _visibleCount = _pageSize;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 100) {
+      if (_visibleCount < widget.likers.length) {
+        setState(() {
+          _visibleCount = (_visibleCount + _pageSize).clamp(
+            0,
+            widget.likers.length,
+          );
+        });
+      }
+    }
+  }
+
+  void _navigateToProfile(BuildContext context, StoryUserModel user) {
+    Navigator.pop(context);
+    final isAdvisor = user.userType.toLowerCase() == 'advisor';
+    if (isAdvisor) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => UserAdvisorProfileView(advisorId: user.id),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => UserPublicProfileView(userId: user.id),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayedLikers = widget.likers.take(_visibleCount).toList();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.6,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      child: Column(
+        children: [
+          Gap(12.h),
+          Container(
+            width: 40.w,
+            height: 4.h,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2.r),
+            ),
+          ),
+          Gap(16.h),
+          Text(context.tr('story_likers'), style: Styles.textStyle16SemiBold),
+          Gap(12.h),
+          Expanded(
+            child: widget.likers.isEmpty
+                ? Center(
+                    child: Text(
+                      context.tr('no_likers_yet'),
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.kGreyB3,
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    controller: _scrollController,
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    itemCount: displayedLikers.length,
+                    separatorBuilder: (_, _) => Gap(12.h),
+                    itemBuilder: (context, index) {
+                      final user = displayedLikers[index];
+                      return GestureDetector(
+                        onTap: () => _navigateToProfile(context, user),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22.r,
+                              backgroundImage: NetworkImage(user.image),
+                            ),
+                            Gap(12.w),
+                            Expanded(
+                              child: Text(
+                                user.name,
+                                style: Styles.textStyle14SemiBold,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          Gap(16.h),
+        ],
       ),
     );
   }

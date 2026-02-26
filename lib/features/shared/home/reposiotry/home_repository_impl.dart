@@ -40,18 +40,26 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  Future<void> reactToPost({
+  Future<Either<Failure, String>> reactToPost({
     required String postId,
     required ReactionType? reactionType,
     required bool isRemove,
   }) async {
-    final data = {
-      "postId": postId,
-      if (!isRemove) "type": reactionType!.name,
-      'action': isRemove ? 'remove' : 'add',
-    };
+    try {
+      final data = {
+        "postId": postId,
+        if (!isRemove) "type": reactionType!.name,
+        'action': isRemove ? 'remove' : 'add',
+      };
 
-    await apiService.post(endPoint: ApiEndPoint.like, data: data);
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.like,
+        data: data,
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
   }
 
   @override

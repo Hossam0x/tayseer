@@ -19,8 +19,7 @@ class LayoutCubit extends Cubit<LayoutState> {
 
   void changeIndex(int index) {
     // لو المستخدم بالفعل في نفس الصفحة وضغط عليها تاني (زي فيسبوك)
-    if (state.currentIndex == index && index == 0) {
-      // Home index = 0
+    if (state.currentIndex == index) {
       scrollToTop();
     } else {
       emit(state.copyWith(currentIndex: index));

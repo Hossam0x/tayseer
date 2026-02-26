@@ -12,71 +12,48 @@ class TransactionItem extends StatelessWidget {
   });
 
   // الحصول على الأيقونة المناسبة حسب نوع المعاملة
-  String _getIconPath(TransactionType type) {
-    switch (type) {
-      case TransactionType.refund:
-        return AssetsData.icWallet;
-      case TransactionType.withdraw:
-        return AssetsData.icBank;
-      case TransactionType.subscription:
-        return AssetsData.icSubscription;
-      case TransactionType.booking:
-        if (transaction.title.contains('حدث')) {
-          return AssetsData.eventIcon;
-        } else {
-          return AssetsData.icBookSession;
-        }
-      case TransactionType.deposit:
+  String _getIconPath() {
+    switch (transaction.type) {
+      case 'session':
+        return AssetsData.icBookSession;
+      case 'event':
+        return AssetsData.eventIcon;
+      default:
         return AssetsData.icWallet;
     }
   }
 
   // الحصول على لون الخلفية للأيقونة
-  Color _getIconBackgroundColor(TransactionType type) {
-    switch (type) {
-      case TransactionType.refund:
-        return AppColors.mainColor.withOpacity(0.2);
-      case TransactionType.withdraw:
+  Color _getIconBackgroundColor() {
+    switch (transaction.type) {
+      case 'session':
         return AppColors.pendingColor.withOpacity(0.2);
-      case TransactionType.subscription:
-        return AppColors.primary200.withOpacity(0.2);
-      case TransactionType.booking:
-        if (transaction.title.contains('حدث')) {
-          return AppColors.primary300.withOpacity(0.2);
-        } else {
-          return AppColors.pendingColor.withOpacity(0.2);
-        }
-      case TransactionType.deposit:
-        return AppColors.alertColor.withOpacity(0.2);
+      case 'event':
+        return AppColors.primary300.withOpacity(0.2);
+      default:
+        return AppColors.mainColor.withOpacity(0.2);
     }
   }
 
   // الحصول على لون الأيقونة
-  Color _getIconColor(TransactionType type) {
-    switch (type) {
-      case TransactionType.refund:
-        return AppColors.mainColor;
-      case TransactionType.withdraw:
+  Color _getIconColor() {
+    switch (transaction.type) {
+      case 'session':
         return AppColors.pendingColor;
-      case TransactionType.subscription:
-        return AppColors.primary400;
-      case TransactionType.booking:
-        if (transaction.title.contains('حدث')) {
-          return AppColors.primary300;
-        } else {
-          return AppColors.pendingColor;
-        }
-      case TransactionType.deposit:
-        return AppColors.alertColor;
+      case 'event':
+        return AppColors.primary300;
+      default:
+        return AppColors.mainColor;
     }
   }
 
-  // تنسيق التاريخ والوقت
-  String _getDateTime() {
-    if (showTime) {
-      return '${transaction.date} ${transaction.time}';
+  String _getTitle(BuildContext context) {
+    if (transaction.type == 'session') {
+      return context.tr('consultancy_session');
+    } else if (transaction.type == 'event') {
+      return context.tr('event_booking');
     }
-    return transaction.date;
+    return context.tr('transaction');
   }
 
   @override
@@ -88,11 +65,11 @@ class TransactionItem extends StatelessWidget {
           // الأيقونة
           CircleAvatar(
             radius: 25.r,
-            backgroundColor: _getIconBackgroundColor(transaction.type),
+            backgroundColor: _getIconBackgroundColor(),
             child: SvgPicture.asset(
-              _getIconPath(transaction.type),
+              _getIconPath(),
               width: 23.w,
-              color: _getIconColor(transaction.type),
+              color: _getIconColor(),
             ),
           ),
           SizedBox(width: 15.w),
@@ -102,24 +79,14 @@ class TransactionItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  transaction.title,
+                  _getTitle(context),
                   style: Styles.textStyle16Bold.copyWith(
                     color: AppColors.primaryText,
                   ),
                 ),
-                // if (transaction.subtitle.isNotEmpty) ...[
-                //   SizedBox(height: 4.h),
-                //   Text(
-                //     transaction.subtitle,
-                //     style: Styles.textStyle14.copyWith(
-                //       color: AppColors.secondaryText,
-                //       fontSize: 12.sp,
-                //     ),
-                //   ),
-                // ],
-                // SizedBox(height: 4.h),
+                SizedBox(height: 4.h),
                 Text(
-                  _getDateTime(),
+                  transaction.formattedDate,
                   style: Styles.textStyle14.copyWith(
                     color: AppColors.secondaryText,
                   ),
@@ -128,13 +95,9 @@ class TransactionItem extends StatelessWidget {
             ),
           ),
           Text(
-            '${transaction.isPositive ? '+' : '-'}${transaction.amount.toStringAsFixed(0)} ${context.tr('sar')}',
+            '${transaction.displayAmount} ${transaction.type == 'event' ? '' : context.tr('egp')}',
             style: Styles.textStyle16Bold.copyWith(
-              color: transaction.pending == true
-                  ? AppColors.pendingColor
-                  : transaction.isPositive
-                  ? AppColors.mainColor
-                  : Colors.red,
+              color: transaction.isPositive ? AppColors.mainColor : Colors.red,
             ),
           ),
         ],

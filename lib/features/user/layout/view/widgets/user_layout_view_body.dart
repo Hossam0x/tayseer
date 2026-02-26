@@ -63,6 +63,11 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                         else if (index == 3 && state.currentIndex == 3) {
                           _interactionsKey.currentState?.handleTabReselect();
                         }
+                        // ✅ Profile in index 4
+                        else if (index == 4 && state.currentIndex == 4) {
+                          cubit.scrollToTop();
+                          cubit.setNavVisibility(true);
+                        }
                       },
                     ),
                   ),

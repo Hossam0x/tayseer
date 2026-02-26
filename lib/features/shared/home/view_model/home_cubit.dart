@@ -364,7 +364,7 @@ class HomeCubit extends Cubit<HomeState> {
       newLikesCount: newLikesCount,
     );
 
-    // التحديث في كل الكاتيجوريز
+    // Optimistic Update في كل الكاتيجوريز
     emit(
       state.updatePostInAllCategories(
         postId,
@@ -377,12 +377,35 @@ class HomeCubit extends Cubit<HomeState> {
       ),
     );
 
-    // API Call (Fire and forget)
-    homeRepository.reactToPost(
-      postId: postId,
-      reactionType: reactionType,
-      isRemove: isRemoving,
-    );
+    // API Call مع Rollback لو فشل
+    homeRepository
+        .reactToPost(
+          postId: postId,
+          reactionType: reactionType,
+          isRemove: isRemoving,
+        )
+        .then((result) {
+          result.fold(
+            (failure) {
+              log('>>>>>>>>>>>>>>>>> React To Post Failed: ${failure.message}');
+              // Rollback في كل الكاتيجوريز
+              emit(
+                state.updatePostInAllCategories(
+                  postId,
+                  (p) => p.copyWith(
+                    likesCount: post.likesCount,
+                    topReactions: post.topReactions,
+                    myReaction: post.myReaction,
+                    clearMyReaction: post.myReaction == null,
+                  ),
+                ),
+              );
+            },
+            (_) {
+              log('>>>>>>>>>>>>>>>>> React To Post Success');
+            },
+          );
+        });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

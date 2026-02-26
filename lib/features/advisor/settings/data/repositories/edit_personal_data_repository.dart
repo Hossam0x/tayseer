@@ -129,32 +129,17 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
         print('📤 JobGrade: ${request.jobGrade!}');
       }
 
-      // ⭐ 5. تحقق من yearsOfExperience - تأكد أنه رقم
+      // ⭐ 5. تحقق من yearsOfExperience
       if (request.yearsOfExperience != null &&
           request.yearsOfExperience!.isNotEmpty) {
-        String yearsExp = request.yearsOfExperience!;
-
-        // ⭐ حاول تحويل النص العربي إلى رقم
-        if (yearsExp.contains("سنتين")) {
-          yearsExp = "2";
-        } else if (yearsExp.contains("3 سنوات")) {
-          yearsExp = "3";
-        } else if (yearsExp.contains("5 سنوات")) {
-          yearsExp = "5";
-        } else if (yearsExp.contains("10 سنوات")) {
-          yearsExp = "10";
-        } else if (yearsExp.contains("أكثر من")) {
-          yearsExp = "11";
-        }
-
-        // ⭐ استخراج أي رقم من النص
-        final match = RegExp(r'(\d+)').firstMatch(yearsExp);
-        if (match != null) {
-          yearsExp = match.group(1)!;
-        }
-
-        formData.fields.add(MapEntry('yearsOfExperience', yearsExp));
-        print('📤 yearsOfExperience (converted): $yearsExp');
+        formData.fields.add(
+          MapEntry('yearsOfExperience', request.yearsOfExperience!),
+        );
+        // للاحتياط إذا كان السيرفر يتوقع Y كبيرة كما في حقول أخرى
+        formData.fields.add(
+          MapEntry('YearsOfExperience', request.yearsOfExperience!),
+        );
+        print('📤 yearsOfExperience: ${request.yearsOfExperience!}');
       }
 
       // ⭐ 6. تحقق من aboutYou
