@@ -1,5 +1,6 @@
 // lib/features/user/marriage/view/widget/marriage_body.dart
 
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/history_screen.dart';
@@ -157,6 +158,7 @@ class _MarriageBodyState extends State<MarriageBody> {
           duration: const Duration(milliseconds: 300),
           child: _isMarriageTab
               ? _buildMarriageContent(
+                  personId: widget.personId ?? "",
                   key: const ValueKey('marriage'),
                   state: state,
                   profileIndex: _currentIndex,
@@ -257,6 +259,7 @@ class _MarriageBodyState extends State<MarriageBody> {
   // ═══════════════════════════════════════════════════════════════
   Widget _buildMarriageContent({
     Key? key,
+    required String personId,
     required MarriageState state,
     required int profileIndex,
     required List<UserItem> users,
@@ -491,7 +494,13 @@ class _MarriageBodyState extends State<MarriageBody> {
                           );
                         },
                         onReport: () {
-                          context.pushNamed(AppRouter.kReportReasonsScreen);
+                          context.pushNamed(
+                            AppRouter.kReportsView,
+                            arguments: {
+                              'type': ReportType.user,
+                              'id': personId,
+                            },
+                          );
                         },
                       ),
                     ),
