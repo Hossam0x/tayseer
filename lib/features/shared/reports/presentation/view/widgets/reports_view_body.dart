@@ -1,3 +1,4 @@
+import 'package:tayseer/features/shared/reports/data/model/report_model.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_state.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/widgets/reports_app_bar.dart';
@@ -46,17 +47,9 @@ class ReportsViewBody extends StatelessWidget {
       itemBuilder: (context, index) {
         final reasons = state.reportReasons!;
         if (index == reasons.length) {
-          return _buildReportItem(
-            context,
-            context.tr(AppStrings.otherReason),
-            isOther: true,
-          );
+          return _buildReportItem(context, isOther: true);
         }
-        return _buildReportItem(
-          context,
-          reasons[index].reason,
-          reportId: reasons[index].id,
-        );
+        return _buildReportItem(context, report: reasons[index]);
       },
     );
   }
@@ -82,15 +75,18 @@ class ReportsViewBody extends StatelessWidget {
   }
 
   Widget _buildReportItem(
-    BuildContext context,
-    String title, {
+    BuildContext context, {
     bool? isOther,
-    String? reportId,
+    ReportModel? report,
   }) {
+    final cubit = context.read<ReportsCubit>();
+
     return ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       title: Text(
-        title,
+        isOther == true
+            ? context.tr(AppStrings.otherReason)
+            : report?.reason ?? '',
         style: Styles.textStyle16SemiBold.copyWith(
           color: AppColors.secondary800,
         ),
@@ -98,7 +94,8 @@ class ReportsViewBody extends StatelessWidget {
       trailing: Icon(Icons.arrow_forward_ios, size: 16.sp),
       onTap: () {
         if (isOther != true) {
-          context.pushNamed(AppRouter.kReportDetailsView);
+          cubit.selectReason(report!);
+          context.pushNamed(AppRouter.kReportDetailsView, arguments: cubit);
         }
       },
     );

@@ -9,12 +9,16 @@ class ReportsState extends Equatable {
   final CubitStates fetchReportReasonsState;
   final List<ReportModel>? reportReasons;
   final String? errMessage;
+
+  final ReportModel? selectedReason;
   const ReportsState({
     this.reportType,
     this.id,
     this.fetchReportReasonsState = CubitStates.initial,
     this.reportReasons,
     this.errMessage,
+
+    this.selectedReason,
   });
 
   ReportsState copyWith({
@@ -23,6 +27,7 @@ class ReportsState extends Equatable {
     List<ReportModel>? reportReasons,
     String? errMessage,
     CubitStates? fetchReportReasonsState,
+    ReportModel? selectedReason,
   }) {
     return ReportsState(
       reportType: reportType ?? this.reportType,
@@ -31,6 +36,7 @@ class ReportsState extends Equatable {
           fetchReportReasonsState ?? this.fetchReportReasonsState,
       reportReasons: reportReasons ?? this.reportReasons,
       errMessage: errMessage ?? this.errMessage,
+      selectedReason: selectedReason ?? this.selectedReason,
     );
   }
 
@@ -41,5 +47,6 @@ class ReportsState extends Equatable {
     fetchReportReasonsState,
     reportReasons,
     errMessage,
+    selectedReason,
   ];
 }

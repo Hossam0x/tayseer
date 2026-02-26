@@ -965,9 +965,13 @@ abstract class AppRouter {
         );
 
       case kReportDetailsView:
+        final reportsCubit = settings.arguments as ReportsCubit;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => ReportDetailsView(),
+          builder: (_) => BlocProvider.value(
+            value: reportsCubit,
+            child: ReportDetailsView(),
+          ),
         );
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;
