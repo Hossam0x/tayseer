@@ -122,24 +122,16 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     LayoutCubit cubit,
     LayoutState state,
   ) {
-  List<Widget> _getPages(
-    BuildContext context,
-    LayoutCubit cubit,
-    LayoutState state,
-  ) {
     switch (selectedUserType) {
       case UserTypeEnum.user:
         return [
           HomeView(onScroll: cubit.onScroll),
           state.isMarriageVisible
               ? MarriageView(key: _marriageKey, onScroll: cubit.onScroll)
-              : const SizedBox.shrink(),
-state.isMarriageVisible
-    ? MarriageView()
-    : BlocProvider(
-        create: (context) => MySpaceCubit(getIt<MySpaceRepo>()),
-        child: const ConsultationStandalonePage(),
-      ),
+              : BlocProvider(
+                  create: (context) => MySpaceCubit(getIt<MySpaceRepo>()),
+                  child: const ConsultationStandalonePage(),
+                ),
 
           MySpaceView(),
           EventView(),
