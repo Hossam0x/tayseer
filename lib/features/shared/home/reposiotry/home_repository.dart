@@ -16,7 +16,7 @@ abstract class HomeRepository {
     String? categoryId,
   });
 
-  Future<void> reactToPost({
+  Future<Either<Failure, String>> reactToPost({
     required String postId,
     required ReactionType? reactionType,
     required bool isRemove,

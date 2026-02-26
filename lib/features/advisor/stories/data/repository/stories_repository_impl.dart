@@ -93,6 +93,72 @@ class StoriesRepositoryImpl implements StoriesRepository {
   }
 
   @override
+  Future<Either<Failure, List<UserStoriesModel>>> fetchStoriesSilent({
+    required int page,
+    String? advisorId,
+    bool isSpecial = false,
+  }) async {
+    try {
+      var response = await apiService.get(
+        endPoint: isSpecial
+            ? ApiEndPoint.specialStories(advisorId)
+            : ApiEndPoint.allStories,
+        query: {'page': page},
+      );
+
+      final data = response['data'];
+      if (data == null) return const Right([]);
+
+      if (data is List) {
+        if (data.isEmpty) return const Right([]);
+        final firstItem = data.first as Map<String, dynamic>;
+
+        if (firstItem.containsKey('id') &&
+            firstItem.containsKey('userId') &&
+            !firstItem.containsKey('stories')) {
+          final allStoryModels = data
+              .map((e) => StoryModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          final Map<String, List<StoryModel>> grouped = {};
+          for (var story in allStoryModels) {
+            grouped.putIfAbsent(story.userId, () => []).add(story);
+          }
+          final List<UserStoriesModel> userStoriesList = [];
+          grouped.forEach((userId, stories) {
+            userStoriesList.add(
+              UserStoriesModel(
+                userId: userId,
+                name: '',
+                image: stories.isNotEmpty ? stories.first.image : '',
+                isFollowed: false,
+                isViewedByMe: stories.any((s) => s.isViewed),
+                allViewed: stories.every((s) => s.isViewed),
+                storiesCount: stories.length,
+                stories: stories,
+              ),
+            );
+          });
+          return Right(userStoriesList);
+        } else {
+          final storiesList = data
+              .map((e) => UserStoriesModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          return Right(storiesList);
+        }
+      } else if (data is Map) {
+        final storiesResponse = StoriesResponseModel.fromJson(response);
+        return Right(storiesResponse.data.result);
+      } else {
+        return Left(ServerFailure('تنسيق استجابة غير متوقع'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('فشل تحليل بيانات القصص: ${e.toString()}'));
+    }
+  }
+
+  @override
   void likeStory({required String storyId}) {
     apiService.post(
       isAuth: true,

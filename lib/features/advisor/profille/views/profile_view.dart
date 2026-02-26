@@ -39,9 +39,12 @@ class ProfileView extends StatelessWidget {
                     create: (_) => getIt<ProfileCubit>(),
                   ),
                   BlocProvider<StoriesCubit>(
-                    create: (_) =>
-                        getIt<StoriesCubit>()
-                          ..fetchStories(isSpecial: true, advisorId: null, context: context),
+                    create: (_) => getIt<StoriesCubit>()
+                      ..fetchStories(
+                        isSpecial: true,
+                        advisorId: null,
+                        context: context,
+                      ),
                   ),
                 ],
                 child: _ProfileContent(),
@@ -54,45 +57,77 @@ class ProfileView extends StatelessWidget {
   }
 }
 
-class _ProfileContent extends StatelessWidget {
+class _ProfileContent extends StatefulWidget {
+  @override
+  State<_ProfileContent> createState() => _ProfileContentState();
+}
+
+class _ProfileContentState extends State<_ProfileContent> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator.adaptive(
-      onRefresh: () => Future.wait([
-        context.read<ProfileCubit>().refresh(),
-        context.read<StoriesCubit>().fetchStories(
-          isSpecial: true,
-          advisorId: null,
-          context: context,
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<LayoutCubit, LayoutState>(
+          listenWhen: (previous, current) =>
+              previous.scrollToTopTrigger != current.scrollToTopTrigger &&
+              current.currentIndex == 3, // advisor profile is index 3
+          listener: (context, state) {
+            if (_scrollController.hasClients) {
+              _scrollController.animateTo(
+                0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+            }
+          },
         ),
-      ]),
-      color: AppColors.kprimaryColor,
-      backgroundColor: AppColors.kWhiteColor,
-      displacement: 40.h,
-      edgeOffset: 0,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
+      ],
+      child: RefreshIndicator.adaptive(
+        onRefresh: () => Future.wait([
+          context.read<ProfileCubit>().refresh(),
+          context.read<StoriesCubit>().fetchStories(
+            isSpecial: true,
+            advisorId: null,
+            context: context,
+          ),
+        ]),
+        color: AppColors.kprimaryColor,
+        backgroundColor: AppColors.kWhiteColor,
+        displacement: 40.h,
+        edgeOffset: 0,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          slivers: [
+            // Profile Header
+            const ProfileHeader(),
+
+            // Bio Information
+            const BioInformation(),
+
+            // Stories Section
+            const ProfileStoriesSection(advisorId: null),
+
+            // Spacing
+            SliverToBoxAdapter(child: Gap(20.h)),
+
+            // Posts Tabs Section
+            const ProfileTabsSection(),
+
+            // Bottom padding for better scrolling
+            SliverToBoxAdapter(child: Gap(100.h)),
+          ],
         ),
-        slivers: [
-          // Profile Header
-          const ProfileHeader(),
-
-          // Bio Information
-          const BioInformation(),
-
-          // Stories Section
-          const ProfileStoriesSection(advisorId: null),
-
-          // Spacing
-          SliverToBoxAdapter(child: Gap(20.h)),
-
-          // Posts Tabs Section
-          const ProfileTabsSection(),
-
-          // Bottom padding for better scrolling
-          SliverToBoxAdapter(child: Gap(100.h)),
-        ],
       ),
     );
   }

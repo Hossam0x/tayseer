@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -11,6 +12,10 @@ import 'package:tayseer/my_import.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   try {
     await dotenv.load(fileName: '.env.example');
   } catch (e) {

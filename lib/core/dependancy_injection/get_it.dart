@@ -76,6 +76,9 @@ import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profi
 import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/order_management_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/order_management_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
+import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
+import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
 
 import '../../my_import.dart';
 
@@ -396,4 +399,13 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<UploadPostCubit>(
     () => UploadPostCubit(getIt<PostsRepository>()),
   );
+
+  /// Wallet
+  getIt.registerLazySingleton<WalletRemoteDataSource>(
+    () => WalletRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<WalletRepo>(
+    () => WalletRepo(getIt<WalletRemoteDataSource>()),
+  );
+  getIt.registerFactory<WalletCubit>(() => WalletCubit(getIt<WalletRepo>()));
 }
