@@ -666,7 +666,7 @@
   "blur_enabled": "Image blur enabled",
   "blur_disabled": "Image blur disabled",
   "update_blur_error": "Error updating image settings",
-  "update_language_success": "Language updated to",
+  "update_language_success": "Language updated",
   "update_language_error": "Error updating language ⚠️",
   "share_app_message": "Try Tayseer app now! 😊\n",
   "share_app_subject": "Invitation to Tayseer app",
@@ -1417,7 +1417,6 @@
   "no_attendees_yet": "No attendees yet",
   "no_attendees_description": "No one has booked tickets for this event yet",
   "something_went_wrong": "Something went wrong",
-  "detils_attendees": "Attendees Details",
   "order_management": "Order Management",
   "receive_orders_sessions": "Accept orders and session bookings",
   "stop_orders_sessions_temporarily": "Temporarily suspend orders and sessions",
@@ -1426,6 +1425,10 @@
   "story_deleted_success": "Story deleted successfully",
   "unsaved_changes": "Unsaved Changes",
   "images_pending_save": "Images pending save",
-  "file_not_found": "File not found"
+  "file_not_found": "File not found",
 
+  "detils_attendees": "Attendees Details",
+  "consultancy_session": "Consultancy Session",
+  "event_booking": "Event Booking",
+  "transaction": "Transaction"
 }

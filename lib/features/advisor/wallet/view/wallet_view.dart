@@ -1,8 +1,10 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_state.dart';
+import 'package:tayseer/features/advisor/wallet/data/models/transaction_model.dart';
 import 'package:tayseer/features/advisor/wallet/view/widgets/balance_card.dart';
 import 'package:tayseer/features/advisor/wallet/view/widgets/transaction_item.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/my_import.dart';
 
 class WalletView extends StatelessWidget {
@@ -11,7 +13,7 @@ class WalletView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => WalletCubit()..loadAllTransactions(),
+      create: (context) => getIt<WalletCubit>()..loadAllData(),
       child: DefaultTabController(
         length: 2,
         initialIndex: 0,
@@ -155,29 +157,38 @@ class WalletView extends StatelessWidget {
           ),
 
           // Transactions List
-          if (state.status == WalletStatus.loading)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 50.h),
-              child: const Center(child: CircularProgressIndicator()),
-            )
-          else if (transactions.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 40.h),
-              child: Text(
-                context.tr('no_transactions'),
-                style: Styles.textStyle16.copyWith(
-                  color: AppColors.secondary600,
-                ),
-              ),
-            )
-          else
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: transactions.length,
-              itemBuilder: (context, index) =>
-                  TransactionItem(transaction: transactions[index]),
-            ),
+          Skeletonizer(
+            enabled: state.status == WalletStatus.loading,
+            child: transactions.isEmpty && state.status != WalletStatus.loading
+                ? Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40.h),
+                    child: Text(
+                      context.tr('no_transactions'),
+                      style: Styles.textStyle16.copyWith(
+                        color: AppColors.secondary600,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: state.status == WalletStatus.loading
+                        ? 5
+                        : transactions.length,
+                    itemBuilder: (context, index) => TransactionItem(
+                      transaction: state.status == WalletStatus.loading
+                          ? TransactionModel(
+                              id: '',
+                              amount: 0,
+                              displayAmount: '+000',
+                              type: 'session',
+                              eventTicketsNumber: 0,
+                              formattedDate: '24 ديسمبر 2025',
+                            )
+                          : transactions[index],
+                    ),
+                  ),
+          ),
 
           SizedBox(height: 20.h),
 
@@ -234,29 +245,38 @@ class WalletView extends StatelessWidget {
           ),
 
           // Transactions List
-          if (state.status == WalletStatus.loading)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 50.h),
-              child: const Center(child: CircularProgressIndicator()),
-            )
-          else if (transactions.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 40.h),
-              child: Text(
-                context.tr('no_bookings'),
-                style: Styles.textStyle16.copyWith(
-                  color: AppColors.secondary600,
-                ),
-              ),
-            )
-          else
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: transactions.length,
-              itemBuilder: (context, index) =>
-                  TransactionItem(transaction: transactions[index]),
-            ),
+          Skeletonizer(
+            enabled: state.status == WalletStatus.loading,
+            child: transactions.isEmpty && state.status != WalletStatus.loading
+                ? Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40.h),
+                    child: Text(
+                      context.tr('no_bookings'),
+                      style: Styles.textStyle16.copyWith(
+                        color: AppColors.secondary600,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: state.status == WalletStatus.loading
+                        ? 5
+                        : transactions.length,
+                    itemBuilder: (context, index) => TransactionItem(
+                      transaction: state.status == WalletStatus.loading
+                          ? TransactionModel(
+                              id: '',
+                              amount: 0,
+                              displayAmount: '+000',
+                              type: 'event',
+                              eventTicketsNumber: 0,
+                              formattedDate: '24 ديسمبر 2025',
+                            )
+                          : transactions[index],
+                    ),
+                  ),
+          ),
 
           SizedBox(height: 30.h),
         ],

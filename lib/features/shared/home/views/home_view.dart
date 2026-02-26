@@ -20,7 +20,8 @@ class _HomeViewState extends State<HomeView> {
         BlocListener<LayoutCubit, LayoutState>(
           listenWhen: (previous, current) =>
               previous.scrollToTopTrigger != current.scrollToTopTrigger &&
-              previous.refreshHomeTrigger == current.refreshHomeTrigger,
+              previous.refreshHomeTrigger == current.refreshHomeTrigger &&
+              current.currentIndex == 0,
           listener: (context, state) {
             // لما يتغير الـ scrollToTopTrigger بس نعمل scroll لفوق
             _homeViewBodyKey.currentState?.scrollToTop();

@@ -50,78 +50,99 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
             ),
             AdvisorBackground(
-              child: BlocListener<UserProfileCubit, UserProfileState>(
-                listenWhen: (previous, current) {
-                  // ⭐ اسمع لما يتحول من loading/initial لـ loaded (initial load)
-                  if (previous is! SettingsLoaded &&
-                      current is SettingsLoaded) {
-                    return true; // ⭐ ده هيمسك الـ initial load
-                  }
+              child: MultiBlocListener(
+                listeners: [
+                  BlocListener<UserProfileCubit, UserProfileState>(
+                    listenWhen: (previous, current) {
+                      // ⭐ اسمع لما يتحول من loading/initial لـ loaded (initial load)
+                      if (previous is! SettingsLoaded &&
+                          current is SettingsLoaded) {
+                        return true; // ⭐ ده هيمسك الـ initial load
+                      }
 
-                  if (current is SettingsLoaded && previous is SettingsLoaded) {
-                    if (previous.isMarriageSectionDeactivated !=
-                        current.isMarriageSectionDeactivated) {
-                      return true;
-                    }
-                    return current.actionTimestamp != previous.actionTimestamp;
-                  }
-
-                  if (current is SettingsLoaded &&
-                      current.actionMessage != null) {
-                    return true;
-                  }
-                  return false;
-                },
-                listener: (context, state) {
-                  if (state is SettingsLoaded) {
-                    final layoutCubit = context.read<LayoutCubit>();
-                    if (layoutCubit.state.isMarriageVisible ==
-                        state.isMarriageSectionDeactivated) {
-                      layoutCubit.updateMarriageVisibility(
-                        !state.isMarriageSectionDeactivated,
-                      );
-                    }
-                    if (state.actionMessage == null) return;
-                    final isLogout = state.actionMessage == 'logout_success';
-                    final isLogoutError = state.actionMessage == 'logout_error';
-
-                    if (isLogout) {
-                      _handleLogoutSuccess();
-                      return;
-                    }
-
-                    if (isLogoutError) {
-                      Navigator.pop(context); // Close loading dialog if open
-                      showSafeSnackBar(
-                        context: context,
-                        text: context.tr("logout_error"),
-                        isError: true,
-                      );
-                      return;
-                    }
-
-                    showSafeSnackBar(
-                      context: context,
-                      text: context.tr(state.actionMessage ?? ""),
-                      isSuccess: state.isActionSuccess ?? false,
-                      isError: !(state.isActionSuccess ?? true),
-                    );
-
-                    // Special case for language: also update context provider
-                    // But language update is usually handled by app restart or root rebuild
-                    // If we need to update LanguageCubit, the View logic wrapper suggested:
-                    // context.read<LanguageCubit>().setLanguage(code);
-                    // We can check if message is "update_language_success"
-                    if (state.actionMessage == "update_language_success") {
-                      SharedPreferences.getInstance().then((p) {
-                        final lang = p.getString('app_language') ?? 'ar';
-                        if (context.mounted) {
-                          context.read<LanguageCubit>().setLanguage(lang);
+                      if (current is SettingsLoaded &&
+                          previous is SettingsLoaded) {
+                        if (previous.isMarriageSectionDeactivated !=
+                            current.isMarriageSectionDeactivated) {
+                          return true;
                         }
-                      });
-                    }
-                  }
-                },
+                        return current.actionTimestamp !=
+                            previous.actionTimestamp;
+                      }
+
+                      if (current is SettingsLoaded &&
+                          current.actionMessage != null) {
+                        return true;
+                      }
+                      return false;
+                    },
+                    listener: (context, state) {
+                      if (state is SettingsLoaded) {
+                        final layoutCubit = context.read<LayoutCubit>();
+                        if (layoutCubit.state.isMarriageVisible ==
+                            state.isMarriageSectionDeactivated) {
+                          layoutCubit.updateMarriageVisibility(
+                            !state.isMarriageSectionDeactivated,
+                          );
+                        }
+                        if (state.actionMessage == null) return;
+                        final isLogout =
+                            state.actionMessage == 'logout_success';
+                        final isLogoutError =
+                            state.actionMessage == 'logout_error';
+
+                        if (isLogout) {
+                          _handleLogoutSuccess();
+                          return;
+                        }
+
+                        if (isLogoutError) {
+                          Navigator.pop(
+                            context,
+                          ); // Close loading dialog if open
+                          showSafeSnackBar(
+                            context: context,
+                            text: context.tr("logout_error"),
+                            isError: true,
+                          );
+                          return;
+                        }
+
+                        showSafeSnackBar(
+                          context: context,
+                          text: context.tr(state.actionMessage ?? ""),
+                          isSuccess: state.isActionSuccess ?? false,
+                          isError: !(state.isActionSuccess ?? true),
+                        );
+
+                        // Special case for language: also update context provider
+                        if (state.actionMessage == "update_language_success") {
+                          SharedPreferences.getInstance().then((p) {
+                            final lang = p.getString('app_language') ?? 'ar';
+                            if (context.mounted) {
+                              context.read<LanguageCubit>().setLanguage(lang);
+                            }
+                          });
+                        }
+                      }
+                    },
+                  ),
+                  BlocListener<LayoutCubit, LayoutState>(
+                    listenWhen: (previous, current) =>
+                        previous.scrollToTopTrigger !=
+                            current.scrollToTopTrigger &&
+                        current.currentIndex == 4,
+                    listener: (context, state) {
+                      if (_scrollController.hasClients) {
+                        _scrollController.animateTo(
+                          0,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
+                      }
+                    },
+                  ),
+                ],
                 child: BlocBuilder<UserProfileCubit, UserProfileState>(
                   builder: (context, state) {
                     return _buildBodyContent(context, state);
