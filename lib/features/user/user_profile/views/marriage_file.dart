@@ -384,34 +384,47 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           SizedBox(height: 8.h),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                cubit.saveProfile().then((_) {
-                  // ⭐ بعد الحفظ ارجع النسبة
-                  if (context.mounted) {
-                    final progress = cubit.state.profile != null
-                        ? _calculateTotalProgress(cubit.state.profile!)
-                        : 0.0;
-                    Navigator.pop(context, progress);
-                  }
-                });
+            child: BlocBuilder<MarriageProfileCubit, MarriageProfileState>(
+              bloc: cubit,
+              builder: (context, currentState) {
+                return ElevatedButton(
+                  onPressed: currentState.isUpdating
+                      ? null
+                      : () {
+                          Navigator.pop(dialogContext); // أغلق الـ dialog
+                          cubit
+                              .saveProfile(); // ✅ بس كده - الـ BlocConsumer في _buildSaveButton هيتكلم عنك
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: currentState.isUpdating
+                        ? AppColors.primary300.withOpacity(0.7)
+                        : AppColors.primary300,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                  ),
+                  child: currentState.isUpdating
+                      ? SizedBox(
+                          height: 20.h,
+                          width: 20.h,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          context.tr('save_and_exit'),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary300,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 14.h),
-              ),
-              child: Text(
-                context.tr('save_and_exit'),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
           ),
           SizedBox(height: 4.h),
@@ -677,21 +690,27 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               child: Container(
                 height: 400.h,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(imageUrl),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.1),
-                      ],
+                color: Colors.grey.shade200, // background while loading
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary300,
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: Colors.grey,
+                      size: 48.w,
                     ),
                   ),
                 ),
@@ -730,12 +749,37 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 height: 650.h,
                 width: double.infinity,
                 decoration: BoxDecoration(
+                  color: Colors.grey.shade200, // background while loading
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(33.r),
                   ),
-                  image: DecorationImage(
-                    image: NetworkImage(mainImage),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(33.r),
+                  ),
+                  child: Image.network(
+                    mainImage,
                     fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary300,
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => Center(
+                      child: Icon(
+                        Icons.person_outline,
+                        color: Colors.grey,
+                        size: 80.w,
+                      ),
+                    ),
                   ),
                 ),
               ),
