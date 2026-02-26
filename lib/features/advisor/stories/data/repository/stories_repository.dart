@@ -9,6 +9,13 @@ abstract class StoriesRepository {
     bool isSpecial = false,
     required BuildContext context,
   });
+
+  /// Context-free version for silent background fetches
+  Future<Either<Failure, List<UserStoriesModel>>> fetchStoriesSilent({
+    required int page,
+    String? advisorId,
+    bool isSpecial = false,
+  });
   void markStoryAsViewed({required String storyId});
   void likeStory({required String storyId});
   Future<Either<Failure, void>> createStories({

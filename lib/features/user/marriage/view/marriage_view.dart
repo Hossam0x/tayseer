@@ -8,8 +8,9 @@ import 'package:tayseer/features/user/questions/view_model/questions_state.dart'
 import 'package:tayseer/my_import.dart';
 
 class MarriageView extends StatelessWidget {
-  const MarriageView({super.key, this.personId});
+  const MarriageView({super.key, this.personId, this.fromInteractions = false});
   final String? personId;
+  final bool fromInteractions;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +20,10 @@ class MarriageView extends StatelessWidget {
       body: completed
           ? BlocProvider(
               create: (context) => MarriageCubit(),
-              child: MarriageBody(personId: personId),
+              child: MarriageBody(
+                personId: personId,
+                fromInteractions: fromInteractions, 
+              ),
             )
           : BlocProvider.value(
               value: getIt<QuestionsCubit>(),

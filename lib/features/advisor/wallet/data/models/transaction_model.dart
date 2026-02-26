@@ -1,59 +1,55 @@
 class TransactionModel {
   final String id;
-  final String title;
-  final String subtitle;
-  final String date;
-  final String time;
-  final double amount;
-  final bool isPositive;
-  final TransactionType type;
-  final TransactionCategory category;
-  final bool? pending;
+  final num amount;
+  final String displayAmount;
+  final String type; // session, event
+  final String? eventId;
+  final String? sessionId;
+  final int eventTicketsNumber;
+  final DateTime? createdAt;
+  final String formattedDate;
 
   TransactionModel({
     required this.id,
-    required this.title,
-    required this.subtitle,
-    required this.date,
-    required this.time,
     required this.amount,
-    required this.isPositive,
+    required this.displayAmount,
     required this.type,
-    required this.category,
-     this.pending,
+    this.eventId,
+    this.sessionId,
+    required this.eventTicketsNumber,
+    this.createdAt,
+    required this.formattedDate,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       id: json['id'] ?? '',
-      title: json['title'] ?? '',
-      subtitle: json['subtitle'] ?? '',
-      date: json['date'] ?? '',
-      time: json['time'] ?? '',
-      amount: (json['amount'] ?? 0).toDouble(),
-      isPositive: json['isPositive'] ?? false,
-      type: TransactionType.values[json['type'] ?? 0],
-      category: TransactionCategory.values[json['category'] ?? 0],
-      pending: json['pending'] ?? false,
+      amount: json['amount'] ?? 0,
+      displayAmount: json['displayAmount'] ?? '',
+      type: json['type'] ?? '',
+      eventId: json['eventId'],
+      sessionId: json['sessionId'],
+      eventTicketsNumber: json['eventTicketsNumber'] ?? 0,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      formattedDate: json['formattedDate'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'title': title,
-      'subtitle': subtitle,
-      'date': date,
-      'time': time,
       'amount': amount,
-      'isPositive': isPositive,
-      'type': type.index,
-      'category': category.index,
-      'pending': pending,
+      'displayAmount': displayAmount,
+      'type': type,
+      'eventId': eventId,
+      'sessionId': sessionId,
+      'eventTicketsNumber': eventTicketsNumber,
+      'createdAt': createdAt?.toIso8601String(),
+      'formattedDate': formattedDate,
     };
   }
+
+  bool get isPositive => displayAmount.startsWith('+');
 }
-
-enum TransactionType { refund, withdraw, subscription, booking, deposit }
-
-enum TransactionCategory { wallet, booking }

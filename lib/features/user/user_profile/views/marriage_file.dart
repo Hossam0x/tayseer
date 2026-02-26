@@ -71,9 +71,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ CALCULATE TOTAL PROGRESS (Server + Media)
   // ════════════════════════════════════════════════════════════════
- double _calculateTotalProgress(MarriageUserProfileModel profile) {
+  double _calculateTotalProgress(MarriageUserProfileModel profile) {
     // Questions: max 25%
-    double questionProgress = (profile.answerCompletedPercentage ?? 0).toDouble();
+    double questionProgress = (profile.answerCompletedPercentage ?? 0)
+        .toDouble();
     questionProgress = questionProgress.clamp(0, 25);
 
     // Images: كل صورة 5%, max 20% (4 صور)
@@ -99,10 +100,15 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     if (hasAudio) audioBonus = 25;
 
     // Verification: 5%
-    int verificationBonus = (profile.isVerified == true) ? 5 : 0;
+    // int verificationBonus = (profile.isVerified == true) ? 5 : 0;
+    int verificationBonus = true ? 5 : 0;
 
     double totalProgress =
-        questionProgress + imageBonus + videoBonus + audioBonus + verificationBonus;
+        questionProgress +
+        imageBonus +
+        videoBonus +
+        audioBonus +
+        verificationBonus;
 
     // لا تتعدى 100
     return totalProgress.clamp(0, 100);
@@ -155,6 +161,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 (state.profile?.userMedia?.singleImage != null &&
                     state.profile!.userMedia!.singleImage!.isNotEmpty) ||
                 state.pendingSingleImage != null;
+            if (!hasSingleImage) {
+              _showMustAddImageDialog(context, cubit, state.profile!);
+              return false;
+            }
 
             final hasUnsavedChanges =
                 state.pendingSingleImage != null ||
@@ -164,26 +174,18 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 state.pendingVideo != null ||
                 state.pendingDeleteVideo ||
                 state.pendingAudio != null ||
-                  state.hasUnsavedFields||
+                state.hasUnsavedFields ||
                 state.pendingDeleteAudio;
 
-
-            // ✅ شيل الشرط _selectedTabIndex == 0
-            // لو فيه تغييرات، اتحقق منها بغض النظر عن الـ tab الحالي
-            if (hasUnsavedChanges || !hasSingleImage) {
-              if (state.profile == null) return true;
-
-              if (!hasSingleImage) {
-                _showMustAddImageDialog(context, cubit, state.profile!);
-                return false;
-              }
-              if (hasUnsavedChanges) {
-                _showUnsavedChangesDialog(context, cubit);
-                return false;
-              }
+            if (hasUnsavedChanges) {
+              _showUnsavedChangesDialog(context, cubit, state);
+              return false;
             }
 
-            return true;
+            // ✅ مفيش مشاكل - اخرج عادي مع الـ progress
+            final progress = _calculateTotalProgress(state.profile!);
+            Navigator.pop(context, progress);
+            return false;
           },
           child: Scaffold(
             body: SafeArea(
@@ -295,6 +297,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   void _showUnsavedChangesDialog(
     BuildContext context,
     MarriageProfileCubit cubit,
+    MarriageProfileState state,
   ) {
     showDialog(
       context: context,
@@ -349,7 +352,27 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               onPressed: () {
                 Navigator.pop(dialogContext);
                 cubit.discardAllPending();
-                Navigator.pop(context);
+
+                // ✅ تحقق من الصورة بعد الـ discard
+                final updatedState = cubit.state;
+                final hasSingleAfterDiscard =
+                    updatedState.profile?.userMedia?.singleImage != null &&
+                    updatedState.profile!.userMedia!.singleImage!.isNotEmpty;
+
+                if (!hasSingleAfterDiscard) {
+                  // ✅ لازم يضيف صورة قبل الخروج
+                  _showMustAddImageDialog(
+                    context,
+                    cubit,
+                    updatedState.profile!,
+                  );
+                  return;
+                }
+
+                final progress = updatedState.profile != null
+                    ? _calculateTotalProgress(cubit.state.profile!)
+                    : 0.0;
+                Navigator.pop(context, progress);
               },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: Colors.red.shade300),
@@ -371,26 +394,47 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           SizedBox(height: 8.h),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                cubit.saveProfile();
+            child: BlocBuilder<MarriageProfileCubit, MarriageProfileState>(
+              bloc: cubit,
+              builder: (context, currentState) {
+                return ElevatedButton(
+                  onPressed: currentState.isUpdating
+                      ? null
+                      : () {
+                          Navigator.pop(dialogContext); // أغلق الـ dialog
+                          cubit
+                              .saveProfile(); // ✅ بس كده - الـ BlocConsumer في _buildSaveButton هيتكلم عنك
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: currentState.isUpdating
+                        ? AppColors.primary300.withOpacity(0.7)
+                        : AppColors.primary300,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                  ),
+                  child: currentState.isUpdating
+                      ? SizedBox(
+                          height: 20.h,
+                          width: 20.h,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          context.tr('save_and_exit'),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary300,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 14.h),
-              ),
-              child: Text(
-                context.tr('save_and_exit'),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
           ),
           SizedBox(height: 4.h),
@@ -437,7 +481,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-Widget _buildViewContent(MarriageUserProfileModel profile) {
+  Widget _buildViewContent(MarriageUserProfileModel profile) {
     final totalProgress = _calculateTotalProgress(profile);
     final progressFraction = totalProgress / 100;
 
@@ -577,6 +621,7 @@ Widget _buildViewContent(MarriageUserProfileModel profile) {
       ),
     );
   }
+
   Widget _buildVerifiedCard() {
     return CustomPaint(
       painter: DashedBorderPainter(
@@ -631,7 +676,7 @@ Widget _buildViewContent(MarriageUserProfileModel profile) {
   // ⭐⭐⭐ NEW: Secondary Image Section with proper logic
   // ════════════════════════════════════════════════════════════════
 
-   Widget _buildImageSection(String imageUrl, String heroTag) {
+  Widget _buildImageSection(String imageUrl, String heroTag) {
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       sliver: SliverToBoxAdapter(
@@ -655,21 +700,27 @@ Widget _buildViewContent(MarriageUserProfileModel profile) {
               child: Container(
                 height: 400.h,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(imageUrl),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.1),
-                      ],
+                color: Colors.grey.shade200, // background while loading
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary300,
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: Colors.grey,
+                      size: 48.w,
                     ),
                   ),
                 ),
@@ -708,12 +759,37 @@ Widget _buildViewContent(MarriageUserProfileModel profile) {
                 height: 650.h,
                 width: double.infinity,
                 decoration: BoxDecoration(
+                  color: Colors.grey.shade200, // background while loading
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(33.r),
                   ),
-                  image: DecorationImage(
-                    image: NetworkImage(mainImage),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(33.r),
+                  ),
+                  child: Image.network(
+                    mainImage,
                     fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary300,
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => Center(
+                      child: Icon(
+                        Icons.person_outline,
+                        color: Colors.grey,
+                        size: 80.w,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -768,7 +844,7 @@ Widget _buildViewContent(MarriageUserProfileModel profile) {
                 Row(
                   children: [
                     Padding(
-                      padding:  EdgeInsets.symmetric(horizontal:  8.w),
+                      padding: EdgeInsets.symmetric(horizontal: 8.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

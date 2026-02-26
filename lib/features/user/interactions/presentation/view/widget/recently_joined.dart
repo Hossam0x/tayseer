@@ -17,13 +17,16 @@ class RecentlyJoined extends StatelessWidget {
   Widget build(BuildContext context) {
     final shouldBlur = forceBlur || item.isImageBlurred;
 
-    return GestureDetector(
-      onTap: () {
-        context.pushNamed(
-          AppRouter.kMarriageView,
-          arguments: {'personId': item.userId},
-        );
-      },
+    return   GestureDetector(
+                          onTap: () {
+                            context.pushNamed(
+                              AppRouter.kMarriageView,
+                              arguments: {
+                                'personId': item.userId,
+                                'fromInteractions': true,
+                              },
+                            );
+                          },
       child: Container(
         margin: EdgeInsets.only(top: 10.h, left: 4.w),
         padding: EdgeInsets.all(8.w),

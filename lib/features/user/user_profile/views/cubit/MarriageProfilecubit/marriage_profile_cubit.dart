@@ -56,6 +56,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     try {
       await _repository.updateMarriageProfile(state.profile!);
       debugPrint('✅ [AUTO-SAVE] Fields saved');
+      emit(state.copyWith(hasUnsavedFields: false));
     } catch (e) {
       debugPrint('⚠️ [AUTO-SAVE] Error: $e');
     }
@@ -98,7 +99,12 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   void discardAllPending() {
     // ✅ نرجع الـ profile لحالته الأصلية (reload من السيرفر)
     // الأسهل: نعمل emit بـ clearAllPending: true
-    emit(state.copyWith(clearAllPending: true));
+    emit(
+      state.copyWith(
+        clearAllPending: true,
+        hasUnsavedFields: false, // ← أضف
+      ),
+    );
   }
 
   // ════════════════════════════════════════════════════════════════

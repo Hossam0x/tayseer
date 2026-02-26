@@ -160,10 +160,20 @@ class StoryModel extends Equatable {
     // Try multiple ID fields because the backend might be inconsistent
     final storyId = json['id']?.toString() ?? json['_id']?.toString() ?? "";
 
+    // Handle likesCount as int or List
+    int likesCount = 0;
+    if (json['likesCount'] is int) {
+      likesCount = json['likesCount'];
+    } else if (json['likesCount'] is List) {
+      likesCount = (json['likesCount'] as List).length;
+    }
+
     // Check for viewed status from multiple possible fields
     int viewsCount = 0;
-    if (json['viewsCount'] != null) {
+    if (json['viewsCount'] is int) {
       viewsCount = json['viewsCount'];
+    } else if (json['viewsCount'] is List) {
+      viewsCount = (json['viewsCount'] as List).length;
     } else if (json['isViewedByMe'] == true) {
       viewsCount = 1;
     } else if (json['isViewed'] == true) {
@@ -181,7 +191,7 @@ class StoryModel extends Equatable {
       isMine: json['isMine'] ?? false,
       isSpecial: json['isSpecial'] ?? false,
       viewsCount: viewsCount,
-      likesCount: json['likesCount'] ?? 0,
+      likesCount: likesCount,
       isLiked: json['isLiked'] ?? false,
       likedBy: json['likedBy'] != null
           ? List<StoryUserModel>.from(

@@ -6,6 +6,9 @@ import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
 import 'package:tayseer/features/user/layout/view/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
+import 'package:tayseer/features/user/marriage/view/widget/consultation_standalone_page.dart';
+import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -60,6 +63,11 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                         else if (index == 3 && state.currentIndex == 3) {
                           _interactionsKey.currentState?.handleTabReselect();
                         }
+                        // ✅ Profile in index 4
+                        else if (index == 4 && state.currentIndex == 4) {
+                          cubit.scrollToTop();
+                          cubit.setNavVisibility(true);
+                        }
                       },
                     ),
                   ),
@@ -104,12 +112,21 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     }
   }
 
-  List<Widget> _getPages(BuildContext context, LayoutCubit cubit,LayoutState state) {
+  List<Widget> _getPages(
+    BuildContext context,
+    LayoutCubit cubit,
+    LayoutState state,
+  ) {
     switch (selectedUserType) {
       case UserTypeEnum.user:
         return [
           HomeView(onScroll: cubit.onScroll),
-          state.isMarriageVisible ? MarriageView() : const SizedBox.shrink(),
+          state.isMarriageVisible
+              ? MarriageView()
+              : BlocProvider(
+                  create: (context) => MySpaceCubit(getIt<MySpaceRepo>()),
+                  child: const ConsultationStandalonePage(),
+                ),
           MySpaceView(),
           EventView(),
           const UserProfileView(),

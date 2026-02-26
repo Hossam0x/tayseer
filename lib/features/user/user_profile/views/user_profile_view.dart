@@ -50,78 +50,99 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
             ),
             AdvisorBackground(
-              child: BlocListener<UserProfileCubit, UserProfileState>(
-                listenWhen: (previous, current) {
-                  // ⭐ اسمع لما يتحول من loading/initial لـ loaded (initial load)
-                  if (previous is! SettingsLoaded &&
-                      current is SettingsLoaded) {
-                    return true; // ⭐ ده هيمسك الـ initial load
-                  }
+              child: MultiBlocListener(
+                listeners: [
+                  BlocListener<UserProfileCubit, UserProfileState>(
+                    listenWhen: (previous, current) {
+                      // ⭐ اسمع لما يتحول من loading/initial لـ loaded (initial load)
+                      if (previous is! SettingsLoaded &&
+                          current is SettingsLoaded) {
+                        return true; // ⭐ ده هيمسك الـ initial load
+                      }
 
-                  if (current is SettingsLoaded && previous is SettingsLoaded) {
-                    if (previous.isMarriageSectionDeactivated !=
-                        current.isMarriageSectionDeactivated) {
-                      return true;
-                    }
-                    return current.actionTimestamp != previous.actionTimestamp;
-                  }
-
-                  if (current is SettingsLoaded &&
-                      current.actionMessage != null) {
-                    return true;
-                  }
-                  return false;
-                },
-                listener: (context, state) {
-                  if (state is SettingsLoaded) {
-                    final layoutCubit = context.read<LayoutCubit>();
-                    if (layoutCubit.state.isMarriageVisible ==
-                        state.isMarriageSectionDeactivated) {
-                      layoutCubit.updateMarriageVisibility(
-                        !state.isMarriageSectionDeactivated,
-                      );
-                    }
-                    if (state.actionMessage == null) return;
-                    final isLogout = state.actionMessage == 'logout_success';
-                    final isLogoutError = state.actionMessage == 'logout_error';
-
-                    if (isLogout) {
-                      _handleLogoutSuccess();
-                      return;
-                    }
-
-                    if (isLogoutError) {
-                      Navigator.pop(context); // Close loading dialog if open
-                      showSafeSnackBar(
-                        context: context,
-                        text: context.tr("logout_error"),
-                        isError: true,
-                      );
-                      return;
-                    }
-
-                    showSafeSnackBar(
-                      context: context,
-                      text: context.tr(state.actionMessage ?? ""),
-                      isSuccess: state.isActionSuccess ?? false,
-                      isError: !(state.isActionSuccess ?? true),
-                    );
-
-                    // Special case for language: also update context provider
-                    // But language update is usually handled by app restart or root rebuild
-                    // If we need to update LanguageCubit, the View logic wrapper suggested:
-                    // context.read<LanguageCubit>().setLanguage(code);
-                    // We can check if message is "update_language_success"
-                    if (state.actionMessage == "update_language_success") {
-                      SharedPreferences.getInstance().then((p) {
-                        final lang = p.getString('app_language') ?? 'ar';
-                        if (context.mounted) {
-                          context.read<LanguageCubit>().setLanguage(lang);
+                      if (current is SettingsLoaded &&
+                          previous is SettingsLoaded) {
+                        if (previous.isMarriageSectionDeactivated !=
+                            current.isMarriageSectionDeactivated) {
+                          return true;
                         }
-                      });
-                    }
-                  }
-                },
+                        return current.actionTimestamp !=
+                            previous.actionTimestamp;
+                      }
+
+                      if (current is SettingsLoaded &&
+                          current.actionMessage != null) {
+                        return true;
+                      }
+                      return false;
+                    },
+                    listener: (context, state) {
+                      if (state is SettingsLoaded) {
+                        final layoutCubit = context.read<LayoutCubit>();
+                        if (layoutCubit.state.isMarriageVisible ==
+                            state.isMarriageSectionDeactivated) {
+                          layoutCubit.updateMarriageVisibility(
+                            !state.isMarriageSectionDeactivated,
+                          );
+                        }
+                        if (state.actionMessage == null) return;
+                        final isLogout =
+                            state.actionMessage == 'logout_success';
+                        final isLogoutError =
+                            state.actionMessage == 'logout_error';
+
+                        if (isLogout) {
+                          _handleLogoutSuccess();
+                          return;
+                        }
+
+                        if (isLogoutError) {
+                          Navigator.pop(
+                            context,
+                          ); // Close loading dialog if open
+                          showSafeSnackBar(
+                            context: context,
+                            text: context.tr("logout_error"),
+                            isError: true,
+                          );
+                          return;
+                        }
+
+                        showSafeSnackBar(
+                          context: context,
+                          text: context.tr(state.actionMessage ?? ""),
+                          isSuccess: state.isActionSuccess ?? false,
+                          isError: !(state.isActionSuccess ?? true),
+                        );
+
+                        // Special case for language: also update context provider
+                        if (state.actionMessage == "update_language_success") {
+                          SharedPreferences.getInstance().then((p) {
+                            final lang = p.getString('app_language') ?? 'ar';
+                            if (context.mounted) {
+                              context.read<LanguageCubit>().setLanguage(lang);
+                            }
+                          });
+                        }
+                      }
+                    },
+                  ),
+                  BlocListener<LayoutCubit, LayoutState>(
+                    listenWhen: (previous, current) =>
+                        previous.scrollToTopTrigger !=
+                            current.scrollToTopTrigger &&
+                        current.currentIndex == 4,
+                    listener: (context, state) {
+                      if (_scrollController.hasClients) {
+                        _scrollController.animateTo(
+                          0,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
+                      }
+                    },
+                  ),
+                ],
                 child: BlocBuilder<UserProfileCubit, UserProfileState>(
                   builder: (context, state) {
                     return _buildBodyContent(context, state);
@@ -692,14 +713,21 @@ class _UserProfileViewState extends State<UserProfileView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      context.tr(setting.title),
-                      style: Styles.textStyle16Meduim.copyWith(
-                        color:
-                            isNotificationsItem || isDeactiveTheMarriageSection
-                            ? AppColors.secondary800.withOpacity(0.9)
-                            : AppColors.secondary800,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        String title = setting.title;
+
+                        return Text(
+                          context.tr(title),
+                          style: Styles.textStyle16Meduim.copyWith(
+                            color:
+                                isNotificationsItem ||
+                                    isDeactiveTheMarriageSection
+                                ? AppColors.secondary800.withOpacity(0.9)
+                                : AppColors.secondary800,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -733,10 +761,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                             activeColor: const Color(0xFFF06C88),
                             trackColor: AppColors.dropDownArrow,
                             onChanged: (value) {
-                              context.read<UserProfileCubit>().updateSwitch(
-                                setting.id,
-                                value,
-                              );
+                              _showDeactivateMarriageDialog(context, value);
                             },
                           ),
                         ),
@@ -998,17 +1023,16 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   void _openMarriageEditProfile(BuildContext context, UserProfileState state) {
-    if (state is! SettingsLoaded || state.userProfile == null) {
-      return;
-    }
+    if (state is! SettingsLoaded || state.userProfile == null) return;
 
     final isDataCompleted = state.userProfile!.dataCompleted ?? false;
-
     if (!isDataCompleted) {
       final layoutCubit = context.read<LayoutCubit>();
       layoutCubit.changeIndex(1);
       return;
     }
+
+    final isProfileComplete = state.isMarriageProfileComplete;
 
     Navigator.push(
       context,
@@ -1025,11 +1049,43 @@ class _UserProfileViewState extends State<UserProfileView> {
               ),
               MarriagefilePage(
                 userProfile: state.userProfile,
-              ), // ← remove AdvisorBackground
+                initialTabIndex: isProfileComplete ? 0 : 1,
+              ),
             ],
           ),
         ),
       ),
+    ).then((result) {
+      if (!context.mounted) return;
+      if (result != null && result is double) {
+        final isComplete = result >= 100;
+        context.read<UserProfileCubit>().updateMarriageProgress(isComplete);
+      }
+    });
+  }
+
+  void _showDeactivateMarriageDialog(BuildContext context, bool value) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr(
+        value ? "deactivate_marriage_title" : "activate_marriage_title",
+      ),
+
+      supTitle: context.tr(
+        value ? "activate_marriage_subtitle" : "activate_marriage_subtitle",
+      ),
+      imageUrl: AssetsData.marriageRingIcon,
+      bottonText: context.tr("نعم"),
+      cancelText: context.tr("لا"),
+      showCancelButton: true,
+      onPressed: () {
+      
+        context.read<UserProfileCubit>().updateSwitch(
+          'deactivate_the_marriage_section',
+          value,
+        );
+      },
+      onCancel: () {},
     );
   }
 

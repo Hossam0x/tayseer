@@ -665,7 +665,7 @@
   "blur_enabled": "تم تفعيل تمويه الصورة",
   "blur_disabled": "تم إلغاء تمويه الصورة",
   "update_blur_error": "حدث خطأ في تحديث إعدادات الصورة",
-  "update_language_success": "تم تحديث اللغة إلى",
+  "update_language_success": "تم تحديث اللغة",
   "update_language_error": "حدث خطأ في تحديث اللغة ⚠️",
   "share_app_message": "جرب تطبيق تيسير الآن! 😊\n",
   "share_app_subject": "دعوة لتطبيق تيسير",
@@ -1417,7 +1417,6 @@
   "no_attendees_yet": "لا يوجد حاضرين حتى الآن",
   "no_attendees_description": "لم يقم أحد بحجز تذاكر لهذا الحدث بعد",
   "something_went_wrong": "حدث خطأ ما",
-  "detils_attendees": "تفاصيل الحاضرين",
   "order_management": "إدارة الطلبات",
   "receive_orders_sessions": "استقبل الطلبات وحجوزات الجلسات",
   "stop_orders_sessions_temporarily": "إيقاف الطلبات والجلسات مؤقتًا",
@@ -1425,7 +1424,15 @@
   "orders_stop_success": "تم إيقاف استقبال الطلبات والجلسات بنجاح",
   "story_deleted_success": "تم حذف القصة بنجاح",
   "unsaved_changes": "تغييرات غير محفوظة",
-  "images_pending_save": "حفظ الصور معلق",
-  "file_not_found": "الملف غير موجود"
+"images_pending_save": "حفظ الصور معلق",
+"file_not_found": "الملف غير موجود",
+"edit_marriage_profile": "تعديل ملف الزواج",
+"activate_marriage_subtitle":"لجعل رحلتك نحو الزواج أسهل وأكثر سلاسة، نحن هنا لمساعدتك في كل خطوة!",
+"activate_marriage_title":"هل تريد استكشاف قسم الزواج في تيسير؟",
+"deactivate_marriage_title":"هل تريد تعطيل قسم الزواج في تيسير؟",
+"consultation":"استشارة",
+"Consulting":"الإستشارات"
+
+
 
 }

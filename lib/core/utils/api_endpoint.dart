@@ -67,4 +67,6 @@ class ApiEndPoint {
   static const String followAdvisor = '/advisor/toggle-follow/';
   static const String changeIsAvaliableForSessions =
       '/advisor/changeIsAvaliableForSessions';
+  static const String wallet = '/wallet/';
+  static const String walletTransactions = '/wallet/transactions';
 }

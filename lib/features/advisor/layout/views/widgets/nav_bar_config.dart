@@ -1,4 +1,3 @@
-// core/config/nav_bar_config.dart
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/utils/assets.dart';
 
@@ -6,7 +5,6 @@ class NavBarItem {
   final String icon;
   final String activeIcon;
   final String labelKey;
-
   const NavBarItem({
     required this.icon,
     required this.activeIcon,
@@ -25,6 +23,13 @@ class NavBarConfig {
     }
   }
 
+  // ⭐ item الاستشارة البديل لما يتم إلغاء قسم الزواج
+  static const NavBarItem consultationNavItem = NavBarItem(
+    icon: AssetsData.consultatIcon,
+    activeIcon: AssetsData.consultatIcon,
+    labelKey: "consultation",
+  );
+
   static const List<NavBarItem> _consultantNavItems = [
     NavBarItem(
       icon: AssetsData.homeIcon,
@@ -36,7 +41,6 @@ class NavBarConfig {
       activeIcon: AssetsData.selectedSessionIcon,
       labelKey: "sessions",
     ),
-
     NavBarItem(
       icon: AssetsData.eventIcon,
       activeIcon: AssetsData.selectedEventIcon,
@@ -70,7 +74,6 @@ class NavBarConfig {
       activeIcon: AssetsData.selectedEventIcon,
       labelKey: "event",
     ),
-
     NavBarItem(
       icon: AssetsData.profileIcon,
       activeIcon: AssetsData.selectedProfileIcon,

@@ -24,9 +24,9 @@ import 'package:tayseer/features/user/marriage/view/widget/life_event_section.da
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 
 class MarriageBody extends StatefulWidget {
-  const MarriageBody({super.key, this.personId});
+  const MarriageBody({super.key, this.personId, this.fromInteractions = false});
   final String? personId;
-
+  final bool fromInteractions;
   @override
   State<MarriageBody> createState() => _MarriageBodyState();
 }
@@ -66,16 +66,21 @@ class _MarriageBodyState extends State<MarriageBody> {
     super.dispose();
   }
 
-  Widget _buildToggle() {
-    return SectionToggle(
-      isMarriage: _isMarriageTab,
-      onChanged: (value) {
-        setState(() {
-          _isMarriageTab = value;
-        });
-      },
-    );
-  }
+Widget _buildToggle() {
+  return SectionToggle(
+    isMarriage: _isMarriageTab,
+    onChanged: (value) {
+      // ✅ لو جاي من التفاعلات وضغط على تاب التفاعلات = ارجع للخلف
+      if (!value && widget.fromInteractions) {
+        context.pop();
+        return;
+      }
+      setState(() {
+        _isMarriageTab = value;
+      });
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
