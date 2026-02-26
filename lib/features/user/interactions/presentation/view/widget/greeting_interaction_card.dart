@@ -53,13 +53,16 @@ class GreetingProfileCard extends StatelessWidget {
         child: Row(
           children: [
             // Profile Image
-        GestureDetector(
-  onTap: () {
-    context.pushNamed(
-      AppRouter.kMarriageView,
-      arguments: {'personId': item.userId},
-    );
-  },
+  GestureDetector(
+                          onTap: () {
+                            context.pushNamed(
+                              AppRouter.kMarriageView,
+                              arguments: {
+                                'personId':item.userId,
+                                'fromInteractions': true,
+                              },
+                            );
+                          },
   child: ClipRRect(
     borderRadius: BorderRadius.circular(16.r),
     child: Stack(
@@ -97,7 +100,10 @@ class GreetingProfileCard extends StatelessWidget {
                   onTap: () {
                     context.pushNamed(
                       AppRouter.kMarriageView,
-                      arguments: {'personId': item.userId},
+                      arguments: {
+                        'personId': item.userId,
+                        'fromInteractions': true,
+                      },
                     );
                   },
                 child: Column(

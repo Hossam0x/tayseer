@@ -934,12 +934,13 @@ abstract class AppRouter {
               TicketDetailsView(ticketId: args?['ticketId'] as String? ?? ''),
         );
 
-      case kMarriageView:
+      case AppRouter.kMarriageView:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          settings: settings,
-          builder: (_) =>
-              MarriageView(personId: args?['personId'] as String? ?? ''),
+          builder: (_) => MarriageView(
+            personId: args?['personId'],
+            fromInteractions: args?['fromInteractions'] ?? false, // ✅
+          ),
         );
       /////  report screens ///////
       case kReportReasonsScreen:
