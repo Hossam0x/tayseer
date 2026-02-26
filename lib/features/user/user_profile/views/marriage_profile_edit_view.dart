@@ -941,40 +941,39 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 void _startRecordingInPlace(BuildContext context) async {
-  // ✅ Android فقط - iOS: VoiceRecordingWidget بيتعامل مع الـ permission داخلياً
-  if (Platform.isAndroid) {
-    final status = await Permission.microphone.request();
-    
-    if (status.isDenied) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('microphone_permission_required'),
-            isError: true,
-          ),
-        );
-      }
-      return;
-    }
-    
-    if (status.isPermanentlyDenied) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('enable_microphone_from_settings'),
-            isError: true,
-          ),
-        );
-        await openAppSettings();
-      }
-      return;
-    }
+  final status = await Permission.microphone.request();
+  
+  if (!mounted) return;
+  
+  if (status.isGranted) {
+    // ✅ انتظر قليلاً عشان iOS يسجل الـ permission قبل ما VoiceRecordingWidget يشتغل
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) setState(() => _isRecordingInPlace = true);
+    return;
   }
   
-  // ✅ iOS و Android: فتح الـ recording مباشرة
-  if (mounted) setState(() => _isRecordingInPlace = true);
+  if (status.isDenied) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      CustomSnackBar(
+        context,
+        text: context.tr('microphone_permission_required'),
+        isError: true,
+      ),
+    );
+    return;
+  }
+  
+  if (status.isPermanentlyDenied) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      CustomSnackBar(
+        context,
+        text: context.tr('enable_microphone_from_settings'),
+        isError: true,
+      ),
+    );
+    await openAppSettings();
+    return;
+  }
 }
 Future<void> _pickAudio(BuildContext context) async {
   try {
