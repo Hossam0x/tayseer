@@ -25,7 +25,7 @@ class UserNavBar extends StatelessWidget {
               item: NavBarItem(
                 // أو اللي عندك من class
                 icon: AssetsData.consultationIcon,
-                activeIcon: AssetsData.consultationIcon,
+                activeIcon: AssetsData.consultationActiveIcon,
                 labelKey: 'consultation',
               ),
             ));

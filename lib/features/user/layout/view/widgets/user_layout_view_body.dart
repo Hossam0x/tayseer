@@ -121,13 +121,12 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
       case UserTypeEnum.user:
         return [
           HomeView(onScroll: cubit.onScroll),
-state.isMarriageVisible
-    ? MarriageView()
-    : BlocProvider(
-        create: (context) => MySpaceCubit(getIt<MySpaceRepo>()),
-        child: const ConsultationStandalonePage(),
-      ),
-
+          state.isMarriageVisible
+              ? MarriageView()
+              : BlocProvider(
+                  create: (context) => MySpaceCubit(getIt<MySpaceRepo>()),
+                  child: const ConsultationStandalonePage(),
+                ),
           MySpaceView(),
           EventView(),
           const UserProfileView(),

@@ -42,7 +42,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   late int _selectedTabIndex;
   final int _maxImages = 5;
   String? _scrollToSection;
-  bool _hasAutoSwitchedToEdit = false;
+
   // ⭐⭐⭐ DEFAULT IMAGE URL
   static const String _defaultImageUrl =
       "https://cdn-icons-png.flaticon.com/512/149/149071.png";
@@ -161,6 +161,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 (state.profile?.userMedia?.singleImage != null &&
                     state.profile!.userMedia!.singleImage!.isNotEmpty) ||
                 state.pendingSingleImage != null;
+            if (!hasSingleImage) {
+              _showMustAddImageDialog(context, cubit, state.profile!);
+              return false;
+            }
 
             final hasUnsavedChanges =
                 state.pendingSingleImage != null ||
@@ -173,26 +177,15 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 state.hasUnsavedFields ||
                 state.pendingDeleteAudio;
 
-            // ✅ شيل الشرط _selectedTabIndex == 0
-            // لو فيه تغييرات، اتحقق منها بغض النظر عن الـ tab الحالي
-            if (hasUnsavedChanges || !hasSingleImage) {
-              if (state.profile == null) return true;
-
-              if (!hasSingleImage) {
-                _showMustAddImageDialog(context, cubit, state.profile!);
-                return false;
-              }
-              if (hasUnsavedChanges) {
-                _showUnsavedChangesDialog(context, cubit, state);
-                return false;
-              }
-            }
-            if (state.profile != null) {
-              final progress = _calculateTotalProgress(state.profile!);
-              Navigator.pop(context, progress);
+            if (hasUnsavedChanges) {
+              _showUnsavedChangesDialog(context, cubit, state);
               return false;
             }
-            return true;
+
+            // ✅ مفيش مشاكل - اخرج عادي مع الـ progress
+            final progress = _calculateTotalProgress(state.profile!);
+            Navigator.pop(context, progress);
+            return false;
           },
           child: Scaffold(
             body: SafeArea(
@@ -359,7 +352,24 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               onPressed: () {
                 Navigator.pop(dialogContext);
                 cubit.discardAllPending();
-                final progress = state.profile != null
+
+                // ✅ تحقق من الصورة بعد الـ discard
+                final updatedState = cubit.state;
+                final hasSingleAfterDiscard =
+                    updatedState.profile?.userMedia?.singleImage != null &&
+                    updatedState.profile!.userMedia!.singleImage!.isNotEmpty;
+
+                if (!hasSingleAfterDiscard) {
+                  // ✅ لازم يضيف صورة قبل الخروج
+                  _showMustAddImageDialog(
+                    context,
+                    cubit,
+                    updatedState.profile!,
+                  );
+                  return;
+                }
+
+                final progress = updatedState.profile != null
                     ? _calculateTotalProgress(cubit.state.profile!)
                     : 0.0;
                 Navigator.pop(context, progress);

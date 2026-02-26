@@ -149,6 +149,7 @@ abstract class AssetsData {
   static const String sentMessageIcon = "assets/icons/sent_message_icon.svg";
   static const String commentnotify = 'assets/icons/comment_notify.svg';
   static const String consultatIcon = "assets/icons/Consultation.svg";
+  static const String consultationActiveIcon = "assets/icons/consultationActiveIcon.svg";
   static const String followNotify = "assets/icons/follow_notify.svg";
   static const String messageNotify = "assets/icons/message_notify.svg";
   static const String ticketEventNotify =
