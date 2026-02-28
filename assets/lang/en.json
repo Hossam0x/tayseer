@@ -1439,5 +1439,6 @@
   "photos": "Photos",
   "add_caption": "Add a caption...",
   "move_up": "Move Up",
-  "other_reason": "Other Reason"
+  "other_reason": "Other Reason", 
+  "report_sent_successfully": "Report sent successfully"
 }

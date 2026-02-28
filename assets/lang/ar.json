@@ -1435,5 +1435,6 @@
   "photos": "صور",
   "add_caption": "إضافة شرح توضيحي...",
   "move_up": "نقل لأعلى",
-  "other_reason": "سبب آخر"
+  "other_reason": "سبب آخر",
+  "report_sent_successfully" : "تم إرسال التقرير بنجاح"
 }

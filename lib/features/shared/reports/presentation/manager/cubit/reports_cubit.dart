@@ -7,13 +7,27 @@ import 'package:tayseer/my_import.dart';
 class ReportsCubit extends Cubit<ReportsState> {
   ReportsCubit(this.reportsRepo) : super(const ReportsState());
   final ReportsRepo reportsRepo;
+
   void intialize(ReportType reportType, String id) {
     emit(state.copyWith(reportType: reportType, id: id));
   }
 
   void selectReason(ReportModel reason) {
-    emit(state.copyWith(selectedReason: reason));
+    emit(
+      state.copyWith(
+        selectedReason: reason,
+        selectedDetailIndex: selectedReasonDetails.isEmpty ? null : 0,
+      ),
+    );
   }
+
+  // ✅ جديد - اختيار التفصيل
+  void selectDetail(int index) {
+    emit(state.copyWith(selectedDetailIndex: index));
+  }
+
+  List<String> get selectedReasonDetails =>
+      state.selectedReason?.reasonDetails ?? [];
 
   Future<void> fetchReportReasons() async {
     emit(state.copyWith(fetchReportReasonsState: CubitStates.loading));
@@ -32,6 +46,30 @@ class ReportsCubit extends Cubit<ReportsState> {
           fetchReportReasonsState: CubitStates.success,
         ),
       ),
+    );
+  }
+
+  Future<void> sendReport({String? otherReason}) async {
+    emit(state.copyWith(sendReportState: CubitStates.loading));
+
+    final result = await reportsRepo.sendReport(
+      id: state.id!,
+      reportType: state.reportType!,
+      reasonId: state.selectedReason?.id,
+      details: state.selectedDetailIndex != null
+          ? state.selectedReason?.reasonDetails[state.selectedDetailIndex!]
+          : null,
+      otherReason: otherReason,
+    );
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          errMessage: failure.message,
+          sendReportState: CubitStates.failure,
+        ),
+      ),
+      (message) => emit(state.copyWith(sendReportState: CubitStates.success)),
     );
   }
 }

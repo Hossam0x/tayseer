@@ -1,3 +1,4 @@
+import 'package:tayseer/features/shared/reports/presentation/view/widgets/reports_app_bar.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/widgets/reports_view_body.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -6,6 +7,15 @@ class ReportsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: CustomBackground(child: ReportsViewBody()));
+    return Scaffold(
+      body: CustomBackground(
+        child: Column(
+          children: [
+            ReportsAppBar(title: context.tr(AppStrings.reportReason)),
+            ReportsViewBody(),
+          ],
+        ),
+      ),
+    );
   }
 }
