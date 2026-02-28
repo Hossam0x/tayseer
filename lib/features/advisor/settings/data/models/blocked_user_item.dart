@@ -59,7 +59,7 @@ class BlockedUserItem extends StatelessWidget {
 
           // Unblock Button
           CustomBotton(
-            title: 'الغاء الحظر',
+            title: 'إلغاء الحظر',
             onPressed: onUnblock,
             width: 105.w,
             height: 50.w,

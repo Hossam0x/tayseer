@@ -8,10 +8,10 @@ class OldSessionInfoWidget extends StatelessWidget {
   final bool showFullDetails;
 
   const OldSessionInfoWidget({
-    Key? key,
+    super.key,
     required this.oldSession,
     this.showFullDetails = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

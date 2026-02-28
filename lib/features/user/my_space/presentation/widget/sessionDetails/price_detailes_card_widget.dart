@@ -27,13 +27,13 @@ class PriceDetailsCard extends StatelessWidget {
             value: "${pricing.sessionPrice} $currency",
           ),
           _PriceRow(label: "الضرائب", value: "${pricing.taxes} $currency"),
-          _PriceRow(label: "الرسوم", value: "${pricing.fees} $currency"),
-          if (pricing.discount > 0)
-            _PriceRow(
-              label: "الخصم",
-              value: "-${pricing.discount} $currency",
-              isDiscount: true,
-            ),
+
+          // _PriceRow(label: "الرسوم", value: "${pricing.fees} $currency"),
+          _PriceRow(
+            label: "الخصم",
+            value: "-${pricing.discount} $currency",
+            isDiscount: true,
+          ),
           _buildDivider(),
           _buildTotalRow(),
         ],

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_cubit.dart';
 
-/// Handles scroll behavior for the chat screen
 class ScrollBehaviorHandler {
   final ScrollController scrollController;
   final ChatScrollCubit scrollCubit;
@@ -15,9 +14,9 @@ class ScrollBehaviorHandler {
 
   void _onScroll() {
     if (scrollController.hasClients) {
-      // For reverse list, position 0 is the bottom
-      // User is at bottom when offset is close to 0
-      final isAtBottom = scrollController.offset <= 100;
+      final position = scrollController.position;
+      final isAtBottom =
+          position.maxScrollExtent == 0 || scrollController.offset <= 100;
       scrollCubit.setAtBottom(isAtBottom);
     }
   }
@@ -25,11 +24,10 @@ class ScrollBehaviorHandler {
   void scrollToBottom({bool force = false}) {
     if (!scrollController.hasClients) return;
 
-    // Using a small delay to ensure the list has updated
     Future.delayed(const Duration(milliseconds: 100), () {
       if (scrollController.hasClients) {
         scrollController.animateTo(
-          0, // 0 is bottom for reverse lists
+          0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -46,8 +44,9 @@ class ScrollBehaviorHandler {
     required bool isSuccess,
   }) {
     if (isSuccess) {
-      // Logic to decide whether to auto-scroll usually goes here
-      // For now, simple logic
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _onScroll();
+      });
     }
   }
 

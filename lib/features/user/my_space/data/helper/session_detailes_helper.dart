@@ -10,7 +10,7 @@ class SessionDetailsHelper {
   /// Parse session status from string
   static SessionStatus parseStatus(String status) {
     switch (status.toLowerCase()) {
-      case 'confirmed':
+      case 'approved':
         return SessionStatus.confirmed;
       case 'completed':
         return SessionStatus.completed;

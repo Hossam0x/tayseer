@@ -254,6 +254,24 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
                     _hasInitializedTimeSlot = false;
                   });
                 },
+                onNextMonth: () {
+                  setState(() {
+                    _selectedDay = null;
+                    _selectedDate = null;
+                    _selectedTimeSlot = null;
+                    _hasInitializedTimeSlot = false;
+                  });
+                  cubit.getNextMonth();
+                },
+                onPreviousMonth: () {
+                  setState(() {
+                    _selectedDay = null;
+                    _selectedDate = null;
+                    _selectedTimeSlot = null;
+                    _hasInitializedTimeSlot = false;
+                  });
+                  cubit.getPreviousMonth();
+                },
               ),
               SizedBox(height: 20.h),
 

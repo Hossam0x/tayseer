@@ -74,13 +74,14 @@ class MySpaceRepo {
   }
 
   Future<Either<Failure, AvailableSlotsResponseModel>> getAvailableSlots(
-    String addvisorId,
-  ) async {
+    String addvisorId, {
+    int? month,
+  }) async {
     try {
       final response = await apiService.get(
         endPoint: ApiEndPoint.getValidDaysAndHours(
           addvisorId,
-          DateTime.now().month,
+          month ?? DateTime.now().month,
         ),
       );
       return Right(AvailableSlotsResponseModel.fromJson(response));

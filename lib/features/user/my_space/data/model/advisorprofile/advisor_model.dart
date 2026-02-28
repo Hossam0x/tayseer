@@ -1,6 +1,7 @@
 class AdvisorModel {
   final String id;
   final String name;
+  final String? userName;
   final String image;
   final dynamic rate;
   final int sessions;
@@ -10,6 +11,7 @@ class AdvisorModel {
   AdvisorModel({
     required this.id,
     required this.name,
+    this.userName,
     required this.image,
     required this.rate,
     required this.sessions,
@@ -21,6 +23,7 @@ class AdvisorModel {
     return AdvisorModel(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
+      userName: json['userName'],
       image: json['image'] ?? '',
       rate: json['rate'] ?? 0,
       sessions: json['sessions'] ?? 0,

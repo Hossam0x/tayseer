@@ -368,7 +368,7 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
             child: SessionCard(
               isBlur: false,
               isNow: session.isNow,
-              sessiondate: _formatDate(session.date),
+              sessiondate: _formatDate(session.fromTimeUTC),
               timeRange: "${session.timeRange.from} - ${session.timeRange.to}",
               imageUrl: session.advisor.image,
               style: style,
