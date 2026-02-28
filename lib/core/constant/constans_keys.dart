@@ -7,6 +7,5 @@ const String ktoken = "token";
 const String kuserData = "user_data";
 const String kMarriageSectionDeactivatedKey = 'marriage_section_deactivated';
 
-// const String kIsCompletedQuestions = "is_completed_questions";
-
-
+const String kAdvisorProfileCache = 'advisor_profile_cache';
+const String kUserProfileCache = 'user_profile_cache';
