@@ -1436,5 +1436,19 @@
   "detils_attendees": "Attendees Details",
   "consultancy_session": "Consultancy Session",
   "event_booking": "Event Booking",
-  "transaction": "Transaction"
+  "transaction": "Transaction",
+  "price": "Price",
+"experience": "Experience",
+"language": "Language",
+"badges": "Badges",
+"influencer": "Influencer",
+"expert": "Expert",
+"fast_response": "Fast Response",
+"trusted": "Trusted",
+"inspired": "Inspired",
+"listener": "Listener",
+"wise": "Wise",
+"search_by_experience": "Search",
+"book_session": "Book Session",
+"recommended": "Recommended"
 }

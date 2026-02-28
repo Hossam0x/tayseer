@@ -1,45 +1,13 @@
-import 'package:tayseer/features/user/my_space/presentation/view/My_Space_Consultatioin_Content.dart';
+
 import 'package:tayseer/my_import.dart';
 
-class ConsultationStandalonePage extends StatelessWidget {
-  const ConsultationStandalonePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AdvisorBackground(
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: 16.w,
-            vertical: 16.h,
-          ), // ✅ مش 0
-          child: Column(
-            children: [
-              Text(context.tr("Consulting"), style: Styles.textStyle20Bold),
-              SizedBox(height: 24.h),
-              CustomSearchBar(
-                isReadOnly: false,
-                onFilterTap: () => context.pushNamed(AppRouter.kMarriageFilterView),
-                onTap: () {
-                  // هنا ممكن تضيف أكشن للبحث لو حبيت
-                },
-              ),
-              const Expanded(child: MySpaceConsultationContent()),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomSearchBar extends StatelessWidget {
+class SearchBarWithFilter extends StatelessWidget {
   final bool isReadOnly;
   final VoidCallback? onTap;
   final VoidCallback? onFilterTap;
   final TextEditingController? controller;
 
-  const CustomSearchBar({
+  const SearchBarWithFilter({
     super.key,
     this.isReadOnly = false,
     this.onTap,
@@ -65,16 +33,15 @@ class CustomSearchBar extends StatelessWidget {
         onTap: () {
           if (isReadOnly && onTap != null) onTap!();
         },
-        // textAlign: TextAlign.right,
-        // textDirection: TextDirection.rtl,
+    
         decoration: InputDecoration(
-          hintText: 'بحث',
+          hintText: context.tr("search_by_experience"),
           hintStyle: Styles.textStyle14Meduim.copyWith(
             color: AppColors.secondary400,
             fontSize: fontSize,
           ),
 
-          // ✅ أيقونة البحث على اليمين (suffix لـ RTL)
+        
           prefixIcon: Icon(
             Icons.search,
             color: Colors.grey[400],
@@ -86,7 +53,7 @@ class CustomSearchBar extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.all(10.w),
               child: Opacity(
-                opacity: 0.6, // ✅ غير القيمة من 0.0 إلى 1.0
+                opacity: 0.6,
                 child: AppImage(
                   AssetsData.filter2Icon,
                   width: iconSize,

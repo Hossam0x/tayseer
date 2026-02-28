@@ -6,7 +6,7 @@ import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
 import 'package:tayseer/features/user/layout/view/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
-import 'package:tayseer/features/user/marriage/view/widget/consultation_standalone_page.dart';
+import 'package:tayseer/features/user/consultation_filtter/consultation_standalone_page.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
