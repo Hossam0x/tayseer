@@ -83,23 +83,21 @@ class _FilterList extends StatelessWidget {
         controller: scrollController,
         scrollDirection: Axis.horizontal,
         child: Row(
+          spacing: 8.w,
           children: [
             // "الكل" filter
             _FilterItem(
-              title: "الكل",
+              title: context.tr('all'),
               isSelected: selectedCategoryId == null,
               onTap: () => context.read<HomeCubit>().selectCategory(null),
             ),
             // Category filters
             ...categories.map((category) {
-              return Padding(
-                padding: EdgeInsets.only(right: context.responsiveWidth(8)),
-                child: _FilterItem(
-                  title: category.name,
-                  isSelected: selectedCategoryId == category.id,
-                  onTap: () =>
-                      context.read<HomeCubit>().selectCategory(category.id),
-                ),
+              return _FilterItem(
+                title: category.name,
+                isSelected: selectedCategoryId == category.id,
+                onTap: () =>
+                    context.read<HomeCubit>().selectCategory(category.id),
               );
             }),
             // Loading more indicator

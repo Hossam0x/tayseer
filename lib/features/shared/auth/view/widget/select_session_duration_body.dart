@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+import 'package:tayseer/core/utils/helper/currency_helper.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -32,7 +34,9 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
             children: [
               /// Back Button
               Align(
-                alignment: Alignment.centerRight,
+                alignment: isArabic
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.pop(),
@@ -44,8 +48,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
               /// Title
               Text(
                 context.tr('selectSessionDuration'),
-                style: Styles.textStyle18.copyWith(
-                  fontWeight: FontWeight.bold,
+                style: Styles.textStyle20Bold.copyWith(
                   color: AppColors.kscandryTextColor,
                 ),
               ),
@@ -76,7 +79,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
                       children: [
                         // --- خيار 30 دقيقة ---
                         _SessionDurationItem(
-                          title: context.tr('30_minutes'),
+                          title: context.tr('thirtyMinutes'),
                           isActive: state.isThirtyMinutesSelected,
                           priceController: _price30Controller,
                           onSwitchChanged: (value) {
@@ -92,7 +95,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
 
                         // --- خيار 60 دقيقة ---
                         _SessionDurationItem(
-                          title: context.tr('60_minutes'),
+                          title: context.tr('sixtyMinutes'),
                           isActive: state.isSixtyMinutesSelected,
                           priceController: _price60Controller,
                           onSwitchChanged: (value) {
@@ -113,7 +116,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
               BlocConsumer<AuthCubit, AuthState>(
                 listener: (context, state) {
                   if (state.addServiceProviderState == CubitStates.success) {
-                    context.pushNamed(AppRouter.kActivationSuccessView);
+                    context.pushNamed(AppRouter.kAccountReviewScreen);
                   } else if (state.addServiceProviderState ==
                       CubitStates.failure) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -177,14 +180,18 @@ class _SessionDurationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // نسبة الخصم (مثلاً 50%)
+    const double appFeePercentage = 0.50;
+
     return Column(
       children: [
+        /// 1. العنوان والسويتش
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(title, style: Styles.textStyle18),
             Transform.scale(
-              scale: 0.8, // تصغير بسيط عشان يناسب التصميم
+              scale: 0.8,
               child: Switch(
                 value: isActive,
                 onChanged: onSwitchChanged,
@@ -201,44 +208,133 @@ class _SessionDurationItem extends StatelessWidget {
           ],
         ),
 
+        /// 2. الجزء المخفي (السعر والحسبة)
         AnimatedCrossFade(
           firstChild: const SizedBox(width: double.infinity),
           secondChild: Padding(
             padding: const EdgeInsets.only(top: 12.0, bottom: 8.0),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(context.tr('session_price'), style: Styles.textStyle14),
-                Gap(context.responsiveWidth(8)),
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: CustomTextFormField(
-                      onChanged: onPriceChanged,
-                      isNumber: true,
-                      controller: priceController,
-                      hintText: '0',
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: AppImage(
-                          AssetsData.kWalletIcon,
-                          width: 30,
-                          height: 30,
-                          fit: BoxFit.contain,
+                // --- (أ) حقل إدخال السعر ---
+                Row(
+                  children: [
+                    Text(
+                      context.tr('session_price'),
+                      style: Styles.textStyle14,
+                    ),
+                    Gap(context.responsiveWidth(8)),
+                    Expanded(
+                      child: SizedBox(
+                        height: context.height * 0.08,
+                        child: CustomTextFormField(
+                          autovalidateMode: AutovalidateMode.always,
+                          onChanged: onPriceChanged,
+                          isNumber: true,
+                          controller: priceController,
+                          hintText: '0',
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(5),
+                          ],
+                          validator: (v) {
+                            if (v?.trim().isEmpty ?? true) {
+                              return context.tr('field_required');
+                            }
+                            return null;
+                          },
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: AppImage(
+                              AssetsData.kWalletIcon,
+                              width: 30,
+                              height: 30,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                CurrencyHelper.getCurrencySymbolFromContext(
+                                  context,
+                                ),
+                                style: Styles.textStyle14Bold.copyWith(
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                            ],
+                          ),
                         ),
                       ),
-                      suffixIcon: Row(
-                        mainAxisSize: MainAxisSize.min,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                // --- (ب) نص التنبيه بنسبة الخصم ---
+                Center(
+                  child: Text(
+                    // "سيتم خصم 50% من سعر الجلسة الواحدة رسوم للتطبيق"
+                    context.tr('app_fees_deduction_note'),
+                    style: Styles.textStyle10.copyWith(color: Colors.grey),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // --- (ج) بوكس السعر النهائي (الحسبة) ---
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: priceController,
+                  builder: (context, value, child) {
+                    // منطق الحسبة
+                    double price = double.tryParse(value.text) ?? 0;
+                    double finalPrice =
+                        price * (1 - appFeePercentage); // السعر بعد الخصم
+                    // أو لو المعادلة هي إن ده ربحك: double finalPrice = price * 0.5;
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.kWhiteColor, HexColor('fbf4f8')],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.kprimaryColor.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            context.tr('currency_rs'),
-                            style: Styles.textStyle14Bold.copyWith(
-                              color: Colors.grey,
+                            context.tr('final_price_after_discount'),
+                            style: Styles.textStyle14.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            CurrencyHelper.formatPriceFromContext(
+                              context,
+                              finalPrice,
+                            ),
+                            style: Styles.textStyle16.copyWith(
+                              color: AppColors
+                                  .kprimaryColor, // اللون الأحمر/الوردي
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -253,45 +349,3 @@ class _SessionDurationItem extends StatelessWidget {
     );
   }
 }
-//  TextField(
-//                       controller: priceController,
-//                       keyboardType: TextInputType.number,
-//                       onChanged: onPriceChanged,
-//                       textAlign: TextAlign.start,
-//                       decoration: InputDecoration(
-//                         fillColor: AppColors.kWhiteColor,
-//                         hintText: '0',
-//                         hintStyle: Styles.textStyle14.copyWith(
-//                           color: AppColors.kgreyColor,
-//                         ),
-//                         suffixText: context.tr('currency_rs'),
-//                         suffixStyle: Styles.textStyle14.copyWith(
-//                           color: AppColors.kgreyColor,
-//                         ),
-//                         contentPadding: const EdgeInsets.symmetric(
-//                           horizontal: 12,
-//                         ),
-//                         border: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(12),
-//                           borderSide: const BorderSide(color: Colors.grey),
-//                         ),
-//                         enabledBorder: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(12),
-//                           borderSide: BorderSide(
-//                             color: Colors.grey.withOpacity(0.3),
-//                           ),
-//                         ),
-//                         focusedBorder: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(12),
-//                           borderSide: BorderSide(
-//                             color: AppColors.kprimaryColor,
-//                           ),
-//                         ),
-
-//                         prefixIcon: AppImage(
-//                           AssetsData.kWalletIcon,
-//                           width: 10,
-//                           height: 10,
-//                         ),
-//                       ),
-//                     ),

@@ -10,9 +10,11 @@ class EditPersonalDataState extends Equatable {
   final File? imageFile;
   final File? videoFile;
   final String? errorMessage;
+  final String? successMessage;
   final bool isSaving;
   final String? videoPreviewUrl;
   final String? imagePreviewUrl;
+  final CubitStates isAiState;
 
   const EditPersonalDataState({
     this.state = CubitStates.initial,
@@ -21,15 +23,18 @@ class EditPersonalDataState extends Equatable {
     this.imageFile,
     this.videoFile,
     this.errorMessage,
+    this.successMessage,
     this.isSaving = false,
     this.videoPreviewUrl,
     this.imagePreviewUrl,
+    this.isAiState = CubitStates.initial,
   });
 
   factory EditPersonalDataState.initial() {
     return EditPersonalDataState(
       currentData: UpdatePersonalDataRequest(),
       state: CubitStates.loading,
+      isAiState: CubitStates.initial,
     );
   }
 
@@ -40,20 +45,30 @@ class EditPersonalDataState extends Equatable {
     File? imageFile,
     File? videoFile,
     String? errorMessage,
+    String? successMessage,
     bool? isSaving,
     String? videoPreviewUrl,
     String? imagePreviewUrl,
+    bool clearVideo = false,
+    bool clearImage = false,
+    CubitStates? isAiState,
   }) {
     return EditPersonalDataState(
       state: state ?? this.state,
       profile: profile ?? this.profile,
       currentData: currentData ?? this.currentData,
-      imageFile: imageFile ?? this.imageFile,
-      videoFile: videoFile ?? this.videoFile,
-      errorMessage: errorMessage ?? this.errorMessage,
+      imageFile: clearImage ? null : (imageFile ?? this.imageFile),
+      videoFile: clearVideo ? null : (videoFile ?? this.videoFile),
+      errorMessage: errorMessage, // Intentionally not keeping previous
+      successMessage: successMessage, // Intentionally not keeping previous
       isSaving: isSaving ?? this.isSaving,
-      videoPreviewUrl: videoPreviewUrl ?? this.videoPreviewUrl,
-      imagePreviewUrl: imagePreviewUrl ?? this.imagePreviewUrl,
+      videoPreviewUrl: clearVideo
+          ? null
+          : (videoPreviewUrl ?? this.videoPreviewUrl),
+      imagePreviewUrl: clearImage
+          ? null
+          : (imagePreviewUrl ?? this.imagePreviewUrl),
+      isAiState: isAiState ?? this.isAiState,
     );
   }
 
@@ -63,6 +78,8 @@ class EditPersonalDataState extends Equatable {
     // تحقق من التغييرات في الحقول النصية
     final currentTextChanged =
         (currentData.name != null && currentData.name != profile!.name) ||
+        (currentData.username != null &&
+            currentData.username != profile!.userName) || // ⭐ أضف هذا
         (currentData.professionalSpecialization != null &&
             currentData.professionalSpecialization !=
                 profile!.professionalSpecialization) ||
@@ -87,8 +104,10 @@ class EditPersonalDataState extends Equatable {
     imageFile,
     videoFile,
     errorMessage,
+    successMessage,
     isSaving,
     videoPreviewUrl,
     imagePreviewUrl,
+    isAiState,
   ];
 }

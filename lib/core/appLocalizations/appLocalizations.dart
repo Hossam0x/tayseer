@@ -28,7 +28,7 @@ class AppLocalizations {
     });
   }
 
-  String translate(String key) => jsonString[key] ?? '';
+  String translate(String key) => jsonString[key] ?? key;
 }
 
 class _AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

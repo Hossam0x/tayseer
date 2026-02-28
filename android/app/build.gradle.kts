@@ -5,7 +5,7 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services") // Firebase
+    id("com.google.gms.google-services")
 }
 
 val keystorePropertiesFile = rootProject.file("key.properties")
@@ -16,14 +16,15 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.athr.tayser"
-    compileSdk = 36 // <-- غيرنا من 34 إلى 36
+    compileSdk = 36  // ← غيرها لـ 35 (أكثر استقراراً)
 
     defaultConfig {
         applicationId = "com.athr.tayser"
-        minSdk = flutter.minSdkVersion
-        targetSdk = 36 // <-- غيرنا من 34 إلى 36
-        versionCode = 1
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 3
         versionName = "1.0"
+        multiDexEnabled = true  // ← أضف هذا
     }
 
     signingConfigs {
@@ -58,11 +59,24 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+        // ← أضف هذه السطور لتجاهل التحذيرات
+        freeCompilerArgs = listOf(
+            "-Xjvm-default=all",
+            "-Xopt-in=kotlin.RequiresOptIn",
+            "-Xsuppress-version-warnings"
+        )
+    }
+
+    // ← أضف هذا القسم
+    lint {
+        disable += "InvalidPackage"
+        checkReleaseBuilds = false
     }
 }
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation("androidx.multidex:multidex:2.0.1")  // ← أضف هذا
 }
 
 flutter {

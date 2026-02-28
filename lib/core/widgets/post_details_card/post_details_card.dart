@@ -10,6 +10,7 @@ class PostDetailsCard extends StatelessWidget {
   final PostModel post;
   final VideoPlayerController? cachedController;
   final ScrollController? scrollController;
+  final bool isFromProfile;
 
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
@@ -78,6 +79,7 @@ class PostDetailsCard extends StatelessWidget {
     this.isEditLoading = false,
     this.isReplyLoading = false,
     this.getCommentKey,
+    required this.isFromProfile,
   });
 
   @override
@@ -88,6 +90,7 @@ class PostDetailsCard extends StatelessWidget {
       slivers: [
         // Post Section
         _PostSection(
+          isFromProfile: isFromProfile,
           post: post,
           cachedController: cachedController,
           callbacks: callbacks,
@@ -143,8 +146,8 @@ class PostDetailsCard extends StatelessWidget {
       onSaveEdit: onSaveEdit,
       onSendReply: onSendReply,
       onLoadReplies: onLoadReplies,
-      getCommentKey: getCommentKey, 
-      commentCallbacks: commentCallbacks, 
+      getCommentKey: getCommentKey,
+      commentCallbacks: commentCallbacks,
     );
   }
 }
@@ -158,12 +161,14 @@ class _PostSection extends StatelessWidget {
   final VideoPlayerController? cachedController;
   final PostCallbacks callbacks;
   final VoidCallback? onCommentTap;
+  final bool isFromProfile;
 
   const _PostSection({
     required this.post,
     this.cachedController,
     required this.callbacks,
     this.onCommentTap,
+    required this.isFromProfile,
   });
 
   @override
@@ -174,6 +179,7 @@ class _PostSection extends StatelessWidget {
         isDetailsView: true,
         sharedController: cachedController,
         callbacks: callbacks,
+        isFromProfile: isFromProfile,
         onNavigateToDetails: (_, __, ___) => onCommentTap?.call(),
       ),
     );
@@ -203,7 +209,8 @@ class _CommentsList extends StatelessWidget {
   final void Function(String commentId, String text)? onSendReply;
   final void Function(String commentId)? onLoadReplies;
   final GlobalKey Function(String commentId)? getCommentKey;
-final CommentCallbacks commentCallbacks;
+  final CommentCallbacks commentCallbacks;
+
   const _CommentsList({
     required this.comments,
     required this.hasMore,
@@ -245,11 +252,12 @@ final CommentCallbacks commentCallbacks;
               child: _CommentItem(
                 callbacks: commentCallbacks, // ✅ تمرير الـ Bundle
                 comment: comment,
-                isEditing: editingCommentId == comment.id,
+                editingCommentId: editingCommentId,
                 isReplying: activeReplyId == comment.id,
-                isEditLoading: editingCommentId == comment.id && isEditLoading,
+                isEditLoading: isEditLoading,
                 isReplyLoading: activeReplyId == comment.id && isReplyLoading,
                 getReplyKey: getCommentKey,
+
                 onLikeTap: () => onLikeComment?.call(comment, false),
                 onReplyTap: () => onReplyTap?.call(comment.id),
                 onEditTap: () => onEditTap?.call(comment.id),
@@ -300,7 +308,7 @@ final CommentCallbacks commentCallbacks;
 
 class _CommentItem extends StatefulWidget {
   final CommentModel comment;
-  final bool isEditing;
+  final String? editingCommentId;
   final bool isReplying;
   final bool isEditLoading;
   final bool isReplyLoading;
@@ -315,11 +323,12 @@ class _CommentItem extends StatefulWidget {
   final void Function(CommentModel reply)? onLikeReply;
   final void Function(String replyId, String content)? onSaveReplyEdit;
   final GlobalKey Function(String commentId)? getReplyKey;
-final CommentCallbacks callbacks;
+  final CommentCallbacks callbacks;
+
   const _CommentItem({
     required this.comment,
     required this.callbacks,
-    this.isEditing = false,
+    this.editingCommentId,
     this.isReplying = false,
     this.isEditLoading = false,
     this.isReplyLoading = false,
@@ -343,20 +352,21 @@ final CommentCallbacks callbacks;
 class _CommentItemState extends State<_CommentItem> {
   CommentCard? _cachedWidget;
   CommentModel? _lastComment;
-  bool? _lastIsEditing;
+  String? _lastEditingCommentId;
   bool? _lastIsReplying;
   bool? _lastIsEditLoading;
   bool? _lastIsReplyLoading;
   bool? _lastIsLoadingReplies;
 
-@override
+  @override
   Widget build(BuildContext context) {
     if (widget.comment.isTemp) return _buildTempComment(context);
 
     // ✅ تحديث الـ Logic ليعتمد على الـ Bundle
-    final shouldRebuild = _cachedWidget == null ||
+    final shouldRebuild =
+        _cachedWidget == null ||
         widget.comment != _lastComment ||
-        widget.isEditing != _lastIsEditing ||
+        widget.editingCommentId != _lastEditingCommentId ||
         widget.isReplying != _lastIsReplying ||
         widget.isEditLoading != _lastIsEditLoading ||
         widget.isReplyLoading != _lastIsReplyLoading ||
@@ -364,7 +374,7 @@ class _CommentItemState extends State<_CommentItem> {
 
     if (shouldRebuild) {
       _lastComment = widget.comment;
-      _lastIsEditing = widget.isEditing;
+      _lastEditingCommentId = widget.editingCommentId;
       _lastIsReplying = widget.isReplying;
       _lastIsEditLoading = widget.isEditLoading;
       _lastIsReplyLoading = widget.isReplyLoading;
@@ -373,7 +383,7 @@ class _CommentItemState extends State<_CommentItem> {
       _cachedWidget = CommentCard(
         comment: widget.comment,
         callbacks: widget.callbacks, // ✅ تمرير الـ Bundle
-        isEditing: widget.isEditing,
+        editingCommentId: widget.editingCommentId,
         isReplying: widget.isReplying,
         isEditLoading: widget.isEditLoading,
         isReplyLoading: widget.isReplyLoading,
@@ -382,6 +392,7 @@ class _CommentItemState extends State<_CommentItem> {
     }
     return _cachedWidget!;
   }
+
   // ✅ Widget للكومنت المؤقت
   Widget _buildTempComment(BuildContext context) {
     return IgnorePointer(
@@ -391,7 +402,7 @@ class _CommentItemState extends State<_CommentItem> {
         child: CommentCard(
           comment: widget.comment,
           isReply: false,
-          isEditing: false,
+          editingCommentId: null,
           isReplying: false,
           isEditLoading: false,
           isReplyLoading: false,

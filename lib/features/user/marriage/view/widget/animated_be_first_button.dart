@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:tayseer/my_import.dart';
 
 class AnimatedBeFirstButton extends StatefulWidget {
-  const AnimatedBeFirstButton({super.key});
-
+  const AnimatedBeFirstButton({super.key, this.onTap});
+  final VoidCallback? onTap;
   @override
   State<AnimatedBeFirstButton> createState() => _AnimatedBeFirstButtonState();
 }
@@ -37,7 +37,7 @@ class _AnimatedBeFirstButtonState extends State<AnimatedBeFirstButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeInOutBack,

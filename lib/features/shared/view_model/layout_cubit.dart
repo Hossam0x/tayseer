@@ -4,12 +4,22 @@ import 'package:tayseer/my_import.dart';
 
 class LayoutCubit extends Cubit<LayoutState> {
   LayoutCubit({UserTypeEnum userType = UserTypeEnum.asConsultant})
-    : super(LayoutState(userType: userType));
+    : super(LayoutState(userType: userType)) {
+    _loadMarriageVisibility();
+  }
+  Future<void> _loadMarriageVisibility() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDeactivated =
+        prefs.getBool('marriage_section_deactivated') ?? false;
+    if (isDeactivated) {
+      emit(state.copyWith(isMarriageVisible: false));
+    }
+  }
+  
 
   void changeIndex(int index) {
     // لو المستخدم بالفعل في نفس الصفحة وضغط عليها تاني (زي فيسبوك)
-    if (state.currentIndex == index && index == 0) {
-      // Home index = 0
+    if (state.currentIndex == index) {
       scrollToTop();
     } else {
       emit(state.copyWith(currentIndex: index));
@@ -35,7 +45,29 @@ class LayoutCubit extends Cubit<LayoutState> {
     }
   }
 
+  void setHomeAtTop(bool isAtTop) {
+    if (state.isHomeAtTop != isAtTop) {
+      emit(state.copyWith(isHomeAtTop: isAtTop));
+    }
+  }
+
+  void scrollToTopAndRefresh() {
+    emit(
+      state.copyWith(
+        scrollToTopTrigger: state.scrollToTopTrigger + 1,
+        refreshHomeTrigger: state.refreshHomeTrigger + 1,
+      ),
+    );
+  }
+
   void changeUserType(UserTypeEnum userType) {
     emit(state.copyWith(userType: userType, currentIndex: 0));
+  }
+
+  void updateMarriageVisibility(bool isVisible) {
+    final newIndex = (!isVisible && state.currentIndex == 1)
+        ? 0
+        : state.currentIndex;
+    emit(state.copyWith(isMarriageVisible: isVisible, currentIndex: newIndex));
   }
 }

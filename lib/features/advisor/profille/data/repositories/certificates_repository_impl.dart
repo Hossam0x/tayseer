@@ -10,16 +10,28 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
 
   @override
   Future<Either<Failure, CertificatesAndVideosResponse>>
-  getCertificatesAndVideos() async {
+  getCertificatesAndVideos({
+    String? advisorId,
+    int page = 1,
+    int limit = 10,
+  }) async {
     try {
-      final response = await _apiService.get(
-        endPoint: '/advisor/getAllCertificatesAndVideos',
-      );
+      String endpoint = '/advisor/getAllCertificatesAndVideos';
+      Map<String, dynamic> query = {'page': page, 'limit': limit};
+
+      if (advisorId != null) {
+        endpoint = '/advisor/getAllCertificatesAndVideos/$advisorId';
+      }
+
+      final response = await _apiService.get(endPoint: endpoint, query: query);
 
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
+        final pagination = Map<String, dynamic>.from(data['pagination'] ?? {});
+
         final certificatesResponse = CertificatesAndVideosResponse.fromJson(
           data,
+          pagination: pagination,
         );
         return Right(certificatesResponse);
       } else {
@@ -39,45 +51,33 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
     required String nameCertificate,
     required String fromWhere,
     required DateTime date,
-    File? image,
+    File? image, // Keep as nullable File
   }) async {
     try {
-      // ⭐ إنشاء Map بدلاً من FormData
       final Map<String, dynamic> data = {
         'nameCertificate': nameCertificate,
         'fromWhere': fromWhere,
         'date': date.toIso8601String(),
       };
 
-      // ⭐ إضافة الصورة كـ MultipartFile إذا كانت موجودة
       if (image != null && image.existsSync()) {
         final String fileName = image.path.split('/').last;
-
-        // ⭐ في Dio، نضيف الملفات بشكل مختلف عند استخدام FormData.fromMap()
-        // لكن بما أن ApiService يستخدم FormData.fromMap(data)، نحتاج طريقة أخرى
-
-        // ⭐ الحل: إنشاء FormData مباشرة وإضافة الحقول والملفات
         final FormData formData = FormData();
 
-        // إضافة الحقول النصية
         formData.fields.addAll([
           MapEntry('nameCertificate', nameCertificate),
           MapEntry('fromWhere', fromWhere),
           MapEntry('date', date.toIso8601String()),
         ]);
 
-        // إضافة الملف
         formData.files.add(
           MapEntry(
-            'certificateImage',
+            'image', // Changed from 'certificateImage' to 'image' based on typical multer conventions and error
             await MultipartFile.fromFile(image.path, filename: fileName),
           ),
         );
 
-        // ⭐ استخدام dio مباشرة للطلب
         final dio = Dio();
-
-        // الحصول على الهيدرات
         final Map<String, dynamic> headers = {
           'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
           'Accept': 'application/json',
@@ -99,11 +99,10 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
           );
         }
       } else {
-        // ⭐ إذا لم تكن هناك صورة، استخدم ApiService العادي
         final response = await _apiService.post(
           endPoint: '/advisor/addCertificate',
           data: data,
-          isFromData: true,
+          isFromData: false,
         );
 
         if (response['success'] == true) {
@@ -128,41 +127,41 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
     required String fromWhere,
     required DateTime date,
     File? image,
+    bool? removeImage,
   }) async {
     try {
-      // ⭐ إنشاء Map بدلاً من FormData
       final Map<String, dynamic> data = {
         'nameCertificate': nameCertificate,
         'fromWhere': fromWhere,
         'date': date.toIso8601String(),
       };
 
-      // ⭐ إذا كانت هناك صورة
+      if (removeImage == true) {
+        data['image'] = ""; // أو حسب ما يتوقعه الباك لحذف الصورة
+      }
+
       if (image != null && image.existsSync()) {
         final String fileName = image.path.split('/').last;
-
-        // ⭐ إنشاء FormData مباشرة
         final FormData formData = FormData();
 
-        // إضافة الحقول النصية
         formData.fields.addAll([
           MapEntry('nameCertificate', nameCertificate),
           MapEntry('fromWhere', fromWhere),
           MapEntry('date', date.toIso8601String()),
         ]);
 
-        // إضافة الملف
+        if (removeImage == true) {
+          formData.fields.add(const MapEntry('image', ""));
+        }
+
         formData.files.add(
           MapEntry(
-            'certificateImage',
+            'image',
             await MultipartFile.fromFile(image.path, filename: fileName),
           ),
         );
 
-        // ⭐ استخدام dio مباشرة
         final dio = Dio();
-
-        // الحصول على الهيدرات
         final Map<String, dynamic> headers = {
           'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
           'Accept': 'application/json',
@@ -184,11 +183,10 @@ class CertificatesRepositoryImpl implements CertificatesRepository {
           );
         }
       } else {
-        // ⭐ إذا لم تكن هناك صورة، استخدم ApiService العادي
         final response = await _apiService.patch(
           endPoint: '/advisor/updateCertificate/$certificateId',
           data: data,
-          isFromData: true,
+          isFromData: false,
         );
 
         if (response['success'] == true) {

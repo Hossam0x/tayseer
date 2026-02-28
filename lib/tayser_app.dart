@@ -34,7 +34,7 @@ class TayseerApp extends StatelessWidget {
                   GlobalMaterialLocalizations.delegate,
                   GlobalWidgetsLocalizations.delegate,
                 ],
-                title: kAppNameAr,
+                title: isArabic ? kAppNameAr : kAppNameEn,
                 debugShowCheckedModeBanner: false,
                 useInheritedMediaQuery: true,
                 theme: ThemeData(

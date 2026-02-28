@@ -32,16 +32,15 @@ class RegisterBody extends StatelessWidget {
               isSuccess: true,
             ),
           );
-          Future.delayed(const Duration(seconds: 2), () {
-            // if (state.verify == true) {
-            //   final route = routeByLastQuestion(state.lastQuestionNumber);
-            //   selectedUserType == UserTypeEnum.asConsultant
-            //       ? context.pushNamed(AppRouter.kPersonalInfoAsConsultantView)
-            //       : context.pushNamed(route);
-            // } else {
-            // }
-            context.pushNamed(AppRouter.kOtpView);
-          });
+
+          // if (state.verify == true) {
+          //   final route = routeByLastQuestion(state.lastQuestionNumber);
+          //   selectedUserType == UserTypeEnum.asConsultant
+          //       ? context.pushNamed(AppRouter.kPersonalInfoAsConsultantView)
+          //       : context.pushNamed(route);
+          // } else {
+          // }
+          context.pushNamed(AppRouter.kOtpView);
         }
         if (state.registerState == CubitStates.failure) {
           context.pop();
@@ -64,7 +63,9 @@ class RegisterBody extends StatelessWidget {
                 children: [
                   SizedBox(height: context.height * 0.05),
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: isArabic
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
                     child: IconButton(
                       onPressed: () async {
                         context.pop();

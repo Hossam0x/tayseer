@@ -1,16 +1,19 @@
+import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 
 class SettingsCubit extends Cubit<SettingsState> {
   final LocalNotification _notificationService = LocalNotification();
+  final UserProfileRepository _userProfileRepository;
 
-  SettingsCubit() : super(SettingsInitial()) {
+  SettingsCubit(this._userProfileRepository) : super(SettingsInitial()) {
     _loadSettings();
   }
 
@@ -21,7 +24,7 @@ class SettingsCubit extends Cubit<SettingsState> {
       final prefs = await SharedPreferences.getInstance();
 
       // Load saved language (fallback to Arabic)
-      final savedLanguage = prefs.getString('app_language') ?? 'العربية';
+      final savedLanguage = prefs.getString('app_language') ?? 'ar';
 
       // Get initial notification status
       final notificationStatus = await _getNotificationStatus();
@@ -29,7 +32,7 @@ class SettingsCubit extends Cubit<SettingsState> {
       final settings = [
         SettingItemModel(
           id: 'notifications',
-          title: 'الاشعارات',
+          title: 'notifications_settings',
           iconAsset: AssetsData.icNotificationSettings,
           hasSwitch: true,
           routeName: '',
@@ -44,130 +47,141 @@ class SettingsCubit extends Cubit<SettingsState> {
         ),
         SettingItemModel(
           id: 'edit_profile',
-          title: 'تعديل البيانات الشخصية',
+          title: 'edit_personal_data',
           iconAsset: AssetsData.icEditSettings,
           routeName: AppRouter.kEditPersonalDataView,
         ),
         SettingItemModel(
           id: 'savers',
-          title: 'المحفظة',
+          title: 'wallet',
           iconAsset: AssetsData.icWalletSettings,
           routeName: AppRouter.kWalletView,
         ),
-        // في دالة _loadSettings:
         SettingItemModel(
           id: 'language',
-          title: 'اللغة',
-          subtitle: getLanguageName(savedLanguage),
+          title: 'app_language',
+          subtitle: getLanguageKey(savedLanguage),
           iconAsset: AssetsData.icLanguageSettings,
           routeName: AppRouter.kLanguageSelectionView,
         ),
         SettingItemModel(
+          id: 'order_management',
+          title: 'order_management',
+          iconAsset: AssetsData.icOrderManagment,
+          routeName: AppRouter.kOrderManagementView,
+        ),
+        SettingItemModel(
           id: 'packages',
-          title: 'الباقات',
+          title: 'packages',
           iconAsset: AssetsData.icPackesSettinngs,
           routeName: AppRouter.kPackagesTabView,
         ),
         SettingItemModel(
           id: 'archive',
-          title: 'أرشيف',
+          title: 'archive_general',
           iconAsset: AssetsData.icArchiveSettings,
           routeName: AppRouter.kArchiveView,
         ),
         SettingItemModel(
           id: 'hide_story',
-          title: 'إخفاء القصة من',
+          title: 'hide_story_from',
           iconAsset: AssetsData.icHideSettings,
           switchValue: prefs.getBool('setting_hide_story') ?? false,
           routeName: AppRouter.kHideStoryFromView,
         ),
         SettingItemModel(
           id: 'appointments',
-          title: 'المواعيد',
+          title: 'appointments',
           iconAsset: AssetsData.icDatesSettings,
           routeName: AppRouter.kAppointmentsView,
         ),
         SettingItemModel(
           id: 'session_settings',
-          title: 'مدة وأسعار الجلسات',
+          title: 'session_settings_title',
           iconAsset: AssetsData.icDurationSettings,
           routeName: AppRouter.kSessionPricingView,
         ),
         SettingItemModel(
           id: 'workshops',
-          title: 'المنشورات المحفوظه',
+          title: 'saved_posts',
           iconAsset: AssetsData.icSavedSettings,
           routeName: AppRouter.kSavedPostsView,
         ),
         SettingItemModel(
           id: 'blocks',
-          title: 'المحظورات',
+          title: 'blocked_users',
           iconAsset: AssetsData.icBlockedSettings,
           routeName: AppRouter.kBlockedUsersView,
         ),
         SettingItemModel(
           id: 'help_support',
-          title: 'المساعدة والدعم',
+          title: 'help_and_support',
           iconAsset: AssetsData.icHelpSettings,
           routeName: AppRouter.kHelpSupportView,
         ),
         SettingItemModel(
           id: 'invite',
-          title: 'دعوة',
+          title: 'invite_friend',
           iconAsset: AssetsData.icInviteSettings,
           routeName: '',
-          onTap: () async {
-            await _shareAppLink();
-          },
+        ),
+        SettingItemModel(
+          id: 'rate_app',
+          title: 'rate_the_app',
+          iconAsset: AssetsData.icRateSettings,
+          routeName: '',
         ),
         SettingItemModel(
           id: 'account_management',
-          title: 'إدارة الحساب',
+          title: 'manage_account',
           iconAsset: AssetsData.icManagementSettings,
           routeName: AppRouter.kAccountManagementView,
         ),
       ];
 
-      emit(SettingsLoaded(settings: settings));
+      emit(
+        SettingsLoaded(
+          settings: settings,
+          isNotificationEnabled: notificationStatus,
+        ),
+      );
     } catch (e) {
-      emit(SettingsError(message: 'حدث خطأ في تحميل الإعدادات'));
+      emit(SettingsError(message: 'settings_load_error'));
     }
   }
 
-  // في دالة updateLanguage:
   /// تحديث اللغة المختارة + حفظها + تحديث الـ UI
-  Future<void> updateLanguage(String languageName, BuildContext context) async {
+  Future<void> updateLanguage(String languageCode) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
-
-    // الحصول على الكود من اسم اللغة
-    final languageCode = getLanguageCode(languageName);
 
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('app_language', languageCode);
 
-      // تحديث القائمة محلياً بعرض اسم اللغة
+      // تحديث القائمة محلياً بعرض مفتاح اللغة
       final updatedSettings = currentState.settings.map((item) {
         if (item.id == 'language') {
-          return item.copyWith(subtitle: languageName);
+          return item.copyWith(subtitle: getLanguageKey(languageCode));
         }
         return item;
       }).toList();
 
-      emit(SettingsLoaded(settings: updatedSettings));
-
-      // عرض رسالة نجاح
-      showSafeSnackBar(
-        context: context,
-        text: 'تم تحديث اللغة إلى $languageName',
-        isSuccess: true,
+      emit(
+        currentState.copyWith(
+          settings: updatedSettings,
+          actionSuccess: "update_language_success",
+          isActionKey: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
     } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: 'حدث خطأ في تحديث اللغة ⚠️',
-        isError: true,
+      emit(
+        currentState.copyWith(
+          actionError: "update_language_error",
+          isActionKey: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
     }
   }
@@ -178,25 +192,24 @@ class SettingsCubit extends Cubit<SettingsState> {
     return prefs.getBool('notifications_enabled') ?? true;
   }
 
-  Future<void> _shareAppLink() async {
+  Future<void> shareApp(String message, String subject) async {
     try {
-      // رابط التطبيق - يمكنك تغييره
+      // رابط التطبيق
       const String appLink =
           'https://play.google.com/store/apps/details?id=com.tayseer.app';
-      const String message = 'جرب تطبيق تيسير الآن! 😊\n$appLink';
+      String fullMessage = '$message$appLink';
 
-      await Share.share(message, subject: 'دعوة لتطبيق تيسير');
+      await Share.share(fullMessage, subject: subject);
     } catch (e) {
       debugPrint('❌ خطأ في المشاركة: $e');
     }
   }
 
-  /// التحكم في الاشعارات (فتح/قفل)
   Future<void> _toggleNotificationSetting(String id, bool newValue) async {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
-    // تحديث محلي أولاً
+    // Update both the specific field and the settings list for consistency
     final updatedSettings = currentState.settings.map((item) {
       if (item.id == id) {
         return item.copyWith(switchValue: newValue);
@@ -204,30 +217,30 @@ class SettingsCubit extends Cubit<SettingsState> {
       return item;
     }).toList();
 
-    emit(SettingsLoaded(settings: updatedSettings));
+    emit(
+      currentState.copyWith(
+        settings: updatedSettings,
+        isNotificationEnabled: newValue,
+      ),
+    );
 
     try {
       final prefs = await SharedPreferences.getInstance();
 
       if (newValue) {
-        // تفعيل الاشعارات
+        // Activate notifications
         await _enableNotifications();
         await prefs.setBool('notifications_enabled', true);
       } else {
-        // تعطيل الاشعارات
+        // Deactivate notifications
         await _disableNotifications();
         await prefs.setBool('notifications_enabled', false);
       }
     } catch (e) {
-      // التراجع عند الخطأ
-      final revertedSettings = currentState.settings.map((item) {
-        if (item.id == id) {
-          return item.copyWith(switchValue: !newValue);
-        }
-        return item;
-      }).toList();
-
-      emit(SettingsLoaded(settings: revertedSettings));
+      // Revert on failure
+      if (!isClosed) {
+        emit(currentState.copyWith(isNotificationEnabled: !newValue));
+      }
       rethrow;
     }
   }
@@ -282,7 +295,7 @@ class SettingsCubit extends Cubit<SettingsState> {
       // 2. إلغاء جميع الاشعارات المحلية
       await _notificationService.clearAllNotifications();
 
-      // 3. تعطيل عرض الاشعارات في الخلفية
+      // 3. تشغيل عرض الاشعارات في الخلفية
       if (Platform.isIOS) {
         await messaging.setForegroundNotificationPresentationOptions(
           alert: false,
@@ -299,29 +312,87 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   /// تحديث قيمة switch (للاستخدام العام)
-  Future<void> updateSwitch(String id, bool value, BuildContext context) async {
-    try {
-      SnackBarService().clearAll(context);
+  Future<void> updateSwitch(String id, bool value) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
 
+    try {
       await _toggleNotificationSetting(id, value);
 
-      showSafeSnackBar(
-        context: context,
-        text: value ? 'تم تفعيل الاشعارات ✅' : 'تم تعطيل الاشعارات 🔕',
-        isSuccess: value,
-        duration: const Duration(milliseconds: 1500),
+      // Re-fetch current state as it might have been updated by _toggleNotificationSetting
+      final latestState = state as SettingsLoaded;
+
+      emit(
+        latestState.copyWith(
+          actionSuccess: value
+              ? "notifications_enabled_success"
+              : "notifications_disabled_success",
+          isActionKey: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
     } catch (e) {
-      showSafeSnackBar(
-        context: context,
-        text: 'حدث خطأ في تحديث الإعدادات ⚠️',
-        isError: true,
+      emit(
+        currentState.copyWith(
+          actionError: "update_settings_error",
+          isActionKey: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
+    }
+  }
+
+  Future<void> rateApp(int rating) async {
+    final currentState = state;
+    if (currentState is! SettingsLoaded) return;
+
+    try {
+      final result = await _userProfileRepository.rateApp(rating);
+
+      result.fold(
+        (failure) {
+          emit(
+            currentState.copyWith(
+              actionError: failure.message,
+              isActionKey: false, // Message from API
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
+          );
+        },
+        (_) {
+          emit(
+            currentState.copyWith(
+              actionSuccess: "rate_app_success",
+              isActionKey: true,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      emit(
+        currentState.copyWith(
+          actionError: "rate_app_error",
+          isActionKey: true,
+          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+    }
+  }
+
+  void clearMessages() {
+    if (state is SettingsLoaded) {
+      final currentState = state as SettingsLoaded;
+      emit(currentState.copyWith(actionSuccess: null, actionError: null));
     }
   }
 
   /// إعادة تحميل الإعدادات كاملة (refresh)
   void refresh() {
     _loadSettings();
+  }
+
+  void logoutFromSever() {
+    _userProfileRepository.logout(isAdvisor: true);
   }
 }

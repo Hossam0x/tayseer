@@ -13,7 +13,7 @@ import 'package:tayseer/my_import.dart';
 /// - Uses final fields where possible
 class PostActionsRow extends StatefulWidget {
   final int likesCount;
-  final List<ReactionType> topReactions;
+  final List<TopReactionModel> topReactions;
   final ReactionType? myReaction;
   final bool isRepostedByMe;
   final void Function(ReactionType?) onReactionChanged;
@@ -124,7 +124,7 @@ class _ActionButtons extends StatelessWidget {
 
 class _ReactionsDisplay extends StatelessWidget {
   final int likesCount;
-  final List<ReactionType> topReactions;
+  final List<TopReactionModel> topReactions;
   final GlobalKey destinationKey;
 
   const _ReactionsDisplay({
@@ -161,7 +161,7 @@ class _ReactionsDisplay extends StatelessWidget {
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _ReactionStack extends StatelessWidget {
-  final List<ReactionType> reactions;
+  final List<TopReactionModel> reactions;
 
   const _ReactionStack({required this.reactions});
 
@@ -185,7 +185,7 @@ class _ReactionStack extends StatelessWidget {
     );
   }
 
-  Widget _buildReactionIcon(int index, ReactionType type) {
+  Widget _buildReactionIcon(int index, TopReactionModel reactionModel) {
     return Positioned(
       left: index * _overlap.w,
       child: Container(
@@ -205,7 +205,7 @@ class _ReactionStack extends StatelessWidget {
         ),
         child: ClipOval(
           child: AppImage(
-            getReactionAsset(type),
+            getReactionAsset(reactionModel.type),
             fit: BoxFit.cover,
             height: (_iconSize - 2).w,
             width: (_iconSize - 2).w,

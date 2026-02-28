@@ -5,7 +5,7 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/features/shared/auth/model/guest_response_model.dart';
 import 'package:tayseer/features/shared/auth/model/last_login_model.dart';
-import 'package:tayseer/features/shared/auth/model/login_data.dart';
+import 'package:tayseer/core/models/login_data.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dartz/dartz.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -37,17 +37,17 @@ class AuthRepoImpl implements AuthRepo {
     return '';
   }
 
-  String getDeviceTimeZoneGMT() {
-    final now = DateTime.now();
-    final offset = now.timeZoneOffset;
+  // String getDeviceTimeZoneGMT() {
+  //   final now = DateTime.now();
+  //   final offset = now.timeZoneOffset;
 
-    final hours = offset.inHours;
-    final minutes = offset.inMinutes.remainder(60).abs();
+  //   final hours = offset.inHours;
+  //   final minutes = offset.inMinutes.remainder(60).abs();
 
-    final sign = hours >= 0 ? '+' : '-';
+  //   final sign = hours >= 0 ? '+' : '-';
 
-    return 'GMT $sign${hours.abs()}:${minutes.toString().padLeft(2, '0')}';
-  }
+  //   return 'GMT $sign${hours.abs()}:${minutes.toString().padLeft(2, '0')}';
+  // }
 
   String? token;
   @override
@@ -70,7 +70,7 @@ class AuthRepoImpl implements AuthRepo {
           'fcmToken': fcmToken,
           'deviceId': deviceId,
           'deviceType': platform,
-          'timezone': getDeviceTimeZoneGMT(),
+          // 'timezone': getDeviceTimeZoneGMT(),
         },
       );
       log('register User response$response');
@@ -167,7 +167,7 @@ class AuthRepoImpl implements AuthRepo {
               ? 'advisor'
               : 'user',
           'deviceId': deviceId,
-          'timezone': getDeviceTimeZoneGMT(),
+          // 'timezone': getDeviceTimeZoneGMT(),
         },
       );
       debugPrint('authGoogle idToken $idToken');
@@ -218,7 +218,7 @@ class AuthRepoImpl implements AuthRepo {
       final platform = Platform.isAndroid ? 'android' : 'ios';
 
       final response = await apiService.post(
-        endPoint:selectedUserType == UserTypeEnum.asConsultant
+        endPoint: selectedUserType == UserTypeEnum.asConsultant
             ? '/advisor/apple'
             : "/auth/apple",
         data: {
@@ -229,7 +229,7 @@ class AuthRepoImpl implements AuthRepo {
               ? 'user'
               : 'advisor',
           'deviceId': deviceId,
-          'timezone': getDeviceTimeZoneGMT(),
+          // 'timezone': getDeviceTimeZoneGMT(),
         },
       );
       log('idToken$idToken');
@@ -325,53 +325,6 @@ class AuthRepoImpl implements AuthRepo {
     } catch (e) {
       debugPrint('Error fetching last login: $e');
       return Left(ServerFailure('حدث خطأ غير متوقع'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> answerQuestions({
-    required String question,
-    required String questionCategoryEnum,
-    required int questionNumber,
-    required List<Map<String, dynamic>> answers,
-    bool? answerCompleted,
-  }) async {
-    try {
-      final response = await apiService.post(
-        endPoint: '/answer-questions',
-        data: {
-          'question': question,
-          'questionCategory': questionCategoryEnum,
-          'questionNumber': questionNumber,
-          'answers': answers,
-          if (answerCompleted != null) 'answerCompleted': answerCompleted,
-        },
-        isAuth: true,
-      );
-      log('answer-questions:::: $response');
-
-      final success = response['success'] ?? false;
-      debugPrint('success $success');
-
-      if (success) {
-        return right(null);
-      } else {
-        final message = response['message'] ?? 'فشل ارسال الاجابه';
-        debugPrint('message $message');
-
-        return left(ServerFailure(message));
-      }
-    } on DioException catch (error) {
-      debugPrint('DioException error $error');
-      return left(
-        ServerFailure(
-          error.response?.data['message'] ?? 'خطأ في الاتصال بالسيرفر',
-        ),
-      );
-    } catch (error) {
-      debugPrint(' error $error');
-
-      return left(ServerFailure('حدث خطأ غير متوقع: $error'));
     }
   }
 
@@ -507,18 +460,25 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   @override
-  Future<Either<Failure, GuestResponseModel>> guestLogin() {
+  Future<Either<Failure, GuestResponseModel>> guestLogin() async {
     try {
-      return apiService.post(endPoint: ApiEndPoint.guestLogin).then((response) {
-        final success = response['success'] ?? false;
-        if (success) {
-          final guestResponse = GuestResponseModel.fromJson(response);
-          return right(guestResponse);
-        } else {
-          final message = response['message'] ?? 'فشل تسجيل الدخول كزائر.';
-          return left(ServerFailure(message));
-        }
-      });
+      final response = await apiService.post(endPoint: ApiEndPoint.guestLogin);
+      final success = response['success'] ?? false;
+      if (success) {
+        final guestResponse = GuestResponseModel.fromJson(response);
+        await CachNetwork.setData(
+          key: ktoken,
+          value: guestResponse.data?.token ?? '',
+        );
+        await CachNetwork.setData(
+          key: kUserType,
+          value: UserTypeEnum.guest.name,
+        );
+        return right(guestResponse);
+      } else {
+        final message = response['message'] ?? 'فشل تسجيل الدخول كزائر.';
+        return left(ServerFailure(message));
+      }
     } on DioException catch (error) {
       final message =
           error.response?.data['message'] ?? 'خطأ في الاتصال بالخادم';
@@ -529,7 +489,7 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   @override
-  Future<Either<Failure, void>> addServiceProvider({
+  Future<Either<Failure, RegisterResponse>> addServiceProvider({
     required Map<String, dynamic> body,
   }) async {
     try {
@@ -539,9 +499,15 @@ class AuthRepoImpl implements AuthRepo {
       );
 
       final success = response['success'] ?? false;
-      debugPrint('addServiceProvider response: $response');
       if (success) {
-        return right(null);
+        final registerResponse = RegisterResponse.fromJson(response);
+        await CachNetwork.setData(
+          key: kuserData,
+          value: jsonEncode(registerResponse.data?.user?.toJson()),
+        );
+        kCurrentUserData = registerResponse.data?.user;
+
+        return right(registerResponse);
       } else {
         final message = response['message'] ?? 'فشل في إضافة إعدادات الخدمة';
         return left(ServerFailure(message));

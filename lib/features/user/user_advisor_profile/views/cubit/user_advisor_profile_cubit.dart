@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'user_advisor_profile_state.dart';
@@ -8,10 +12,50 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
   final UserAdvisorProfileRepository _repository;
   final String advisorId;
   final int _pageSize = 10;
+  Timer? _chatTimeoutTimer;
+  final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
   UserAdvisorProfileCubit(this._repository, this.advisorId)
     : super(const UserAdvisorProfileState()) {
     _initializeProfile();
+    _setupSocketListeners();
+  }
+
+  @override
+  Future<void> close() {
+    _chatTimeoutTimer?.cancel();
+    socketHelper.off('room_created');
+    socketHelper.off('fail');
+    return super.close();
+  }
+
+  void _setupSocketListeners() {
+    // ⭐ الاستماع لإنشاء الروم من السوكيت
+    socketHelper.listen('room_created', (data) {
+      final String chatRoomId =
+          data['chatRoomId']?.toString() ?? ''; //chatRoomId
+
+      if (chatRoomId.isNotEmpty) {
+        log('Socket room created: $chatRoomId');
+
+        // ⭐ تحديث الـ profile بالـ room الجديد
+        final updatedProfile = state.profile?.copyWith(
+          room: RoomInfoModel(
+            chatRoomId: chatRoomId,
+            isBlocked: false,
+            isHaveSession: false,
+          ),
+        );
+
+        emit(
+          state.copyWith(
+            profile: updatedProfile,
+            chatRoomId: chatRoomId,
+            shouldNavigateToChat: true,
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _initializeProfile() async {
@@ -33,61 +77,63 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
           profileErrorMessage: failure.message,
         ),
       ),
-      (profileModel) => emit(
-        state.copyWith(
-          profileState: CubitStates.success,
-          profile: profileModel,
-          profileErrorMessage: null,
-        ),
-      ),
+      (profileModel) {
+        // ⭐ تحديث state بالـ room من الـ profile
+        final room = profileModel.room;
+        final chatRoomId = room?.chatRoomId;
+
+        emit(
+          state.copyWith(
+            profileState: CubitStates.success,
+            profile: profileModel,
+            profileErrorMessage: null,
+            chatRoomId: chatRoomId,
+            shouldNavigateToChat: false,
+          ),
+        );
+      },
     );
   }
 
-  Future<void> fetchPosts({bool loadMore = false}) async {
+  Future<void> fetchPosts({
+    bool loadMore = false,
+    bool isSilent = false,
+    bool forceRefresh = false,
+  }) async {
     if (loadMore) {
       if (state.isLoadingMore || !state.hasMore) return;
-      if (isClosed) return;
       emit(state.copyWith(isLoadingMore: true));
 
       final nextPage = state.currentPage + 1;
-
       final result = await _repository.fetchUserPosts(
         advisorId: advisorId,
         page: nextPage,
       );
 
-      if (isClosed) return;
-      result.fold(
-        (failure) {
-          emit(
-            state.copyWith(
-              isLoadingMore: false,
-              postsErrorMessage: failure.message,
-            ),
-          );
-        },
-        (newPosts) {
-          final updatedList = [...state.posts, ...newPosts];
-          emit(
-            state.copyWith(
-              posts: updatedList,
-              currentPage: nextPage,
-              hasMore: newPosts.length >= _pageSize,
-              isLoadingMore: false,
-              postsErrorMessage: null,
-            ),
-          );
-        },
-      );
-    } else {
-      if (isClosed) return;
+      result.fold((failure) => emit(state.copyWith(isLoadingMore: false)), (
+        newPosts,
+      ) {
+        final updatedList = [...state.posts, ...newPosts];
+        emit(
+          state.copyWith(
+            posts: updatedList,
+            currentPage: nextPage,
+            hasMore: newPosts.length >= _pageSize,
+            isLoadingMore: false,
+          ),
+        );
+      });
+      return;
+    }
+
+    // ── حالة التحميل الأولي أو force refresh ──
+    if (forceRefresh || state.posts.isEmpty) {
       emit(
         state.copyWith(
           postsState: CubitStates.loading,
           posts: [],
           currentPage: 1,
           hasMore: true,
-          postsErrorMessage: null,
         ),
       );
 
@@ -96,64 +142,83 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
         page: 1,
       );
 
-      if (isClosed) return;
+      result.fold(
+        (failure) => emit(state.copyWith(postsState: CubitStates.failure)),
+        (postsList) => emit(
+          state.copyWith(
+            postsState: CubitStates.success,
+            posts: postsList,
+            currentPage: 1,
+            hasMore: postsList.length >= _pageSize,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // ── Silent refresh (الحالة الافتراضية لما نرجع للتب) ──
+    if (isSilent && state.posts.isNotEmpty) {
+      // لا نغير postsState → نبقى success
+      // بس نجيب البيانات الجديدة
+
+      final result = await _repository.fetchUserPosts(
+        advisorId: advisorId,
+        page: 1,
+      );
 
       result.fold(
         (failure) {
-          emit(
-            state.copyWith(
-              postsState: CubitStates.failure,
-              postsErrorMessage: failure.message,
-            ),
-          );
+          // ممكن نعمل log فقط، أو نعرض toast خفيف إذا أردت
+          log("Silent refresh failed: ${failure.message}");
         },
-        (postsList) {
-          emit(
-            state.copyWith(
-              postsState: CubitStates.success,
-              posts: postsList,
-              currentPage: 1,
-              hasMore: postsList.length >= _pageSize,
-              postsErrorMessage: null,
-            ),
-          );
+        (freshPosts) {
+          // نقارن لو فيه تغيير حقيقي ولا لأ (اختياري)
+          if (!_listsAreEqual(state.posts, freshPosts)) {
+            emit(
+              state.copyWith(
+                posts: freshPosts,
+                currentPage: 1,
+                hasMore: freshPosts.length >= _pageSize,
+              ),
+            );
+          }
+          // لو نفس البيانات → مفيش داعي نعمل emit
         },
       );
     }
+  }
+
+  // مساعدة للمقارنة (اختياري - يمنع flicker غير ضروري)
+  bool _listsAreEqual(List<PostModel> a, List<PostModel> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].postId != b[i].postId ||
+          a[i].content != b[i].content ||
+          a[i].likesCount != b[i].likesCount ||
+          a[i].sharesCount != b[i].sharesCount ||
+          a[i].myReaction != b[i].myReaction) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<void> refresh() async {
     await Future.wait([fetchProfile(), fetchPosts(loadMore: false)]);
   }
 
-  // ⭐ تحديث دالة toggleFollow لتشمل التحقق من حالة التحميل
   Future<void> toggleFollow() async {
     if (state.profile == null || state.profile!.isMe) return;
 
-    if (state.followActionState == CubitStates.loading) return;
+    // ⭐ إعادة تعيين حالة التحميل إذا كانت معلقة
+    if (state.followActionState == CubitStates.loading) {
+      emit(state.copyWith(followActionState: CubitStates.initial));
+    }
 
     emit(
       state.copyWith(
         followActionState: CubitStates.loading,
         followMessage: null,
-      ),
-    );
-
-    final currentFollowState = state.profile!.isFollowing;
-    final newFollowerCount = currentFollowState
-        ? (state.profile!.followers - 1).clamp(0, state.profile!.followers)
-        : state.profile!.followers + 1;
-
-    // ⭐ تحديث مؤقت للواجهة
-    final optimisticProfile = state.profile!.copyWith(
-      isFollowing: !currentFollowState,
-      followers: newFollowerCount,
-    );
-
-    emit(
-      state.copyWith(
-        profile: optimisticProfile,
-        followActionState: CubitStates.loading,
       ),
     );
 
@@ -164,21 +229,27 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
 
     result.fold(
       (failure) {
-        // ⭐ الرجوع للحالة السابقة عند الفشل
         emit(
           state.copyWith(
-            profile: state.profile?.copyWith(
-              isFollowing: currentFollowState,
-              followers: state.profile!.followers,
-            ),
             followActionState: CubitStates.failure,
             followMessage: failure.message,
           ),
         );
       },
       (message) {
+        final currentFollowState = state.profile?.isFollowing ?? false;
+        final newFollowerCount = currentFollowState
+            ? (state.profile!.followers - 1).clamp(0, state.profile!.followers)
+            : state.profile!.followers + 1;
+
+        final updatedProfile = state.profile?.copyWith(
+          isFollowing: !currentFollowState,
+          followers: newFollowerCount,
+        );
+
         emit(
           state.copyWith(
+            profile: updatedProfile,
             followActionState: CubitStates.success,
             followMessage: message,
             isFollowAdded: !currentFollowState,
@@ -280,6 +351,143 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     );
   }
 
+  void navigateToChat() {
+    if (state.profile?.hasRoom == true &&
+        state.profile?.room != null &&
+        state.profile!.chatRoomId != null) {
+      emit(state.copyWith(shouldNavigateToChat: true));
+    }
+  }
+
+  void createRoom(String receiverId) {
+    if (state.profile?.hasRoom == true && state.profile!.chatRoomId != null) {
+      navigateToChat();
+      return;
+    }
+
+    socketHelper.send('create_room', {'reciverId': receiverId}, (ack) {
+      log("send room create for user: $receiverId");
+    });
+  }
+
+  Future<void> startChat() async {
+    // ⭐ إلغاء أي timer سابق
+    _chatTimeoutTimer?.cancel();
+
+    // ⭐ إذا كان هناك room بالفعل
+    if (state.profile?.hasRoom == true &&
+        state.profile!.chatRoomId != null &&
+        state.profile!.chatRoomId!.isNotEmpty) {
+      // ⭐ تحديث حالة التحميل والتنقل
+      emit(state.copyWith(isChatLoading: true, shouldNavigateToChat: true));
+      return;
+    }
+
+    // ⭐ إذا لم يكن هناك room، ننشئ واحد
+    emit(
+      state.copyWith(
+        isChatLoading: true,
+        chatActionState: CubitStates.loading,
+        chatErrorMessage: null,
+      ),
+    );
+
+    // ⭐ تنظيف أي listeners سابقين
+    socketHelper.off('room_created');
+    socketHelper.off('fail');
+
+    // ⭐ الاستماع لإنشاء الروم بنجاح
+    socketHelper.listen('room_created', (data) {
+      _handleRoomCreated(data);
+    });
+
+    // ⭐ الاستماع لفشل إنشاء الروم
+    socketHelper.listen('fail', (data) {
+      _handleRoomCreationFailed(data);
+    });
+
+    // ⭐ إرسال طلب إنشاء room
+    socketHelper.send('create_room', {'receiverId': advisorId}, (ack) {
+      log("send room create for user: $advisorId");
+    });
+
+    // ⭐ إضافة timeout في حالة عدم الرد
+    _chatTimeoutTimer = Timer(const Duration(seconds: 10), () {
+      if (!isClosed && state.isChatLoading) {
+        emit(state.copyWith(isChatLoading: false));
+        // ⭐ يمكن إضافة toast خطأ هنا
+        log("Chat room creation timeout");
+      }
+    });
+  }
+
+  void _handleRoomCreated(Map<String, dynamic> data) {
+    final String chatRoomId = data['chatRoomId']?.toString() ?? '';
+
+    if (chatRoomId.isNotEmpty && !isClosed) {
+      log('Socket room created: $chatRoomId');
+
+      // ⭐ إلغاء الـ timeout
+      _chatTimeoutTimer?.cancel();
+
+      // ⭐ تحديث الـ profile بالـ room الجديد
+      final updatedProfile = state.profile?.copyWith(
+        room: RoomInfoModel(
+          chatRoomId: chatRoomId,
+          isBlocked: false,
+          isHaveSession: false,
+        ),
+      );
+
+      emit(
+        state.copyWith(
+          profile: updatedProfile,
+          chatRoomId: chatRoomId,
+          isChatLoading: false,
+          chatActionState: CubitStates.success,
+          chatErrorMessage: null,
+          shouldNavigateToChat: true,
+        ),
+      );
+    }
+  }
+
+  void _handleRoomCreationFailed(Map<String, dynamic> data) {
+    if (!isClosed) {
+      final message = data['message']?.toString() ?? 'فشل إنشاء غرفة المحادثة';
+      log('Room creation failed: $message');
+
+      // ⭐ إلغاء الـ timeout
+      _chatTimeoutTimer?.cancel();
+
+      emit(
+        state.copyWith(
+          isChatLoading: false,
+          chatActionState: CubitStates.failure,
+          chatErrorMessage: message,
+        ),
+      );
+
+      // ⭐ يمكن إضافة Toast أو snackbar للإخطار
+      log('⚠️ Chat room creation failed: $message');
+    }
+  }
+
+  void resetNavigation() {
+    emit(state.copyWith(shouldNavigateToChat: false, isChatLoading: false));
+  }
+
+  // ⭐ دالة لتحديث room يدويًا
+  void updateRoomInfo(RoomInfoModel roomInfo) {
+    if (state.profile == null) return;
+
+    final updatedProfile = state.profile!.copyWith(room: roomInfo);
+
+    emit(
+      state.copyWith(profile: updatedProfile, chatRoomId: roomInfo.chatRoomId),
+    );
+  }
+
   void _updatePostInList(String postId, PostModel updatedPost) {
     final currentIndex = state.posts.indexWhere((p) => p.postId == postId);
     if (currentIndex == -1) return;
@@ -288,5 +496,270 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     updatedPosts[currentIndex] = updatedPost;
 
     emit(state.copyWith(posts: updatedPosts));
+  }
+
+  PostModel? _findPost(String postId) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    return index != -1 ? state.posts[index] : null;
+  }
+
+  Future<void> toggleSavePost({required String postId}) async {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    final isCurrentlySaved = post.isSaved;
+
+    emit(state.copyWith(saveActionState: CubitStates.initial));
+
+    // Optimistic Update
+    final updatedPost = post.copyWith(isSaved: !isCurrentlySaved);
+    _updatePostInList(postId, updatedPost);
+
+    final result = await _repository.savedPost(
+      postId: postId,
+      isRemove: isCurrentlySaved,
+    );
+
+    result.fold(
+      (failure) {
+        _updatePostInList(postId, post);
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.failure,
+            saveMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.success,
+            saveMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> deletePost({required String postId}) async {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    final originalPosts = List<PostModel>.from(state.posts);
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+
+    emit(
+      state.copyWith(
+        posts: updatedPosts,
+        deletePostActionState: CubitStates.initial,
+      ),
+    );
+
+    final result = await _repository.deletePost(postId: postId);
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            posts: originalPosts,
+            deletePostActionState: CubitStates.failure,
+            deletePostMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            deletePostActionState: CubitStates.success,
+            deletePostMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> archivePost({required String postId}) async {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    final originalPosts = List<PostModel>.from(state.posts);
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+
+    emit(
+      state.copyWith(
+        posts: updatedPosts,
+        archivePostActionState: CubitStates.initial,
+      ),
+    );
+
+    final result = await _repository.archivePost(postId: postId);
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            posts: originalPosts,
+            archivePostActionState: CubitStates.failure,
+            archivePostMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            archivePostActionState: CubitStates.success,
+            archivePostMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  void toggleHidePost({required String postId}) {
+    final post = _findPost(postId);
+    if (post == null) return;
+
+    final newHideState = !post.isHidden;
+    final updatedPost = post.copyWith(isHidden: newHideState);
+    _updatePostInList(postId, updatedPost);
+
+    _repository.hidePost(postId: postId, isHide: newHideState);
+  }
+
+  Future<void> blockUser({
+    String? visiblePostId,
+    required String advisorId,
+  }) async {
+    if (isClosed) return;
+
+    emit(
+      state.copyWith(
+        blockActionState: visiblePostId == null ? CubitStates.loading : null,
+        blockUserActionState: visiblePostId != null
+            ? CubitStates.loading
+            : null,
+      ),
+    );
+
+    final result = await _repository.blockUser(advisorId);
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            blockActionState: visiblePostId == null
+                ? CubitStates.failure
+                : null,
+            blockMessage: visiblePostId == null ? failure.message : null,
+            blockUserActionState: visiblePostId != null
+                ? CubitStates.failure
+                : null,
+            blockUserMessage: visiblePostId != null ? failure.message : null,
+          ),
+        );
+      },
+      (message) {
+        if (visiblePostId != null) {
+          // التعامل مع الحظر من بوست
+          final updatedPosts = <PostModel>[];
+          for (final post in state.posts) {
+            if (post.postId == visiblePostId) {
+              updatedPosts.add(post.copyWith(isBlocked: true));
+            } else if (post.advisorId == advisorId) {
+              continue;
+            } else {
+              updatedPosts.add(post);
+            }
+          }
+          emit(
+            state.copyWith(
+              posts: updatedPosts,
+              blockUserActionState: CubitStates.success,
+              blockUserMessage: message,
+            ),
+          );
+        } else {
+          // التعامل مع الحظر من البروفايل
+          final updatedProfile = state.profile?.copyWith(
+            room:
+                state.profile?.room?.copyWith(isBlocked: true) ??
+                const RoomInfoModel(
+                  chatRoomId: '',
+                  isBlocked: true,
+                  isHaveSession: false,
+                ),
+          );
+          emit(
+            state.copyWith(
+              profile: updatedProfile,
+              blockActionState: CubitStates.success,
+              blockMessage: message,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  Future<void> unblockUser({required String advisorId}) async {
+    if (isClosed) return;
+
+    emit(state.copyWith(blockActionState: CubitStates.loading));
+
+    final result = await _repository.unblockUser(advisorId);
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            blockActionState: CubitStates.failure,
+            blockMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        final updatedProfile = state.profile?.copyWith(
+          room: state.profile?.room?.copyWith(isBlocked: false),
+        );
+        emit(
+          state.copyWith(
+            profile: updatedProfile,
+            blockActionState: CubitStates.success,
+            blockMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> reportUser({
+    required String reportedId,
+    required String reason,
+    required String reasonDetails,
+  }) async {
+    emit(state.copyWith(reportActionState: CubitStates.loading));
+    final result = await _repository.reportUser(
+      reportedId: reportedId,
+      reason: reason,
+      reasonDetails: reasonDetails,
+    );
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          reportActionState: CubitStates.failure,
+          reportMessage: failure.message,
+        ),
+      ),
+      (message) => emit(
+        state.copyWith(
+          reportActionState: CubitStates.success,
+          reportMessage: message,
+        ),
+      ),
+    );
   }
 }

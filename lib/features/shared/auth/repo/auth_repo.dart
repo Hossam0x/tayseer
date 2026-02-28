@@ -1,6 +1,6 @@
 import 'package:tayseer/features/shared/auth/model/guest_response_model.dart';
 import 'package:tayseer/features/shared/auth/model/last_login_model.dart';
-import 'package:tayseer/features/shared/auth/model/login_data.dart';
+import 'package:tayseer/core/models/login_data.dart';
 import 'package:dartz/dartz.dart';
 
 import '../../../../my_import.dart';
@@ -12,20 +12,13 @@ abstract class AuthRepo {
   Future<Either<Failure, GuestResponseModel>> guestLogin();
   Future<Either<Failure, RegisterResponse>> authGoogle({
     required String idToken,
-  
   });
   Future<Either<Failure, RegisterResponse>> authApple({
     required String idToken,
   });
   Future<Either<Failure, void>> resendOtp();
   Future<Either<Failure, LastLoginResponse>> getLastLogIn();
-  Future<Either<Failure, void>> answerQuestions({
-    required String question,
-    required String questionCategoryEnum,
-    required int questionNumber,
-    required List<Map<String, dynamic>> answers,
-    bool? answerCompleted,
-  });
+
   Future<Either<Failure, void>> personalDataAsConsultant({
     required String name,
     required String dateOfBirth,
@@ -49,7 +42,7 @@ abstract class AuthRepo {
     required List<XFile> nationalImages,
   });
 
-  Future<Either<Failure, void>> addServiceProvider({
+  Future<Either<Failure, RegisterResponse>> addServiceProvider({
     required Map<String, dynamic> body,
   });
   Future<Either<Failure, void>> addLanguage({required List<String> languages});

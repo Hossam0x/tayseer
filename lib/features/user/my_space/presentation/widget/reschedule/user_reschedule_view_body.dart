@@ -3,11 +3,9 @@ import 'package:tayseer/features/user/my_space/data/model/create_session/get_ava
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/create_session/create_session_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/create_session/create_session_state.dart';
-import 'package:tayseer/features/user/my_space/presentation/widget/reschedule/bank_account_filed.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/reschedule/rechedule_calender.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/reschedule/reschedule_duration.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/reschedule/reschedule_header.dart';
-import 'package:tayseer/features/user/my_space/presentation/widget/reschedule/reschedule_payment_method.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/reschedule/reschedule_timer_selector.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/reschedule/section_lable.dart';
 import 'package:tayseer/my_import.dart';
@@ -285,28 +283,27 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
               ),
               SizedBox(height: 20.h),
 
-              if (!_isReschedule) ...[
-                const SectionLabel(title: "طريقة الدفع"),
-                ReschedulePaymentMethods(
-                  selectedMethodIndex: _selectedPaymentMethod,
-                  onMethodChanged: (index) {
-                    setState(() {
-                      _selectedPaymentMethod = index;
-                    });
-                  },
-                ),
-                SizedBox(height: 15.h),
+              // if (!_isReschedule) ...[
+              //   const SectionLabel(title: "طريقة الدفع"),
+              //   ReschedulePaymentMethods(
+              //     selectedMethodIndex: _selectedPaymentMethod,
+              //     onMethodChanged: (index) {
+              //       setState(() {
+              //         _selectedPaymentMethod = index;
+              //       });
+              //     },
+              //   ),
+              //   SizedBox(height: 15.h),
 
-                if (_selectedPaymentMethod == 0) ...[
-                  const SectionLabel(title: "رقم الحساب البنكي"),
-                  BankAccountField(
-                    accountNumber: "SAXXXXXXXXXXXXXXXXXXXX",
-                    controller: _bankAccountController,
-                  ),
-                  SizedBox(height: 30.h),
-                ],
-              ],
-
+              //   if (_selectedPaymentMethod == 0) ...[
+              //     const SectionLabel(title: "رقم الحساب البنكي"),
+              //     BankAccountField(
+              //       accountNumber: "SAXXXXXXXXXXXXXXXXXXXX",
+              //       controller: _bankAccountController,
+              //     ),
+              //     SizedBox(height: 30.h),
+              //   ],
+              // ],
               Center(
                 child: CustomBotton(
                   useGradient: true,

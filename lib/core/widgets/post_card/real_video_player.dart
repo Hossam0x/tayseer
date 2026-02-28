@@ -1,19 +1,16 @@
-// lib/core/widgets/post_card/real_video_player.dart
-
-// ignore_for_file: unused_element_parameter
-
-import 'package:tayseer/core/utils/global_mute_manager.dart'; // ✅ أضف هذا
+import 'dart:async';
+import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/video/video_state_manager.dart';
-import 'package:tayseer/core/widgets/post_card/full_screen_video_player.dart';
 import 'package:tayseer/my_import.dart';
 
 class RealVideoPlayer extends StatefulWidget {
   final String postId;
   final String videoUrl;
-  final bool isReel;
+  final VideoModel? videoData;
   final VideoPlayerController? videoController;
   final Function(VideoPlayerController)? onControllerCreated;
   final Function(VideoPlayerController controller)? onReelTap;
@@ -22,7 +19,7 @@ class RealVideoPlayer extends StatefulWidget {
     super.key,
     required this.postId,
     required this.videoUrl,
-    this.isReel = false,
+    this.videoData,
     this.videoController,
     this.onControllerCreated,
     this.onReelTap,
@@ -36,64 +33,58 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   VideoPlayerController? _controller;
   final _videoCacheManager = VideoCacheManager();
   final _stateManager = VideoStateManager();
-  final _muteManager = GlobalMuteManager.instance; // ✅ أضف هذا
+  final _muteManager = GlobalMuteManager.instance;
 
-  // States
   bool _isInitialized = false;
   bool _hasError = false;
   bool _isBuffering = false;
-  bool _showControls = false;
   bool _isEnded = false;
   bool _isDisposed = false;
 
-  // إعادة المحاولة
+  // Completer لمنع التهيئة المتكررة
+  Completer<void>? _initCompleter;
+
   int _retryCount = 0;
-  static const int _maxRetries = 3;
+  int _lastSavedSecond = -1;
+  static const int _maxRetries = 5;
+
+  // Auto-retry timer للفشل الصامت
+  Timer? _autoRetryTimer;
+
+  // Delayed disposal timer — ينتظر 2 ثانية قبل dispose عند الخروج من الشاشة
+  Timer? _disposeDelayTimer;
 
   @override
   void initState() {
     super.initState();
-
-    // نستمع للمدير عشان نعرف مين اللي عليه الدور يشتغل
     VideoManager.instance.currentlyPlayingPostId.addListener(
       _videoManagerListener,
     );
-
-    // ✅ نستمع لتغييرات الـ Mute العام
     _muteManager.isMuted.addListener(_onGlobalMuteChanged);
   }
 
-  // ✅ دالة جديدة: لما الـ Global Mute يتغير
   void _onGlobalMuteChanged() {
-    if (_controller != null &&
-        _controller!.value.isInitialized &&
-        !_isDisposed) {
-      try {
-        _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
-        if (mounted) setState(() {});
-      } catch (e) {
-        debugPrint('⚠️ Cannot change volume: $e');
-      }
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized || _isDisposed) {
+      return;
+    }
+    try {
+      controller.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+    } catch (e) {
+      debugPrint('⚠️ Cannot change volume: $e');
     }
   }
 
-  // ✅ دالة جديدة: تبديل الـ Mute (للزر)
-  void _toggleGlobalMute() {
-    _muteManager.toggleMute();
-  }
-
   void _videoManagerListener() {
-    if (_isDisposed || _controller == null) return;
+    final controller = _controller;
+    if (_isDisposed || controller == null) return;
 
-    final activeId = VideoManager.instance.currentlyPlayingPostId.value;
-    if (activeId != widget.postId) {
+    if (VideoManager.instance.currentlyPlayingPostId.value != widget.postId) {
       try {
-        if (_controller!.value.isPlaying) {
+        if (controller.value.isPlaying) {
           _savePosition();
-          _controller!.pause();
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && !_isDisposed) setState(() {});
-          });
+          controller.pause();
+          _scheduleSetState(() {});
         }
       } catch (e) {
         debugPrint('⚠️ Cannot pause in listener, controller disposed');
@@ -113,16 +104,16 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   @override
   void didUpdateWidget(RealVideoPlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.videoController != oldWidget.videoController) {
-      if (widget.videoController != null) {
-        try {
-          final _ = widget.videoController!.value;
-          _disposeLocalController();
-          _controller = widget.videoController;
-          _setupController();
-        } catch (e) {
-          debugPrint('⚠️ Received disposed controller, ignoring');
-        }
+    if (widget.videoController != oldWidget.videoController &&
+        widget.videoController != null) {
+      try {
+        // Access .value to verify the controller isn't disposed
+        final _ = widget.videoController!.value;
+        _disposeLocalController();
+        _controller = widget.videoController;
+        _setupController();
+      } catch (e) {
+        debugPrint('⚠️ Received disposed controller, ignoring');
       }
     }
   }
@@ -130,36 +121,44 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   @override
   void dispose() {
     _isDisposed = true;
+    _autoRetryTimer?.cancel();
+    _disposeDelayTimer?.cancel();
     _savePosition();
     VideoManager.instance.currentlyPlayingPostId.removeListener(
       _videoManagerListener,
     );
-    _muteManager.isMuted.removeListener(_onGlobalMuteChanged); // ✅ أضف هذا
+    _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
     videoRouteObserver.unsubscribe(this);
     _disposeLocalController();
     super.dispose();
   }
 
   @override
-  void didPushNext() {
-    if (_controller == null) return;
+  void didPushNext() => _pauseAndSave();
 
+  // ─── Helpers ─────────────────────────────────────────────────────────
+
+  void _pauseAndSave() {
+    final controller = _controller;
+    if (controller == null) return;
     try {
-      if (_controller!.value.isPlaying) {
+      if (controller.value.isPlaying) {
         _savePosition();
-        _controller!.pause();
+        controller.pause();
       }
     } catch (e) {
       debugPrint('⚠️ Cannot pause, controller disposed');
     }
   }
 
-  void _savePosition() {
-    if (_controller == null || widget.videoController != null) return;
+  // ─── Position Management ─────────────────────────────────────────────
 
+  void _savePosition() {
+    final controller = _controller;
+    if (controller == null || widget.videoController != null) return;
     try {
-      if (_controller!.value.isInitialized) {
-        final position = _controller!.value.position;
+      if (controller.value.isInitialized) {
+        final position = controller.value.position;
         if (position.inSeconds > 0) {
           _stateManager.savePosition(widget.postId, position);
         }
@@ -170,28 +169,28 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   }
 
   Future<void> _restorePosition() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
 
     final lastPosition = _stateManager.getLastPosition(widget.postId);
     if (lastPosition != null && lastPosition.inSeconds > 0) {
-      final duration = _controller!.value.duration;
+      final duration = controller.value.duration;
       if (lastPosition < duration - const Duration(seconds: 2)) {
-        await _controller!.seekTo(lastPosition);
-        debugPrint(
-          '📍 Restored position for ${widget.postId}: ${lastPosition.inSeconds}s',
-        );
+        await controller.seekTo(lastPosition);
       }
     }
   }
 
-  void _disposeLocalController() {
-    if (_controller != null) {
-      _controller!.removeListener(_videoListener);
+  // ─── Controller Lifecycle ────────────────────────────────────────────
 
+  void _disposeLocalController() {
+    final controller = _controller;
+    if (controller != null) {
+      controller.removeListener(_videoListener);
       if (widget.videoController == null) {
-        _controller!.dispose();
+        controller.dispose();
       } else {
-        _controller!.pause();
+        controller.pause();
       }
     }
     _controller = null;
@@ -200,125 +199,120 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   }
 
   Future<void> _initializeVideo() async {
-    if (_controller != null || _isDisposed) return;
+    if (_isDisposed) return;
+
+    // Completer guard — لو التهيئة شغالة بالفعل، استنى عليها
+    if (_initCompleter != null && !_initCompleter!.isCompleted) {
+      return _initCompleter!.future;
+    }
+
+    if (_controller != null && _isInitialized) return;
+
+    _initCompleter = Completer<void>();
 
     try {
       if (widget.videoController != null) {
         _controller = widget.videoController;
         _setupController();
+        _initCompleter?.complete();
         return;
       }
 
-      if (widget.videoUrl.isEmpty) return;
+      if (widget.videoUrl.isEmpty) {
+        _initCompleter?.complete();
+        return;
+      }
 
       final cachedFile = await _videoCacheManager.getCachedFile(
         widget.videoUrl,
       );
-      if (!mounted || _isDisposed) return;
+      if (!mounted || _isDisposed) {
+        _initCompleter?.complete();
+        return;
+      }
 
-      if (cachedFile != null) {
-        _controller = VideoPlayerController.file(cachedFile);
-        debugPrint('📁 Home: Loading from cache');
-      } else {
-        _controller = VideoPlayerController.networkUrl(
-          Uri.parse(widget.videoUrl),
-          videoPlayerOptions: VideoPlayerOptions(
-            mixWithOthers: true,
-            allowBackgroundPlayback: false,
-          ),
-        );
+      _controller = cachedFile != null
+          ? VideoPlayerController.file(cachedFile)
+          : VideoPlayerController.networkUrl(
+              Uri.parse(widget.videoUrl),
+              videoPlayerOptions: VideoPlayerOptions(
+                mixWithOthers: true,
+                allowBackgroundPlayback: false,
+              ),
+            );
+
+      // ابدأ تحميل الكاش في الخلفية بالتوازي
+      if (cachedFile == null) {
         _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
-        debugPrint('🌐 Home: Loading from network');
       }
 
       await _controller!.initialize();
       if (!mounted || _isDisposed) {
         _controller?.dispose();
+        _controller = null;
+        _initCompleter?.complete();
         return;
       }
 
-      // ✅ استخدم الـ Global Mute State
+      await _controller!.setLooping(true);
       _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
       _setupController();
-
       widget.onControllerCreated?.call(_controller!);
-
       await _restorePosition();
 
       _stateManager.markAsLoaded(widget.postId);
       _retryCount = 0;
+      _autoRetryTimer?.cancel();
 
       if (VideoManager.instance.currentlyPlayingPostId.value == widget.postId) {
         _controller!.play();
       }
+
+      _initCompleter?.complete();
     } catch (e) {
       debugPrint("❌ Error initializing video: $e");
-      if (mounted && !_isDisposed) {
-        if (_retryCount < _maxRetries &&
-            _stateManager.canRetry(widget.postId)) {
-          _retryCount++;
-          _stateManager.recordError(widget.postId);
-          debugPrint('🔄 Auto-retrying... ($_retryCount/$_maxRetries)');
-          await Future.delayed(Duration(milliseconds: 500 * _retryCount));
+      if (!mounted || _isDisposed) {
+        _initCompleter?.complete();
+        return;
+      }
+
+      // التخلص من الـ controller الفاشل
+      try {
+        _controller?.dispose();
+      } catch (_) {}
+      _controller = null;
+      _isInitialized = false;
+
+      if (_retryCount < _maxRetries && _stateManager.canRetry(widget.postId)) {
+        _retryCount++;
+        _stateManager.recordError(widget.postId);
+        _initCompleter?.complete();
+
+        // Auto-retry صامت — بدون إظهار خطأ للمستخدم
+        final delay = Duration(milliseconds: 800 * _retryCount);
+        _autoRetryTimer?.cancel();
+        _autoRetryTimer = Timer(delay, () {
           if (mounted && !_isDisposed) {
             _initializeVideo();
           }
-        } else {
-          setState(() => _hasError = true);
-        }
-      }
-    }
-  }
-
-  void _handleVisibility(VisibilityInfo info) {
-    if (!mounted || _isDisposed) return;
-
-    final Route? route = ModalRoute.of(context);
-    if (route != null && !route.isCurrent) return;
-
-    final double visibleFraction = info.visibleFraction;
-
-    if (visibleFraction > 0.7) {
-      if (_controller == null && !_hasError) {
-        _initializeVideo().then((_) {
-          if (mounted && !_isDisposed && _isInitialized) {
-            VideoManager.instance.playVideo(widget.postId);
-            _controller!.play();
-          }
         });
-      } else if (_controller != null &&
-          _isInitialized &&
-          !_controller!.value.isPlaying &&
-          !_isEnded &&
-          !_hasError) {
-        VideoManager.instance.playVideo(widget.postId);
-        _controller!.play();
-      }
-    } else {
-      if (_controller != null && _controller!.value.isPlaying) {
-        _savePosition();
-        _controller!.pause();
-      }
-
-      if (visibleFraction == 0.0 && widget.videoController == null) {
-        _savePosition();
-        _disposeLocalController();
-        if (mounted && !_isDisposed) setState(() => _isInitialized = false);
+      } else {
+        // بعد استنفاد كل المحاولات فقط، أظهر الخطأ
+        _scheduleSetState(() => _hasError = true);
+        _initCompleter?.complete();
       }
     }
   }
 
   void _setupController() {
-    if (_controller == null) return;
+    final controller = _controller;
+    if (controller == null) return;
 
     try {
-      _isInitialized = _controller!.value.isInitialized;
-      _isBuffering = _controller!.value.isBuffering;
-      _controller!.addListener(_videoListener);
-
-      // ✅ تطبيق الـ Global Mute State
-      _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
-
+      _isInitialized = controller.value.isInitialized;
+      _isBuffering = controller.value.isBuffering;
+      controller.addListener(_videoListener);
+      controller.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
       if (mounted && !_isDisposed) setState(() {});
     } catch (e) {
       debugPrint('⚠️ Controller disposed during setup: $e');
@@ -327,44 +321,141 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     }
   }
 
+  // ─── Video Listener ──────────────────────────────────────────────────
+
   void _videoListener() {
-    if (!mounted || _controller == null || _isDisposed) return;
+    final controller = _controller;
+    if (!mounted || controller == null || _isDisposed) return;
 
     try {
-      final value = _controller!.value;
+      final value = controller.value;
 
-      void safeSetState(VoidCallback fn) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && !_isDisposed) setState(fn);
-        });
+      // كشف خطأ أثناء التشغيل — auto-retry صامت
+      if (value.hasError && !_hasError) {
+        debugPrint('⚠️ Video error during playback: ${value.errorDescription}');
+        _handleSilentRetry();
+        return;
       }
 
       if (value.isBuffering != _isBuffering) {
-        safeSetState(() => _isBuffering = value.isBuffering);
+        _scheduleSetState(() => _isBuffering = value.isBuffering);
       }
 
-      if (value.isInitialized &&
+      final isAtEnd =
+          value.isInitialized &&
           !value.isPlaying &&
-          value.position >= value.duration) {
-        if (!_isEnded) {
-          safeSetState(() {
-            _isEnded = true;
-            _showControls = true;
-          });
-        }
-      } else {
-        if (_isEnded && value.position < value.duration) {
-          safeSetState(() => _isEnded = false);
-        }
+          value.duration > Duration.zero &&
+          value.position >= value.duration;
+
+      if (isAtEnd != _isEnded) {
+        _scheduleSetState(() => _isEnded = isAtEnd);
       }
 
+      // Debounced position save — only once per 5-second mark
+      final currentSecond = value.position.inSeconds;
       if (_isInitialized &&
-          value.position.inSeconds % 5 == 0 &&
-          value.position.inSeconds > 0) {
+          currentSecond > 0 &&
+          currentSecond % 5 == 0 &&
+          currentSecond != _lastSavedSecond) {
+        _lastSavedSecond = currentSecond;
         _savePosition();
       }
     } catch (e) {
       debugPrint('⚠️ Controller disposed in listener');
+    }
+  }
+
+  /// Auto-retry صامت بدون إظهار خطأ للمستخدم
+  void _handleSilentRetry() {
+    if (_isDisposed || !mounted) return;
+
+    if (_retryCount < _maxRetries) {
+      _retryCount++;
+      debugPrint('🔄 Silent auto-retry #$_retryCount for ${widget.postId}');
+
+      // تخلص من الـ controller الحالي وأعد التهيئة
+      try {
+        _controller?.removeListener(_videoListener);
+        if (widget.videoController == null) {
+          _controller?.dispose();
+        }
+      } catch (_) {}
+      _controller = null;
+      _isInitialized = false;
+      _initCompleter = null;
+
+      final delay = Duration(milliseconds: 800 * _retryCount);
+      _autoRetryTimer?.cancel();
+      _autoRetryTimer = Timer(delay, () {
+        if (mounted && !_isDisposed) {
+          _initializeVideo();
+        }
+      });
+    } else {
+      _scheduleSetState(() => _hasError = true);
+    }
+  }
+
+  void _scheduleSetState(VoidCallback fn) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isDisposed) setState(fn);
+    });
+  }
+
+  // ─── Visibility & Interaction ────────────────────────────────────────
+
+  void _handleVisibility(VisibilityInfo info) {
+    if (!mounted || _isDisposed) return;
+
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) return;
+
+    final visibleFraction = info.visibleFraction;
+
+    if (visibleFraction > 0.7) {
+      // ألغِ أي timer dispose — الفيديو رجع للشاشة
+      _disposeDelayTimer?.cancel();
+      _disposeDelayTimer = null;
+
+      if (_controller == null && !_hasError) {
+        _initializeVideo().then((_) {
+          if (mounted && !_isDisposed && _isInitialized) {
+            VideoManager.instance.playVideo(widget.postId);
+            _controller?.play();
+          }
+        });
+      } else if (_controller != null &&
+          _isInitialized &&
+          !_isEnded &&
+          !_hasError) {
+        try {
+          if (!_controller!.value.isPlaying) {
+            VideoManager.instance.playVideo(widget.postId);
+            _controller!.play();
+          }
+        } catch (e) {
+          debugPrint('⚠️ Cannot play, controller disposed');
+        }
+      }
+    } else if (visibleFraction > 0.0) {
+      // ظاهر جزئياً — إيقاف مؤقت فقط بدون dispose
+      _disposeDelayTimer?.cancel();
+      _disposeDelayTimer = null;
+      _pauseAndSave();
+    } else {
+      // خرج من الشاشة تماماً — إيقاف مؤقت + dispose بعد 2 ثانية
+      // لتحرير hardware decoder slot
+      _pauseAndSave();
+      _disposeDelayTimer?.cancel();
+      _disposeDelayTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted && !_isDisposed && _controller != null) {
+          debugPrint('♻️ Delayed dispose for ${widget.postId}');
+          _savePosition();
+          _disposeLocalController();
+          _initCompleter = null;
+          if (mounted && !_isDisposed) setState(() {});
+        }
+      });
     }
   }
 
@@ -374,6 +465,9 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     _stateManager.resetErrorCount(widget.postId);
     _videoCacheManager.resetFailedStatus(widget.videoUrl);
     _retryCount = 0;
+    _lastSavedSecond = -1;
+    _isEnded = false;
+    _initCompleter = null;
 
     setState(() {
       _hasError = false;
@@ -384,180 +478,86 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   }
 
   void _handleTap() {
-    if (widget.isReel) {
-      if (_isInitialized && _controller != null) {
-        widget.onReelTap?.call(_controller!);
-      }
-    } else {
-      _toggleControls();
+    if (_isInitialized && _controller != null) {
+      widget.onReelTap?.call(_controller!);
     }
   }
 
-  void _toggleControls() {
-    setState(() => _showControls = !_showControls);
-    if (_showControls && (_controller?.value.isPlaying ?? false)) {
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted && (_controller?.value.isPlaying ?? false)) {
-          setState(() => _showControls = false);
-        }
-      });
-    }
-  }
-
-  void _togglePlay() {
-    if (_controller!.value.isPlaying) {
-      _controller!.pause();
-    } else {
-      VideoManager.instance.playVideo(widget.postId);
-      _controller!.play();
-    }
-    setState(() {});
-  }
-
-  void _seekRelative(Duration offset) {
-    if (_controller == null) return;
-    final newPos = _controller!.value.position + offset;
-    final dur = _controller!.value.duration;
-    if (newPos < Duration.zero) {
-      _controller!.seekTo(Duration.zero);
-    } else if (newPos > dur) {
-      _controller!.seekTo(dur);
-    } else {
-      _controller!.seekTo(newPos);
-    }
-  }
-
-  Future<void> _openFullscreen() async {
-    if (_controller == null || !_isInitialized) return;
-
-    _controller!.pause();
-
-    final result = await Navigator.push<FullscreenResult>(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => FullscreenVideoPlayer(
-          videoUrl: widget.videoUrl,
-          startPosition: _controller!.value.position,
-          // ✅ الـ FullscreenVideoPlayer هيستخدم الـ Global Mute برضو
-        ),
-        transitionsBuilder: (_, a, __, c) =>
-            FadeTransition(opacity: a, child: c),
-      ),
-    );
-
-    if (result != null && mounted) {
-      await _controller!.seekTo(result.position);
-      if (result.wasPlaying) {
-        VideoManager.instance.playVideo(widget.postId);
-        _controller!.play();
-      }
-    }
-  }
+  // ─── Build ───────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final aspectRatio = widget.isReel ? 4 / 5 : 16 / 9;
-    final visibilityKey = Key("${widget.postId}_${widget.videoUrl}");
+    final videoData = widget.videoData;
+    final double aspectRatio;
+    if (videoData != null && videoData.width > 0 && videoData.height > 0) {
+      aspectRatio = videoData.aspectRatio.clamp(0.4, 2.5);
+    } else {
+      aspectRatio = 4 / 5;
+    }
 
-    Widget content = AspectRatio(
-      aspectRatio: aspectRatio,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12.r),
-          child: GestureDetector(
-            onTap: _handleTap,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Video Player
-                if (_isInitialized && _controller != null)
-                  SizedBox.expand(
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: _controller!.value.size.width,
-                        height: _controller!.value.size.height,
-                        child: VideoPlayer(_controller!),
+    final thumbnail = videoData?.thumbnail;
+
+    return VisibilityDetector(
+      key: Key('${widget.postId}_${widget.videoUrl}'),
+      onVisibilityChanged: _handleVisibility,
+      child: AspectRatio(
+        aspectRatio: aspectRatio,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12.r),
+            child: GestureDetector(
+              onTap: _handleTap,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (thumbnail != null && thumbnail.isNotEmpty)
+                    Positioned.fill(
+                      child: CachedNetworkImage(
+                        imageUrl: thumbnail,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) =>
+                            const ColoredBox(color: Colors.black),
+                        errorWidget: (_, __, ___) =>
+                            const ColoredBox(color: Colors.black),
                       ),
                     ),
-                  ),
 
-                // Error State
-                if (_hasError) _buildErrorState(),
-
-                // Loading
-                if (!_isInitialized && !_hasError)
-                  const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
-                    ),
-                  ),
-
-                // Buffering
-                if (_isInitialized && _isBuffering && !_showControls)
-                  _buildBufferingIndicator(),
-
-                // Play Icon (when not initialized)
-                if (!_isInitialized && !_hasError && !widget.isReel)
-                  Center(
-                    child: Container(
-                      padding: EdgeInsets.all(10.r),
-                      decoration: const BoxDecoration(
-                        color: Colors.black45,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: 40.sp,
+                  if (_isInitialized && _controller != null)
+                    Positioned.fill(
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: _controller!.value.size.width,
+                          height: _controller!.value.size.height,
+                          child: VideoPlayer(_controller!),
+                        ),
                       ),
                     ),
-                  ),
 
-                // ✅ زرار الـ Mute العام (دايماً ظاهر في أسفل اليمين)
-                if (_isInitialized && _controller != null && widget.isReel)
-                  Positioned(
-                    bottom: 12.h,
-                    right: 12.w,
-                    child: _GlobalMuteButton(onTap: _toggleGlobalMute),
-                  ),
+                  if (_hasError) _buildErrorState(),
 
-                // Controls Overlay (for non-reel videos)
-                if (_isInitialized && _controller != null && !widget.isReel)
-                  _ControlsOverlay(
-                    controller: _controller!,
-                    isVisible: _showControls,
-                    isEnded: _isEnded,
-                    onPlayPause: _togglePlay,
-                    onReplay: () {
-                      _controller!.seekTo(Duration.zero);
-                      VideoManager.instance.playVideo(widget.postId);
-                      _controller!.play();
-                      setState(() => _isEnded = false);
-                    },
-                    onSeekForward: () =>
-                        _seekRelative(const Duration(seconds: 10)),
-                    onSeekBackward: () =>
-                        _seekRelative(const Duration(seconds: -10)),
-                    onFullscreen: _openFullscreen,
-                    onTapBackground: _handleTap,
-                  ),
-              ],
+                  // لا نظهر loading indicator — الـ thumbnail يكفي (زي فيسبوك)
+                  if (_isInitialized && _isBuffering)
+                    _buildBufferingIndicator(),
+
+                  if (_isInitialized && _controller != null)
+                    Positioned(
+                      bottom: 12.h,
+                      right: 12.w,
+                      child: _MuteButton(
+                        onTap: () => _muteManager.toggleMute(),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    );
-
-    return VisibilityDetector(
-      key: visibilityKey,
-      onVisibilityChanged: _handleVisibility,
-      child: content,
     );
   }
 
@@ -601,313 +601,51 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
   Widget _buildBufferingIndicator() {
     return Center(
-      child: Container(
-        padding: EdgeInsets.all(8.r),
+      child: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.black38,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const CircularProgressIndicator(
-          color: Colors.white,
-          strokeWidth: 2,
+        child: Padding(
+          padding: EdgeInsets.all(8.r),
+          child: const CircularProgressIndicator(
+            color: Colors.white,
+            strokeWidth: 2,
+          ),
         ),
       ),
     );
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ✅ زرار الـ Mute العام (الجديد)
-// ══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 
-class _GlobalMuteButton extends StatelessWidget {
+class _MuteButton extends StatelessWidget {
   final VoidCallback onTap;
 
-  const _GlobalMuteButton({required this.onTap});
+  const _MuteButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: GlobalMuteManager.instance.isMuted,
-      builder: (context, isMuted, child) {
+      builder: (context, isMuted, _) {
         return GestureDetector(
           onTap: onTap,
-          child: Container(
-            padding: EdgeInsets.all(8.r),
+          child: DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withValues(alpha: 0.6),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-              color: Colors.white,
-              size: 18.sp,
+            child: Padding(
+              padding: EdgeInsets.all(8.r),
+              child: Icon(
+                isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                color: Colors.white,
+                size: 18.sp,
+              ),
             ),
           ),
-        );
-      },
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Controls Overlay (معدّل - بدون زرار mute لأنه بقى global)
-// ══════════════════════════════════════════════════════════════════════════════
-
-class _ControlsOverlay extends StatelessWidget {
-  final VideoPlayerController controller;
-  final bool isVisible;
-  final bool isEnded;
-  final VoidCallback onPlayPause;
-  final VoidCallback onReplay;
-  final VoidCallback onSeekForward;
-  final VoidCallback onSeekBackward;
-  final VoidCallback onFullscreen;
-  final VoidCallback onTapBackground;
-
-  const _ControlsOverlay({
-    required this.controller,
-    required this.isVisible,
-    required this.isEnded,
-    required this.onPlayPause,
-    required this.onReplay,
-    required this.onSeekForward,
-    required this.onSeekBackward,
-    required this.onFullscreen,
-    required this.onTapBackground,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTapBackground,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedOpacity(
-        opacity: isVisible ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 300),
-        child: IgnorePointer(
-          ignoring: !isVisible,
-          child: Container(
-            color: Colors.black.withOpacity(0.4),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Top Bar
-                Padding(
-                  padding: EdgeInsets.all(12.w),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Fullscreen button
-                      _CircleButton(
-                        icon: Icons.fullscreen_rounded,
-                        onTap: onFullscreen,
-                      ),
-                      // ✅ زرار الـ Mute العام
-                      _GlobalMuteButton(
-                        onTap: () => GlobalMuteManager.instance.toggleMute(),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Center Controls
-                isEnded
-                    ? _CircleButton(
-                        icon: Icons.replay,
-                        size: 40.sp,
-                        padding: 12.r,
-                        onTap: onReplay,
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            onPressed: onSeekBackward,
-                            icon: Icon(
-                              Icons.replay_10,
-                              color: Colors.white,
-                              size: 30.sp,
-                            ),
-                          ),
-                          SizedBox(width: 20.w),
-                          _CircleButton(
-                            icon: controller.value.isPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                            size: 40.sp,
-                            padding: 8.r,
-                            onTap: onPlayPause,
-                          ),
-                          SizedBox(width: 20.w),
-                          IconButton(
-                            onPressed: onSeekForward,
-                            icon: Icon(
-                              Icons.forward_10,
-                              color: Colors.white,
-                              size: 30.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                // Seek Bar
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 10.h,
-                  ),
-                  child: _VideoSeekBar(
-                    controller: controller,
-                    onSeek: (pos) => controller.seekTo(pos),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CircleButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final double? size;
-  final double? padding;
-
-  const _CircleButton({
-    required this.icon,
-    required this.onTap,
-    this.size,
-    this.padding,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(padding ?? 6.r),
-        decoration: const BoxDecoration(
-          color: Colors.black45,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: Colors.white, size: size ?? 20.sp),
-      ),
-    );
-  }
-}
-
-class _VideoSeekBar extends StatefulWidget {
-  final VideoPlayerController controller;
-  final Function(Duration) onSeek;
-  final VoidCallback? onDragStart;
-  final VoidCallback? onDragEnd;
-
-  const _VideoSeekBar({
-    required this.controller,
-    required this.onSeek,
-    this.onDragStart,
-    this.onDragEnd,
-  });
-
-  @override
-  State<_VideoSeekBar> createState() => _VideoSeekBarState();
-}
-
-class _VideoSeekBarState extends State<_VideoSeekBar> {
-  double? _dragValue;
-  bool _isDragging = false;
-
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    return "${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<VideoPlayerValue>(
-      valueListenable: widget.controller,
-      builder: (context, value, child) {
-        final duration = value.duration;
-        final position = value.position;
-        if (duration.inMilliseconds == 0) return const SizedBox.shrink();
-
-        final progress = _isDragging
-            ? _dragValue!
-            : position.inMilliseconds / duration.inMilliseconds;
-        final displayPosition = _isDragging
-            ? Duration(
-                milliseconds: (_dragValue! * duration.inMilliseconds).toInt(),
-              )
-            : position;
-
-        return Row(
-          children: [
-            SizedBox(
-              width: 45.w,
-              child: Text(
-                _formatDuration(displayPosition),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Expanded(
-              child: SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 4.h,
-                  thumbShape: RoundSliderThumbShape(
-                    enabledThumbRadius: _isDragging ? 8.r : 6.r,
-                  ),
-                  overlayShape: RoundSliderOverlayShape(overlayRadius: 16.r),
-                  activeTrackColor: AppColors.kprimaryColor,
-                  inactiveTrackColor: Colors.white.withOpacity(0.3),
-                  thumbColor: AppColors.kprimaryColor,
-                  overlayColor: AppColors.kprimaryColor.withOpacity(0.2),
-                ),
-                child: Slider(
-                  value: progress.clamp(0.0, 1.0),
-                  onChangeStart: (value) {
-                    setState(() {
-                      _isDragging = true;
-                      _dragValue = value;
-                    });
-                    widget.onDragStart?.call();
-                  },
-                  onChanged: (value) {
-                    setState(() => _dragValue = value);
-                  },
-                  onChangeEnd: (value) {
-                    final newPosition = Duration(
-                      milliseconds: (value * duration.inMilliseconds).toInt(),
-                    );
-                    widget.onSeek(newPosition);
-                    setState(() {
-                      _isDragging = false;
-                      _dragValue = null;
-                    });
-                    widget.onDragEnd?.call();
-                  },
-                ),
-              ),
-            ),
-            SizedBox(
-              width: 45.w,
-              child: Text(
-                _formatDuration(duration),
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 12.sp,
-                ),
-                textAlign: TextAlign.end,
-              ),
-            ),
-          ],
         );
       },
     );

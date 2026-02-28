@@ -1,4 +1,6 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_state.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart' as di;
@@ -11,6 +13,18 @@ class AddPostCubit extends Cubit<AddPostState> {
 
   final PostsRepository _repo;
   final contentController = TextEditingController();
+
+  // ✅ تحديد نوع البوست تلقائياً بناءً على المحتوى
+  void _resolvePostType() {
+    final hasVideo =
+        state.selectedVideos.isNotEmpty || state.capturedVideo != null;
+
+    if (hasVideo) {
+      emit(state.copyWith(resolvedPostType: AddPostEnum.reel));
+    } else {
+      emit(state.copyWith(resolvedPostType: AddPostEnum.post));
+    }
+  }
 
   /// Create post using repository (uses current state for content/media)
   Future<void> createPost({
@@ -58,6 +72,7 @@ class AddPostCubit extends Cubit<AddPostState> {
             capturedImages: [],
             capturedVideo: null,
             draftText: '',
+            resolvedPostType: AddPostEnum.post, // ✅ reset بعد النشر
           ),
         );
         contentController.clear();
@@ -66,7 +81,6 @@ class AddPostCubit extends Cubit<AddPostState> {
   }
 
   /// Get All category
-
   Future<void> getALLCategory() async {
     emit(state.copyWith(categoryState: CubitStates.loading));
 
@@ -97,6 +111,7 @@ class AddPostCubit extends Cubit<AddPostState> {
     final selected = List<AssetEntity>.from(state.selectedImages);
     selected.remove(image);
     emit(state.copyWith(selectedImages: selected));
+    _resolvePostType(); // ✅
   }
 
   /// 🔥 حذف صورة ملتقطة من الكاميرا
@@ -104,6 +119,7 @@ class AddPostCubit extends Cubit<AddPostState> {
     final captured = List<File>.from(state.capturedImages);
     captured.remove(file);
     emit(state.copyWith(capturedImages: captured));
+    _resolvePostType(); // ✅
   }
 
   /// Update the draft text from the UI
@@ -119,9 +135,14 @@ class AddPostCubit extends Cubit<AddPostState> {
   /// 🔥 إضافة صورة ملتقطة من الكاميرا مباشرة بدون حفظها في الجاليري
   Future<void> addCapturedImage(File file) async {
     try {
+      // ❌ لو فيه فيديو محمل، منع إضافة صور
+      if (state.capturedVideo != null || state.selectedVideos.isNotEmpty) {
+        return;
+      }
       final captured = List<File>.from(state.capturedImages);
       captured.add(file);
       emit(state.copyWith(capturedImages: captured));
+      _resolvePostType(); // ✅
     } catch (e) {
       debugPrint('addCapturedImage error: $e');
     }
@@ -130,8 +151,13 @@ class AddPostCubit extends Cubit<AddPostState> {
   /// 🔥 إضافة فيديو ملتقط من المعرض/الكاميرا
   Future<void> addCapturedVideo(XFile file) async {
     try {
+      // ❌ لو فيه صور محملة، منع إضافة فيديو
+      if (state.capturedImages.isNotEmpty || state.selectedImages.isNotEmpty) {
+        return;
+      }
       // Only allow a single captured video — replace any existing one
       emit(state.copyWith(capturedVideo: file));
+      _resolvePostType(); // ✅
     } catch (e) {
       debugPrint('addCapturedVideo error: $e');
     }
@@ -140,6 +166,7 @@ class AddPostCubit extends Cubit<AddPostState> {
   /// Remove a captured video file
   void removeCapturedVideo() {
     emit(state.copyWith(capturedVideo: null));
+    _resolvePostType(); // ✅
   }
 
   Future<void> enhanceTextWithGemini(BuildContext context) async {
@@ -158,7 +185,18 @@ class AddPostCubit extends Cubit<AddPostState> {
 
     emit(state.copyWith(isAiLoading: true));
 
-    const apiKey = 'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg';
+    final apiKey = dotenv.env['GEMINI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      emit(state.copyWith(isAiLoading: false));
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'Missing AI API key. Configure GEMINI_API_KEY in your .env',
+          isError: true,
+        ),
+      );
+      return;
+    }
 
     try {
       final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);

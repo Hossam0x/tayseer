@@ -1,7 +1,9 @@
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/widgets/profile_options_bottom_sheet.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -45,10 +47,12 @@ class UserAdvisorProfileHeader extends StatelessWidget {
         followers: '0',
         isVerified: false,
         context: context,
+        profileId: '',
       ),
     );
   }
 
+  // في UserAdvisorProfileHeader
   Widget _buildProfileHeader(
     BuildContext context,
     UserAdvisorProfileModel profile,
@@ -59,6 +63,91 @@ class UserAdvisorProfileHeader extends StatelessWidget {
       followers: profile.followers.toString(),
       isVerified: profile.isVerified,
       context: context,
+      profileId: profile.id,
+      profileName: profile.name,
+    );
+  }
+
+  Widget _buildHeaderContent({
+    required String imageUrl,
+    required String following,
+    required String followers,
+    required bool isVerified,
+    required BuildContext context,
+    required String profileId,
+    String? profileName,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Gap(1.w),
+          // Profile picture with Hero animation
+          Stack(
+            children: [
+              MyProfileImage(
+                width: 85.w,
+                imageUrl: imageUrl,
+                heroTag: 'advisor_profile_image_$profileId',
+                onTap: imageUrl.isNotEmpty
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FullScreenImageView(
+                              imageUrl: imageUrl,
+                              heroTag: 'advisor_profile_image_$profileId',
+                              userName: profileName,
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+              ),
+            ],
+          ),
+          Gap(10.w),
+          // Stats
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRouter.kFollowingView,
+              arguments: profileId, // ⭐ استخدام الـ profileId
+            ),
+            child: Column(
+              children: [
+                Text(following, style: Styles.textStyle16SemiBold),
+                Text(context.tr("followings"), style: Styles.textStyle14),
+              ],
+            ),
+          ),
+          Gap(20.w),
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRouter.kFollowersView,
+              arguments: profileId, // ⭐ استخدام الـ profileId
+            ),
+            child: Column(
+              children: [
+                Text(followers, style: Styles.textStyle16SemiBold),
+                Text(context.tr("followers"), style: Styles.textStyle14),
+              ],
+            ),
+          ),
+          Gap(10.w),
+
+          // More button
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _buildMoreButton(context),
+              SizedBox(height: 40.w),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -79,7 +168,7 @@ class UserAdvisorProfileHeader extends StatelessWidget {
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(10.h),
           Text(
-            errorMessage ?? 'حدث خطأ أثناء تحميل البيانات',
+            errorMessage ?? context.tr("error_loading_data"),
             style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
           ),
@@ -94,7 +183,7 @@ class UserAdvisorProfileHeader extends StatelessWidget {
             onPressed: () =>
                 context.read<UserAdvisorProfileCubit>().fetchProfile(),
             child: Text(
-              'إعادة المحاولة',
+              context.tr("retry"),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -105,104 +194,43 @@ class UserAdvisorProfileHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderContent({
-    required String imageUrl,
-    required String following,
-    required String followers,
-    required bool isVerified,
-    required BuildContext context,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Gap(1.w),
-          // Profile picture
-          Stack(
-            children: [MyProfileImage(width: 85.w, imageUrl: imageUrl)],
-          ),
-          Gap(10.w),
-          // Stats
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowingView),
-            child: Column(
-              children: [
-                Text(following, style: Styles.textStyle16SemiBold),
-                Text("Following", style: Styles.textStyle14),
-              ],
-            ),
-          ),
-          Gap(20.w),
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowersView),
-            child: Column(
-              children: [
-                Text(followers, style: Styles.textStyle16SemiBold),
-                Text("Followers", style: Styles.textStyle14),
-              ],
-            ),
-          ),
-          Gap(10.w),
-
-          // More button
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _buildMoreButton(context),
-              SizedBox(height: 40.w),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMoreButton(BuildContext context) {
+    final cubit = context.read<UserAdvisorProfileCubit>();
     return GestureDetector(
-      onTap: () => _showMoreOptions(context),
-      child: Icon(Icons.more_vert, color: AppColors.secondary600, size: 28.w),
-    );
-  }
+      onTap: () {
+        if (isGuest) {
+          CustomshowDialogWithImage(
+            context,
+            title: context.tr('joinUs'),
+            supTitle: context.tr("guest_login_first"),
+            icon: Icons.lock_person_outlined,
+            iconColor: AppColors.kprimaryColor,
+            bottonText: context.tr("login"),
+            showCancelButton: true,
+            cancelText: context.tr('skip'),
+            onPressed: () {
+              CachNetwork.removeData(key: ktoken);
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kRegisrationView,
+                predicate: (_) => false,
+              );
+            },
+            onCancel: () {},
+          );
+          return;
+        }
 
-  void _showMoreOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) => Container(
-        padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.share, color: AppColors.kprimaryColor),
-              title: Text('مشاركة البروفايل', style: Styles.textStyle16),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement share functionality
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.block, color: AppColors.kRedColor),
-              title: Text('حظر المستخدم', style: Styles.textStyle16),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement block functionality
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.report, color: AppColors.kRedColor),
-              title: Text('الإبلاغ', style: Styles.textStyle16),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement report functionality
-              },
-            ),
-          ],
-        ),
-      ),
+        final profileId = cubit.advisorId;
+        final name = cubit.state.profile?.name;
+
+        ProfileOptionsBottomSheet.show(
+          context,
+          advisorId: profileId,
+          advisorName: name,
+          cubit: cubit,
+        );
+      },
+      child: Icon(Icons.more_vert, color: AppColors.secondary600, size: 28.w),
     );
   }
 

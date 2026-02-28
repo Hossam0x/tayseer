@@ -1,6 +1,5 @@
 // lib/features/advisor/home/cubit/post_details_cubit.dart
 
-
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -12,9 +11,24 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   final HomeRepository homeRepository;
   final String postId;
 
-  PostDetailsCubit({required this.homeRepository, required this.postId})
-    : super(const PostDetailsState()) {
+  PostDetailsCubit({
+    required this.homeRepository,
+    required this.postId,
+    bool isCommented = false,
+    bool? isAnonymous,
+  }) : super(
+         PostDetailsState(
+           isAnonymousLocked: isCommented,
+           selectedAnonymous: isAnonymous ?? false,
+         ),
+       ) {
     loadComments();
+  }
+
+  /// Toggle anonymous selection (only if not locked)
+  void changeAnonymous(bool value) {
+    if (state.isAnonymousLocked) return;
+    emit(state.copyWith(selectedAnonymous: value));
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -220,13 +234,14 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   Future<void> addComment(String content) async {
     if (content.trim().isEmpty) return;
 
+    final anonymous = state.selectedAnonymous;
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
 
     final currentUser = CommenterModel(
       id: kCurrentUserData?.id ?? "..",
       name: kCurrentUserData?.name ?? 'أنت',
       userName: kCurrentUserData?.username ?? '@you',
-      avatar: kCurrentUserData?.image,
+      avatar: anonymous ? AssetsData.anonymousProfile : kCurrentUserData?.image,
       isVerified: kCurrentUserData?.isVerified ?? false,
       userType: selectedUserType?.name ?? 'user',
     );
@@ -248,6 +263,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     final result = await homeRepository.addComment(
       postId: postId,
       comment: content,
+      anonymous: anonymous,
     );
 
     result.fold(
@@ -281,6 +297,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             // ✅ NEW: Scroll للكومنت الجديد
             scrollToCommentId: newComment.id,
             scrollTrigger: state.scrollTrigger + 1,
+            isAnonymousLocked: true,
           ),
         );
 
@@ -296,11 +313,13 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   Future<void> addReply(String parentCommentId, String content) async {
     if (content.trim().isEmpty) return;
 
+    final anonymous = state.selectedAnonymous;
     emit(state.copyWith(addingReplyState: CubitStates.loading));
 
     final result = await homeRepository.addReply(
       commentId: parentCommentId,
       reply: content,
+      anonymous: anonymous,
     );
 
     result.fold(
@@ -343,6 +362,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             // ✅ NEW: Scroll للرد الجديد
             scrollToCommentId: newReply.id,
             scrollTrigger: state.scrollTrigger + 1,
+            isAnonymousLocked: true,
           ),
         );
 
@@ -356,19 +376,15 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   // ═══════════════════════════════════════════════════════════
 
   void toggleReply(String commentId) {
-    if (state.activeReplyId == commentId) {
-      emit(state.copyWith(clearActiveReplyId: true));
-    } else {
-      emit(
-        state.copyWith(
-          activeReplyId: commentId,
-          clearEditingCommentId: true,
-          // ✅ NEW: Scroll للكومنت اللي هنرد عليه
-          scrollToCommentId: commentId,
-          scrollTrigger: state.scrollTrigger + 1,
-        ),
-      );
-    }
+    emit(
+      state.copyWith(
+        activeReplyId: commentId,
+        clearEditingCommentId: true,
+        // ✅ NEW: Scroll للكومنت اللي هنرد عليه
+        scrollToCommentId: commentId,
+        scrollTrigger: state.scrollTrigger + 1,
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -525,13 +541,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   }
 
   void toggleEdit(String commentId) {
-    if (state.editingCommentId == commentId) {
-      emit(state.copyWith(clearEditingCommentId: true));
-    } else {
-      emit(
-        state.copyWith(editingCommentId: commentId, clearActiveReplyId: true),
-      );
-    }
+    emit(state.copyWith(editingCommentId: commentId, clearActiveReplyId: true));
   }
 
   void cancelEdit() {

@@ -1,0 +1,16 @@
+import 'package:tayseer/features/shared/event/view/widget/event_body.dart';
+import 'package:tayseer/features/shared/event/view_model/events_cubit.dart';
+import 'package:tayseer/my_import.dart';
+
+class EventView extends StatelessWidget {
+  const EventView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => EventsCubit(),
+
+      child: Scaffold(body: AdvisorBackground(child: const EventBody())),
+    );
+  }
+}

@@ -3,6 +3,7 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_states.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/time_slot_item.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class AppointmentsView extends StatelessWidget {
@@ -14,27 +15,27 @@ class AppointmentsView extends StatelessWidget {
       create: (_) => getIt<AppointmentsCubit>(),
       child: BlocConsumer<AppointmentsCubit, AppointmentsState>(
         listener: (context, state) {
-          if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(context, text: state.errorMessage!, isError: true),
+          if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr(state.errorMessage!),
+              isError: true,
             );
             context.read<AppointmentsCubit>().clearError();
           }
 
-          // // عرض رسالة النجاح فقط عند الانتهاء من الحفظ وبدون أخطاء
-          // if (state.isSaving == false &&
-          //     state.errorMessage == null &&
-          //     !state.hasChanges) {
-          //   Future.delayed(Duration.zero, () {
-          //     ScaffoldMessenger.of(context).showSnackBar(
-          //       CustomSnackBar(
-          //         context,
-          //         text: 'تم حفظ التغييرات بنجاح',
-          //         isSuccess: true,
-          //       ),
-          //     );
-          //   });
-          // }
+          if (state.successMessage != null &&
+              state.successMessage!.isNotEmpty) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr(state.successMessage!),
+              isSuccess: true,
+            );
+            context.read<AppointmentsCubit>().clearSuccess();
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (context.mounted) Navigator.pop(context);
+            });
+          }
         },
         builder: (context, state) {
           final cubit = context.read<AppointmentsCubit>();
@@ -66,7 +67,7 @@ class AppointmentsView extends StatelessWidget {
                       child: Column(
                         children: [
                           Gap(16.h),
-                          SimpleAppBar(title: 'المواعيد'),
+                          SimpleAppBar(title: context.tr('appointments_title')),
                           Gap(30.h),
 
                           // Loading State with Skeletonizer
@@ -87,7 +88,7 @@ class AppointmentsView extends StatelessWidget {
                                     Gap(16.h),
                                     Text(
                                       state.errorMessage ??
-                                          'حدث خطأ في تحميل البيانات',
+                                          context.tr('error_loading_data'),
                                       textAlign: TextAlign.center,
                                       style: Styles.textStyle16.copyWith(
                                         color: AppColors.kRedColor,
@@ -97,7 +98,7 @@ class AppointmentsView extends StatelessWidget {
                                     ElevatedButton(
                                       onPressed: () =>
                                           cubit.loadServiceProvider(),
-                                      child: Text('إعادة المحاولة'),
+                                      child: Text(context.tr('retry')),
                                     ),
                                   ],
                                 ),
@@ -263,14 +264,16 @@ class AppointmentsView extends StatelessWidget {
       width: double.infinity,
       useGradient: true,
       title: state.isSaving
-          ? 'جاري الحفظ...'
+          ? context.tr('saving_status')
           : state.hasChanges
-          ? 'حفظ التغييرات'
-          : 'لا توجد تغييرات',
-      onPressed: state.isSaving || !state.hasChanges
+          ? context.tr('save_changes')
+          : context.tr('no_changes'),
+      onPressed: state.isSaving || !state.hasChanges || !state.isValid
           ? null
-          : () => cubit.saveChanges(context),
-      backGroundcolor: state.hasChanges ? null : AppColors.inactiveColor,
+          : () => cubit.saveChanges(),
+      backGroundcolor: state.hasChanges && state.isValid
+          ? null
+          : AppColors.inactiveColor,
     );
   }
 }

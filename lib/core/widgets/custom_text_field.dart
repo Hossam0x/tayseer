@@ -1,5 +1,7 @@
 // ignore_for_file: must_be_immutable
 
+import 'package:flutter/scheduler.dart';
+
 import '../../my_import.dart';
 
 class CustomTextField extends StatelessWidget {
@@ -18,13 +20,18 @@ class CustomTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: context.width * .8,
-      height: context.height * .5,
+      height: context.height * .3,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.kWhiteColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextField(
+        onTapOutside: (event) {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            FocusScope.of(context).unfocus();
+          });
+        },
         style: Styles.textStyle12.copyWith(color: AppColors.kgreyColor),
         maxLength: maxlength,
         controller: controller,

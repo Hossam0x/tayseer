@@ -59,16 +59,25 @@ class UserStoriesModel extends Equatable {
   });
 
   factory UserStoriesModel.fromJson(Map<String, dynamic> json) {
+    String userIdStr = "";
+    if (json['userId'] is String) {
+      userIdStr = json['userId'];
+    } else if (json['userId'] is Map) {
+      userIdStr = json['userId']['_id'] ?? "";
+    }
+
     return UserStoriesModel(
-      userId: json['userId'],
-      name: json['name'],
-      image: json['image'],
-      isFollowed: json['isFollowed'],
-      isViewedByMe: json['isViewedByMe'],
-      allViewed: json['allViewed'],
-      storiesCount: json['storiesCount'],
+      userId: userIdStr,
+      name: json['name'] ?? "",
+      image: json['image'] ?? "",
+      isFollowed: json['isFollowed'] ?? false,
+      isViewedByMe: json['isViewedByMe'] ?? false,
+      allViewed: json['allViewed'] ?? false,
+      storiesCount: json['storiesCount'] ?? 0,
       stories: List<StoryModel>.from(
-        json['stories'].map((x) => StoryModel.fromJson(x)),
+        (json['stories'] as List? ?? []).map(
+          (x) => StoryModel.fromJson(x as Map<String, dynamic>),
+        ),
       ),
     );
   }
@@ -110,7 +119,9 @@ class UserStoriesModel extends Equatable {
 
 class StoryModel extends Equatable {
   final String id;
+  final String userId;
   final String image;
+  final String? video;
   final bool isMine;
   final bool isSpecial;
   final int viewsCount;
@@ -119,53 +130,112 @@ class StoryModel extends Equatable {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  final double? videoDuration;
+  final List<StoryUserModel>? likedBy;
+
   const StoryModel({
     required this.id,
+    required this.userId,
     required this.image,
+    this.video,
+    this.videoDuration,
     required this.isMine,
     required this.isSpecial,
     required this.viewsCount,
     required this.likesCount,
     required this.isLiked,
+    this.likedBy,
     required this.createdAt,
     required this.updatedAt,
   });
 
   factory StoryModel.fromJson(Map<String, dynamic> json) {
+    String userIdStr = "";
+    if (json['userId'] is String) {
+      userIdStr = json['userId'];
+    } else if (json['userId'] is Map) {
+      userIdStr = json['userId']['_id'] ?? "";
+    }
+
+    // Try multiple ID fields because the backend might be inconsistent
+    final storyId = json['id']?.toString() ?? json['_id']?.toString() ?? "";
+
+    // Handle likesCount as int or List
+    int likesCount = 0;
+    if (json['likesCount'] is int) {
+      likesCount = json['likesCount'];
+    } else if (json['likesCount'] is List) {
+      likesCount = (json['likesCount'] as List).length;
+    }
+
+    // Check for viewed status from multiple possible fields
+    int viewsCount = 0;
+    if (json['viewsCount'] is int) {
+      viewsCount = json['viewsCount'];
+    } else if (json['viewsCount'] is List) {
+      viewsCount = (json['viewsCount'] as List).length;
+    } else if (json['isViewedByMe'] == true) {
+      viewsCount = 1;
+    } else if (json['isViewed'] == true) {
+      viewsCount = 1;
+    }
+
     return StoryModel(
-      id: json['id'],
+      id: storyId,
+      userId: userIdStr,
       image:
-          json['image'] ??
+          json['image']?.toString() ??
           "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80",
+      video: json['video']?.toString(),
+      videoDuration: (json['videoDuration'] as num?)?.toDouble(),
       isMine: json['isMine'] ?? false,
       isSpecial: json['isSpecial'] ?? false,
-      viewsCount: json['viewsCount'] ?? 0,
-      likesCount: json['likesCount'] ?? 0,
+      viewsCount: viewsCount,
+      likesCount: likesCount,
       isLiked: json['isLiked'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      likedBy: json['likedBy'] != null
+          ? List<StoryUserModel>.from(
+              json['likedBy'].map((x) => StoryUserModel.fromJson(x)),
+            )
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
     );
   }
 
+  bool get isViewed => viewsCount > 0;
+
   StoryModel copyWith({
     String? id,
+    String? userId,
     String? image,
+    String? video,
+    double? videoDuration,
     bool? isMine,
     bool? isSpecial,
     int? viewsCount,
     int? likesCount,
     bool? isLiked,
+    List<StoryUserModel>? likedBy,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return StoryModel(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       image: image ?? this.image,
+      video: video ?? this.video,
+      videoDuration: videoDuration ?? this.videoDuration,
       isMine: isMine ?? this.isMine,
       isSpecial: isSpecial ?? this.isSpecial,
       viewsCount: viewsCount ?? this.viewsCount,
       likesCount: likesCount ?? this.likesCount,
       isLiked: isLiked ?? this.isLiked,
+      likedBy: likedBy ?? this.likedBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -174,12 +244,16 @@ class StoryModel extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    userId,
     image,
+    video,
+    videoDuration,
     isMine,
     isSpecial,
     viewsCount,
     likesCount,
     isLiked,
+    likedBy,
     createdAt,
     updatedAt,
   ];
@@ -189,14 +263,21 @@ class StoryUserModel {
   final String id;
   final String name;
   final String image;
+  final String userType; // 'User' or 'Advisor'
 
-  StoryUserModel({required this.id, required this.name, required this.image});
+  StoryUserModel({
+    required this.id,
+    required this.name,
+    required this.image,
+    required this.userType,
+  });
 
   factory StoryUserModel.fromJson(Map<String, dynamic> json) {
     return StoryUserModel(
-      id: json['_id'],
-      name: json['name'],
-      image: json['image'],
+      id: json['id'] ?? json['_id'] ?? '',
+      name: json['name'] ?? '',
+      image: json['image'] ?? '',
+      userType: json['userType'] ?? 'User',
     );
   }
 }

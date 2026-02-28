@@ -16,6 +16,7 @@ class ImageViewerView extends StatefulWidget {
   final String postId;
   final PostModel? post;
   final bool isFromPostDetails;
+  final bool isFromProfile;
 
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
@@ -28,6 +29,7 @@ class ImageViewerView extends StatefulWidget {
     this.post,
     required this.isFromPostDetails,
     this.callbacks = const PostCallbacks(),
+    required this.isFromProfile,
   });
 
   @override
@@ -158,8 +160,11 @@ class _ImageViewerViewState extends State<ImageViewerView>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            PostDetailsView(post: post, callbacks: widget.callbacks),
+        builder: (_) => PostDetailsView(
+          post: post,
+          callbacks: widget.callbacks,
+          isFromProfile: widget.isFromProfile,
+        ),
       ),
     );
   }
@@ -271,6 +276,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
 
         // ✅ استخدام الويدجت الجديد المخصص للزوم
         return _ZoomableImage(
+          isFromProfile: widget.isFromProfile,
           imageUrl: imageUrl,
           postId: widget.postId,
           onTap: _onImageTap,
@@ -284,18 +290,20 @@ class _ImageViewerViewState extends State<ImageViewerView>
             if (!_showOverlaysNotifier.value) {
               _showOverlaysNotifier.value = true;
             }
-            FlyAnimation.flyWidget(
-              context: context,
-              startOffset: tapPosition,
-              endKey: _reactionDestinationKey,
-              child: _buildFlyingHeart(),
-              onComplete: () {
-                widget.callbacks.onReactionChanged?.call(
-                  widget.postId,
-                  ReactionType.love,
-                );
-              },
-            );
+            if (!isGuest) {
+              FlyAnimation.flyWidget(
+                context: context,
+                startOffset: tapPosition,
+                endKey: _reactionDestinationKey,
+                child: _buildFlyingHeart(),
+                onComplete: () {
+                  widget.callbacks.onReactionChanged?.call(
+                    widget.postId,
+                    ReactionType.love,
+                  );
+                },
+              );
+            }
           },
         );
       },
@@ -372,6 +380,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _ZoomableImage extends StatefulWidget {
+  final bool isFromProfile;
   final String imageUrl;
   final String postId;
   final VoidCallback onTap;
@@ -379,6 +388,7 @@ class _ZoomableImage extends StatefulWidget {
   final Function(Offset) onDoubleTapReaction;
 
   const _ZoomableImage({
+    required this.isFromProfile,
     required this.imageUrl,
     required this.postId,
     required this.onTap,
@@ -452,6 +462,8 @@ class _ZoomableImageState extends State<_ZoomableImage>
     }
   }
 
+  // في _ZoomableImage فقط - غيّر الـ build method
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -459,19 +471,35 @@ class _ZoomableImageState extends State<_ZoomableImage>
       onDoubleTapDown: _handleDoubleTap,
       child: InteractiveViewer(
         transformationController: _transformationController,
-        minScale: 1.0, // يمنع التصغير أقل من حجم الشاشة
-        maxScale: 4.0, // أقصى حد للتكبير
-        panEnabled: true, // السماح بالتحريك
+        minScale: 1.0,
+        maxScale: 4.0,
+        panEnabled: true,
         onInteractionUpdate: (_) => _checkZoomStatus(),
         onInteractionEnd: (_) => _checkZoomStatus(),
         child: Center(
           child: Hero(
-            tag: 'post_${widget.postId}_img_${widget.imageUrl}',
-            child: AppImage(
-              widget.imageUrl,
+            tag:
+                '${widget.isFromProfile ? 'profile' : 'home'}_post_${widget.postId}_img_${widget.imageUrl}',
+            // ✅ استخدم CachedNetworkImage مباشرة بدل AppImage
+            child: CachedNetworkImage(
+              imageUrl: widget.imageUrl,
               fit: BoxFit.contain,
               width: double.infinity,
               height: double.infinity,
+              // ✅ Placeholder شفاف أو خفيف للخلفية السوداء
+              placeholder: (context, url) => const SizedBox.shrink(),
+              // أو لو عايز loading indicator خفيف:
+              // placeholder: (context, url) => Center(
+              //   child: CircularProgressIndicator(
+              //     color: Colors.white.withOpacity(0.3),
+              //     strokeWidth: 2,
+              //   ),
+              // ),
+              errorWidget: (context, url, error) => Icon(
+                Icons.broken_image_outlined,
+                color: Colors.white.withOpacity(0.3),
+                size: 48,
+              ),
             ),
           ),
         ),
@@ -522,8 +550,23 @@ class _ViewerHeader extends StatelessWidget {
                   onTap: onClose,
                   child: Icon(Icons.close, color: Colors.white, size: 28.sp),
                 ),
-                if (totalImages > 1) _buildDots() else const SizedBox(),
-                Icon(Icons.info_outline, color: Colors.white, size: 26.sp),
+                if (totalImages > 1 && totalImages < 15)
+                  _buildDots()
+                else
+                  const SizedBox(),
+                if (!isGuest)
+                  IconButton(
+                    onPressed: () {
+                      context.pushNamed(AppRouter.kReportReasonsScreen);
+                    },
+                    icon: Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 26.sp,
+                    ),
+                  )
+                else
+                  SizedBox(width: 24.w),
               ],
             ),
           ),

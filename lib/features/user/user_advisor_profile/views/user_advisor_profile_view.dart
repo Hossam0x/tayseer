@@ -1,8 +1,13 @@
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/widgets/navigate_to_chat_listener.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_bio_information.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_profile_header.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/user_advisor_profile_tabs_section.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserAdvisorProfileView extends StatelessWidget {
@@ -17,33 +22,54 @@ class UserAdvisorProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isArabic =
+        context.read<LanguageCubit>().state.languageCode == 'ar';
     return Scaffold(
       body: AdvisorBackground(
-        child: Stack(
-          children: [
-            // Main scrollable content
-            SafeArea(
-              child: BlocProvider<UserAdvisorProfileCubit>(
-                create: (_) => UserAdvisorProfileCubit(
-                  getIt<UserAdvisorProfileRepository>(),
-                  advisorId,
-                ),
-                child: _UserProfileContent(advisorName: advisorName),
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<UserAdvisorProfileCubit>(
+              create: (_) => UserAdvisorProfileCubit(
+                getIt<UserAdvisorProfileRepository>(),
+                advisorId,
               ),
             ),
-
-            Positioned(
-              top: 40.h,
-              right: 5.w,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(Icons.arrow_back_ios, size: 22.w),
+            BlocProvider<StoriesCubit>(
+              create: (_) => getIt<StoriesCubit>()
+                ..fetchStories(
+                  isSpecial: true,
+                  advisorId: advisorId,
+                  context: context,
                 ),
-              ),
             ),
           ],
+          child: Stack(
+            children: [
+              // Main scrollable content
+              SafeArea(
+                child: _UserProfileContent(
+                  advisorName: advisorName,
+                  advisorId: advisorId,
+                ),
+              ),
+
+              Positioned(
+                top: 55.h,
+                right: isArabic ? 8.w : null,
+                left: !isArabic ? 8.w : null,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.arrow_back_ios, size: 22.w),
+                  ),
+                ),
+              ),
+
+              // ⭐ نقل NavigateToChatListener داخل BlocProvider
+              const NavigateToChatListener(),
+            ],
+          ),
         ),
       ),
     );
@@ -52,38 +78,58 @@ class UserAdvisorProfileView extends StatelessWidget {
 
 class _UserProfileContent extends StatelessWidget {
   final String? advisorName;
+  final String advisorId;
 
-  const _UserProfileContent({this.advisorName});
+  const _UserProfileContent({this.advisorName, required this.advisorId});
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator.adaptive(
-      onRefresh: () => context.read<UserAdvisorProfileCubit>().refresh(),
-      color: AppColors.kprimaryColor,
-      backgroundColor: AppColors.kWhiteColor,
-      displacement: 40.h,
-      edgeOffset: 0,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        slivers: [
-          // Profile Header
-          const UserAdvisorProfileHeader(),
+    return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+      buildWhen: (previous, current) =>
+          previous.profile?.room?.isBlocked != current.profile?.room?.isBlocked,
+      builder: (context, state) {
+        final isBlocked = state.profile?.room?.isBlocked ?? false;
 
-          // Bio Information
-          const UserAdvisorBioInformation(),
+        return RefreshIndicator.adaptive(
+          onRefresh: () => Future.wait([
+            context.read<UserAdvisorProfileCubit>().refresh(),
+            if (!isBlocked)
+              context.read<StoriesCubit>().fetchStories(
+                isSpecial: true,
+                advisorId: advisorId,
+                context: context,
+              ),
+          ]),
+          color: AppColors.kprimaryColor,
+          backgroundColor: AppColors.kWhiteColor,
+          displacement: 40.h,
+          edgeOffset: 0,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              // Profile Header
+              const UserAdvisorProfileHeader(),
 
-          // Spacing
-          SliverToBoxAdapter(child: Gap(20.h)),
+              // Bio Information
+              const UserAdvisorBioInformation(),
 
-          // Posts Tabs Section
-          const UserAdvisorProfileTabsSection(),
+              // Stories Section
+              ProfileStoriesSection(advisorId: advisorId),
 
-          // Bottom padding
-          SliverToBoxAdapter(child: Gap(100.h)),
-        ],
-      ),
+              // Spacing
+              SliverToBoxAdapter(child: Gap(20.h)),
+
+              // Posts Tabs Section
+              UserAdvisorProfileTabsSection(advisorId: advisorId),
+
+              // Bottom padding
+              SliverToBoxAdapter(child: Gap(100.h)),
+            ],
+          ),
+        );
+      },
     );
   }
 }

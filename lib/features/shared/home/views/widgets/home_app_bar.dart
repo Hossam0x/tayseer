@@ -18,7 +18,6 @@ class _HomeAppBarState extends State<HomeAppBar> {
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
           final userName = state.homeInfo?.name ?? '';
-          final userImage = state.homeInfo?.image ?? '';
 
           return Container(
             width: context.width,
@@ -38,14 +37,20 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 ),
                 child: Row(
                   children: [
-                    MyProfileImage(imageUrl: kCurrentUserData?.image ),
+                    // ⭐ استخدام state.homeInfo?.image بدل kCurrentUserData?.image
+                    MyProfileImage(
+                      imageUrl:
+                          kCurrentUserData?.image ?? state.homeInfo?.image,
+                    ),
                     Gap(context.responsiveWidth(14)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           GradientText(
-                            text: isUser ? context.tr("welcome") : context.tr("welcomeAdvisor"),
+                            text: isAdvisor
+                                ? context.tr("welcomeAdvisor")
+                                : context.tr("welcome") ,
                             style: Styles.textStyle24Bold,
                             gradient: AppColors.blueOrangeGradient,
                           ),
@@ -71,7 +76,28 @@ class _HomeAppBarState extends State<HomeAppBar> {
                         children: [
                           GestureDetector(
                             onTap: () {
-                              context.pushNamed(AppRouter.notification);
+                              if (isGuest) {
+                                CustomshowDialogWithImage(
+                                  context,
+                                  title: context.tr('joinUs'),
+                                  supTitle: context.tr("guest_login_first"),
+                                  icon: Icons.lock_person_outlined,
+                                  iconColor: AppColors.kprimaryColor,
+                                  bottonText: context.tr("login"),
+                                  showCancelButton: true,
+                                  cancelText: context.tr('skip'),
+                                  onPressed: () {
+                                    CachNetwork.removeData(key: ktoken);
+                                    context.pushNamedAndRemoveUntil(
+                                      AppRouter.kRegisrationView,
+                                      predicate: (_) => false,
+                                    );
+                                  },
+                                  onCancel: () {},
+                                );
+                              } else {
+                                context.pushNamed(AppRouter.notification);
+                              }
                             },
                             child: AppImage(
                               AssetsData.notificationIcon,

@@ -1,6 +1,6 @@
-// features/advisor/layout/views/widgets/a_nav_bar.dart
 import 'package:tayseer/features/advisor/layout/views/widgets/nav_bar_config.dart';
 import 'package:tayseer/my_import.dart';
+// لاحظ: شيلنا استدعاء CustomFabMenu من هنا لأنه بقى برا
 
 class ANavBar extends StatelessWidget {
   const ANavBar({super.key});
@@ -12,31 +12,74 @@ class ANavBar extends StatelessWidget {
         final cubit = context.read<LayoutCubit>();
         final navItems = NavBarConfig.getNavItems(state.userType);
 
-        return Container(
-          padding: EdgeInsets.only(top: context.responsiveHeight(16)),
-          color: AppColors.kWhiteColor,
-          child: SafeArea(
-            top: false,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(
-                navItems.length,
-                (index) => _NavItem(
-                  icon: navItems[index].icon,
-                  activeIcon: navItems[index].activeIcon,
-                  label: context.tr(navItems[index].labelKey),
-                  isActive: state.currentIndex == index,
-                  onTap: () => cubit.changeIndex(index),
+        // تقسيم العناصر يمين وشمال
+        final int midPoint = (navItems.length / 2).floor();
+        final leftItems = navItems.sublist(0, midPoint);
+        final rightItems = navItems.sublist(midPoint);
+
+        return Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.bottomCenter,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 5.w),
+              decoration: BoxDecoration(
+                color: AppColors.kWhiteColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: List.generate(leftItems.length, (index) {
+                          return _NavItem(
+                            icon: leftItems[index].icon,
+                            activeIcon: leftItems[index].activeIcon,
+                            label: context.tr(leftItems[index].labelKey),
+                            isActive: state.currentIndex == index,
+                            onTap: () => cubit.changeIndex(index),
+                          );
+                        }),
+                      ),
+                    ),
+
+                    SizedBox(width: 80.w),
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: List.generate(rightItems.length, (index) {
+                          final realIndex = index + midPoint;
+                          return _NavItem(
+                            icon: rightItems[index].icon,
+                            activeIcon: rightItems[index].activeIcon,
+                            label: context.tr(rightItems[index].labelKey),
+                            isActive: state.currentIndex == realIndex,
+                            onTap: () => cubit.changeIndex(realIndex),
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
+          ],
         );
       },
     );
   }
 }
 
+// كلاس _NavItem زي ما هو بدون تغيير
 class _NavItem extends StatefulWidget {
   final String activeIcon;
   final String icon;
@@ -107,48 +150,56 @@ class _NavItemState extends State<_NavItem>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: Opacity(
-              opacity: widget.isActive ? 1.0 : _fadeAnimation.value,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AppImage(
-                    widget.isActive ? widget.activeIcon : widget.icon,
-                    width: context.responsiveWidth(widget.isActive ? 26 : 24),
-                    height: context.responsiveHeight(widget.isActive ? 26 : 24),
-                    fit: BoxFit.contain,
-                  ),
-                  Gap(context.responsiveHeight(6)),
-                  AnimatedDefaultTextStyle(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOut,
-                    style: widget.isActive
-                        ? Styles.textStyle14SemiBold
-                        : Styles.textStyle12.copyWith(
-                            color: AppColors.kTextGrey,
-                          ),
-                    child: widget.isActive
-                        ? GradientText(
-                            text: widget.label,
-                            style: Styles.textStyle14,
-                          )
-                        : Text(
-                            widget.label,
-                            style: Styles.textStyle12.copyWith(
+      child: Container(
+        color: Colors.transparent, // منطقة ضغط أوسع
+        padding: EdgeInsets.symmetric(horizontal: 4.w),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value,
+              child: Opacity(
+                opacity: widget.isActive ? 1.0 : _fadeAnimation.value,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Gap(8.h),
+                    AppImage(
+                      widget.isActive ? widget.activeIcon : widget.icon,
+                      width: context.responsiveWidth(widget.isActive ? 26 : 24),
+                      height: context.responsiveHeight(
+                        widget.isActive ? 26 : 24,
+                      ),
+                      fit: BoxFit.contain,
+                    ),
+                    Gap(context.responsiveHeight(6)),
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      style: widget.isActive
+                          ? Styles.textStyle14SemiBold
+                          : Styles.textStyle12.copyWith(
                               color: AppColors.kTextGrey,
                             ),
-                          ),
-                  ),
-                ],
+                      child: widget.isActive
+                          ? GradientText(
+                              text: widget.label,
+                              style: Styles.textStyle14,
+                            )
+                          : Text(
+                              widget.label,
+                              style: Styles.textStyle12.copyWith(
+                                color: AppColors.kTextGrey,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

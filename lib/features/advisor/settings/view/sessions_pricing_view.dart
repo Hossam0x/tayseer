@@ -3,6 +3,7 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_states.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/session_price_item.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class SessionPricingView extends StatelessWidget {
@@ -14,26 +15,25 @@ class SessionPricingView extends StatelessWidget {
       create: (_) => getIt<SessionPricingCubit>(),
       child: BlocConsumer<SessionPricingCubit, SessionPricingState>(
         listener: (context, state) {
-          if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(context, text: state.errorMessage!, isError: true),
+          if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr(state.errorMessage!),
+              isError: true,
             );
             context.read<SessionPricingCubit>().clearError();
           }
 
-          // if (state.isSaving == false &&
-          //     state.errorMessage == null &&
-          //     !state.hasChanges) {
-          //   Future.delayed(Duration.zero, () {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   CustomSnackBar(
-          //     context,
-          //     text: 'تم حفظ التغييرات بنجاح',
-          //     isSuccess: true,
-          //   ),
-          // );
-          //   });
-          // }
+          if (state.successMessage != null &&
+              state.successMessage!.isNotEmpty) {
+            showSafeSnackBar(
+              context: context,
+              text: context.tr(state.successMessage!),
+              isSuccess: true,
+            );
+            context.read<SessionPricingCubit>().clearSuccess();
+            Navigator.pop(context);
+          }
         },
         builder: (context, state) {
           final cubit = context.read<SessionPricingCubit>();
@@ -65,7 +65,9 @@ class SessionPricingView extends StatelessWidget {
                       child: Column(
                         children: [
                           Gap(16.h),
-                          SimpleAppBar(title: 'مدة واسعار الجلسات'),
+                          SimpleAppBar(
+                            title: context.tr('session_pricing_title'),
+                          ),
                           Gap(30.h),
 
                           // Loading State with Skeletonizer
@@ -86,7 +88,7 @@ class SessionPricingView extends StatelessWidget {
                                     Gap(16.h),
                                     Text(
                                       state.errorMessage ??
-                                          'حدث خطأ في تحميل البيانات',
+                                          context.tr('error_loading_data'),
                                       textAlign: TextAlign.center,
                                       style: Styles.textStyle16.copyWith(
                                         color: AppColors.kRedColor,
@@ -96,7 +98,7 @@ class SessionPricingView extends StatelessWidget {
                                     ElevatedButton(
                                       onPressed: () =>
                                           cubit.loadServiceProvider(),
-                                      child: Text('إعادة المحاولة'),
+                                      child: Text(context.tr('retry')),
                                     ),
                                   ],
                                 ),
@@ -283,13 +285,13 @@ class SessionPricingView extends StatelessWidget {
       width: double.infinity,
       useGradient: true,
       title: state.isSaving
-          ? 'جاري الحفظ...'
+          ? context.tr('saving_status')
           : state.hasChanges
-          ? 'حفظ التغييرات'
-          : 'لا توجد تغييرات',
+          ? context.tr('save_changes')
+          : context.tr('no_changes'),
       onPressed: state.isSaving || !state.hasChanges
           ? null
-          : () => cubit.saveChanges(context),
+          : () => cubit.saveChanges(),
       backGroundcolor: state.hasChanges ? null : AppColors.inactiveColor,
     );
   }

@@ -17,8 +17,8 @@ class SnackBarService {
     bool? isSuccess,
     Duration? duration,
   }) {
-    // إغلاق أي SnackBar سابق أولاً
-    _hideCurrentSnackBar();
+    // إغلاق أي SnackBar سابق أولاً بشكل فوري
+    clearAll(context);
 
     // التحقق من أن context لا يزال صالحاً
     if (!context.mounted) {
@@ -90,26 +90,13 @@ class SnackBarService {
     );
   }
 
-  /// إخفاء الـ SnackBar الحالي إذا كان ظاهراً
-  void _hideCurrentSnackBar() {
-    if (_isShowing && _currentController != null) {
-      try {
-        _currentController?.close();
-      } catch (e) {
-        debugPrint('⚠️ Error closing snackbar: $e');
-      }
-      _currentController = null;
-      _isShowing = false;
-    }
-  }
-
-  /// إغلاق جميع الـ SnackBars
+  /// إغلاق جميع الـ SnackBars بشكل فوري
   void clearAll(BuildContext context) {
-    _hideCurrentSnackBar();
-
     if (context.mounted) {
       ScaffoldMessenger.maybeOf(context)?.clearSnackBars();
     }
+    _currentController = null;
+    _isShowing = false;
   }
 
   /// التحقق مما إذا كان هناك SnackBar معروض حالياً

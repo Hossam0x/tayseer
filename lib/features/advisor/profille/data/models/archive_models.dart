@@ -31,13 +31,72 @@ class ArchiveUserModel extends Equatable {
 }
 
 // ============================================
-// 📌 CHAT ROOM MODEL
+// 📌 LAST MESSAGE MODEL
+// ============================================
+class ArchiveLastMessageModel extends Equatable {
+  final String id;
+  final String sender;
+  final String senderType;
+  final String content;
+  final String messageType;
+  final String chatRoom;
+  final String createdAt;
+  final String updatedAt;
+  final String senderName;
+  final String timeAgo;
+
+  const ArchiveLastMessageModel({
+    required this.id,
+    required this.sender,
+    required this.senderType,
+    required this.content,
+    required this.messageType,
+    required this.chatRoom,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.senderName,
+    required this.timeAgo,
+  });
+
+  factory ArchiveLastMessageModel.fromJson(Map<String, dynamic> json) {
+    return ArchiveLastMessageModel(
+      id: json['id']?.toString() ?? '',
+      sender: json['sender']?.toString() ?? '',
+      senderType: json['senderType']?.toString() ?? 'User',
+      content: json['content']?.toString() ?? '',
+      messageType: json['messageType']?.toString() ?? 'text',
+      chatRoom: json['chatRoom']?.toString() ?? '',
+      createdAt: json['createdAt']?.toString() ?? '',
+      updatedAt: json['updatedAt']?.toString() ?? '',
+      senderName: json['senderName']?.toString() ?? '',
+      timeAgo: json['timeAgo']?.toString() ?? '',
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    id,
+    sender,
+    senderType,
+    content,
+    messageType,
+    chatRoom,
+    createdAt,
+    updatedAt,
+    senderName,
+    timeAgo,
+  ];
+}
+
+// ============================================
+// 📌 CHAT ROOM MODEL (محدث)
 // ============================================
 class ArchiveChatRoomModel extends Equatable {
   final String id;
   final bool isBlocked;
+  final bool isHaveSession;
   final List<ArchiveUserModel> users;
-  final String? lastMessage;
+  final ArchiveLastMessageModel? lastMessage;
   final String? lastMessageAt;
   final String status;
   final ArchiveUserModel? sender;
@@ -48,6 +107,7 @@ class ArchiveChatRoomModel extends Equatable {
   const ArchiveChatRoomModel({
     required this.id,
     required this.isBlocked,
+    required this.isHaveSession,
     required this.users,
     this.lastMessage,
     this.lastMessageAt,
@@ -59,9 +119,6 @@ class ArchiveChatRoomModel extends Equatable {
   });
 
   factory ArchiveChatRoomModel.fromJson(Map<String, dynamic> json) {
-    // Debug print
-    print('📌 Parsing chat room: $json');
-
     // معالجة users
     List<ArchiveUserModel> usersList = [];
     try {
@@ -80,10 +137,22 @@ class ArchiveChatRoomModel extends Equatable {
       print('❌ Error parsing users: $e');
     }
 
+    // معالجة lastMessage
+    ArchiveLastMessageModel? lastMessage;
+    try {
+      if (json['lastMessage'] is Map) {
+        lastMessage = ArchiveLastMessageModel.fromJson(
+          (json['lastMessage'] as Map).cast<String, dynamic>(),
+        );
+      }
+    } catch (e) {
+      print('❌ Error parsing lastMessage: $e');
+    }
+
     // معالجة sender
     ArchiveUserModel? sender;
     try {
-      if (json['sender'] != null && json['sender'] is Map) {
+      if (json['sender'] is Map) {
         sender = ArchiveUserModel.fromJson(
           (json['sender'] as Map).cast<String, dynamic>(),
         );
@@ -92,23 +161,13 @@ class ArchiveChatRoomModel extends Equatable {
       print('❌ Error parsing sender: $e');
     }
 
-    // معالجة الحقول النصية
-    final lastMessage = json['lastMessage'];
-    final lastMessageAt = json['lastMessageAt'];
-
-    print('📝 lastMessage type: ${lastMessage.runtimeType}');
-    print('📝 lastMessage value: "$lastMessage"');
-
     return ArchiveChatRoomModel(
       id: json['id']?.toString() ?? '',
       isBlocked: json['isBlocked'] as bool? ?? false,
+      isHaveSession: json['isHaveSession'] as bool? ?? false,
       users: usersList,
-      lastMessage: lastMessage is String
-          ? (lastMessage.isEmpty ? null : lastMessage)
-          : null,
-      lastMessageAt: lastMessageAt is String
-          ? (lastMessageAt.isEmpty ? null : lastMessageAt)
-          : null,
+      lastMessage: lastMessage,
+      lastMessageAt: json['lastMessageAt']?.toString(),
       status: json['status']?.toString() ?? 'active',
       sender: sender,
       createdAt: json['createdAt']?.toString() ?? '',
@@ -118,17 +177,138 @@ class ArchiveChatRoomModel extends Equatable {
   }
 
   // الحصول على المستخدم الآخر
+  // في class ArchiveChatRoomModel
   ArchiveUserModel? getOtherUser(String currentUserId) {
     try {
+      // البحث عن المستخدم الذي ليس هو المستخدم الحالي
       for (final user in users) {
         if (user.id != currentUserId) {
           return user;
         }
       }
-      return users.isNotEmpty ? users.first : null;
+
+      // إذا لم نجد مستخدم آخر (جميع users هم نفس ID الحالي)
+      // أو إذا كانت users فارغة، نستخدم sender كبديل
+      if (sender != null && sender!.id != currentUserId) {
+        return sender;
+      }
+
+      // إذا كان sender هو نفس المستخدم الحالي، نعود بـ null
+      return null;
     } catch (e) {
       print('❌ Error in getOtherUser: $e');
       return null;
+    }
+  }
+
+  // أو دالة بديلة تحدد من هو المستخدم الآخر بناءً على الـ sender
+  ArchiveUserModel? getOtherUserBasedOnSender(String currentUserId) {
+    try {
+      // إذا كان sender هو المستخدم الحالي، فالمستخدم الآخر هو أول user في القائمة ليس هو الحالي
+      if (sender != null && sender!.id == currentUserId) {
+        for (final user in users) {
+          if (user.id != currentUserId) {
+            return user;
+          }
+        }
+      }
+      // إذا كان sender ليس المستخدم الحالي، فهو المستخدم الآخر
+      else if (sender != null) {
+        return sender;
+      }
+
+      // الحالة الافتراضية: نبحث عن أي user ليس هو المستخدم الحالي
+      for (final user in users) {
+        if (user.id != currentUserId) {
+          return user;
+        }
+      }
+
+      return users.isNotEmpty ? users.first : null;
+    } catch (e) {
+      print('❌ Error in getOtherUserBasedOnSender: $e');
+      return null;
+    }
+  }
+
+  // الحصول على محتوى آخر رسالة
+  String get lastMessageContent {
+    if (lastMessage != null) {
+      return lastMessage!.content;
+    }
+    return '';
+  }
+
+  // الحصول على وقت آخر رسالة
+  String get formattedLastMessageTime {
+    try {
+      if (lastMessageAt != null) {
+        return _formatToEgyptTime(lastMessageAt!);
+      }
+      return '--:--';
+    } catch (e) {
+      return '--:--';
+    }
+  }
+
+  // في class ArchiveChatRoomModel
+  String _formatToEgyptTime(String dateString) {
+    try {
+      final date = DateTime.parse(dateString).toUtc();
+      final egyptTime = date.add(const Duration(hours: 2)); // توقيت مصر UTC+2
+
+      final now = DateTime.now().toUtc().add(const Duration(hours: 2));
+      final today = DateTime(now.year, now.month, now.day);
+      final messageDate = DateTime(
+        egyptTime.year,
+        egyptTime.month,
+        egyptTime.day,
+      );
+
+      // تحديد إذا كان AM أو PM
+      final hour = egyptTime.hour;
+      final minute = egyptTime.minute.toString().padLeft(2, '0');
+
+      // تحويل من 24 ساعة إلى 12 ساعة
+      final period = hour >= 12 ? 'م' : 'ص';
+      final hour12 = hour % 12;
+      final displayHour = hour12 == 0 ? 12 : hour12; // الساعة 0 تصبح 12
+
+      if (messageDate == today) {
+        return '$displayHour:$minute $period';
+      } else if (messageDate.isAfter(today.subtract(const Duration(days: 1)))) {
+        return 'أمس $displayHour:$minute $period';
+      } else if (messageDate.isAfter(today.subtract(const Duration(days: 7)))) {
+        final dayName = _getArabicDayName(egyptTime.weekday);
+        return '$dayName $displayHour:$minute $period';
+      } else {
+        final day = egyptTime.day.toString();
+        final month = egyptTime.month.toString();
+        return '$day/$month $displayHour:$minute $period';
+      }
+    } catch (e) {
+      return '--:--';
+    }
+  }
+
+  String _getArabicDayName(int weekday) {
+    switch (weekday) {
+      case 1:
+        return 'الإثنين';
+      case 2:
+        return 'الثلاثاء';
+      case 3:
+        return 'الأربعاء';
+      case 4:
+        return 'الخميس';
+      case 5:
+        return 'الجمعة';
+      case 6:
+        return 'السبت';
+      case 7:
+        return 'الأحد';
+      default:
+        return '';
     }
   }
 
@@ -136,6 +316,7 @@ class ArchiveChatRoomModel extends Equatable {
   List<Object?> get props => [
     id,
     isBlocked,
+    isHaveSession,
     users,
     lastMessage,
     lastMessageAt,
@@ -166,32 +347,16 @@ class ArchivedChatsResponseModel extends Equatable {
   });
 
   factory ArchivedChatsResponseModel.fromJson(Map<String, dynamic> json) {
-    print('📦 Parsing ArchivedChatsResponseModel');
-
     // معالجة chatRooms
     List<ArchiveChatRoomModel> chatRoomsList = [];
     try {
       if (json['chatRooms'] is List) {
         chatRoomsList = (json['chatRooms'] as List).map((chatRoom) {
-          try {
-            return ArchiveChatRoomModel.fromJson(
-              chatRoom is Map<String, dynamic>
-                  ? chatRoom
-                  : (chatRoom as Map).cast<String, dynamic>(),
-            );
-          } catch (e) {
-            print('❌ Error parsing individual chat room: $e');
-            print('❌ Chat room data: $chatRoom');
-            return ArchiveChatRoomModel(
-              id: '',
-              isBlocked: false,
-              users: [],
-              status: 'active',
-              createdAt: '',
-              updatedAt: '',
-              unreadCount: 0,
-            );
-          }
+          return ArchiveChatRoomModel.fromJson(
+            chatRoom is Map<String, dynamic>
+                ? chatRoom
+                : (chatRoom as Map).cast<String, dynamic>(),
+          );
         }).toList();
       }
     } catch (e) {
@@ -230,12 +395,7 @@ class ArchivedChatsResponseModel extends Equatable {
 }
 
 // ============================================
-// 📌 POST MODEL (Placeholder - اضف الموديل الخاص بالمنشورات)
-// ============================================
-// في features/advisor/profille/data/models/archive_models.dart
-
-// ============================================
-// 📌 ARCHIVE POST MODEL (محدث)
+// 📌 POST MODEL
 // ============================================
 class ArchivePostModel extends Equatable {
   final String id;
@@ -243,7 +403,7 @@ class ArchivePostModel extends Equatable {
   final String? userImage;
   final String? advisorId;
   final String? content;
-  final List<String>? images;
+  final List<ImageModel>? images;
   final String? video;
   final PostContentType? contentType;
   final int? commentsCount;
@@ -286,8 +446,11 @@ class ArchivePostModel extends Equatable {
       PostContentType? parsedContentType;
       if (json['contentType'] != null) {
         switch (json['contentType'].toString().toLowerCase()) {
-          case 'video':
-            parsedContentType = PostContentType.video;
+          case 'poll':
+            parsedContentType = PostContentType.poll;
+            break;
+          case 'event':
+            parsedContentType = PostContentType.event;
             break;
           case 'reel':
             parsedContentType = PostContentType.reel;
@@ -320,7 +483,9 @@ class ArchivePostModel extends Equatable {
         userImage: json['userImage']?.toString(),
         advisorId: json['advisorId']?.toString(),
         content: json['content']?.toString(),
-        images: imagesList,
+        images: imagesList
+            ?.map((url) => ImageModel(image: '', width: 0, height: 0))
+            .toList(),
         video: json['video']?.toString(),
         contentType: parsedContentType,
         commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,

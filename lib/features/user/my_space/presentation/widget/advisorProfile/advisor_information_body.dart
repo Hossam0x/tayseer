@@ -366,7 +366,7 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
           child: Padding(
             padding: EdgeInsets.only(bottom: 10.h),
             child: SessionCard(
-              isBlur: !session.isNow && !session.isDone,
+              isBlur: false,
               isNow: session.isNow,
               sessiondate: _formatDate(session.date),
               timeRange: "${session.timeRange.from} - ${session.timeRange.to}",

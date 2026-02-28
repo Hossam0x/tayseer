@@ -1,3 +1,6 @@
+import 'package:country_picker/country_picker.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import '../../my_import.dart';
 
 class CustomTextFormField extends StatefulWidget {
@@ -14,9 +17,9 @@ class CustomTextFormField extends StatefulWidget {
     this.isNumber = false,
 
     this.controller,
+    this.countryCodeController, // ✅ جديد
     this.maxLines = 1,
     this.enable = true,
-    this.withCountryCode = false,
     this.hintText,
 
     this.prefixIcon,
@@ -24,6 +27,8 @@ class CustomTextFormField extends StatefulWidget {
     this.keyboardType,
     this.textInputAction,
     this.validator,
+    this.inputFormatters,
+    this.autovalidateMode,
     this.onChanged,
     this.onTap,
     this.readOnly = false,
@@ -40,18 +45,19 @@ class CustomTextFormField extends StatefulWidget {
   final bool isNumber;
 
   final TextEditingController? controller;
+  final TextEditingController? countryCodeController; // ✅ جديد
+
   final int maxLines;
   final bool enable;
-  final bool withCountryCode;
   final String? hintText;
 
-  /// 👇 التعديل هنا
-  final dynamic prefixIcon; // IconData أو Widget
-
+  final dynamic prefixIcon;
   final Widget? suffixIcon;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final FormFieldValidator<String>? validator;
+  final List<TextInputFormatter>? inputFormatters;
+  final AutovalidateMode? autovalidateMode;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onTap;
   final bool readOnly;
@@ -62,6 +68,15 @@ class CustomTextFormField extends StatefulWidget {
 
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
   bool _showPassword = true;
+  Country _selectedCountry = Country.parse('SA');
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isPhoneWithCountryCode) {
+      widget.countryCodeController?.text = '+${_selectedCountry.phoneCode}';
+    }
+  }
 
   void _toggleVisibility() {
     setState(() => _showPassword = !_showPassword);
@@ -71,7 +86,9 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     if (widget.keyboardType != null) return widget.keyboardType!;
     if (widget.isNumber) return TextInputType.number;
     if (widget.isMail) return TextInputType.emailAddress;
-    if (widget.isPhone) return TextInputType.phone;
+    if (widget.isPhone || widget.isPhoneWithCountryCode) {
+      return TextInputType.phone;
+    }
     if (widget.isName || widget.isAccountName) return TextInputType.name;
     return TextInputType.text;
   }
@@ -79,6 +96,13 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      autovalidateMode: widget.autovalidateMode ?? AutovalidateMode.disabled,
+      inputFormatters: widget.inputFormatters,
+      onTapOutside: (event) {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          FocusScope.of(context).unfocus();
+        });
+      },
       autocorrect: false,
       controller: widget.controller,
       keyboardType: _resolveKeyboardType(),
@@ -88,7 +112,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       maxLines: widget.maxLines,
       onChanged: widget.onChanged,
       onTap: widget.onTap,
-      style: Styles.textStyle10,
+      style: Styles.textStyle12,
       obscureText: widget.isPasswordFiled || widget.isConfirmPasswordFiled
           ? _showPassword
           : false,
@@ -124,8 +148,28 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         ),
         errorStyle: Styles.textStyle10.copyWith(color: Colors.red),
 
-        /// 👇 هنا التنفيذ
-        prefixIcon: widget.prefixIcon == null
+        /// ✅ Country Code Picker
+        prefixIcon: widget.isPhoneWithCountryCode
+            ? GestureDetector(
+                onTap: _openCountryPicker,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(width: 8),
+                    Text(
+                      _selectedCountry.flagEmoji,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '+${_selectedCountry.phoneCode}',
+                      style: Styles.textStyle10,
+                    ),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
+                ),
+              )
+            : widget.prefixIcon == null
             ? null
             : widget.prefixIcon is IconData
             ? Icon(widget.prefixIcon)
@@ -155,7 +199,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 ? context.tr('password')
                 : widget.isConfirmPasswordFiled
                 ? context.tr('confirm_password')
-                : widget.isPhone
+                : widget.isPhone || widget.isPhoneWithCountryCode
                 ? context.tr('enter_phone')
                 : widget.isCity
                 ? context.tr('enter_city')
@@ -166,6 +210,19 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         ),
       ),
       validator: widget.validator ?? _defaultValidator,
+    );
+  }
+
+  void _openCountryPicker() {
+    showCountryPicker(
+      context: context,
+      showPhoneCode: true,
+      onSelect: (country) {
+        setState(() {
+          _selectedCountry = country;
+          widget.countryCodeController?.text = '+${country.phoneCode}';
+        });
+      },
     );
   }
 
@@ -188,8 +245,8 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       return null;
     }
 
-    if (widget.isPhone) {
-      if (text.length != 11) return context.tr("invalid_phone");
+    if (widget.isPhone || widget.isPhoneWithCountryCode) {
+      if (text.length < 7) return context.tr("invalid_phone");
       return null;
     }
 

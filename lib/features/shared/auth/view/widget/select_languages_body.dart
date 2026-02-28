@@ -30,7 +30,7 @@ class SelectLanguagesBody extends StatelessWidget {
                 children: [
                   /// Back
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment:isArabic? Alignment.centerRight: Alignment.centerLeft,
                     child: IconButton(
                       onPressed: () => context.pop(),
                       icon: const Icon(Icons.arrow_back),
@@ -42,8 +42,7 @@ class SelectLanguagesBody extends StatelessWidget {
                   /// Title
                   Text(
                     context.tr('languagesYouSpeak'),
-                    style: Styles.textStyle18.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: Styles.textStyle20Bold.copyWith(
                       color: AppColors.kscandryTextColor,
                     ),
                   ),

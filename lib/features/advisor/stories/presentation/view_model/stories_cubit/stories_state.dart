@@ -9,6 +9,11 @@ class StoriesState extends Equatable {
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
+  final String? advisorId;
+  final bool isSpecial;
+  final CubitStates createStoryState;
+  final String createStoryMessage;
+  final double uploadProgress;
 
   const StoriesState({
     this.storiesMessage = '',
@@ -17,6 +22,11 @@ class StoriesState extends Equatable {
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
+    this.advisorId,
+    this.isSpecial = false,
+    this.createStoryState = CubitStates.initial,
+    this.createStoryMessage = '',
+    this.uploadProgress = 0.0,
   });
 
   StoriesState copyWith({
@@ -26,6 +36,11 @@ class StoriesState extends Equatable {
     int? currentPage,
     bool? hasMore,
     bool? isLoadingMore,
+    String? advisorId,
+    bool? isSpecial,
+    CubitStates? createStoryState,
+    String? createStoryMessage,
+    double? uploadProgress,
   }) {
     return StoriesState(
       storiesMessage: storiesMessage ?? this.storiesMessage,
@@ -34,6 +49,11 @@ class StoriesState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      advisorId: advisorId ?? this.advisorId,
+      isSpecial: isSpecial ?? this.isSpecial,
+      createStoryState: createStoryState ?? this.createStoryState,
+      createStoryMessage: createStoryMessage ?? this.createStoryMessage,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
     );
   }
 
@@ -45,5 +65,10 @@ class StoriesState extends Equatable {
     currentPage,
     hasMore,
     isLoadingMore,
+    advisorId,
+    isSpecial,
+    createStoryState,
+    createStoryMessage,
+    uploadProgress,
   ];
 }

@@ -1,4 +1,9 @@
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/widgets.dart';
+import 'package:tayseer/core/constant/constans_keys.dart';
+import 'package:tayseer/core/shared/network/local_network.dart';
+import 'package:tayseer/core/enum/cubit_states.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -32,6 +37,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
 
           final initialRequest = UpdatePersonalDataRequest(
             name: profile.name,
+            username: profile.userName, // ⭐ أضف هذا
             dateOfBirth: profile.dateOfBirth,
             gender: profile.gender,
             professionalSpecialization: profile.professionalSpecialization,
@@ -148,8 +154,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   void removeImage() {
     emit(
       state.copyWith(
-        imageFile: null,
-        imagePreviewUrl: null,
+        clearImage: true,
         // ⭐ إضافة flag للحذف
         currentData: state.currentData.copyWith(image: ""),
       ),
@@ -159,15 +164,14 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   void removeVideo() {
     emit(
       state.copyWith(
-        videoFile: null,
-        videoPreviewUrl: null,
+        clearVideo: true,
         // ⭐ إضافة flag للحذف
         currentData: state.currentData.copyWith(video: ""),
       ),
     );
   }
 
-  Future<void> saveChanges(BuildContext context) async {
+  Future<void> saveChanges() async {
     if (state.isSaving || !state.hasChanges) return;
 
     emit(state.copyWith(isSaving: true, errorMessage: null));
@@ -187,9 +191,22 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
           emit(state.copyWith(isSaving: false, errorMessage: failure.message));
         },
         (response) {
+          // ⭐ مسح cache الصورة القديمة لضمان تحميل الصورة الجديدة
+          if (state.imageFile != null && state.imagePreviewUrl != null) {
+            try {
+              CachedNetworkImage.evictFromCache(state.imagePreviewUrl!);
+              debugPrint('🗑️ تم مسح cache الصورة القديمة');
+            } catch (e) {
+              debugPrint('⚠️ خطأ في مسح cache الصورة: $e');
+            }
+          }
+
           // تحديث البروفايل بعد الحفظ الناجح
           final updatedProfile = state.profile?.copyWith(
             name: state.currentData.name ?? state.profile!.name,
+            userName:
+                state.currentData.username ??
+                state.profile!.userName, // ⭐ أضف هذا
             professionalSpecialization:
                 state.currentData.professionalSpecialization ??
                 state.profile!.professionalSpecialization,
@@ -202,25 +219,34 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
             video: response.data?['videoLink'] ?? state.profile!.video,
           );
 
-          emit(
-            state.copyWith(
-              isSaving: false,
-              errorMessage: null,
-              profile: updatedProfile,
-              // مسح الملفات المؤقتة بعد الحفظ
-              imageFile: null,
-              videoFile: null,
-            ),
-          );
-
-          // إظهار رسالة النجاح
-          if (response.success) {
-            showSafeSnackBar(
-              context: context,
-              text: 'تم تحديث البيانات بنجاح',
-              isSuccess: true,
+          // ⭐ تحديث الكاش للصورة والاسم (للـ HomeAppBar)
+          if (updatedProfile != null) {
+            CachNetwork.setData(
+              key: kMyProfileImage,
+              value: updatedProfile.image ?? '',
             );
-            Navigator.pop(context);
+            CachNetwork.setData(
+              key: kMyProfileName,
+              value: updatedProfile.name,
+            );
+            debugPrint('✅ تم تحديث كاش الصورة والاسم في HomeAppBar');
+          }
+
+          if (response.success) {
+            emit(
+              state.copyWith(
+                isSaving: false,
+                errorMessage: null,
+                profile: updatedProfile,
+                state: CubitStates.success,
+                successMessage: 'تم تحديث البيانات بنجاح',
+                // مسح الملفات المؤقتة بعد الحفظ
+                imageFile: null,
+                videoFile: null,
+              ),
+            );
+          } else {
+            emit(state.copyWith(isSaving: false, errorMessage: 'فشل الحفظ'));
           }
         },
       );
@@ -237,6 +263,90 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   void clearError() {
     if (state.errorMessage != null) {
       emit(state.copyWith(errorMessage: null));
+    }
+  }
+
+  void clearSuccess() {
+    if (state.successMessage != null) {
+      emit(state.copyWith(successMessage: null));
+    }
+  }
+
+  ///  🧠✨ Gemini AI Content Generation for Bio
+  Future<void> enhanceTextWithGemini(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final currentText = controller.text;
+
+    if (currentText.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('please_write_text_first'),
+          isError: true,
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(isAiState: CubitStates.loading));
+
+    const apiKey = 'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg';
+
+    try {
+      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
+
+      final prompt =
+          '''
+أنت كاتب محتوى متخصص في كتابة السِّيَر الذاتية (Bio) للمستشارين والمرشدين الأسريين.
+
+المطلوب:
+- اكتب بايو احترافي لمستشار/مرشد في العلاقات الأسرية بناءً على النص اللي هيكتبه المستخدم.
+- البايو يكون مناسب لعرضه في تطبيق استشارات أسرية.
+
+قواعد مهمة:
+1. اكتشف لغة النص المُدخل واكتب البايو بنفس اللغة — لا تترجم أبدًا.
+2. اجعل البايو احترافيًا، مطمئنًا، ويعكس الثقة والخبرة.
+3. أبرز التخصص والخبرة في مجالات الإرشاد الأسري مثل:
+   - الإرشاد الزواجي (الخلافات، التواصل، الثقة، الغيرة، إدارة المال، الخيانة)
+   - الإرشاد قبل الزواج (اختيار الشريك، التوقعات، التوافق، الجاهزية النفسية والمالية)
+   - الإرشاد التربوي والوالدي (أساليب التربية، العناد، الإدمان الرقمي)
+   - مشكلات الأطفال والمراهقين
+   - العلاقات العائلية الممتدة
+   - إدارة الأزمات الأسرية
+   - قضايا الطلاق وما بعده
+   - الصحة النفسية داخل الأسرة
+4. لا تذكر كل التخصصات — ركّز فقط على ما يتناسب مع كلام المستخدم.
+5. اجعل الأسلوب دافئًا وإنسانيًا، يشعر القارئ بالأمان والراحة.
+6. أضف إيموجي مناسبة باعتدال.
+7. اجعل البايو مختصرًا (3-5 أسطر كحد أقصى).
+8. أرجع البايو فقط — بدون أي شرح أو مقدمات أو تعليقات.
+
+النص المُدخل من المستخدم: "$currentText"
+''';
+
+      final content = [Content.text(prompt)];
+      final response = await model.generateContent(content);
+
+      if (response.text != null) {
+        controller.text = response.text!;
+        updateBio(response.text!);
+        emit(state.copyWith(isAiState: CubitStates.success));
+        emit(state.copyWith(isAiState: CubitStates.initial));
+      }
+    } catch (e) {
+      debugPrint('Gemini AI error: $e');
+      emit(state.copyWith(isAiState: CubitStates.failure));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: 'AI Error: ${e.toString()}',
+          isError: true,
+        ),
+      );
+      emit(state.copyWith(isAiState: CubitStates.initial));
     }
   }
 }

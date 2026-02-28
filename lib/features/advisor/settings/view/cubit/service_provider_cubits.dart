@@ -1,4 +1,3 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/features/advisor/settings/data/models/service_provider_models.dart';
 import 'package:tayseer/features/advisor/settings/data/models/service_provider_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -69,7 +68,6 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
         isEnabled: oldSession.isEnabled,
       );
 
-      // حساب التغييرات
       final hasChanges = _hasSessionTypesChanged(updatedSessionTypes);
 
       emit(
@@ -95,7 +93,6 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
         isEnabled: isEnabled,
       );
 
-      // حساب التغييرات
       final hasChanges = _hasSessionTypesChanged(updatedSessionTypes);
 
       emit(
@@ -124,10 +121,12 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
     return false;
   }
 
-  Future<void> saveChanges(BuildContext context) async {
+  Future<void> saveChanges() async {
     if (!state.hasChanges) return;
 
-    emit(state.copyWith(isSaving: true));
+    emit(
+      state.copyWith(isSaving: true, errorMessage: null, successMessage: null),
+    );
 
     final currentProvider = state.serviceProvider;
     final request = currentProvider != null
@@ -139,11 +138,7 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
         : ServiceProviderRequest.defaultRequest();
 
     final result = await _repository.updateServiceProvider(request: request);
-    ScaffoldMessenger.of(context).showSnackBar(
-      CustomSnackBar(context, text: 'تم حفظ التغييرات بنجاح', isSuccess: true),
-    );
 
-    context.pop();
     result.fold(
       (failure) {
         emit(state.copyWith(isSaving: false, errorMessage: failure.message));
@@ -156,6 +151,8 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
             originalServiceProvider: response.data,
             sessionTypes: response.data?.sessionTypes ?? state.sessionTypes,
             hasChanges: false,
+            successMessage: 'changes_saved_successfully',
+            state: CubitStates.success,
           ),
         );
       },
@@ -164,6 +161,10 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
 
   void clearError() {
     emit(state.copyWith(errorMessage: null));
+  }
+
+  void clearSuccess() {
+    emit(state.copyWith(successMessage: null));
   }
 }
 
@@ -234,7 +235,6 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
         timeSlots: isEnabled ? oldDay.timeSlots : [],
       );
 
-      // حساب التغييرات
       final hasChanges = _hasAvailabilityChanged(updatedAvailability);
 
       emit(
@@ -262,7 +262,6 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
         timeSlots: [TimeSlotModel(start: startTime, end: endTime)],
       );
 
-      // حساب التغييرات
       final hasChanges = _hasAvailabilityChanged(updatedAvailability);
 
       emit(
@@ -282,47 +281,67 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
     final originalAvailability =
         state.originalServiceProvider!.weeklyAvailability;
 
+    if (currentAvailability.length != originalAvailability.length) return true;
+
     for (int i = 0; i < currentAvailability.length; i++) {
-      final current = currentAvailability[i];
-      final original = originalAvailability[i];
+      final current = _normalizeDay(currentAvailability[i]);
+      final original = _normalizeDay(originalAvailability[i]);
 
-      if (current.isEnabled != original.isEnabled) return true;
-      if (current.timeSlots.length != original.timeSlots.length) return true;
-
-      for (int j = 0; j < current.timeSlots.length; j++) {
-        final currentSlot = current.timeSlots[j];
-        final originalSlot = original.timeSlots[j];
-
-        if (currentSlot.start != originalSlot.start ||
-            currentSlot.end != originalSlot.end) {
-          return true;
-        }
-      }
+      if (current != original) return true;
     }
 
     return false;
   }
 
-  Future<void> saveChanges(BuildContext context) async {
+  WeeklyAvailabilityModel _normalizeDay(WeeklyAvailabilityModel day) {
+    bool isActuallyEnabled = day.isEnabled;
+    if (isActuallyEnabled) {
+      if (day.timeSlots.isEmpty) {
+        isActuallyEnabled = false;
+      } else {
+        bool hasValidSlot = false;
+        for (final slot in day.timeSlots) {
+          if (slot.start != '00:00' &&
+              slot.start != '' &&
+              slot.end != '00:00' &&
+              slot.end != '') {
+            hasValidSlot = true;
+            break;
+          }
+        }
+        if (!hasValidSlot) isActuallyEnabled = false;
+      }
+    }
+
+    return WeeklyAvailabilityModel(
+      dayOfWeek: day.dayOfWeek,
+      isEnabled: isActuallyEnabled,
+      timeSlots: isActuallyEnabled ? day.timeSlots : [],
+    );
+  }
+
+  Future<void> saveChanges() async {
     if (!state.hasChanges) return;
 
-    emit(state.copyWith(isSaving: true));
+    emit(
+      state.copyWith(isSaving: true, successMessage: null, errorMessage: null),
+    );
 
     final currentProvider = state.serviceProvider;
+    final normalizedAvailability = state.weeklyAvailability
+        .map(_normalizeDay)
+        .toList();
+
     final request = currentProvider != null
         ? ServiceProviderRequest(
             sessionTypes: currentProvider.sessionTypes,
-            weeklyAvailability: state.weeklyAvailability,
+            weeklyAvailability: normalizedAvailability,
             timezone: currentProvider.timezone,
           )
         : ServiceProviderRequest.defaultRequest();
 
     final result = await _repository.updateServiceProvider(request: request);
-    ScaffoldMessenger.of(context).showSnackBar(
-      CustomSnackBar(context, text: 'تم حفظ التغييرات بنجاح', isSuccess: true),
-    );
 
-    context.pop();
     result.fold(
       (failure) {
         emit(state.copyWith(isSaving: false, errorMessage: failure.message));
@@ -336,6 +355,7 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
             weeklyAvailability:
                 response.data?.weeklyAvailability ?? state.weeklyAvailability,
             hasChanges: false,
+            successMessage: 'changes_saved_successfully',
           ),
         );
       },
@@ -344,5 +364,9 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
 
   void clearError() {
     emit(state.copyWith(errorMessage: null));
+  }
+
+  void clearSuccess() {
+    emit(state.copyWith(successMessage: null));
   }
 }

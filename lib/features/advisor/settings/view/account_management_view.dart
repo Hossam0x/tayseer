@@ -2,6 +2,7 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_action_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class AccountManagementView extends StatefulWidget {
@@ -12,26 +13,30 @@ class AccountManagementView extends StatefulWidget {
 }
 
 class _AccountManagementViewState extends State<AccountManagementView> {
-  // نوع enum لتحديد الاختيار
-  AccountAction? selectedAction;
   late AccountManagementCubit _cubit;
+  late AccountActionCubit _actionCubit;
 
   @override
   void initState() {
     super.initState();
     _cubit = AccountManagementCubit(getIt<AccountManagementRepository>());
+    _actionCubit = AccountActionCubit();
   }
 
   @override
   void dispose() {
     _cubit.close();
+    _actionCubit.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _cubit,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _cubit),
+        BlocProvider.value(value: _actionCubit),
+      ],
       child: BlocConsumer<AccountManagementCubit, AccountManagementState>(
         listener: (context, state) {
           _handleStateChanges(context, state);
@@ -62,11 +67,12 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Gap(16.h),
-                          SimpleAppBar(title: 'ادارة الحساب'),
+                          SimpleAppBar(title: context.tr('account_management')),
                           Gap(50.h),
                           // خيار "حذف الحساب نهائياً"
                           _buildOptionCard(
-                            title: 'حذف الحساب',
+                            context: context,
+                            title: context.tr('permanent_delete'),
                             action: AccountAction.permanentDelete,
                           ),
                           Gap(10.h),
@@ -76,7 +82,8 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                           Gap(10.h),
                           // خيار "إيقاف حسابي بشكل مؤقت"
                           _buildOptionCard(
-                            title: 'إيقاف حسابي بشكل مؤقت',
+                            context: context,
+                            title: context.tr('temporary_disable'),
                             action: AccountAction.temporaryDisable,
                           ),
 
@@ -84,21 +91,31 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                           // زر "تأكيد" في الأسفل
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 20.w),
-                            child: CustomBotton(
-                              height: 54.h,
-                              width: double.infinity,
-                              title: state.state == CubitStates.loading
-                                  ? 'جاري المعالجة...'
-                                  : 'تأكيد',
-                              onPressed:
-                                  (selectedAction != null &&
-                                      state.state != CubitStates.loading)
-                                  ? () => _handleConfirm(context, state)
-                                  : null,
-                              useGradient:
-                                  selectedAction != null &&
-                                  state.state != CubitStates.loading,
-                            ),
+                            child:
+                                BlocBuilder<AccountActionCubit, AccountAction?>(
+                                  builder: (context, selectedAction) {
+                                    return CustomBotton(
+                                      height: 54.h,
+                                      width: double.infinity,
+                                      title: state.state == CubitStates.loading
+                                          ? context.tr('loading')
+                                          : context.tr('confirm'),
+                                      onPressed:
+                                          (selectedAction != null &&
+                                              state.state !=
+                                                  CubitStates.loading)
+                                          ? () => _handleConfirm(
+                                              context,
+                                              state,
+                                              selectedAction,
+                                            )
+                                          : null,
+                                      useGradient:
+                                          selectedAction != null &&
+                                          state.state != CubitStates.loading,
+                                    );
+                                  },
+                                ),
                           ),
                           Gap(30.h),
                         ],
@@ -115,58 +132,68 @@ class _AccountManagementViewState extends State<AccountManagementView> {
   }
 
   Widget _buildOptionCard({
+    required BuildContext context,
     required String title,
     required AccountAction action,
   }) {
-    final isSelected = selectedAction == action;
+    return BlocBuilder<AccountActionCubit, AccountAction?>(
+      builder: (context, selectedAction) {
+        final isSelected = selectedAction == action;
 
-    return GestureDetector(
-      onTap: () => setState(() => selectedAction = action),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary100 : Colors.transparent,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: isSelected ? AppColors.primary400 : Colors.transparent,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: Styles.textStyle18Meduim.copyWith(
-                color: AppColors.secondary800,
+        return GestureDetector(
+          onTap: () => context.read<AccountActionCubit>().selectAction(action),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primary100 : Colors.transparent,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: isSelected ? AppColors.primary400 : Colors.transparent,
+                width: 1,
               ),
             ),
-          ],
-        ),
-      ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: Styles.textStyle18Meduim.copyWith(
+                    color: AppColors.secondary800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  void _handleConfirm(BuildContext context, AccountManagementState state) {
+  void _handleConfirm(
+    BuildContext context,
+    AccountManagementState state,
+    AccountAction selectedAction,
+  ) {
     if (selectedAction == AccountAction.temporaryDisable) {
-      _showTemporaryDisableDialog();
+      _showTemporaryDisableDialog(context);
     } else if (selectedAction == AccountAction.permanentDelete) {
-      _showPermanentDeleteDialog();
+      _showPermanentDeleteDialog(context);
     }
   }
 
-  void _showTemporaryDisableDialog() {
+  void _showTemporaryDisableDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => _buildCustomDialog(
+      builder: (ctx) => _buildCustomDialog(
+        context: context,
         icon: Icons.archive_outlined,
-        title: 'هل تريد أرشفة الحساب ؟',
-        message: 'في حالة أرشفة الحساب لن يظهر لك رسائل من الشخص في الاشعارات.',
-        confirmText: 'نعم',
-        cancelText: 'لا',
+        title: context.tr('are_you_sure_temporary_disable'),
+        message: context.tr('are_you_sure_temporary_disable_message'),
+        confirmText: context.tr('yes'),
+        cancelText: context.tr('no'),
         onConfirm: () {
-          Navigator.pop(context);
+          Navigator.pop(ctx); // Use dialog context
           // تنفيذ عملية الإيقاف المؤقت
           _cubit.suspendAccount();
         },
@@ -174,17 +201,18 @@ class _AccountManagementViewState extends State<AccountManagementView> {
     );
   }
 
-  void _showPermanentDeleteDialog() {
+  void _showPermanentDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => _buildCustomDialog(
+      builder: (ctx) => _buildCustomDialog(
+        context: context,
         icon: Icons.delete_outline,
-        title: 'هل تريد حذف الحساب ؟',
-        message: 'في حالة حذف الحساب سيتم حذف جميع بياناتك بشكل نهائي.',
-        confirmText: 'نعم',
-        cancelText: 'لا',
+        title: context.tr('are_you_sure_permanent_delete'),
+        message: context.tr('are_you_sure_permanent_delete_message'),
+        confirmText: context.tr('yes'),
+        cancelText: context.tr('no'),
         onConfirm: () {
-          Navigator.pop(context);
+          Navigator.pop(ctx); // Use dialog context
           // تنفيذ عملية الحذف النهائي
           _cubit.deleteAccount();
         },
@@ -193,6 +221,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
   }
 
   Widget _buildCustomDialog({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String message,
@@ -235,18 +264,19 @@ class _AccountManagementViewState extends State<AccountManagementView> {
               children: [
                 Expanded(
                   child: CustomBotton(
-                    title: confirmText,
+                    title: confirmText, // زر "نعم" - التأكيد
                     onPressed: onConfirm,
-                    backGroundcolor: Colors.green,
+                    backGroundcolor: Colors.red, // أحمر للموافقة
                     titleColor: Colors.white,
                   ),
                 ),
                 Gap(12.w),
                 Expanded(
                   child: CustomBotton(
-                    title: cancelText,
-                    onPressed: () => Navigator.pop(context),
-                    backGroundcolor: Colors.red,
+                    title: cancelText, // زر "لا" - الإلغاء
+                    onPressed: () =>
+                        Navigator.pop(context), // This might pop the dialog
+                    backGroundcolor: Colors.green, // أخضر للإلغاء
                     titleColor: Colors.white,
                   ),
                 ),
@@ -265,16 +295,14 @@ class _AccountManagementViewState extends State<AccountManagementView> {
     // معالجة النجاح
     if (state.state == CubitStates.success) {
       // إعادة تعيين الخيار المحدد
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() => selectedAction = null);
-      });
+      _actionCubit.clearSelection();
 
       // تنفيذ التسجيل الخروج ومسح البيانات
       await _logoutAndClearData(
         context,
         message: state.operation == AccountOperation.suspend
-            ? 'تم إيقاف حسابك مؤقتاً بنجاح'
-            : 'تم حذف حسابك بنجاح',
+            ? context.tr('account_suspended_successfully')
+            : context.tr('account_deleted_successfully'),
       );
     }
 

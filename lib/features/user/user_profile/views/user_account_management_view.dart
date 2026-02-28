@@ -1,0 +1,323 @@
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_management_state.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_account_management_cubit.dart';
+import 'package:tayseer/my_import.dart';
+
+class UserAccountManagementView extends StatefulWidget {
+  const UserAccountManagementView({super.key});
+
+  @override
+  State<UserAccountManagementView> createState() =>
+      _UserAccountManagementViewState();
+}
+
+class _UserAccountManagementViewState extends State<UserAccountManagementView> {
+  AccountAction? selectedAction;
+  late UserAccountManagementCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = UserAccountManagementCubit(
+      getIt<UserAccountManagementRepository>(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: _cubit,
+      child: BlocConsumer<UserAccountManagementCubit, AccountManagementState>(
+        listener: (context, state) {
+          _handleStateChanges(context, state);
+        },
+        builder: (context, state) {
+          return Scaffold(
+            body: AdvisorBackground(
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 105.h,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage(AssetsData.homeBarBackgroundImage),
+                          fit: BoxFit.fill,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SafeArea(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Gap(16.h),
+                          SimpleAppBar(title: context.tr('account_management')),
+                          Gap(50.h),
+                          // خيار "حذف الحساب نهائياً"
+                          _buildOptionCard(
+                            title: context.tr('permanent_delete'),
+                            action: AccountAction.permanentDelete,
+                          ),
+                          Gap(10.h),
+                          Divider(
+                            color: AppColors.secondary200.withOpacity(0.5),
+                          ),
+                          Gap(10.h),
+                          // خيار "إيقاف حسابي بشكل مؤقت"
+                          _buildOptionCard(
+                            title: context.tr('temporary_disable'),
+                            action: AccountAction.temporaryDisable,
+                          ),
+
+                          const Spacer(),
+                          // زر "تأكيد" في الأسفل
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20.w),
+                            child: CustomBotton(
+                              height: 54.h,
+                              width: double.infinity,
+                              title: state.state == CubitStates.loading
+                                  ? context.tr('loading')
+                                  : context.tr('confirm'),
+                              onPressed:
+                                  (selectedAction != null &&
+                                      state.state != CubitStates.loading)
+                                  ? () => _handleConfirm(context, state)
+                                  : null,
+                              useGradient:
+                                  selectedAction != null &&
+                                  state.state != CubitStates.loading,
+                            ),
+                          ),
+                          Gap(30.h),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildOptionCard({
+    required String title,
+    required AccountAction action,
+  }) {
+    final isSelected = selectedAction == action;
+
+    return GestureDetector(
+      onTap: () => setState(() => selectedAction = action),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary100 : Colors.transparent,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isSelected ? AppColors.primary400 : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: Styles.textStyle18Meduim.copyWith(
+                color: AppColors.secondary800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleConfirm(BuildContext context, AccountManagementState state) {
+    if (selectedAction == AccountAction.temporaryDisable) {
+      _showTemporaryDisableDialog();
+    } else if (selectedAction == AccountAction.permanentDelete) {
+      _showPermanentDeleteDialog();
+    }
+  }
+
+  void _showTemporaryDisableDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => _buildCustomDialog(
+        icon: Icons.archive_outlined,
+        title: context.tr('are_you_sure_temporary_disable'),
+        message: context.tr('are_you_sure_temporary_disable_message'),
+        confirmText: context.tr('yes'),
+        cancelText: context.tr('no'),
+        onConfirm: () {
+          Navigator.pop(context);
+          // تنفيذ عملية الإيقاف المؤقت لليوزر
+          _cubit.suspendAccount();
+        },
+      ),
+    );
+  }
+
+  void _showPermanentDeleteDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => _buildCustomDialog(
+        icon: Icons.delete_outline,
+        title: context.tr('are_you_sure_permanent_delete'),
+        message: context.tr('are_you_sure_permanent_delete_message'),
+        confirmText: context.tr('yes'),
+        cancelText: context.tr('no'),
+        onConfirm: () {
+          Navigator.pop(context);
+          // تنفيذ عملية الحذف النهائي لليوزر
+          _cubit.deleteAccount();
+        },
+      ),
+    );
+  }
+
+  Widget _buildCustomDialog({
+    required IconData icon,
+    required String title,
+    required String message,
+    required String confirmText,
+    required String cancelText,
+    required VoidCallback onConfirm,
+  }) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+      child: Container(
+        padding: EdgeInsets.all(24.w),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.pink.shade50, Colors.blue.shade50],
+          ),
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppImage(AssetsData.pauseIcon),
+            Gap(20.h),
+            Text(
+              title,
+              style: Styles.textStyle18Meduim.copyWith(
+                color: AppColors.secondary800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Gap(12.h),
+            Text(
+              message,
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
+              textAlign: TextAlign.center,
+            ),
+            Gap(24.h),
+            Row(
+              children: [
+                Expanded(
+                  child: CustomBotton(
+                    title: confirmText,
+                    onPressed: onConfirm,
+                    backGroundcolor: Colors.red, // أحمر للموافقة
+                    titleColor: Colors.white,
+                  ),
+                ),
+                Gap(12.w),
+                Expanded(
+                  child: CustomBotton(
+                    title: cancelText,
+                    onPressed: () => Navigator.pop(context),
+                    backGroundcolor: Colors.green, // أخضر للإلغاء
+                    titleColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleStateChanges(
+    BuildContext context,
+    AccountManagementState state,
+  ) async {
+    // معالجة النجاح
+    if (state.state == CubitStates.success) {
+      // إعادة تعيين الخيار المحدد
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() => selectedAction = null);
+      });
+
+      // تنفيذ التسجيل الخروج ومسح البيانات
+      await _logoutAndClearData(
+        context,
+        message: state.operation == AccountOperation.suspend
+            ? context.tr('account_suspended_successfully')
+            : context.tr('account_deleted_successfully'),
+      );
+    }
+
+    // معالجة الأخطاء
+    if (state.state == CubitStates.failure && state.errorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(context, text: state.errorMessage!, isSuccess: false),
+        );
+      });
+    }
+  }
+
+  Future<void> _logoutAndClearData(
+    BuildContext context, {
+    required String message,
+  }) async {
+    try {
+      // الانتظار قليلاً لعرض الحالة النهائية
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // 1. إعادة التوجيه إلى شاشة التسجيل/تسجيل الدخول
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRouter.kRegisrationView,
+        (route) => false,
+      );
+
+      // 2. مسح جميع البيانات من SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // 3. عرض رسالة نجاح
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(CustomSnackBar(context, text: message, isSuccess: true));
+    } catch (e) {
+      print('❌ Error during logout: $e');
+    }
+  }
+}
+
+// Enum لتحديد نوع العملية
+enum AccountAction { temporaryDisable, permanentDelete }

@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:dartz/dartz.dart';
-import 'package:dio/dio.dart';
 import 'package:tayseer/my_import.dart';
 import '../models/edit_personal_data_models.dart';
 
@@ -91,15 +89,18 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
 
       print('🔍 ====== REQUEST VALIDATION ======');
 
-      // ⭐ 1. تحقق من username وتأكد أنه يبدأ بـ @
+      // ⭐ 1. تحقق من username
       String? username = request.username;
       if (username != null && username.isNotEmpty) {
-        if (!username.startsWith('@')) {
-          print('⚠️ Adding @ to username: $username → @$username');
-          username = '@$username';
-        }
-        formData.fields.add(MapEntry('username', username));
-        print('📤 username: $username');
+        // إذا كان اليوزرنيم يبدأ بـ @، نمسحها قبل الإرسال لأن بعض السيرفرات ترفضها
+        final cleanedUsername = username.startsWith('@')
+            ? username.substring(1)
+            : username;
+
+        formData.fields.add(MapEntry('username', cleanedUsername));
+        // للاحتياط إذا كان السيرفر يتوقع N كبيرة كما في الموديل
+        formData.fields.add(MapEntry('userName', cleanedUsername));
+        print('📤 username: $cleanedUsername');
       }
 
       // ⭐ 2. تحقق من name
@@ -128,32 +129,17 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
         print('📤 JobGrade: ${request.jobGrade!}');
       }
 
-      // ⭐ 5. تحقق من yearsOfExperience - تأكد أنه رقم
+      // ⭐ 5. تحقق من yearsOfExperience
       if (request.yearsOfExperience != null &&
           request.yearsOfExperience!.isNotEmpty) {
-        String yearsExp = request.yearsOfExperience!;
-
-        // ⭐ حاول تحويل النص العربي إلى رقم
-        if (yearsExp.contains("سنتين")) {
-          yearsExp = "2";
-        } else if (yearsExp.contains("3 سنوات")) {
-          yearsExp = "3";
-        } else if (yearsExp.contains("5 سنوات")) {
-          yearsExp = "5";
-        } else if (yearsExp.contains("10 سنوات")) {
-          yearsExp = "10";
-        } else if (yearsExp.contains("أكثر من")) {
-          yearsExp = "11";
-        }
-
-        // ⭐ استخراج أي رقم من النص
-        final match = RegExp(r'(\d+)').firstMatch(yearsExp);
-        if (match != null) {
-          yearsExp = match.group(1)!;
-        }
-
-        formData.fields.add(MapEntry('yearsOfExperience', yearsExp));
-        print('📤 yearsOfExperience (converted): $yearsExp');
+        formData.fields.add(
+          MapEntry('yearsOfExperience', request.yearsOfExperience!),
+        );
+        // للاحتياط إذا كان السيرفر يتوقع Y كبيرة كما في حقول أخرى
+        formData.fields.add(
+          MapEntry('YearsOfExperience', request.yearsOfExperience!),
+        );
+        print('📤 yearsOfExperience: ${request.yearsOfExperience!}');
       }
 
       // ⭐ 6. تحقق من aboutYou
@@ -200,7 +186,7 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
 
       print('🔍 ====== END VALIDATION ======');
 
-      print('📤 Sending PATCH request to /advisor/editPersonalData');
+      print('📤 Sending PATCH request to advisor/editPersonalData');
       print(
         '📤 FormData has ${formData.fields.length} fields and ${formData.files.length} files',
       );
@@ -208,7 +194,6 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       final response = await dio.patch<Map<String, dynamic>>(
         '/advisor/editPersonalData',
         data: formData,
-        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
       );
 
       print('📥 Response Status Code: ${response.statusCode}');

@@ -1,5 +1,5 @@
-import 'package:tayseer/core/utils/helper/picker_helper.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/add_story_view.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
@@ -36,19 +36,18 @@ class StoriesSection extends StatelessWidget {
       case CubitStates.failure:
         return _StoriesErrorWidget(
           message: state.storiesMessage,
-          onRetry: () => context.read<StoriesCubit>().fetchStories(),
+          onRetry: () =>
+              context.read<StoriesCubit>().fetchStories(context: context),
         );
       case CubitStates.success:
       case CubitStates.initial:
-        return _StoriesListView(stories: state.storiesList);
+        return const _StoriesListView();
     }
   }
-} // في ملف HomeStoriesSection.dart
+}
 
 class _StoriesListView extends StatefulWidget {
-  final List<UserStoriesModel> stories;
-
-  const _StoriesListView({required this.stories});
+  const _StoriesListView();
 
   @override
   State<_StoriesListView> createState() => _StoriesListViewState();
@@ -72,7 +71,10 @@ class _StoriesListViewState extends State<_StoriesListView> {
 
   void _onScroll() {
     if (_isBottom) {
-      context.read<StoriesCubit>().fetchStories(loadMore: true);
+      context.read<StoriesCubit>().fetchStories(
+        loadMore: true,
+        context: context,
+      );
     }
   }
 
@@ -85,110 +87,181 @@ class _StoriesListViewState extends State<_StoriesListView> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            Padding(
-              padding: EdgeInsetsDirectional.only(
-                end: context.responsiveWidth(14),
-              ),
-              child: const _AddStoryItem(),
-            ),
-          ],
-          ...widget.stories.map(
-            (userStory) => Padding(
-              key: ValueKey(userStory.userId),
-              padding: EdgeInsetsDirectional.only(
-                end: context.responsiveWidth(14),
-              ),
-              child: _UserStoryItem(
-                key: ValueKey(
-                  'story_${userStory.userId}_${userStory.allViewed}',
-                ),
-                userStoryModel: userStory,
-              ),
-            ),
-          ),
-          BlocBuilder<StoriesCubit, StoriesState>(
-            buildWhen: (previous, current) =>
-                previous.isLoadingMore != current.isLoadingMore,
-            builder: (context, state) {
-              if (state.isLoadingMore) {
-                return Padding(
+    return BlocSelector<StoriesCubit, StoriesState, String>(
+      selector: (state) => state.storiesList.map((s) => s.userId).join(','),
+      builder: (context, userIdsString) {
+        final userIds = userIdsString.isEmpty
+            ? <String>[]
+            : userIdsString.split(',');
+        final myUserId = kCurrentUserData?.id;
+        final listWithoutMe = userIds.where((id) => id != myUserId).toList();
+
+        return SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isAdvisor) ...[
+                Padding(
                   padding: EdgeInsetsDirectional.only(
                     end: context.responsiveWidth(14),
                   ),
-                  child: _StoriesLoadingShimmer(count: 1),
+                  child: const _AddStoryItem(),
+                ),
+              ],
+              ...List.generate(listWithoutMe.length, (index) {
+                final userId = listWithoutMe[index];
+                return Padding(
+                  key: ValueKey(userId),
+                  padding: EdgeInsetsDirectional.only(
+                    end: context.responsiveWidth(14),
+                  ),
+                  child: _UserStoryItem(
+                    key: ValueKey('story_$userId'),
+                    userId: userId,
+                    userIndex: index,
+                  ),
                 );
-              }
-              return const SizedBox.shrink();
-            },
+              }),
+              BlocBuilder<StoriesCubit, StoriesState>(
+                buildWhen: (previous, current) =>
+                    previous.isLoadingMore != current.isLoadingMore,
+                builder: (context, state) {
+                  if (state.isLoadingMore) {
+                    return Padding(
+                      padding: EdgeInsetsDirectional.only(
+                        end: context.responsiveWidth(14),
+                      ),
+                      child: const _StoriesLoadingShimmer(count: 1),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
 class _UserStoryItem extends StatelessWidget {
-  final UserStoriesModel userStoryModel;
+  final String userId;
+  final int userIndex;
 
-  const _UserStoryItem({super.key, required this.userStoryModel});
+  const _UserStoryItem({
+    super.key,
+    required this.userId,
+    required this.userIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (newContext) => BlocProvider.value(
-              value: context.read<StoriesCubit>(),
-              child: StoryDetailsView(userStories: userStoryModel),
-            ),
+    return BlocSelector<StoriesCubit, StoriesState, UserStoriesModel?>(
+      selector: (state) {
+        try {
+          return state.storiesList.firstWhere((s) => s.userId == userId);
+        } catch (_) {
+          return null;
+        }
+      },
+      builder: (context, userStoryModel) {
+        if (userStoryModel == null) return const SizedBox.shrink();
+
+        return GestureDetector(
+          onTap: () {
+            if (isGuest) {
+              CustomshowDialogWithImage(
+                context,
+                title: context.tr('joinUs'),
+                supTitle: context.tr("guest_login_first"),
+                icon: Icons.lock_person_outlined,
+                iconColor: AppColors.kprimaryColor,
+                bottonText: context.tr("login"),
+                showCancelButton: true,
+                cancelText: context.tr('skip'),
+                onPressed: () {
+                  CachNetwork.removeData(key: ktoken);
+                  context.pushNamedAndRemoveUntil(
+                    AppRouter.kRegisrationView,
+                    predicate: (_) => false,
+                  );
+                },
+                onCancel: () {},
+              );
+              return;
+            }
+
+            final myUserId = kCurrentUserData?.id;
+            final allStories = context
+                .read<StoriesCubit>()
+                .state
+                .storiesList
+                .where((us) => us.userId != myUserId)
+                .toList();
+
+            final chronologicalUsersStories = allStories.map((us) {
+              return us.copyWith(stories: us.stories.reversed.toList());
+            }).toList();
+
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                opaque: false,
+                pageBuilder: (newContext, animation, secondaryAnimation) =>
+                    BlocProvider.value(
+                      value: context.read<StoriesCubit>(),
+                      child: StoryDetailsView(
+                        usersStories: chronologicalUsersStories,
+                        initialUserIndex: userIndex,
+                      ),
+                    ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+              ),
+            );
+          },
+          child: Column(
+            children: [
+              Hero(
+                tag: userStoryModel.userId,
+                child: Container(
+                  width: context.responsiveWidth(76),
+                  height: context.responsiveWidth(76),
+                  padding: EdgeInsets.all(3.r),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: userStoryModel.allViewed
+                          ? AppColors.kGreyB3
+                          : AppColors.kprimaryColor,
+                      width: 2.sp,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: AppImage(userStoryModel.image, fit: BoxFit.cover),
+                  ),
+                ),
+              ),
+              Gap(context.responsiveHeight(6)),
+              SizedBox(
+                width: context.responsiveWidth(76),
+                child: Text(
+                  userStoryModel.name,
+                  textAlign: TextAlign.center,
+                  style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         );
       },
-      child: Column(
-        children: [
-          Hero(
-            tag: userStoryModel.userId, // استخدام معرف المستخدم كـ tag
-            child: Container(
-              width: context.responsiveWidth(76),
-              height: context.responsiveWidth(76),
-              padding: EdgeInsets.all(3.r), // مسافة بين البوردر والصورة
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  // تغيير اللون إذا تمت المشاهدة بالكامل
-                  color: userStoryModel.allViewed
-                      ? AppColors.kGreyB3
-                      : AppColors.kprimaryColor,
-                  width: 2.sp,
-                ),
-              ),
-              child: ClipOval(
-                child: AppImage(userStoryModel.image, fit: BoxFit.cover),
-              ),
-            ),
-          ),
-          Gap(context.responsiveHeight(6)),
-          SizedBox(
-            width: context.responsiveWidth(76),
-            child: Text(
-              userStoryModel.name,
-              textAlign: TextAlign.center,
-              style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -283,53 +356,186 @@ class _AddStoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () async {
-        final picker = MediaPickerController(
-          config: PickerConfig(
-            allowMultiple: false,
-            maxCount: 1,
-            requestType: RequestType.image,
-          ),
-        );
-        final SelectedMedia? picked = await picker.pickFromCamera();
-        if (picked != null) {
-          if (picked.type == AssetType.image) {
-            // cubit.addCapturedImage(picked.file);
-          } else if (picked.type == AssetType.video) {
-            // cubit.addCapturedVideo(XFile(picked.file.path));
-          }
-        }
+    return BlocBuilder<StoriesCubit, StoriesState>(
+      buildWhen: (previous, current) {
+        final myUserId = kCurrentUserData?.id;
+        final prevMyStory = previous.storiesList
+            .where((s) => s.userId == myUserId)
+            .firstOrNull;
+        final currentMyStory = current.storiesList
+            .where((s) => s.userId == myUserId)
+            .firstOrNull;
+
+        return previous.createStoryState != current.createStoryState ||
+            previous.uploadProgress != current.uploadProgress ||
+            prevMyStory != currentMyStory;
       },
-      child: Column(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              MyProfileImage(width: context.responsiveWidth(76)),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: context.responsiveWidth(24),
-                  height: context.responsiveWidth(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.kprimaryColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2.sp),
+      builder: (context, storyState) {
+        final myUserId = kCurrentUserData?.id;
+        final myStory = storyState.storiesList
+            .where((s) => s.userId == myUserId)
+            .firstOrNull;
+        final isUploading = storyState.createStoryState == CubitStates.loading;
+
+        return Column(
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                // Upload Progress Ring
+                if (isUploading)
+                  SizedBox(
+                    width: context.responsiveWidth(76),
+                    height: context.responsiveWidth(76),
+                    child: CircularProgressIndicator(
+                      value: storyState.uploadProgress > 0
+                          ? storyState.uploadProgress
+                          : null,
+                      strokeWidth: 2.sp,
+                      color: AppColors.kprimaryColor,
+                      backgroundColor: AppColors.secondary200,
+                    ),
                   ),
-                  child: Icon(Icons.add, color: Colors.white, size: 16.sp),
+
+                GestureDetector(
+                  onTap: () {
+                    if (isUploading) return;
+                    if (myStory != null) {
+                      // Open my story
+                      final chronologicalUserStory = myStory.copyWith(
+                        stories: myStory.stories.reversed.toList(),
+                      );
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          opaque: false,
+                          pageBuilder:
+                              (newContext, animation, secondaryAnimation) =>
+                                  BlocProvider.value(
+                                    value: context.read<StoriesCubit>(),
+                                    child: StoryDetailsView(
+                                      usersStories: [chronologicalUserStory],
+                                      initialUserIndex: 0,
+                                    ),
+                                  ),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                        ),
+                      );
+                    } else {
+                      // Open add story
+                      if (context.mounted) {
+                        final storiesCubit = context.read<StoriesCubit>();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BlocProvider.value(
+                              value: storiesCubit,
+                              child: const AddStoryView(),
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: Hero(
+                    tag: myStory != null ? myStory.userId : 'add_story_hero',
+                    child: Container(
+                      width: context.responsiveWidth(76),
+                      height: context.responsiveWidth(76),
+                      padding: myStory != null ? EdgeInsets.all(3.r) : null,
+                      decoration: myStory != null
+                          ? BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: myStory.allViewed
+                                    ? AppColors.kGreyB3
+                                    : AppColors.kprimaryColor,
+                                width: 2.sp,
+                              ),
+                            )
+                          : null,
+                      child: MyProfileImage(
+                        width: context.responsiveWidth(
+                          isUploading || myStory != null ? 66 : 76,
+                        ),
+                        imageUrl: kCurrentUserData?.image,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          Gap(context.responsiveHeight(6)),
-          Text(
-            context.tr("your_story"),
-            style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
-          ),
-        ],
-      ),
+
+                // Add Icon (Hidden when uploading)
+                if (!isUploading)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () {
+                        if (context.mounted) {
+                          final storiesCubit = context.read<StoriesCubit>();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BlocProvider.value(
+                                value: storiesCubit,
+                                child: const AddStoryView(),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Container(
+                        width: context.responsiveWidth(24),
+                        height: context.responsiveWidth(24),
+                        decoration: BoxDecoration(
+                          color: AppColors.kprimaryColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2.sp),
+                        ),
+                        child: Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 16.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Percentage Text Overlay
+                if (isUploading)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 2.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Text(
+                      '${(storyState.uploadProgress * 100).toInt()}%',
+                      style: Styles.textStyle10.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            Gap(context.responsiveHeight(6)),
+            Text(
+              context.tr("your_story"),
+              style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
+            ),
+          ],
+        );
+      },
     );
   }
 }

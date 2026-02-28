@@ -1,6 +1,8 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/widgets/comment_avatar.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:flutter/foundation.dart' as foundation;
 
@@ -90,11 +92,11 @@ class CommentInputAreaState extends State<CommentInputArea> {
           listenWhen: (previous, current) {
             final replyStarted =
                 previous.activeReplyId != current.activeReplyId &&
-                    current.activeReplyId != null;
+                current.activeReplyId != null;
 
             final editStarted =
                 previous.editingCommentId != current.editingCommentId &&
-                    current.editingCommentId != null;
+                current.editingCommentId != null;
 
             final focusTriggered =
                 previous.focusInputTrigger != current.focusInputTrigger;
@@ -126,7 +128,6 @@ class CommentInputAreaState extends State<CommentInputArea> {
                 state.errorMessage ?? "حدث خطأ أثناء إضافة التعليق",
               );
             }
-            // ✅ Success: مش محتاج نعمل حاجة لأن الكومنت ظاهر فعلاً
           },
         ),
       ],
@@ -137,6 +138,10 @@ class CommentInputAreaState extends State<CommentInputArea> {
           if (shouldHideInput) {
             return const SizedBox.shrink();
           }
+
+          final cubit = context.watch<PostDetailsCubit>();
+          final isLocked = cubit.state.isAnonymousLocked;
+          final selectedAnonymous = cubit.state.selectedAnonymous;
 
           return PopScope(
             canPop: !_showEmojiPicker,
@@ -164,7 +169,19 @@ class CommentInputAreaState extends State<CommentInputArea> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const MyProfileImage(),
+                        if (isUser)
+                          CommentAvatar(
+                            iscommented: isLocked,
+                            isAnonymous: selectedAnonymous,
+                            currentSelection: selectedAnonymous,
+                            onSelectionChanged: (value) {
+                              context.read<PostDetailsCubit>().changeAnonymous(
+                                value,
+                              );
+                            },
+                          )
+                        else
+                          const MyProfileImage(isAnnonymous: false),
                         Gap(12.w),
                         Expanded(
                           child: Container(
@@ -188,8 +205,8 @@ class CommentInputAreaState extends State<CommentInputArea> {
                                     textDirection: _textDirection,
                                     textAlign:
                                         _textDirection == TextDirection.rtl
-                                            ? TextAlign.right
-                                            : TextAlign.left,
+                                        ? TextAlign.right
+                                        : TextAlign.left,
                                     maxLines: null,
                                     keyboardType: TextInputType.multiline,
                                     style: TextStyle(
@@ -236,7 +253,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
                         ),
                         Gap(10.w),
                         // ✅ MODIFIED: زر الإرسال
-                        InkWell(
+                        CustomClick(
                           onTap: _sendComment,
                           child: AppImage(
                             AssetsData.send,
@@ -257,7 +274,8 @@ class CommentInputAreaState extends State<CommentInputArea> {
                         height: 250.h,
                         checkPlatformCompatibility: true,
                         emojiViewConfig: EmojiViewConfig(
-                          emojiSizeMax: 28 *
+                          emojiSizeMax:
+                              28 *
                               (foundation.defaultTargetPlatform ==
                                       TargetPlatform.iOS
                                   ? 1.30

@@ -2,6 +2,9 @@ import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_actions_menu.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_avatar.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
+import 'package:tayseer/core/widgets/custom_click.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 
 /// CommentContent - Displays comment information
@@ -24,8 +27,6 @@ class CommentContent extends StatelessWidget {
     this.callbacks = CommentCallbacks.empty,
   });
 
- 
-
   @override
   Widget build(BuildContext context) {
     return IntrinsicHeight(
@@ -33,9 +34,15 @@ class CommentContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Avatar
-          CommentAvatar(
-            avatarUrl: comment.commenter.avatar,
-            isReply: isReply,
+          NavToProfile(
+            isAnnonymous: comment.commenter.isAnnonymous,
+            userType: comment.commenter.userType,
+            userId: comment.commenter.id,
+            child: CommentAvatar(
+              isAnnonymous: comment.commenter.isAnnonymous,
+              avatarUrl: comment.commenter.avatar,
+              isReply: isReply,
+            ),
           ),
           Gap(10.w),
 
@@ -74,7 +81,6 @@ class CommentContent extends StatelessWidget {
 // Avatar
 // ══════════════════════════════════════════════════════════════════════════════
 
-
 // ══════════════════════════════════════════════════════════════════════════════
 // Header (Name + Verified Badge)
 // ══════════════════════════════════════════════════════════════════════════════
@@ -101,17 +107,23 @@ class _CommentHeader extends StatelessWidget {
               Row(
                 children: [
                   Flexible(
-                    child: Text(
-                      comment.commenter.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Styles.textStyle16SemiBold.copyWith(
-                        color: const Color(0xFF19295C),
+                    child: NavToProfile(
+                      isAnnonymous: comment.commenter.isAnnonymous,
+                      userType: comment.commenter.userType,
+                      userId: comment.commenter.id,
+                      child: Text(
+                        comment.commenter.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Styles.textStyle16SemiBold.copyWith(
+                          color: const Color(0xFF19295C),
+                        ),
                       ),
                     ),
                   ),
                   Gap(4.w),
-                  if (comment.commenter.isVerified)
+                  if (comment.commenter.isVerified &&
+                      !comment.commenter.isAnnonymous)
                     Icon(Icons.verified, color: Colors.blue, size: 14.sp),
                 ],
               ),
@@ -120,7 +132,9 @@ class _CommentHeader extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      comment.commenter.userName,
+                      comment.commenter.isAnnonymous
+                          ? ""
+                          : comment.commenter.userName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Styles.textStyle12.copyWith(
@@ -151,12 +165,13 @@ class _CommentHeader extends StatelessWidget {
           ),
         ),
         Gap(8.w),
-        CommentActionsMenu(
-          isOwner: comment.isOwner,
-          isReply: isReply,
-          commentId: comment.id,
-          callbacks: callbacks,
-        ),
+        if (!isGuest)
+          CommentActionsMenu(
+            isOwner: comment.isOwner,
+            isReply: isReply,
+            commentId: comment.id,
+            callbacks: callbacks,
+          ),
       ],
     );
   }
@@ -175,11 +190,48 @@ class _CommentText extends StatelessWidget {
 
   const _CommentText({required this.text});
 
+  bool _isEmojiOnly(String text) {
+    final emojiRegex = RegExp(
+      r'^(?:[\u{1F300}-\u{1FAFF}|\u{2600}-\u{26FF}|\u{2700}-\u{27BF}|\u{FE0F}|\u{1F1E6}-\u{1F1FF}]+)$',
+      unicode: true,
+    );
+    return emojiRegex.hasMatch(text.replaceAll(' ', ''));
+  }
+
+  int _emojiCount(String text) {
+    final emojiRegex = RegExp(
+      r'[\u{1F300}-\u{1FAFF}|\u{2600}-\u{26FF}|\u{2700}-\u{27BF}|\u{FE0F}|\u{1F1E6}-\u{1F1FF}]',
+      unicode: true,
+    );
+    return emojiRegex.allMatches(text).length;
+  }
+
+  double _fontSize() {
+    if (!_isEmojiOnly(text)) {
+      return 14.sp; // الحجم العادي
+    }
+
+    final count = _emojiCount(text);
+
+    if (count == 1) {
+      return 40.sp; // إيموجي واحد
+    } else if (count <= 7) {
+      return 28.sp; // من 2 لـ 7
+    } else {
+      return 14.sp; // كتير
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: Styles.textStyle14.copyWith(color: Colors.black, height: 1.5),
+      textAlign: TextAlign.start,
+      style: Styles.textStyle14.copyWith(
+        fontSize: _fontSize(),
+        color: Colors.black,
+        height: 1.5,
+      ),
     );
   }
 }
@@ -249,7 +301,7 @@ class _LikeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return CustomClick(
       onTap: onTap,
       child: Row(
         children: [
@@ -279,7 +331,7 @@ class _ReplyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return CustomClick(
       onTap: onTap,
       child: Text(
         context.tr(AppStrings.reply),
@@ -320,6 +372,63 @@ class _Separator extends StatelessWidget {
         const Text('•', style: TextStyle(color: Colors.black)),
         Gap(10.w),
       ],
+    );
+  }
+}
+
+class NavToProfile extends StatelessWidget {
+  final Widget child;
+  final bool isAnnonymous;
+  final String userType;
+  final String userId;
+  const NavToProfile({
+    super.key,
+    required this.child,
+    required this.isAnnonymous,
+    required this.userType,
+    required this.userId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        if (isAnnonymous) {
+          // لا تفعل شيئًا أو أظهر رسالة
+          return;
+        }
+        userType == 'Advisor'
+            ? _navigateToUserAdvisorProfile(context)
+            : _navigateToUserProfile(context);
+      },
+      child: child,
+    );
+  }
+
+  void _navigateToUserAdvisorProfile(BuildContext context) {
+    // التحقق من أن هذا ليس بروفايل المستخدم الحالي
+    // يمكنك استخدام getIt أو أي طريقة أخرى للتحقق من الـ current user id
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserAdvisorProfileView(
+          advisorId: userId,
+        ), // تأكد من أن userId ليس null
+      ),
+    );
+  }
+
+  void _navigateToUserProfile(BuildContext context) {
+    if (userId.isEmpty) {
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserPublicProfileView(userId: userId),
+      ),
     );
   }
 }

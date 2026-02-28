@@ -1,5 +1,7 @@
 class ApiEndPoint {
-  static const String stories = '/stories/all';
+  static const String allStories = '/stories/all';
+  static String specialStories([String? advisorId]) =>
+      '/stories/special/${advisorId ?? ''}';
   static const String guestLogin = '/guest/login';
   static const String likeStory = '/story-likes/toggle';
   static const String storyViews = '/stories/view/';
@@ -53,4 +55,18 @@ class ApiEndPoint {
 
   static const String hideComment = '/hidden/comment';
   static const String hideReply = '/hidden/reply';
+  static const String advisorStatistics = '/advisor/statistics';
+  static const String vote = '/votes';
+  //  // ✅ Interactions (NEW)
+  // static const String explorationUsers = '/interactions/exploration';
+  // static const String historyUsers = '/interactions/history';
+  // static const String toggleFavorite = '/interactions/favorite';
+  // static const String sendCompliment = '/interactions/compliment';
+  // static const String likeUser = '/interactions/like';
+  static const String rateApp = '/app-rate/rate';
+  static const String followAdvisor = '/advisor/toggle-follow/';
+  static const String changeIsAvaliableForSessions =
+      '/advisor/changeIsAvaliableForSessions';
+  static const String wallet = '/wallet/';
+  static const String walletTransactions = '/wallet/transactions';
 }

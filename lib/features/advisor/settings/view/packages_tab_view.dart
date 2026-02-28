@@ -1,5 +1,5 @@
-import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/packages_tab_ui_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/package_card.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/subscriprion_card.dart'
     show SubscriptionCard;
@@ -37,25 +37,64 @@ class PackagesTabView extends StatelessWidget {
                     // Header
                     Padding(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 30.w,
+                        horizontal: 20.w,
                         vertical: 15.h,
                       ),
-                      child: SimpleAppBar(title: 'الباقات'),
+                      child: SimpleAppBar(title: context.tr('packages')),
                     ),
 
-                    // Tab Bar Container
-                    const CustomToggleTabBar(
-                      firstTabText: 'الباقات',
-                      secondTabText: 'الاشتراكات',
+                    // TabBar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Container(
+                        margin: EdgeInsets.symmetric(
+                          horizontal: 20.w,
+                          vertical: 10.h,
+                        ),
+                        padding: EdgeInsets.all(2.5.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.tabsBack,
+                          borderRadius: BorderRadius.circular(15.r),
+                          border: Border.all(color: AppColors.primary100),
+                        ),
+                        child: Builder(
+                          builder: (context) {
+                            final bool isTablet =
+                                MediaQuery.of(context).size.width > 600;
+                            return TabBar(
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              dividerColor: Colors.transparent,
+                              indicator: BoxDecoration(
+                                color: AppColors.primary300,
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                              labelStyle: isTablet
+                                  ? Styles.textStyle16
+                                  : Styles.textStyle20,
+                              labelPadding: isTablet
+                                  ? EdgeInsets.symmetric(
+                                      horizontal: 24.w,
+                                      vertical: 12.h,
+                                    )
+                                  : EdgeInsets.zero,
+                              labelColor: AppColors.secondary950,
+                              unselectedLabelColor: AppColors.blackColor,
+                              unselectedLabelStyle: Styles.textStyle16,
+                              tabs: [
+                                Tab(text: context.tr('packages')),
+                                Tab(text: context.tr('subscriptions')),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
                     ),
 
-                    Expanded(
+                    // Content
+                    const Expanded(
                       child: TabBarView(
                         children: [
-                          // Packages Tab Content
                           _PackagesTabContent(),
-
-                          // Subscriptions Tab Content
                           _SubscriptionsTabContent(),
                         ],
                       ),
@@ -71,28 +110,28 @@ class PackagesTabView extends StatelessWidget {
   }
 }
 
-// تبويب الباقات
-class _PackagesTabContent extends StatefulWidget {
-  @override
-  State<_PackagesTabContent> createState() => _PackagesTabContentState();
-}
+class _PackagesTabContent extends StatelessWidget {
+  const _PackagesTabContent();
 
-class _PackagesTabContentState extends State<_PackagesTabContent> {
-  // نوع الباقة المختار
-  String _selectedPackageType = 'الشاملة';
-
-  // قائمة الباقات الشاملة
-  final List<PackageCard> _comprehensivePackages = [
+  List<PackageCard> _getComprehensivePackages(BuildContext context) => [
     PackageCard(
-      title: 'باقة شاملة اولي',
-      features: ['3 محادثات', 'تعزيز البوستات', 'تثبيت في الاعلي لمدة يوم'],
+      title: context.tr('comprehensive_package_one'),
+      features: [
+        context.tr('conversations_count', args: ['3']),
+        context.tr('boost_posts'),
+        context.tr('pin_top_one_day'),
+      ],
       price: '170',
       savings: '150',
       onSubscribe: () {},
     ),
     PackageCard(
-      title: 'باقة شاملة مميزة',
-      features: ['3 محادثات', 'تعزيز البوستات', 'تثبيت في الاعلي لمدة يوم'],
+      title: context.tr('premium_comprehensive_package'),
+      features: [
+        context.tr('conversations_count', args: ['3']),
+        context.tr('boost_posts'),
+        context.tr('pin_top_one_day'),
+      ],
       price: '170',
       savings: '150',
       isFeatured: true,
@@ -100,18 +139,17 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
     ),
   ];
 
-  // قائمة الباقات المفصلة (بدون features)
-  final List<PackageCard> _detailedPackages = [
+  List<PackageCard> _getDetailedPackages(BuildContext context) => [
     PackageCard(
-      title: 'باقة مفصلة اولي',
-      features: null, // بدون features
+      title: context.tr('detailed_package_one'),
+      features: null,
       price: '100',
       savings: '80',
       onSubscribe: () {},
     ),
     PackageCard(
-      title: 'باقة مفصلة مميزة',
-      features: null, // بدون features
+      title: context.tr('premium_detailed_package'),
+      features: null,
       price: '120',
       savings: '90',
       isFeatured: true,
@@ -121,61 +159,78 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
 
   @override
   Widget build(BuildContext context) {
-    // اختيار القائمة بناءً على النوع المختار
-    final List<PackageCard> currentPackages = _selectedPackageType == 'الشاملة'
-        ? _comprehensivePackages
-        : _detailedPackages;
+    return BlocProvider(
+      create: (context) => PackageTypeCubit(),
+      child: BlocBuilder<PackageTypeCubit, String>(
+        builder: (context, selectedPackageType) {
+          final List<PackageCard> currentPackages =
+              selectedPackageType == 'comprehensive'
+              ? _getComprehensivePackages(context)
+              : _getDetailedPackages(context);
 
-    return GestureDetector(
-      onTap: () {
-        _showPackageTypeSelection(context);
-      },
-      child: Column(
-        children: [
-          // Selection Bar
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30.w),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 23.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: AppColors.secondary950,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    'الباقات $_selectedPackageType',
-                    style: Styles.textStyle14.copyWith(
-                      color: AppColors.secondary300,
+          return GestureDetector(
+            onTap: () =>
+                _showPackageTypeSelection(context, selectedPackageType),
+            child: Column(
+              children: [
+                // Selection Bar
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.w),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 23.w,
+                      vertical: 12.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary950.withOpacity(0.75),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          context.tr(
+                            'packages_of_type',
+                            args: [context.tr(selectedPackageType)],
+                          ),
+                          style: Styles.textStyle14.copyWith(
+                            color: AppColors.secondary600,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.keyboard_arrow_down,
+                          color: AppColors.secondary300,
+                          size: 24.h,
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppColors.secondary300,
-                    size: 24.h,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Gap(5.h),
+                ),
+                Gap(5.h),
 
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
-              children: [...currentPackages],
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 24.w,
+                      vertical: 10.h,
+                    ),
+                    children: [...currentPackages],
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  // عرض قائمة اختيار نوع الباقة
-  void _showPackageTypeSelection(BuildContext context) {
+  void _showPackageTypeSelection(
+    BuildContext parentContext,
+    String currentType,
+  ) {
     showModalBottomSheet(
-      context: context,
+      context: parentContext,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
@@ -183,12 +238,7 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
           margin: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24.r),
-              topRight: Radius.circular(24.r),
-              bottomLeft: Radius.circular(24.r),
-              bottomRight: Radius.circular(24.r),
-            ),
+            borderRadius: BorderRadius.circular(24.r),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -201,7 +251,7 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header with Close Button
+              // Header
               Container(
                 padding: EdgeInsets.all(20.w),
                 decoration: BoxDecoration(
@@ -226,8 +276,8 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
                     ),
                     Expanded(
                       child: Text(
-                        'اختر نوع الباقات',
-                        style: Styles.textStyle16SemiBold.copyWith(),
+                        parentContext.tr('select_package_type'),
+                        style: Styles.textStyle16SemiBold,
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -235,34 +285,29 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
                 ),
               ),
 
-              // Option 1: الباقات الشاملة
               _buildPackageTypeOption(
-                title: 'الباقات الشاملة',
-                subtitle: 'باقات متكاملة مع جميع المميزات',
-                isSelected: _selectedPackageType == 'الشاملة',
+                context: parentContext,
+                title: parentContext.tr('comprehensive_packages'),
+                subtitle: parentContext.tr('comprehensive_packages_desc'),
+                isSelected: currentType == 'comprehensive',
                 onTap: () {
+                  parentContext.read<PackageTypeCubit>().selectType(
+                    'comprehensive',
+                  );
                   Navigator.pop(context);
-                  setState(() {
-                    _selectedPackageType = 'الشاملة';
-                  });
                 },
               ),
-
               Gap(12.h),
-
-              // Option 2: الباقات المفصلة
               _buildPackageTypeOption(
-                title: 'الباقات المفصلة',
-                subtitle: 'اختر المميزات التي تحتاجها فقط',
-                isSelected: _selectedPackageType == 'المفصلة',
+                context: parentContext,
+                title: parentContext.tr('detailed_packages'),
+                subtitle: parentContext.tr('detailed_packages_desc'),
+                isSelected: currentType == 'detailed',
                 onTap: () {
+                  parentContext.read<PackageTypeCubit>().selectType('detailed');
                   Navigator.pop(context);
-                  setState(() {
-                    _selectedPackageType = 'المفصلة';
-                  });
                 },
               ),
-
               Gap(24.h),
             ],
           ),
@@ -271,8 +316,8 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
     );
   }
 
-  // Widget لعرض خيار نوع الباقة
   Widget _buildPackageTypeOption({
+    required BuildContext context,
     required String title,
     required String subtitle,
     required bool isSelected,
@@ -294,8 +339,6 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
         child: Row(
           children: [
             Gap(16.w),
-
-            // Text Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,9 +351,7 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
                           : AppColors.titleCard,
                     ),
                   ),
-
                   Gap(4.h),
-
                   Text(
                     subtitle,
                     style: Styles.textStyle12.copyWith(
@@ -329,28 +370,29 @@ class _PackagesTabContentState extends State<_PackagesTabContent> {
   }
 }
 
-// تبويب الاشتراكات (بدون تغيير)
 class _SubscriptionsTabContent extends StatelessWidget {
+  const _SubscriptionsTabContent();
+
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
       children: [
         SubscriptionCard(
-          title: 'باقة شاملة اولي',
+          title: context.tr('comprehensive_package_one'),
           dateStart: '12/10/2020',
           dateEnd: '13/11/2020',
           isExpiring: true,
         ),
         Gap(10.h),
         SubscriptionCard(
-          title: 'باقة شاملة اولي',
+          title: context.tr('comprehensive_package_one'),
           dateStart: '12/10/2020',
           dateEnd: '13/11/2020',
         ),
         Gap(10.h),
         SubscriptionCard(
-          title: 'باقة شاملة اولي',
+          title: context.tr('comprehensive_package_one'),
           dateStart: '12/10/2020',
           dateEnd: '13/11/2020',
           canRenew: false,

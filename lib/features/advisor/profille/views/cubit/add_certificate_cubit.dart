@@ -1,55 +1,35 @@
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_state.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/core/enum/cubit_states.dart';
 
 class AddCertificateCubit extends Cubit<AddCertificateState> {
   final CertificatesRepository _repository;
 
-  AddCertificateCubit(this._repository) : super(const AddCertificateState());
+  late TextEditingController nameCertificateController;
+  late TextEditingController fromWhereController;
+
+  AddCertificateCubit(this._repository) : super(const AddCertificateState()) {
+    nameCertificateController = TextEditingController();
+    fromWhereController = TextEditingController();
+    emit(
+      state.copyWith(
+        nameCertificateController: nameCertificateController,
+        fromWhereController: fromWhereController,
+      ),
+    );
+  }
 
   void updateNameCertificate(String value) {
-    // ⭐ تنظيف النص والحفاظ على الاتجاه
-    final cleanedText = value.trim();
-    emit(state.copyWith(nameCertificate: cleanedText));
+    emit(state.copyWith(nameCertificate: value));
   }
 
   void updateFromWhere(String value) {
-    final cleanedText = value.trim();
-    emit(state.copyWith(fromWhere: cleanedText));
+    emit(state.copyWith(fromWhere: value));
   }
 
-  Future<void> pickDate(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: state.date ?? DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Directionality(
-          textDirection: TextDirection.rtl, // ⭐ تعيين الاتجاه للتقويم
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
-                primary: AppColors.kprimaryColor,
-                onPrimary: Colors.white,
-                onSurface: AppColors.secondary800,
-              ),
-              textTheme: TextTheme(
-                bodyMedium: TextStyle(
-                  fontFamily: 'ArabicFont',
-                ), // ⭐ إضافة خط عربي
-              ),
-            ),
-            child: child!,
-          ),
-        );
-      },
-    );
-
-    if (picked != null && context.mounted) {
-      emit(state.copyWith(date: picked));
-    }
+  void updateDate(DateTime date) {
+    emit(state.copyWith(date: date));
   }
 
   Future<void> pickCertificateImage() async {
@@ -66,7 +46,7 @@ class AddCertificateCubit extends Cubit<AddCertificateState> {
 
       // ⭐ التحقق من حجم الملف (مثال: 5 ميجابايت كحد أقصى)
       if (fileSize > 5 * 1024 * 1024) {
-        // يمكنك إظهار رسالة خطأ هنا
+        emit(state.copyWith(errorMessage: 'حجم الملف كبير جداً'));
         return;
       }
 
@@ -78,29 +58,29 @@ class AddCertificateCubit extends Cubit<AddCertificateState> {
     emit(state.copyWith(certificateImageFile: null));
   }
 
-  Future<void> addCertificate(BuildContext context) async {
+  Future<void> addCertificate() async {
     // ⭐ التحقق من البيانات
     if (state.nameCertificate.isEmpty) {
-      _showErrorSnackBar(context, 'يرجى إدخال اسم الشهادة');
+      emit(state.copyWith(errorMessage: 'يرجى إدخال اسم الشهادة'));
       return;
     }
 
     if (state.fromWhere.isEmpty) {
-      _showErrorSnackBar(context, 'يرجى إدخال الجهة المصدرة');
+      emit(state.copyWith(errorMessage: 'يرجى إدخال الجهة المصدرة'));
       return;
     }
 
     if (state.date == null) {
-      _showErrorSnackBar(context, 'يرجى اختيار سنة الحصول');
+      emit(state.copyWith(errorMessage: 'يرجى اختيار سنة الحصول'));
       return;
     }
 
     if (state.certificateImageFile == null) {
-      _showErrorSnackBar(context, 'يرجى تحميل صورة الشهادة');
+      emit(state.copyWith(errorMessage: 'يرجى تحميل صورة الشهادة'));
       return;
     }
 
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, errorMessage: null));
 
     final result = await _repository.addCertificate(
       nameCertificate: state.nameCertificate,
@@ -113,35 +93,52 @@ class AddCertificateCubit extends Cubit<AddCertificateState> {
 
     result.fold(
       (failure) {
-        emit(state.copyWith(isLoading: false));
-        if (context.mounted) {
-          _showErrorSnackBar(context, failure.message);
-        }
+        emit(
+          state.copyWith(
+            isLoading: false,
+            errorMessage: failure.message,
+            state: CubitStates.failure,
+          ),
+        );
       },
       (response) {
-        emit(state.copyWith(isLoading: false));
-        if (context.mounted) {
-          // ⭐ مسح النموذج بعد الإضافة الناجحة
-          _clearForm();
-          // ⭐ إظهار رسالة النجاح
-          showSafeSnackBar(
-            context: context,
-            text: 'تم إضافة الشهادة بنجاح',
-            isSuccess: true,
-          );
+        // ⭐ مسح النموذج بعد الإضافة الناجحة
+        _clearForm();
 
-          // ⭐ العودة مع تحديث البيانات
-          Navigator.pop(context, true);
-        }
+        emit(
+          state.copyWith(
+            isLoading: false,
+            successMessage: 'تم إضافة الشهادة بنجاح',
+            state: CubitStates.success,
+          ),
+        );
       },
     );
   }
 
   void _clearForm() {
-    emit(AddCertificateState());
+    nameCertificateController.clear();
+    fromWhereController.clear();
+    emit(
+      state.copyWith(
+        nameCertificate: '',
+        fromWhere: '',
+        date: null,
+        certificateImageFile: null,
+        nameCertificateController: nameCertificateController,
+        fromWhereController: fromWhereController,
+      ),
+    );
   }
 
-  void _showErrorSnackBar(BuildContext context, String message) {
-    showSafeSnackBar(context: context, text: message, isError: true);
+  @override
+  Future<void> close() {
+    nameCertificateController.dispose();
+    fromWhereController.dispose();
+    return super.close();
+  }
+
+  void clearMessage() {
+    emit(state.copyWith(errorMessage: null, successMessage: null));
   }
 }

@@ -1,7 +1,9 @@
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/bio_information.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_header.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_tabs_section.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileView extends StatelessWidget {
@@ -31,8 +33,20 @@ class ProfileView extends StatelessWidget {
 
             // Main scrollable content
             SafeArea(
-              child: BlocProvider<ProfileCubit>(
-                create: (_) => getIt<ProfileCubit>(),
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider<ProfileCubit>(
+                    create: (_) => getIt<ProfileCubit>(),
+                  ),
+                  BlocProvider<StoriesCubit>(
+                    create: (_) => getIt<StoriesCubit>()
+                      ..fetchStories(
+                        isSpecial: true,
+                        advisorId: null,
+                        context: context,
+                      ),
+                  ),
+                ],
                 child: _ProfileContent(),
               ),
             ),
@@ -43,35 +57,77 @@ class ProfileView extends StatelessWidget {
   }
 }
 
-class _ProfileContent extends StatelessWidget {
+class _ProfileContent extends StatefulWidget {
+  @override
+  State<_ProfileContent> createState() => _ProfileContentState();
+}
+
+class _ProfileContentState extends State<_ProfileContent> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator.adaptive(
-      onRefresh: () => context.read<ProfileCubit>().refresh(),
-      color: AppColors.kprimaryColor,
-      backgroundColor: AppColors.kWhiteColor,
-      displacement: 40.h,
-      edgeOffset: 0,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<LayoutCubit, LayoutState>(
+          listenWhen: (previous, current) =>
+              previous.scrollToTopTrigger != current.scrollToTopTrigger &&
+              current.currentIndex == 3, // advisor profile is index 3
+          listener: (context, state) {
+            if (_scrollController.hasClients) {
+              _scrollController.animateTo(
+                0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+            }
+          },
         ),
-        slivers: [
-          // Profile Header
-          const ProfileHeader(),
+      ],
+      child: RefreshIndicator.adaptive(
+        onRefresh: () => Future.wait([
+          context.read<ProfileCubit>().refresh(),
+          context.read<StoriesCubit>().fetchStories(
+            isSpecial: true,
+            advisorId: null,
+            context: context,
+          ),
+        ]),
+        color: AppColors.kprimaryColor,
+        backgroundColor: AppColors.kWhiteColor,
+        displacement: 40.h,
+        edgeOffset: 0,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          slivers: [
+            // Profile Header
+            const ProfileHeader(),
 
-          // Bio Information
-          const BioInformation(),
+            // Bio Information
+            const BioInformation(),
 
-          // Spacing
-          SliverToBoxAdapter(child: Gap(20.h)),
+            // Stories Section
+            const ProfileStoriesSection(advisorId: null),
 
-          // Posts Tabs Section
-          const ProfileTabsSection(),
+            // Spacing
+            SliverToBoxAdapter(child: Gap(20.h)),
 
-          // Bottom padding for better scrolling
-          SliverToBoxAdapter(child: Gap(100.h)),
-        ],
+            // Posts Tabs Section
+            const ProfileTabsSection(),
+
+            // Bottom padding for better scrolling
+            SliverToBoxAdapter(child: Gap(100.h)),
+          ],
+        ),
       ),
     );
   }

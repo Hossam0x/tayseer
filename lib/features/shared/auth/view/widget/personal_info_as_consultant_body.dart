@@ -29,7 +29,7 @@ class _PersonalInfoAsConsultantBodyState
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
                     child: IconButton(
                       onPressed: () => context.pop(),
                       icon: const Icon(Icons.arrow_back),
@@ -38,7 +38,7 @@ class _PersonalInfoAsConsultantBodyState
 
                   Text(
                     context.tr('enterPersonalInfo'),
-                    style: Styles.textStyle18.copyWith(
+                    style: Styles.textStyle20Bold.copyWith(
                       color: AppColors.kscandryTextColor,
                     ),
                   ),
@@ -61,7 +61,7 @@ class _PersonalInfoAsConsultantBodyState
                         authCubit.pickedImage = image;
                       },
                       validator: (v) =>
-                          v == null ? context.tr('required') : null,
+                          v == null ? context.tr('required_images') : null,
                     ),
                   ),
 

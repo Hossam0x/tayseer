@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_actions_menu.dart';
@@ -11,45 +10,33 @@ import 'package:tayseer/core/widgets/comment_card/comment_actions_menu.dart';
 typedef CommentActionCallback = void Function(String commentId);
 
 /// Callback for actions requiring content (edit, reply)
-typedef CommentContentCallback = void Function(String commentId, String content);
+typedef CommentContentCallback =
+    void Function(String commentId, String content);
 
 /// Callback for actions requiring isReply flag
 typedef CommentToggleCallback = void Function(String commentId, bool isReply);
 
 /// Callback for menu actions
-typedef CommentMenuCallback = void Function(
-  String commentId,
-  CommentMenuAction action,
-  bool isReply,
-);
+typedef CommentMenuCallback =
+    void Function(String commentId, CommentMenuAction action, bool isReply);
 
 /// Callback for liking (needs to know if it's a reply)
-typedef CommentLikeCallback = void Function(
-  CommentModel comment,
-  bool isReply,
-);
+typedef CommentLikeCallback = void Function(CommentModel comment, bool isReply);
 
 /// Callback for save edit (needs content + isReply flag)
-typedef CommentSaveEditCallback = void Function(
-  String commentId,
-  String content,
-  bool isReply,
-);
+typedef CommentSaveEditCallback =
+    void Function(String commentId, String content, bool isReply);
 
 /// Callback for sending reply
-typedef CommentReplyCallback = void Function(
-  String parentCommentId,
-  String replyText,
-);
+typedef CommentReplyCallback =
+    void Function(String parentCommentId, String replyText);
 
 /// Callback for loading replies
 typedef CommentLoadRepliesCallback = void Function(String commentId);
 
 /// Callback for blocking user
-typedef CommentBlockUserCallback = void Function(
-  String commentId,
-  String userId,
-);
+typedef CommentBlockUserCallback =
+    void Function(String commentId, String userId);
 
 // ==========================================
 // ✅ Bundle of Comment Callbacks
@@ -59,35 +46,35 @@ class CommentCallbacks {
   // ════════════════════════════════════════
   // Main Comment Actions
   // ════════════════════════════════════════
-  
+
   /// Toggle like on comment or reply
   final CommentLikeCallback? onLike;
-  
+
   /// Toggle reply mode for a comment
   final CommentActionCallback? onReplyToggle;
-  
+
   /// Toggle edit mode for a comment
   final CommentActionCallback? onEditToggle;
-  
+
   /// Cancel edit mode
   final VoidCallback? onCancelEdit;
-  
+
   /// Cancel reply mode
   final VoidCallback? onCancelReply;
-  
+
   /// Save edited comment/reply
   final CommentSaveEditCallback? onSaveEdit;
-  
+
   /// Send a new reply
   final CommentReplyCallback? onSendReply;
-  
+
   /// Load replies for a comment
   final CommentLoadRepliesCallback? onLoadReplies;
 
   // ════════════════════════════════════════
   // Menu Actions (Owner)
   // ════════════════════════════════════════
-  
+
   /// Delete comment/reply
   final CommentActionCallback? onDeleteComment;
   final CommentActionCallback? onDeleteReply;
@@ -95,19 +82,18 @@ class CommentCallbacks {
   // ════════════════════════════════════════
   // Menu Actions (Guest)
   // ════════════════════════════════════════
-  
+
   /// Report comment/reply
   final CommentActionCallback? onReport;
-  
+
   /// Hide comment/reply
   final CommentActionCallback? onHideComment;
   final CommentActionCallback? onHideReply;
-  
 
   // ════════════════════════════════════════
   // Utility
   // ════════════════════════════════════════
-  
+
   /// General menu action handler (alternative to individual callbacks)
   final CommentMenuCallback? onMenuAction;
 

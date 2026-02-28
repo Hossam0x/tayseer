@@ -5,6 +5,7 @@ class ProfileTextField extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final String? hint;
   final int? maxLines;
+  final int? maxLength;
   final TextInputType? keyboardType;
   final bool enabled;
 
@@ -14,6 +15,7 @@ class ProfileTextField extends StatelessWidget {
     required this.onChanged,
     this.hint,
     this.maxLines = 1,
+    this.maxLength,
     this.keyboardType,
     this.enabled = true,
   });
@@ -23,8 +25,9 @@ class ProfileTextField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       onChanged: onChanged,
-      textAlign: TextAlign.right,
+      textAlign: isArabic ? TextAlign.right : TextAlign.left,
       maxLines: maxLines,
+      maxLength: maxLength,
       keyboardType: keyboardType,
       enabled: enabled,
       style: Styles.textStyle14.copyWith(color: AppColors.secondary800),

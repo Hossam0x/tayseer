@@ -7,14 +7,16 @@ import 'package:tayseer/features/shared/home/model/categories_response_model.dar
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/model/comments_response_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/shared/home/model/post_response_model.dart';
 
 abstract class HomeRepository {
-  Future<Either<Failure, List<PostModel>>> fetchPosts({
+  Future<Either<Failure, PostsResponseModel>> fetchPosts({
     required int page,
+    double? nextCursor,
     String? categoryId,
   });
 
-  Future<void> reactToPost({
+  Future<Either<Failure, String>> reactToPost({
     required String postId,
     required ReactionType? reactionType,
     required bool isRemove,
@@ -38,6 +40,7 @@ abstract class HomeRepository {
   Future<Either<Failure, CommentModel>> addComment({
     required String postId,
     required String comment,
+    required bool anonymous,
   });
 
   Future<Either<Failure, String>> deleteComment({required String commentId});
@@ -50,6 +53,7 @@ abstract class HomeRepository {
   Future<Either<Failure, CommentModel>> addReply({
     required String commentId,
     required String reply,
+    required bool anonymous,
   });
 
   Future<void> likeToggle({
@@ -84,4 +88,14 @@ abstract class HomeRepository {
   void hidePost({required String postId, required bool isHide});
   Future<Either<Failure, String>> blockUser({required String userId});
   Future<Either<Failure, String>> archivePost({required String postId});
+
+  Future<Either<Failure, bool>> voteInPoll({
+    required String postId,
+    required String choiceIndex,
+  });
+
+  Future<Either<Failure, String>> followAdvisor({
+    required String advisorId,
+    required bool isAdding,
+  });
 }

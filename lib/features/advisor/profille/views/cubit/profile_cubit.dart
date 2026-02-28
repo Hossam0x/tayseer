@@ -1,5 +1,6 @@
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
+import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
 import 'profile_state.dart';
@@ -11,12 +12,54 @@ class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit(this._profileRepository) : super(const ProfileState()) {
     _initializeProfile();
   }
-
   // ═══════════════════════════════════════════════════════════
   // 📌 INITIALIZE PROFILE
   // ═══════════════════════════════════════════════════════════
   Future<void> _initializeProfile() async {
-    await Future.wait([fetchProfile(), fetchPosts()]);
+    await Future.wait([
+      fetchProfile(),
+      fetchPosts(),
+      fetchAnalytics(), // ⭐ جديد: جلب الإحصائيات
+    ]);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 FETCH ANALYTICS
+  // ═══════════════════════════════════════════════════════════
+  Future<void> fetchAnalytics() async {
+    if (state.analyticsState == CubitStates.loading) return;
+
+    emit(state.copyWith(analyticsState: CubitStates.loading));
+
+    final result = await _profileRepository.getAnalytics();
+    if (isClosed) return;
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          analyticsState: CubitStates.failure,
+          analyticsErrorMessage: failure.message,
+        ),
+      ),
+      (analyticsModel) => emit(
+        state.copyWith(
+          analyticsState: CubitStates.success,
+          analytics: analyticsModel,
+          analyticsErrorMessage: null,
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 REFRESH ALL DATA
+  // ═══════════════════════════════════════════════════════════
+  Future<void> refresh() async {
+    await Future.wait([
+      fetchProfile(),
+      fetchPosts(loadMore: false),
+      fetchAnalytics(),
+    ]);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -59,9 +102,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       final nextPage = state.currentPage + 1;
 
       // ⭐️ استخدم ProfileRepository بدل HomeRepository
-      final result = await _profileRepository.fetchSavedPosts(
-        page: nextPage,
-      );
+      final result = await _profileRepository.fetchSavedPosts(page: nextPage);
 
       if (isClosed) return;
       result.fold(
@@ -130,9 +171,6 @@ class ProfileCubit extends Cubit<ProfileState> {
   // ═══════════════════════════════════════════════════════════
   // 📌 REFRESH ALL DATA
   // ═══════════════════════════════════════════════════════════
-  Future<void> refresh() async {
-    await Future.wait([fetchProfile(), fetchPosts(loadMore: false)]);
-  }
 
   // ═══════════════════════════════════════════════════════════
   // 📌 UPDATE PROFILE PICTURE (إذا كان مطلوباً)
@@ -143,6 +181,43 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (isClosed) return;
       emit(state.copyWith(profile: updatedProfile));
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 UPDATE PROFILE DATA (تحديث البيانات من الكاش)
+  // ═══════════════════════════════════════════════════════════
+  void updateProfileData({
+    String? image,
+    String? name,
+    String? username,
+    String? aboutYou,
+    String? professionalSpecialization,
+    String? jobGrade,
+    String? yearsOfExperience,
+    String? location,
+  }) {
+    if (state.profile != null) {
+      final updatedProfile = state.profile!.copyWith(
+        image: image,
+        name: name,
+        username: username,
+        aboutYou: aboutYou,
+        professionalSpecialization: professionalSpecialization,
+        jobGrade: jobGrade,
+        yearsOfExperience: yearsOfExperience,
+        location: location,
+      );
+      if (isClosed) return;
+      emit(state.copyWith(profile: updatedProfile));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 UPDATE PROFILE FROM CACHE (تحديث كامل من الكاش)
+  // ═══════════════════════════════════════════════════════════
+  void updateProfileFromCache(ProfileModel updatedProfile) {
+    if (isClosed) return;
+    emit(state.copyWith(profile: updatedProfile));
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -259,6 +334,188 @@ class ProfileCubit extends Cubit<ProfileState> {
             shareActionState: CubitStates.success,
             shareMessage: message,
             isShareAdded: !isRemoving,
+          ),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 💾 SAVE POST
+  // ═══════════════════════════════════════════════════════════
+  Future<void> toggleSavePost({required String postId}) async {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final originalPost = state.posts[postIndex];
+    final isCurrentlySaved = originalPost.isSaved;
+
+    // Optimistic Update
+    final updatedPost = originalPost.copyWith(isSaved: !isCurrentlySaved);
+    _updatePostInList(postId, updatedPost);
+    emit(state.copyWith(saveActionState: CubitStates.initial));
+
+    final result = await _profileRepository.toggleSavePost(
+      postId: postId,
+      isRemove: isCurrentlySaved,
+    );
+
+    result.fold(
+      (failure) {
+        _updatePostInList(postId, originalPost);
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.failure,
+            saveMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.success,
+            saveMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 🗑 DELETE POST
+  // ═══════════════════════════════════════════════════════════
+  void deletePost({required String postId}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final originalPosts = List<PostModel>.from(state.posts);
+
+    // Optimistic Update
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+    emit(
+      state.copyWith(
+        posts: updatedPosts,
+        deletePostActionState: CubitStates.initial,
+      ),
+    );
+
+    _profileRepository.deletePost(postId: postId).then((result) {
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              posts: originalPosts,
+              deletePostActionState: CubitStates.failure,
+              deletePostMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          emit(
+            state.copyWith(
+              deletePostActionState: CubitStates.success,
+              deletePostMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📦 ARCHIVE POST
+  // ═══════════════════════════════════════════════════════════
+  void archivePost({required String postId}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final originalPosts = List<PostModel>.from(state.posts);
+
+    // Optimistic Update
+    final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
+    emit(
+      state.copyWith(
+        posts: updatedPosts,
+        archivePostActionState: CubitStates.initial,
+      ),
+    );
+
+    _profileRepository.archivePost(postId: postId).then((result) {
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              posts: originalPosts,
+              archivePostActionState: CubitStates.failure,
+              archivePostMessage: failure.message,
+            ),
+          );
+        },
+        (message) {
+          emit(
+            state.copyWith(
+              archivePostActionState: CubitStates.success,
+              archivePostMessage: message,
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 👁️ HIDE POST
+  // ═══════════════════════════════════════════════════════════
+  void toggleHidePost({required String postId}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+    final newHideState = !post.isHidden;
+
+    final updatedPost = post.copyWith(isHidden: newHideState);
+    _updatePostInList(postId, updatedPost);
+
+    _profileRepository.toggleHidePost(postId: postId, isHide: newHideState);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 🚫 BLOCK USER
+  // ═══════════════════════════════════════════════════════════
+  Future<void> blockUser({
+    required String visiblePostId,
+    required String advisorId,
+  }) async {
+    emit(state.copyWith(blockUserActionState: CubitStates.loading));
+
+    final result = await _profileRepository.blockUser(userId: advisorId);
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            blockUserActionState: CubitStates.failure,
+            blockUserMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        final updatedPosts = <PostModel>[];
+        for (final post in state.posts) {
+          if (post.postId == visiblePostId) {
+            updatedPosts.add(post.copyWith(isBlocked: true));
+          } else if (post.advisorId == advisorId) {
+            continue;
+          } else {
+            updatedPosts.add(post);
+          }
+        }
+
+        emit(
+          state.copyWith(
+            posts: updatedPosts,
+            blockUserActionState: CubitStates.success,
+            blockUserMessage: message,
           ),
         );
       },

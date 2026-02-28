@@ -34,7 +34,7 @@ class CustomNormalTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Padding(
         padding: EdgeInsets.only(
           right: context.width * 0.02,

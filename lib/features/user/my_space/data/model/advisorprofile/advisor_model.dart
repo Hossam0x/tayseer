@@ -4,7 +4,7 @@ class AdvisorModel {
   final String image;
   final dynamic rate;
   final int sessions;
-  final int yearsOfExperience;
+  final String yearsOfExperience;
   final int followers;
 
   AdvisorModel({
@@ -24,7 +24,7 @@ class AdvisorModel {
       image: json['image'] ?? '',
       rate: json['rate'] ?? 0,
       sessions: json['sessions'] ?? 0,
-      yearsOfExperience: json['yearsOfExperience'] ?? 0,
+      yearsOfExperience: json['yearsOfExperience'] ?? '0',
       followers: json['followers'] ?? 0,
     );
   }

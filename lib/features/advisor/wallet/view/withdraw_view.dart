@@ -1,5 +1,6 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/withdraw_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/withdraw_state.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/withdraw_model.dart';
 import 'package:tayseer/features/advisor/wallet/view/widgets/balance_card.dart';
@@ -10,8 +11,11 @@ class WithdrawView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => WithdrawCubit(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => WithdrawCubit()),
+        BlocProvider(create: (context) => getIt<WalletCubit>()..getWallet()),
+      ],
       child: Scaffold(
         backgroundColor: AppColors.kScaffoldColor,
         body: AdvisorBackground(
@@ -33,7 +37,7 @@ class WithdrawView extends StatelessWidget {
                     Gap(16.h),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: SimpleAppBar(title: 'سحب'),
+                      child: SimpleAppBar(title: context.tr('withdraw')),
                     ),
                     Gap(16.h),
                     // Content
@@ -52,7 +56,7 @@ class WithdrawView extends StatelessWidget {
                                 _buildAmountInput(context, state),
                                 SizedBox(height: 10.h),
                                 // Fees Section
-                                _buildFeesSection(state),
+                                _buildFeesSection(context, state),
                                 SizedBox(height: 20.h),
                                 // Withdraw Method
                                 _buildWithdrawMethod(context, state),
@@ -61,7 +65,7 @@ class WithdrawView extends StatelessWidget {
                                 _buildAccountDetails(state, context),
                                 SizedBox(height: 24.h),
                                 // Notes
-                                _buildNotesSection(),
+                                _buildNotesSection(context),
                                 SizedBox(height: 20.h),
                                 // Submit Button
                                 _buildSubmitButton(context, state),
@@ -87,7 +91,7 @@ class WithdrawView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'المبلغ المراد سحبه',
+          context.tr('amount_to_withdraw'),
           style: Styles.textStyle16.copyWith(color: AppColors.primaryText),
         ),
         SizedBox(height: 8.h),
@@ -100,12 +104,12 @@ class WithdrawView extends StatelessWidget {
           child: Row(
             children: [
               Padding(
-                padding: EdgeInsets.only(right: 16.w),
+                padding: EdgeInsetsDirectional.only(start: 16.w),
                 child: AppImage(AssetsData.amountIcon, width: 24.w),
               ),
               Expanded(
                 child: TextFormField(
-                  textAlign: TextAlign.right,
+                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
                   keyboardType: TextInputType.number,
                   style: Styles.textStyle20Bold.copyWith(
                     color: AppColors.primaryText,
@@ -132,9 +136,9 @@ class WithdrawView extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.only(left: 16.w),
+                padding: EdgeInsetsDirectional.only(end: 16.w),
                 child: Text(
-                  'ر.س',
+                  context.tr('sar'),
                   style: Styles.textStyle16.copyWith(
                     color: AppColors.primaryText,
                   ),
@@ -147,7 +151,7 @@ class WithdrawView extends StatelessWidget {
     );
   }
 
-  Widget _buildFeesSection(WithdrawState state) {
+  Widget _buildFeesSection(BuildContext context, WithdrawState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -155,7 +159,7 @@ class WithdrawView extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(right: 18.0),
           child: Text(
-            '*تتم خصم نسبة من المبلغ المراد سحبه رسوم سحب',
+            context.tr('withdraw_fees_note'),
             style: Styles.textStyle14.copyWith(color: AppColors.secondaryText),
           ),
         ),
@@ -172,12 +176,15 @@ class WithdrawView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'بعد خصم نسبة التطبيق',
+                context.tr('after_app_commission'),
                 style: Styles.textStyle16.copyWith(
                   color: AppColors.secondaryText,
                 ),
               ),
-              GradientText(text: '325 ر.س', style: Styles.textStyle20Bold),
+              GradientText(
+                text: '325 ${context.tr('sar')}',
+                style: Styles.textStyle20Bold,
+              ),
               // Text(
               //   // '${state.netAmount.toStringAsFixed(0)} ر.س',
               //   '325 ر.س',
@@ -197,14 +204,14 @@ class WithdrawView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'طريقة السحب',
+          context.tr('withdraw_method'),
           style: Styles.textStyle16.copyWith(color: AppColors.primaryText),
         ),
         SizedBox(height: 8.h),
         // Bank Account Option
         _buildMethodOption(
           context,
-          title: 'حساب بنكي',
+          title: context.tr('bank_account'),
           icon: AssetsData.icBank,
           isSelected: state.method == WithdrawMethod.bankAccount,
           onTap: () {
@@ -239,7 +246,7 @@ class WithdrawView extends StatelessWidget {
         // Vodafone Cash Pay Option
         _buildMethodOption(
           context,
-          title: 'فودافون كاش',
+          title: context.tr('vodafone_cash'),
           icon: AssetsData.vodafoneCash,
           isSelected: state.method == WithdrawMethod.vodafoneCash,
           onTap: () {
@@ -300,7 +307,9 @@ class WithdrawView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          isBank ? 'رقم الحساب البنكي' : 'رقم الهاتف',
+          isBank
+              ? context.tr('bank_account_number')
+              : context.tr('phone_number_label'),
           style: Styles.textStyle16.copyWith(color: AppColors.primaryText),
         ),
         SizedBox(height: 12.h),
@@ -363,7 +372,7 @@ class WithdrawView extends StatelessWidget {
                   Gap(12.h),
                   Text(
                     textAlign: TextAlign.center,
-                    'يرجى رفع صورتك الشخصية مع صورة البطاقة (الوجه والظهر).',
+                    context.tr('upload_id_image_note'),
                     style: Styles.textStyle16Meduim.copyWith(
                       color: AppColors.mentionBlue,
                     ),
@@ -444,18 +453,18 @@ class WithdrawView extends StatelessWidget {
     );
   }
 
-  Widget _buildNotesSection() {
+  Widget _buildNotesSection(BuildContext context) {
     return Center(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            'الحد الأدنى للسحب 50 ر.س',
+            context.tr('min_withdraw_amount', args: [context.tr('sar')]),
             style: Styles.textStyle14.copyWith(color: AppColors.secondaryText),
           ),
           SizedBox(height: 8.h),
           Text(
-            'يتم تحويل الأموال خلال 2-7 أيام عمل',
+            context.tr('transfer_time_note'),
             style: Styles.textStyle14.copyWith(color: AppColors.secondaryText),
           ),
         ],
@@ -507,7 +516,9 @@ class WithdrawView extends StatelessWidget {
               child: CustomBotton(
                 height: 54.h,
                 width: double.infinity,
-                title: state.isLoading ? 'يتم الطلب...' : 'سحب',
+                title: state.isLoading
+                    ? context.tr('requesting_status')
+                    : context.tr('withdraw'),
                 onPressed: () {
                   Navigator.pushReplacementNamed(
                     context,

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:tayseer/my_import.dart';
 
 class CustomSearchBar extends StatelessWidget {
@@ -24,7 +23,7 @@ class CustomSearchBar extends StatelessWidget {
     final contentPaddingV = isMobile ? 10.0 : 12.0;
     final iconSize = isMobile ? 18.0 : 20.0;
 
-    return Container(
+    return SizedBox(
       height: height,
       width: double.infinity,
       child: TextField(

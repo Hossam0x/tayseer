@@ -1,13 +1,15 @@
-import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
+import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/profile_post_card.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts_state.dart';
 import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
-import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
+import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
+    as home_feed;
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
+import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 
 class SavedPostsView extends StatelessWidget {
   const SavedPostsView({super.key});
@@ -15,67 +17,158 @@ class SavedPostsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) {
-        final cubit = SavedPostsCubit(getIt<SavedPostsRepository>());
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          cubit.fetchSavedPosts();
-        });
-        return cubit;
-      },
-      child: BlocListener<SavedPostsCubit, SavedPostsState>(
-        // ⭐️ Listener للـ Share
-        listenWhen: (prev, curr) =>
-            prev.shareActionState != curr.shareActionState &&
-            curr.shareActionState != CubitStates.initial,
-        listener: (context, state) {
-          final message = state.shareMessage;
-          switch (state.shareActionState) {
-            case CubitStates.success:
-              state.isShareAdded == true
-                  ? AppToast.success(context, message ?? 'تمت المشاركة بنجاح')
-                  : AppToast.info(context, message ?? 'تم إلغاء المشاركة');
-              break;
-            case CubitStates.failure:
-              AppToast.error(context, message ?? 'حدث خطأ أثناء المشاركة');
-              break;
-            default:
-              break;
-          }
-        },
-        child: Scaffold(
-          body: AdvisorBackground(
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 105.h,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(AssetsData.homeBarBackgroundImage),
-                        fit: BoxFit.fill,
-                      ),
+      create: (context) => SavedPostsCubit(getIt<SavedPostsRepository>()),
+      child: const _SavedPostsBody(),
+    );
+  }
+}
+
+class _SavedPostsBody extends StatelessWidget {
+  const _SavedPostsBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<SavedPostsCubit, SavedPostsState>(
+          listenWhen: (p, c) =>
+              p.status != c.status && c.status == CubitStates.failure,
+          listener: (context, state) {
+            if (state.errorMessage != null) {
+              AppToast.error(context, state.errorMessage!);
+            }
+          },
+        ),
+        // 📢 SHARE FEEDBACK
+        BlocListener<SavedPostsCubit, SavedPostsState>(
+          listenWhen: (p, c) =>
+              p.shareActionState != c.shareActionState &&
+              c.shareActionState != CubitStates.initial,
+          listener: (context, state) {
+            if (state.shareActionState == CubitStates.success) {
+              AppToast.success(
+                context,
+                state.isShareAdded == true
+                    ? (state.shareMessage ?? context.tr('shared_success'))
+                    : (state.shareMessage ?? context.tr('unshared_success')),
+              );
+            } else if (state.shareActionState == CubitStates.failure) {
+              AppToast.error(
+                context,
+                state.shareMessage ?? context.tr('shared_error'),
+              );
+            }
+          },
+        ),
+        // 💾 SAVE FEEDBACK
+        BlocListener<SavedPostsCubit, SavedPostsState>(
+          listenWhen: (p, c) =>
+              p.saveActionState != c.saveActionState &&
+              c.saveActionState != CubitStates.initial,
+          listener: (context, state) {
+            if (state.saveActionState == CubitStates.success) {
+              AppToast.success(
+                context,
+                state.saveMessage ?? context.tr('saved_success'),
+              );
+            } else if (state.saveActionState == CubitStates.failure) {
+              AppToast.error(
+                context,
+                state.saveMessage ?? context.tr('save_error'),
+              );
+            }
+          },
+        ),
+        // 🗑 DELETE FEEDBACK
+        BlocListener<SavedPostsCubit, SavedPostsState>(
+          listenWhen: (p, c) =>
+              p.deletePostActionState != c.deletePostActionState &&
+              c.deletePostActionState != CubitStates.initial,
+          listener: (context, state) {
+            if (state.deletePostActionState == CubitStates.success) {
+              AppToast.success(
+                context,
+                state.deletePostMessage ?? context.tr('delete_success'),
+              );
+            } else if (state.deletePostActionState == CubitStates.failure) {
+              AppToast.error(
+                context,
+                state.deletePostMessage ?? context.tr('delete_error'),
+              );
+            }
+          },
+        ),
+        // 📦 ARCHIVE FEEDBACK
+        BlocListener<SavedPostsCubit, SavedPostsState>(
+          listenWhen: (p, c) =>
+              p.archivePostActionState != c.archivePostActionState &&
+              c.archivePostActionState != CubitStates.initial,
+          listener: (context, state) {
+            if (state.archivePostActionState == CubitStates.success) {
+              AppToast.success(
+                context,
+                state.archivePostMessage ?? context.tr('archive_success'),
+              );
+            } else if (state.archivePostActionState == CubitStates.failure) {
+              AppToast.error(
+                context,
+                state.archivePostMessage ?? context.tr('archive_error'),
+              );
+            }
+          },
+        ),
+        // 🚫 BLOCK FEEDBACK
+        BlocListener<SavedPostsCubit, SavedPostsState>(
+          listenWhen: (p, c) =>
+              p.blockUserActionState != c.blockUserActionState &&
+              c.blockUserActionState != CubitStates.initial,
+          listener: (context, state) {
+            if (state.blockUserActionState == CubitStates.success) {
+              AppToast.success(
+                context,
+                state.blockUserMessage ?? context.tr('blocked_successfully'),
+              );
+            } else if (state.blockUserActionState == CubitStates.failure) {
+              AppToast.error(
+                context,
+                state.blockUserMessage ?? context.tr('failed_to_block'),
+              );
+            }
+          },
+        ),
+      ],
+      child: Scaffold(
+        body: AdvisorBackground(
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 105.h,
+                child: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(AssetsData.homeBarBackgroundImage),
+                      fit: BoxFit.fill,
                     ),
                   ),
                 ),
-                Column(
-                  children: [
-                    Gap(30.h),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 20.w,
-                        vertical: 15.h,
-                      ),
-                      child: SimpleAppBar(title: 'المنشورات المحفوظة'),
+              ),
+              Column(
+                children: [
+                  Gap(30.h),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 15.h,
                     ),
-
-                    Expanded(child: _buildBody()),
-                  ],
-                ),
-              ],
-            ),
+                    child: SimpleAppBar(title: context.tr('saved_posts')),
+                  ),
+                  Expanded(child: _buildBody()),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -87,376 +180,187 @@ class SavedPostsView extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<SavedPostsCubit>();
 
-        // ⭐️⭐️⭐️ الحل: التحقق من حالة التحميل أولاً
         if (state.status == CubitStates.loading && state.posts.isEmpty) {
-          return _buildShimmerList();
+          return ListView.builder(
+            padding: EdgeInsets.symmetric(vertical: 16.h),
+            itemCount: 3,
+            itemBuilder: (context, index) => Padding(
+              padding: EdgeInsets.only(bottom: 16.h),
+              child: const PostCardShimmer(),
+            ),
+          );
         }
 
         if (state.status == CubitStates.failure && state.posts.isEmpty) {
-          return _buildErrorState(cubit);
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  context.tr('error_loading_posts'),
+                  style: Styles.textStyle16.copyWith(color: AppColors.kGreyB3),
+                ),
+                Gap(12.h),
+                ElevatedButton(
+                  onPressed: () => cubit.refresh(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.kprimaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 24.w,
+                      vertical: 12.h,
+                    ),
+                  ),
+                  child: Text(
+                    context.tr('retry'),
+                    style: Styles.textStyle14.copyWith(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
 
-        // ⭐️⭐️⭐️ هذا هو الجزء المهم:
-        // تأكد أن التحميل انتهى وفقط عندها تحقق من وجود الـ posts
         if (state.status == CubitStates.success && state.posts.isEmpty) {
-          return _buildEmptyState();
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AppImage(AssetsData.postsEndIcon, height: 200.h, width: 200.w),
+                Gap(16.h),
+                Text(
+                  context.tr('no_saved_posts'),
+                  style: Styles.textStyle16.copyWith(
+                    color: AppColors.secondary400,
+                  ),
+                ),
+                Gap(8.h),
+                Text(
+                  context.tr('saved_posts_empty_hint'),
+                  style: Styles.textStyle14.copyWith(
+                    color: AppColors.secondary300,
+                  ),
+                ),
+              ],
+            ),
+          );
         }
 
-        // ⭐️⭐️⭐️ إذا كانت الـ posts ليست فارغة أو مازال التحميل جارياً
-        return RefreshIndicator(
-          color: AppColors.kprimaryColor,
-          onRefresh: () => cubit.refresh(),
-          child: _buildPostsList(state, cubit),
+        return NotificationListener<ScrollNotification>(
+          onNotification: (scrollInfo) {
+            // Trigger load more when user is near the end
+            if (scrollInfo.metrics.pixels >=
+                scrollInfo.metrics.maxScrollExtent - 400) {
+              if (state.hasMore && !state.isLoadingMore) {
+                cubit.fetchSavedPosts(loadMore: true);
+              }
+            }
+            return false;
+          },
+          child: RefreshIndicator(
+            color: AppColors.kprimaryColor,
+            onRefresh: () => cubit.refresh(),
+            child: ListView.builder(
+              padding: EdgeInsets.symmetric(vertical: 16.h),
+              itemCount: state.posts.length + 1,
+              itemBuilder: (context, index) {
+                if (index == state.posts.length) {
+                  if (state.isLoadingMore) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: PostCardShimmer(),
+                    );
+                  }
+                  if (!state.hasMore && state.posts.isNotEmpty) {
+                    return const home_feed.EndOfFeedIndicator();
+                  }
+                  return const SizedBox.shrink();
+                }
+
+                return _PostItem(
+                  postId: state.posts[index].postId,
+                  cubit: cubit,
+                );
+              },
+            ),
+          ),
         );
       },
     );
   }
+}
 
-  Widget _buildShimmerList() {
-    return ListView.builder(
-      itemCount: 3,
-      itemBuilder: (context, index) {
+class _PostItem extends StatefulWidget {
+  final String postId;
+  final SavedPostsCubit cubit;
+  const _PostItem({required this.postId, required this.cubit});
+
+  @override
+  State<_PostItem> createState() => _PostItemState();
+}
+
+class _PostItemState extends State<_PostItem> {
+  late final Stream<PostModel?> _postStream;
+  late final PostCallbacks _callbacks;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeStreamAndCallbacks();
+  }
+
+  void _initializeStreamAndCallbacks() {
+    _postStream = widget.cubit.stream
+        .map(
+          (state) =>
+              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+        )
+        .distinct();
+
+    _callbacks = PostCallbacks(
+      postUpdatesStream: _postStream,
+      onReactionChanged: (postId, reaction) =>
+          widget.cubit.reactToPost(postId: postId, reactionType: reaction),
+      onShareTap: (postId) => widget.cubit.toggleSharePost(postId: postId),
+      onSave: (postId) => widget.cubit.toggleSavePost(postId: postId),
+      onDelete: (postId) => widget.cubit.deletePost(postId: postId),
+      onArchive: (postId) => widget.cubit.archivePost(postId: postId),
+      onHide: (postId) => widget.cubit.toggleHidePost(postId: postId),
+      onBlock: (postId, advisorId) =>
+          widget.cubit.blockUser(visiblePostId: postId, advisorId: advisorId),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<SavedPostsCubit, SavedPostsState, PostModel?>(
+      selector: (state) =>
+          state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+      builder: (context, post) {
+        if (post == null) return const SizedBox.shrink();
+
         return Padding(
           padding: EdgeInsets.only(bottom: 16.h),
-          child: const PostCardShimmer(),
-        );
-      },
-    );
-  }
-
-  Widget _buildErrorState(SavedPostsCubit cubit) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'حدث خطأ في تحميل المنشورات',
-            style: Styles.textStyle16.copyWith(color: AppColors.kGreyB3),
-          ),
-          Gap(12.h),
-          ElevatedButton(
-            onPressed: () => cubit.fetchSavedPosts(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.kprimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            ),
-            child: Text(
-              'إعادة المحاولة',
-              style: Styles.textStyle14.copyWith(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AppImage(AssetsData.postsEndIcon, height: 200.h, width: 200.w),
-          Gap(16.h),
-          Text(
-            'لا توجد منشورات محفوظة',
-            style: Styles.textStyle16.copyWith(color: AppColors.secondary400),
-          ),
-          Gap(8.h),
-          Text(
-            'عند حفظ منشور سيظهر هنا',
-            style: Styles.textStyle14.copyWith(color: AppColors.secondary300),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPostsList(SavedPostsState state, SavedPostsCubit cubit) {
-    return ListView.builder(
-      itemCount: state.posts.length + (state.isLoadingMore ? 1 : 0),
-
-      itemBuilder: (context, index) {
-        if (index < state.posts.length) {
-          final post = state.posts[index];
-          return _buildPostItem(context, post, cubit);
-        } else {
-          return _buildLoadingMoreIndicator();
-        }
-      },
-    );
-  }
-
-  Widget _buildPostItem(
-    BuildContext context,
-    PostModel post,
-    SavedPostsCubit cubit,
-  ) {
-    return Container(
-      padding: EdgeInsets.only(bottom: 20.h),
-      child: Column(
-        children: [
-          // Post Card
-          ProfilePostCard(
+          child: PostCard(
+            isFromProfile: false,
             post: post,
-            onReactionChanged: (postId, reactionType) {
-              // ⭐️ استدعاء Like
-              cubit.reactToPost(postId: postId, reactionType: reactionType);
-            },
-            onShareTap: (postId) {
-              // ⭐️ استدعاء Share
-              cubit.toggleSharePost(postId: postId);
-            },
-            onNavigateToDetails: (ctx, post, controller) {
-              _navigateToDetails(ctx, post, controller, cubit);
-            },
-            onHashtagTap: (hashtag) {
-              context.pushNamed(AppRouter.kAdvisorSearchView);
-            },
-            onMoreTap: () => _showOptionsBottomSheet(context, post, cubit),
-          ),
-
-          // Remove button
-          Divider(height: 1, color: Colors.grey.shade200),
-          // Padding(
-          //   padding: const EdgeInsets.all(8.0),
-          //   child: _buildRemoveButton(context, post, cubit),
-          // ),
-        ],
-      ),
-    );
-  }
-
-  // Widget _buildRemoveButton(
-  //   BuildContext context,
-  //   PostModel post,
-  //   SavedPostsCubit cubit,
-  // ) {
-  //   return InkWell(
-  //     onTap: () => _confirmRemove(context, post, cubit),
-  //     borderRadius: BorderRadius.only(
-  //       bottomLeft: Radius.circular(12.r),
-  //       bottomRight: Radius.circular(12.r),
-  //     ),
-  //     child: Container(
-  //       padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-  //       decoration: BoxDecoration(
-  //         color: AppColors.kRedColor.withOpacity(0.05),
-  //         borderRadius: BorderRadius.only(
-  //           bottomLeft: Radius.circular(12.r),
-  //           bottomRight: Radius.circular(12.r),
-  //         ),
-  //       ),
-  //       child: Row(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: [
-  //           Icon(
-  //             Icons.bookmark_remove_rounded,
-  //             color: AppColors.kRedColor,
-  //             size: 18.w,
-  //           ),
-  //           Gap(8.w),
-  //           Text(
-  //             'إزالة من المحفوظات',
-  //             style: Styles.textStyle14.copyWith(
-  //               color: AppColors.kRedColor,
-  //               fontWeight: FontWeight.w600,
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  Widget _buildLoadingMoreIndicator() {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.h),
-      child: Center(
-        child: CircularProgressIndicator(color: AppColors.kprimaryColor),
-      ),
-    );
-  }
-
-  void _navigateToDetails(
-    BuildContext context,
-    PostModel post,
-    VideoPlayerController? controller,
-    SavedPostsCubit cubit,
-  ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PostDetailsView(
-          post: post,
-          cachedController: controller,
-         callbacks: PostCallbacks(
-             postUpdatesStream: cubit.stream.map((state) {
-                          return state.posts.firstWhere(
-                            (p) => p.postId == post.postId,
-                            orElse: () => post,
-                          );
-                        }),
-                        onReactionChanged: (postId, reactionType) {
-                          cubit.reactToPost(
-                            postId: postId,
-                            reactionType: reactionType,
-                          );
-                        },
-                        onShareTap: (postId) {
-                          cubit.toggleSharePost(postId: postId);
-                        },
-                        onHashtagTap: (hashtag) {
-                          context.pushNamed(AppRouter.kAdvisorSearchView);
-                        },),
-        ),
-      ),
-    );
-  }
-
-  void _showOptionsBottomSheet(
-    BuildContext context,
-    PostModel post,
-    SavedPostsCubit cubit,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Gap(12.h),
-              Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2.r),
-                ),
-              ),
-              Gap(16.h),
-              // ⭐️ أضف خيار الإزالة من المحفوظات
-              _buildOptionItem(
+            callbacks: _callbacks,
+            onNavigateToDetails: (context, post, controller) {
+              Navigator.push(
                 context,
-                icon: Icons.bookmark_remove_rounded,
-                title: 'إزالة من المحفوظات',
-                color: AppColors.kRedColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  _confirmRemove(context, post, cubit);
-                },
-              ),
-              // ⭐️ أضف خيار المشاركة
-              _buildOptionItem(
-                context,
-                icon: Icons.share_rounded,
-                title: 'مشاركة',
-                color: AppColors.kprimaryColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  cubit.toggleSharePost(postId: post.postId);
-                },
-              ),
-              // ⭐️ أضف خيار حفظ/إلغاء حفظ
-              // _buildOptionItem(
-              //   context,
-              //   icon: post.isSaved
-              //       ? Icons.bookmark_remove_rounded
-              //       : Icons.bookmark_add_rounded,
-              //   title: post.isSaved ? 'إلغاء الحفظ' : 'حفظ',
-              //   color: AppColors.kprimaryColor,
-              //   onTap: () {
-              //     Navigator.pop(context);
-              //     cubit.toggleSavePost(postId: post.postId);
-              //     AppToast.success(
-              //       context,
-              //       post.isSaved ? 'تم إلغاء الحفظ' : 'تم الحفظ بنجاح',
-              //     );
-              //   },
-              // ),
-              Gap(16.h),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildOptionItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title, style: Styles.textStyle16.copyWith(color: color)),
-      onTap: onTap,
-    );
-  }
-
-  // في _confirmRemove:
-  void _confirmRemove(
-    BuildContext context,
-    PostModel post,
-    SavedPostsCubit cubit,
-  ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(
-            'إزالة من المحفوظات',
-            style: Styles.textStyle18Bold,
-            textAlign: TextAlign.center,
-          ),
-          content: Text(
-            'هل أنت متأكد من إزالة هذا المنشور من المحفوظات؟',
-            style: Styles.textStyle14,
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                'إلغاء',
-                style: Styles.textStyle14.copyWith(
-                  color: AppColors.secondary400,
+                MaterialPageRoute(
+                  builder: (context) => PostDetailsView(
+                    post: post,
+                    isFromProfile: false,
+                    cachedController: controller,
+                    callbacks: _callbacks,
+                  ),
                 ),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-
-                // ⭐️ استخدام try-catch مع mounted check
-                try {
-                  await cubit.removeFromSaved(post.postId);
-
-                  // ⭐️ التحقق من mounted قبل show toast
-                  if (context.mounted) {
-                    AppToast.success(context, 'تمت الإزالة من المحفوظات');
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    AppToast.error(context, 'حدث خطأ أثناء الإزالة');
-                  }
-                }
-              },
-              child: Text(
-                'إزالة',
-                style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         );
       },
     );

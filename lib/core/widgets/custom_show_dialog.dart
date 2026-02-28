@@ -70,9 +70,9 @@ void CustomshowDialogWithImage(
   BuildContext context, {
   required String title,
   required String supTitle,
-  String? imageUrl,           // ✅ صورة (اختياري)
-  IconData? icon,             // ✅ أيقونة (اختياري)
-  Color? iconColor,           // ✅ لون الأيقونة (اختياري)
+  String? imageUrl, // ✅ صورة (اختياري)
+  IconData? icon, // ✅ أيقونة (اختياري)
+  Color? iconColor, // ✅ لون الأيقونة (اختياري)
   Color? iconBackgroundColor, // ✅ لون خلفية الأيقونة (اختياري)
   required String bottonText,
   required void Function() onPressed,
@@ -81,10 +81,7 @@ void CustomshowDialogWithImage(
   bool showCancelButton = false,
 }) {
   // ✅ التأكد إن واحد منهم على الأقل موجود
-  assert(
-    imageUrl != null || icon != null,
-    'يجب توفير إما imageUrl أو icon',
-  );
+  assert(imageUrl != null || icon != null, 'يجب توفير إما imageUrl أو icon');
 
   HapticFeedback.mediumImpact();
 
@@ -116,9 +113,9 @@ void CustomshowDialogWithImage(
 class _DialogContent extends StatelessWidget {
   final String title;
   final String supTitle;
-  final String? imageUrl;           // ✅ صورة
-  final IconData? icon;             // ✅ أيقونة
-  final Color? iconColor;           // ✅ لون الأيقونة
+  final String? imageUrl; // ✅ صورة
+  final IconData? icon; // ✅ أيقونة
+  final Color? iconColor; // ✅ لون الأيقونة
   final Color? iconBackgroundColor; // ✅ لون خلفية الأيقونة
   final String bottonText;
   final void Function() onPressed;
@@ -220,11 +217,7 @@ class _DialogContent extends StatelessWidget {
           color: iconBackgroundColor ?? Colors.red.withOpacity(0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          size: 50,
-          color: iconColor ?? Colors.red,
-        ),
+        child: Icon(icon, size: 50, color: iconColor ?? Colors.red),
       );
     } else {
       // ✅ في حالة عدم وجود أي منهم (احتياطي)
@@ -235,11 +228,7 @@ class _DialogContent extends StatelessWidget {
           color: Colors.grey.withOpacity(0.1),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.info_outline,
-          size: 50,
-          color: Colors.grey,
-        ),
+        child: const Icon(Icons.info_outline, size: 50, color: Colors.grey),
       );
     }
 
@@ -433,7 +422,6 @@ class _AnimatedDialogButtonState extends State<_AnimatedDialogButton> {
         );
   }
 }
-
 void CustomSHowDetailsDialog(
   BuildContext context, {
   String? title,
@@ -447,84 +435,84 @@ void CustomSHowDetailsDialog(
     barrierDismissible: true,
     barrierColor: Colors.black.withOpacity(0.5),
     transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (_, __, ___) {
-      return const SizedBox();
-    },
+    pageBuilder: (_, __, ___) => const SizedBox(),
     transitionBuilder: (context, animation, secondaryAnimation, child) {
+      // ✅ نستخدم MediaQuery لجلب مساحة لوحة المفاتيح
+      final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
       return ScaleTransition(
-        scale: CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutBack,
-        ),
+        scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
         child: FadeTransition(
           opacity: animation,
           child: Center(
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 20.w),
-                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFFFCE4EC),
-                      Color(0xFFF3E5F5),
-                      Color(0xFFE1F5FE),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(24.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: Icon(
-                            Icons.close,
-                            color: Colors.grey.shade600,
-                            size: 24.sp,
-                          ),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
+            // ✅ إضافة AnimatedPadding لرفع الحوار عند ظهور الكيبورد
+            child: AnimatedPadding(
+              padding: EdgeInsets.only(bottom: keyboardHeight),
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
+              child: SingleChildScrollView( // ✅ حماية إضافية للشاشات الصغيرة
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+                    padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFFFCE4EC),
+                          Color(0xFFF3E5F5),
+                          Color(0xFFE1F5FE),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(24.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
                         ),
-                        Text(
-                          title ?? "ارسال تحية",
-                          style: Styles.textStyle16Bold.copyWith(
-                            color: const Color(0xFF5D1028),
-                          ),
-                        ),
-                        SizedBox(width: 24.sp),
                       ],
                     ),
-                    Gap(20.h),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(12.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16.r),
-                      ),
-                      child: contantWidget,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: Icon(Icons.close, color: Colors.grey.shade600, size: 24.sp),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            Text(
+                              title ?? "تعديل البيانات",
+                              style: Styles.textStyle16Bold.copyWith(color: const Color(0xFF5D1028)),
+                            ),
+                            SizedBox(width: 24.sp),
+                          ],
+                        ),
+                        Gap(20.h),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(12.w),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          child: contantWidget,
+                        ),
+                        Gap(24.h),
+                        CustomBotton(
+                          useGradient: true,
+                          title: buttonLabel ?? context.tr('send'),
+                          onPressed: onSendPressed,
+                        ),
+                      ],
                     ),
-                    Gap(24.h),
-                    CustomBotton(
-                      useGradient: true,
-                      title: context.tr('send'),
-                      onPressed: onSendPressed,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

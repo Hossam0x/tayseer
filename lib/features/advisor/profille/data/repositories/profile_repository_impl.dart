@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/advisor/profille/data/models/analytics_model.dart';
 import 'package:tayseer/my_import.dart';
 import 'profile_repository.dart';
 import '../models/profile_model.dart';
@@ -8,6 +9,27 @@ class ProfileRepositoryImpl implements ProfileRepository {
   final ApiService _apiService;
 
   ProfileRepositoryImpl(this._apiService);
+
+  @override
+  Future<Either<Failure, AnalyticsModel>> getAnalytics() async {
+    try {
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.advisorStatistics,
+      );
+
+      if (response['success'] == true) {
+        final data = response['data'] as Map<String, dynamic>;
+        final analytics = AnalyticsModel.fromJson(data);
+        return Right(analytics);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل جلب الإحصائيات'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, ProfileModel>> getAdvisorProfile() async {
@@ -53,7 +75,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       final response = await _apiService.get(
         endPoint: '/posts/all-for-advisor',
-        query: {'page': page},
+        query: {'page': page, 'limit': 10},
       );
 
       if (response['success'] == true) {
@@ -103,6 +125,87 @@ class ProfileRepositoryImpl implements ProfileRepository {
         data: requestData,
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> toggleSavePost({
+    required String postId,
+    required bool isRemove,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.savePost,
+        query: {'action': isRemove ? 'remove' : 'add'},
+        data: {"postId": postId},
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> deletePost({required String postId}) async {
+    try {
+      final response = await _apiService.delete(
+        endPoint: "${ApiEndPoint.deletePost}$postId",
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم حذف المنشور بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  void toggleHidePost({required String postId, required bool isHide}) {
+    _apiService.post(
+      endPoint: ApiEndPoint.hidePost,
+      query: {'action': isHide ? 'add' : 'remove'},
+      data: {"postId": postId},
+    );
+  }
+
+  @override
+  Future<Either<Failure, String>> blockUser({required String userId}) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.blockuser,
+        data: {"blockedId": userId},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> archivePost({required String postId}) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: "${ApiEndPoint.archivePost}$postId",
+        query: {'action': 'add'},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم أرشفة المنشور بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {

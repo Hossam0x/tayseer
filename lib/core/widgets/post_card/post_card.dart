@@ -2,19 +2,22 @@ import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
+import 'package:tayseer/core/widgets/post_card/post_images_grid.dart';
 import 'package:tayseer/core/widgets/post_card/post_options_bottom_sheet.dart';
 import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/core/widgets/post_card/real_video_player.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
-import 'package:tayseer/core/widgets/post_card/post_images_grid.dart';
 import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/features/advisor/reels/views/reels_feed_view.dart';
+import 'package:tayseer/features/shared/event/view/widget/event_cart_item.dart';
+import 'package:tayseer/features/shared/reels/views/reels_feed_view.dart';
+import 'package:tayseer/core/widgets/post_card/post_poll_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
   final bool isDetailsView;
   final VideoPlayerController? sharedController;
+  final bool isFromProfile;
 
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
@@ -29,6 +32,7 @@ class PostCard extends StatefulWidget {
     this.sharedController,
     this.callbacks = const PostCallbacks(),
     this.onNavigateToDetails,
+    required this.isFromProfile,
   });
 
   @override
@@ -94,6 +98,7 @@ class _PostCardState extends State<PostCard> {
 
           // User Info
           _PostUserHeader(
+            isFromProfile: widget.isFromProfile,
             post: widget.post,
             onMoreTap: () => PostOptionsBottomSheet.show(
               context,
@@ -110,8 +115,8 @@ class _PostCardState extends State<PostCard> {
               onHide: () => widget.callbacks.onHide?.call(widget.post.postId),
               onSave: () => widget.callbacks.onSave?.call(widget.post.postId),
               onBlock: () => widget.callbacks.onBlock?.call(
-                widget.post.advisorId,
                 widget.post.postId,
+                widget.post.advisorId,
               ),
             ),
           ),
@@ -127,6 +132,7 @@ class _PostCardState extends State<PostCard> {
 
           // Media
           _PostMedia(
+            isFromProfile: widget.isFromProfile,
             post: widget.post,
             isDetailsView: widget.isDetailsView,
             sharedController: widget.sharedController,
@@ -410,14 +416,20 @@ class _RepostHeader extends StatelessWidget {
 class _PostUserHeader extends StatelessWidget {
   final PostModel post;
   final VoidCallback? onMoreTap;
+  final bool isFromProfile;
 
-  const _PostUserHeader({required this.post, this.onMoreTap});
+  const _PostUserHeader({
+    required this.post,
+    this.onMoreTap,
+    required this.isFromProfile,
+  });
 
   @override
   Widget build(BuildContext context) {
     return UserInfoHeader(
       name: post.name,
       avatar: post.avatar,
+      advisorId: post.advisorId,
       isVerified: post.isVerified,
       onMoreTap: onMoreTap ?? () {},
       subtitle: Row(
@@ -441,6 +453,7 @@ class _PostUserHeader extends StatelessWidget {
           Icon(Icons.public, color: AppColors.kGreyB3, size: 12.sp),
         ],
       ),
+      isFromProfile: isFromProfile,
     );
   }
 }
@@ -480,6 +493,7 @@ class _PostMedia extends StatefulWidget {
   final VideoPlayerController? sharedController;
   final void Function(VideoPlayerController) onControllerCreated;
   final PostCallbacks callbacks;
+  final bool isFromProfile;
 
   const _PostMedia({
     required this.post,
@@ -487,6 +501,7 @@ class _PostMedia extends StatefulWidget {
     this.sharedController,
     required this.onControllerCreated,
     required this.callbacks,
+    required this.isFromProfile,
   });
 
   @override
@@ -508,6 +523,7 @@ class _PostMediaState extends State<_PostMedia> {
       case PostContentType.post:
         return widget.post.images.isNotEmpty
             ? PostImagesGrid(
+                isFromProfile: widget.isFromProfile,
                 isFromPostDetails: widget.isDetailsView,
                 images: widget.post.images,
                 postId: widget.post.postId,
@@ -515,24 +531,38 @@ class _PostMediaState extends State<_PostMedia> {
                 callbacks: widget.callbacks,
               )
             : const SizedBox.shrink();
+      case PostContentType.event:
+        return EventCardItem(
+          key: ValueKey('event_${widget.post.postId}'), // 👈 أضف ده
 
-      case PostContentType.video:
-        return RealVideoPlayer(
-          postId: widget.post.postId,
-          videoUrl: widget.post.videoUrl ?? '',
-          isReel: false,
-          videoController: _activeController,
-          onControllerCreated: (controller) {
-            _activeController = controller;
-            widget.onControllerCreated(controller);
+          imageUrl: widget.post.event?.image ?? '',
+          sessionTitle: widget.post.event?.title ?? '',
+          location: widget.post.event?.location ?? '',
+          advisorName: widget.post.event?.advisor ?? '',
+          dateTime: widget.post.event?.date ?? '',
+          price: widget.post.event?.priceAfterDiscount.toString() ?? '',
+          oldPrice: widget.post.event?.priceBeforeDiscount.toString() ?? '',
+          onTap: () {
+            context.pushNamed(
+              AppRouter.kEventDetailView,
+              arguments: {'eventId': widget.post.event?.id},
+            );
           },
+        );
+
+      case PostContentType.poll:
+        return PostPollView(
+          post: widget.post,
+          onVote: (choiceText) =>
+              widget.callbacks.onPollVote?.call(widget.post.postId, choiceText),
         );
 
       case PostContentType.reel:
         return RealVideoPlayer(
           postId: widget.post.postId,
           videoUrl: widget.post.videoUrl ?? '',
-          isReel: true,
+          videoData: widget.post.videoData,
+
           videoController: widget.sharedController ?? _activeController,
           onControllerCreated: (controller) {
             _activeController = controller;

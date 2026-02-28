@@ -9,11 +9,29 @@ class UserAdvisorBioInformation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
-      listenWhen: (previous, current) =>
-          previous.followActionState != current.followActionState &&
-          current.followActionState != CubitStates.initial,
-      listener: _handleFollowState,
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+          listenWhen: (previous, current) =>
+              previous.followActionState != current.followActionState &&
+              current.followActionState != CubitStates.initial,
+          listener: _handleFollowState,
+        ),
+        BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+          listenWhen: (previous, current) =>
+              previous.chatActionState != current.chatActionState &&
+              current.chatActionState == CubitStates.failure,
+          listener: (context, state) {
+            if (state.chatErrorMessage != null) {
+              showSafeSnackBar(
+                context: context,
+                text: state.chatErrorMessage!,
+                isError: true,
+              );
+            }
+          },
+        ),
+      ],
       child: BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
         buildWhen: (previous, current) =>
             previous.profileState != current.profileState ||
@@ -46,11 +64,12 @@ class UserAdvisorBioInformation extends StatelessWidget {
     switch (state.followActionState) {
       case CubitStates.success:
         state.isFollowAdded == true
-            ? AppToast.success(context, message ?? 'تمت المتابعة بنجاح')
-            : AppToast.info(context, message ?? 'تم إلغاء المتابعة');
+            // make translation here for text
+            ? AppToast.success(context, message ?? context.tr('follow_success'))
+            : AppToast.info(context, message ?? context.tr('unfollow_success'));
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء المتابعة');
+        AppToast.error(context, message ?? context.tr('follow_error'));
         break;
       default:
         break;
@@ -63,6 +82,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
       child: _buildBioContent(
         context,
         const UserAdvisorProfileModel(
+          id: '1',
           name: 'اسم المستخدم',
           image: '',
           username: '@username',
@@ -75,6 +95,8 @@ class UserAdvisorBioInformation extends StatelessWidget {
           isMe: false,
           professionalSpecialization: null,
           jobGrade: null,
+          isFollowing: false,
+          videoLink: null,
         ),
       ),
     );
@@ -94,7 +116,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
           Icon(Icons.info_outline, color: AppColors.kRedColor, size: 32.w),
           Gap(10.h),
           Text(
-            errorMessage ?? 'حدث خطأ في تحميل البيانات',
+            errorMessage ?? context.tr('error_loading_data'),
             style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
           ),
@@ -129,7 +151,11 @@ class UserAdvisorBioInformation extends StatelessWidget {
           ],
 
           // Professional info - عرض فقط إذا كان هناك بيانات
-          _buildProfessionalInfo(displaySpecialization, displayYearsExperience),
+          _buildProfessionalInfo(
+            displaySpecialization,
+            displayYearsExperience,
+            context,
+          ),
 
           // Location - عرض فقط إذا كان موجوداً
           _buildLocation(profile),
@@ -149,15 +175,14 @@ class UserAdvisorBioInformation extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          "Dr / ${profile.name}",
+          profile.name,
           style: Styles.textStyle20SemiBold.copyWith(color: AppColors.blueText),
           overflow: TextOverflow.ellipsis,
         ),
-        if (profile.isVerified)
-          Padding(
-            padding: EdgeInsets.only(left: 8.w),
-            child: AppImage(AssetsData.expertAdvisor, width: 24.w),
-          ),
+        if (profile.isVerified) ...[
+          Gap(8.w),
+          Icon(Icons.verified, color: Colors.blue, size: 20.w),
+        ],
       ],
     );
   }
@@ -165,6 +190,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
   Widget _buildProfessionalInfo(
     String? displaySpecialization,
     String? displayYearsExperience,
+    BuildContext context,
   ) {
     final hasSpecialization =
         displaySpecialization != null && displaySpecialization.isNotEmpty;
@@ -173,16 +199,44 @@ class UserAdvisorBioInformation extends StatelessWidget {
 
     // ⭐ إذا لم يكن هناك بيانات، لا تعرض أي شيء
     if (!hasSpecialization && !hasYearsExperience) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
+    }
+
+    String specializationText = '';
+    if (hasSpecialization) {
+      specializationText = context.tr(displaySpecialization);
+      // ⭐ تكبير أول حرف من كل كلمة في اللغة الإنجليزية
+      if (!context.isArabicLang) {
+        specializationText = specializationText
+            .split(' ')
+            .map(
+              (word) => word.isNotEmpty
+                  ? '${word[0].toUpperCase()}${word.substring(1)}'
+                  : '',
+            )
+            .join(' ');
+      }
+    }
+
+    String experienceText = '';
+    if (hasYearsExperience) {
+      experienceText = context.tr(displayYearsExperience);
+      if (context.isArabicLang) {
+        experienceText =
+            '${experienceText.replaceAll('-', 'الي')} ${context.tr('years_experience')}';
+      } else {
+        experienceText =
+            '${experienceText.replaceAll('-', 'to')} ${context.tr('years_experience')}';
+      }
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ⭐ عرض التخصص إذا كان موجوداً
+        // ⭐ عرض التخصص
         if (hasSpecialization)
           Text(
-            displaySpecialization,
+            specializationText,
             style: Styles.textStyle14.copyWith(
               color: AppColors.secondary800,
               fontWeight: FontWeight.w600,
@@ -195,7 +249,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
         // ⭐ عرض سنوات الخبرة إذا كانت موجودة
         if (hasYearsExperience)
           Text(
-            '$displayYearsExperience من الخبرة',
+            experienceText,
             style: Styles.textStyle14Meduim.copyWith(
               color: AppColors.secondary800,
             ),
@@ -210,7 +264,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
     final hasLocation =
         profile.location != null && profile.location!.isNotEmpty;
 
-    if (!hasLocation) return SizedBox.shrink();
+    if (!hasLocation) return const SizedBox.shrink();
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4.h),
@@ -233,7 +287,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
   Widget _buildAboutYou(UserAdvisorProfileModel profile) {
     final hasAboutYou = profile.aboutYou.isNotEmpty;
 
-    if (!hasAboutYou) return SizedBox.shrink();
+    if (!hasAboutYou) return const SizedBox.shrink();
 
     return Padding(
       padding: EdgeInsets.only(top: 8.h, bottom: 24.h),
@@ -253,68 +307,162 @@ class UserAdvisorBioInformation extends StatelessWidget {
     );
   }
 
-  // ⭐ تحديث قسم المتابعة والرسائل
+  // ⭐ تحديث زر المحادثة في _buildFollowSection
+  // ⭐ تحديث _buildFollowSection
   Widget _buildFollowSection(
     BuildContext context,
     UserAdvisorProfileModel profile,
   ) {
-    return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+    return BlocConsumer<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+      listenWhen: (previous, current) =>
+          previous.profile?.isFollowing != current.profile?.isFollowing ||
+          previous.profile?.room != current.profile?.room ||
+          previous.isChatLoading != current.isChatLoading ||
+          previous.followActionState != current.followActionState,
+      listener: (context, state) {
+        // ⭐ معالجة رسائل المتابعة (ليست هناك حاجة للتكرار إذا كانت في BlocListener بالأعلى)
+        // لكن بما أنه BlocConsumer يمكننا تركها أو إزالتها.
+        // بما أننا أضفنا BlocListener في الـ build، سنزيل هذا الجزء من هنا لتجنب التكرار.
+      },
       buildWhen: (previous, current) =>
           previous.profile?.isFollowing != current.profile?.isFollowing ||
+          previous.profile?.room != current.profile?.room ||
+          previous.isChatLoading != current.isChatLoading ||
           previous.followActionState != current.followActionState,
       builder: (context, state) {
+        final isBlocked = state.profile?.room?.isBlocked ?? false;
         final isFollowing = state.profile?.isFollowing ?? false;
-        final isLoading = state.followActionState == CubitStates.loading;
+        final isLoadingFollow = state.followActionState == CubitStates.loading;
+        final isLoadingBlock = state.blockActionState == CubitStates.loading;
+        final isChatLoading = state.isChatLoading;
+        final room = state.profile?.room;
+
+        // ⭐ حالة التحميل العامة لتعطيل الأزرار
+        final bool isSomeActionLoading =
+            isLoadingFollow || isChatLoading || isLoadingBlock;
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
           child: Row(
             children: [
-              // زر المتابعة
+              // زر المتابعة أو إلغاء الحظر
               Expanded(
                 child: CustomBotton(
                   height: 54.h,
                   width: double.infinity,
-                  title: isFollowing ? 'متابَع' : 'متابعة',
-                  onPressed: isLoading
+                  title: isBlocked
+                      ? context.tr('unblock')
+                      : (isFollowing
+                            ? context.tr('following')
+                            : context.tr('follow')),
+                  onPressed: isSomeActionLoading
                       ? null
-                      : () => context
-                            .read<UserAdvisorProfileCubit>()
-                            .toggleFollow(),
-                  backGroundcolor: isFollowing
+                      : () {
+                          if (isBlocked) {
+                            context.read<UserAdvisorProfileCubit>().unblockUser(
+                              advisorId: profile.id,
+                            );
+                            return;
+                          }
+                          if (isGuest) {
+                            CustomshowDialogWithImage(
+                              context,
+                              title: context.tr('joinUs'),
+                              supTitle: context.tr("guest_login_first"),
+                              icon: Icons.lock_person_outlined,
+                              iconColor: AppColors.kprimaryColor,
+                              bottonText: context.tr("login"),
+                              showCancelButton: true,
+                              cancelText: context.tr('skip'),
+                              onPressed: () {
+                                CachNetwork.removeData(key: ktoken);
+                                context.pushNamedAndRemoveUntil(
+                                  AppRouter.kRegisrationView,
+                                  predicate: (_) => false,
+                                );
+                              },
+                              onCancel: () {},
+                            );
+                          } else {
+                            context
+                                .read<UserAdvisorProfileCubit>()
+                                .toggleFollow();
+                          }
+                        },
+                  backGroundcolor: (isFollowing || isBlocked)
                       ? AppColors.kWhiteColor
                       : AppColors.kprimaryColor,
-                  titleColor: isFollowing
+                  titleColor: (isFollowing || isBlocked)
                       ? AppColors.kprimaryColor
                       : AppColors.kWhiteColor,
                   radius: 10.r,
-                  useGradient: isFollowing ? false : true,
-                  isLoading: isLoading,
+                  useGradient: (isFollowing || isBlocked) ? false : true,
+                  isLoading: isBlocked ? isLoadingBlock : isLoadingFollow,
                   elevation: 0,
                 ),
               ),
 
-              Gap(13.w),
+              if (!isBlocked && isFollowing) ...[
+                Gap(13.w),
+                GestureDetector(
+                  onTap: isSomeActionLoading
+                      ? null
+                      : () {
+                          if (isGuest) {
+                            CustomshowDialogWithImage(
+                              context,
+                              title: context.tr('joinUs'),
+                              supTitle: context.tr("guest_login_first"),
+                              icon: Icons.lock_person_outlined,
+                              iconColor: AppColors.kprimaryColor,
+                              bottonText: context.tr("login"),
+                              showCancelButton: true,
+                              cancelText: context.tr('skip'),
+                              onPressed: () {
+                                CachNetwork.removeData(key: ktoken);
+                                context.pushNamedAndRemoveUntil(
+                                  AppRouter.kRegisrationView,
+                                  predicate: (_) => false,
+                                );
+                              },
+                              onCancel: () {},
+                            );
+                            return;
+                          }
 
-              // زر المحادثة (يظهر فقط إذا كان المستخدم يتابع أو كان صديقاً)
-              if (isFollowing) // ⭐ يظهر فقط إذا كان يتابع
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 13.h,
-                    horizontal: 16.w,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary100,
-                    borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(color: AppColors.primary500),
-                  ),
-                  child: GestureDetector(
-                    onTap: () {
-                      // TODO: افتح شات مع المستخدم
-                    },
-                    child: AppImage(AssetsData.chatIconSVG, width: 22.w),
+                          final cubit = context.read<UserAdvisorProfileCubit>();
+                          if (profile.hasRoom &&
+                              profile.chatRoomId != null &&
+                              profile.chatRoomId!.isNotEmpty &&
+                              room != null) {
+                            cubit.startChat();
+                          } else {
+                            cubit.startChat();
+                          }
+                        },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 13.h,
+                      horizontal: 16.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary100,
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(color: AppColors.primary500),
+                    ),
+                    child: isChatLoading
+                        ? SizedBox(
+                            width: 22.w,
+                            height: 22.w,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary500,
+                            ),
+                          )
+                        : AppImage(AssetsData.chatIconSVG, width: 22.w),
                   ),
                 ),
+              ],
             ],
           ),
         );

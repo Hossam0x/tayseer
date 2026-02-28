@@ -6,6 +6,10 @@ import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/add_story_view.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key});
@@ -93,7 +97,7 @@ class ProfileHeader extends StatelessWidget {
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(10.h),
           Text(
-            errorMessage ?? 'حدث خطأ أثناء تحميل البيانات',
+            errorMessage ?? context.tr('error_loading_data'),
             style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
           ),
@@ -107,7 +111,7 @@ class ProfileHeader extends StatelessWidget {
             ),
             onPressed: () => context.read<ProfileCubit>().fetchProfile(),
             child: Text(
-              'إعادة المحاولة',
+              context.tr('retry'),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -130,39 +134,97 @@ class ProfileHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Profile picture
-          GestureDetector(
-            onTap: () {
-              // Navigator.pushNamed(
-              //   context,
-              //   AppRouter.kAddPostView,
-              //   arguments: AddPostEnum.story,
-              // );
-            },
-            child: Stack(
-              children: [
-                MyProfileImage(width: 85.w, imageUrl: imageUrl),
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: Container(
-                    width: 22.w,
-                    height: 22.w,
-                    decoration: BoxDecoration(
-                      color: AppColors.kprimaryColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: AppImage(
-                        width: 12.w,
-                        AssetsData.icAdd,
-                        color: AppColors.kWhiteColor,
+          // Profile picture with Upload Indicator
+          BlocBuilder<StoriesCubit, StoriesState>(
+            buildWhen: (previous, current) =>
+                previous.createStoryState != current.createStoryState ||
+                previous.uploadProgress != current.uploadProgress,
+            builder: (context, storyState) {
+              final isUploading =
+                  storyState.createStoryState == CubitStates.loading;
+
+              return GestureDetector(
+                onTap: isUploading
+                    ? null
+                    : () async {
+                        if (context.mounted) {
+                          final storiesCubit = context.read<StoriesCubit>();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BlocProvider.value(
+                                value: storiesCubit,
+                                child: const AddStoryView(),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Upload Progress Ring
+                    if (isUploading)
+                      SizedBox(
+                        width: 92.w,
+                        height: 92.w,
+                        child: CircularProgressIndicator(
+                          value: storyState.uploadProgress > 0
+                              ? storyState.uploadProgress
+                              : null,
+                          strokeWidth: 4,
+                          color: AppColors.kprimaryColor,
+                          backgroundColor: AppColors.secondary200,
+                        ),
                       ),
-                    ),
-                  ),
+
+                    MyProfileImage(width: 85.w, imageUrl: imageUrl),
+
+                    // Add Icon (Hidden when uploading)
+                    if (!isUploading)
+                      Positioned(
+                        bottom: 2,
+                        right: 2,
+                        child: Container(
+                          width: 22.w,
+                          height: 22.w,
+                          decoration: BoxDecoration(
+                            color: AppColors.kprimaryColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: AppImage(
+                              width: 12.w,
+                              AssetsData.icAdd,
+                              color: AppColors.kWhiteColor,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Percentage Text Overlay
+                    if (isUploading)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6.w,
+                          vertical: 2.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Text(
+                          '${(storyState.uploadProgress * 100).toInt()}%',
+                          style: Styles.textStyle12.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
 
           // Top bar with followers/following
@@ -171,7 +233,7 @@ class ProfileHeader extends StatelessWidget {
             child: Column(
               children: [
                 Text(following, style: Styles.textStyle16SemiBold),
-                Text("Following", style: Styles.textStyle14),
+                Text(context.tr('followings'), style: Styles.textStyle14),
               ],
             ),
           ),
@@ -180,7 +242,7 @@ class ProfileHeader extends StatelessWidget {
             child: Column(
               children: [
                 Text(followers, style: Styles.textStyle16SemiBold),
-                Text("Followers", style: Styles.textStyle14),
+                Text(context.tr('followers'), style: Styles.textStyle14),
               ],
             ),
           ),
@@ -217,13 +279,21 @@ class ProfileHeader extends StatelessWidget {
     return const SliverToBoxAdapter(child: SizedBox.shrink());
   }
 
-  void _openSettings(BuildContext context) {
-    Navigator.push(
+  void _openSettings(BuildContext context) async {
+    // ⭐ انتظار الرجوع من صفحة الإعدادات
+    await Navigator.push(
       context,
       SlideLeftRoute(
         page: const SettingsView(),
         routeSettings: const RouteSettings(name: AppRouter.kSettingsView),
       ),
     );
+
+    // ⭐ تحديث البروفايل بعد الرجوع من الإعدادات
+    if (context.mounted) {
+      context.read<ProfileCubit>().fetchProfile();
+      // تحديث بيانات الهوم من الكاش أيضاً لضمان التزامن
+      getIt<HomeCubit>().refreshUserInfoFromCache();
+    }
   }
 }

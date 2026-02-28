@@ -9,39 +9,169 @@ import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates_state.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class ProfileCertificatesSection extends StatelessWidget {
-  const ProfileCertificatesSection({super.key});
+class ProfileCertificatesSection extends StatefulWidget {
+  final String advisorId;
+  final bool isMe;
+
+  const ProfileCertificatesSection({
+    super.key,
+    required this.advisorId,
+    required this.isMe,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider<CertificatesCubit>(
-      create: (_) => getIt<CertificatesCubit>(),
-      child: const _CertificatesSectionContent(),
-    );
-  }
+  State<ProfileCertificatesSection> createState() =>
+      _ProfileCertificatesSectionState();
 }
 
-class _CertificatesSectionContent extends StatelessWidget {
-  const _CertificatesSectionContent();
+class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+    final bool isMe = widget.isMe;
+
+    // ⭐ استخدام الـ Cubit الموجود من الـ context
     return BlocBuilder<CertificatesCubit, CertificatesState>(
       builder: (context, state) {
-        switch (state.state) {
-          case CubitStates.loading:
-            return _buildSkeletonSection();
-          case CubitStates.failure:
-            return _buildErrorSection(context, state.errorMessage);
-          case CubitStates.success:
-            return _buildContentSection(context, state);
-          default:
-            return const SizedBox.shrink();
+        if (state.state == CubitStates.loading) {
+          return _buildSkeletonSection();
         }
+
+        if (state.state == CubitStates.failure && state.certificates.isEmpty) {
+          return _buildErrorSection(context);
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            await context.read<CertificatesCubit>().refresh(
+              advisorId: widget.advisorId,
+            );
+          },
+          child: Column(
+            children: [
+              _buildContentSection(context, state, isMe),
+              if (state.hasMore) _buildLoadMoreButton(context, state),
+              Gap(20.h),
+            ],
+          ),
+        );
       },
     );
   }
 
+  Widget _buildLoadMoreButton(BuildContext context, CertificatesState state) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 24.w),
+      child: state.isLoadingMore
+          ? Center(
+              child: CircularProgressIndicator(color: AppColors.kprimaryColor),
+            )
+          : SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => context.read<CertificatesCubit>().loadMore(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.kWhiteColor,
+                  foregroundColor: AppColors.kprimaryColor,
+                  side: BorderSide(color: AppColors.kprimaryColor, width: 1.w),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  elevation: 0,
+                ),
+                child: Text(
+                  context.tr('load_more_certificates'),
+                  style: Styles.textStyle14Meduim.copyWith(
+                    color: AppColors.kprimaryColor,
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildContentSection(
+    BuildContext context,
+    CertificatesState state,
+    bool isMe,
+  ) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 24.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (state.hasVideo) ...[
+            _buildVideoSection(context, state.videoUrl!),
+            Gap(24.h),
+          ],
+          if (isMe)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  context.tr('certificates'),
+                  style: Styles.textStyle18Bold.copyWith(
+                    color: AppColors.secondary800,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    _navigateToAddCertificate(context);
+                  },
+                  label: Text(
+                    context.tr('add'),
+                    style: Styles.textStyle16Meduim.copyWith(
+                      color: AppColors.secondary400,
+                    ),
+                  ),
+                  icon: Icon(
+                    Icons.add,
+                    size: 22.w,
+                    color: AppColors.secondary400,
+                  ),
+                ),
+              ],
+            ),
+          if (state.hasCertificates)
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: state.certificates.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: EdgeInsets.only(bottom: 10.h),
+                  child: _buildCertificateItem(
+                    context,
+                    state.certificates[index],
+                    isMe,
+                  ),
+                );
+              },
+            )
+          else
+            _buildNoCertificatesSection(),
+          Gap(24.h),
+          if (isMe)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 35.w),
+              child: BoostButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRouter.kBoostAccountView);
+                },
+                text: context.tr('boost_button'),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ... باقي الـ methods كما هي (نفس الكود السابق)
   Widget _buildSkeletonSection() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 24.h),
@@ -49,7 +179,6 @@ class _CertificatesSectionContent extends StatelessWidget {
         enabled: true,
         child: Column(
           children: [
-            // Video skeleton
             Container(
               width: double.infinity,
               height: 400.h,
@@ -59,7 +188,6 @@ class _CertificatesSectionContent extends StatelessWidget {
               ),
             ),
             Gap(24.h),
-            // Certificates skeleton
             ...List.generate(
               3,
               (index) => Padding(
@@ -114,7 +242,6 @@ class _CertificatesSectionContent extends StatelessWidget {
               ),
             ),
             Gap(24.h),
-            // Boost button skeleton
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 35.w),
               child: Container(
@@ -132,30 +259,30 @@ class _CertificatesSectionContent extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorSection(BuildContext context, String? errorMessage) {
+  Widget _buildErrorSection(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 100.h),
       child: Column(
         children: [
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(16.h),
           Text(
-            errorMessage ?? 'حدث خطأ في تحميل الشهادات والفيديوهات',
+            context.tr('error'),
             style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-            textAlign: TextAlign.center,
           ),
           Gap(24.h),
           ElevatedButton(
+            onPressed: () => context.read<CertificatesCubit>().refresh(
+              advisorId: widget.advisorId,
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.kprimaryColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.r),
               ),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
             ),
-            onPressed: () => context.read<CertificatesCubit>().refresh(),
             child: Text(
-              'إعادة المحاولة',
+              context.tr('retry'),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -166,83 +293,10 @@ class _CertificatesSectionContent extends StatelessWidget {
     );
   }
 
-  Widget _buildContentSection(BuildContext context, CertificatesState state) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 24.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Video Section
-          if (state.hasVideo) _buildVideoSection(context, state.videoUrl!),
-          Gap(24.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "الشهادات",
-                style: Styles.textStyle18Bold.copyWith(
-                  color: AppColors.secondary800,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  _navigateToAddCertificate(context);
-                },
-                label: Text(
-                  'إضافة',
-                  style: Styles.textStyle16Meduim.copyWith(
-                    color: AppColors.secondary400,
-                  ),
-                ),
-                icon: Icon(
-                  Icons.add,
-                  size: 22.w,
-                  color: AppColors.secondary400,
-                ),
-              ),
-            ],
-          ),
-          // Certificates List
-          if (state.hasCertificates)
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: state.certificates.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: EdgeInsets.only(bottom: 10.h),
-                  child: _buildCertificateItem(
-                    context,
-                    state.certificates[index],
-                    state.isMe,
-                  ),
-                );
-              },
-            )
-          else
-            _buildNoCertificatesSection(),
-          Gap(24.h),
-          // Boost Button
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 35.w),
-            child: BoostButton(
-              onPressed: () {
-                Navigator.pushNamed(context, AppRouter.kBoostAccountView);
-              },
-              text: 'تعزيز',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // إضافة دالة التنقل لإضافة الشهادة
   void _navigateToAddCertificate(BuildContext context) {
     Navigator.push(
       context,
       PageRouteBuilder(
-        // settings: const RouteSettings(name: AppRouter.kAddCertificateView),
         pageBuilder: (context, animation, secondaryAnimation) =>
             const AddCertificateView(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -261,7 +315,7 @@ class _CertificatesSectionContent extends StatelessWidget {
       ),
     ).then((result) {
       if (result == true && context.mounted) {
-        context.read<CertificatesCubit>().refresh();
+        context.read<CertificatesCubit>().refresh(advisorId: widget.advisorId);
       }
     });
   }
@@ -271,13 +325,13 @@ class _CertificatesSectionContent extends StatelessWidget {
     CertificateModel certificate,
     bool isMe,
   ) {
-    // ⭐ تحقق من وجود بيانات الشهادة
     if (certificate.nameCertificate.isEmpty) {
-      return Container(); // أو عرض عنصر فارغ
+      return Container();
     }
 
     return GestureDetector(
-      onTap: () => _navigateToEditCertificate(context, certificate),
+      onTap: () =>
+          isMe ? _navigateToEditCertificate(context, certificate) : null,
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
@@ -288,7 +342,6 @@ class _CertificatesSectionContent extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // الصورة
             Container(
               width: 110.w,
               height: 90.w,
@@ -312,7 +365,6 @@ class _CertificatesSectionContent extends StatelessWidget {
                   : Icon(Icons.school, color: Colors.grey.shade400, size: 22.w),
             ),
             SizedBox(width: 16.w),
-            // التفاصيل
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,15 +400,13 @@ class _CertificatesSectionContent extends StatelessWidget {
                 ],
               ),
             ),
-            // if (isMe)
-            AppImage(AssetsData.editIcon, width: 20.w),
+            if (isMe) AppImage(AssetsData.editIcon, width: 20.w),
           ],
         ),
       ),
     );
   }
 
-  // تعديل دالة التنقل لتأخذ الشهادة المفردة
   void _navigateToEditCertificate(
     BuildContext context,
     CertificateModel selectedCertificate,
@@ -368,7 +418,6 @@ class _CertificatesSectionContent extends StatelessWidget {
       PageRouteBuilder(
         settings: const RouteSettings(name: AppRouter.kEditCertificateView),
         pageBuilder: (context, animation, secondaryAnimation) {
-          // ⭐ استخدام BlocProvider.value لنقل الـ Cubit الحالي
           return BlocProvider.value(
             value: certificatesCubit,
             child: EditCertificateView(
@@ -392,8 +441,13 @@ class _CertificatesSectionContent extends StatelessWidget {
         },
       ),
     ).then((result) {
-      if (result == true && context.mounted) {
-        certificatesCubit.refresh();
+      if (result != null && result is Map && result['updated'] == true) {
+        // ⭐ تحديث محلي فوري
+        if (result['certificate'] != null) {
+          certificatesCubit.updateCertificateLocally(result['certificate']);
+        }
+        // ⭐ تحديث من السيرفر للتأكد
+        certificatesCubit.refresh(advisorId: widget.advisorId);
       }
     });
   }
@@ -401,36 +455,29 @@ class _CertificatesSectionContent extends StatelessWidget {
   Widget _buildVideoSection(BuildContext context, String videoUrl) {
     return SizedBox(
       width: double.infinity,
-      height: 400.h,
+      height: 300.h,
       child: VideoPlayerWidget(videoUrl: videoUrl, showFullScreenButton: true),
     );
   }
 
   Widget _buildNoCertificatesSection() {
-    return Container(
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.school_outlined, color: Colors.grey.shade400, size: 48.w),
-          Gap(16.h),
-          Text(
-            'لا توجد شهادات متاحة',
-            style: Styles.textStyle16Meduim.copyWith(
-              color: Colors.grey.shade600,
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 40.h),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppImage(AssetsData.emptyBoxImage, width: 150.w),
+            Gap(16.h),
+            Text(
+              context.tr('no_certificates_yet'),
+              style: Styles.textStyle16Meduim.copyWith(
+                color: AppColors.kGreyB3,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          Gap(8.h),
-          Text(
-            'يمكنك إضافة شهاداتك من خلال تعديل البروفايل',
-            style: Styles.textStyle14.copyWith(color: Colors.grey.shade600),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

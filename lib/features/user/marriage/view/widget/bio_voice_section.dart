@@ -77,7 +77,6 @@ class _BioVoiceSectionState extends State<BioVoiceSection> {
     }
   }
 
-  // دالة الانتقال لوقت معين عند اللمس
   Future<void> _seekTo(Duration position) async {
     await _audioPlayer.seek(position);
   }
@@ -97,13 +96,25 @@ class _BioVoiceSectionState extends State<BioVoiceSection> {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasBio =
+        widget.bioText.trim().isNotEmpty &&
+        widget.bioText.toLowerCase() != 'null';
+
+    final bool hasAudio =
+        widget.audioPath.trim().isNotEmpty &&
+        widget.audioPath.toLowerCase() != 'null';
+
+    // ❌ مفيش Bio ولا Voice
+    if (!hasBio && !hasAudio) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(context.tr('my_cv'), style: Styles.textStyle16Bold),
-
             Container(
               padding: EdgeInsets.all(6.w),
               decoration: BoxDecoration(
@@ -119,6 +130,7 @@ class _BioVoiceSectionState extends State<BioVoiceSection> {
           ],
         ),
         Gap(12.h),
+
         Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
@@ -127,74 +139,78 @@ class _BioVoiceSectionState extends State<BioVoiceSection> {
           ),
           child: Column(
             children: [
-              Text(
-                widget.bioText,
-                style: Styles.textStyle16.copyWith(
-                  color: Colors.black87,
-                  height: 1.6,
+              /// ===== Bio =====
+              if (hasBio)
+                Text(
+                  widget.bioText,
+                  style: Styles.textStyle16.copyWith(
+                    color: Colors.black87,
+                    height: 1.6,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              Gap(20.h),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: HexColor('#F2F3F5'),
-                  borderRadius: BorderRadius.circular(50.r),
-                ),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: _toggleAudio,
-                      child: Container(
-                        width: 40.w,
-                        height: 40.w,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFeb7a91),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isPlaying
-                              ? Icons.pause_rounded
-                              : Icons.play_arrow_rounded,
-                          color: Colors.white,
-                          size: 24.sp,
+
+              if (hasBio && hasAudio) Gap(20.h),
+
+              /// ===== Voice =====
+              if (hasAudio)
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 8.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: HexColor('#F2F3F5'),
+                    borderRadius: BorderRadius.circular(50.r),
+                  ),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _toggleAudio,
+                        child: Container(
+                          width: 40.w,
+                          height: 40.w,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFeb7a91),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isPlaying
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 24.sp,
+                          ),
                         ),
                       ),
-                    ),
-                    Gap(12.w),
-
-                    // ✅ شكل الموجات التفاعلي
-                    Expanded(
-                      child: SizedBox(
-                        height: 30.h,
-                        child: _WaveformVisualizer(
-                          duration: _duration,
-                          position: _position,
-                          onSeek: _seekTo, // نمرر دالة الـ Seek
+                      Gap(12.w),
+                      Expanded(
+                        child: SizedBox(
+                          height: 30.h,
+                          child: _WaveformVisualizer(
+                            duration: _duration,
+                            position: _position,
+                            onSeek: _seekTo,
+                          ),
                         ),
                       ),
-                    ),
-
-                    Gap(12.w),
-                    // الوقت
-                    Text(
-                      _formatDuration(_position),
-                      style: Styles.textStyle12.copyWith(
+                      Gap(12.w),
+                      Text(
+                        _formatDuration(_position),
+                        style: Styles.textStyle12.copyWith(
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Gap(8.w),
+                      Icon(
+                        Icons.volume_up_rounded,
                         color: Colors.grey.shade700,
-                        fontWeight: FontWeight.bold,
+                        size: 20.sp,
                       ),
-                    ),
-                    Gap(8.w),
-                    Icon(
-                      Icons.volume_up_rounded,
-                      color: Colors.grey.shade700,
-                      size: 20.sp,
-                    ),
-                    Gap(8.w),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -217,7 +233,6 @@ class _WaveformVisualizer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const int barCount = 25;
-
     final bool isRtl = Directionality.of(context) == TextDirection.rtl;
 
     return LayoutBuilder(
@@ -247,7 +262,6 @@ class _WaveformVisualizer extends StatelessWidget {
 
               final int activeBars = (progress * barCount).round();
               final double randomHeight = _getBarHeight(index);
-
               final bool isActive = index < activeBars;
 
               return AnimatedContainer(
@@ -255,7 +269,6 @@ class _WaveformVisualizer extends StatelessWidget {
                 width: 3.w,
                 height: randomHeight.h,
                 decoration: BoxDecoration(
-                  // في حالة العربي، التلوين بيبدأ من اليمين، والـ Row بيعكسهم تلقائي
                   color: isActive
                       ? const Color(0xFF333333)
                       : const Color(0xFFDDDDDD),
@@ -269,16 +282,11 @@ class _WaveformVisualizer extends StatelessWidget {
     );
   }
 
-  // 2. تمرير متغير الاتجاه للدالة
   void _calculateSeek(double dx, double maxWidth, bool isRtl) {
     if (duration.inMilliseconds == 0) return;
 
     double percentage = dx / maxWidth;
-
-    if (isRtl) {
-      percentage = 1.0 - percentage;
-    }
-
+    if (isRtl) percentage = 1.0 - percentage;
     percentage = percentage.clamp(0.0, 1.0);
 
     final newPosition = duration.inMilliseconds * percentage;

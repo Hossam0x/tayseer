@@ -1,0 +1,237 @@
+import 'dart:ui';
+import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
+import 'package:tayseer/my_import.dart';
+
+import '../../Interactions_cubit/interactions_cubit.dart';
+import '../../Interactions_cubit/interactions_state.dart';
+
+class GreetingProfileCard extends StatelessWidget {
+  final InteractionUserModel item;
+  final bool forceBlur;
+
+  const GreetingProfileCard({
+    super.key,
+    required this.item,
+    this.forceBlur = false,
+  });
+
+
+  @override
+  Widget build(BuildContext context) {
+    final shouldBlur = forceBlur || item.isImageBlurred;
+
+    return BlocListener<InteractionsCubit, InteractionsState>(
+      listener: (context, state) {
+        // ✅ Show success animation when sendCompliment succeeds
+        if (state.actionState == CubitStates.success) {
+          _showSuccessAnimation(context);
+
+          // Reset action state after showing dialog
+          Future.delayed(const Duration(milliseconds: 100), () {
+            context.read<InteractionsCubit>().resetActionState();
+          });
+        } else if (state.actionState == CubitStates.failure) {
+          // ✅ Show error message if fails
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: state.actionMessage ?? context.tr('error_occurred'),
+              isSuccess: false,
+            ),
+          );
+          context.read<InteractionsCubit>().resetActionState();
+        }
+      },
+      child: Container(
+        height: 160.h,
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(0, 0, 0, 0.08),
+          borderRadius: BorderRadius.circular(24.r),
+          border: Border.all(color: Colors.white.withOpacity(0.5)),
+        ),
+        child: Row(
+          children: [
+            // Profile Image
+        GestureDetector(
+  onTap: () {
+    context.pushNamed(
+      AppRouter.kMarriageView,
+      arguments: {'personId': item.userId},
+    );
+  },
+  child: ClipRRect(
+    borderRadius: BorderRadius.circular(16.r),
+    child: Stack(
+      children: [
+        shouldBlur
+            ? ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: AppImage(
+                  item.image,
+                  width: 130.w,
+                  height: 117.h,
+                  fit: BoxFit.cover,
+                ),
+              )
+            : AppImage(
+                item.image,
+                width: 130.w,
+                height: 117.h,
+                fit: BoxFit.cover,
+              ),
+        if (shouldBlur)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.2),
+            ),
+          ),
+      ],
+    ),
+  ),
+),  SizedBox(width: 12.w),
+
+            // User Info
+            Expanded(
+              child: GestureDetector(
+                  onTap: () {
+                    context.pushNamed(
+                      AppRouter.kMarriageView,
+                      arguments: {'personId': item.userId},
+                    );
+                  },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  '${item.name},',
+                                  style: Styles.textStyle16SemiBold,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                ' ${item.age} ${context.tr('age')}',
+                                style: Styles.textStyle16.copyWith(
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              SizedBox(width: 5.w),
+                              if (item.isverified)
+                                Icon(
+                                  Icons.verified,
+                                  color: Colors.blue,
+                                  size: 16.sp,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                
+                    SizedBox(height: 8.h),
+                
+                    Row(
+                      children: [
+                        _buildBadge(text: item.day),
+                        SizedBox(width: 4.w),
+                        if (item.country.isNotEmpty)
+                          _buildBadge(
+                            text: item.country,
+                            icon: AssetsData.EgyFlagIcon,
+                          ),
+                      ],
+                    ),
+                
+                    SizedBox(height: 4.h),
+                
+                    if (item.job.isNotEmpty)
+                      _buildBadge(text: item.job, icon: AssetsData.workIcon),
+                  ],
+                ),
+              ),
+            ),
+
+            // Star Button
+            GestureDetector(
+              onTap: () {
+                context.read<InteractionsCubit>().sendCompliment(
+                  userId: item.userId,
+                );
+              },
+              child: Container(
+                width: 55.w,
+                height: 55.h,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.primary200, AppColors.primary400],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF48174E).withOpacity(0.2),
+                      offset: const Offset(0, 2.87),
+                      blurRadius: 37.85,
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.star, color: Colors.white, size: 30.r),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ✅ Success Animation Dialog
+  void _showSuccessAnimation(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return Opacity(
+          opacity: 0.6,
+          child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie));
+      },
+    );
+    Future.delayed(const Duration(seconds: 4), () {
+      context.pop();
+    });
+  }
+
+  Widget _buildBadge({required String text, String? icon}) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: const Color.fromRGBO(186, 186, 186, 0.24),
+        borderRadius: BorderRadius.circular(15.r),
+        border: Border.all(color: Colors.white.withOpacity(0.5), width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            AppImage(icon, width: 14.w),
+            SizedBox(width: 4.w),
+          ],
+          Text(
+            text,
+            style: Styles.textStyle14SemiBold.copyWith(
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

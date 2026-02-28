@@ -18,35 +18,48 @@ class HomeRepositoryImpl implements HomeRepository {
   // ================= Posts =================
 
   @override
-  Future<Either<Failure, List<PostModel>>> fetchPosts({
+  Future<Either<Failure, PostsResponseModel>> fetchPosts({
     required int page,
+    double? nextCursor,
     String? categoryId,
   }) async {
     try {
       final response = await apiService.get(
         endPoint: ApiEndPoint.posts,
-        query: {'page': page, if (categoryId != null) 'categoryId': categoryId},
+        query: {
+          'page': page,
+          if (categoryId != null) 'categoryId': categoryId,
+          if (nextCursor != null) 'nextCursor': nextCursor,
+        },
       );
       final postsResponse = PostsResponseModel.fromJson(response);
-      return Right(postsResponse.posts);
+      return Right(postsResponse);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
   }
 
   @override
-  Future<void> reactToPost({
+  Future<Either<Failure, String>> reactToPost({
     required String postId,
     required ReactionType? reactionType,
     required bool isRemove,
   }) async {
-    final data = {
-      "postId": postId,
-      if (!isRemove) "type": reactionType!.name,
-      'action': isRemove ? 'remove' : 'add',
-    };
+    try {
+      final data = {
+        "postId": postId,
+        if (!isRemove) "type": reactionType!.name,
+        'action': isRemove ? 'remove' : 'add',
+      };
 
-    await apiService.post(endPoint: ApiEndPoint.like, data: data);
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.like,
+        data: data,
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
   }
 
   @override
@@ -104,11 +117,12 @@ class HomeRepositoryImpl implements HomeRepository {
   Future<Either<Failure, CommentModel>> addComment({
     required String postId,
     required String comment,
+    required bool anonymous,
   }) async {
     try {
       final response = await apiService.post(
         endPoint: ApiEndPoint.comments,
-        data: {"postId": postId, "comment": comment},
+        data: {"postId": postId, "comment": comment, "anonymous": anonymous},
       );
       return Right(CommentModel.fromJson(response['data']));
     } on DioException catch (e) {
@@ -120,11 +134,12 @@ class HomeRepositoryImpl implements HomeRepository {
   Future<Either<Failure, CommentModel>> addReply({
     required String commentId,
     required String reply,
+    required bool anonymous,
   }) async {
     try {
       final response = await apiService.post(
         endPoint: ApiEndPoint.createReply,
-        data: {"commentId": commentId, "reply": reply},
+        data: {"commentId": commentId, "reply": reply, "anonymous": anonymous},
       );
       return Right(CommentModel.fromJson(response['data']));
     } on DioException catch (e) {
@@ -355,6 +370,41 @@ class HomeRepositoryImpl implements HomeRepository {
         return Right(response['message'] ?? 'تم أرشفة المنشور بنجاح');
       }
       return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> voteInPoll({
+    required String postId,
+    required String choiceIndex,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.vote,
+        data: {"postId": postId, "choiceIndex": choiceIndex},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(true);
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> followAdvisor({
+    required String advisorId,
+    required bool isAdding,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: "${ApiEndPoint.followAdvisor}$advisorId",
+        query: {'action': isAdding ? 'add' : 'remove'},
+      );
+      return Right(response['message'] ?? 'تمت العملية بنجاح');
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }

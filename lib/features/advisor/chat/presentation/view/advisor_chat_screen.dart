@@ -1,10 +1,12 @@
 import 'dart:developer';
-import 'package:tayseer/core/constant/constans.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // ✅ للنسخ
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/input/chat_input_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_cubit.dart';
@@ -83,7 +85,6 @@ class AdvisorChatScreen extends StatelessWidget {
 /// Internal Content Widget that extends BaseChatScreen
 class _AdvisorChatContent extends BaseChatScreen {
   const _AdvisorChatContent({
-    super.key,
     super.chatRoomId,
     super.receiverId,
     super.username,
@@ -102,7 +103,6 @@ class _AdvisorChatContentState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Now we can safely access providers from context
     initializeHandlers(context);
   }
 
@@ -218,9 +218,36 @@ class _AdvisorChatContentState
     );
   }
 
+  void _copyMessageText(ChatMessage message) {
+    final textContent = message.contentList.join('\n');
+    if (textContent.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: textContent));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'تم نسخ الرسالة',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            backgroundColor: ChatColors.bubbleSender,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+          ),
+        );
+      }
+    }
+  }
+
   /// Build context menu overlay
   Widget _buildContextMenuOverlay(BuildContext context, bool isMyMessage) {
-    // استخدم getter الآمن أو تحقق من الـ null
     final handler = overlayManager;
     if (handler == null) return const SizedBox.shrink();
 
@@ -243,6 +270,10 @@ class _AdvisorChatContentState
       onReply: () {
         context.read<ChatInputCubit>().setReplyingToMessage(selectedMessage);
         handler.hideOverlay(onStateChanged: () => setState(() {}));
+      },
+      onCopy: () {
+        handler.hideOverlay(onStateChanged: () => setState(() {}));
+        _copyMessageText(selectedMessage);
       },
       onDetails: () {
         handler.hideOverlay(onStateChanged: () => setState(() {}));

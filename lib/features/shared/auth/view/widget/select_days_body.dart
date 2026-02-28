@@ -25,7 +25,7 @@ class SelectDaysBody extends StatelessWidget {
             children: [
               /// Back
               Align(
-                alignment: Alignment.centerRight,
+                alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.pop(),
@@ -37,8 +37,7 @@ class SelectDaysBody extends StatelessWidget {
               /// Title
               Text(
                 context.tr('selectAvailableDays'),
-                style: Styles.textStyle18.copyWith(
-                  fontWeight: FontWeight.bold,
+                style: Styles.textStyle20Bold.copyWith(
                   color: AppColors.kscandryTextColor,
                 ),
               ),

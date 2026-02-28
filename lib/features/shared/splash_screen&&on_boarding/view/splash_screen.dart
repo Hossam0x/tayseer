@@ -56,14 +56,20 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateBasedOnToken() async {
-    await Future.delayed(const Duration(seconds: 12));
+    await Future.delayed(const Duration(seconds: 9));
     if (!mounted) return;
     String? token = CachNetwork.getStringData(key: ktoken);
     if (mounted) {
       if (token.isNotEmpty) {
-        selectedUserType == UserTypeEnum.asConsultant
-            ? context.pushReplacementNamed(AppRouter.kAdvisorLayoutView)
-            : context.pushReplacementNamed(AppRouter.kUserLayoutView);
+        if (selectedUserType == UserTypeEnum.asConsultant) {
+          if (kCurrentUserData?.compeletedData == true) {
+            context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+          } else {
+            context.pushReplacementNamed(AppRouter.kRegisrationView);
+          }
+        } else {
+          context.pushReplacementNamed(AppRouter.kUserLayoutView);
+        }
       } else {
         context.pushReplacementNamed(AppRouter.kRegisrationView);
       }

@@ -1,44 +1,317 @@
 import 'package:intl/intl.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
+import 'package:tayseer/core/cubits/int_cubit.dart';
+import 'package:tayseer/core/cubits/toggle_cubit.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_state.dart';
+import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class RatingsTab extends StatelessWidget {
-  const RatingsTab({super.key});
+class RatingsTab extends StatefulWidget {
+  final String advisorId;
+  final bool isMe;
+  const RatingsTab({super.key, required this.advisorId, required this.isMe});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider<RatingsCubit>(
-      create: (_) => getIt<RatingsCubit>(),
-      child: const _RatingsTabContent(),
-    );
-  }
+  State<RatingsTab> createState() => _RatingsTabState();
 }
 
-class _RatingsTabContent extends StatelessWidget {
-  const _RatingsTabContent();
+class _RatingsTabState extends State<RatingsTab>
+    with AutomaticKeepAliveClientMixin {
+  final TextEditingController _reviewController = TextEditingController();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+    final bool isMe = widget.isMe;
+
     return BlocBuilder<RatingsCubit, RatingsState>(
       builder: (context, state) {
-        switch (state.state) {
-          case CubitStates.loading:
-            return _buildSkeletonRatings();
-          case CubitStates.failure:
-            return _buildErrorRatings(context, state.errorMessage);
-          case CubitStates.success:
-            if (state.ratings.isEmpty) {
-              return const SharedEmptyState(title: "لا توجد تقييمات");
-            }
-            return _buildRatingsContent(context, state);
-          default:
-            return const SizedBox.shrink();
+        if (state.state == CubitStates.loading) {
+          return _buildSkeletonRatings();
         }
+
+        if (state.state == CubitStates.failure && state.ratings.isEmpty) {
+          return _buildErrorSection(context);
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async => await context.read<RatingsCubit>().refresh(
+            advisorId: widget.advisorId,
+          ),
+          child: Column(
+            children: [
+              if (!isMe && isUser) _buildAddRatingButton(context),
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+                child: Column(
+                  children: [
+                    _buildSummarySection(state),
+                    Gap(20.h),
+                    _buildRatingsList(context, state),
+                  ],
+                ),
+              ),
+              if (state.hasMore) _buildLoadMoreButton(context, state),
+              Gap(20.h),
+            ],
+          ),
+        );
       },
     );
+  }
+
+  Widget _buildAddRatingButton(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 24.w),
+      child: ElevatedButton(
+        onPressed: () {
+          if (isGuest) {
+            CustomshowDialogWithImage(
+              context,
+              title: context.tr('joinUs'),
+              supTitle: context.tr("guest_login_first"),
+              icon: Icons.lock_person_outlined,
+              iconColor: AppColors.kprimaryColor,
+              bottonText: context.tr("login"),
+              showCancelButton: true,
+              cancelText: context.tr('skip'),
+              onPressed: () {
+                CachNetwork.removeData(key: ktoken);
+                context.pushNamedAndRemoveUntil(
+                  AppRouter.kRegisrationView,
+                  predicate: (_) => false,
+                );
+              },
+              onCancel: () {},
+            );
+          } else {
+            _showRateDialog(context);
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.kprimaryColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          minimumSize: Size(double.infinity, 54.h),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.star, color: AppColors.kWhiteColor, size: 20.w),
+            Gap(8.w),
+            Text(
+              context.tr('add_rating'),
+              style: Styles.textStyle16Meduim.copyWith(
+                color: AppColors.kWhiteColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRateDialog(BuildContext context) {
+    _reviewController.clear();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => IntCubit(0)), // For Rating
+          BlocProvider(create: (_) => ToggleCubit(false)), // For submit loading
+        ],
+        child: Builder(
+          builder: (innerContext) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(dialogContext),
+                        child: Icon(Icons.close, size: 24.w),
+                      ),
+                      Text(
+                        context.tr('rate_advisor'),
+                        style: Styles.textStyle20Meduim.copyWith(
+                          color: AppColors.primary500,
+                        ),
+                      ),
+                      Gap(24.w),
+                    ],
+                  ),
+                  Gap(25.h),
+                  BlocBuilder<IntCubit, int>(
+                    builder: (context, currentRating) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          return GestureDetector(
+                            onTap: () {
+                              context.read<IntCubit>().setValue(index + 1);
+                            },
+                            child: Icon(
+                              Icons.star_rounded,
+                              color: index < currentRating
+                                  ? AppColors.kprimaryColor
+                                  : AppColors.secondary100,
+                              size: 56.w,
+                            ),
+                          );
+                        }),
+                      );
+                    },
+                  ),
+                  BlocBuilder<IntCubit, int>(
+                    builder: (context, currentRating) {
+                      if (currentRating == 0) return const SizedBox.shrink();
+                      return Column(
+                        children: [
+                          Gap(12.h),
+                          Text(
+                            '${context.tr('your_rating')}: $currentRating / 5',
+                            style: Styles.textStyle14.copyWith(
+                              color: AppColors.primary500,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  Gap(24.h),
+                  TextFormField(
+                    controller: _reviewController,
+                    maxLines: 4,
+                    maxLength: 400,
+                    decoration: InputDecoration(
+                      labelText: context.tr('write_your_review'),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                    ),
+                  ),
+                  Gap(24.h),
+                  BlocBuilder<ToggleCubit, bool>(
+                    builder: (loadingContext, isSubmitting) {
+                      if (isSubmitting) {
+                        return Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.kprimaryColor,
+                          ),
+                        );
+                      }
+                      return BlocBuilder<IntCubit, int>(
+                        builder: (context, currentRating) {
+                          return CustomBotton(
+                            title: context.tr('send_rating'),
+                            onPressed: currentRating == 0
+                                ? null
+                                : () async {
+                                    loadingContext.read<ToggleCubit>().set(
+                                      true,
+                                    );
+                                    await _submitRating(
+                                      loadingContext,
+                                      currentRating,
+                                      _reviewController.text,
+                                    );
+                                  },
+                            width: double.infinity,
+                            height: 54.h,
+                            backGroundcolor: currentRating == 0
+                                ? Colors.transparent
+                                : AppColors.secondary100,
+                            useGradient: currentRating > 0,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitRating(
+    BuildContext dialogContext,
+    int rating,
+    String review,
+  ) async {
+    try {
+      final apiService = getIt<ApiService>();
+      final response = await apiService.post(
+        endPoint: '/advisor-rating',
+        data: {
+          "rating": rating,
+          "review": review,
+          "advisorId": widget.advisorId,
+        },
+      );
+
+      if (response['success'] == true) {
+        if (dialogContext.mounted) {
+          Navigator.of(dialogContext, rootNavigator: true).pop();
+        }
+
+        showSafeSnackBar(
+          context: context,
+          text: response['message'] ?? context.tr('advisor_rated_successfully'),
+          isSuccess: true,
+        );
+
+        if (mounted) {
+          context.read<RatingsCubit>().fetchRatings(
+            advisorId: widget.advisorId,
+            loadMore: false,
+            isSilent: false,
+            forceRefresh: true,
+          );
+        }
+      } else {
+        if (dialogContext.mounted) {
+          showSafeSnackBar(
+            context: dialogContext,
+            text:
+                response['message'] ??
+                dialogContext.tr('failed_to_rate_advisor'),
+            isError: true,
+          );
+        }
+      }
+    } catch (e) {
+      if (dialogContext.mounted) {
+        showSafeSnackBar(
+          context: dialogContext,
+          text: dialogContext.tr('failed_to_rate_advisor'),
+          isError: true,
+        );
+      }
+    } finally {
+      if (dialogContext.mounted) {
+        dialogContext.read<ToggleCubit>().set(false);
+      }
+    }
   }
 
   Widget _buildSkeletonRatings() {
@@ -48,7 +321,6 @@ class _RatingsTabContent extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
         child: Column(
           children: [
-            // Summary skeleton
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10.r),
@@ -141,7 +413,6 @@ class _RatingsTabContent extends StatelessWidget {
               ),
             ),
             Gap(20.h),
-            // Ratings list skeleton
             ...List.generate(
               3,
               (index) => Padding(
@@ -205,31 +476,30 @@ class _RatingsTabContent extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorRatings(BuildContext context, String? errorMessage) {
+  Widget _buildErrorSection(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 100.h),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(16.h),
           Text(
-            errorMessage ?? 'حدث خطأ في تحميل التقييمات',
+            context.tr('rate_app_error'),
             style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-            textAlign: TextAlign.center,
           ),
           Gap(24.h),
           ElevatedButton(
+            onPressed: () => context.read<RatingsCubit>().refresh(
+              advisorId: widget.advisorId,
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.kprimaryColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.r),
               ),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
             ),
-            onPressed: () => context.read<RatingsCubit>().refresh(),
             child: Text(
-              'إعادة المحاولة',
+              context.tr('retry'),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -240,29 +510,10 @@ class _RatingsTabContent extends StatelessWidget {
     );
   }
 
-  Widget _buildRatingsContent(BuildContext context, RatingsState state) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-      child: Column(
-        children: [
-          // قسم الإحصائيات العلوي
-          _buildSummarySection(state),
-
-          Gap(20.h),
-
-          // قائمة التقييمات
-          _buildRatingsList(context, state),
-
-          // زر تحميل المزيد (إذا كان هناك المزيد)
-          if (state.hasMore) _buildLoadMoreButton(context, state),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSummarySection(RatingsState state) {
     final starsBreakdown = state.starsBreakdown;
-    final maxStarCount = starsBreakdown[5] ?? 1; // لتجنب القسمة على صفر
+    final maxStarCount = starsBreakdown[5] ?? 0;
+    final safeMaxStarCount = maxStarCount > 0 ? maxStarCount : 1;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -272,7 +523,6 @@ class _RatingsTabContent extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // التقييم الكبير على اليمين
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -301,7 +551,7 @@ class _RatingsTabContent extends StatelessWidget {
                   ),
                   Gap(8.h),
                   Text(
-                    '${state.totalRatings} تقييم',
+                    '${state.totalRatings} ${context.tr('reviews')}',
                     style: Styles.textStyle14.copyWith(
                       color: AppColors.secondaryText,
                     ),
@@ -310,7 +560,6 @@ class _RatingsTabContent extends StatelessWidget {
                 ],
               ),
               Gap(24.w),
-              // البارات والأرقام
               Expanded(
                 child: Column(
                   children: [
@@ -319,7 +568,6 @@ class _RatingsTabContent extends StatelessWidget {
                         padding: EdgeInsets.only(bottom: 8.h),
                         child: Row(
                           children: [
-                            // النجوم والرقم
                             Row(
                               children: [
                                 Text(
@@ -337,14 +585,15 @@ class _RatingsTabContent extends StatelessWidget {
                               ],
                             ),
                             Gap(12.w),
-                            // شريط التقدم
                             Expanded(
                               flex: 2,
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4.r),
                                 child: LinearProgressIndicator(
-                                  value:
-                                      (starsBreakdown[i] ?? 0) / maxStarCount,
+                                  value: safeMaxStarCount > 0
+                                      ? (starsBreakdown[i] ?? 0) /
+                                            safeMaxStarCount
+                                      : 0,
                                   backgroundColor: AppColors.barGreyColor,
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     AppColors.primary400,
@@ -354,11 +603,10 @@ class _RatingsTabContent extends StatelessWidget {
                               ),
                             ),
                             Gap(12.w),
-                            // النسبة والنص
                             Text(
                               starsBreakdown[i] == 0
-                                  ? 'لا يوجد'
-                                  : '${starsBreakdown[i]} تقييم',
+                                  ? ''
+                                  : '${starsBreakdown[i]} ${context.tr('reviews')}',
                               style: Styles.textStyle12.copyWith(
                                 color: AppColors.primaryText,
                               ),
@@ -390,7 +638,6 @@ class _RatingsTabContent extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // صورة المستخدم
               SizedBox(
                 width: 60.r,
                 height: 60.r,
@@ -408,17 +655,15 @@ class _RatingsTabContent extends StatelessWidget {
                 ),
               ),
               Gap(12.w),
-              // محتوى التقييم
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header (الاسم + التاريخ)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          rating.user.name ?? 'مستخدم',
+                          rating.user.name ?? context.tr('user'),
                           style: Styles.textStyle16Bold.copyWith(
                             color: AppColors.primaryText,
                           ),
@@ -433,7 +678,6 @@ class _RatingsTabContent extends StatelessWidget {
                       ],
                     ),
                     Gap(8.h),
-                    // النجوم
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: List.generate(
@@ -451,15 +695,7 @@ class _RatingsTabContent extends StatelessWidget {
                       ),
                     ),
                     Gap(12.h),
-                    // نص التقييم
-                    Text(
-                      rating.review,
-                      textAlign: TextAlign.right,
-                      style: Styles.textStyle14.copyWith(
-                        color: AppColors.secondaryText,
-                        height: 1.6,
-                      ),
-                    ),
+                    _ExpandableReviewText(text: rating.review),
                   ],
                 ),
               ),
@@ -470,54 +706,126 @@ class _RatingsTabContent extends StatelessWidget {
     );
   }
 
-  Widget _buildLoadMoreButton(BuildContext context, RatingsState state) {
-    return Padding(
-      padding: EdgeInsets.all(16.w),
-      child: SizedBox(
-        width: double.infinity,
-        child: state.isLoadingMore
-            ? Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.kprimaryColor,
-                ),
-              )
-            : OutlinedButton(
-                onPressed: () => _loadMoreRatings(context),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.kprimaryColor, width: 1.w),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                ),
-                child: Text(
-                  'تحميل المزيد من التقييمات',
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.kprimaryColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-      ),
-    );
-  }
-
   String _formatDate(String dateString) {
     try {
-      // 1️⃣ parse التاريخ بصيغته الصح
       final parsedDate = DateFormat(
         'M/d/yyyy, hh:mm:ss a',
         'en',
       ).parse(dateString);
 
-      // 2️⃣ عرضه بالعربي ومن غير وقت
-      return DateFormat('dd MMMM yyyy', 'ar').format(parsedDate);
+      final lang = context.read<LanguageCubit>().state.languageCode;
+      return DateFormat('dd MMMM yyyy', lang).format(parsedDate);
     } catch (e) {
       return dateString;
     }
   }
 
-  void _loadMoreRatings(BuildContext context) {
-    context.read<RatingsCubit>().fetchRatings(loadMore: true);
+  Widget _buildLoadMoreButton(BuildContext context, RatingsState state) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 24.w),
+      child: state.isLoadingMore
+          ? Center(
+              child: CircularProgressIndicator(color: AppColors.kprimaryColor),
+            )
+          : SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => context.read<RatingsCubit>().fetchRatings(
+                  advisorId: widget.advisorId,
+                  loadMore: true,
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.kWhiteColor,
+                  foregroundColor: AppColors.kprimaryColor,
+                  side: BorderSide(color: AppColors.kprimaryColor, width: 1.w),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  elevation: 0,
+                ),
+                child: Text(
+                  context.tr('load_more'),
+                  style: Styles.textStyle14Meduim.copyWith(
+                    color: AppColors.kprimaryColor,
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+class _ExpandableReviewText extends StatelessWidget {
+  final String text;
+  const _ExpandableReviewText({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => ToggleCubit(false),
+      child: BlocBuilder<ToggleCubit, bool>(
+        builder: (context, isExpanded) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final style = Styles.textStyle14.copyWith(
+                color: AppColors.secondaryText,
+                height: 1.6,
+              );
+
+              final span = TextSpan(text: text, style: style);
+              final tp = TextPainter(
+                text: span,
+                maxLines: 3,
+                textDirection: Directionality.of(context),
+              );
+              tp.layout(maxWidth: constraints.maxWidth);
+
+              if (!tp.didExceedMaxLines) {
+                return Text(
+                  text,
+                  style: style,
+                  textAlign: TextAlign.right,
+                  textDirection: Directionality.of(context),
+                );
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    text,
+                    textAlign: TextAlign.right,
+                    textDirection: Directionality.of(context),
+                    style: style,
+                    maxLines: isExpanded ? null : 3,
+                    overflow: isExpanded
+                        ? TextOverflow.visible
+                        : TextOverflow.ellipsis,
+                  ),
+                  InkWell(
+                    onTap: () {
+                      context.read<ToggleCubit>().toggle();
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 4.h),
+                      child: Text(
+                        isExpanded
+                            ? context.tr('see_less')
+                            : context.tr('see_more'),
+                        style: Styles.textStyle12.copyWith(
+                          color: AppColors.kprimaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 }

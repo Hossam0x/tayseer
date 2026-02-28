@@ -7,6 +7,7 @@ class UserAdvisorProfileState extends Equatable {
   final CubitStates profileState;
   final UserAdvisorProfileModel? profile;
   final String? profileErrorMessage;
+  final String? chatRoomId;
 
   final CubitStates postsState;
   final List<PostModel> posts;
@@ -23,10 +24,35 @@ class UserAdvisorProfileState extends Equatable {
   final String? shareMessage;
   final bool? isShareAdded;
 
+  final bool shouldNavigateToChat;
+
+  final bool isChatLoading;
+
+  final CubitStates saveActionState;
+  final String? saveMessage;
+
+  final CubitStates deletePostActionState;
+  final String? deletePostMessage;
+
+  final CubitStates archivePostActionState;
+  final String? archivePostMessage;
+
+  final CubitStates blockUserActionState;
+  final String? blockUserMessage;
+
+  final CubitStates chatActionState;
+  final String? chatErrorMessage;
+
+  final CubitStates blockActionState;
+  final String? blockMessage;
+  final CubitStates reportActionState;
+  final String? reportMessage;
+
   const UserAdvisorProfileState({
     this.profileState = CubitStates.initial,
     this.profile,
     this.profileErrorMessage,
+    this.chatRoomId,
     this.postsState = CubitStates.initial,
     this.posts = const [],
     this.postsErrorMessage,
@@ -39,12 +65,31 @@ class UserAdvisorProfileState extends Equatable {
     this.shareActionState = CubitStates.initial,
     this.shareMessage,
     this.isShareAdded,
+    this.shouldNavigateToChat = false,
+    this.isChatLoading = false,
+    this.chatActionState = CubitStates.initial,
+    this.chatErrorMessage,
+    this.saveActionState = CubitStates.initial,
+    this.saveMessage,
+    this.deletePostActionState = CubitStates.initial,
+    this.deletePostMessage,
+    this.archivePostActionState = CubitStates.initial,
+    this.archivePostMessage,
+    this.blockUserActionState = CubitStates.initial,
+    this.blockUserMessage,
+    this.blockActionState = CubitStates.initial,
+    this.blockMessage,
+    this.reportActionState = CubitStates.initial,
+    this.reportMessage,
   });
+
+  bool get hasRoom => profile?.hasRoom == true;
 
   UserAdvisorProfileState copyWith({
     CubitStates? profileState,
     UserAdvisorProfileModel? profile,
     String? profileErrorMessage,
+    String? chatRoomId,
     CubitStates? postsState,
     List<PostModel>? posts,
     String? postsErrorMessage,
@@ -57,11 +102,28 @@ class UserAdvisorProfileState extends Equatable {
     CubitStates? shareActionState,
     String? shareMessage,
     bool? isShareAdded,
+    bool? shouldNavigateToChat,
+    bool? isChatLoading,
+    CubitStates? chatActionState,
+    String? chatErrorMessage,
+    CubitStates? saveActionState,
+    String? saveMessage,
+    CubitStates? deletePostActionState,
+    String? deletePostMessage,
+    CubitStates? archivePostActionState,
+    String? archivePostMessage,
+    CubitStates? blockUserActionState,
+    String? blockUserMessage,
+    CubitStates? blockActionState,
+    String? blockMessage,
+    CubitStates? reportActionState,
+    String? reportMessage,
   }) {
     return UserAdvisorProfileState(
       profileState: profileState ?? this.profileState,
       profile: profile ?? this.profile,
       profileErrorMessage: profileErrorMessage ?? this.profileErrorMessage,
+      chatRoomId: chatRoomId ?? this.chatRoomId,
       postsState: postsState ?? this.postsState,
       posts: posts ?? this.posts,
       postsErrorMessage: postsErrorMessage ?? this.postsErrorMessage,
@@ -74,6 +136,24 @@ class UserAdvisorProfileState extends Equatable {
       shareActionState: shareActionState ?? this.shareActionState,
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
+      shouldNavigateToChat: shouldNavigateToChat ?? this.shouldNavigateToChat,
+      isChatLoading: isChatLoading ?? this.isChatLoading,
+      chatActionState: chatActionState ?? this.chatActionState,
+      chatErrorMessage: chatErrorMessage ?? this.chatErrorMessage,
+      saveActionState: saveActionState ?? this.saveActionState,
+      saveMessage: saveMessage ?? this.saveMessage,
+      deletePostActionState:
+          deletePostActionState ?? this.deletePostActionState,
+      deletePostMessage: deletePostMessage ?? this.deletePostMessage,
+      archivePostActionState:
+          archivePostActionState ?? this.archivePostActionState,
+      archivePostMessage: archivePostMessage ?? this.archivePostMessage,
+      blockUserActionState: blockUserActionState ?? this.blockUserActionState,
+      blockUserMessage: blockUserMessage ?? this.blockUserMessage,
+      blockActionState: blockActionState ?? this.blockActionState,
+      blockMessage: blockMessage ?? this.blockMessage,
+      reportActionState: reportActionState ?? this.reportActionState,
+      reportMessage: reportMessage ?? this.reportMessage,
     );
   }
 
@@ -82,6 +162,7 @@ class UserAdvisorProfileState extends Equatable {
     profileState,
     profile,
     profileErrorMessage,
+    chatRoomId,
     postsState,
     posts,
     postsErrorMessage,
@@ -94,5 +175,21 @@ class UserAdvisorProfileState extends Equatable {
     shareActionState,
     shareMessage,
     isShareAdded,
+    shouldNavigateToChat,
+    isChatLoading,
+    chatActionState,
+    chatErrorMessage,
+    saveActionState,
+    saveMessage,
+    deletePostActionState,
+    deletePostMessage,
+    archivePostActionState,
+    archivePostMessage,
+    blockUserActionState,
+    blockUserMessage,
+    blockActionState,
+    blockMessage,
+    reportActionState,
+    reportMessage,
   ];
 }

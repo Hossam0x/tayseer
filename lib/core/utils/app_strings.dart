@@ -19,11 +19,11 @@ class AppStrings {
   static const String noComments = "no_comments";
 
   static const String share = "share";
+  static const String unshare = "unshare";
   static const String archive = "archive";
   static const String delete = "delete";
   static const String block = "block";
   static const String save = "save";
-
 
   static const String deletePost = "delete_post";
   static const String deletePostConfirmation = "delete_post_confirmation";
@@ -39,11 +39,41 @@ class AppStrings {
   static const String archivePost = "archive_post";
   static const String archivePostConfirmation = "archive_post_confirmation";
 
-  static const String archivePostConfirmationMessage = "archive_post_confirmation_message";
+  static const String archivePostConfirmationMessage =
+      "archive_post_confirmation_message";
 
   static const String unhide = "unhide";
   static const String commentHiddenMessage = "comment_hidden_message";
   static const String showMoreReplies = "show_more_replies";
-    static const String showNReplies = "show_n_replies"; 
+  static const String showNReplies = "show_n_replies";
 
+  static const String votes = "votes";
+  static const String anonymous = "anonymous";
+  static const String general = "general";
+
+  static const String followError = "follow_error";
+  static const String sharedSuccess = "shared_success";
+  static const String unsharedSuccess = "unshared_success";
+  static const String sharedError = "shared_error";
+  static const String error = "error";
+  static const String reelSavedSuccess = "reel_saved_success";
+  static const String reelUnsavedSuccess = "reel_unsaved_success";
+  static const String reelSaveError = "reel_save_error";
+
+  // Video Download
+  static const String download = "download";
+  static const String downloadingVideo = "downloading_video";
+  static const String downloadComplete = "download_complete";
+  static const String downloadFailed = "download_failed";
+  static const String successGallery = "success_gallery";
+  static const String errorDownload = "error_download";
+  static const String downloadInProgress = "download_in_progress";
+  static const String noVideoToDownload = "no_video_to_download";
+  static const String allowGallery = "allow_gallery";
+  static const String downloading = "downloading";
+  static const String failedDownloadFile = "failed_download_file";
+  static const String processing = "processing";
+  static const String videoSavedSuccess = "video_saved_success";
+  static const String failedSaveVideo = "failed_save_video";
+  static const String errorDownloadingVideo = "error_downloading_video";
 }

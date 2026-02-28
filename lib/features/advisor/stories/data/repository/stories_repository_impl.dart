@@ -12,16 +12,149 @@ class StoriesRepositoryImpl implements StoriesRepository {
   @override
   Future<Either<Failure, List<UserStoriesModel>>> fetchStories({
     required int page,
+    String? advisorId,
+    bool isSpecial = false,
+    required BuildContext context,
   }) async {
     try {
       var response = await apiService.get(
-        endPoint: ApiEndPoint.stories,
+        endPoint: isSpecial
+            ? ApiEndPoint.specialStories(advisorId)
+            : ApiEndPoint.allStories,
         query: {'page': page},
       );
-      final storiesResponse = StoriesResponseModel.fromJson(response);
-      return Right(storiesResponse.data.result);
+
+      final data = response['data'];
+      debugPrint("Stories Debug: data type is ${data.runtimeType}");
+      debugPrint("Stories Debug: isSpecial is $isSpecial");
+
+      if (data == null) {
+        return const Right([]);
+      }
+
+      if (data is List) {
+        if (data.isEmpty) return const Right([]);
+
+        // فحص أول عنصر، لو هو Story فردية (فيها id و userId) ولا UserStory (فيها stories list)
+        final firstItem = data.first as Map<String, dynamic>;
+
+        if (firstItem.containsKey('id') &&
+            firstItem.containsKey('userId') &&
+            !firstItem.containsKey('stories')) {
+          // دي حالة الـ special stories: دي قائمة قصص خام
+          final allStoryModels = data
+              .map((e) => StoryModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+
+          // تجميع القصص حسب الـ userId (غالباً هيكون مستخدم واحد في البروفايل بس بنعملها بشكل عام)
+          final Map<String, List<StoryModel>> grouped = {};
+          for (var story in allStoryModels) {
+            grouped.putIfAbsent(story.userId, () => []).add(story);
+          }
+
+          final List<UserStoriesModel> userStoriesList = [];
+          grouped.forEach((userId, stories) {
+            // نحاول نأخذ الاسم والصورة من بيانات الـ Story لو متاحة
+            // أو سيعتمد التطبيق على الصور الافتراضية
+            userStoriesList.add(
+              UserStoriesModel(
+                userId: userId,
+                name: stories.isNotEmpty
+                    ? (stories.first.isMine ? context.tr("your_story") : "")
+                    : "",
+                image: stories.isNotEmpty ? stories.first.image : "",
+                isFollowed: false,
+                isViewedByMe: stories.any((s) => s.isViewed),
+                allViewed: stories.every((s) => s.isViewed),
+                storiesCount: stories.length,
+                stories: stories,
+              ),
+            );
+          });
+          return Right(userStoriesList);
+        } else {
+          // دي الحالة العادية لو الباك باعت List of UserStories مباشرة
+          final storiesList = data
+              .map((e) => UserStoriesModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          return Right(storiesList);
+        }
+      } else if (data is Map) {
+        final storiesResponse = StoriesResponseModel.fromJson(response);
+        return Right(storiesResponse.data.result);
+      } else {
+        return Left(ServerFailure('تنسيق استجابة غير متوقع'));
+      }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('فشل تحليل بيانات القصص: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<UserStoriesModel>>> fetchStoriesSilent({
+    required int page,
+    String? advisorId,
+    bool isSpecial = false,
+  }) async {
+    try {
+      var response = await apiService.get(
+        endPoint: isSpecial
+            ? ApiEndPoint.specialStories(advisorId)
+            : ApiEndPoint.allStories,
+        query: {'page': page},
+      );
+
+      final data = response['data'];
+      if (data == null) return const Right([]);
+
+      if (data is List) {
+        if (data.isEmpty) return const Right([]);
+        final firstItem = data.first as Map<String, dynamic>;
+
+        if (firstItem.containsKey('id') &&
+            firstItem.containsKey('userId') &&
+            !firstItem.containsKey('stories')) {
+          final allStoryModels = data
+              .map((e) => StoryModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          final Map<String, List<StoryModel>> grouped = {};
+          for (var story in allStoryModels) {
+            grouped.putIfAbsent(story.userId, () => []).add(story);
+          }
+          final List<UserStoriesModel> userStoriesList = [];
+          grouped.forEach((userId, stories) {
+            userStoriesList.add(
+              UserStoriesModel(
+                userId: userId,
+                name: '',
+                image: stories.isNotEmpty ? stories.first.image : '',
+                isFollowed: false,
+                isViewedByMe: stories.any((s) => s.isViewed),
+                allViewed: stories.every((s) => s.isViewed),
+                storiesCount: stories.length,
+                stories: stories,
+              ),
+            );
+          });
+          return Right(userStoriesList);
+        } else {
+          final storiesList = data
+              .map((e) => UserStoriesModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          return Right(storiesList);
+        }
+      } else if (data is Map) {
+        final storiesResponse = StoriesResponseModel.fromJson(response);
+        return Right(storiesResponse.data.result);
+      } else {
+        return Left(ServerFailure('تنسيق استجابة غير متوقع'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('فشل تحليل بيانات القصص: ${e.toString()}'));
     }
   }
 
@@ -40,13 +173,49 @@ class StoriesRepositoryImpl implements StoriesRepository {
   }
 
   @override
-  Future<Either<Failure, void>> createStories({required XFile image}) async {
+  Future<Either<Failure, void>> createStories({
+    String? content,
+    List<File>? images,
+    List<XFile>? videos,
+    double? videoDuration,
+    Function(int sent, int total)? onSendProgress,
+  }) async {
     try {
+      final List<MultipartFile> uploadedImages = [];
+      if (images != null) {
+        for (final file in images) {
+          final filename = file.path.split(Platform.pathSeparator).isNotEmpty
+              ? file.path.split(Platform.pathSeparator).last
+              : (file.uri.pathSegments.isNotEmpty
+                    ? file.uri.pathSegments.last
+                    : 'file');
+          uploadedImages.add(
+            await MultipartFile.fromFile(file.path, filename: filename),
+          );
+        }
+      }
+
+      final List<MultipartFile> uploadedVideos = [];
+      if (videos != null) {
+        for (final video in videos) {
+          uploadedVideos.add(await uploadVideoToApi(video));
+        }
+      }
+
+      final data = <String, dynamic>{
+        if (content != null) 'content': content,
+        if (uploadedImages.isNotEmpty) 'images': uploadedImages,
+        if (uploadedVideos.isNotEmpty) 'videos': uploadedVideos,
+        if (videoDuration != null && videoDuration > 0)
+          'videoDuration': videoDuration,
+      };
+
       final response = await apiService.post(
         endPoint: '/stories/create',
         isFromData: true,
-
-        data: {'images': await uploadImageToApi(image)},
+        isAuth: true,
+        data: data,
+        onSendProgress: onSendProgress,
       );
 
       final success = response['success'] ?? false;
@@ -54,7 +223,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
       if (success) {
         return right(null);
       } else {
-        return left(ServerFailure(response['message'] ?? 'فشل إنشاء المنشور'));
+        return left(ServerFailure(response['message'] ?? 'فشل إنشاء القصة'));
       }
     } on DioException catch (error) {
       final message =
@@ -62,6 +231,88 @@ class StoriesRepositoryImpl implements StoriesRepository {
       return left(ServerFailure(message));
     } catch (error) {
       return left(ServerFailure('حدث خطأ غير متوقع: $error'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> toggleArchiveStory({
+    required String storyId,
+    required bool isArchive,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/stories/toggle-archive/$storyId',
+        query: {'action': isArchive ? 'add' : 'remove'},
+      );
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل أرشفة القصة'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteStory({required String storyId}) async {
+    try {
+      final response = await apiService.delete(
+        endPoint: '/stories/delete/$storyId',
+      );
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل حذف القصة'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> makeStorySpecial({
+    required String storyId,
+  }) async {
+    try {
+      final response = await apiService.patch(
+        endPoint: '/stories/make-special/$storyId',
+      );
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(
+          ServerFailure(response['message'] ?? 'فشل تمييز القصة كـ Special'),
+        );
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> hideStory({required String storyId}) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/hidden/story',
+        query: {'action': 'add'},
+        data: {'storyId': storyId},
+      );
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل إخفاء القصة'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

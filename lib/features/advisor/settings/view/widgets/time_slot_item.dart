@@ -27,17 +27,15 @@ class TimeSlotItem extends StatefulWidget {
 
 class _TimeSlotItemState extends State<TimeSlotItem>
     with SingleTickerProviderStateMixin {
-  late bool isActive;
   late TextEditingController fromController;
   late TextEditingController toController;
   late AnimationController _animationController;
-  late Animation<double> _heightAnimation;
-  late Animation<double> _opacityAnimation;
+  late Animation<double> heightAnimation;
+  late Animation<double> opacityAnimation;
 
   @override
   void initState() {
     super.initState();
-    isActive = widget.initialStatus;
     fromController = TextEditingController(text: widget.initialFrom);
     toController = TextEditingController(text: widget.initialTo);
 
@@ -46,19 +44,18 @@ class _TimeSlotItemState extends State<TimeSlotItem>
       vsync: this,
     );
 
-    _heightAnimation = Tween<double>(begin: 0, end: 70).animate(
+    heightAnimation = Tween<double>(begin: 0, end: 70).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    _opacityAnimation = Tween<double>(begin: 0, end: 1).animate(
+    opacityAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    // تشغيل أو إيقاف الأنيميشن بناءً على حالة isActive
-    if (isActive) {
+    if (widget.initialStatus) {
       _animationController.forward();
     } else {
-      _animationController.reverse();
+      _animationController.value = 0.0;
     }
   }
 
@@ -72,28 +69,12 @@ class _TimeSlotItemState extends State<TimeSlotItem>
       toController.text = widget.initialTo;
     }
     if (oldWidget.initialStatus != widget.initialStatus) {
-      _toggleStatus(widget.initialStatus, animate: false);
-    }
-  }
-
-  void _toggleStatus(bool val, {bool animate = true}) {
-    setState(() => isActive = val);
-
-    if (animate) {
-      if (val) {
+      if (widget.initialStatus) {
         _animationController.forward();
       } else {
         _animationController.reverse();
       }
-    } else {
-      if (val) {
-        _animationController.value = 1.0;
-      } else {
-        _animationController.value = 0.0;
-      }
     }
-
-    widget.onStatusChanged?.call(val);
   }
 
   Future<void> _pickTime(bool isFrom) async {
@@ -107,13 +88,11 @@ class _TimeSlotItemState extends State<TimeSlotItem>
       final formattedTime =
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
 
-      setState(() {
-        if (isFrom) {
-          fromController.text = formattedTime;
-        } else {
-          toController.text = formattedTime;
-        }
-      });
+      if (isFrom) {
+        fromController.text = formattedTime;
+      } else {
+        toController.text = formattedTime;
+      }
 
       // إرسال القيم المحدثة
       widget.onTimeChanged?.call(fromController.text, toController.text);
@@ -135,7 +114,7 @@ class _TimeSlotItemState extends State<TimeSlotItem>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              widget.name,
+              context.tr(widget.name),
               style: Styles.textStyle20.copyWith(color: AppColors.primaryText),
             ),
             Transform.scale(
@@ -149,9 +128,8 @@ class _TimeSlotItemState extends State<TimeSlotItem>
                   return Transform.scale(
                     scale: scaleFactor,
                     child: CupertinoSwitch(
-                      value: isActive,
+                      value: widget.initialStatus,
                       onChanged: (val) {
-                        setState(() => isActive = val);
                         widget.onStatusChanged?.call(val);
                       },
                       activeColor: const Color(0xFFF06C88),
@@ -168,16 +146,10 @@ class _TimeSlotItemState extends State<TimeSlotItem>
         AnimatedBuilder(
           animation: _animationController,
           builder: (context, child) {
-            return Opacity(
-              opacity: _opacityAnimation.value,
-              child: SizedBox(
-                height: _heightAnimation.value,
-                child: OverflowBox(
-                  alignment: Alignment.topCenter,
-                  maxHeight: 70.h,
-                  child: child,
-                ),
-              ),
+            return Align(
+              heightFactor: _animationController.value,
+              alignment: Alignment.topCenter,
+              child: Opacity(opacity: _animationController.value, child: child),
             );
           },
           child: Column(
@@ -186,22 +158,22 @@ class _TimeSlotItemState extends State<TimeSlotItem>
               Row(
                 children: [
                   Text(
-                    'من',
-                    style: Styles.textStyle16.copyWith(
-                      color: AppColors.secondaryText,
-                    ),
-                  ),
-                  Gap(8.w),
-                  Expanded(child: _buildTimeField(toController, false)),
-                  Gap(8.w),
-                  Text(
-                    'إلى',
+                    context.tr('from'),
                     style: Styles.textStyle16.copyWith(
                       color: AppColors.secondaryText,
                     ),
                   ),
                   Gap(8.w),
                   Expanded(child: _buildTimeField(fromController, true)),
+                  Gap(8.w),
+                  Text(
+                    context.tr('to'),
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondaryText,
+                    ),
+                  ),
+                  Gap(8.w),
+                  Expanded(child: _buildTimeField(toController, false)),
                 ],
               ),
             ],

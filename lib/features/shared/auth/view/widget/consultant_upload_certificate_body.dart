@@ -28,7 +28,9 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
                     children: [
                       /// Back
                       Align(
-                        alignment: Alignment.centerRight,
+                        alignment: isArabic
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: IconButton(
                           onPressed: () => context.pop(),
                           icon: const Icon(Icons.arrow_back),
@@ -38,8 +40,7 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
                       /// Title
                       Text(
                         context.tr('shareYourCertificates'),
-                        style: Styles.textStyle18.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: Styles.textStyle20Bold.copyWith(
                           color: AppColors.kscandryTextColor,
                         ),
                       ),
@@ -55,12 +56,17 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
                       Gap(context.responsiveHeight(32)),
 
                       /// Upload Image
-                      UploadImageWidget(
+                      UploadImageFormField(
+                        key: ValueKey(
+                          authCubit.pickedCertificate?.path ?? 'no_image',
+                        ),
                         isShowImage: true,
-                        initialImage: authCubit.pickedCertificate,
+                        initialValue: authCubit.pickedCertificate,
                         onImagePicked: (image) {
                           authCubit.setPickedCertificate(image);
                         },
+                        validator: (v) =>
+                            v == null ? context.tr('required_images') : null,
                       ),
                       Gap(context.responsiveHeight(8)),
                       if (authCubit.certificates.isNotEmpty)

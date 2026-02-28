@@ -1,4 +1,15 @@
+// lib/features/user/marriage/view/widget/marriage_body.dart
+
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/history_screen.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
+import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
+import 'package:tayseer/features/user/marriage/view/widget/section_toggle.dart';
+import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
+import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
+import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
+import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
 import 'package:tayseer/features/user/marriage/view/widget/additional_image.dart';
 import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
@@ -11,267 +22,486 @@ import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 import 'package:tayseer/features/user/marriage/view/widget/sliver_profile_header.dart';
 import 'package:tayseer/features/user/marriage/view/widget/life_event_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
-import 'package:tayseer/my_import.dart';
 
-class MarriageBody extends StatelessWidget {
-  const MarriageBody({super.key});
+class MarriageBody extends StatefulWidget {
+  const MarriageBody({super.key, this.personId});
+  final String? personId;
 
-  // --- الدامي داتا (Dummy Data Map) ---
-  static final Map<String, dynamic> profileData = {
-    'header': {
-      'name': 'أحمد سمير',
-      'age': 34,
-      'location': 'مصر - القاهرة - التجمع الأول',
-      'image': 'assets/images/574a759a5925c0782cccfd5524fb465e.jpg',
-      'isVerified': true,
-      'tags': [
-        {'icon': AssetsData.kmusicIcon, 'label': 'جسم رياضي'},
-        {'icon': AssetsData.ksewingIcon, 'label': 'عريض'},
-        {'icon': AssetsData.kswimmingIcon, 'label': 'قسم بالله'},
-      ],
-    },
-    'compatibility': {
-      'title': 'التشابه بينكم',
-      'subtitle': 'أنت توافقه تماماً في 80% من صفات شريكه',
-      'tags': [
-        'الصدق',
-        'ليس لدي أطفال',
-        'الزواج من قبل',
-        'يملك صحة جيدة',
-        'من مصر',
-      ],
-    },
-    'aboutMe': [
-      {'icon': AssetsData.kdrawingIcon, 'label': 'أعزب'},
-      {'icon': AssetsData.kphotographyIcon, 'label': 'ليس لدي أطفال'},
-      {'icon': AssetsData.kdrawingIcon, 'label': '75 كيلو'},
-      {'icon': AssetsData.kwritingIcon, 'label': 'اقتصادي'},
-      {'icon': AssetsData.kmusicIcon, 'label': 'حالة صحية جيدة'},
-    ],
-    'education': [
-      {'icon': AssetsData.kwritingIcon, 'label': 'بكالوريوس'},
-      {'icon': AssetsData.kwritingIcon, 'label': 'مهندس'},
-    ],
-    'timeline': [
-      {'timeLabel': 'خلال سنتين', 'goalLabel': 'زواج', 'isActive': true},
-      {'timeLabel': 'خلال سنة', 'goalLabel': 'خطوبة', 'isActive': true},
-      {'timeLabel': 'خلال 3 اشهر', 'goalLabel': 'تواصل', 'isActive': true},
-      {'timeLabel': '', 'goalLabel': 'توافق', 'isActive': true},
-    ],
-    'additionalImage': 'assets/images/574a759a5925c0782cccfd5524fb465e.jpg',
-    'religious': {
-      'title': 'الاستقامة',
-      'tags': [
-        {'icon': AssetsData.kdrawingIcon, 'label': 'أعزب'},
-        {'icon': AssetsData.kphotographyIcon, 'label': 'ليس لدي أطفال'},
-        {'icon': AssetsData.kdrawingIcon, 'label': '75 كيلو'},
-        {'icon': AssetsData.kwritingIcon, 'label': 'اقتصادي'},
-        {'icon': AssetsData.kmusicIcon, 'label': 'حالة صحية جيدة'},
-      ],
-    },
-    'video': {
-      'thumbnail':
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    },
-    'interests': [
-      {'icon': AssetsData.kdrawingIcon, 'label': 'أعزب'},
-      {'icon': AssetsData.kphotographyIcon, 'label': 'ليس لدي أطفال'},
-      {'icon': AssetsData.kdrawingIcon, 'label': '75 كيلو'},
-      {'icon': AssetsData.kwritingIcon, 'label': 'اقتصادي'},
-      {'icon': AssetsData.kmusicIcon, 'label': 'حالة صحية جيدة'},
-    ],
-    'bio': {
-      'text':
-          "سوف نمضي في إكمال الحكاية مع خيرة من الآخرين لتلك اللحظات في الخمسين، يملأ كل فراغ بلذة غالية. أسعى دائماً لتطوير مهاراتي والعمل في بيئة تشجع على الابتكار.",
-      'duration': '0:25',
-    },
-  };
+  @override
+  State<MarriageBody> createState() => _MarriageBodyState();
+}
+
+class _MarriageBodyState extends State<MarriageBody> {
+  int _currentIndex = 0;
+  UsersMarriageResponse? _lastProfile;
+  bool _isMarriageTab = true;
+
+  final ScrollController _mainScrollController = ScrollController();
+  InteractionsCubit? _interactionsCubit;
+
+  // ✅ Key للتحكم في InteractionBody من MarriageBody
+  final GlobalKey<InteractionBodyState> _interactionBodyKey =
+      GlobalKey<InteractionBodyState>();
+
+  InteractionsCubit get interactionsCubit {
+    if (_interactionsCubit == null) {
+      _interactionsCubit = getIt<InteractionsCubit>();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _interactionsCubit!.fetchHistorySilently();
+      });
+    }
+    return _interactionsCubit!;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<MarriageCubit>().fetchMarriageProfile();
+  }
+
+  @override
+  void dispose() {
+    _mainScrollController.dispose();
+    _interactionsCubit?.close();
+    super.dispose();
+  }
+
+  Widget _buildToggle() {
+    return SectionToggle(
+      isMarriage: _isMarriageTab,
+      onChanged: (value) {
+        setState(() {
+          _isMarriageTab = value;
+        });
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    return BlocConsumer<MarriageCubit, MarriageState>(
+      listenWhen: (previous, current) =>
+          previous.marriageProfileState != current.marriageProfileState ||
+          previous.userInteractionState != current.userInteractionState ||
+          previous.sendRegardState != current.sendRegardState,
+      listener: (context, state) {
+        if (state.userInteractionState == CubitStates.failure ||
+            state.sendRegardState == CubitStates.failure ||
+            state.sendRegardTextState == CubitStates.failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: state.errorMessage ?? 'حدث خطأ ما',
+              isError: true,
+            ),
+          );
+          context.read<MarriageCubit>().resetState();
+        }
+
+        if (state.sendRegardState == CubitStates.success) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) {
+              return AppImage(AssetsData.kSuccessMarriageAnimationsLottie);
+            },
+          );
+          Future.delayed(const Duration(seconds: 4), () {
+            context.pop();
+          });
+          context.read<MarriageCubit>().resetState();
+        }
+      },
+      builder: (context, state) {
+        if (state.marriageProfileState == CubitStates.loading) {
+          return _buildShimmerScreen();
+        }
+
+        if (state.marriageProfileState == CubitStates.failure) {
+          return _buildWithAppBar(
+            child: Center(
+              child: Text(
+                state.errorMessage ?? 'حدث خطأ ما',
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+              ),
+            ),
+          );
+        }
+
+        final List<UserItem> allUsers = state.profile?.data?.users ?? [];
+        final List<UserItem> users = widget.personId != null
+            ? allUsers.where((p) => p.user?.id == widget.personId).toList()
+            : allUsers;
+
+        if (users.isEmpty) {
+          return AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _isMarriageTab
+                ? _buildWithAppBar(
+                    key: const ValueKey('empty_marriage'),
+                    child: _buildEmptyMarriage(),
+                  )
+                : _buildInteractionsContent(
+                    key: const ValueKey('interactions'),
+                  ),
+          );
+        }
+
+        if (state.profile != _lastProfile) {
+          _lastProfile = state.profile;
+          _currentIndex = 0;
+        }
+        if (_currentIndex >= users.length) _currentIndex = users.length - 1;
+
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _isMarriageTab
+              ? _buildMarriageContent(
+                  key: const ValueKey('marriage'),
+                  state: state,
+                  profileIndex: _currentIndex,
+                  users: users,
+                )
+              : _buildInteractionsContent(key: const ValueKey('interactions')),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // APP BAR WRAPPER
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildWithAppBar({Key? key, required Widget child}) {
     return Directionality(
+      key: key,
+      textDirection: TextDirection.rtl,
+      child: CustomBackground(
+        child: Column(
+          children: [
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Center(child: _buildToggle()),
+                    Positioned(
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kMarriageFilterView);
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black12,
+                          child: AppImage(
+                            AssetsData.kfilterIcon,
+                            width: 20,
+                            height: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      child: AnimatedBeFirstButton(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kBoostAccountView);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(child: child),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // EMPTY MARRIAGE STATE
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildEmptyMarriage() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppImage(AssetsData.noPersonsBlocked, width: 180.w, height: 180.h),
+            Gap(24.h),
+            Text(
+              context.tr('no_marriage_users'),
+              style: Styles.textStyle18Bold.copyWith(
+                color: AppColors.kprimaryTextColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Gap(12.h),
+            Text(
+              context.tr('share_app_to_find_users'),
+              style: Styles.textStyle14.copyWith(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // MARRIAGE TAB
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildMarriageContent({
+    Key? key,
+    required MarriageState state,
+    required int profileIndex,
+    required List<UserItem> users,
+  }) {
+    final profile = users[profileIndex];
+    final user = profile.user;
+    final answers = profile.answers;
+    final images = answers?.userMedia?.image ?? [];
+
+    return Directionality(
+      key: key,
       textDirection: TextDirection.rtl,
       child: CustomBackground(
         child: Stack(
           children: [
-            CustomScrollView(
-              slivers: [
-                // ===== 1. Header =====
-                SliverProfileHeader(
-                  images: [
-                    profileData['header']['image'],
-                    profileData['header']['image'],
-                    profileData['header']['image'],
-                    profileData['header']['image'],
-                  ],
-                  name: profileData['header']['name'],
-                  age: profileData['header']['age'],
-                  location: profileData['header']['location'],
-                  tags: profileData['header']['tags'],
-                ),
-
-                // ===== 2. Compatibility =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 20.h,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 500),
+              transitionBuilder: (child, animation) {
+                final offsetAnimation = Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(animation);
+                return SlideTransition(position: offsetAnimation, child: child);
+              },
+              child: CustomScrollView(
+                key: ValueKey<int>(_currentIndex),
+                slivers: [
+                  SliverProfileHeader(
+                    images: images,
+                    name: user?.name ?? '',
+                    age: answers?.aboutMe?.age ?? '',
+                    location: user?.country ?? answers?.aboutMe?.country ?? '',
+                    tagsjob: user?.about?.job ?? '',
+                    educationLevel: user?.about?.educationLevel,
+                    religiousCommitment: user?.about?.religiousCommitment,
+                    nationality: user?.about?.nationality,
+                    height: user?.about?.height,
+                    toggleWidget: _buildToggle(),
                   ),
-                  sliver: SliverToBoxAdapter(
-                    child: CompatibilitySection(
-                      title: profileData['compatibility']['title'],
-                      subtitle: profileData['compatibility']['subtitle'],
-                      tags: List<String>.from(
-                        profileData['compatibility']['tags'],
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 20.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: CompatibilitySection(
+                        title: context.tr('compatibility_profile'),
+                        subtitle: user?.similarity != null
+                            ? '${user!.similarity}%'
+                            : '',
+                        tags:
+                            user?.matchingTags
+                                ?.where(
+                                  (t) =>
+                                      t.value != null &&
+                                      t.value!.trim().isNotEmpty,
+                                )
+                                .map<String>((t) => t.value!)
+                                .toList() ??
+                            [],
                       ),
                     ),
                   ),
-                ),
-
-                // ===== 3. About Me =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: AboutMeSection(
-                      items: List<Map<String, dynamic>>.from(
-                        profileData['aboutMe'],
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: AboutMeSection(
+                        items: [
+                          if (answers?.aboutMe?.socialStatus != null)
+                            {'label': answers!.aboutMe!.socialStatus},
+                          if (answers?.family?.hasChildren != null)
+                            {'label': answers!.family!.hasChildren},
+                          if (answers?.aboutMe?.weight != null)
+                            {'label': "gm ${answers?.aboutMe?.weight}"},
+                          if (answers?.professionalLife?.job != null)
+                            {'label': answers!.professionalLife!.job},
+                          if (answers?.aboutMe?.healthStatus != null)
+                            {'label': answers!.aboutMe!.healthStatus},
+                        ],
                       ),
                     ),
                   ),
-                ),
-
-                // ===== 4. Education =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: EducationSection(
-                      items: List<Map<String, dynamic>>.from(
-                        profileData['education'],
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: EducationSection(
+                        items: [
+                          if (answers?.professionalLife?.educationLevel != null)
+                            {
+                              'label':
+                                  answers!.professionalLife!.educationLevel,
+                            },
+                          if (answers?.professionalLife?.job != null)
+                            {'label': answers!.professionalLife!.job},
+                        ],
                       ),
                     ),
                   ),
-                ),
-
-                // ===== 5. Life Events / Timeline =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: LifeEventsSection(
-                      titleName: "خالد جلال",
-                      events: List<Map<String, dynamic>>.from(
-                        profileData['timeline'],
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: LifeEventsSection(
+                        titleName: user?.name ?? '',
+                        events: [
+                          {
+                            'timeLabel': answers?.yourGoals?.marry,
+                            'goalLabel': context.tr('marriage_profile'),
+                            'isActive': true,
+                          },
+                          {
+                            'timeLabel': answers?.yourGoals?.engagment ?? '',
+                            'goalLabel': context.tr('engagement_profile'),
+                            'isActive': true,
+                          },
+                          {
+                            'timeLabel': answers?.yourGoals?.children ?? '',
+                            'goalLabel': context.tr('children_profile'),
+                            'isActive': true,
+                          },
+                          {
+                            'timeLabel': answers?.yourGoals?.travel,
+                            'goalLabel': context.tr('travel_profile'),
+                            'isActive': true,
+                          },
+                        ],
                       ),
                     ),
                   ),
-                ),
-
-                // ===== 6. Additional Image =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: AdditionalImageSection(
-                      imageUrl: profileData['additionalImage'],
+                  if (images.isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: AdditionalImageSection(
+                          personId: user?.id ?? '',
+                          imageUrl: images.first,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-
-                // ===== 7. Religious / Values =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: ReligiousSection(
-                      tags: List<Map<String, dynamic>>.from(
-                        profileData['religious']['tags'],
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: ReligiousSection(
+                        tags: [
+                          if (answers?.aboutMe?.religiousCommitment != null)
+                            {'label': answers!.aboutMe!.religiousCommitment},
+                          if (answers?.aboutMe?.smoker != null)
+                            {'label': answers!.aboutMe!.smoker},
+                        ],
                       ),
                     ),
                   ),
-                ),
-
-                // ===== 8. Video =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: VideoSection(
-                      videoUrl: profileData['video']['thumbnail'],
+                  if (answers?.userMedia?.video != null)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: VideoSection(
+                          videoUrl: answers!.userMedia!.video!,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-
-                // ===== 9. Interests =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: InterestsSection(
-                      interests: List<Map<String, dynamic>>.from(
-                        profileData['interests'],
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: InterestsSection(
+                        interests: (answers?.hobbies ?? [])
+                            .map((h) => {'label': h})
+                            .toList(),
                       ),
                     ),
                   ),
-                ),
-
-                // ===== 10. Bio + Voice =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: BioVoiceSection(
-                      bioText:
-                          "محترف متمرس في مجال البرمجة مع خبرة تمتد لأكثر من 3 سنوات...",
-                      audioPath:
-                          "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: BioVoiceSection(
+                        bioText: answers?.myDescription ?? '',
+                        audioPath: answers?.userMedia?.audio ?? '',
+                      ),
                     ),
                   ),
-                ),
-
-                // ===== 11. Message Input =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: MessageInputSection(
-                      name: profileData['header']['name'],
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: MessageInputSection(
+                        name: user?.name ?? '',
+                        personId: user?.id ?? '',
+                      ),
                     ),
                   ),
-                ),
-
-                // ===== 12. Bottom Actions =====
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 20.h,
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 20.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: BottomActionsSection(
+                        onBlock: () {
+                          CustomshowDialogWithImage(
+                            context,
+                            bottonText: context.tr("send_report"),
+                            imageUrl: AssetsData.kWoriningImage,
+                            title: context.tr("confirm_report"),
+                            supTitle: context.tr("sup_confirm_report"),
+                            onPressed: () {},
+                            showCancelButton: true,
+                          );
+                        },
+                        onReport: () {
+                          context.pushNamed(AppRouter.kReportReasonsScreen);
+                        },
+                      ),
+                    ),
                   ),
-                  sliver: const SliverToBoxAdapter(
-                    child: BottomActionsSection(),
-                  ),
-                ),
-
-                SliverToBoxAdapter(child: SizedBox(height: 150.h)),
-              ],
+                  SliverToBoxAdapter(child: SizedBox(height: 150.h)),
+                ],
+              ),
             ),
+
+            // Floating Buttons
             Positioned(
               bottom: 130.h,
               left: 0,
@@ -280,37 +510,47 @@ class MarriageBody extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   buildCircleButton(
+                    onTap: () {
+                      context.read<MarriageCubit>().userInteraction(
+                        personId: profile.user?.id ?? '',
+                        interactionType: 'like',
+                      );
+                      if (widget.personId == null && users.length > 1) {
+                        setState(() {
+                          _currentIndex = (_currentIndex + 1) >= users.length
+                              ? 0
+                              : (_currentIndex + 1);
+                        });
+                      }
+                    },
                     Icons.favorite_outline,
                     AppColors.kprimaryTextColor,
                     HexColor('f8d3da'),
                   ),
                   buildCircleButton(
                     onTap: () {
-                      CustomSHowDetailsDialog(
-                        context,
-                        title: context.tr('send_a_greeting'),
-                        onSendPressed: () {
-                          print("تم الارسال");
-                          Navigator.pop(context);
-                        },
-                        contantWidget: TextField(
-                          maxLines: 5,
-                          decoration: InputDecoration(
-                            hintText: context.tr('tell_us_more_about_yourself'),
-                            hintStyle: Styles.textStyle12.copyWith(
-                              color: Colors.grey,
-                            ),
-                            border: InputBorder.none,
-                          ),
-                        ),
+                      context.read<MarriageCubit>().sendRegard(
+                        personId: profile.user?.id ?? '',
                       );
                     },
                     Icons.star,
                     Colors.white,
                     HexColor('cccab3'),
                   ),
-
                   buildCircleButton(
+                    onTap: () {
+                      context.read<MarriageCubit>().userInteraction(
+                        personId: profile.user?.id ?? '',
+                        interactionType: 'dislike',
+                      );
+                      if (widget.personId == null && users.length > 1) {
+                        setState(() {
+                          _currentIndex = (_currentIndex + 1) >= users.length
+                              ? 0
+                              : (_currentIndex + 1);
+                        });
+                      }
+                    },
                     Icons.close,
                     Colors.white,
                     HexColor('e44e6c'),
@@ -324,6 +564,86 @@ class MarriageBody extends StatelessWidget {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // INTERACTIONS TAB
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildInteractionsContent({Key? key}) {
+    return Directionality(
+      key: key,
+      textDirection: TextDirection.rtl,
+      child: CustomBackground(
+        child: Column(
+          children: [
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Toggle ثابت في النص
+                    Center(child: _buildToggle()),
+
+                    // Filter button (يمين في RTL)
+                    Positioned(
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kMarriageFilterView);
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black12,
+                          child: AppImage(
+                            AssetsData.kfilterIcon,
+                            width: 20,
+                            height: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // ✅ Archive button بدل AnimatedBeFirstButton
+                    // ✅ Archive button - يفتح السجل مباشرة كـ page جديدة
+                    Positioned(
+                      left: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BlocProvider.value(
+                                value: interactionsCubit,
+                                child: const HistoryScreen(),
+                              ),
+                            ),
+                          );
+                        },
+                        child: AppImage(
+                          AssetsData.archiveIcon,
+                          width: 50.w,
+                          height: 50.h,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              child: BlocProvider.value(
+                value: interactionsCubit,
+                child: InteractionBody(key: _interactionBodyKey), // ✅ Key
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // HELPERS
+  // ═══════════════════════════════════════════════════════════════
   Widget buildCircleButton(
     IconData icon,
     Color iconColor,
@@ -336,6 +656,42 @@ class MarriageBody extends StatelessWidget {
         radius: 28.r,
         backgroundColor: bgColor,
         child: Icon(icon, color: iconColor, size: 30),
+      ),
+    );
+  }
+
+  Widget _buildShimmerScreen() {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: CustomBackground(
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _shimmer(height: context.height * 0.9)),
+            SliverToBoxAdapter(child: const SizedBox(height: 20)),
+            SliverToBoxAdapter(child: _shimmer(height: 100)),
+            SliverToBoxAdapter(child: const SizedBox(height: 20)),
+            SliverToBoxAdapter(child: _shimmer(height: 100)),
+            SliverToBoxAdapter(child: const SizedBox(height: 20)),
+            SliverToBoxAdapter(child: _shimmer(height: 150)),
+            SliverToBoxAdapter(child: const SizedBox(height: 150)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _shimmer({double? height, double? width}) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: Container(
+        height: height ?? 100,
+        width: width ?? double.infinity,
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }

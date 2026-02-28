@@ -6,7 +6,9 @@ list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_linux
   emoji_picker_flutter
   file_selector_linux
+  flutter_sound
   flutter_volume_controller
+  pro_video_editor
   url_launcher_linux
   zego_express_engine
 )

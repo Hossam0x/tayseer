@@ -1,9 +1,10 @@
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/features/shared/event/model/my_event_model.dart';
 
 // --- Enums ---
 enum ReactionType { love, care, dislike }
 
-enum PostContentType { post, video, reel }
+enum PostContentType { post, event, reel, poll }
 
 // --- Helper Functions ---
 String getReactionAsset(ReactionType type) {
@@ -35,13 +36,40 @@ ReactionType? _parseReactionType(String? value) {
 // ✅ تحويل String إلى PostContentType
 PostContentType _parseContentType(String? value) {
   switch (value?.toLowerCase()) {
-    case 'video':
-      return PostContentType.video;
+    case 'poll':
+      return PostContentType.poll;
     case 'reel':
       return PostContentType.reel;
     case 'post':
+      return PostContentType.post;
+    case 'event':
+      return PostContentType.event;
     default:
       return PostContentType.post;
+  }
+}
+
+// --- Top Reaction Model ---
+class TopReactionModel {
+  final ReactionType type;
+  final int count;
+
+  TopReactionModel({required this.type, required this.count});
+
+  factory TopReactionModel.fromJson(Map<String, dynamic> json) {
+    return TopReactionModel(
+      type: _parseReactionType(json['type']) ?? ReactionType.love,
+      count: json['count'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'type': type.name, 'count': count};
+
+  TopReactionModel copyWith({ReactionType? type, int? count}) {
+    return TopReactionModel(
+      type: type ?? this.type,
+      count: count ?? this.count,
+    );
   }
 }
 
@@ -60,31 +88,33 @@ class PostModel {
   final String timeAgo;
   final String content;
 
-  // Media Fields
-  final List<String> images;
   final PostContentType contentType;
+  // Media Fields
+  final List<ImageModel> images;
   final String? videoUrl;
+  final PollModel? pollModel;
+  final EventModel? event;
+  final VideoModel? videoData; // ✅ جديد
 
   // Stats
   final int commentsCount;
   final int sharesCount;
   final int likesCount;
-  final List<ReactionType> topReactions;
+  final List<TopReactionModel> topReactions;
 
   // User Interaction
   final ReactionType? myReaction;
   final bool isRepostedByMe;
   final String? repostedBy;
 
-
-
-  // local 
+  // local
   final bool isSaved;
   final bool isMine;
-    final bool isBlocked; 
+  final bool isBlocked;
 
-  
-
+  // for commnets
+  final bool isCommented;
+  final bool? isAnonymous;
   PostModel({
     required this.postId,
     required this.name,
@@ -99,17 +129,23 @@ class PostModel {
     this.images = const [],
     this.contentType = PostContentType.post,
     this.videoUrl,
+    this.pollModel,
     required this.commentsCount,
     required this.sharesCount,
     required this.likesCount,
-    required this.topReactions,
+    this.topReactions = const [],
     this.myReaction,
     this.repostedBy,
     this.isRepostedByMe = false,
     this.isSaved = false,
     this.isMine = false,
-    this.isHidden = false, 
-    this.isBlocked = false
+    this.isHidden = false,
+    this.isBlocked = false,
+    this.event,
+    this.videoData,
+
+    this.isCommented = false,
+    this.isAnonymous,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -124,18 +160,37 @@ class PostModel {
       category: json['category'] ?? '',
       timeAgo: json['timeAgo'] ?? '',
       content: json['content'] ?? '',
-      images: (json['images'] as List<dynamic>?)
-              ?.map((e) => e.toString())
+      images:
+          (json['images'] as List<dynamic>?)
+              ?.map(
+                (e) => ImageModel(
+                  image: e['image'] ?? '',
+                  width: e['width'] ?? 0,
+                  height: e['height'] ?? 0,
+                ),
+              )
               .toList() ??
           [],
+
+      videoData: json['video'] != null
+          ? VideoModel.fromJson(json['video'] as Map<String, dynamic>)
+          : null,
       contentType: _parseContentType(json['contentType']),
       videoUrl: json['videoUrl'],
+      pollModel: json["pollModel"] != null
+          ? PollModel.fromJson(
+              json["pollModel"],
+              totalPollVotes: json["totalPollVotes"] ?? 0,
+            )
+          : null,
+
+      event: json['event'] != null ? EventModel.fromJson(json['event']) : null,
       commentsCount: json['commentsCount'] ?? 0,
       sharesCount: json['sharesCount'] ?? 0,
       likesCount: json['likesCount'] ?? 0,
-      topReactions: (json['topReactions'] as List<dynamic>?)
-              ?.map((e) => _parseReactionType(e.toString()))
-              .whereType<ReactionType>()
+      topReactions:
+          (json['topReactions'] as List<dynamic>?)
+              ?.map((e) => TopReactionModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       myReaction: _parseReactionType(json['myReaction']),
@@ -143,6 +198,9 @@ class PostModel {
       repostedBy: json['repostedBy'],
       isSaved: json['isSaved'] ?? false,
       isMine: json['isMine'] ?? false,
+
+      isCommented: json['isCommented'] ?? false,
+      isAnonymous: json['isAnonymousCommented'],
     );
   }
 
@@ -163,22 +221,27 @@ class PostModel {
     String? category,
     String? timeAgo,
     String? content,
-    List<String>? images,
+    List<ImageModel>? images,
     PostContentType? contentType,
     String? videoUrl,
+    PollModel? pollModel,
     int? commentsCount,
     int? sharesCount,
     int? likesCount,
-    List<ReactionType>? topReactions,
+    List<TopReactionModel>? topReactions,
     ReactionType? myReaction,
     bool clearMyReaction = false,
     bool? isRepostedByMe,
     String? repostedBy,
     bool? isSaved,
     String? userName,
-    bool? isMine, 
-    bool? isHidden, 
-    bool? isBlocked, 
+    bool? isMine,
+    bool? isHidden,
+    bool? isBlocked,
+    EventModel? event,
+
+    bool? isCommented,
+    bool? isAnonymous,
   }) {
     return PostModel(
       postId: postId ?? this.postId,
@@ -193,6 +256,7 @@ class PostModel {
       images: images ?? this.images,
       contentType: contentType ?? this.contentType,
       videoUrl: videoUrl ?? this.videoUrl,
+      pollModel: pollModel ?? this.pollModel,
       commentsCount: commentsCount ?? this.commentsCount,
       sharesCount: sharesCount ?? this.sharesCount,
       likesCount: likesCount ?? this.likesCount,
@@ -202,13 +266,133 @@ class PostModel {
       repostedBy: repostedBy ?? this.repostedBy,
       isSaved: isSaved ?? this.isSaved,
       userName: userName ?? this.userName,
-      isMine: isMine ?? this.isMine,     
-      isHidden: isHidden ?? this.isHidden, 
-      isBlocked: isBlocked ?? this.isBlocked
+      isMine: isMine ?? this.isMine,
+      isHidden: isHidden ?? this.isHidden,
+      isBlocked: isBlocked ?? this.isBlocked,
+      event: event ?? this.event,
+      isCommented: isCommented ?? this.isCommented,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
     );
   }
 }
 
+class PollModel {
+  final List<PollChoice> pollChoices;
+  final int totalPollVotes;
+
+  PollModel({this.pollChoices = const [], this.totalPollVotes = 0});
+
+  factory PollModel.fromJson(
+    Map<String, dynamic> json, {
+    int totalPollVotes = 0,
+  }) {
+    final choices =
+        (json['pollChoices'] as List<dynamic>?)
+            ?.map((e) => PollChoice.fromJson(e))
+            .toList() ??
+        [];
+    // totalPollVotes بييجي من الـ post level مش من جوه pollModel
+    final serverTotal = totalPollVotes > 0
+        ? totalPollVotes
+        : (json['totalPollVotes'] ?? 0);
+    // لو لسه 0، نحسبه من مجموع الأصوات
+    final calculatedTotal = serverTotal > 0
+        ? serverTotal
+        : choices.fold<int>(0, (sum, c) => sum + c.votes);
+
+    return PollModel(pollChoices: choices, totalPollVotes: calculatedTotal);
+  }
+
+  PollModel copyWith({List<PollChoice>? pollChoices, int? totalPollVotes}) {
+    return PollModel(
+      pollChoices: pollChoices ?? this.pollChoices,
+      totalPollVotes: totalPollVotes ?? this.totalPollVotes,
+    );
+  }
+}
+
+class PollChoice {
+  final String choice;
+  final int votes;
+  final int percentage;
+  final bool isSelected;
+  final List<String> votersAvatars;
+
+  PollChoice({
+    required this.choice,
+    required this.votes,
+    required this.percentage,
+    this.votersAvatars = const [],
+
+    this.isSelected = false,
+  });
+
+  factory PollChoice.fromJson(Map<String, dynamic> json) {
+    return PollChoice(
+      choice: json['choice'] ?? '',
+      percentage: json['percentage'] ?? 0,
+      votes: json['votes'] ?? 0,
+      votersAvatars:
+          (json['voters'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      isSelected: json['isSelectedByMe'] ?? false,
+    );
+  }
+
+  PollChoice copyWith({
+    String? choice,
+    int? votes,
+    int? percentage,
+    bool? isSelected,
+    List<String>? votersAvatars,
+  }) {
+    return PollChoice(
+      choice: choice ?? this.choice,
+      votes: votes ?? this.votes,
+      percentage: percentage ?? this.percentage,
+      isSelected: isSelected ?? this.isSelected,
+      votersAvatars: votersAvatars ?? this.votersAvatars,
+    );
+  }
+}
+
+class ImageModel {
+  final String image;
+  final int width;
+  final int height;
+  double get aspectRatio => width / height;
+
+  ImageModel({required this.image, required this.width, required this.height});
+}
+
+// lib/core/models/video_model.dart
+
+class VideoModel {
+  final String video;
+  final int width;
+  final int height;
+  final String thumbnail;
+
+  VideoModel({
+    required this.video,
+    required this.width,
+    required this.height,
+    required this.thumbnail,
+  });
+
+  double get aspectRatio => width / height;
+
+  factory VideoModel.fromJson(Map<String, dynamic> json) {
+    return VideoModel(
+      video: json['video'] ?? '',
+      width: json['width'] ?? 0,
+      height: json['height'] ?? 0,
+      thumbnail: json['thumbnail'] ?? '',
+    );
+  }
+}
 // // --- Data Generator (Mock Backend) ---
 // List<PostModel> dummyPosts = [
 //   // 1.

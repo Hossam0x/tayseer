@@ -73,6 +73,12 @@ class HomeState extends Equatable {
   final CubitStates blockUserActionState;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 🗳️ Poll Vote
+  // ─────────────────────────────────────────────────────────────────────────
+  final String? pollVoteMessage;
+  final CubitStates pollVoteActionState;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 🏗️ Constructor
   // ─────────────────────────────────────────────────────────────────────────
   const HomeState({
@@ -111,6 +117,10 @@ class HomeState extends Equatable {
     this.archivePostMessage,
     this.archivePostActionState = CubitStates.initial,
     this.sessionStartModel,
+
+    // poll vote
+    this.pollVoteMessage,
+    this.pollVoteActionState = CubitStates.initial,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -153,6 +163,10 @@ class HomeState extends Equatable {
     String? archivePostMessage,
     CubitStates? archivePostActionState,
     SessionStartModel? sessionStartModel,
+
+    // poll vote
+    String? pollVoteMessage,
+    CubitStates? pollVoteActionState,
   }) {
     return HomeState(
       // Posts
@@ -198,6 +212,10 @@ class HomeState extends Equatable {
       archivePostActionState:
           archivePostActionState ?? this.archivePostActionState,
       sessionStartModel: sessionStartModel ?? this.sessionStartModel,
+
+      // poll vote
+      pollVoteMessage: pollVoteMessage ?? this.pollVoteMessage,
+      pollVoteActionState: pollVoteActionState ?? this.pollVoteActionState,
     );
   }
 
@@ -327,6 +345,10 @@ class HomeState extends Equatable {
     archivePostMessage,
     archivePostActionState,
     sessionStartModel,
+
+    // poll vote
+    pollVoteMessage,
+    pollVoteActionState,
   ];
 }
 
@@ -340,6 +362,7 @@ class CategoryPostsData extends Equatable {
   final int currentPage;
   final bool hasMore;
   final bool isLoadingMore;
+  final double? nextCursor;
 
   const CategoryPostsData({
     this.state = CubitStates.initial,
@@ -348,6 +371,7 @@ class CategoryPostsData extends Equatable {
     this.currentPage = 1,
     this.hasMore = true,
     this.isLoadingMore = false,
+    this.nextCursor,
   });
 
   /// هل البيانات محملة وجاهزة للعرض
@@ -366,6 +390,7 @@ class CategoryPostsData extends Equatable {
     int? currentPage,
     bool? hasMore,
     bool? isLoadingMore,
+    double? nextCursor,
   }) {
     return CategoryPostsData(
       state: state ?? this.state,
@@ -374,6 +399,7 @@ class CategoryPostsData extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      nextCursor: nextCursor ?? this.nextCursor,
     );
   }
 
@@ -385,5 +411,6 @@ class CategoryPostsData extends Equatable {
     currentPage,
     hasMore,
     isLoadingMore,
+    nextCursor,
   ];
 }

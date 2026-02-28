@@ -1,10 +1,13 @@
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
+import 'package:tayseer/core/enum/cubit_states.dart';
 
 class AddCertificateView extends StatelessWidget {
   const AddCertificateView({super.key});
@@ -16,83 +19,104 @@ class AddCertificateView extends StatelessWidget {
     return BlocProvider(
       create: (context) => AddCertificateCubit(certificatesRepository),
       child: Scaffold(
-        body: BlocBuilder<AddCertificateCubit, AddCertificateState>(
-          builder: (context, state) {
-            final cubit = context.read<AddCertificateCubit>();
+        body: BlocListener<AddCertificateCubit, AddCertificateState>(
+          listener: (context, state) {
+            if (state.errorMessage != null) {
+              showSafeSnackBar(
+                context: context,
+                text: state.errorMessage!,
+                isError: true,
+              );
+              context.read<AddCertificateCubit>().clearMessage();
+            } else if (state.successMessage != null &&
+                state.state == CubitStates.success) {
+              showSafeSnackBar(
+                context: context,
+                text: state.successMessage!,
+                isSuccess: true,
+              );
+              context.read<AddCertificateCubit>().clearMessage();
+              Navigator.pop(context, true);
+            }
+          },
+          child: BlocBuilder<AddCertificateCubit, AddCertificateState>(
+            builder: (context, state) {
+              final cubit = context.read<AddCertificateCubit>();
 
-            return AdvisorBackground(
-              child: SingleChildScrollView(
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 110.h,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage(
-                              AssetsData.homeBarBackgroundImage,
+              return AdvisorBackground(
+                child: SingleChildScrollView(
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 110.h,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage(
+                                AssetsData.homeBarBackgroundImage,
+                              ),
+                              fit: BoxFit.fill,
                             ),
-                            fit: BoxFit.fill,
                           ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 20.w,
-                        vertical: 16.h,
-                      ),
-                      child: SafeArea(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SimpleAppBar(title: 'إضافة شهادة'),
-                            // Certificate Image / Preview
-                            _buildImagePickerSection(cubit, state),
-                            Gap(32.h),
-                            // Name Certificate field
-                            ProfileTextField(
-                              controller: state.nameCertificateController,
-                              onChanged: cubit.updateNameCertificate,
-                              hint: 'اسم الشهادة (مثال: بكالوريوس علم النفس)',
-                            ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20.w,
+                          vertical: 16.h,
+                        ),
+                        child: SafeArea(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SimpleAppBar(title: 'إضافة شهادة'),
+                              // Certificate Image / Preview
+                              _buildImagePickerSection(cubit, state),
+                              Gap(32.h),
+                              // Name Certificate field
+                              ProfileTextField(
+                                controller: state.nameCertificateController!,
+                                onChanged: cubit.updateNameCertificate,
+                                hint: 'اسم الشهادة (مثال: بكالوريوس علم النفس)',
+                              ),
 
-                            Gap(20.h),
+                              Gap(20.h),
 
-                            ProfileTextField(
-                              controller: state.fromWhereController,
-                              onChanged: cubit.updateFromWhere,
-                              hint: 'من أين (مثال: جامعة الملك فيصل)',
-                            ),
-                            Gap(20.h),
-                            // Date picker
-                            _buildDatePicker(context, cubit, state),
-                            Gap(24.h),
-                            // Add Button
-                            CustomBotton(
-                              height: 54.h,
-                              width: context.width * 0.8,
-                              title: state.isLoading
-                                  ? 'جاري الإضافة....'
-                                  : 'إضافة',
-                              useGradient: true,
-                              onPressed: state.isLoading
-                                  ? null
-                                  : () => cubit.addCertificate(context),
-                            ),
-                            Gap(20.h),
-                          ],
+                              ProfileTextField(
+                                controller: state.fromWhereController!,
+                                onChanged: cubit.updateFromWhere,
+                                hint: 'من أين (مثال: جامعة الملك فيصل)',
+                              ),
+                              Gap(20.h),
+                              // Date picker
+                              _buildDatePicker(context, cubit, state),
+                              Gap(24.h),
+                              // Add Button
+                              CustomBotton(
+                                height: 54.h,
+                                width: context.width * 0.8,
+                                title: state.isLoading
+                                    ? 'جاري الإضافة....'
+                                    : 'إضافة',
+                                useGradient: true,
+                                onPressed: state.isLoading
+                                    ? null
+                                    : () => cubit.addCertificate(),
+                              ),
+                              Gap(20.h),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -167,7 +191,37 @@ class AddCertificateView extends StatelessWidget {
     AddCertificateState state,
   ) {
     return GestureDetector(
-      onTap: () => cubit.pickDate(context),
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: state.date ?? DateTime.now(),
+          firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+          builder: (context, child) {
+            return Directionality(
+              textDirection: ui.TextDirection.rtl, // ⭐ تعيين الاتجاه للتقويم
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: ColorScheme.light(
+                    primary: AppColors.kprimaryColor,
+                    onPrimary: Colors.white,
+                    onSurface: AppColors.secondary800,
+                  ),
+                  textTheme: TextTheme(
+                    bodyMedium: TextStyle(
+                      fontFamily: 'ArabicFont',
+                    ), // ⭐ إضافة خط عربي
+                  ),
+                ),
+                child: child!,
+              ),
+            );
+          },
+        );
+        if (picked != null) {
+          cubit.updateDate(picked);
+        }
+      },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         decoration: BoxDecoration(
