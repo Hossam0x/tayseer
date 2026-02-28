@@ -1433,5 +1433,7 @@
   "activate_marriage_title": "هل تريد استكشاف قسم الزواج في تيسير؟",
   "deactivate_marriage_title": "هل تريد تعطيل قسم الزواج في تيسير؟",
   "consultation": "استشارة",
-  "Consulting": "الإستشارات"
+  "Consulting": "الإستشارات",
+  "story_likers": "المعجبين بالقصة",
+  "no_likers_yet": "لا يوجد معجبين حتى الآن"
 }

@@ -10,7 +10,6 @@ import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_stat
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 
-
 class UserProfileCubit extends Cubit<UserProfileState> {
   final LocalNotification _notificationService = LocalNotification();
   final UserProfileRepository _userProfileRepository;
@@ -683,7 +682,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       await _notificationService.clearAllNotifications();
       _userProfileRepository.logout();
 
-      CachNetwork.clearCache();
+      await CachNetwork.clearCache();
       getIt<tayseerSocketHelper>().disconnect();
 
       emit(

@@ -1,10 +1,8 @@
-import 'dart:convert';
-import 'package:tayseer/core/constant/constans_keys.dart';
-import 'package:tayseer/core/models/login_data.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit_state.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserProfileEditCubit extends Cubit<UserProfileEditState> {
@@ -115,11 +113,21 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
   }
 
   Future<void> _uploadImage(File imageFile, BuildContext context) async {
+    emit(state.copyWith(isLoading: true, uploadProgress: 0.0));
     try {
       // ⭐ إرسال الصورة فقط لتجنب مشاكل التحقق في الحقول الأخرى (مثل الوصف)
       // نظرًا لأن هذا إجراء "تحديث صورة" منفصل
       final result = await _repository.updateUserProfile(
         imageFile: imageFile,
+        onSendProgress: (sent, total) {
+          if (total > 0) {
+            final progress = sent / total;
+            if ((progress - state.uploadProgress).abs() > 0.01 ||
+                progress == 1.0) {
+              emit(state.copyWith(uploadProgress: progress));
+            }
+          }
+        },
         // لا نرسل الحقول الأخرى لأننا نريد تحديث الصورة فقط هنا
         // هذا يعتمد على أن الـ Backend يدعم PATCH لتحديث جزئي
       );
@@ -145,27 +153,41 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
           debugPrint('🔄 تحديث الصورة في kCurrentUserData');
           debugPrint('📸 الصورة الجديدة: ${updatedProfile.image}');
 
+          final oldImageUrl = kCurrentUserData?.image;
+
           if (kCurrentUserData != null) {
-            final Map<String, dynamic> currentUserJson = kCurrentUserData!
-                .toJson();
-            currentUserJson['image'] = updatedProfile.image;
-            kCurrentUserData = UserModel.fromJson(currentUserJson);
+            // ⭐ تحديث kCurrentUserData بالصورة الجديدة (reactive update)
+            kCurrentUserData = kCurrentUserData!.copyWith(
+              image: updatedProfile.image,
+            );
 
             debugPrint(
               '✅ تم تحديث kCurrentUserData.image: ${kCurrentUserData!.image}',
             );
 
+            // هنا نفترض أن الـ toJson بـ Map<dynamic, dynamic> ولذلك تم التحديث بـ copyWith
+
+            // ⭐ تحديث الكاش للصورة والاسم (للـ HomeAppBar)
             CachNetwork.setData(
-              key: kuserData,
-              value: jsonEncode(kCurrentUserData!.toJson()),
+              key: kMyProfileImage,
+              value: updatedProfile.image ?? '',
+            );
+            CachNetwork.setData(
+              key: kMyProfileName,
+              value: updatedProfile.name,
             );
 
-            // ⭐ مسح الـ cache للصورة القديمة لضمان تحميل الصورة الجديدة
-            if (state.imagePreviewUrl != null &&
-                state.imagePreviewUrl!.isNotEmpty) {
+            // ⭐ تحديث الـ HomeCubit والـ StoriesCubit فوراً
+            getIt<HomeCubit>().refreshUserInfoFromCache();
+            getIt<StoriesCubit>().fetchStoriesSilent();
+
+            debugPrint('✅ تم تحديث كاش الصورة والاسم والـ HomeCubit');
+
+            // ⭐ مسح الـ cache للصورة القديمة (network URL الحقيقي)
+            if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
               try {
-                CachedNetworkImage.evictFromCache(state.imagePreviewUrl!);
-                debugPrint('🗑️ تم مسح cache الصورة القديمة');
+                CachedNetworkImage.evictFromCache(oldImageUrl);
+                debugPrint('🗑️ تم مسح cache الصورة القديمة: $oldImageUrl');
               } catch (e) {
                 debugPrint('⚠️ خطأ في مسح cache الصورة: $e');
               }
@@ -217,6 +239,17 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
           emit(state.copyWith(isLoading: false, errorMessage: failure.message));
         },
         (updatedProfile) {
+          // ⭐ تحديث الكاش للصورة والاسم (للـ HomeAppBar)
+          CachNetwork.setData(
+            key: kMyProfileImage,
+            value: updatedProfile.image ?? '',
+          );
+          CachNetwork.setData(key: kMyProfileName, value: updatedProfile.name);
+
+          // ⭐ تحديث الـ HomeCubit والـ StoriesCubit فوراً
+          getIt<HomeCubit>().refreshUserInfoFromCache();
+          getIt<StoriesCubit>().fetchStoriesSilent();
+
           emit(
             state.copyWith(
               isLoading: false,

@@ -1433,5 +1433,7 @@
   "activate_marriage_title": "Do you want to explore the marriage section in Tayseer?",
   "deactivate_marriage_title": "Do you want to disable the marriage section in Tayseer?",
   "consultation": "Consultation",
-  "Consulting": "Consulting"
+  "Consulting": "Consulting",
+  "story_likers": "Story Likers",
+  "no_likers_yet": "No likers yet"
 }

@@ -4,6 +4,8 @@ import 'package:tayseer/features/advisor/stories/data/models/stories_response_mo
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class StoriesSection extends StatelessWidget {
@@ -206,6 +208,12 @@ class _UserStoryItem extends StatelessWidget {
               return us.copyWith(stories: us.stories.reversed.toList());
             }).toList();
 
+            // Find the correct index in the filtered list
+            final correctIndex = chronologicalUsersStories.indexWhere(
+              (us) => us.userId == userId,
+            );
+            final safeIndex = correctIndex != -1 ? correctIndex : 0;
+
             Navigator.push(
               context,
               PageRouteBuilder(
@@ -215,7 +223,7 @@ class _UserStoryItem extends StatelessWidget {
                       value: context.read<StoriesCubit>(),
                       child: StoryDetailsView(
                         usersStories: chronologicalUsersStories,
-                        initialUserIndex: userIndex,
+                        initialUserIndex: safeIndex,
                       ),
                     ),
                 transitionsBuilder:
@@ -236,7 +244,9 @@ class _UserStoryItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: userStoryModel.allViewed
+                      color:
+                          (userStoryModel.allViewed ||
+                              userStoryModel.isViewedByMe)
                           ? AppColors.kGreyB3
                           : AppColors.kprimaryColor,
                       width: 2.sp,
@@ -453,18 +463,24 @@ class _AddStoryItem extends StatelessWidget {
                           ? BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: myStory.allViewed
+                                color:
+                                    (myStory.allViewed || myStory.isViewedByMe)
                                     ? AppColors.kGreyB3
                                     : AppColors.kprimaryColor,
                                 width: 2.sp,
                               ),
                             )
                           : null,
-                      child: MyProfileImage(
-                        width: context.responsiveWidth(
-                          isUploading || myStory != null ? 66 : 76,
-                        ),
-                        imageUrl: kCurrentUserData?.image,
+                      child: BlocSelector<HomeCubit, HomeState, String?>(
+                        selector: (homeState) => homeState.homeInfo?.image,
+                        builder: (context, profileImage) {
+                          return MyProfileImage(
+                            width: context.responsiveWidth(
+                              isUploading || myStory != null ? 66 : 76,
+                            ),
+                            imageUrl: profileImage ?? kCurrentUserData?.image,
+                          );
+                        },
                       ),
                     ),
                   ),

@@ -422,9 +422,11 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           final cubit = context.read<EditPersonalDataCubit>();
 
           return PopScope(
-            canPop: !state.hasChanges || state.isSaving,
+            canPop: !state.hasChanges && !state.isSaving,
             onPopInvokedWithResult: (didPop, result) async {
               if (didPop) return;
+
+              if (state.isSaving) return; // Prevent navigation during saving
 
               final shouldPop = await _showUnsavedChangesDialog(context, cubit);
               if (shouldPop && context.mounted) {
@@ -920,7 +922,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
           children: [
             GestureDetector(
               onTap:
-                  !isImageDeleted &&
+                  !state.isSaving &&
+                      !isImageDeleted &&
                       (imageFile != null ||
                           (imageUrl != null && imageUrl.isNotEmpty))
                   ? () {
@@ -939,52 +942,92 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                   : null,
               child: Hero(
                 tag: 'advisor_edit_profile_avatar',
-                child: Container(
-                  height: 150.h,
-                  width: 155.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.hintText,
-                    borderRadius: BorderRadius.circular(32.r),
-                  ),
-                  child: isImageDeleted
-                      ? _buildDefaultAvatar()
-                      : imageFile != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(32.r),
-                          child: Image.file(
-                            imageFile,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorBuilder: (context, error, stackTrace) {
-                              return _buildDefaultAvatar();
-                            },
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Upload Progress Ring (Like Add Story)
+                    if (state.isSaving)
+                      SizedBox(
+                        width: 160.w,
+                        height: 160.h,
+                        child: CircularProgressIndicator(
+                          value: state.uploadProgress > 0
+                              ? state.uploadProgress
+                              : null,
+                          strokeWidth: 4,
+                          color: AppColors.kprimaryColor,
+                          backgroundColor: AppColors.secondary200,
+                        ),
+                      ),
+                    Container(
+                      height: 150.h,
+                      width: 155.w,
+                      decoration: BoxDecoration(
+                        color: AppColors.hintText,
+                        borderRadius: BorderRadius.circular(32.r),
+                      ),
+                      child: isImageDeleted
+                          ? _buildDefaultAvatar()
+                          : imageFile != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(32.r),
+                              child: Image.file(
+                                imageFile,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildDefaultAvatar();
+                                },
+                              ),
+                            )
+                          : imageUrl != null && imageUrl.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(32.r),
+                              child: Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildDefaultAvatar();
+                                },
+                              ),
+                            )
+                          : _buildDefaultAvatar(),
+                    ),
+                    // Percentage Text Overlay
+                    if (state.isSaving)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        child: Text(
+                          '${(state.uploadProgress * 100).toInt()}%',
+                          style: Styles.textStyle14.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
-                        )
-                      : imageUrl != null && imageUrl.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(32.r),
-                          child: Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorBuilder: (context, error, stackTrace) {
-                              return _buildDefaultAvatar();
-                            },
-                          ),
-                        )
-                      : _buildDefaultAvatar(),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: GestureDetector(
-                onTap: () => _pickAvatarImage(cubit),
-                child: AppImage(AssetsData.addCertificateImage, width: 30.w),
+            if (!state.isSaving)
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () => _pickAvatarImage(cubit),
+                  child: AppImage(AssetsData.addCertificateImage, width: 30.w),
+                ),
               ),
-            ),
-            if (!isImageDeleted &&
+            if (!state.isSaving &&
+                !isImageDeleted &&
                 (imageFile != null ||
                     (imageUrl != null && imageUrl.isNotEmpty)))
               Positioned(

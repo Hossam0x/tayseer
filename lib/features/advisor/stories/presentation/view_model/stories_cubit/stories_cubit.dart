@@ -143,14 +143,19 @@ class StoriesCubit extends Cubit<StoriesState> {
     if (storyIndex == -1) return;
 
     final story = userStory.stories[storyIndex];
-    if (story.viewsCount > 0) return;
 
+    // ⭐ Always update local state so border turns grey immediately
     bool isLastStory = storyIndex == userStory.stories.length - 1;
     final List<StoryModel> updatedStories = List.from(userStory.stories);
-    updatedStories[storyIndex] = story.copyWith(viewsCount: 1);
+    if (!story.isViewedByMe) {
+      updatedStories[storyIndex] = story.copyWith(
+        isViewedByMe: true,
+        viewsCount: story.viewsCount == 0 ? 1 : story.viewsCount,
+      );
+    }
 
     final bool allViewedLocally =
-        isLastStory || updatedStories.every((s) => s.viewsCount > 0);
+        isLastStory || updatedStories.every((s) => s.isViewedByMe);
 
     final updatedUserStory = userStory.copyWith(
       stories: updatedStories,
@@ -162,7 +167,11 @@ class StoriesCubit extends Cubit<StoriesState> {
     updatedList[userStoryIndex] = updatedUserStory;
 
     emit(state.copyWith(storiesList: updatedList));
-    storiesRepository.markStoryAsViewed(storyId: storyId);
+
+    // ⭐ Call API only if NOT already viewed by me
+    if (!story.isViewedByMe) {
+      storiesRepository.markStoryAsViewed(storyId: storyId);
+    }
   }
 
   void likeStory({required String storyId, required String userId}) {

@@ -37,11 +37,8 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 ),
                 child: Row(
                   children: [
-                    // ⭐ استخدام state.homeInfo?.image بدل kCurrentUserData?.image
-                    MyProfileImage(
-                      imageUrl:
-                          kCurrentUserData?.image ?? state.homeInfo?.image,
-                    ),
+                    // ⭐ Use state.homeInfo?.image which updates reactively via HomeCubit
+                    MyProfileImage(imageUrl: state.homeInfo?.image),
                     Gap(context.responsiveWidth(14)),
                     Expanded(
                       child: Column(
@@ -50,7 +47,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                           GradientText(
                             text: isAdvisor
                                 ? context.tr("welcomeAdvisor")
-                                : context.tr("welcome") ,
+                                : context.tr("welcome"),
                             style: Styles.textStyle24Bold,
                             gradient: AppColors.blueOrangeGradient,
                           ),

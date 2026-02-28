@@ -13,6 +13,7 @@ abstract class UserProfileRepository {
     File? imageFile,
     int? age,
     String? gender,
+    void Function(int, int)? onSendProgress,
   });
   Future<Either<Failure, void>> toggleAnonymousStatus(bool isAnonymous);
   Future<Either<Failure, void>> toggleMarriageStatus(bool enable);
@@ -55,6 +56,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
     File? imageFile,
     int? age,
     String? gender,
+    void Function(int, int)? onSendProgress,
   }) async {
     try {
       final Map<String, dynamic> data = {};
@@ -77,6 +79,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         endPoint: '/user/update-profile',
         data: data,
         isFromData: true,
+        onSendProgress: onSendProgress,
       );
 
       if (response['success'] == true) {

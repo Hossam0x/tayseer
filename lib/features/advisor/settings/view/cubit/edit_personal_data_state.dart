@@ -15,6 +15,7 @@ class EditPersonalDataState extends Equatable {
   final String? videoPreviewUrl;
   final String? imagePreviewUrl;
   final CubitStates isAiState;
+  final double uploadProgress;
 
   const EditPersonalDataState({
     this.state = CubitStates.initial,
@@ -28,6 +29,7 @@ class EditPersonalDataState extends Equatable {
     this.videoPreviewUrl,
     this.imagePreviewUrl,
     this.isAiState = CubitStates.initial,
+    this.uploadProgress = 0.0,
   });
 
   factory EditPersonalDataState.initial() {
@@ -35,6 +37,7 @@ class EditPersonalDataState extends Equatable {
       currentData: UpdatePersonalDataRequest(),
       state: CubitStates.loading,
       isAiState: CubitStates.initial,
+      uploadProgress: 0.0,
     );
   }
 
@@ -52,6 +55,7 @@ class EditPersonalDataState extends Equatable {
     bool clearVideo = false,
     bool clearImage = false,
     CubitStates? isAiState,
+    double? uploadProgress,
   }) {
     return EditPersonalDataState(
       state: state ?? this.state,
@@ -69,6 +73,7 @@ class EditPersonalDataState extends Equatable {
           ? null
           : (imagePreviewUrl ?? this.imagePreviewUrl),
       isAiState: isAiState ?? this.isAiState,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
     );
   }
 
@@ -109,5 +114,6 @@ class EditPersonalDataState extends Equatable {
     videoPreviewUrl,
     imagePreviewUrl,
     isAiState,
+    uploadProgress,
   ];
 }

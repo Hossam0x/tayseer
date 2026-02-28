@@ -27,29 +27,43 @@ class UserProfileEditView extends StatelessWidget {
         getIt<UserProfileRepository>(),
         initialProfile: initialProfile,
       ),
-      child: Scaffold(
-        body: AdvisorBackground(
-          child: SingleChildScrollView(
-            child: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SimpleAppBar(
-                      title: context.tr('edit_profile'),
-                      isLargeTitle: true,
+      child: BlocBuilder<UserProfileEditCubit, UserProfileEditState>(
+        builder: (context, state) {
+          return PopScope(
+            canPop: !state.isLoading,
+            onPopInvokedWithResult: (didPop, result) {
+              if (didPop) return;
+              // Prevent navigation while uploading
+            },
+            child: Scaffold(
+              body: AdvisorBackground(
+                child: SingleChildScrollView(
+                  child: SafeArea(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 16.h,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SimpleAppBar(
+                            title: context.tr('edit_profile'),
+                            isLargeTitle: true,
+                          ),
+                          _UserProfileEditContent(
+                            onProfileUpdated: onProfileUpdated,
+                            localImageFile: localImageFile,
+                          ),
+                        ],
+                      ),
                     ),
-                    _UserProfileEditContent(
-                      onProfileUpdated: onProfileUpdated,
-                      localImageFile: localImageFile,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -201,85 +215,97 @@ class _UserProfileEditContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Stack(
+          alignment: Alignment.center,
           children: [
             GestureDetector(
-              onTap: () => cubit.pickImage(context),
-              child: Container(
-                height: 150.h,
-                width: 155.w,
-                decoration: BoxDecoration(
-                  color: AppColors.hintText,
-                  borderRadius: BorderRadius.circular(32.r),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(32.r),
-                  child: imageFile != null
-                      ? Image.file(
-                          imageFile,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        )
-                      : localImageFile != null
-                      ? Image.file(
-                          localImageFile,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        )
-                      : (imageUrl != null && imageUrl.isNotEmpty)
-                      ? CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          placeholder: (context, url) => Container(
-                            width: double.infinity,
-                            height: double.infinity,
-                            color: AppColors.secondary200,
-                          ),
-                          errorWidget: (context, error, stackTrace) {
-                            debugPrint('❌ خطأ في تحميل الصورة: $imageUrl');
-                            return _buildDefaultAvatar();
-                          },
-                        )
-                      : _buildDefaultAvatar(),
-                ),
+              onTap: state.isLoading ? null : () => cubit.pickImage(context),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Upload Progress Ring
+                  if (state.isLoading)
+                    SizedBox(
+                      width: 160.w,
+                      height: 160.h,
+                      child: CircularProgressIndicator(
+                        value: state.uploadProgress > 0
+                            ? state.uploadProgress
+                            : null,
+                        strokeWidth: 4,
+                        color: AppColors.kprimaryColor,
+                        backgroundColor: AppColors.secondary200,
+                      ),
+                    ),
+                  Container(
+                    height: 150.h,
+                    width: 155.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.hintText,
+                      borderRadius: BorderRadius.circular(32.r),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(32.r),
+                      child: imageFile != null
+                          ? Image.file(
+                              imageFile,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            )
+                          : localImageFile != null
+                          ? Image.file(
+                              localImageFile,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            )
+                          : (imageUrl != null && imageUrl.isNotEmpty)
+                          ? CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              placeholder: (context, url) => Container(
+                                width: double.infinity,
+                                height: double.infinity,
+                                color: AppColors.secondary200,
+                              ),
+                              errorWidget: (context, error, stackTrace) {
+                                debugPrint('❌ خطأ في تحميل الصورة: $imageUrl');
+                                return _buildDefaultAvatar();
+                              },
+                            )
+                          : _buildDefaultAvatar(),
+                    ),
+                  ),
+                  // Percentage Text Overlay
+                  if (state.isLoading)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      child: Text(
+                        '${(state.uploadProgress * 100).toInt()}%',
+                        style: Styles.textStyle14.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: GestureDetector(
-                onTap: () => cubit.pickImage(context),
-                child: AppImage(AssetsData.addCertificateImage, width: 30.w),
+            if (!state.isLoading)
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () => cubit.pickImage(context),
+                  child: AppImage(AssetsData.addCertificateImage, width: 30.w),
+                ),
               ),
-            ),
-
-            // if (imageUrl != null && imageUrl.isNotEmpty)
-            //   Positioned(
-            //     top: 10,
-            //     right: 10,
-            //     child: GestureDetector(
-            //       onTap: () => cubit.removeImage(),
-            //       child: Container(
-            //         padding: EdgeInsets.all(4.w),
-            //         decoration: BoxDecoration(
-            //           shape: BoxShape.circle,
-            //           color: AppColors.kWhiteColor,
-            //           boxShadow: [
-            //             BoxShadow(
-            //               color: Colors.black.withOpacity(0.1),
-            //               blurRadius: 4,
-            //               offset: const Offset(0, 2),
-            //             ),
-            //           ],
-            //         ),
-            //         child: Icon(
-            //           Icons.close,
-            //           color: AppColors.primary500,
-            //           size: 18.w,
-            //         ),
-            //       ),
-            //     ),
-            //   ),
           ],
         ),
         Gap(20.h),

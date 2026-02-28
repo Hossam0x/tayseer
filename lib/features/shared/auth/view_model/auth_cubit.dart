@@ -671,8 +671,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     try {
-      await CachNetwork.removeData(key: 'userData');
-      await CachNetwork.removeData(key: 'token');
+      await CachNetwork.clearCache();
       cacheCleared = true;
       debugPrint('Cache cleared successfully');
     } catch (e) {
@@ -897,7 +896,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(guestLoginState: CubitStates.loading));
 
     try {
-      CachNetwork.clearCache();
+      await CachNetwork.clearCache();
       final response = await _repo.guestLogin();
 
       response.fold(
