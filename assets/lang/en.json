@@ -1438,7 +1438,6 @@
   "transaction": "Transaction",
   "photos": "Photos",
   "add_caption": "Add a caption...",
-  "move_up": "Move Up"
-  "transaction": "Transaction",
-  "other_reason" :"Other Reason"
+  "move_up": "Move Up",
+  "other_reason": "Other Reason"
 }

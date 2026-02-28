@@ -1434,17 +1434,6 @@
   "Consulting": "الإستشارات",
   "photos": "صور",
   "add_caption": "إضافة شرح توضيحي...",
-  "move_up": "نقل لأعلى"
-"images_pending_save": "حفظ الصور معلق",
-"file_not_found": "الملف غير موجود",
-"edit_marriage_profile": "تعديل ملف الزواج",
-"activate_marriage_subtitle":"لجعل رحلتك نحو الزواج أسهل وأكثر سلاسة، نحن هنا لمساعدتك في كل خطوة!",
-"activate_marriage_title":"هل تريد استكشاف قسم الزواج في تيسير؟",
-"deactivate_marriage_title":"هل تريد تعطيل قسم الزواج في تيسير؟",
-"consultation":"استشارة",
-"Consulting":"الإستشارات",
-"other_reason" : "سبب آخر"
-
-
-
+  "move_up": "نقل لأعلى",
+  "other_reason": "سبب آخر"
 }
