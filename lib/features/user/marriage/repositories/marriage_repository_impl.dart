@@ -12,7 +12,6 @@ class MarriageRepositoryImpl implements MarriageRepository {
   Future<Either<Failure, UsersMarriageResponse>> getMarriageProfile() async {
     try {
       final response = await _apiService.get(endPoint: '/user/users-for-marry');
-      debugPrint('Marriage Profile Data: $response');
 
       if (response['success'] == true) {
         final profile = UsersMarriageResponse.fromJson(response);

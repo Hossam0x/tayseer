@@ -211,7 +211,9 @@ class MarriageFilterBody extends StatelessWidget {
             width: context.width * 0.9,
             title: context.tr('apply_filters'),
             onPressed: () {
-              context.read<MarriageFilterCubit>().sendMarriageFilter();
+              if (hasFilters) {
+                context.read<MarriageFilterCubit>().sendMarriageFilter();
+              }
             },
           ),
         ),

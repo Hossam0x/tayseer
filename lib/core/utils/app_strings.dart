@@ -76,4 +76,12 @@ class AppStrings {
   static const String videoSavedSuccess = "video_saved_success";
   static const String failedSaveVideo = "failed_save_video";
   static const String errorDownloadingVideo = "error_downloading_video";
+
+  //  report
+  static const String reportReason = "report_reason";
+  static const String otherReason = "other_reason";
+  static const String tellUsMoreAboutTheReason =
+      "tell_us_more_about_the_reason";
+
+  static const String somethingWentWrong = "something_went_wrong";
 }

@@ -8,6 +8,9 @@ class MarriageState extends Equatable {
   final CubitStates sendRegardState;
   final CubitStates sendRegardTextState;
   final UsersMarriageResponse? profile;
+  final int currentIndex;
+  final bool isScrollingDown;
+  final bool isMarriageTab;
   final String? errorMessage;
 
   const MarriageState({
@@ -16,6 +19,9 @@ class MarriageState extends Equatable {
     this.sendRegardState = CubitStates.initial,
     this.sendRegardTextState = CubitStates.initial,
     this.profile,
+    this.currentIndex = 0,
+    this.isScrollingDown = false,
+    this.isMarriageTab = true,
     this.errorMessage,
   });
 
@@ -25,6 +31,9 @@ class MarriageState extends Equatable {
     CubitStates? sendRegardState,
     CubitStates? sendRegardTextState,
     UsersMarriageResponse? profile,
+    int? currentIndex,
+    bool? isScrollingDown,
+    bool? isMarriageTab,
     String? errorMessage,
   }) {
     return MarriageState(
@@ -33,6 +42,9 @@ class MarriageState extends Equatable {
       sendRegardState: sendRegardState ?? this.sendRegardState,
       sendRegardTextState: sendRegardTextState ?? this.sendRegardTextState,
       profile: profile ?? this.profile,
+      currentIndex: currentIndex ?? this.currentIndex,
+      isScrollingDown: isScrollingDown ?? this.isScrollingDown,
+      isMarriageTab: isMarriageTab ?? this.isMarriageTab,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -43,6 +55,9 @@ class MarriageState extends Equatable {
     userInteractionState,
     sendRegardState,
     profile,
+    currentIndex,
+    isScrollingDown,
+    isMarriageTab,
     errorMessage,
   ];
 }

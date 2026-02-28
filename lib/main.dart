@@ -16,18 +16,13 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  try {
-    await dotenv.load(fileName: '.env.example');
-  } catch (e) {
-    debugPrint('⚠️ .env not found or failed to load: $e');
-  }
+
+  await dotenv.load(fileName: '.env');
   await Hive.initFlutter();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   LocalNotification().initialize();
-
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
-
   await _initializeVideoSystem();
   await GlobalMuteManager.instance.init();
 

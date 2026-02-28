@@ -1,5 +1,4 @@
 import 'package:flutter/services.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/add_post_button.dart';

@@ -1,3 +1,4 @@
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -56,7 +57,10 @@ class PostOptionsBottomSheet extends StatelessWidget {
         isFromReels: isFromReels,
         onShare: onShare,
         onReport: () {
-          context.pushNamed(AppRouter.kReportReasonsScreen);
+          context.pushNamed(
+            AppRouter.kReportsView,
+            arguments: {'type': ReportType.post, 'id': post.postId},
+          );
         },
         onBlock: onBlock,
         onHide: onHide,

@@ -2,7 +2,7 @@ name: tayseer
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.3+3
+version: 1.2.3+3
 
 environment:
   sdk: ">=3.8.1 <4.0.0"
@@ -105,7 +105,7 @@ flutter:
     - assets/icons/
     - assets/lang/
     - assets/sounds/
-    - .env.example
+    - .env
 
   fonts:
     - family: ibmp

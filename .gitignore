@@ -34,7 +34,7 @@ migrate_working_dir/
 /coverage/
 
 # Environment file (contains secrets)
-.env.example
+.env
 
 # Symbolication related
 app.*.symbols

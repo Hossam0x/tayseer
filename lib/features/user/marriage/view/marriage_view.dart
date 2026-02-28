@@ -8,9 +8,9 @@ import 'package:tayseer/features/user/questions/view_model/questions_state.dart'
 import 'package:tayseer/my_import.dart';
 
 class MarriageView extends StatelessWidget {
-  const MarriageView({super.key, this.personId, this.fromInteractions = false});
+  const MarriageView({super.key, this.personId, this.onScroll});
   final String? personId;
-  final bool fromInteractions;
+  final Function(bool isScrollingDown)? onScroll;
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +20,7 @@ class MarriageView extends StatelessWidget {
       body: completed
           ? BlocProvider(
               create: (context) => MarriageCubit(),
-              child: MarriageBody(
-                personId: personId,
-                fromInteractions: fromInteractions, 
-              ),
+              child: MarriageBody(personId: personId, onScroll: onScroll),
             )
           : BlocProvider.value(
               value: getIt<QuestionsCubit>(),

@@ -88,7 +88,6 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
     switch (config.type) {
       case QuestionType.selectableList:
         return SelectableListWidget(
-          
           items: config.items ?? [],
           selectedKey: tempValue, // 🔥 التحكم هنا
           showSearch: config.showSearch,

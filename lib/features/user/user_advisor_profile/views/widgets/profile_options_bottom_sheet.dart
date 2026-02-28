@@ -1,3 +1,4 @@
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -228,7 +229,10 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
   // للـ Report: بدلاً من confirmation بسيط، افتح bottom sheet جديدة
   void _showReportConfirmation(BuildContext context) {
     Navigator.pop(context); // Close the option sheet
-    context.pushNamed(AppRouter.kReportReasonsScreen);
+    context.pushNamed(
+      AppRouter.kReportsView,
+      arguments: {'type': ReportType.user, 'id': advisorId},
+    );
   }
 }
 

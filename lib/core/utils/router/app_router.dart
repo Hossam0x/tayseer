@@ -4,7 +4,6 @@ import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/core/screens/report_reasons_screen.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
@@ -57,6 +56,9 @@ import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
+import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
+import 'package:tayseer/features/shared/reports/presentation/view/report_details_view.dart';
+import 'package:tayseer/features/shared/reports/presentation/view/reports_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_subscription_view.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
@@ -228,7 +230,8 @@ abstract class AppRouter {
   static const kEventReservationPeopleView = '/EventReservationPeopleView';
   static const kOrderManagementView = '/order_management_view';
   ///// report screens /////
-  static const kReportReasonsScreen = '/ReportReasonsScreen';
+  static const kReportsView = '/reportsView';
+  static const kReportDetailsView = '/reportDetailsView';
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
   //     return kOnBoardingScreen;
@@ -950,10 +953,26 @@ abstract class AppRouter {
           routeSettings: settings,
         );
       /////  report screens ///////
-      case kReportReasonsScreen:
+      case kReportsView:
+        final arg = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => ReportReasonsScreen(),
+          builder: (_) => BlocProvider(
+            create: (context) => getIt<ReportsCubit>()
+              ..intialize(arg['type'], arg['id'])
+              ..fetchReportReasons(),
+            child: ReportsView(),
+          ),
+        );
+
+      case kReportDetailsView:
+        final reportsCubit = settings.arguments as ReportsCubit;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: reportsCubit,
+            child: ReportDetailsView(),
+          ),
         );
       // case kEditCertificateView:
       //   final cert = settings.arguments as CertificateModelProfile;

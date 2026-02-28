@@ -3,13 +3,12 @@ import 'package:tayseer/core/utils/helper/picker_helper.dart';
 import 'package:tayseer/core/widgets/custtom_glass_button.dart';
 import 'package:tayseer/core/widgets/pick_image_bottom_sheet.dart';
 import 'package:tayseer/features/advisor/add_post/view/widget/custom_profile_header.dart';
+import 'package:tayseer/features/advisor/add_post/view/widget/style_gallery_grid.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_state.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
 import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
 import 'package:tayseer/my_import.dart';
-
-// add_post_body.dart
 
 class AddPostBody extends StatelessWidget {
   const AddPostBody({super.key});
@@ -17,11 +16,8 @@ class AddPostBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AddPostCubit, AddPostState>(
-      // ✅ مش محتاجين نسمع لـ addPostState خالص
       listenWhen: (previous, current) => false,
-      listener: (context, state) {
-        // ❌ شيلنا كل الـ loading / success / failure listeners
-      },
+      listener: (context, state) {},
       builder: (context, state) {
         final cubit = context.read<AddPostCubit>();
         final postType = state.resolvedPostType;
@@ -63,9 +59,6 @@ class AddPostBody extends StatelessWidget {
                     height: 40,
                     width: context.responsiveWidth(100),
                     title: context.tr('to_publish'),
-                    // ────────────────────────────────────
-                    // ✅ التعديل الرئيسي هنا
-                    // ────────────────────────────────────
                     onPressed: isActive
                         ? () => _publishPost(context, cubit, state, postType)
                         : null,
@@ -73,12 +66,13 @@ class AddPostBody extends StatelessWidget {
                 ),
               ],
             ),
-
-            // ─── باقي الـ body زي ما هو بالظبط ───
             body: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ════════════════════════════════════════════
+                  // Profile Header + Category
+                  // ════════════════════════════════════════════
                   CustomProfileHeader(
                     name: kCurrentUserData?.name ?? 'user',
                     initialSubtitle: context.tr('select_group'),
@@ -89,6 +83,9 @@ class AddPostBody extends StatelessWidget {
                         cubit.setSelectedCategoryId(group),
                   ),
 
+                  // ════════════════════════════════════════════
+                  // Text Input
+                  // ════════════════════════════════════════════
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: TextField(
@@ -107,17 +104,23 @@ class AddPostBody extends StatelessWidget {
                     ),
                   ),
 
-                  // صور من الجاليري
-                  if (state.selectedImages.isNotEmpty &&
+                  // ════════════════════════════════════════════
+                  // ✅ صور (Facebook Style Grid) - كاميرا + جاليري معاً
+                  // ════════════════════════════════════════════
+                  if ((state.capturedImages.isNotEmpty ||
+                          state.selectedImages.isNotEmpty) &&
                       postType != AddPostEnum.reel)
-                    _buildGalleryImages(context, state, cubit),
+                    StyleCombinedGrid(
+                      capturedImages: state.capturedImages,
+                      galleryImages: state.selectedImages,
+                      onRemoveCaptured: (image) =>
+                          cubit.removeCapturedImage(image),
+                      onRemoveGallery: (image) => cubit.removeSelected(image),
+                    ),
 
-                  // صور من الكاميرا
-                  if (state.capturedImages.isNotEmpty &&
-                      postType != AddPostEnum.reel)
-                    _buildCapturedImages(context, state, cubit),
-
-                  // فيديو
+                  // ════════════════════════════════════════════
+                  // فيديو (زي ما هو - بدون تعديل)
+                  // ════════════════════════════════════════════
                   if (state.capturedVideo != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -134,6 +137,9 @@ class AddPostBody extends StatelessWidget {
               ),
             ),
 
+            // ════════════════════════════════════════════
+            // Bottom Bar
+            // ════════════════════════════════════════════
             bottomNavigationBar: _buildBottomBar(context, state, cubit),
           ),
         );
@@ -142,7 +148,7 @@ class AddPostBody extends StatelessWidget {
   }
 
   // ──────────────────────────────────────────────
-  // ✅ الميثود الجديدة: نشر البوست + الرجوع للهوم
+  // ✅ نشر البوست + الرجوع للهوم
   // ──────────────────────────────────────────────
   void _publishPost(
     BuildContext context,
@@ -150,13 +156,11 @@ class AddPostBody extends StatelessWidget {
     AddPostState state,
     AddPostEnum postType,
   ) {
-    // 1. جمع بيانات البوست
     final content = state.draftText.trim();
     final categoryId = state.selectedCategoryId!;
     final images = List<File>.from(state.capturedImages);
     final video = state.capturedVideo;
 
-    // 2. إطلاق الرفع في الخلفية عبر الـ UploadPostCubit
     getIt<UploadPostCubit>().startUploadWithRetry(
       categoryId: categoryId,
       postType: postType.name,
@@ -165,7 +169,6 @@ class AddPostBody extends StatelessWidget {
       video: video,
     );
 
-    // 3. الرجوع للهوم فوراً
     context.pushNamedAndRemoveUntil(
       AppRouter.kAdvisorLayoutView,
       predicate: (route) => false,
@@ -173,116 +176,8 @@ class AddPostBody extends StatelessWidget {
   }
 
   // ──────────────────────────────────────────────
-  // باقي الـ Helper Methods (نفس الكود القديم)
+  // Bottom Bar
   // ──────────────────────────────────────────────
-
-  Widget _buildGalleryImages(
-    BuildContext context,
-    AddPostState state,
-    AddPostCubit cubit,
-  ) {
-    return SizedBox(
-      height: context.height * 0.25,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        itemCount: state.selectedImages.length,
-        itemBuilder: (_, index) {
-          final image = state.selectedImages[index];
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: FutureBuilder(
-                    future: image.thumbnailDataWithSize(
-                      const ThumbnailSize(300, 300),
-                    ),
-                    builder: (_, snap) {
-                      if (!snap.hasData) {
-                        return Center(
-                          child: SizedBox(
-                            width: 28,
-                            height: 28,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: HexColor('4d4d4d'),
-                            ),
-                          ),
-                        );
-                      }
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.memory(snap.data!, fit: BoxFit.cover),
-                      );
-                    },
-                  ),
-                ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: GestureDetector(
-                    onTap: () => cubit.removeSelected(image),
-                    child: const CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.black54,
-                      child: Icon(Icons.close, size: 14, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildCapturedImages(
-    BuildContext context,
-    AddPostState state,
-    AddPostCubit cubit,
-  ) {
-    return SizedBox(
-      height: context.height * 0.25,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        itemCount: state.capturedImages.length,
-        itemBuilder: (_, index) {
-          final imageFile = state.capturedImages[index];
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.file(imageFile, fit: BoxFit.cover),
-                  ),
-                ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: GestureDetector(
-                    onTap: () => cubit.removeCapturedImage(imageFile),
-                    child: const CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.black54,
-                      child: Icon(Icons.close, size: 14, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildBottomBar(
     BuildContext context,
     AddPostState state,
@@ -296,19 +191,16 @@ class AddPostBody extends StatelessWidget {
           CusttomGlassButton(
             text: context.tr('generate_ai_content'),
             showIcon: state.isAiLoading,
-
             onTap: () {
               cubit.enhanceTextWithGemini(context);
             },
           ),
-
-          // AiAssistantBanner(
-          //   isLoading: state.isAiLoading,
-          //   onTap: () => cubit.enhanceTextWithGemini(context),
-          // ),
           const Divider(color: Colors.grey, thickness: 0.5),
           Row(
             children: [
+              // ════════════════════════════════════════
+              // 📷 Camera Button
+              // ════════════════════════════════════════
               IconButton(
                 icon: Icon(
                   Icons.camera_alt_outlined,
@@ -334,6 +226,10 @@ class AddPostBody extends StatelessWidget {
                         }
                       },
               ),
+
+              // ════════════════════════════════════════
+              // 🖼️ Gallery Button
+              // ════════════════════════════════════════
               GestureDetector(
                 onTap: _hasVideo(state)
                     ? null
@@ -365,6 +261,10 @@ class AddPostBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
+
+              // ════════════════════════════════════════
+              // 🎥 Video Button
+              // ════════════════════════════════════════
               IconButton(
                 icon: Icon(
                   Icons.video_library_outlined,
@@ -408,6 +308,9 @@ class AddPostBody extends StatelessWidget {
     );
   }
 
+  // ──────────────────────────────────────────────
+  // Helpers
+  // ──────────────────────────────────────────────
   bool _hasImages(AddPostState state) {
     return state.selectedImages.isNotEmpty || state.capturedImages.isNotEmpty;
   }

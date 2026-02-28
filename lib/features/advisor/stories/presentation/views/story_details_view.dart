@@ -1,4 +1,5 @@
 import 'package:story_view/story_view.dart';
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
@@ -634,7 +635,13 @@ class _UserStoryPageState extends State<_UserStoryPage> {
                     userId: widget.userStories.userId,
                   );
                 } else if (value == 'report') {
-                  context.pushNamed(AppRouter.kReportReasonsScreen);
+                  context.pushNamed(
+                    AppRouter.kReportsView,
+                    arguments: {
+                      'type': ReportType.story,
+                      'id': currentStory.id,
+                    },
+                  );
                 } else if (value == 'hide') {
                   await cubit.hideStory(
                     context: context,
