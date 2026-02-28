@@ -53,6 +53,15 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     _recorder = FlutterSoundRecorder();
 
     try {
+      // ✅ على iOS: اطلب الـ permission الأول قبل openRecorder
+      if (Platform.isIOS) {
+        final status = await Permission.microphone.request();
+        if (!status.isGranted) {
+          debugPrint('❌ Microphone permission denied on iOS');
+          return; // مش نكمل
+        }
+      }
+
       await _recorder!.openRecorder();
 
       await _recorder!.setSubscriptionDuration(
@@ -124,7 +133,9 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Microphone permission is required to record audio'),
+              content: Text(
+                'Microphone permission is required to record audio',
+              ),
             ),
           );
         }
@@ -285,9 +296,9 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     } catch (e) {
       debugPrint('❌ Error stopping recording: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to stop recording: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to stop recording: $e')));
       }
     }
   }
@@ -395,22 +406,19 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                               width: 10,
                               height: 10,
                               decoration: BoxDecoration(
-                                color:
-                                    _isPaused ? Colors.orange : Colors.red,
+                                color: _isPaused ? Colors.orange : Colors.red,
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: (_isPaused
-                                            ? Colors.orange
-                                            : Colors.red)
-                                        .withOpacity(
-                                          0.3 +
-                                              (_animationController.value *
-                                                  0.4),
-                                        ),
+                                    color:
+                                        (_isPaused ? Colors.orange : Colors.red)
+                                            .withOpacity(
+                                              0.3 +
+                                                  (_animationController.value *
+                                                      0.4),
+                                            ),
                                     blurRadius:
-                                        4 +
-                                        (_animationController.value * 4),
+                                        4 + (_animationController.value * 4),
                                     spreadRadius: 1,
                                   ),
                                 ],
@@ -428,40 +436,37 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
-                              children: List.generate(
-                                _waveHeights.length,
-                                (index) {
-                                  final height = _waveHeights[index];
+                              children: List.generate(_waveHeights.length, (
+                                index,
+                              ) {
+                                final height = _waveHeights[index];
 
-                                  final color = Color.lerp(
-                                    AppColors.secondary200.withOpacity(0.5),
-                                    AppColors.secondary600,
-                                    (height / 35.0).clamp(0.0, 1.0),
-                                  )!;
+                                final color = Color.lerp(
+                                  AppColors.secondary200.withOpacity(0.5),
+                                  AppColors.secondary600,
+                                  (height / 35.0).clamp(0.0, 1.0),
+                                )!;
 
-                                  return AnimatedContainer(
-                                    duration: Duration(milliseconds: 400),
-                                    curve: Curves.easeOut,
-                                    width: 2.5,
-                                    height: height,
-                                    margin: EdgeInsets.symmetric(
-                                      horizontal: 0.8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: color,
-                                      borderRadius: BorderRadius.circular(2),
-                                      boxShadow: height > 20
-                                          ? [
-                                              BoxShadow(
-                                                color: color.withOpacity(0.3),
-                                                blurRadius: 2,
-                                              ),
-                                            ]
-                                          : null,
-                                    ),
-                                  );
-                                },
-                              ),
+                                return AnimatedContainer(
+                                  duration: Duration(milliseconds: 400),
+                                  curve: Curves.easeOut,
+                                  width: 2.5,
+                                  height: height,
+                                  margin: EdgeInsets.symmetric(horizontal: 0.8),
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    borderRadius: BorderRadius.circular(2),
+                                    boxShadow: height > 20
+                                        ? [
+                                            BoxShadow(
+                                              color: color.withOpacity(0.3),
+                                              blurRadius: 2,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                );
+                              }),
                             ),
                           ),
                         ),
@@ -498,8 +503,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                         ),
 
                         GestureDetector(
-                          onTap:
-                              _isPaused ? _resumeRecording : _pauseRecording,
+                          onTap: _isPaused ? _resumeRecording : _pauseRecording,
                           child: Container(
                             width: 40.w,
                             height: 40.h,

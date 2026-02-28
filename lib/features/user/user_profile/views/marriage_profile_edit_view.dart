@@ -941,39 +941,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 void _startRecordingInPlace(BuildContext context) async {
-  final status = await Permission.microphone.request();
-  
-  if (!mounted) return;
-  
-  if (status.isGranted) {
-    // ✅ انتظر قليلاً عشان iOS يسجل الـ permission قبل ما VoiceRecordingWidget يشتغل
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) setState(() => _isRecordingInPlace = true);
-    return;
-  }
-  
-  if (status.isDenied) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      CustomSnackBar(
-        context,
-        text: context.tr('microphone_permission_required'),
-        isError: true,
-      ),
-    );
-    return;
-  }
-  
-  if (status.isPermanentlyDenied) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      CustomSnackBar(
-        context,
-        text: context.tr('enable_microphone_from_settings'),
-        isError: true,
-      ),
-    );
-    await openAppSettings();
-    return;
-  }
+  // ✅ مفيش طلب permission هنا - بيتطلب جوا _initializeRecorder
+  if (mounted) setState(() => _isRecordingInPlace = true);
 }
 Future<void> _pickAudio(BuildContext context) async {
   try {
