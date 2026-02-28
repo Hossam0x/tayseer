@@ -72,7 +72,12 @@ class ChatListBuilder extends StatelessWidget {
               },
               color: const Color(0xFFE96E88),
               child: ListView.separated(
-                padding: EdgeInsets.only(bottom: screenHeight * 0.01),
+                padding: EdgeInsets.only(
+                  bottom: screenHeight * 0.12,
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                ),
                 itemCount: s.chatRooms.length,
                 separatorBuilder: (context, index) => Divider(
                   color: Colors.grey.shade200,
