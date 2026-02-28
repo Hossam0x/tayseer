@@ -1,3 +1,4 @@
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/history_screen.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
@@ -338,6 +339,7 @@ class MarriageBodyState extends State<MarriageBody> {
                 controller: _mainScrollController,
                 slivers: [
                   SliverProfileHeader(
+                    reportId: user?.id,
                     images: images,
                     name: user?.name ?? '',
                     age: answers?.aboutMe?.age ?? '',
@@ -603,7 +605,7 @@ class MarriageBodyState extends State<MarriageBody> {
                             AppRouter.kReportsView,
                             arguments: {
                               'type': ReportType.user,
-                              'id': personId,
+                              'id': user?.id ?? '',
                             },
                           );
                         },

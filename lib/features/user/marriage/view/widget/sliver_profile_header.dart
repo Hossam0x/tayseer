@@ -16,8 +16,8 @@ class SliverProfileHeader extends StatelessWidget {
   final String? nationality;
   final String? height;
   final String? transitionKey;
-  final Widget? toggleWidget; // ✅ NEW
-
+  final Widget? toggleWidget;
+  final String? reportId;
   const SliverProfileHeader({
     super.key,
     required this.images,
@@ -30,7 +30,8 @@ class SliverProfileHeader extends StatelessWidget {
     this.nationality,
     this.height,
     this.transitionKey,
-    this.toggleWidget, // ✅ NEW
+    this.toggleWidget,
+    this.reportId,
   });
 
   @override
@@ -95,8 +96,11 @@ class SliverProfileHeader extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          ImageViewerGallery(images: images, initialIndex: 0),
+                      builder: (context) => ImageViewerGallery(
+                        images: images,
+                        initialIndex: 0,
+                        personId: reportId,
+                      ),
                     ),
                   );
                 }

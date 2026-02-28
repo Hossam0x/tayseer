@@ -1,14 +1,17 @@
 import 'dart:ui';
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/my_import.dart';
 
 class ImageViewerGallery extends StatefulWidget {
   final List<String> images;
   final int initialIndex;
+  final String? personId;
 
   const ImageViewerGallery({
     super.key,
     required this.images,
     this.initialIndex = 0,
+    this.personId,
   });
 
   @override
@@ -86,7 +89,13 @@ class _ImageViewerGalleryState extends State<ImageViewerGallery> {
 
                       IconButton(
                         onPressed: () {
-                          context.pushNamed(AppRouter.kReportReasonsScreen);
+                          context.pushNamed(
+                            AppRouter.kReportsView,
+                            arguments: {
+                              'type': ReportType.user,
+                              'id': widget.personId,
+                            },
+                          );
                         },
                         icon: const Icon(
                           Icons.report_gmailerrorred,
