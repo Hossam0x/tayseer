@@ -244,7 +244,7 @@ abstract class AssetsData {
   static const String expertAdvisor = "assets/images/expertAdvisor.png";
   static const String chatIconSVG = "assets/icons/chatIcon.svg";
   static const String filterIcon = "assets/icons/filterIcon.svg";
-  static const String filter2Icon = "aassets/icons/filter2.svg";
+  static const String filter2Icon = "assets/icons/filter2.svg";
 
   // User Profile Icons
   static const String navigateIcon = "assets/icons/navigateIcon.svg";
