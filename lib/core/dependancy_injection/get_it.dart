@@ -49,6 +49,9 @@ import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:tayseer/features/shared/reports/data/repo/reports_repo.dart';
+import 'package:tayseer/features/shared/reports/data/repo/reports_repo_impl.dart';
+import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository_impl.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
@@ -408,4 +411,10 @@ Future<void> setupGetIt() async {
     () => WalletRepo(getIt<WalletRemoteDataSource>()),
   );
   getIt.registerFactory<WalletCubit>(() => WalletCubit(getIt<WalletRepo>()));
+
+  // Reports
+  getIt.registerLazySingleton<ReportsRepo>(
+    () => ReportsRepoImpl(getIt<ApiService>()),
+  );
+  getIt.registerFactory<ReportsCubit>(() => ReportsCubit(getIt<ReportsRepo>()));
 }

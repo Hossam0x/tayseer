@@ -207,6 +207,7 @@ class MarriageBodyState extends State<MarriageBody> {
           duration: const Duration(milliseconds: 300),
           child: state.isMarriageTab
               ? _buildMarriageContent(
+                  personId: widget.personId ?? "",
                   key: const ValueKey('marriage'),
                   state: state,
                   profileIndex: profileIndex,
@@ -307,6 +308,7 @@ class MarriageBodyState extends State<MarriageBody> {
   // ═══════════════════════════════════════════════════════════════
   Widget _buildMarriageContent({
     Key? key,
+    required String personId,
     required MarriageState state,
     required int profileIndex,
     required List<UserItem> users,
@@ -597,7 +599,13 @@ class MarriageBodyState extends State<MarriageBody> {
                           );
                         },
                         onReport: () {
-                          context.pushNamed(AppRouter.kReportReasonsScreen);
+                          context.pushNamed(
+                            AppRouter.kReportsView,
+                            arguments: {
+                              'type': ReportType.user,
+                              'id': personId,
+                            },
+                          );
                         },
                       ),
                     ),

@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/functions/count_formate.dart';
 import 'package:tayseer/core/widgets/follow_button.dart';
 import 'package:tayseer/core/widgets/post_card/circular_icon_button.dart';
@@ -114,7 +115,10 @@ class ReelsOverlay extends StatelessWidget {
                 if (!isGuest)
                   IconButton(
                     onPressed: () {
-                      context.pushNamed(AppRouter.kReportReasonsScreen);
+                      context.pushNamed(
+                        AppRouter.kReportsView,
+                        arguments: {'type': ReportType.post, 'id': post.postId},
+                      );
                     },
 
                     icon: Icon(

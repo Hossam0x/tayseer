@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:ui';
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/utils/animation/fly_animation.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
@@ -225,6 +226,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
                 left: 0,
                 right: 0,
                 child: _ViewerHeader(
+                  postId: widget.postId,
                   currentIndex: _currentIndex,
                   totalImages: widget.images.length,
                   onClose: () => Navigator.pop(context),
@@ -516,11 +518,13 @@ class _ViewerHeader extends StatelessWidget {
   final int currentIndex;
   final int totalImages;
   final VoidCallback onClose;
+  final String postId;
 
   const _ViewerHeader({
     required this.currentIndex,
     required this.totalImages,
     required this.onClose,
+    required this.postId,
   });
 
   @override
@@ -557,7 +561,10 @@ class _ViewerHeader extends StatelessWidget {
                 if (!isGuest)
                   IconButton(
                     onPressed: () {
-                      context.pushNamed(AppRouter.kReportReasonsScreen);
+                      context.pushNamed(
+                        AppRouter.kReportsView,
+                        arguments: {'type': ReportType.post, 'id': postId},
+                      );
                     },
                     icon: Icon(
                       Icons.info_outline,
