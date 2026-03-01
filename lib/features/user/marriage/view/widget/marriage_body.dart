@@ -1,6 +1,8 @@
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/history_screen.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/history_page.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_FilterChips.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/view/widget/section_toggle.dart';
@@ -22,13 +24,14 @@ import 'package:tayseer/features/user/marriage/view/widget/life_event_section.da
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 
 class MarriageBody extends StatefulWidget {
-    const MarriageBody({
+  const MarriageBody({
     super.key,
     this.personId,
     this.fromInteractions = false,
     this.onScroll,
   });
-    final String? personId;
+
+  final String? personId;
   final bool fromInteractions;
   final Function(bool isScrollingDown)? onScroll;
 
@@ -50,8 +53,12 @@ class MarriageBodyState extends State<MarriageBody> {
   double _scrollDelta = 0;
   static const double _scrollThreshold = 20.0;
 
-  // ✅ متغير للتحكم في موقع الـ Floating Buttons
-  // Note: scrolling flag moved to cubit state; local tracking variables remain.
+  // ════════════════════════════════════════════════════
+  // ✅ متغيرات الـ History (embedded بدل Navigator.push)
+  // ════════════════════════════════════════════════════
+  bool _showHistory = false;
+  String _selectedHistoryFilter = "liked_you";
+  final GlobalKey<HistorypageState> _historyKey = GlobalKey<HistorypageState>();
 
   InteractionsCubit get interactionsCubit {
     if (_interactionsCubit == null) {
@@ -82,26 +89,26 @@ class MarriageBodyState extends State<MarriageBody> {
   // ✅ Scroll Listener
   // ════════════════════════════════════════════════════
   void _scrollListener() {
-  final currentOffset = _mainScrollController.offset;
-  final delta = currentOffset - _lastOffset;
+    final currentOffset = _mainScrollController.offset;
+    final delta = currentOffset - _lastOffset;
 
-  _scrollDelta += delta;
+    _scrollDelta += delta;
 
-  if (_scrollDelta.abs() >= _scrollThreshold) {
-    final isDown = _scrollDelta > 0;
+    if (_scrollDelta.abs() >= _scrollThreshold) {
+      final isDown = _scrollDelta > 0;
 
-    final cubit = context.read<MarriageCubit>();
-    if (cubit.state.isScrollingDown != isDown) {
-      cubit.setScrollingDown(isDown);
+      final cubit = context.read<MarriageCubit>();
+      if (cubit.state.isScrollingDown != isDown) {
+        cubit.setScrollingDown(isDown);
+      }
+
+      widget.onScroll?.call(isDown);
+      _scrollDelta = 0;
     }
 
-    // ✅ إبلاغ الـ Layout بالسكرول (لإخفاء NavBar)
-    widget.onScroll?.call(isDown);
-    _scrollDelta = 0;
+    _lastOffset = currentOffset;
   }
 
-  _lastOffset = currentOffset;
-}
   // ✅ Scroll to Top
   void scrollToTop() {
     if (_mainScrollController.hasClients) {
@@ -120,20 +127,23 @@ class MarriageBodyState extends State<MarriageBody> {
     context.read<MarriageCubit>().setScrollingDown(false);
   }
 
-Widget _buildToggle() {
-  final cubit = context.read<MarriageCubit>();
-  return SectionToggle(
-    isMarriage: cubit.state.isMarriageTab,
-    onChanged: (value) {
-      // ✅ لو جاي من التفاعلات وضغط على تاب التفاعلات = ارجع للخلف
-      if (!value && widget.fromInteractions) {
-        context.pop();
-        return;
-      }
-      cubit.setMarriageTab(value);
-    },
-  );
-}
+  Widget _buildToggle() {
+    final cubit = context.read<MarriageCubit>();
+    return SectionToggle(
+      isMarriage: cubit.state.isMarriageTab,
+      onChanged: (value) {
+        if (!value && widget.fromInteractions) {
+          context.pop();
+          return;
+        }
+        // ✅ لو بيرجع من الـ history، ارجع للـ interactions أولاً
+        if (_showHistory) {
+          setState(() => _showHistory = false);
+        }
+        cubit.setMarriageTab(value);
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -225,7 +235,9 @@ Widget _buildToggle() {
                   profileIndex: profileIndex,
                   users: users,
                 )
-              : _buildInteractionsContent(key: const ValueKey('interactions')),
+              : _buildInteractionsContent(
+                  key: const ValueKey('interactions'),
+                ),
         );
       },
     );
@@ -316,7 +328,7 @@ Widget _buildToggle() {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // MARRIAGE TAB (✅ مع Animated Floating Buttons)
+  // MARRIAGE TAB
   // ═══════════════════════════════════════════════════════════════
   Widget _buildMarriageContent({
     Key? key,
@@ -373,8 +385,7 @@ Widget _buildToggle() {
                         subtitle: user?.similarity != null
                             ? '${user!.similarity}%'
                             : '',
-                        tags:
-                            user?.matchingTags
+                        tags: user?.matchingTags
                                 ?.where(
                                   (t) =>
                                       t.value != null &&
@@ -421,7 +432,6 @@ Widget _buildToggle() {
                       ),
                     ),
                   ),
-
                   if (images.length > 2 && images[2].isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -454,7 +464,6 @@ Widget _buildToggle() {
                       ),
                     ),
                   ),
-
                   if (images.length > 3 && images[3].isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -542,7 +551,6 @@ Widget _buildToggle() {
                         ),
                       ),
                     ),
-
                   if (images.length > 4 && images[4].isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -640,7 +648,6 @@ Widget _buildToggle() {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // ❤️ Like Button
                   buildCircleButton(
                     onTap: () {
                       context.read<MarriageCubit>().userInteraction(
@@ -659,7 +666,6 @@ Widget _buildToggle() {
                     AppColors.kprimaryTextColor,
                     HexColor('f8d3da'),
                   ),
-                  // ⭐ Star/Regard Button
                   buildCircleButton(
                     onTap: () {
                       context.read<MarriageCubit>().sendRegard(
@@ -670,7 +676,6 @@ Widget _buildToggle() {
                     Colors.white,
                     HexColor('cccab3'),
                   ),
-                  // ✖️ Dislike Button
                   buildCircleButton(
                     onTap: () {
                       context.read<MarriageCubit>().userInteraction(
@@ -699,7 +704,7 @@ Widget _buildToggle() {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // INTERACTIONS TAB
+  // ✅ INTERACTIONS TAB — مع embedded history (بدون Navigator.push)
   // ═══════════════════════════════════════════════════════════════
   Widget _buildInteractionsContent({Key? key}) {
     return Directionality(
@@ -712,55 +717,114 @@ Widget _buildToggle() {
               bottom: false,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Center(child: _buildToggle()),
-                    Positioned(
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          context.pushNamed(AppRouter.kMarriageFilterView);
-                        },
-                        child: CircleAvatar(
-                          backgroundColor: Colors.black12,
-                          child: AppImage(
-                            AssetsData.kfilterIcon,
-                            width: 20,
-                            height: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BlocProvider.value(
-                                value: interactionsCubit,
-                                child: const HistoryScreen(),
+                child: _showHistory
+                    // ══════════════════════════════════════
+                    // ✅ AppBar السجل: SimpleAppBar
+                    // ══════════════════════════════════════
+                    ? SimpleAppBar(
+                        title: context.tr('history'),
+                        isLargeTitle: true,
+                        onBack: () => setState(() => _showHistory = false),
+                      )
+                    // ══════════════════════════════════════
+                    // ✅ AppBar التفاعلات: الأصلي
+                    // ══════════════════════════════════════
+                    : Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Center(child: _buildToggle()),
+                          Positioned(
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () {
+                                context.pushNamed(AppRouter.kMarriageFilterView);
+                              },
+                              child: CircleAvatar(
+                                backgroundColor: Colors.black12,
+                                child: AppImage(
+                                  AssetsData.kfilterIcon,
+                                  width: 20,
+                                  height: 20,
+                                ),
                               ),
                             ),
-                          );
-                        },
-                        child: AppImage(
-                          AssetsData.archiveIcon,
-                          width: 50.w,
-                          height: 50.h,
-                        ),
+                          ),
+                          Positioned(
+                            left: 0,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _showHistory = true;
+                                  _selectedHistoryFilter = "liked_you";
+                                });
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  Future.delayed(
+                                    const Duration(milliseconds: 150),
+                                    () => _historyKey.currentState?.scrollToTop(),
+                                  );
+                                });
+                              },
+                              child: AppImage(
+                                AssetsData.archiveIcon,
+                                width: 50.w,
+                                height: 50.h,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
+
+            // ✅ AnimatedSwitcher بين الـ InteractionBody والـ History
             Expanded(
-              child: BlocProvider.value(
-                value: interactionsCubit,
-                child: InteractionBody(key: _interactionBodyKey),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: _showHistory
+                    ? _buildEmbeddedHistory()
+                    : BlocProvider.value(
+                        key: const ValueKey('interaction_body'),
+                        value: interactionsCubit,
+                        child: InteractionBody(key: _interactionBodyKey),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ EMBEDDED HISTORY — بدون Scaffold أو Navigator
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildEmbeddedHistory() {
+    return BlocProvider.value(
+      key: const ValueKey('history_content'),
+      value: interactionsCubit,
+      child: Builder(
+        builder: (context) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ✅ Filter Chips
+            FilterChips(
+              onFilterChanged: (filterKey) {
+                setState(() => _selectedHistoryFilter = filterKey);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Future.delayed(
+                    const Duration(milliseconds: 100),
+                    () => _historyKey.currentState?.scrollToTop(),
+                  );
+                });
+              },
+            ),
+            SizedBox(height: 8.h),
+
+            // ✅ History Page — الـ BlocProvider.value فوق بيوصله للـ Historypage
+            Expanded(
+              child: Historypage(
+                key: _historyKey,
+                selectedFilter: _selectedHistoryFilter,
               ),
             ),
           ],

@@ -29,7 +29,12 @@ class ConsultationStandalonePage extends StatelessWidget {
                   context,
                   MaterialPageRoute(builder: (context) => AdvisorFilterView()),
                 ),
-                onTap: () {},
+                onTap: () {
+                   Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AdvisorFilterView()),
+                );
+                },
               ),
               SizedBox(height: 20.h),
               Expanded(

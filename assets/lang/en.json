@@ -1425,6 +1425,7 @@
   "orders_stop_success": "Orders and sessions have been suspended successfully",
   "story_deleted_success": "Story deleted successfully",
   "unsaved_changes": "Unsaved Changes",
+<<<<<<< HEAD
 "images_pending_save": "Images pending save",
 "file_not_found": "File not found",
 "edit_marriage_profile": "Edit Marriage Profile",
@@ -1433,6 +1434,8 @@
 "deactivate_marriage_title":"Do you want to disable the marriage section in Tayseer?",
 "consultation":"Consultation",
 "Consulting":"Book a consultation",
+=======
+>>>>>>> origin/Interaction
   "detils_attendees": "Attendees Details",
   "consultancy_session": "Consultancy Session",
   "event_booking": "Event Booking",
@@ -1450,11 +1453,15 @@
 "search_by_experience": "Search",
 "book_session": "Book Session",
 "recommended": "Recommended",
+<<<<<<< HEAD
   "transaction": "Transaction",
+=======
+>>>>>>> origin/Interaction
   "photos": "Photos",
   "add_caption": "Add a caption...",
   "move_up": "Move Up",
   "other_reason": "Other Reason",
+<<<<<<< HEAD
   "trim_video": "Trim",
   "add_text": "Text",
   "save_video": "Save",
@@ -1466,4 +1473,13 @@
   "no_likers_yet": "No likers yet",
   "enter_reason": "Enter Reason",
   "other_reason_hint": "Your opinion helps keep Tayseer reliable and safe ......."
+=======
+  "long_press_to_drag": "Long press to drag",
+"reorder": "Reorder",
+"images_pending_save": "Images pending save",
+"edit_marriage_profile": "Edit Marriage Profile",
+"activate_marriage_subtitle": "To make your journey toward marriage easier and smoother, we're here to help you every step of the way!",
+"activate_marriage_title": "Would you like to explore the marriage section in Tayseer?",
+"deactivate_marriage_title": "Would you like to disable the marriage section in Tayseer?"
+>>>>>>> origin/Interaction
 }
