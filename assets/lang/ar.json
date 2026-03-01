@@ -377,6 +377,7 @@
   "password_min_length": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
   "invalid_phone": "رقم الهاتف غير صحيح",
   "field_required": "يجب إدخال هذا الحقل",
+  "min_3_characters": "يجب أن يكون النص 3 أحرف على الأقل",
   "confirm": "تأكيد",
   "select_category_required_to_publish_post": "يجب اختيار المجموع لنشر المنشور",
   "tart_writing_ideas": "ابدأ بكتابة أفكارك ودع",
@@ -1453,7 +1454,9 @@
 "wise": "حكيم",
 "search_by_experience": "بحث",
 "book_session": "حجز جلسة",
-"recommended": "موصى به"
+"recommended": "موصى به",
+"enter_reason": "ادخال السبب",
+"other_reason_hint": "يساعد رأيك في الحفاظ علي تطبيق تيسير بشكل موثوق وامن ......."
 
 
 

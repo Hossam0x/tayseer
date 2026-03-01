@@ -94,6 +94,13 @@ class ReportsViewBody extends StatelessWidget {
             AppRouter.kReportDetailsView,
             arguments: {'reportsCubit': cubit, 'reportReason': report.reason},
           );
+        } else {
+          // Send no reason text to clear previous selection, or emit state for 'other'
+          // We don't have to select a reason because the server logic passes it as otherReason
+          context.pushNamed(
+            AppRouter.kOtherReportReasonView,
+            arguments: {'reportsCubit': cubit},
+          );
         }
       },
     );

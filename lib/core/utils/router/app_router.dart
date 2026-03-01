@@ -59,6 +59,7 @@ import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/report_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/reports_view.dart';
+import 'package:tayseer/features/shared/reports/presentation/view/other_report_reason_view.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_subscription_view.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
@@ -232,6 +233,7 @@ abstract class AppRouter {
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
+  static const kOtherReportReasonView = '/otherReportReasonView';
   // static String getInitialRoute() {
   //   if (kShowOnBoarding == false) {
   //     return kOnBoardingScreen;
@@ -975,6 +977,17 @@ abstract class AppRouter {
             child: ReportDetailsView(
               reportReason: arg['reportReason'] as String? ?? '',
             ),
+          ),
+        );
+
+      case kOtherReportReasonView:
+        final arg = settings.arguments as Map<String, dynamic>;
+        final reportsCubit = arg['reportsCubit'] as ReportsCubit;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: reportsCubit,
+            child: const OtherReportReasonView(),
           ),
         );
       // case kEditCertificateView:
