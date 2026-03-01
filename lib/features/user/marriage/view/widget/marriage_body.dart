@@ -22,8 +22,14 @@ import 'package:tayseer/features/user/marriage/view/widget/life_event_section.da
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 
 class MarriageBody extends StatefulWidget {
-  const MarriageBody({super.key, this.personId, this.onScroll});
-  final String? personId;
+    const MarriageBody({
+    super.key,
+    this.personId,
+    this.fromInteractions = false,
+    this.onScroll,
+  });
+    final String? personId;
+  final bool fromInteractions;
   final Function(bool isScrollingDown)? onScroll;
 
   @override
@@ -76,28 +82,26 @@ class MarriageBodyState extends State<MarriageBody> {
   // ✅ Scroll Listener
   // ════════════════════════════════════════════════════
   void _scrollListener() {
-    final currentOffset = _mainScrollController.offset;
-    final delta = currentOffset - _lastOffset;
+  final currentOffset = _mainScrollController.offset;
+  final delta = currentOffset - _lastOffset;
 
-    _scrollDelta += delta;
+  _scrollDelta += delta;
 
-    if (_scrollDelta.abs() >= _scrollThreshold) {
-      final isDown = _scrollDelta > 0;
+  if (_scrollDelta.abs() >= _scrollThreshold) {
+    final isDown = _scrollDelta > 0;
 
-      // ✅ تحديث حالة الـ Floating Buttons
-      final cubit = context.read<MarriageCubit>();
-      if (cubit.state.isScrollingDown != isDown) {
-        cubit.setScrollingDown(isDown);
-      }
-
-      // ✅ إبلاغ الـ Layout بالسكرول (لإخفاء NavBar)
-      widget.onScroll?.call(isDown);
-      _scrollDelta = 0;
+    final cubit = context.read<MarriageCubit>();
+    if (cubit.state.isScrollingDown != isDown) {
+      cubit.setScrollingDown(isDown);
     }
 
-    _lastOffset = currentOffset;
+    // ✅ إبلاغ الـ Layout بالسكرول (لإخفاء NavBar)
+    widget.onScroll?.call(isDown);
+    _scrollDelta = 0;
   }
 
+  _lastOffset = currentOffset;
+}
   // ✅ Scroll to Top
   void scrollToTop() {
     if (_mainScrollController.hasClients) {
@@ -116,13 +120,20 @@ class MarriageBodyState extends State<MarriageBody> {
     context.read<MarriageCubit>().setScrollingDown(false);
   }
 
-  Widget _buildToggle() {
-    final cubit = context.read<MarriageCubit>();
-    return SectionToggle(
-      isMarriage: cubit.state.isMarriageTab,
-      onChanged: (value) => cubit.setMarriageTab(value),
-    );
-  }
+Widget _buildToggle() {
+  final cubit = context.read<MarriageCubit>();
+  return SectionToggle(
+    isMarriage: cubit.state.isMarriageTab,
+    onChanged: (value) {
+      // ✅ لو جاي من التفاعلات وضغط على تاب التفاعلات = ارجع للخلف
+      if (!value && widget.fromInteractions) {
+        context.pop();
+        return;
+      }
+      cubit.setMarriageTab(value);
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {

@@ -113,13 +113,16 @@ class CategoryDetailPage extends StatelessWidget {
       ),
       itemCount: data.length,
       itemBuilder: (context, index) {
-        return GestureDetector(
-          onTap: () {
-            context.pushNamed(
-              AppRouter.kMarriageView,
-              arguments: {'personId': data[index].userId},
-            );
-          },
+        return   GestureDetector(
+                          onTap: () {
+                            context.pushNamed(
+                              AppRouter.kMarriageView,
+                              arguments: {
+                                'personId': data[index].userId,
+                                'fromInteractions': true,
+                              },
+                            );
+                          },
           child: RecentlyJoined(
             item: data[index],
             forceBlur: !isSubscribed,

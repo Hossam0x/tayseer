@@ -1,5 +1,6 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:tayseer/core/constant/marriage_constants.dart';
+import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
@@ -98,16 +99,22 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       });
     });
   }
-String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
-  final List<String> hobbiesList = MarriageConstants.parseKeysFromRaw(hobbyKeys);
-  if (hobbiesList.isEmpty) return '';
 
-  return hobbiesList.map((key) {
-    final emoji = MarriageConstants.getEmoji(key);
-    final text = context.tr(key);
-    return '$emoji $text';
-  }).join(', ');
-}
+  String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
+    final List<String> hobbiesList = MarriageConstants.parseKeysFromRaw(
+      hobbyKeys,
+    );
+    if (hobbiesList.isEmpty) return '';
+
+    return hobbiesList
+        .map((key) {
+          final emoji = MarriageConstants.getEmoji(key);
+          final text = context.tr(key);
+          return '$emoji $text';
+        })
+        .join(', ');
+  }
+
   String _translateValue(String value, BuildContext context) {
     if (value.isEmpty || value == 'اختر' || value == 'select') {
       return context.tr('select');
@@ -181,15 +188,10 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
     final pendingVideo = widget.state.pendingVideo;
     final pendingDeleteVideo = widget.state.pendingDeleteVideo;
 
-    // منطق العرض: pending delete → مفيش | pending file → محلي | غير كده → سيرفر
     final hasVideo =
         !pendingDeleteVideo &&
         (pendingVideo != null ||
             (serverVideoUrl != null && serverVideoUrl.isNotEmpty));
-
-    final displayVideoUrl = pendingVideo != null
-        ? pendingVideo.path
-        : serverVideoUrl;
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -203,14 +205,35 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
         children: [
           Text(context.tr('intro_video'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-          if (pendingVideo != null)
+
+          // ✅ لو في pending video → عرضه بـ CustomUploadedVideoPreview زي AddPost
+          if (pendingVideo != null) ...[
             _buildPendingBadge(context, context.tr('video_pending_save')),
-          VideoSection(
-            videoUrl: displayVideoUrl,
-            onDelete: hasVideo ? () => _deleteVideo(context) : null,
-            onUpload: !hasVideo ? () => _showVideoOptions(context) : null,
-            showControls: true,
-          ),
+            Gap(8.h),
+            Center(
+              child: CustomUploadedVideoPreview(
+                key: ValueKey(pendingVideo.path),
+                video: XFile(pendingVideo.path),
+                height: 0.3,
+                width: 0.9,
+                onInitialized: () {},
+                onRemove: () => _deleteVideo(context),
+              ),
+            ),
+          ]
+          // ✅ لو في server video فقط → عرضه بـ VideoSection العادية
+          else
+            VideoSection(
+              videoUrl:
+                  (!pendingDeleteVideo &&
+                      serverVideoUrl != null &&
+                      serverVideoUrl.isNotEmpty)
+                  ? serverVideoUrl
+                  : null,
+              onDelete: hasVideo ? () => _deleteVideo(context) : null,
+              onUpload: !hasVideo ? () => _showVideoOptions(context) : null,
+              showControls: true,
+            ),
         ],
       ),
     );
@@ -698,111 +721,111 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
   }
 
   Future<void> _pickVideoFromCamera(BuildContext context) async {
-    try {
+  try {
+    // ✅ iOS: ImagePicker بيتعامل مع الـ permission داخلياً
+    if (Platform.isAndroid) {
       final cameraStatus = await Permission.camera.request();
+      if (!mounted) return;
+      
       if (cameraStatus.isDenied) {
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('camera_permission_required'),
-              isError: true,
-            ),
-          );
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('camera_permission_required'),
+            isError: true,
+          ),
+        );
         return;
       }
       if (cameraStatus.isPermanentlyDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('enable_camera_from_settings'),
-              isError: true,
-            ),
-          );
-          await openAppSettings();
-        }
-        return;
-      }
-      final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(
-        source: ImageSource.camera,
-        maxDuration: const Duration(minutes: 2),
-      );
-      if (video != null) await _processVideoFile(context, video);
-    } catch (e) {
-      debugPrint('❌ Error picking video from camera: $e');
-      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
             context,
-            text: context.tr('error_recording_video'),
+            text: context.tr('enable_camera_from_settings'),
             isError: true,
           ),
         );
-    }
-  }
-
-  Future<void> _pickVideoFromGallery(BuildContext context) async {
-    try {
-      PermissionStatus status;
-      if (Platform.isIOS) {
-        status = await Permission.photos.request();
-      } else {
-        if (Platform.isAndroid) {
-          final androidInfo = await DeviceInfoPlugin().androidInfo;
-          if (androidInfo.version.sdkInt >= 33) {
-            status = await Permission.videos.request();
-          } else {
-            status = await Permission.storage.request();
-          }
-        } else {
-          status = await Permission.storage.request();
-        }
+        await openAppSettings();
+        return;
       }
+    }
+
+    // ✅ iOS و Android: فتح الكاميرا مباشرة
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(
+      source: ImageSource.camera,
+      maxDuration: const Duration(minutes: 2),
+    );
+    if (video != null) await _processVideoFile(context, video);
+    
+  } catch (e) {
+    debugPrint('❌ Error picking video from camera: $e');
+    if (mounted)
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('error_recording_video'),
+          isError: true,
+        ),
+      );
+  }
+}
+  Future<void> _pickVideoFromGallery(BuildContext context) async {
+  try {
+    // ✅ iOS: ImagePicker مش محتاج permission - بيفتح Photos مباشرة
+    if (Platform.isAndroid) {
+      PermissionStatus status;
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      if (androidInfo.version.sdkInt >= 33) {
+        status = await Permission.videos.request();
+      } else {
+        status = await Permission.storage.request();
+      }
+
+      if (!mounted) return;
       if (status.isDenied) {
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('gallery_permission_required'),
-              isError: true,
-            ),
-          );
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('gallery_permission_required'),
+            isError: true,
+          ),
+        );
         return;
       }
       if (status.isPermanentlyDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('enable_gallery_from_settings'),
-              isError: true,
-            ),
-          );
-          await openAppSettings();
-        }
-        return;
-      }
-      final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(
-        source: ImageSource.gallery,
-        maxDuration: const Duration(minutes: 2),
-      );
-      if (video != null) await _processVideoFile(context, video);
-    } catch (e) {
-      debugPrint('❌ Error picking video from gallery: $e');
-      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
             context,
-            text: context.tr('error_selecting_video'),
+            text: context.tr('enable_gallery_from_settings'),
             isError: true,
           ),
         );
+        await openAppSettings();
+        return;
+      }
     }
-  }
 
+    // ✅ iOS و Android: فتح ImagePicker مباشرة
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 2),
+    );
+    if (video != null) await _processVideoFile(context, video);
+    
+  } catch (e) {
+    debugPrint('❌ Error picking video from gallery: $e');
+    if (mounted)
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('error_selecting_video'),
+          isError: true,
+        ),
+      );
+  }
+}
   Future<void> _processVideoFile(BuildContext context, XFile video) async {
     try {
       final file = File(video.path);
@@ -917,28 +940,22 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
       },
     );
   }
-
-  void _startRecordingInPlace(BuildContext context) {
-    setState(() => _isRecordingInPlace = true);
-  }
-
-  Future<void> _pickAudio(BuildContext context) async {
-    try {
+void _startRecordingInPlace(BuildContext context) async {
+  // ✅ مفيش طلب permission هنا - بيتطلب جوا _initializeRecorder
+  if (mounted) setState(() => _isRecordingInPlace = true);
+}
+Future<void> _pickAudio(BuildContext context) async {
+  try {
+    // ✅ iOS: FilePicker مش محتاج permission - بيفتح Files app مباشرة
+    if (Platform.isAndroid) {
       PermissionStatus status;
-      if (Platform.isIOS) {
-        status = await Permission.mediaLibrary.request();
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      if (androidInfo.version.sdkInt >= 33) {
+        status = await Permission.audio.request();
       } else {
-        if (Platform.isAndroid) {
-          final androidInfo = await DeviceInfoPlugin().androidInfo;
-          if (androidInfo.version.sdkInt >= 33) {
-            status = await Permission.audio.request();
-          } else {
-            status = await Permission.storage.request();
-          }
-        } else {
-          status = await Permission.storage.request();
-        }
+        status = await Permission.storage.request();
       }
+
       if (!mounted) return;
       if (status.isDenied) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -961,55 +978,55 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
         await openAppSettings();
         return;
       }
+    }
 
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['mp3', 'aac', 'wav', 'm4a', 'ogg', 'opus', 'flac'],
-        allowCompression: false,
-      );
+    // ✅ iOS و Android: فتح FilePicker مباشرة
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['mp3', 'aac', 'wav', 'm4a', 'ogg', 'opus', 'flac'],
+      allowCompression: false,
+    );
 
-      if (!mounted) return;
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        if (!await file.exists()) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('file_not_found'),
-              isError: true,
-            ),
-          );
-          return;
-        }
-        final fileSize = await file.length();
-        if (fileSize > 10 * 1024 * 1024) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('file_too_large'),
-              isError: true,
-            ),
-          );
-          return;
-        }
-        // ✅ pending فقط
-        widget.cubit.addPendingAudio(file);
-        if (mounted) setState(() {});
-      }
-    } catch (e) {
-      if (mounted)
+    if (!mounted) return;
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      if (!await file.exists()) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
             context,
-            text: '${context.tr('error_picking_audio')}: ${e.toString()}',
+            text: context.tr('file_not_found'),
             isError: true,
           ),
         );
+        return;
+      }
+      final fileSize = await file.length();
+      if (fileSize > 10 * 1024 * 1024) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('file_too_large'),
+            isError: true,
+          ),
+        );
+        return;
+      }
+      widget.cubit.addPendingAudio(file);
+      if (mounted) setState(() {});
     }
+  } catch (e) {
+    if (mounted)
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: '${context.tr('error_picking_audio')}: ${e.toString()}',
+          isError: true,
+        ),
+      );
   }
-
+}
   void _deleteAudio(BuildContext context) {
     CustomshowDialogWithImage(
       context,
@@ -1689,7 +1706,7 @@ String _formatHobbiesForDisplay(dynamic hobbyKeys, BuildContext context) {
         final newBio = controller.text.trim();
         if (newBio.isNotEmpty) {
           cubit.updateField('bio', newBio);
-            // cubit.autoSaveFields();
+          // cubit.autoSaveFields();
           Navigator.pop(context);
         }
       },

@@ -149,6 +149,7 @@ abstract class AssetsData {
   static const String sentMessageIcon = "assets/icons/sent_message_icon.svg";
   static const String commentnotify = 'assets/icons/comment_notify.svg';
   static const String consultatIcon = "assets/icons/Consultation.svg";
+  static const String consultationActiveIcon = "assets/icons/consultationActiveIcon.svg";
   static const String followNotify = "assets/icons/follow_notify.svg";
   static const String messageNotify = "assets/icons/message_notify.svg";
   static const String ticketEventNotify =
@@ -243,7 +244,7 @@ abstract class AssetsData {
   static const String expertAdvisor = "assets/images/expertAdvisor.png";
   static const String chatIconSVG = "assets/icons/chatIcon.svg";
   static const String filterIcon = "assets/icons/filterIcon.svg";
-  static const String filter2Icon = "aassets/icons/filter2.svg";
+  static const String filter2Icon = "assets/icons/filter2.svg";
 
   // User Profile Icons
   static const String navigateIcon = "assets/icons/navigateIcon.svg";

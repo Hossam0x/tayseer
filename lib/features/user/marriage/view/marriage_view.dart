@@ -1,5 +1,3 @@
-// lib/features/user/marriage/view/marriage_view.dart
-
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
@@ -8,9 +6,16 @@ import 'package:tayseer/features/user/questions/view_model/questions_state.dart'
 import 'package:tayseer/my_import.dart';
 
 class MarriageView extends StatelessWidget {
-  const MarriageView({super.key, this.personId, this.onScroll});
+  const MarriageView({
+    super.key,
+    this.personId,
+    this.fromInteractions = false,
+    this.onScroll,
+  });
+
   final String? personId;
   final Function(bool isScrollingDown)? onScroll;
+  final bool fromInteractions;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +25,11 @@ class MarriageView extends StatelessWidget {
       body: completed
           ? BlocProvider(
               create: (context) => MarriageCubit(),
-              child: MarriageBody(personId: personId, onScroll: onScroll),
+              child: MarriageBody(
+                personId: personId,
+                fromInteractions: fromInteractions,
+                onScroll: onScroll,
+              ),
             )
           : BlocProvider.value(
               value: getIt<QuestionsCubit>(),
@@ -29,18 +38,15 @@ class MarriageView extends StatelessWidget {
                   if (state.lastQuestionNumberState == CubitStates.success) {
                     context.pop();
                     final lastQuestionNumber =
-                        state.lastQuestionNumberResponse?.lastQuestionNumber ??
-                        0;
+                        state.lastQuestionNumberResponse?.lastQuestionNumber ?? 0;
 
-                    // ✅ الترتيب الصحيح: من الأكبر للأصغر
                     if (lastQuestionNumber >= 29) {
                       context.pushNamed(AppRouter.kAccountReviewUserView);
                     } else if (lastQuestionNumber >= 28) {
                       context.pushNamed(AppRouter.kCommitmentView);
                     } else if (lastQuestionNumber >= 27) {
                       context.pushNamed(AppRouter.kPersonalInfoView);
-                    } else if (lastQuestionNumber >= 1 &&
-                        lastQuestionNumber < 27) {
+                    } else if (lastQuestionNumber >= 1 && lastQuestionNumber < 27) {
                       context.pushNamed(
                         AppRouter.kQuestionsPageView,
                         arguments: {'lastQuestionNumber': lastQuestionNumber},
@@ -48,20 +54,16 @@ class MarriageView extends StatelessWidget {
                     } else if (lastQuestionNumber == 0) {
                       context.pushNamed(AppRouter.kChooseGenderView);
                     }
-                  } else if (state.lastQuestionNumberState ==
-                      CubitStates.failure) {
+                  } else if (state.lastQuestionNumberState == CubitStates.failure) {
                     context.pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       CustomSnackBar(
                         context,
-                        text:
-                            state.errorMessage ??
-                            context.tr('failed_to_fetch_data'),
+                        text: state.errorMessage ?? context.tr('failed_to_fetch_data'),
                         isSuccess: false,
                       ),
                     );
-                  } else if (state.lastQuestionNumberState ==
-                      CubitStates.loading) {
+                  } else if (state.lastQuestionNumberState == CubitStates.loading) {
                     showDialog(
                       context: context,
                       barrierDismissible: false,
@@ -74,9 +76,7 @@ class MarriageView extends StatelessWidget {
                   return GuestLockWidget(
                     titleBott: context.tr('complete_your_profile_bott'),
                     message: context.tr('complete_your_profile'),
-                    description: context.tr(
-                      'complete_your_profile_description',
-                    ),
+                    description: context.tr('complete_your_profile_description'),
                     onTap: () {
                       cubit.fetchLastQuestionNumber();
                     },

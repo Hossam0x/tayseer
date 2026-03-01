@@ -83,7 +83,10 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                           onTap: () {
                             context.pushNamed(
                               AppRouter.kMarriageView,
-                              arguments: {'personId': widget.item.userId},
+                              arguments: {
+                                'personId': widget.item.userId,
+                                'fromInteractions': true,
+                              },
                             );
                           },
                           child: shouldBlur
@@ -104,7 +107,10 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                             onTap: () {
                               context.pushNamed(
                                 AppRouter.kMarriageView,
-                                arguments: {'personId': widget.item.userId},
+                                arguments: {
+                                  'personId': widget.item.userId,
+                                  'fromInteractions': true,
+                                },
                               );
                             },
                             child: Container(
@@ -171,7 +177,10 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                   onTap: () {
                     context.pushNamed(
                       AppRouter.kMarriageView,
-                      arguments: {'personId': widget.item.userId},
+                      arguments: {
+                        'personId': widget.item.userId,
+                        'fromInteractions': true,
+                      },
                     );
                   },
                   child: Padding(
