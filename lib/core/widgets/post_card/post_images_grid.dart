@@ -10,6 +10,7 @@ class PostImagesGrid extends StatelessWidget {
   final bool isFromPostDetails;
   final PostCallbacks callbacks;
   final bool isFromProfile;
+  final String? heroPrefix;
 
   const PostImagesGrid({
     super.key,
@@ -19,6 +20,7 @@ class PostImagesGrid extends StatelessWidget {
     required this.isFromPostDetails,
     this.callbacks = const PostCallbacks(),
     required this.isFromProfile,
+    this.heroPrefix,
   });
 
   @override
@@ -50,7 +52,7 @@ class PostImagesGrid extends StatelessWidget {
       onTap: () => _openGallery(context, 0),
       child: Hero(
         tag:
-            '${isFromProfile ? 'profile' : 'home'}_post_${postId}_img_${image.image}',
+            '${heroPrefix ?? (isFromProfile ? 'profile' : 'home')}_post_${postId}_img_${image.image}',
         placeholderBuilder: (_, __, child) => child,
         child: Container(
           width: double.infinity,
@@ -132,7 +134,7 @@ class PostImagesGrid extends StatelessWidget {
     int moreCount = 0,
   }) {
     final heroTag =
-        '${isFromProfile ? 'profile' : 'home'}_post_${postId}_img_${image.image}';
+        '${heroPrefix ?? (isFromProfile ? 'profile' : 'home')}_post_${postId}_img_${image.image}';
 
     return Expanded(
       child: GestureDetector(
@@ -186,6 +188,7 @@ class PostImagesGrid extends StatelessWidget {
           post: post,
           isFromPostDetails: isFromPostDetails,
           callbacks: callbacks,
+          heroPrefix: heroPrefix,
         ),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);

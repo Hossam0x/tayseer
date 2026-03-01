@@ -1,6 +1,7 @@
 // lib/core/widgets/user_info_header.dart
 import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
 // import your styles and assets...
 
@@ -12,6 +13,8 @@ class UserInfoHeader extends StatelessWidget {
   final VoidCallback? onMoreTap;
   final String advisorId;
   final bool isFromProfile;
+  final String userType;
+  final bool isMine;
 
   const UserInfoHeader({
     super.key,
@@ -22,19 +25,27 @@ class UserInfoHeader extends StatelessWidget {
     this.subtitle,
     this.onMoreTap,
     required this.isFromProfile,
+    required this.userType,
+    required this.isMine,
   });
 
   void _navigateToUserProfile(BuildContext context) {
-    // التحقق من أن هذا ليس بروفايل المستخدم الحالي
-    // يمكنك استخدام getIt أو أي طريقة أخرى للتحقق من الـ current user id
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            UserAdvisorProfileView(advisorId: advisorId, advisorName: name),
-      ),
-    );
+    if (userType.toLowerCase() == 'advisor') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              UserAdvisorProfileView(advisorId: advisorId, advisorName: name),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserPublicProfileView(userId: advisorId),
+        ),
+      );
+    }
   }
 
   @override
@@ -45,7 +56,9 @@ class UserInfoHeader extends StatelessWidget {
         // تجميع الصورة والاسم في GestureDetector واحد
         Expanded(
           child: GestureDetector(
-            onTap: () => isFromProfile ? null : _navigateToUserProfile(context),
+            onTap: () => (isFromProfile && isMine)
+                ? null
+                : _navigateToUserProfile(context),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

@@ -660,6 +660,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       MaterialPageRoute(
         builder: (_) => PostDetailsView(
           isFromProfile: false,
+          heroPrefix: 'search_advisor',
           post: post,
           cachedController: controller,
           callbacks: PostCallbacks(
@@ -717,6 +718,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       child: PostCard(
         post: post,
         isFromProfile: false,
+        heroPrefix: 'search_advisor',
         onNavigateToDetails: _onNavigateToDetails,
         callbacks: PostCallbacks(
           onReactionChanged: (postId, type) {
