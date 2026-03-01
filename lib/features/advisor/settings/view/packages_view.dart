@@ -30,7 +30,11 @@ class _PackagesViewContent extends StatelessWidget {
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-              icon: SvgPicture.asset(AssetsData.backArrow),
+              // Flip the svg icon
+              icon: Transform.flip(
+                flipX: isArabic ? false : true,
+                child: SvgPicture.asset(AssetsData.backArrow),
+              ),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -41,10 +45,9 @@ class _PackagesViewContent extends StatelessWidget {
                 child: SafeArea(
                   child: Column(
                     children: [
-                      Gap(20.h),
                       Expanded(
                         child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 600),
+                          duration: const Duration(milliseconds: 200),
                           switchInCurve: Curves.easeOutQuart,
                           switchOutCurve: Curves.easeInQuart,
                           transitionBuilder: (child, animation) {
@@ -61,22 +64,28 @@ class _PackagesViewContent extends StatelessWidget {
                           child: _buildPackageDetailContainer(
                             context,
                             package,
+                            state.selectedPackage,
                             key: ValueKey(package.id),
                           ),
                         ),
                       ),
-                      Gap(40.h),
+                      Gap(80.h),
                       PackagesTabSelector(
                         selectedPackage: state.selectedPackage,
                         onSelected: (pkg) =>
                             context.read<PackagesCubit>().selectPackage(pkg),
                       ),
-                      Gap(40.h),
+                      Gap(120.h),
                       _buildBottomActions(context, state.selectedPackage),
                       Gap(20.h),
                     ],
                   ),
                 ),
+              ),
+              Positioned(
+                left: 65.w,
+                top: 65.h,
+                child: SvgPicture.asset(AssetsData.kingIcon, height: 80.h),
               ),
             ],
           ),
@@ -85,31 +94,49 @@ class _PackagesViewContent extends StatelessWidget {
     );
   }
 
+  // ─── Background Layer ────────────────────────────────────────────────────────
+
   Widget _buildBackgroundLayer(SelectedPackage package) {
-    List<Color> colors;
-    if (package == SelectedPackage.basic) {
-      colors = [const Color(0xFFFFFFFF), const Color(0xFFFDE7EC)];
-    } else if (package == SelectedPackage.pro) {
-      colors = [const Color(0xFFFFFFFF), const Color(0xFFFFF8E5)];
-    } else {
-      colors = [const Color(0xFFFFFFFF), const Color(0xFFE5F3FF)];
+    // Elite uses PNG, others use SVG
+    if (package == SelectedPackage.elite) {
+      return AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        switchInCurve: Curves.easeInOut,
+        switchOutCurve: Curves.easeInOut,
+        child: Image.asset(
+          AssetsData.eliteBackgroundPng,
+          key: const ValueKey('elite_bg'),
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+        ),
+      );
     }
 
-    return AnimatedContainer(
-      duration: const Duration(seconds: 1),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: colors,
-        ),
+    final String bgAsset = package == SelectedPackage.basic
+        ? AssetsData.basicBackground
+        : AssetsData.proBackground;
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      switchInCurve: Curves.easeInOut,
+      switchOutCurve: Curves.easeInOut,
+      child: SvgPicture.asset(
+        bgAsset,
+        key: ValueKey(bgAsset),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
       ),
     );
   }
 
+  // ─── Package Detail Container ────────────────────────────────────────────────
+
   Widget _buildPackageDetailContainer(
     BuildContext context,
-    PackageModel package, {
+    PackageModel package,
+    SelectedPackage selected, {
     required Key key,
   }) {
     return SingleChildScrollView(
@@ -117,14 +144,7 @@ class _PackagesViewContent extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
         children: [
-          Text(
-            package.packageTitle,
-            textAlign: TextAlign.center,
-            style: Styles.textStyle24Meduim.copyWith(
-              color: AppColors.primary500,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          _buildTitle(context, package, selected),
           Gap(40.h),
           PackageFeatureGrid(package: package),
         ],
@@ -132,51 +152,113 @@ class _PackagesViewContent extends StatelessWidget {
     );
   }
 
+  // ─── Title Builder (per-package style) ───────────────────────────────────────
+
+  Widget _buildTitle(
+    BuildContext context,
+    PackageModel package,
+    SelectedPackage selected,
+  ) {
+    if (selected == SelectedPackage.elite) {
+      // Elite: king icon on the left + title in primary50
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            child: Text(
+              package.packageTitle,
+              textAlign: TextAlign.center,
+              style: Styles.textStyle24Meduim.copyWith(
+                color: AppColors.primary50,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (selected == SelectedPackage.pro) {
+      // Pro: secondary800 dark text
+      return Text(
+        package.packageTitle,
+        textAlign: TextAlign.center,
+        style: Styles.textStyle24Meduim.copyWith(color: AppColors.secondary800),
+      );
+    } else {
+      // Basic: primary500
+      return Text(
+        package.packageTitle,
+        textAlign: TextAlign.center,
+        style: Styles.textStyle24Meduim.copyWith(
+          color: AppColors.primary500,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+  }
+
+  // ─── Bottom Action Button ────────────────────────────────────────────────────
+
   Widget _buildBottomActions(BuildContext context, SelectedPackage selected) {
-    String buttonText = '';
-    Color color = AppColors.primary400;
+    String buttonText;
+    List<Color> gradientColors;
+    final bool isElite = selected == SelectedPackage.elite;
 
     if (selected == SelectedPackage.basic) {
       buttonText = context.tr('continue_limited_account');
-      color = AppColors.primary400;
+      gradientColors = [AppColors.primary300, AppColors.primary500];
     } else if (selected == SelectedPackage.pro) {
       buttonText = context.tr('get_all_benefits_for').replaceFirst('{}', '30');
-      color = const Color(0xFFCF9916);
+      gradientColors = [const Color(0xFFBD8F14), const Color(0xFFF5C003)];
     } else {
       buttonText = context.tr('subscribe_vip_for').replaceFirst('{}', '60');
-      color = const Color(0xFF1E88E5);
+      gradientColors = [const Color(0xFF4BB8F9), const Color(0xFF6284FF)];
     }
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
-      child: SizedBox(
-        width: double.infinity,
+    // basic & elite: top→bottom gradient. pro: right→left
+    final bool isVertical = selected == SelectedPackage.basic || isElite;
+
+    return Center(
+      child: Container(
+        width: 348.w,
         height: 55.h,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15.r),
-            gradient: LinearGradient(colors: [color.withOpacity(0.7), color]),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(11.r),
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: isVertical ? Alignment.topCenter : Alignment.centerRight,
+            end: isVertical ? Alignment.bottomCenter : Alignment.centerLeft,
           ),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.r),
-              ),
+          border: isElite ? Border.all(color: Colors.white, width: 1.5) : null,
+          boxShadow: isElite
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF6284FF).withOpacity(0.45),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : null,
+        ),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(11.r),
             ),
-            onPressed: () {
-              // Subscription flow logic here
-            },
-            child: Text(
-              buttonText,
-              style: Styles.textStyle16Bold.copyWith(color: Colors.white),
-            ),
+          ),
+          onPressed: () {
+            // Subscription flow logic here
+          },
+          child: Text(
+            buttonText,
+            style: Styles.textStyle20SemiBold.copyWith(color: Colors.white),
           ),
         ),
       ),
     );
   }
+
+  // ─── Package Data ────────────────────────────────────────────────────────────
 
   PackageModel _getPackage(BuildContext context, SelectedPackage pkg) {
     if (pkg == SelectedPackage.basic) {
@@ -224,28 +306,28 @@ class _PackagesViewContent extends StatelessWidget {
         backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFFFF8E5)],
         features: [
           PackageFeatureModel(
-            title: context.tr('3_session_monthly'),
-            iconPath: AssetsData.eightSessionMonthIcon,
-          ),
-          PackageFeatureModel(
             title: context.tr('unlimited_messages'),
             iconPath: AssetsData.threeMessages,
           ),
           PackageFeatureModel(
-            title: context.tr('initial_documentation'),
-            iconPath: AssetsData.verifiedBegin,
+            title: context.tr('1_event_monthly'),
+            iconPath: AssetsData.noEvents,
+          ),
+          PackageFeatureModel(
+            title: context.tr('basic_stats'),
+            iconPath: AssetsData.essentialStats,
           ),
           PackageFeatureModel(
             title: context.tr('4_boosts_monthly'),
             iconPath: AssetsData.oneBoost,
           ),
           PackageFeatureModel(
-            title: context.tr('basic_support'),
-            iconPath: AssetsData.essentialSupport,
+            title: context.tr('initial_documentation'),
+            iconPath: AssetsData.verifiedBegin,
           ),
           PackageFeatureModel(
-            title: context.tr('1_event_monthly'),
-            iconPath: AssetsData.noEvents,
+            title: context.tr('unlimited_sessions'),
+            iconPath: AssetsData.eightSessionMonthIcon,
           ),
         ],
       );
@@ -259,28 +341,40 @@ class _PackagesViewContent extends StatelessWidget {
         backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFE5F3FF)],
         features: [
           PackageFeatureModel(
-            title: context.tr('who_visited_profile_action'),
-            iconPath: AssetsData.seeProfileVisits,
-          ),
-          PackageFeatureModel(
             title: context.tr('unlimited_messages'),
             iconPath: AssetsData.threeMessages,
-          ),
-          PackageFeatureModel(
-            title: context.tr('full_official_documentation'),
-            iconPath: AssetsData.verifiedBegin,
           ),
           PackageFeatureModel(
             title: context.tr('10_boosts_monthly'),
             iconPath: AssetsData.oneBoost,
           ),
           PackageFeatureModel(
+            title: context.tr('basic_stats'),
+            iconPath: AssetsData.essentialStats,
+          ),
+          PackageFeatureModel(
             title: context.tr('vip_support'),
             iconPath: AssetsData.premiumSupport,
           ),
           PackageFeatureModel(
+            title: context.tr('full_official_documentation'),
+            iconPath: AssetsData.verifiedBegin,
+          ),
+          PackageFeatureModel(
             title: context.tr('unlimited_sessions'),
             iconPath: AssetsData.eightSessionMonthIcon,
+          ),
+          PackageFeatureModel(
+            title: context.tr('advanced_performance_reports'),
+            iconPath: AssetsData.performanceReports,
+          ),
+          PackageFeatureModel(
+            title: context.tr('appearance_count'),
+            iconPath: AssetsData.normalApperance,
+          ),
+          PackageFeatureModel(
+            title: context.tr('who_visited_profile_action'),
+            iconPath: AssetsData.seeProfileVisits,
           ),
         ],
       );

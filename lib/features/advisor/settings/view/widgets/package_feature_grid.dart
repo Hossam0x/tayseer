@@ -19,7 +19,7 @@ class PackageFeatureGrid extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(25.r),
         boxShadow: [
           BoxShadow(
@@ -31,13 +31,13 @@ class PackageFeatureGrid extends StatelessWidget {
       ),
       child: GridView.builder(
         shrinkWrap: true,
-        padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 10.w),
+        padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          crossAxisSpacing: 5.w,
-          mainAxisSpacing: 25.h,
-          childAspectRatio: 0.85,
+          crossAxisSpacing: 20.w,
+          mainAxisSpacing: 0.h,
+          childAspectRatio: 0.95,
         ),
         itemCount: package.features.length,
         itemBuilder: (context, index) {
