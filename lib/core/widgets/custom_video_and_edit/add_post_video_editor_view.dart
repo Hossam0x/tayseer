@@ -125,7 +125,7 @@ class _VideoEditorViewState extends State<VideoEditorView> {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final outputPath = '${tempDir.path}/edited_$timestamp.mp4';
 
-      final renderModel = VideoRenderData(
+      final renderModel = RenderVideoModel(
         video: EditorVideo.file(widget.videoFile.path),
         outputFormat: VideoOutputFormat.mp4,
       );

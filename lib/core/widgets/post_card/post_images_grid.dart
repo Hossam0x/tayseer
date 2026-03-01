@@ -63,8 +63,9 @@ class PostImagesGrid extends StatelessWidget {
                 imageUrl: image.image,
                 fit: BoxFit.cover,
                 alignment: Alignment.center,
-                fadeInDuration: Duration.zero, // ✅ جديد
-                fadeOutDuration: Duration.zero, // ✅ جديد
+                fadeInDuration: Duration.zero,
+                fadeOutDuration: Duration.zero,
+                placeholderFadeInDuration: Duration.zero,
                 placeholder: (context, url) => _buildShimmerPlaceholder(),
                 errorWidget: (context, url, error) => _buildErrorWidget(),
               ),
@@ -148,8 +149,9 @@ class PostImagesGrid extends StatelessWidget {
                 CachedNetworkImage(
                   imageUrl: image.image,
                   fit: BoxFit.cover,
-                  fadeInDuration: Duration.zero, // ✅ جديد
-                  fadeOutDuration: Duration.zero, // ✅ جديد
+                  fadeInDuration: Duration.zero,
+                  fadeOutDuration: Duration.zero,
+                  placeholderFadeInDuration: Duration.zero,
                   placeholder: (_, __) => _buildShimmerPlaceholder(),
                   errorWidget: (_, __, ___) => _buildErrorWidget(),
                 ),
