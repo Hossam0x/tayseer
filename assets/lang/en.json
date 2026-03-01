@@ -1423,7 +1423,6 @@
   "orders_receive_success": "Orders and sessions have been activated successfully",
   "orders_stop_success": "Orders and sessions have been suspended successfully",
   "story_deleted_success": "Story deleted successfully",
-<<<<<<< HEAD
   "unsaved_changes": "Unsaved Changes",
 "images_pending_save": "Images pending save",
 "file_not_found": "File not found",
@@ -1434,14 +1433,9 @@
 "consultation":"Consultation",
 "Consulting":"Book a consultation",
   "detils_attendees": "Attendees Details",
-=======
-  "images_pending_save": "Images pending save",
-  "file_not_found": "File not found",
->>>>>>> b3dbe4c4ce119774fb5eb972f75b256a64139b96
   "consultancy_session": "Consultancy Session",
   "event_booking": "Event Booking",
   "price": "Price",
-<<<<<<< HEAD
 "experience": "Experience",
 "language": "Language",
 "badges": "Badges",
@@ -1455,22 +1449,7 @@
 "search_by_experience": "Search",
 "book_session": "Book Session",
 "recommended": "Recommended",
-=======
-  "experience": "Experience",
-  "language": "Language",
-  "badges": "Badges",
-  "influencer": "Influencer",
-  "expert": "Expert",
-  "fast_response": "Fast Response",
-  "trusted": "Trusted",
-  "inspired": "Inspired",
-  "listener": "Listener",
-  "wise": "Wise",
-  "search_by_experience": "Search",
-  "book_session": "Book Session",
-  "recommended": "Recommended",
   "transaction": "Transaction",
->>>>>>> b3dbe4c4ce119774fb5eb972f75b256a64139b96
   "photos": "Photos",
   "add_caption": "Add a caption...",
   "move_up": "Move Up",
@@ -1481,14 +1460,7 @@
   "start_typing": "Start Typing",
   "video_saved": "Video saved successfully",
   "report_sent_successfully": "Report sent successfully",
-  "detils_attendees": "Attendees Details",
-  "unsaved_changes": "Unsaved Changes",
-  "edit_marriage_profile": "Edit Marriage Profile",
-  "activate_marriage_subtitle": "To make your journey towards marriage easier and smoother, we are here to help you every step of the way!",
-  "activate_marriage_title": "Do you want to explore the marriage section in Tayseer?",
-  "deactivate_marriage_title": "Do you want to disable the marriage section in Tayseer?",
-  "consultation": "Consultation",
-  "Consulting": "Consulting",
+
   "story_likers": "Story Likers",
   "no_likers_yet": "No likers yet"
 }

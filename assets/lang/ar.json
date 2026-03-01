@@ -1432,8 +1432,14 @@
   "save_video": "حفظ",
   "start_typing": "ابدأ الكتابة",
   "video_saved": "تم حفظ الفيديو بنجاح",
-<<<<<<< HEAD
   "report_sent_successfully" : "تم إرسال التقرير بنجاح",
+"images_pending_save": "حفظ الصور معلق",
+"file_not_found": "الملف غير موجود",
+"edit_marriage_profile": "تعديل ملف الزواج",
+"activate_marriage_subtitle":"لجعل رحلتك نحو الزواج أسهل وأكثر سلاسة، نحن هنا لمساعدتك في كل خطوة!",
+"activate_marriage_title":"هل تريد استكشاف قسم الزواج في تيسير؟",
+"deactivate_marriage_title":"هل تريد تعطيل قسم الزواج في تيسير؟",
+"Consulting":"حجز استشارة",
 "price": "السعر",
 "experience": "الخبرة",
 "language": "اللغة",
@@ -1451,36 +1457,4 @@
 
 
 
-=======
-  "report_sent_successfully": "تم إرسال التقرير بنجاح",
-  "images_pending_save": "حفظ الصور معلق",
-  "file_not_found": "الملف غير موجود",
-  "price": "السعر",
-  "experience": "الخبرة",
-  "language": "اللغة",
-  "badges": "الشارات",
-  "influencer": "مؤثر",
-  "expert": "خبير",
-  "fast_response": "استجابة سريعة",
-  "trusted": "موثوق",
-  "inspired": "ملهم",
-  "listener": "مستمع جيد",
-  "wise": "حكيم",
-  "search_by_experience": "بحث",
-  "book_session": "حجز جلسة",
-  "recommended": "موصى به",
-  "story_deleted_success": "تم حذف القصة بنجاح",
-  "consultancy_session": "جلسة استشارية",
-  "event_booking": "حجز حدث",
-  "transaction": "معاملة",
-  "detils_attendees": "تفاصيل الحاضرين",
-  "unsaved_changes": "تغييرات غير محفوظة",
-  "edit_marriage_profile": "تعديل ملف الزواج",
-  "activate_marriage_subtitle": "لجعل رحلتك نحو الزواج أسهل وأكثر سلاسة، نحن هنا لمساعدتك في كل خطوة!",
-  "activate_marriage_title": "هل تريد استكشاف قسم الزواج في تيسير؟",
-  "deactivate_marriage_title": "هل تريد تعطيل قسم الزواج في تيسير؟",
-  "Consulting": "الإستشارات",
-  "story_likers": "المعجبين بالقصة",
-  "no_likers_yet": "لا يوجد معجبين حتى الآن"
->>>>>>> b3dbe4c4ce119774fb5eb972f75b256a64139b96
 }
