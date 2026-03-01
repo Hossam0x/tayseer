@@ -5,9 +5,14 @@ import 'package:tayseer/features/advisor/settings/view_model/packages_cubit.dart
 import 'package:tayseer/core/functions/country_helper.dart';
 import 'package:tayseer/my_import.dart';
 
-class PackagesView extends StatelessWidget {
+class PackagesView extends StatefulWidget {
   const PackagesView({super.key});
 
+  @override
+  State<PackagesView> createState() => _PackagesViewState();
+}
+
+class _PackagesViewState extends State<PackagesView> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -22,102 +27,73 @@ class _PackagesViewContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<PackagesCubit, PackagesState>(
-      builder: (context, state) {
-        final packages = state.packages;
-        final package = _getPackage(context, state.selectedPackage, packages);
-        return Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              // Flip the svg icon
-              icon: Transform.flip(
-                flipX: isArabic ? false : true,
-                child: SvgPicture.asset(AssetsData.backArrow),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Transform.flip(
+            flipX: isArabic ? false : true,
+            child: SvgPicture.asset(AssetsData.backArrow),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Stack(
+        children: [
+          // Background Layer (Independent Rebuild)
+          const _BackgroundLayer(),
+
+          Positioned.fill(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  const Expanded(child: _PackageDetailSwitcher()),
+                  Gap(80.h),
+                  const _TabSelectorSection(),
+                  Gap(120.h),
+                  const _BottomActionsSection(),
+                  Gap(20.h),
+                ],
               ),
-              onPressed: () => Navigator.pop(context),
             ),
           ),
-          body: Stack(
-            children: [
-              _buildBackgroundLayer(state.selectedPackage),
-              Positioned.fill(
-                child: SafeArea(
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          switchInCurve: Curves.easeOutQuart,
-                          switchOutCurve: Curves.easeInQuart,
-                          transitionBuilder: (child, animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: ScaleTransition(
-                                scale: animation.drive(
-                                  Tween(begin: 0.95, end: 1.0),
-                                ),
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: _buildPackageDetailContainer(
-                            context,
-                            package,
-                            state.selectedPackage,
-                            key: ValueKey(package.id),
-                          ),
-                        ),
-                      ),
-                      Gap(80.h),
-                      PackagesTabSelector(
-                        selectedPackage: state.selectedPackage,
-                        onSelected: (pkg) =>
-                            context.read<PackagesCubit>().selectPackage(pkg),
-                      ),
-                      Gap(120.h),
-                      _buildBottomActions(context, state.selectedPackage),
-                      Gap(20.h),
-                    ],
-                  ),
-                ),
-              ),
-              // Flip in Arabic
-              if (state.selectedPackage == SelectedPackage.elite)
-                Positioned(
-                  left: isArabic ? 65.w : null,
-                  right: !isArabic ? 25.w : null,
-                  top: 55.h,
-                  child: Transform.flip(
-                    flipX: isArabic ? false : true,
-                    child: SvgPicture.asset(AssetsData.kingIcon, height: 80.h),
-                  ),
-                ),
-            ],
+
+          // King Icon (Independent Rebuild)
+          const _KingIconOverlay(),
+        ],
+      ),
+    );
+  }
+}
+
+class _BackgroundLayer extends StatelessWidget {
+  const _BackgroundLayer();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<PackagesCubit, PackagesState, SelectedPackage>(
+      selector: (state) => state.selectedPackage,
+      builder: (context, package) {
+        return RepaintBoundary(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: _buildBackground(package),
           ),
         );
       },
     );
   }
 
-  // ─── Background Layer ────────────────────────────────────────────────────────
-
-  Widget _buildBackgroundLayer(SelectedPackage package) {
-    // Elite uses PNG, others use SVG
+  Widget _buildBackground(SelectedPackage package) {
     if (package == SelectedPackage.elite) {
-      return AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        switchInCurve: Curves.easeInOut,
-        switchOutCurve: Curves.easeInOut,
-        child: Image.asset(
-          AssetsData.eliteBackgroundPng,
-          key: const ValueKey('elite_bg'),
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-        ),
+      return Image.asset(
+        AssetsData.eliteBackgroundPng,
+        key: const ValueKey('elite_bg'),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
       );
     }
 
@@ -125,30 +101,68 @@ class _PackagesViewContent extends StatelessWidget {
         ? AssetsData.basicBackground
         : AssetsData.proBackground;
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 200),
-      switchInCurve: Curves.easeInOut,
-      switchOutCurve: Curves.easeInOut,
-      child: SvgPicture.asset(
-        bgAsset,
-        key: ValueKey(bgAsset),
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-      ),
+    return SvgPicture.asset(
+      bgAsset,
+      key: ValueKey(bgAsset),
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
     );
   }
+}
 
-  // ─── Package Detail Container ────────────────────────────────────────────────
+class _PackageDetailSwitcher extends StatelessWidget {
+  const _PackageDetailSwitcher();
 
-  Widget _buildPackageDetailContainer(
-    BuildContext context,
-    PackageModel package,
-    SelectedPackage selected, {
-    required Key key,
-  }) {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<PackagesCubit, PackagesState>(
+      buildWhen: (prev, curr) =>
+          prev.selectedPackage != curr.selectedPackage ||
+          prev.packages != curr.packages,
+      builder: (context, state) {
+        final package = _getPackageData(
+          context,
+          state.selectedPackage,
+          state.packages,
+        );
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: animation.drive(
+                  Tween(begin: const Offset(0, 0.05), end: Offset.zero),
+                ),
+                child: child,
+              ),
+            );
+          },
+          child: RepaintBoundary(
+            key: ValueKey(package.id),
+            child: _PackageDetailContent(
+              package: package,
+              selected: state.selectedPackage,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PackageDetailContent extends StatelessWidget {
+  final PackageModel package;
+  final SelectedPackage selected;
+
+  const _PackageDetailContent({required this.package, required this.selected});
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
-      key: key,
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
         children: [
@@ -160,15 +174,12 @@ class _PackagesViewContent extends StatelessWidget {
     );
   }
 
-  // ─── Title Builder (per-package style) ───────────────────────────────────────
-
   Widget _buildTitle(
     BuildContext context,
     PackageModel package,
     SelectedPackage selected,
   ) {
     if (selected == SelectedPackage.elite) {
-      // Elite: king icon on the left + title in primary50
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -184,14 +195,12 @@ class _PackagesViewContent extends StatelessWidget {
         ],
       );
     } else if (selected == SelectedPackage.pro) {
-      // Pro: secondary800 dark text
       return Text(
         package.packageTitle,
         textAlign: TextAlign.center,
         style: Styles.textStyle24Meduim.copyWith(color: AppColors.secondary800),
       );
     } else {
-      // Basic: primary500
       return Text(
         package.packageTitle,
         textAlign: TextAlign.center,
@@ -202,240 +211,293 @@ class _PackagesViewContent extends StatelessWidget {
       );
     }
   }
+}
 
-  // ─── Bottom Action Button ────────────────────────────────────────────────────
+class _TabSelectorSection extends StatelessWidget {
+  const _TabSelectorSection();
 
-  Widget _buildBottomActions(BuildContext context, SelectedPackage selected) {
-    String buttonText;
-    List<Color> gradientColors;
-    final bool isElite = selected == SelectedPackage.elite;
-    final bool gulf = isGulfGroup();
-    final String currency = getCurrency();
-
-    if (selected == SelectedPackage.basic) {
-      buttonText = context.tr('continue_limited_account');
-      gradientColors = [AppColors.primary300, AppColors.primary500];
-    } else if (selected == SelectedPackage.pro) {
-      final price = gulf ? "200" : "40";
-      buttonText = context
-          .tr('get_all_benefits_for')
-          .replaceFirst('{}', '$price $currency');
-      gradientColors = [const Color(0xFFBD8F14), const Color(0xFFF5C003)];
-    } else {
-      final price = gulf ? "399" : "80";
-      buttonText = context
-          .tr('subscribe_vip_for')
-          .replaceFirst('{}', '$price $currency');
-      gradientColors = [const Color(0xFF4BB8F9), const Color(0xFF6284FF)];
-    }
-
-    // basic & elite: top→bottom gradient. pro: right→left
-    final bool isVertical = selected == SelectedPackage.basic || isElite;
-
-    return Center(
-      child: Container(
-        width: 360.w,
-        height: 55.h,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(11.r),
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: isVertical ? Alignment.topCenter : Alignment.centerRight,
-            end: isVertical ? Alignment.bottomCenter : Alignment.centerLeft,
-          ),
-          border: isElite ? Border.all(color: Colors.white, width: 1.5) : null,
-          boxShadow: isElite
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF6284FF).withOpacity(0.45),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : null,
-        ),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(11.r),
-            ),
-          ),
-          onPressed: () {
-            if (selected == SelectedPackage.basic) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushNamed(
-                context,
-                AppRouter.kAdvisorSubscriptionView,
-                arguments: selected,
-              );
-            }
-          },
-          child: Text(
-            buttonText,
-            style: Styles.textStyle18SemiBold.copyWith(color: Colors.white),
-          ),
-        ),
-      ),
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<PackagesCubit, PackagesState, SelectedPackage>(
+      selector: (state) => state.selectedPackage,
+      builder: (context, selectedPackage) {
+        return PackagesTabSelector(
+          selectedPackage: selectedPackage,
+          onSelected: (pkg) => context.read<PackagesCubit>().selectPackage(pkg),
+        );
+      },
     );
   }
+}
 
-  // ─── Package Data ────────────────────────────────────────────────────────────
+class _BottomActionsSection extends StatelessWidget {
+  const _BottomActionsSection();
 
-  PackageModel _getPackage(
-    BuildContext context,
-    SelectedPackage pkg,
-    List<AdvisorPackageModel> apiPackages,
-  ) {
-    final bool gulf = isGulfGroup();
-    final String currency = getCurrency();
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<PackagesCubit, PackagesState, SelectedPackage>(
+      selector: (state) => state.selectedPackage,
+      builder: (context, selectedPackage) {
+        return _buildBottomActions(context, selectedPackage);
+      },
+    );
+  }
+}
 
-    // Map API package by type
-    final typeStr = pkg == SelectedPackage.elite
-        ? 'elite'
-        : pkg == SelectedPackage.pro
-        ? 'pro'
-        : 'Free';
+class _KingIconOverlay extends StatelessWidget {
+  const _KingIconOverlay();
 
-    final apiPkg = apiPackages.isEmpty
-        ? null
-        : apiPackages.firstWhere(
-            (e) => e.type.toLowerCase() == typeStr.toLowerCase(),
-            orElse: () => apiPackages.first,
-          );
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<PackagesCubit, PackagesState, SelectedPackage>(
+      selector: (state) => state.selectedPackage,
+      builder: (context, selectedPackage) {
+        if (selectedPackage != SelectedPackage.elite)
+          return const SizedBox.shrink();
+        return Positioned(
+          left: isArabic ? 65.w : null,
+          right: !isArabic ? 25.w : null,
+          top: 55.h,
+          child: RepaintBoundary(
+            child: Transform.flip(
+              flipX: isArabic ? false : true,
+              child: SvgPicture.asset(AssetsData.kingIcon, height: 80.h),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
 
-    if (pkg == SelectedPackage.basic) {
-      final price = gulf ? "0" : "0";
-      return PackageModel(
-        id: 'basic',
-        packageTitle: context.tr(apiPkg?.name ?? 'basic_plan_title'),
-        price: '$price $currency',
-        buttonText: context.tr('continue_limited_account'),
-        themeColor: AppColors.primary500,
-        backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFFDE9ED)],
-        features: [
-          PackageFeatureModel(
-            title: context.tr('8_session_monthly'),
-            iconPath: AssetsData.eightSessionMonthIcon,
-          ),
-          PackageFeatureModel(
-            title: context.tr('3_messages_monthly'),
-            iconPath: AssetsData.threeMessages,
-          ),
-          PackageFeatureModel(
-            title: context.tr('normal_appearance'),
-            iconPath: AssetsData.normalApperance,
-          ),
-          PackageFeatureModel(
-            title: context.tr('no_events'),
-            iconPath: AssetsData.noEvents,
-          ),
-          PackageFeatureModel(
-            title: context.tr('1_boost_monthly'),
-            iconPath: AssetsData.oneBoost,
-          ),
-          PackageFeatureModel(
-            title: context.tr('basic_support'),
-            iconPath: AssetsData.essentialSupport,
-          ),
-        ],
-      );
-    } else if (pkg == SelectedPackage.pro) {
-      final price = apiPkg != null
-          ? (gulf ? apiPkg.sarPrice.toString() : apiPkg.egPrice.toString())
-          : (gulf ? "200" : "40");
+Widget _buildBottomActions(BuildContext context, SelectedPackage selected) {
+  String buttonText;
+  List<Color> gradientColors;
+  final bool isElite = selected == SelectedPackage.elite;
+  final bool gulf = isGulfGroup();
+  final String currency = getCurrency();
 
-      return PackageModel(
-        id: 'pro',
-        packageTitle: context.tr('enjoy_more_benefits'),
-        price: '$price $currency',
-        buttonText: context
-            .tr('get_all_benefits_for')
-            .replaceFirst('{}', '$price $currency'),
-        themeColor: const Color(0xFFCF9916),
-        backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFFFF8E5)],
-        features: [
-          PackageFeatureModel(
-            title: context.tr('unlimited_messages'),
-            iconPath: AssetsData.threeMessages,
-          ),
-          PackageFeatureModel(
-            title: context.tr('1_event_monthly'),
-            iconPath: AssetsData.noEvents,
-          ),
-          PackageFeatureModel(
-            title: context.tr('basic_stats'),
-            iconPath: AssetsData.essentialStats,
-          ),
-          PackageFeatureModel(
-            title: context.tr('4_boosts_monthly'),
-            iconPath: AssetsData.oneBoost,
-          ),
-          PackageFeatureModel(
-            title: context.tr('initial_documentation'),
-            iconPath: AssetsData.verifiedBegin,
-          ),
-          PackageFeatureModel(
-            title: context.tr('unlimited_sessions'),
-            iconPath: AssetsData.graySessionIcon,
-          ),
-        ],
-      );
-    } else {
-      final price = apiPkg != null
-          ? (gulf ? apiPkg.sarPrice.toString() : apiPkg.egPrice.toString())
-          : (gulf ? "399" : "80");
+  if (selected == SelectedPackage.basic) {
+    buttonText = context.tr('continue_limited_account');
+    gradientColors = [AppColors.primary300, AppColors.primary500];
+  } else if (selected == SelectedPackage.pro) {
+    final price = gulf ? "200" : "40";
+    buttonText = context
+        .tr('get_all_benefits_for')
+        .replaceFirst('{}', '$price $currency');
+    gradientColors = [const Color(0xFFBD8F14), const Color(0xFFF5C003)];
+  } else {
+    final price = gulf ? "399" : "80";
+    buttonText = context
+        .tr('subscribe_vip_for')
+        .replaceFirst('{}', '$price $currency');
+    gradientColors = [const Color(0xFF4BB8F9), const Color(0xFF6284FF)];
+  }
 
-      return PackageModel(
-        id: 'elite',
-        packageTitle: context.tr('enjoy_more_benefits'),
-        price: '$price $currency',
-        buttonText: context
-            .tr('subscribe_vip_for')
-            .replaceFirst('{}', '$price $currency'),
-        themeColor: const Color(0xFF4BB8F9),
-        backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFE5F1FF)],
-        features: [
-          PackageFeatureModel(
-            title: context.tr('unlimited_messages'),
-            iconPath: AssetsData.threeMessages,
+  // basic & elite: top→bottom gradient. pro: right→left
+  final bool isVertical = selected == SelectedPackage.basic || isElite;
+
+  return Center(
+    child: Container(
+      width: 360.w,
+      height: 55.h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(11.r),
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: isVertical ? Alignment.topCenter : Alignment.centerRight,
+          end: isVertical ? Alignment.bottomCenter : Alignment.centerLeft,
+        ),
+        border: isElite ? Border.all(color: Colors.white, width: 1.5) : null,
+        boxShadow: isElite
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF6284FF).withOpacity(0.45),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : null,
+      ),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(11.r),
           ),
-          PackageFeatureModel(
-            title: context.tr('10_boosts_monthly'),
-            iconPath: AssetsData.oneBoost,
-          ),
-          PackageFeatureModel(
-            title: context.tr('basic_stats'),
-            iconPath: AssetsData.essentialStats,
-          ),
-          PackageFeatureModel(
-            title: context.tr('vip_support'),
-            iconPath: AssetsData.premiumSupport,
-          ),
-          PackageFeatureModel(
-            title: context.tr('توثيق رسمى كامل'),
-            iconPath: AssetsData.verifiedBegin,
-          ),
-          PackageFeatureModel(
-            title: context.tr('unlimited_sessions'),
-            iconPath: AssetsData.eightSessionMonthIcon,
-          ),
-          PackageFeatureModel(
-            title: context.tr('advanced_performance_reports'),
-            iconPath: AssetsData.performanceReports,
-          ),
-          PackageFeatureModel(
-            title: context.tr('appearance_count'),
-            iconPath: AssetsData.performanceReports,
-          ),
-          PackageFeatureModel(
-            title: context.tr('who_visited_profile_action'),
-            iconPath: AssetsData.normalApperance,
-          ),
-        ],
-      );
-    }
+        ),
+        onPressed: () {
+          if (selected == SelectedPackage.basic) {
+            Navigator.pop(context);
+          } else {
+            Navigator.pushNamed(
+              context,
+              AppRouter.kAdvisorSubscriptionView,
+              arguments: selected,
+            );
+          }
+        },
+        child: Text(
+          buttonText,
+          style: Styles.textStyle18SemiBold.copyWith(color: Colors.white),
+        ),
+      ),
+    ),
+  );
+}
+
+PackageModel _getPackageData(
+  BuildContext context,
+  SelectedPackage pkg,
+  List<AdvisorPackageModel> apiPackages,
+) {
+  final bool gulf = isGulfGroup();
+  final String currency = getCurrency();
+
+  // Map API package by type
+  final typeStr = pkg == SelectedPackage.elite
+      ? 'elite'
+      : pkg == SelectedPackage.pro
+      ? 'pro'
+      : 'Free';
+
+  final apiPkg = apiPackages.isEmpty
+      ? null
+      : apiPackages.firstWhere(
+          (e) => e.type.toLowerCase() == typeStr.toLowerCase(),
+          orElse: () => apiPackages.first,
+        );
+
+  if (pkg == SelectedPackage.basic) {
+    final price = gulf ? "0" : "0";
+    return PackageModel(
+      id: 'basic',
+      packageTitle: context.tr(apiPkg?.name ?? 'basic_plan_title'),
+      price: '$price $currency',
+      buttonText: context.tr('continue_limited_account'),
+      themeColor: AppColors.primary500,
+      backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFFDE9ED)],
+      features: [
+        PackageFeatureModel(
+          title: context.tr('8_session_monthly'),
+          iconPath: AssetsData.eightSessionMonthIcon,
+        ),
+        PackageFeatureModel(
+          title: context.tr('3_messages_monthly'),
+          iconPath: AssetsData.threeMessages,
+        ),
+        PackageFeatureModel(
+          title: context.tr('normal_appearance'),
+          iconPath: AssetsData.normalApperance,
+        ),
+        PackageFeatureModel(
+          title: context.tr('no_events'),
+          iconPath: AssetsData.noEvents,
+        ),
+        PackageFeatureModel(
+          title: context.tr('1_boost_monthly'),
+          iconPath: AssetsData.oneBoost,
+        ),
+        PackageFeatureModel(
+          title: context.tr('basic_support'),
+          iconPath: AssetsData.essentialSupport,
+        ),
+      ],
+    );
+  } else if (pkg == SelectedPackage.pro) {
+    final price = apiPkg != null
+        ? (gulf ? apiPkg.sarPrice.toString() : apiPkg.egPrice.toString())
+        : (gulf ? "200" : "40");
+
+    return PackageModel(
+      id: 'pro',
+      packageTitle: context.tr('enjoy_more_benefits'),
+      price: '$price $currency',
+      buttonText: context
+          .tr('get_all_benefits_for')
+          .replaceFirst('{}', '$price $currency'),
+      themeColor: const Color(0xFFCF9916),
+      backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFFFF8E5)],
+      features: [
+        PackageFeatureModel(
+          title: context.tr('unlimited_messages'),
+          iconPath: AssetsData.threeMessages,
+        ),
+        PackageFeatureModel(
+          title: context.tr('1_event_monthly'),
+          iconPath: AssetsData.noEvents,
+        ),
+        PackageFeatureModel(
+          title: context.tr('basic_stats'),
+          iconPath: AssetsData.essentialStats,
+        ),
+        PackageFeatureModel(
+          title: context.tr('4_boosts_monthly'),
+          iconPath: AssetsData.oneBoost,
+        ),
+        PackageFeatureModel(
+          title: context.tr('initial_documentation'),
+          iconPath: AssetsData.verifiedBegin,
+        ),
+        PackageFeatureModel(
+          title: context.tr('unlimited_sessions'),
+          iconPath: AssetsData.graySessionIcon,
+        ),
+      ],
+    );
+  } else {
+    final price = apiPkg != null
+        ? (gulf ? apiPkg.sarPrice.toString() : apiPkg.egPrice.toString())
+        : (gulf ? "399" : "80");
+
+    return PackageModel(
+      id: 'elite',
+      packageTitle: context.tr('enjoy_more_benefits'),
+      price: '$price $currency',
+      buttonText: context
+          .tr('subscribe_vip_for')
+          .replaceFirst('{}', '$price $currency'),
+      themeColor: const Color(0xFF4BB8F9),
+      backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFE5F1FF)],
+      features: [
+        PackageFeatureModel(
+          title: context.tr('unlimited_messages'),
+          iconPath: AssetsData.threeMessages,
+        ),
+        PackageFeatureModel(
+          title: context.tr('10_boosts_monthly'),
+          iconPath: AssetsData.oneBoost,
+        ),
+        PackageFeatureModel(
+          title: context.tr('basic_stats'),
+          iconPath: AssetsData.essentialStats,
+        ),
+        PackageFeatureModel(
+          title: context.tr('vip_support'),
+          iconPath: AssetsData.premiumSupport,
+        ),
+        PackageFeatureModel(
+          title: context.tr('توثيق رسمى كامل'),
+          iconPath: AssetsData.verifiedBegin,
+        ),
+        PackageFeatureModel(
+          title: context.tr('unlimited_sessions'),
+          iconPath: AssetsData.eightSessionMonthIcon,
+        ),
+        PackageFeatureModel(
+          title: context.tr('advanced_performance_reports'),
+          iconPath: AssetsData.performanceReports,
+        ),
+        PackageFeatureModel(
+          title: context.tr('appearance_count'),
+          iconPath: AssetsData.performanceReports,
+        ),
+        PackageFeatureModel(
+          title: context.tr('who_visited_profile_action'),
+          iconPath: AssetsData.normalApperance,
+        ),
+      ],
+    );
   }
 }

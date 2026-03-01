@@ -228,5 +228,9 @@ class TrianglePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant TrianglePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.isVertical != isVertical ||
+        oldDelegate.colors != colors;
+  }
 }
