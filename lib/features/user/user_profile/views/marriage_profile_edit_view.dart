@@ -1,12 +1,8 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:tayseer/core/constant/marriage_constants.dart';
-<<<<<<< HEAD
 import 'package:tayseer/core/widgets/custom_video_and_edit/custom_uploaded_video_preview.dart';
-=======
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
-import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
->>>>>>> origin/Interaction
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
@@ -496,99 +492,163 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   // ════════════════════════════════════════════════════════════════
   // ✅ DRAG GRID — main image FIXED (non-draggable), secondary draggable
   // ════════════════════════════════════════════════════════════════
-Widget _buildDragGrid(
-  BuildContext context,
-  MarriageProfileCubit cubit,
-  MarriageUserProfileModel profile, {
-  required String? displaySingleUrl,
-  required File? pendingSingle,
-  required bool hasSingleToShow,
-  required List<String> secondaryImages,
-  required List<String> filteredServerImages,
-  required List<String> allDisplayImages,
-}) {
-  final screenWidth = MediaQuery.of(context).size.width - 40.w - 20.w;
-  final cellWidth = (screenWidth - 24) / 3;
-  final cellHeight = cellWidth / 0.7;
+  Widget _buildDragGrid(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    MarriageUserProfileModel profile, {
+    required String? displaySingleUrl,
+    required File? pendingSingle,
+    required bool hasSingleToShow,
+    required List<String> secondaryImages,
+    required List<String> filteredServerImages,
+    required List<String> allDisplayImages,
+  }) {
+    final screenWidth = MediaQuery.of(context).size.width - 40.w - 20.w;
+    final cellWidth = (screenWidth - 24) / 3;
+    final cellHeight = cellWidth / 0.7;
 
-  // ✅ Fixed Main Image
-  Widget mainFixed = SizedBox(
-    width: cellWidth,
-    height: cellHeight, // spans 2 rows height + gap
-    child: ImageSlotCard(
-      imageUrl: displaySingleUrl,
-      localFile: pendingSingle,
-      isMain: true,
-      onTap: null,
-      onRemove: null,
-    ),
-  );
+    // ✅ Fixed Main Image
+    Widget mainFixed = SizedBox(
+      width: cellWidth,
+      height: cellHeight, // spans 2 rows height + gap
+      child: ImageSlotCard(
+        imageUrl: displaySingleUrl,
+        localFile: pendingSingle,
+        isMain: true,
+        onTap: null,
+        onRemove: null,
+      ),
+    );
 
-  // ✅ Drag hint banner
-  Widget dragHint = Container(
-    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-    decoration: BoxDecoration(
-      color: AppColors.primary50.withOpacity(0.5),
-      borderRadius: BorderRadius.circular(8.r),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.touch_app_outlined, size: 14.w, color: AppColors.primary400),
-        Gap(6.w),
-        Text(
-          context.tr('long_press_to_drag'),
-          style: TextStyle(fontSize: 11.sp, color: AppColors.primary400),
-        ),
-      ],
-    ),
-  );
+    // ✅ Drag hint banner
+    Widget dragHint = Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: AppColors.primary50.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.touch_app_outlined,
+            size: 14.w,
+            color: AppColors.primary400,
+          ),
+          Gap(6.w),
+          Text(
+            context.tr('long_press_to_drag'),
+            style: TextStyle(fontSize: 11.sp, color: AppColors.primary400),
+          ),
+        ],
+      ),
+    );
 
-  // ✅ Build each secondary slot
-  Widget secSlot(int listIndex) {
-    if (listIndex >= secondaryImages.length) {
-      return Container(
-        key: ValueKey('empty_$listIndex'),
-        child: ImageSlotCard(
-          imageUrl: null,
-          isMain: false,
-          onTap: null,
-          onRemove: null,
+    // ✅ Build each secondary slot
+    Widget secSlot(int listIndex) {
+      if (listIndex >= secondaryImages.length) {
+        return Container(
+          key: ValueKey('empty_$listIndex'),
+          child: ImageSlotCard(
+            imageUrl: null,
+            isMain: false,
+            onTap: null,
+            onRemove: null,
+          ),
+        );
+      }
+      final isLocal = listIndex >= filteredServerImages.length;
+      final pendingIndex = listIndex - filteredServerImages.length;
+      final imageUrl = isLocal ? null : secondaryImages[listIndex];
+
+      return AnimatedContainer(
+        key: ValueKey('sec_${secondaryImages[listIndex]}'),
+        duration: const Duration(milliseconds: 200),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12.r),
+              child: ImageSlotCard(
+                imageUrl: imageUrl,
+                localFile: isLocal
+                    ? widget.state.pendingImages[pendingIndex]
+                    : null,
+                isMain: false,
+                onTap: null,
+                onRemove: null,
+              ),
+            ),
+            Positioned(
+              top: 6.h,
+              right: 6.w,
+              child: Container(
+                padding: EdgeInsets.all(3.w),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(5.r),
+                ),
+                child: Icon(
+                  Icons.drag_indicator_rounded,
+                  color: Colors.white,
+                  size: 13.w,
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
-    final isLocal = listIndex >= filteredServerImages.length;
-    final pendingIndex = listIndex - filteredServerImages.length;
-    final imageUrl = isLocal ? null : secondaryImages[listIndex];
 
-    return AnimatedContainer(
-      key: ValueKey('sec_${secondaryImages[listIndex]}'),
-      duration: const Duration(milliseconds: 200),
-      child: Stack(
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12.r),
-            child: ImageSlotCard(
-              imageUrl: imageUrl,
-              localFile: isLocal ? widget.state.pendingImages[pendingIndex] : null,
-              isMain: false,
-              onTap: null,
-              onRemove: null,
-            ),
-          ),
-          Positioned(
-            top: 6.h,
-            right: 6.w,
-            child: Container(
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(5.r),
-              ),
-              child: Icon(
-                Icons.drag_indicator_rounded,
-                color: Colors.white,
-                size: 13.w,
+          // ── LEFT: Main image FIXED (spans full height) ──
+          mainFixed,
+
+          SizedBox(width: 12.w),
+
+          // ── RIGHT: ReorderableGridView للـ 4 صور الثانوية ──
+          Expanded(
+            child: SizedBox(
+              // height = 2 rows + 1 gap
+              height: cellHeight * 2 + 12,
+              child: ReorderableGridView.count(
+                crossAxisCount: 2,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                onReorder: (oldIdx, newIdx) {
+                  if (oldIdx == newIdx) return;
+
+                  // ✅ Reorder locally in the list
+                  final updatedImages = List<String>.from(secondaryImages);
+                  if (newIdx >= updatedImages.length) return;
+
+                  final item = updatedImages.removeAt(oldIdx);
+                  updatedImages.insert(newIdx, item);
+
+                  cubit.reorderSecondaryImages(
+                    updatedImages,
+                    filteredServerImages,
+                  );
+
+                  setState(() {});
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      CustomSnackBar(
+                        context,
+                        text: context.tr('image_reordered_successfully'),
+                        isError: false,
+                      ),
+                    );
+                  }
+                },
+                children: List.generate(4, (i) => secSlot(i)),
               ),
             ),
           ),
@@ -597,60 +657,6 @@ Widget _buildDragGrid(
     );
   }
 
-  return Directionality(
-    textDirection: TextDirection.rtl,
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ── LEFT: Main image FIXED (spans full height) ──
-        mainFixed,
-
-        SizedBox(width: 12.w),
-
-        // ── RIGHT: ReorderableGridView للـ 4 صور الثانوية ──
-        Expanded(
-          child: SizedBox(
-            // height = 2 rows + 1 gap
-            height: cellHeight * 2 + 12,
-            child: ReorderableGridView.count(
-              crossAxisCount: 2,
-              childAspectRatio: 0.7,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              onReorder: (oldIdx, newIdx) {
-                if (oldIdx == newIdx) return;
-
-                // ✅ Reorder locally in the list
-                final updatedImages = List<String>.from(secondaryImages);
-                if (newIdx >= updatedImages.length) return;
-
-                final item = updatedImages.removeAt(oldIdx);
-                updatedImages.insert(newIdx, item);
-
-                cubit.reorderSecondaryImages(updatedImages, filteredServerImages);
-
-                setState(() {});
-
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    CustomSnackBar(
-                      context,
-                      text: context.tr('image_reordered_successfully'),
-                      isError: false,
-                    ),
-                  );
-                }
-              },
-              children: List.generate(4, (i) => secSlot(i)),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
   // ════════════════════════════════════════════════════════════════
   // VIDEO SECTION
   // ════════════════════════════════════════════════════════════════
@@ -916,19 +922,10 @@ Widget _buildDragGrid(
 
   Future<void> _pickVideoFromCamera(BuildContext context) async {
     try {
-<<<<<<< HEAD
-      // ✅ iOS: ImagePicker بيتعامل مع الـ permission داخلياً
-      if (Platform.isAndroid) {
-        final cameraStatus = await Permission.camera.request();
-        if (!mounted) return;
-
-        if (cameraStatus.isDenied) {
-=======
       if (Platform.isAndroid) {
         final s = await Permission.camera.request();
         if (!mounted) return;
         if (s.isDenied) {
->>>>>>> origin/Interaction
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -938,11 +935,7 @@ Widget _buildDragGrid(
           );
           return;
         }
-<<<<<<< HEAD
-        if (cameraStatus.isPermanentlyDenied) {
-=======
         if (s.isPermanentlyDenied) {
->>>>>>> origin/Interaction
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -954,18 +947,6 @@ Widget _buildDragGrid(
           return;
         }
       }
-<<<<<<< HEAD
-
-      // ✅ iOS و Android: فتح الكاميرا مباشرة
-      final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(
-        source: ImageSource.camera,
-        maxDuration: const Duration(minutes: 2),
-      );
-      if (video != null) await _processVideoFile(context, video);
-    } catch (e) {
-      debugPrint('❌ Error picking video from camera: $e');
-=======
       final XFile? v = await ImagePicker().pickVideo(
         source: ImageSource.camera,
         maxDuration: const Duration(minutes: 2),
@@ -973,7 +954,6 @@ Widget _buildDragGrid(
       if (v != null) await _processVideoFile(context, v);
     } catch (e) {
       debugPrint('❌ $e');
->>>>>>> origin/Interaction
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
@@ -987,20 +967,6 @@ Widget _buildDragGrid(
 
   Future<void> _pickVideoFromGallery(BuildContext context) async {
     try {
-<<<<<<< HEAD
-      // ✅ iOS: ImagePicker مش محتاج permission - بيفتح Photos مباشرة
-      if (Platform.isAndroid) {
-        PermissionStatus status;
-        final androidInfo = await DeviceInfoPlugin().androidInfo;
-        if (androidInfo.version.sdkInt >= 33) {
-          status = await Permission.videos.request();
-        } else {
-          status = await Permission.storage.request();
-        }
-
-        if (!mounted) return;
-        if (status.isDenied) {
-=======
       if (Platform.isAndroid) {
         final info = await DeviceInfoPlugin().androidInfo;
         final s = info.version.sdkInt >= 33
@@ -1008,7 +974,6 @@ Widget _buildDragGrid(
             : await Permission.storage.request();
         if (!mounted) return;
         if (s.isDenied) {
->>>>>>> origin/Interaction
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -1018,11 +983,7 @@ Widget _buildDragGrid(
           );
           return;
         }
-<<<<<<< HEAD
-        if (status.isPermanentlyDenied) {
-=======
         if (s.isPermanentlyDenied) {
->>>>>>> origin/Interaction
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -1034,18 +995,6 @@ Widget _buildDragGrid(
           return;
         }
       }
-<<<<<<< HEAD
-
-      // ✅ iOS و Android: فتح ImagePicker مباشرة
-      final ImagePicker picker = ImagePicker();
-      final XFile? video = await picker.pickVideo(
-        source: ImageSource.gallery,
-        maxDuration: const Duration(minutes: 2),
-      );
-      if (video != null) await _processVideoFile(context, video);
-    } catch (e) {
-      debugPrint('❌ Error picking video from gallery: $e');
-=======
       final XFile? v = await ImagePicker().pickVideo(
         source: ImageSource.gallery,
         maxDuration: const Duration(minutes: 2),
@@ -1053,7 +1002,6 @@ Widget _buildDragGrid(
       if (v != null) await _processVideoFile(context, v);
     } catch (e) {
       debugPrint('❌ $e');
->>>>>>> origin/Interaction
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
@@ -1119,156 +1067,6 @@ Widget _buildDragGrid(
   void _showAudioOptions(BuildContext context) {
     showDialog(
       context: context,
-<<<<<<< HEAD
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          title: Text(
-            context.tr('attach_audio'),
-            style: Styles.textStyle18Meduim,
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(
-                  Icons.mic,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text(
-                  context.tr('record_now'),
-                  style: Styles.textStyle16,
-                ),
-                subtitle: Text(
-                  context.tr('record_voice_now'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _startRecordingInPlace(context);
-                },
-              ),
-              Divider(height: 1, color: AppColors.secondary100),
-              ListTile(
-                leading: Icon(
-                  Icons.upload_file,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text(
-                  context.tr('upload_file'),
-                  style: Styles.textStyle16,
-                ),
-                subtitle: Text(
-                  context.tr('choose_audio_file'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAudio(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _startRecordingInPlace(BuildContext context) async {
-    // ✅ مفيش طلب permission هنا - بيتطلب جوا _initializeRecorder
-    if (mounted) setState(() => _isRecordingInPlace = true);
-  }
-
-  Future<void> _pickAudio(BuildContext context) async {
-    try {
-      // ✅ iOS: FilePicker مش محتاج permission - بيفتح Files app مباشرة
-      if (Platform.isAndroid) {
-        PermissionStatus status;
-        final androidInfo = await DeviceInfoPlugin().androidInfo;
-        if (androidInfo.version.sdkInt >= 33) {
-          status = await Permission.audio.request();
-        } else {
-          status = await Permission.storage.request();
-        }
-
-        if (!mounted) return;
-        if (status.isDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('allow_files_access'),
-              isError: true,
-            ),
-          );
-          return;
-        }
-        if (status.isPermanentlyDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('enable_permission_settings'),
-              isError: true,
-            ),
-          );
-          await openAppSettings();
-          return;
-        }
-      }
-
-      // ✅ iOS و Android: فتح FilePicker مباشرة
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['mp3', 'aac', 'wav', 'm4a', 'ogg', 'opus', 'flac'],
-        allowCompression: false,
-      );
-
-      if (!mounted) return;
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        if (!await file.exists()) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('file_not_found'),
-              isError: true,
-            ),
-          );
-          return;
-        }
-        final fileSize = await file.length();
-        if (fileSize > 10 * 1024 * 1024) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('file_too_large'),
-              isError: true,
-            ),
-          );
-          return;
-        }
-        widget.cubit.addPendingAudio(file);
-        if (mounted) setState(() {});
-      }
-    } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: '${context.tr('error_picking_audio')}: ${e.toString()}',
-            isError: true,
-          ),
-        );
-    }
-  }
-
-=======
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.r),
@@ -1395,7 +1193,6 @@ Widget _buildDragGrid(
     }
   }
 
->>>>>>> origin/Interaction
   void _deleteAudio(BuildContext context) {
     CustomshowDialogWithImage(
       context,

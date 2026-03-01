@@ -1428,7 +1428,6 @@
   "add_caption": "إضافة شرح توضيحي...",
   "move_up": "نقل لأعلى",
   "other_reason": "سبب آخر",
-<<<<<<< HEAD
   "trim_video": "اقتطاع",
   "add_text": "النص",
   "save_video": "حفظ",
@@ -1442,8 +1441,6 @@
 "activate_marriage_title":"هل تريد استكشاف قسم الزواج في تيسير؟",
 "deactivate_marriage_title":"هل تريد تعطيل قسم الزواج في تيسير؟",
 "Consulting":"حجز استشارة",
-=======
->>>>>>> origin/Interaction
 "price": "السعر",
 "experience": "الخبرة",
 "language": "اللغة",
@@ -1458,14 +1455,11 @@
 "search_by_experience": "بحث",
 "book_session": "حجز جلسة",
 "recommended": "موصى به",
-<<<<<<< HEAD
 "enter_reason": "ادخال السبب",
-"other_reason_hint": "يساعد رأيك في الحفاظ علي تطبيق تيسير بشكل موثوق وامن ......."
-=======
+"other_reason_hint": "يساعد رأيك في الحفاظ علي تطبيق تيسير بشكل موثوق وامن .......",
 "long_press_to_drag": "اضغط مطولاً للسحب",
 "reorder": "إعادة ترتيب"
 
->>>>>>> origin/Interaction
 
 
 
