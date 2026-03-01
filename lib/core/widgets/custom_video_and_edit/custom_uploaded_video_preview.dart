@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/custom_video_and_edit/add_post_video_editor_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class CustomUploadedVideoPreview extends StatefulWidget {
@@ -6,6 +7,8 @@ class CustomUploadedVideoPreview extends StatefulWidget {
   final VoidCallback onInitialized;
   final double height;
   final double width;
+  final bool showEditButton; // ✅ بارامتر للتحكم في إظهار زرار التعديل
+  final Function(XFile)? onVideoEdited; // ✅ Callback يرجع XFile
 
   const CustomUploadedVideoPreview({
     super.key,
@@ -14,6 +17,8 @@ class CustomUploadedVideoPreview extends StatefulWidget {
     required this.onInitialized,
     this.height = 0.25,
     this.width = 0.4,
+    this.showEditButton = false, // ✅ افتراضياً مخفي
+    this.onVideoEdited,
   });
 
   @override
@@ -106,6 +111,49 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
     });
   }
 
+  // ✅ فتح شاشة التعديل
+  void _openVideoEditor() async {
+    // إيقاف الفيديو قبل فتح الإديتور
+    await _controller.pause();
+
+    if (!mounted) return;
+
+    // فتح شاشة التعديل
+    final editedFile = await Navigator.push<File>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VideoEditorView(videoFile: File(widget.video.path)),
+      ),
+    );
+
+    // ✅ لما يرجع من الإديتور مباشرة لصفحة Add Post
+    if (mounted && editedFile != null) {
+      debugPrint('✏️ [Preview] editedFile returned: ${editedFile.path}');
+
+      // حاول نحدث الـ controller محلياً عشان العرض يتغير فوراً
+      try {
+        _controller.removeListener(_videoListener);
+        await _controller.pause();
+        await _controller.dispose();
+
+        _controller = VideoPlayerController.file(File(editedFile.path))
+          ..initialize().then((_) {
+            if (mounted) {
+              setState(() {
+                _isInitialized = true;
+              });
+            }
+          });
+        _controller.addListener(_videoListener);
+      } catch (e) {
+        debugPrint('✏️ [Preview] failed to reinit controller: $e');
+      }
+
+      // نبعت الـ callback للـ cubit
+      widget.onVideoEdited?.call(XFile(editedFile.path));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
@@ -192,6 +240,35 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
                   ),
                 ),
 
+                /// ✏️ Edit Button (TOP RIGHT - قبل زرار الـ X)
+                if (widget.showEditButton)
+                  Positioned(
+                    top: 8,
+                    right: 40, // ✅ بعيد عن زرار الـ X
+                    child: GestureDetector(
+                      onTap: _openVideoEditor,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.edit,
+                          size: 18,
+                          color: AppColors.kprimaryColor,
+                        ),
+                      ),
+                    ),
+                  ),
+
                 /// ❌ Remove (TOP RIGHT)
                 Positioned(
                   top: 8,
@@ -251,7 +328,6 @@ class _FullScreenVideoPlayerState extends State<_FullScreenVideoPlayer> {
   @override
   void dispose() {
     widget.controller.removeListener(_listener);
-
     super.dispose();
   }
 

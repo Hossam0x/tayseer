@@ -11,7 +11,7 @@ class BillingSummary extends StatelessWidget {
       child: Column(
         children: [
           _billingRow('السعر', '180 ر.س'),
-          _billingRow('الرسوم', '10 ر.س'),
+          // _billingRow('الرسوم', '10 ر.س'),
           _billingRow('ضريبة القيمة المضافة', '20 ر.س'),
           _billingRow('الخصم', '-50 ر.س'),
           Gap(30.h),

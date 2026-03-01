@@ -97,4 +97,14 @@ class PendingSessionCubit extends Cubit<PendingSessionState> {
       );
     }
   }
+
+  void resetCountHelper() {
+    if (state.pendingSessionData == null) return;
+
+    emit(
+      state.copyWith(
+        pendingSessionData: state.pendingSessionData!.copyWith(count: 0),
+      ),
+    );
+  }
 }

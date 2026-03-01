@@ -7,7 +7,7 @@ import 'package:tayseer/features/advisor/add_post/view/widget/style_gallery_grid
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_state.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
-import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
+import 'package:tayseer/core/widgets/custom_video_and_edit/custom_uploaded_video_preview.dart';
 import 'package:tayseer/my_import.dart';
 
 class AddPostBody extends StatelessWidget {
@@ -125,12 +125,16 @@ class AddPostBody extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: CustomUploadedVideoPreview(
-                        height: 0.3,
-                        width: 0.9,
                         key: ValueKey(state.capturedVideo!.path),
+                        height: 0.7,
+                        width: 0.9,
                         video: state.capturedVideo!,
                         onInitialized: () {},
                         onRemove: () => cubit.removeCapturedVideo(),
+                        showEditButton: true,
+                        onVideoEdited: (editedVideo) {
+                          cubit.updateCapturedVideo(editedVideo);
+                        },
                       ),
                     ),
                 ],

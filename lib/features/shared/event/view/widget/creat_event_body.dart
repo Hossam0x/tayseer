@@ -8,7 +8,7 @@ import 'package:tayseer/features/shared/event/view/widget/custom_upload_image.da
 import 'package:tayseer/features/shared/event/view/widget/discount_price_container.dart';
 import 'package:tayseer/features/shared/event/view_model/events_cubit.dart';
 import 'package:tayseer/features/shared/event/view_model/events_state.dart';
-import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
+import 'package:tayseer/core/widgets/custom_video_and_edit/custom_uploaded_video_preview.dart';
 import 'package:tayseer/my_import.dart';
 
 class CreatEventBody extends StatefulWidget {

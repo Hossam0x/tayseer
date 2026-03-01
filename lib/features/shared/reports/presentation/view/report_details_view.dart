@@ -1,92 +1,47 @@
+import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
+import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_state.dart';
+import 'package:tayseer/features/shared/reports/presentation/view/widgets/report_details_view_body.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/widgets/reports_app_bar.dart';
 import 'package:tayseer/my_import.dart';
 
-class ReportDetailsView extends StatefulWidget {
-  const ReportDetailsView({super.key});
-
-  @override
-  State<ReportDetailsView> createState() => _ReportDetailsViewState();
-}
-
-class _ReportDetailsViewState extends State<ReportDetailsView> {
-  int _selectedIndex = 1; // القيمة الافتراضية المختارة (مثل الصورة)
+class ReportDetailsView extends StatelessWidget {
+  const ReportDetailsView({super.key, required this.reportReason});
+  final String reportReason;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomBackground(
-        child: CustomScrollView(
-          slivers: [
-            ReportsAppBar(
-              title: context.tr(AppStrings.tellUsMoreAboutTheReason),
-            ),
-
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20.0,
-                  vertical: 10,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Text(widget.reportReason, style: Styles.textStyle20Bold),
-                    SizedBox(height: 5),
-                    Text(
-                      context.tr('select_report_option'),
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                    SizedBox(height: 20),
-                  ],
-                ),
+    return BlocListener<ReportsCubit, ReportsState>(
+      listenWhen: (previous, current) {
+        return previous.sendReportState != current.sendReportState;
+      },
+      listener: (context, state) {
+        if (state.sendReportState == CubitStates.success) {
+          AppToast.success(
+            context,
+            context.tr(AppStrings.reportSentSuccessfully),
+          );
+          context.popUntil(routeName: AppRouter.kReportsView);
+          context.pop();
+        } else if (state.sendReportState == CubitStates.failure) {
+          context.pop(); // إغلاق شاشة التحميل
+          AppToast.error(
+            context,
+            state.errMessage ?? context.tr(AppStrings.somethingWentWrong),
+          );
+        } else if (state.sendReportState == CubitStates.loading) {
+          CustomloadingApp.show(context);
+        }
+      },
+      child: Scaffold(
+        body: CustomBackground(
+          child: Column(
+            children: [
+              ReportsAppBar(
+                title: context.tr(AppStrings.tellUsMoreAboutTheReason),
               ),
-            ),
-
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  return RadioListTile<int>(
-                    value: index,
-                    groupValue: _selectedIndex,
-                    activeColor: const Color(0xFF4CD964),
-                    title: Text(
-                      "لا احب هذا المحتوى",
-                      style: Styles.textStyle16SemiBold,
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedIndex = value!;
-                      });
-                    },
-                  );
-                },
-                childCount: 7, // عدد الخيارات
-              ),
-            ),
-
-            SliverToBoxAdapter(
-              child: Center(
-                child: CustomBotton(
-                  useGradient: true,
-                  width: context.width * 0.9,
-                  title: context.tr('report_profile'),
-                  onPressed: () {
-                    CustomshowDialogWithImage(
-                      context,
-                      bottonText: context.tr("send_report"),
-                      imageUrl: AssetsData.kWoriningImage,
-                      title: context.tr("confirm_report"),
-                      supTitle: context.tr("sup_confirm_report"),
-                      onPressed: () {},
-                      showCancelButton: true,
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 20)),
-          ],
+              ReportDetailsViewBody(reportReason: reportReason),
+            ],
+          ),
         ),
       ),
     );

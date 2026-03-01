@@ -127,6 +127,7 @@ class StoryModel extends Equatable {
   final int viewsCount;
   final int likesCount;
   final bool isLiked;
+  final bool isViewedByMe; // ⭐ هل أنا شخصياً شوفت القصة دي؟
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -144,6 +145,7 @@ class StoryModel extends Equatable {
     required this.viewsCount,
     required this.likesCount,
     required this.isLiked,
+    required this.isViewedByMe,
     this.likedBy,
     required this.createdAt,
     required this.updatedAt,
@@ -193,6 +195,8 @@ class StoryModel extends Equatable {
       viewsCount: viewsCount,
       likesCount: likesCount,
       isLiked: json['isLiked'] ?? false,
+      // ⭐ isViewedByMe: هل أنا شخصياً شوفت القصة؟ مستقل عن viewsCount
+      isViewedByMe: json['isViewedByMe'] == true || json['isViewed'] == true,
       likedBy: json['likedBy'] != null
           ? List<StoryUserModel>.from(
               json['likedBy'].map((x) => StoryUserModel.fromJson(x)),
@@ -207,7 +211,8 @@ class StoryModel extends Equatable {
     );
   }
 
-  bool get isViewed => viewsCount > 0;
+  // ⭐ isViewed يعتمد على isViewedByMe بدل viewsCount
+  bool get isViewed => isViewedByMe;
 
   StoryModel copyWith({
     String? id,
@@ -220,6 +225,7 @@ class StoryModel extends Equatable {
     int? viewsCount,
     int? likesCount,
     bool? isLiked,
+    bool? isViewedByMe,
     List<StoryUserModel>? likedBy,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -235,6 +241,7 @@ class StoryModel extends Equatable {
       viewsCount: viewsCount ?? this.viewsCount,
       likesCount: likesCount ?? this.likesCount,
       isLiked: isLiked ?? this.isLiked,
+      isViewedByMe: isViewedByMe ?? this.isViewedByMe,
       likedBy: likedBy ?? this.likedBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -253,6 +260,7 @@ class StoryModel extends Equatable {
     viewsCount,
     likesCount,
     isLiked,
+    isViewedByMe,
     likedBy,
     createdAt,
     updatedAt,

@@ -14,7 +14,7 @@ class AvailableSlotsCubit extends Cubit<AvailableSlotsState> {
 
   String? _currentAdvisorId;
 
-  Future<void> getAvailableSlots(String advisorId) async {
+  Future<void> getAvailableSlots(String advisorId, {int? month}) async {
     _currentAdvisorId = advisorId;
     emit(state.copyWith(getAvailableSlotsState: CubitStates.loading));
 
@@ -23,7 +23,7 @@ class AvailableSlotsCubit extends Cubit<AvailableSlotsState> {
       state: CubitStates.loading,
     );
 
-    final result = await mySpaceRepo.getAvailableSlots(advisorId);
+    final result = await mySpaceRepo.getAvailableSlots(advisorId, month: month);
 
     result.fold(
       (failure) {
@@ -72,28 +72,24 @@ class AvailableSlotsCubit extends Cubit<AvailableSlotsState> {
     if (_currentAdvisorId == null) return;
 
     int nextMonth = (state.currentMonth ?? DateTime.now().month) + 1;
-    int nextYear = state.currentYear ?? DateTime.now().year;
 
     if (nextMonth > 12) {
       nextMonth = 1;
-      nextYear++;
     }
 
-    await getAvailableSlots(_currentAdvisorId!);
+    await getAvailableSlots(_currentAdvisorId!, month: nextMonth);
   }
 
   Future<void> getPreviousMonth() async {
     if (_currentAdvisorId == null) return;
 
     int prevMonth = (state.currentMonth ?? DateTime.now().month) - 1;
-    int prevYear = state.currentYear ?? DateTime.now().year;
 
     if (prevMonth < 1) {
       prevMonth = 12;
-      prevYear--;
     }
 
-    await getAvailableSlots(_currentAdvisorId!);
+    await getAvailableSlots(_currentAdvisorId!, month: prevMonth);
   }
 
   List<TimeSlot> getTimeSlotsForDay(String date, int durationMinutes) {

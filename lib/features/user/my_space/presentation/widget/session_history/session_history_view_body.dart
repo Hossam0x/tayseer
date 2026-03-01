@@ -231,7 +231,7 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
       padding: EdgeInsets.only(bottom: 15.h, left: 20.w, right: 20.w),
       child: SessionCard(
         isBlur: isCancelled,
-        sessiondate: _formatDate(session.date),
+        sessiondate: _formatDate(session.fromTimeUTC),
         timeRange: "${session.timeRange.from} - ${session.timeRange.to}",
         imageUrl: session.advisor.image,
         style: isCancelled
@@ -281,7 +281,7 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
       padding: EdgeInsets.only(bottom: 15.h, left: 20.w, right: 20.w),
       child: SessionCard(
         isBlur: false,
-        sessiondate: _formatDate(session.date),
+        sessiondate: _formatDate(session.fromTimeUTC),
         timeRange: "${session.timeRange.from} - ${session.timeRange.to}",
         imageUrl: session.advisor.image,
         style: SessionCardStyle.white,

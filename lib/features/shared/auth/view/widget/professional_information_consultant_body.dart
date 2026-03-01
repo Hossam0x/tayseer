@@ -1,6 +1,6 @@
 import 'package:tayseer/core/utils/helper/video_picker_helper.dart';
 import 'package:tayseer/core/widgets/custtom_glass_button.dart';
-import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
+import 'package:tayseer/core/widgets/custom_video_and_edit/custom_uploaded_video_preview.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:tayseer/my_import.dart';

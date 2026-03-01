@@ -30,11 +30,13 @@ class AdvisorData {
   final List<AdvisorSession> advisorSessionExpired;
   final List<AdvisorSession> advisorSessionNotExpired;
   final String advisorTimezone;
+  final int pendingSessionscount;
 
   AdvisorData({
     required this.advisorSessionExpired,
     required this.advisorSessionNotExpired,
     required this.advisorTimezone,
+    required this.pendingSessionscount,
   });
 
   factory AdvisorData.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,7 @@ class AdvisorData {
               .map((e) => AdvisorSession.fromJson(e))
               .toList(),
       advisorTimezone: json['advisorTimezone'] ?? 'UTC',
+      pendingSessionscount: json['pendingSessionsCount'] ?? '0',
     );
   }
 
@@ -56,6 +59,7 @@ class AdvisorData {
         .map((e) => e.toJson())
         .toList(),
     'advisorTimezone': advisorTimezone,
+    'pendingSessionsCount': pendingSessionscount,
   };
 }
 

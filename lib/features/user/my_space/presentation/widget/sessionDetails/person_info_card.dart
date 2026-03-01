@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tayseer/my_import.dart';
 
 class PersonInfoCard extends StatelessWidget {
   final String name;
@@ -37,13 +36,8 @@ class PersonInfoCard extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    return CircleAvatar(
-      radius: 25.r,
-      backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-      onBackgroundImageError: imageUrl.isNotEmpty ? (_, __) {} : null,
-      child: imageUrl.isEmpty
-          ? Icon(Icons.person, size: 25.sp, color: Colors.grey)
-          : null,
+    return ClipOval(
+      child: AppImage(imageUrl, width: 50.r, height: 50.r, fit: BoxFit.cover),
     );
   }
 

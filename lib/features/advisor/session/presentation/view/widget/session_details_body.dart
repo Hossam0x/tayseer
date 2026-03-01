@@ -76,15 +76,15 @@ class SessionDetailsBody extends StatelessWidget {
                     label: 'سعر الجلسة',
                     value: '${data.pricing.sessionPrice} ر.س',
                   ),
-                  PriceRow(label: 'الرسوم', value: '${data.pricing.fees} ر.س'),
+                  // PriceRow(label: 'الرسوم', value: '${data.pricing.fees} ر.س'),
                   PriceRow(
                     label: 'ضريبة القيمة المضافة',
                     value: '${data.pricing.vat} ر.س',
                   ),
-                  PriceRow(
-                    label: 'رسوم التطبيق',
-                    value: '${data.pricing.appFees} ر.س',
-                  ),
+                  // PriceRow(
+                  //   label: 'رسوم التطبيق',
+                  //   value: '${data.pricing.appFees} ر.س',
+                  // ),
                   PriceRow(
                     label: 'الخصم',
                     value: '${data.pricing.discount} ر.س',

@@ -1,12 +1,11 @@
+import 'package:tayseer/features/advisor/session/presentation/manager/pending_session_cubit/pending_session_cubit.dart';
+import 'package:tayseer/features/advisor/session/presentation/manager/pending_session_cubit/pending_session_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class HeaderTopRow extends StatelessWidget {
-  final bool isChatsSelected; // ✅ أضف هذا
+  final bool isChatsSelected;
 
-  const HeaderTopRow({
-    super.key,
-    required this.isChatsSelected, // ✅ أضف هذا
-  });
+  const HeaderTopRow({super.key, required this.isChatsSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -24,10 +23,10 @@ class HeaderTopRow extends StatelessWidget {
         children: [
           InkWell(
             onTap: () {
-              // ✅ التنقل حسب السيكشن المختار
               if (isChatsSelected) {
                 context.pushNamed(AppRouter.kChatRequest);
               } else {
+                context.read<PendingSessionCubit>().resetCountHelper();
                 context.pushNamed(AppRouter.pendingsession);
               }
             },
@@ -38,7 +37,15 @@ class HeaderTopRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Badge(
-                label: const Text("3"),
+                label: BlocBuilder<PendingSessionCubit, PendingSessionState>(
+                  builder: (context, state) {
+                    if (isChatsSelected) {
+                      return const Text("0");
+                    }
+                    final count = state.pendingSessionData?.count ?? 0;
+                    return Text("$count");
+                  },
+                ),
                 backgroundColor: const Color(0xFFE96E88),
                 child: AppImage(
                   AssetsData.chatNotificationIcon,

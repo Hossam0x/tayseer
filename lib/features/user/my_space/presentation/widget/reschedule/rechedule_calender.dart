@@ -11,6 +11,8 @@ class RescheduleCalendar extends StatelessWidget {
   final int year;
   final List<CalendarDay> calendarDays;
   final Function(int day, String date) onDaySelected;
+  final VoidCallback onNextMonth;
+  final VoidCallback onPreviousMonth;
 
   const RescheduleCalendar({
     super.key,
@@ -19,6 +21,8 @@ class RescheduleCalendar extends StatelessWidget {
     required this.year,
     required this.calendarDays,
     required this.onDaySelected,
+    required this.onNextMonth,
+    required this.onPreviousMonth,
   });
 
   @override
@@ -29,16 +33,18 @@ class RescheduleCalendar extends StatelessWidget {
     final Color glassBgColor = Colors.white.withOpacity(0.35);
     final Color unselectedBgColor = Color(0xFFFFFFFF).withOpacity(0.3);
 
-    // ✅ التأكد من أن الشهر في النطاق الصحيح (1-12)
     final safeMonth = month.clamp(1, 12);
 
-    // حساب عدد أيام الشهر
     final daysInMonth = DateTime(year, safeMonth + 1, 0).day;
 
-    // حساب أول يوم في الشهر
-    final firstDayOfMonth = DateTime(year, safeMonth, 1).weekday % 7;
+    const allDayNames = ["س", "ح", "ن", "ث", "ر", "خ", "ج"];
 
-    // إنشاء Map للأيام المتاحة
+    final firstDayOffset = (DateTime(year, safeMonth, 1).weekday + 1) % 7;
+
+    final rotatedDayNames = [
+      ...allDayNames.sublist(firstDayOffset),
+      ...allDayNames.sublist(0, firstDayOffset),
+    ];
     final availableDaysMap = <int, CalendarDay>{};
     for (var day in calendarDays) {
       availableDaysMap[day.dayNumber] = day;
@@ -63,7 +69,7 @@ class RescheduleCalendar extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
             child: Container(
-              padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 15.w),
+              padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 10.w),
               decoration: BoxDecoration(
                 color: glassBgColor,
                 borderRadius: BorderRadius.circular(20.r),
@@ -75,27 +81,40 @@ class RescheduleCalendar extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Header - اسم الشهر فقط
-                  Text(
-                    _getMonthName(safeMonth), // ✅ استخدام safeMonth
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18.sp,
-                      color: darkText,
-                      fontFamily: 'Arial',
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        onPressed: onNextMonth,
+                        icon: const Icon(Icons.arrow_back_ios, size: 20),
+                        color: darkText,
+                      ),
+                      Text(
+                        "${_getMonthName(safeMonth)} $year",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18.sp,
+                          color: darkText,
+                          fontFamily: 'Arial',
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: onPreviousMonth,
+                        icon: const Icon(Icons.arrow_forward_ios, size: 20),
+                        color: darkText,
+                      ),
+                    ],
                   ),
                   SizedBox(height: 15.h),
                   Divider(color: Colors.grey.withOpacity(0.1), thickness: 1),
                   SizedBox(height: 15.h),
 
-                  // أسماء الأيام
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: ["س", "ح", "ن", "ث", "ر", "خ", "ج"]
+                    children: rotatedDayNames
                         .map(
                           (e) => SizedBox(
-                            width: 40.w,
+                            width: 38.w,
                             child: Center(
                               child: Text(
                                 e,
@@ -112,11 +131,10 @@ class RescheduleCalendar extends StatelessWidget {
                   ),
                   SizedBox(height: 10.h),
 
-                  // أيام التقويم
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: 42,
+                    itemCount: daysInMonth,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 7,
                       childAspectRatio: 1,
@@ -124,43 +142,25 @@ class RescheduleCalendar extends StatelessWidget {
                       mainAxisSpacing: 5.h,
                     ),
                     itemBuilder: (context, index) {
-                      int displayDay;
-                      bool isCurrentMonth = true;
+                      final dayNumber = index + 1;
                       bool isAvailable = false;
                       String fullDate = '';
 
-                      if (index < firstDayOfMonth) {
-                        // أيام الشهر السابق
-                        final prevMonthDays = DateTime(year, safeMonth, 0).day;
-                        displayDay =
-                            prevMonthDays - (firstDayOfMonth - 1 - index);
-                        isCurrentMonth = false;
-                      } else if (index >= firstDayOfMonth + daysInMonth) {
-                        // أيام الشهر التالي
-                        displayDay = index - firstDayOfMonth - daysInMonth + 1;
-                        isCurrentMonth = false;
+                      final calendarDay = availableDaysMap[dayNumber];
+                      if (calendarDay != null) {
+                        isAvailable = calendarDay.isAvailable;
+                        fullDate = calendarDay.date;
                       } else {
-                        // أيام الشهر الحالي
-                        displayDay = index - firstDayOfMonth + 1;
-                        isCurrentMonth = true;
-
-                        final calendarDay = availableDaysMap[displayDay];
-                        if (calendarDay != null) {
-                          isAvailable = calendarDay.isAvailable;
-                          fullDate = calendarDay.date;
-                        } else {
-                          fullDate =
-                              '$year-${safeMonth.toString().padLeft(2, '0')}-${displayDay.toString().padLeft(2, '0')}';
-                        }
+                        fullDate =
+                            '$year-${safeMonth.toString().padLeft(2, '0')}-${dayNumber.toString().padLeft(2, '0')}';
                       }
 
-                      bool isSelected =
-                          (displayDay == selectedDay && isCurrentMonth);
+                      bool isSelected = (dayNumber == selectedDay);
 
                       return GestureDetector(
                         onTap: () {
-                          if (isCurrentMonth && isAvailable) {
-                            onDaySelected(displayDay, fullDate);
+                          if (isAvailable) {
+                            onDaySelected(dayNumber, fullDate);
                           }
                         },
                         child: Center(
@@ -175,14 +175,12 @@ class RescheduleCalendar extends StatelessWidget {
                             ),
                             child: Center(
                               child: Text(
-                                "$displayDay",
+                                "$dayNumber",
                                 style: TextStyle(
                                   color: isSelected
                                       ? Colors.white
-                                      : isCurrentMonth
-                                      ? isAvailable
-                                            ? darkText
-                                            : greyText
+                                      : isAvailable
+                                      ? darkText
                                       : greyText,
                                   fontSize: 14.sp,
                                   fontWeight: isSelected

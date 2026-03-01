@@ -149,7 +149,8 @@ abstract class AssetsData {
   static const String sentMessageIcon = "assets/icons/sent_message_icon.svg";
   static const String commentnotify = 'assets/icons/comment_notify.svg';
   static const String consultatIcon = "assets/icons/Consultation.svg";
-  static const String consultationActiveIcon = "assets/icons/consultationActiveIcon.svg";
+  static const String consultationActiveIcon =
+      "assets/icons/consultationActiveIcon.svg";
   static const String followNotify = "assets/icons/follow_notify.svg";
   static const String messageNotify = "assets/icons/message_notify.svg";
   static const String ticketEventNotify =
@@ -272,4 +273,22 @@ abstract class AssetsData {
   // Search Icons
   static const String icSeachFor = "assets/icons/icNoAdvisorSearch.svg";
   static const String icNoContentSeach = "assets/images/icNoContentSeach.png";
+
+  // Packages Icons
+  static const String eightSessionMonthIcon =
+      "assets/icons/eightSessionMonthIcon.svg";
+  static const String threeMessages = "assets/icons/threeMessages.svg";
+  static const String normalApperance = "assets/icons/normalApperance.svg";
+  static const String noEvents = "assets/icons/noEvents.svg";
+  static const String essentialSupport = "assets/icons/essentialSupport.svg";
+  static const String oneBoost = "assets/icons/oneBoost.svg";
+  static const String essentialStats = "assets/icons/essentialStats.svg";
+  static const String verifiedBegin = "assets/icons/verifiedBegin.svg";
+  static const String premiumSupport = "assets/icons/premiumSupport.svg";
+  static const String seeProfileVisits = "assets/icons/seeProfileVisits.svg";
+  static const String performanceReports =
+      "assets/icons/performanceReports.svg";
+  static const String basicBackground = "assets/icons/basicBackground.svg";
+  static const String proBackground = "assets/icons/proBackground.svg";
+  static const String eliteBackground = "assets/icons/eliteBackground.svg";
 }

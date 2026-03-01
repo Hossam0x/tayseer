@@ -324,16 +324,15 @@ class _AccountManagementViewState extends State<AccountManagementView> {
       // الانتظار قليلاً لعرض الحالة النهائية
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // 1. إعادة التوجيه إلى شاشة التسجيل/تسجيل الدخول
+      // 1. مسح جميع البيانات من SharedPreferences
+      await CachNetwork.clearCache();
+
+      // 2. إعادة التوجيه إلى شاشة التسجيل/تسجيل الدخول
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRouter.kRegisrationView,
         (route) => false,
       );
-
-      // 2. مسح جميع البيانات من SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
 
       // 3. عرض رسالة نجاح
       ScaffoldMessenger.of(
