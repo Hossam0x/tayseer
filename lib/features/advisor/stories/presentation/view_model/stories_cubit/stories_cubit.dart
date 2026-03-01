@@ -145,7 +145,6 @@ class StoriesCubit extends Cubit<StoriesState> {
     final story = userStory.stories[storyIndex];
 
     // ⭐ Always update local state so border turns grey immediately
-    bool isLastStory = storyIndex == userStory.stories.length - 1;
     final List<StoryModel> updatedStories = List.from(userStory.stories);
     if (!story.isViewedByMe) {
       updatedStories[storyIndex] = story.copyWith(
@@ -154,8 +153,7 @@ class StoriesCubit extends Cubit<StoriesState> {
       );
     }
 
-    final bool allViewedLocally =
-        isLastStory || updatedStories.every((s) => s.isViewedByMe);
+    final bool allViewedLocally = updatedStories.every((s) => s.isViewedByMe);
 
     final updatedUserStory = userStory.copyWith(
       stories: updatedStories,

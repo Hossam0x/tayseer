@@ -196,10 +196,7 @@ class StoryModel extends Equatable {
       likesCount: likesCount,
       isLiked: json['isLiked'] ?? false,
       // ⭐ isViewedByMe: هل أنا شخصياً شوفت القصة؟ مستقل عن viewsCount
-      isViewedByMe:
-          json['isViewedByMe'] == true ||
-          json['isViewed'] == true ||
-          (json['isMine'] == true), // قصتي الشخصية تعتبر متشوفة مني
+      isViewedByMe: json['isViewedByMe'] == true || json['isViewed'] == true,
       likedBy: json['likedBy'] != null
           ? List<StoryUserModel>.from(
               json['likedBy'].map((x) => StoryUserModel.fromJson(x)),

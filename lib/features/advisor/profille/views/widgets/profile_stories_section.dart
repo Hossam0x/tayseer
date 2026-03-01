@@ -243,7 +243,10 @@ class _UserStoryItem extends StatelessWidget {
             child: Text(
               userStoryModel.name,
               textAlign: TextAlign.center,
-              style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
+              style: Styles.textStyle12.copyWith(
+                color: AppColors.blackColor,
+                fontWeight: FontWeight.w500,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
