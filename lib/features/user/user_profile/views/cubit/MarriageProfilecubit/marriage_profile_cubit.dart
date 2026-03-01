@@ -334,6 +334,35 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       );
     }
   }
+  void reorderSecondaryImages(
+  List<String> reorderedImages,
+  List<String> filteredServerImages,
+) {
+  if (state.profile == null) return;
+
+  // ✅ الـ server images بالترتيب الجديد
+  final newServerOrder = reorderedImages
+      .where((img) => filteredServerImages.contains(img))
+      .toList();
+
+  // ✅ الـ pending images بالترتيب الجديد
+  final newPendingOrder = reorderedImages
+      .where((img) => !filteredServerImages.contains(img))
+      .map((path) => File(path))
+      .toList();
+
+  // ✅ حدّث الـ profile عشان الـ UI يتحدث فوراً
+  final updatedProfile = state.profile!.copyWith(
+    userMedia: state.profile!.userMedia?.copyWith(
+      images: newServerOrder,
+    ),
+  );
+
+  emit(state.copyWith(
+    profile: updatedProfile,
+    pendingImages: newPendingOrder,
+  ));
+}
 
   // ════════════════════════════════════════════════════════════════
   // CALCULATE PROGRESS

@@ -11,7 +11,6 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       right: 0,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
-  
         child: SafeArea(
           top: false,
           child: Column(
@@ -41,12 +40,11 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       width: MediaQuery.of(context).size.width * 0.8,
       height: 55.h,
       decoration: BoxDecoration(
-        // Linear Gradient implementation from Figma data
         gradient: const LinearGradient(
           begin: Alignment.centerRight,
           end: Alignment.centerLeft,
           colors: [
-            Color(0xFFEB7A91), // primary/300
+            Color(0xFFEB7A91),
             Color.fromRGBO(245, 192, 3, 1),
           ],
         ),
@@ -55,9 +53,8 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              Colors.transparent, 
-          shadowColor: Colors.transparent, 
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
           ),

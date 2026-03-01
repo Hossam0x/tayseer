@@ -1,5 +1,7 @@
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:tayseer/core/constant/marriage_constants.dart';
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/features/shared/auth/view/widget/custom_uploaded_video_preview.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bottom_sheet.dart';
@@ -41,12 +43,13 @@ class MarriageProfileEditView extends StatefulWidget {
 
 class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   bool _isRecordingInPlace = false;
-  // ✅ أزلنا _isUploadingVideo و _isUploadingAudio - مفيش upload فوري
+  bool _isDragMode = false;
 
   final GlobalKey _imagesKey = GlobalKey();
   final GlobalKey _videoKey = GlobalKey();
   final GlobalKey _audioKey = GlobalKey();
   final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -88,12 +91,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         } else {
           debugPrint('⚠️ Retrying scroll for $section...');
           Future.delayed(const Duration(milliseconds: 200), () {
-            if (targetKey?.currentContext != null) {
+            if (targetKey?.currentContext != null)
               Scrollable.ensureVisible(
                 targetKey!.currentContext!,
                 alignment: 0.1,
               );
-            }
           });
         }
       });
@@ -105,31 +107,37 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       hobbyKeys,
     );
     if (hobbiesList.isEmpty) return '';
-
     return hobbiesList
-        .map((key) {
-          final emoji = MarriageConstants.getEmoji(key);
-          final text = context.tr(key);
-          return '$emoji $text';
-        })
+        .map((key) => '${MarriageConstants.getEmoji(key)} ${context.tr(key)}')
         .join(', ');
   }
 
   String _translateValue(String value, BuildContext context) {
-    if (value.isEmpty || value == 'اختر' || value == 'select') {
+    if (value.isEmpty || value == 'اختر' || value == 'select')
       return context.tr('select');
-    }
     final translated = context.tr(value);
-    if (translated == value && !value.contains(' ')) {
-      return value;
-    }
+    if (translated == value && !value.contains(' ')) return value;
     return translated;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ✅ Open image in FullScreen
+  // ════════════════════════════════════════════════════════════════
+  void _openFullScreen(BuildContext context, String imageUrl, String heroTag) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FullScreenImageView(
+          imageUrl: imageUrl,
+          heroTag: heroTag,
+          userName: context.tr('my_profile'),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ تحقق من الصورة الرئيسية - السيرفر أو pending
-
     return CustomScrollView(
       controller: _scrollController,
       cacheExtent: 3000,
@@ -181,13 +189,471 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ VIDEO SECTION - pending video محلياً
+  // ✅ IMAGES SECTION
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildImagesSection(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    MarriageUserProfileModel profile,
+  ) {
+    final serverImages = profile.userMedia?.images ?? [];
+    final serverSingleImage = profile.userMedia?.singleImage;
+    final pendingSingle = widget.state.pendingSingleImage;
+    final pendingImgs = widget.state.pendingImages;
+    final deletedSingleUrl = widget.state.deletedSingleImageUrl;
+
+    final displaySingleUrl = deletedSingleUrl != null
+        ? null
+        : serverSingleImage;
+    final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
+
+    final filteredServerImages = serverImages
+        .where((url) => !widget.state.deletedImageUrls.contains(url))
+        .toList();
+    final allDisplayImages = [
+      ...filteredServerImages,
+      ...pendingImgs.map((f) => f.path),
+    ];
+    final secondaryImages = allDisplayImages.length > 4
+        ? allDisplayImages.sublist(0, 4)
+        : allDisplayImages;
+    final totalCount = (hasSingleToShow ? 1 : 0) + allDisplayImages.length;
+    final canDrag = secondaryImages.length > 1;
+
+    return Container(
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: AppColors.kWhiteColor,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${context.tr('images_count')} ( $totalCount ${context.tr('images_count')})',
+                style: Styles.textStyle18Meduim,
+              ),
+              Row(
+                children: [
+                  if (pendingSingle != null || pendingImgs.isNotEmpty)
+                    _buildPendingBadge(
+                      context,
+                      context.tr('images_pending_save'),
+                    ),
+                  if (canDrag) ...[
+                    Gap(8.w),
+                    GestureDetector(
+                      onTap: () => setState(() => _isDragMode = !_isDragMode),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _isDragMode
+                              ? AppColors.primary300.withOpacity(0.15)
+                              : Colors.grey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(
+                            color: _isDragMode
+                                ? AppColors.primary300
+                                : Colors.grey.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isDragMode
+                                  ? Icons.check_rounded
+                                  : Icons.swap_vert_rounded,
+                              size: 14.w,
+                              color: _isDragMode
+                                  ? AppColors.primary300
+                                  : Colors.grey,
+                            ),
+                            Gap(4.w),
+                            Text(
+                              _isDragMode
+                                  ? context.tr('done')
+                                  : context.tr('reorder'),
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: _isDragMode
+                                    ? AppColors.primary300
+                                    : Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+
+          if (_isDragMode) ...[
+            Gap(8.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: AppColors.primary50.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.touch_app_outlined,
+                    size: 14.w,
+                    color: AppColors.primary400,
+                  ),
+                  Gap(6.w),
+                  Text(
+                    context.tr('long_press_to_drag'),
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.primary400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          Gap(12.h),
+
+          _isDragMode
+              ? _buildDragGrid(
+                  context,
+                  cubit,
+                  profile,
+                  displaySingleUrl: displaySingleUrl,
+                  pendingSingle: pendingSingle,
+                  hasSingleToShow: hasSingleToShow,
+                  secondaryImages: secondaryImages,
+                  filteredServerImages: filteredServerImages,
+                  allDisplayImages: allDisplayImages,
+                )
+              : _buildNormalGrid(
+                  context,
+                  cubit,
+                  profile,
+                  displaySingleUrl: displaySingleUrl,
+                  pendingSingle: pendingSingle,
+                  hasSingleToShow: hasSingleToShow,
+                  secondaryImages: secondaryImages,
+                  filteredServerImages: filteredServerImages,
+                  allDisplayImages: allDisplayImages,
+                ),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ✅ NORMAL GRID — with FullScreenImageView on tap
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildNormalGrid(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    MarriageUserProfileModel profile, {
+    required String? displaySingleUrl,
+    required File? pendingSingle,
+    required bool hasSingleToShow,
+    required List<String> secondaryImages,
+    required List<String> filteredServerImages,
+    required List<String> allDisplayImages,
+  }) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: GridView.builder(
+        padding: EdgeInsets.zero,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          // ── SLOT 0: Main Image ──
+          if (index == 0) {
+            return GestureDetector(
+              // ✅ tap = open fullscreen (only if image exists)
+              onTap: hasSingleToShow && displaySingleUrl != null
+                  ? () =>
+                        _openFullScreen(context, displaySingleUrl, 'main_image')
+                  : !hasSingleToShow
+                  ? () => _pickSingleImage(context, cubit, profile)
+                  : null,
+              child: ImageSlotCard(
+                imageUrl: displaySingleUrl,
+                localFile: pendingSingle,
+                isMain: true,
+                onTap: null, // handled by GestureDetector above
+                onRemove: hasSingleToShow
+                    ? () => _removeSingleImage(context, cubit)
+                    : null,
+              ),
+            );
+          }
+
+          // ── SLOT 5: Guidelines ──
+          if (index == 5) {
+            return GestureDetector(
+              onTap: () => ImageGuidelinesBottomSheet.show(
+                context,
+                onNext: () => context.pop(),
+              ),
+              child: Padding(
+                padding: EdgeInsets.only(top: context.height * 0.06),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 28,
+                      color: AppColors.kscandryTextColor,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      context.tr('photo_guidelines'),
+                      textAlign: TextAlign.center,
+                      style: Styles.textStyle16.copyWith(
+                        color: AppColors.kscandryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          // ── SLOTS 1-4: Secondary Images ──
+          final listIndex = index - 1;
+          if (listIndex < secondaryImages.length) {
+            final isLocal = listIndex >= filteredServerImages.length;
+            final pendingIndex = listIndex - filteredServerImages.length;
+            final imageUrl = isLocal ? null : secondaryImages[listIndex];
+            final heroTag = 'secondary_image_$listIndex';
+
+            return GestureDetector(
+              // ✅ tap = open fullscreen (only server images, not local pending)
+              onTap: !isLocal && imageUrl != null
+                  ? () => _openFullScreen(context, imageUrl, heroTag)
+                  : null,
+              child: ImageSlotCard(
+                imageUrl: imageUrl,
+                localFile: isLocal
+                    ? widget.state.pendingImages[pendingIndex]
+                    : null,
+                isMain: false,
+                onTap: null, // handled by GestureDetector above
+                onRemove: () {
+                  if (isLocal) {
+                    cubit.removePendingImage(pendingIndex);
+                  } else {
+                    _removeImage(
+                      context,
+                      cubit,
+                      listIndex,
+                      filteredServerImages,
+                    );
+                  }
+                },
+              ),
+            );
+          }
+
+          // ── Empty slot ──
+          return ImageSlotCard(
+            imageUrl: null,
+            isMain: false,
+            onTap: allDisplayImages.length < 4
+                ? () => _pickImage(context, cubit, profile, isMain: false)
+                : null,
+            onRemove: null,
+          );
+        },
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ✅ DRAG GRID — main image FIXED (non-draggable), secondary draggable
+  // ════════════════════════════════════════════════════════════════
+Widget _buildDragGrid(
+  BuildContext context,
+  MarriageProfileCubit cubit,
+  MarriageUserProfileModel profile, {
+  required String? displaySingleUrl,
+  required File? pendingSingle,
+  required bool hasSingleToShow,
+  required List<String> secondaryImages,
+  required List<String> filteredServerImages,
+  required List<String> allDisplayImages,
+}) {
+  final screenWidth = MediaQuery.of(context).size.width - 40.w - 20.w;
+  final cellWidth = (screenWidth - 24) / 3;
+  final cellHeight = cellWidth / 0.7;
+
+  // ✅ Fixed Main Image
+  Widget mainFixed = SizedBox(
+    width: cellWidth,
+    height: cellHeight, // spans 2 rows height + gap
+    child: ImageSlotCard(
+      imageUrl: displaySingleUrl,
+      localFile: pendingSingle,
+      isMain: true,
+      onTap: null,
+      onRemove: null,
+    ),
+  );
+
+  // ✅ Drag hint banner
+  Widget dragHint = Container(
+    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+    decoration: BoxDecoration(
+      color: AppColors.primary50.withOpacity(0.5),
+      borderRadius: BorderRadius.circular(8.r),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.touch_app_outlined, size: 14.w, color: AppColors.primary400),
+        Gap(6.w),
+        Text(
+          context.tr('long_press_to_drag'),
+          style: TextStyle(fontSize: 11.sp, color: AppColors.primary400),
+        ),
+      ],
+    ),
+  );
+
+  // ✅ Build each secondary slot
+  Widget secSlot(int listIndex) {
+    if (listIndex >= secondaryImages.length) {
+      return Container(
+        key: ValueKey('empty_$listIndex'),
+        child: ImageSlotCard(
+          imageUrl: null,
+          isMain: false,
+          onTap: null,
+          onRemove: null,
+        ),
+      );
+    }
+    final isLocal = listIndex >= filteredServerImages.length;
+    final pendingIndex = listIndex - filteredServerImages.length;
+    final imageUrl = isLocal ? null : secondaryImages[listIndex];
+
+    return AnimatedContainer(
+      key: ValueKey('sec_${secondaryImages[listIndex]}'),
+      duration: const Duration(milliseconds: 200),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12.r),
+            child: ImageSlotCard(
+              imageUrl: imageUrl,
+              localFile: isLocal ? widget.state.pendingImages[pendingIndex] : null,
+              isMain: false,
+              onTap: null,
+              onRemove: null,
+            ),
+          ),
+          Positioned(
+            top: 6.h,
+            right: 6.w,
+            child: Container(
+              padding: EdgeInsets.all(3.w),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(5.r),
+              ),
+              child: Icon(
+                Icons.drag_indicator_rounded,
+                color: Colors.white,
+                size: 13.w,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  return Directionality(
+    textDirection: TextDirection.rtl,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── LEFT: Main image FIXED (spans full height) ──
+        mainFixed,
+
+        SizedBox(width: 12.w),
+
+        // ── RIGHT: ReorderableGridView للـ 4 صور الثانوية ──
+        Expanded(
+          child: SizedBox(
+            // height = 2 rows + 1 gap
+            height: cellHeight * 2 + 12,
+            child: ReorderableGridView.count(
+              crossAxisCount: 2,
+              childAspectRatio: 0.7,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              onReorder: (oldIdx, newIdx) {
+                if (oldIdx == newIdx) return;
+
+                // ✅ Reorder locally in the list
+                final updatedImages = List<String>.from(secondaryImages);
+                if (newIdx >= updatedImages.length) return;
+
+                final item = updatedImages.removeAt(oldIdx);
+                updatedImages.insert(newIdx, item);
+
+                cubit.reorderSecondaryImages(updatedImages, filteredServerImages);
+
+                setState(() {});
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    CustomSnackBar(
+                      context,
+                      text: context.tr('image_reordered_successfully'),
+                      isError: false,
+                    ),
+                  );
+                }
+              },
+              children: List.generate(4, (i) => secSlot(i)),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+  // ════════════════════════════════════════════════════════════════
+  // VIDEO SECTION
   // ════════════════════════════════════════════════════════════════
   Widget _buildVideoSection(BuildContext context) {
     final serverVideoUrl = widget.profile.userMedia?.video;
     final pendingVideo = widget.state.pendingVideo;
     final pendingDeleteVideo = widget.state.pendingDeleteVideo;
-
     final hasVideo =
         !pendingDeleteVideo &&
         (pendingVideo != null ||
@@ -205,8 +671,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         children: [
           Text(context.tr('intro_video'), style: Styles.textStyle18Meduim),
           Gap(12.h),
-
-          // ✅ لو في pending video → عرضه بـ CustomUploadedVideoPreview زي AddPost
           if (pendingVideo != null) ...[
             _buildPendingBadge(context, context.tr('video_pending_save')),
             Gap(8.h),
@@ -220,9 +684,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 onRemove: () => _deleteVideo(context),
               ),
             ),
-          ]
-          // ✅ لو في server video فقط → عرضه بـ VideoSection العادية
-          else
+          ] else
             VideoSection(
               videoUrl:
                   (!pendingDeleteVideo &&
@@ -240,13 +702,12 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ AUDIO SECTION - pending audio محلياً
+  // AUDIO SECTION
   // ════════════════════════════════════════════════════════════════
   Widget _buildAudioSection(BuildContext context) {
     final serverAudioUrl = widget.profile.userMedia?.audio;
     final pendingAudio = widget.state.pendingAudio;
     final pendingDeleteAudio = widget.state.pendingDeleteAudio;
-
     final hasAudio =
         !pendingDeleteAudio &&
         (pendingAudio != null ||
@@ -275,7 +736,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  // ✅ Badge يخلي المستخدم يعرف إن في تغيير pending
   Widget _buildPendingBadge(BuildContext context, String message) {
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
@@ -300,280 +760,16 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ IMAGES SECTION - pending images محلياً
-  // ════════════════════════════════════════════════════════════════
-  Widget _buildImagesSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    final serverImages = profile.userMedia?.images ?? [];
-    final serverSingleImage = profile.userMedia?.singleImage;
-
-    final pendingSingle = widget.state.pendingSingleImage;
-    final pendingImgs = widget.state.pendingImages;
-    final deletedSingleUrl = widget.state.deletedSingleImageUrl;
-
-    // ✅ الصورة الرئيسية
-    final displaySingleUrl = deletedSingleUrl != null
-        ? null
-        : serverSingleImage;
-    final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
-
-    // ✅ الصور الثانوية: نفلتر المحذوفة من السيرفر + نضيف الـ pending
-    final filteredServerImages = serverImages
-        .where((url) => !widget.state.deletedImageUrls.contains(url))
-        .toList();
-    final allDisplayImages = [
-      ...filteredServerImages,
-      ...pendingImgs.map((f) => f.path),
-    ];
-    final secondaryImages = allDisplayImages.length > 4
-        ? allDisplayImages.sublist(0, 4)
-        : allDisplayImages;
-
-    final totalCount = (hasSingleToShow ? 1 : 0) + allDisplayImages.length;
-
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${context.tr('images_count')} ( $totalCount ${context.tr('images_count')})',
-                style: Styles.textStyle18Meduim,
-              ),
-              if (pendingSingle != null || pendingImgs.isNotEmpty)
-                _buildPendingBadge(context, context.tr('images_pending_save')),
-            ],
-          ),
-          Gap(12.h),
-          Directionality(
-            textDirection: TextDirection.rtl,
-            child: GridView.builder(
-              padding: EdgeInsets.zero,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: 6,
-              itemBuilder: (context, index) {
-                // ✅ SLOT 0: Main Image
-                if (index == 0) {
-                  return ImageSlotCard(
-                    imageUrl: displaySingleUrl,
-                    localFile: pendingSingle,
-                    isMain: true,
-                    onTap: !hasSingleToShow
-                        ? () => _pickSingleImage(context, cubit, profile)
-                        : null,
-                    onRemove: hasSingleToShow
-                        ? () => _removeSingleImage(context, cubit)
-                        : null,
-                  );
-                }
-
-                // ✅ SLOT 5: Guidelines
-                if (index == 5) {
-                  return GestureDetector(
-                    onTap: () {
-                      ImageGuidelinesBottomSheet.show(
-                        context,
-                        onNext: () => context.pop(),
-                      );
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.only(top: context.height * 0.06),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            size: 28,
-                            color: AppColors.kscandryTextColor,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            context.tr('photo_guidelines'),
-                            textAlign: TextAlign.center,
-                            style: Styles.textStyle16.copyWith(
-                              color: AppColors.kscandryTextColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                // ✅ SLOTS 1-4: Secondary Images
-                int listIndex = index - 1;
-                if (listIndex < secondaryImages.length) {
-                  final isLocal = listIndex >= filteredServerImages.length;
-                  final pendingIndex = listIndex - filteredServerImages.length;
-
-                  return ImageSlotCard(
-                    imageUrl: isLocal ? null : secondaryImages[listIndex],
-                    localFile: isLocal ? pendingImgs[pendingIndex] : null,
-                    isMain: false,
-                    onTap: isLocal
-                        ? null
-                        : () => _showReorderImageDialog(
-                            context,
-                            cubit,
-                            listIndex,
-                            filteredServerImages,
-                          ),
-                    onRemove: () {
-                      if (isLocal) {
-                        cubit.removePendingImage(pendingIndex);
-                      } else {
-                        _removeImage(
-                          context,
-                          cubit,
-                          listIndex,
-                          filteredServerImages,
-                        );
-                      }
-                    },
-                  );
-                } else {
-                  // Empty slot
-                  return ImageSlotCard(
-                    imageUrl: null,
-                    isMain: false,
-                    onTap: allDisplayImages.length < 4
-                        ? () =>
-                              _pickImage(context, cubit, profile, isMain: false)
-                        : null,
-                    onRemove: null,
-                  );
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ════════════════════════════════════════════════════════════════
-  // REORDER - محلي فقط، هيتحفظ مع Save
-  // ════════════════════════════════════════════════════════════════
-  void _showReorderImageDialog(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    int currentIndex,
-    List<String> allImages,
-  ) {
-    if (currentIndex == 0) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.swap_vert, color: AppColors.primary600, size: 28.w),
-            Gap(12.w),
-            Expanded(
-              child: Text(
-                context.tr('reorder_image'),
-                style: Styles.textStyle18Meduim.copyWith(
-                  color: AppColors.primary600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12.r),
-              child: Image.network(
-                allImages[currentIndex],
-                height: 200.h,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-            Gap(16.h),
-            Text(
-              context.tr('reorder_image_question'),
-              textAlign: TextAlign.center,
-              style: Styles.textStyle16.copyWith(height: 1.5),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              context.tr('cancel'),
-              style: TextStyle(color: AppColors.secondary600, fontSize: 16.sp),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // ✅ محلي فقط - هيتحفظ مع حفظ التغييرات
-              cubit.reorderImageLocally(currentIndex, allImages);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  CustomSnackBar(
-                    context,
-                    text: context.tr('image_reordered_successfully'),
-                    isError: false,
-                  ),
-                );
-                setState(() {});
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary600,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            ),
-            child: Text(
-              context.tr('yes_make_first'),
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ════════════════════════════════════════════════════════════════
-  // ✅ PICK / REMOVE - كلهم pending فقط
+  // PICK / REMOVE
   // ════════════════════════════════════════════════════════════════
   Future<void> _pickSingleImage(
     BuildContext context,
     MarriageProfileCubit cubit,
     MarriageUserProfileModel profile,
   ) async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
     if (image != null) {
       cubit.addPendingSingleImage(File(image.path));
       if (mounted) setState(() {});
@@ -605,13 +801,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     MarriageUserProfileModel profile, {
     bool isMain = false,
   }) async {
-    // ✅ عدّ السيرفر + pending معاً
     final serverCount =
         (profile.userMedia?.images.length ?? 0) -
         widget.state.deletedImageUrls.length;
-    final totalCount = serverCount + widget.state.pendingImages.length;
-
-    if (totalCount >= 4) {
+    if (serverCount + widget.state.pendingImages.length >= 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(
           context,
@@ -621,9 +814,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       );
       return;
     }
-
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
     if (image != null) {
       cubit.addPendingImage(File(image.path));
       if (mounted) setState(() {});
@@ -636,7 +829,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     int index,
     List<String> allImages,
   ) {
-    final imagePath = allImages[index];
     CustomshowDialogWithImage(
       context,
       title: context.tr('delete_image'),
@@ -648,7 +840,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       showCancelButton: true,
       cancelText: context.tr('delete'),
       onCancel: () {
-        cubit.markDeleteImage(imagePath);
+        cubit.markDeleteImage(allImages[index]);
         if (mounted) setState(() {});
       },
       onPressed: () {},
@@ -661,176 +853,160 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   void _showVideoOptions(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          title: Text(
-            context.tr('attach_video'),
-            style: Styles.textStyle18Meduim,
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(
-                  Icons.videocam,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text(
-                  context.tr('record_video_now'),
-                  style: Styles.textStyle16,
-                ),
-                subtitle: Text(
-                  context.tr('record_with_camera'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickVideoFromCamera(context);
-                },
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        title: Text(
+          context.tr('attach_video'),
+          style: Styles.textStyle18Meduim,
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                Icons.videocam,
+                color: AppColors.primary200,
+                size: 30.w,
               ),
-              Divider(height: 1, color: AppColors.secondary100),
-              ListTile(
-                leading: Icon(
-                  Icons.video_library,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text(
-                  context.tr('choose_from_gallery'),
-                  style: Styles.textStyle16,
-                ),
-                subtitle: Text(
-                  context.tr('choose_video_from_gallery'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickVideoFromGallery(context);
-                },
+              title: Text(
+                context.tr('record_video_now'),
+                style: Styles.textStyle16,
               ),
-            ],
-          ),
-        );
-      },
+              subtitle: Text(
+                context.tr('record_with_camera'),
+                style: Styles.textStyle12.copyWith(color: Colors.grey),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _pickVideoFromCamera(context);
+              },
+            ),
+            Divider(height: 1, color: AppColors.secondary100),
+            ListTile(
+              leading: Icon(
+                Icons.video_library,
+                color: AppColors.primary200,
+                size: 30.w,
+              ),
+              title: Text(
+                context.tr('choose_from_gallery'),
+                style: Styles.textStyle16,
+              ),
+              subtitle: Text(
+                context.tr('choose_video_from_gallery'),
+                style: Styles.textStyle12.copyWith(color: Colors.grey),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _pickVideoFromGallery(context);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Future<void> _pickVideoFromCamera(BuildContext context) async {
-  try {
-    // ✅ iOS: ImagePicker بيتعامل مع الـ permission داخلياً
-    if (Platform.isAndroid) {
-      final cameraStatus = await Permission.camera.request();
-      if (!mounted) return;
-      
-      if (cameraStatus.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('camera_permission_required'),
-            isError: true,
-          ),
-        );
-        return;
+    try {
+      if (Platform.isAndroid) {
+        final s = await Permission.camera.request();
+        if (!mounted) return;
+        if (s.isDenied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('camera_permission_required'),
+              isError: true,
+            ),
+          );
+          return;
+        }
+        if (s.isPermanentlyDenied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('enable_camera_from_settings'),
+              isError: true,
+            ),
+          );
+          await openAppSettings();
+          return;
+        }
       }
-      if (cameraStatus.isPermanentlyDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('enable_camera_from_settings'),
-            isError: true,
-          ),
-        );
-        await openAppSettings();
-        return;
-      }
-    }
-
-    // ✅ iOS و Android: فتح الكاميرا مباشرة
-    final ImagePicker picker = ImagePicker();
-    final XFile? video = await picker.pickVideo(
-      source: ImageSource.camera,
-      maxDuration: const Duration(minutes: 2),
-    );
-    if (video != null) await _processVideoFile(context, video);
-    
-  } catch (e) {
-    debugPrint('❌ Error picking video from camera: $e');
-    if (mounted)
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: context.tr('error_recording_video'),
-          isError: true,
-        ),
+      final XFile? v = await ImagePicker().pickVideo(
+        source: ImageSource.camera,
+        maxDuration: const Duration(minutes: 2),
       );
+      if (v != null) await _processVideoFile(context, v);
+    } catch (e) {
+      debugPrint('❌ $e');
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('error_recording_video'),
+            isError: true,
+          ),
+        );
+    }
   }
-}
+
   Future<void> _pickVideoFromGallery(BuildContext context) async {
-  try {
-    // ✅ iOS: ImagePicker مش محتاج permission - بيفتح Photos مباشرة
-    if (Platform.isAndroid) {
-      PermissionStatus status;
-      final androidInfo = await DeviceInfoPlugin().androidInfo;
-      if (androidInfo.version.sdkInt >= 33) {
-        status = await Permission.videos.request();
-      } else {
-        status = await Permission.storage.request();
+    try {
+      if (Platform.isAndroid) {
+        final info = await DeviceInfoPlugin().androidInfo;
+        final s = info.version.sdkInt >= 33
+            ? await Permission.videos.request()
+            : await Permission.storage.request();
+        if (!mounted) return;
+        if (s.isDenied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('gallery_permission_required'),
+              isError: true,
+            ),
+          );
+          return;
+        }
+        if (s.isPermanentlyDenied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('enable_gallery_from_settings'),
+              isError: true,
+            ),
+          );
+          await openAppSettings();
+          return;
+        }
       }
-
-      if (!mounted) return;
-      if (status.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('gallery_permission_required'),
-            isError: true,
-          ),
-        );
-        return;
-      }
-      if (status.isPermanentlyDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('enable_gallery_from_settings'),
-            isError: true,
-          ),
-        );
-        await openAppSettings();
-        return;
-      }
-    }
-
-    // ✅ iOS و Android: فتح ImagePicker مباشرة
-    final ImagePicker picker = ImagePicker();
-    final XFile? video = await picker.pickVideo(
-      source: ImageSource.gallery,
-      maxDuration: const Duration(minutes: 2),
-    );
-    if (video != null) await _processVideoFile(context, video);
-    
-  } catch (e) {
-    debugPrint('❌ Error picking video from gallery: $e');
-    if (mounted)
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: context.tr('error_selecting_video'),
-          isError: true,
-        ),
+      final XFile? v = await ImagePicker().pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 2),
       );
+      if (v != null) await _processVideoFile(context, v);
+    } catch (e) {
+      debugPrint('❌ $e');
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('error_selecting_video'),
+            isError: true,
+          ),
+        );
+    }
   }
-}
+
   Future<void> _processVideoFile(BuildContext context, XFile video) async {
     try {
       final file = File(video.path);
-      final fileSize = await file.length();
-      if (fileSize > 50 * 1024 * 1024) {
+      if (await file.length() > 50 * 1024 * 1024) {
         if (mounted)
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
@@ -841,11 +1017,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           );
         return;
       }
-      // ✅ pending فقط - مش upload فوري
       widget.cubit.addPendingVideo(file);
       if (mounted) setState(() {});
     } catch (e) {
-      debugPrint('❌ Error processing video file: $e');
+      debugPrint('❌ $e');
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
@@ -882,151 +1057,132 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   void _showAudioOptions(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          title: Text(
-            context.tr('attach_audio'),
-            style: Styles.textStyle18Meduim,
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(
-                  Icons.mic,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text(
-                  context.tr('record_now'),
-                  style: Styles.textStyle16,
-                ),
-                subtitle: Text(
-                  context.tr('record_voice_now'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _startRecordingInPlace(context);
-                },
-              ),
-              Divider(height: 1, color: AppColors.secondary100),
-              ListTile(
-                leading: Icon(
-                  Icons.upload_file,
-                  color: AppColors.primary200,
-                  size: 30.w,
-                ),
-                title: Text(
-                  context.tr('upload_file'),
-                  style: Styles.textStyle16,
-                ),
-                subtitle: Text(
-                  context.tr('choose_audio_file'),
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAudio(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-void _startRecordingInPlace(BuildContext context) async {
-  // ✅ مفيش طلب permission هنا - بيتطلب جوا _initializeRecorder
-  if (mounted) setState(() => _isRecordingInPlace = true);
-}
-Future<void> _pickAudio(BuildContext context) async {
-  try {
-    // ✅ iOS: FilePicker مش محتاج permission - بيفتح Files app مباشرة
-    if (Platform.isAndroid) {
-      PermissionStatus status;
-      final androidInfo = await DeviceInfoPlugin().androidInfo;
-      if (androidInfo.version.sdkInt >= 33) {
-        status = await Permission.audio.request();
-      } else {
-        status = await Permission.storage.request();
-      }
-
-      if (!mounted) return;
-      if (status.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('allow_files_access'),
-            isError: true,
-          ),
-        );
-        return;
-      }
-      if (status.isPermanentlyDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('enable_permission_settings'),
-            isError: true,
-          ),
-        );
-        await openAppSettings();
-        return;
-      }
-    }
-
-    // ✅ iOS و Android: فتح FilePicker مباشرة
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['mp3', 'aac', 'wav', 'm4a', 'ogg', 'opus', 'flac'],
-      allowCompression: false,
-    );
-
-    if (!mounted) return;
-    if (result != null && result.files.single.path != null) {
-      final file = File(result.files.single.path!);
-      if (!await file.exists()) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('file_not_found'),
-            isError: true,
-          ),
-        );
-        return;
-      }
-      final fileSize = await file.length();
-      if (fileSize > 10 * 1024 * 1024) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('file_too_large'),
-            isError: true,
-          ),
-        );
-        return;
-      }
-      widget.cubit.addPendingAudio(file);
-      if (mounted) setState(() {});
-    }
-  } catch (e) {
-    if (mounted)
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: '${context.tr('error_picking_audio')}: ${e.toString()}',
-          isError: true,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
         ),
-      );
+        title: Text(
+          context.tr('attach_audio'),
+          style: Styles.textStyle18Meduim,
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.mic, color: AppColors.primary200, size: 30.w),
+              title: Text(context.tr('record_now'), style: Styles.textStyle16),
+              subtitle: Text(
+                context.tr('record_voice_now'),
+                style: Styles.textStyle12.copyWith(color: Colors.grey),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _startRecordingInPlace(context);
+              },
+            ),
+            Divider(height: 1, color: AppColors.secondary100),
+            ListTile(
+              leading: Icon(
+                Icons.upload_file,
+                color: AppColors.primary200,
+                size: 30.w,
+              ),
+              title: Text(context.tr('upload_file'), style: Styles.textStyle16),
+              subtitle: Text(
+                context.tr('choose_audio_file'),
+                style: Styles.textStyle12.copyWith(color: Colors.grey),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAudio(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
-}
+
+  void _startRecordingInPlace(BuildContext context) async {
+    if (mounted) setState(() => _isRecordingInPlace = true);
+  }
+
+  Future<void> _pickAudio(BuildContext context) async {
+    try {
+      if (Platform.isAndroid) {
+        final info = await DeviceInfoPlugin().androidInfo;
+        final s = info.version.sdkInt >= 33
+            ? await Permission.audio.request()
+            : await Permission.storage.request();
+        if (!mounted) return;
+        if (s.isDenied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('allow_files_access'),
+              isError: true,
+            ),
+          );
+          return;
+        }
+        if (s.isPermanentlyDenied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('enable_permission_settings'),
+              isError: true,
+            ),
+          );
+          await openAppSettings();
+          return;
+        }
+      }
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['mp3', 'aac', 'wav', 'm4a', 'ogg', 'opus', 'flac'],
+        allowCompression: false,
+      );
+      if (!mounted) return;
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        if (!await file.exists()) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('file_not_found'),
+              isError: true,
+            ),
+          );
+          return;
+        }
+        if (await file.length() > 10 * 1024 * 1024) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('file_too_large'),
+              isError: true,
+            ),
+          );
+          return;
+        }
+        widget.cubit.addPendingAudio(file);
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: '${context.tr('error_picking_audio')}: $e',
+            isError: true,
+          ),
+        );
+    }
+  }
+
   void _deleteAudio(BuildContext context) {
     CustomshowDialogWithImage(
       context,
@@ -1049,7 +1205,6 @@ Future<void> _pickAudio(BuildContext context) async {
   Widget _buildAudioPreviewFull(BuildContext context, {File? pendingAudio}) {
     final audioPath =
         pendingAudio?.path ?? widget.profile.userMedia?.audio ?? '';
-
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -1142,7 +1297,6 @@ Future<void> _pickAudio(BuildContext context) async {
       child: VoiceRecordingWidget(
         onAudioRecorded: (audioFile) {
           setState(() => _isRecordingInPlace = false);
-          // ✅ pending فقط
           widget.cubit.addPendingAudio(audioFile);
         },
         onCancel: () => setState(() => _isRecordingInPlace = false),
@@ -1153,6 +1307,131 @@ Future<void> _pickAudio(BuildContext context) async {
   // ════════════════════════════════════════════════════════════════
   // INFO SECTIONS
   // ════════════════════════════════════════════════════════════════
+  Widget _buildPersonalInfoSection(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    MarriageUserProfileModel profile,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: AppColors.kWhiteColor,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(context.tr('personal_info'), style: Styles.textStyle18Meduim),
+          Gap(12.h),
+          _buildInfoRow(
+            context.tr('country'),
+            _translateValue(profile.aboutMe?.country ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'country',
+              profile.aboutMe?.country,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('nationality'),
+            _translateValue(profile.aboutMe?.nationality ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'nationality',
+              profile.aboutMe?.nationality,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('height'),
+            profile.aboutMe?.height ?? context.tr('select'),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'height',
+              profile.aboutMe?.height,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('weight'),
+            profile.aboutMe?.weight ?? context.tr('select'),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'weight',
+              profile.aboutMe?.weight,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('skin_color'),
+            _translateValue(profile.aboutMe?.skinColor ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'skinColor',
+              profile.aboutMe?.skinColor,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('select_health_status_title'),
+            _translateValue(profile.aboutMe?.healthStatus ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'healthStatus',
+              profile.aboutMe?.healthStatus,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('commitment_to_religion'),
+            _translateValue(
+              profile.aboutMe?.religiousCommitment ?? '',
+              context,
+            ),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'religiousCommitment',
+              profile.aboutMe?.religiousCommitment,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('smoking'),
+            _translateValue(profile.aboutMe?.smoker ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'smoker',
+              profile.aboutMe?.smoker,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('drink_alcohol'),
+            _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'drinkAlcohol',
+              profile.aboutMe?.drinkAlcohol,
+            ),
+          ),
+          _buildInfoRow(
+            context.tr('eat_halal_only'),
+            _translateValue(profile.aboutMe?.eatHalalOnly ?? '', context),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'eatHalalOnly',
+              profile.aboutMe?.eatHalalOnly,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProfessionalInfoSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -1222,9 +1501,8 @@ Future<void> _pickAudio(BuildContext context) async {
     MarriageUserProfileModel profile,
   ) {
     final hasChildren = profile.family?.hasChildren ?? '';
-    final bool showChildrenDetails =
+    final showChildrenDetails =
         hasChildren.isNotEmpty && hasChildren != 'no' && hasChildren != 'لا';
-
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
@@ -1359,7 +1637,6 @@ Future<void> _pickAudio(BuildContext context) async {
   ) {
     final faithHobbies = profile.faith;
     final interestHobbies = profile.hobbies;
-
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
@@ -1417,153 +1694,25 @@ Future<void> _pickAudio(BuildContext context) async {
           widget.onTabChanged?.call(1);
         } else if (state.state == CubitStates.failure) {
           debugPrint('❌ [SAVE] Error: ${state.errorMessage}');
-          if (state.errorMessage != null) {
+          if (state.errorMessage != null)
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(context, text: state.errorMessage!, isError: true),
             );
-          }
         }
       },
-      builder: (context, state) {
-        return CustomBotton(
-          title: state.isUpdating
-              ? context.tr('saving')
-              : context.tr('save_changes'),
-          onPressed: state.isUpdating
-              ? null
-              : () {
-                  debugPrint('💾 [SAVE] Button pressed');
-                  cubit.saveProfile();
-                },
-          width: double.infinity,
-          height: 54.h,
-          useGradient: !state.isUpdating,
-        );
-      },
-    );
-  }
-
-  Widget _buildPersonalInfoSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(context.tr('personal_info'), style: Styles.textStyle18Meduim),
-          Gap(12.h),
-          _buildInfoRow(
-            context.tr('country'),
-            _translateValue(profile.aboutMe?.country ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'country',
-              profile.aboutMe?.country,
-            ),
-          ),
-          _buildInfoRow(
-            context.tr('nationality'),
-            _translateValue(profile.aboutMe?.nationality ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'nationality',
-              profile.aboutMe?.nationality,
-            ),
-          ),
-          _buildInfoRow(
-            context.tr('height'),
-            profile.aboutMe?.height ?? context.tr('select'),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'height',
-              profile.aboutMe?.height,
-            ),
-          ),
-          _buildInfoRow(
-            context.tr('weight'),
-            profile.aboutMe?.weight ?? context.tr('select'),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'weight',
-              profile.aboutMe?.weight,
-            ),
-          ),
-          _buildInfoRow(
-            context.tr('skin_color'),
-            _translateValue(profile.aboutMe?.skinColor ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'skinColor',
-              profile.aboutMe?.skinColor,
-            ),
-          ),
-          _buildInfoRow(
-            context.tr('select_health_status_title'),
-            _translateValue(profile.aboutMe?.healthStatus ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'healthStatus',
-              profile.aboutMe?.healthStatus,
-            ),
-          ),
-          _buildInfoRow(
-            context.tr('commitment_to_religion'),
-            _translateValue(
-              profile.aboutMe?.religiousCommitment ?? '',
-              context,
-            ),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'religiousCommitment',
-              profile.aboutMe?.religiousCommitment,
-            ),
-          ),
-          _buildInfoRow(
-            context.tr('smoking'),
-            _translateValue(profile.aboutMe?.smoker ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'smoker',
-              profile.aboutMe?.smoker,
-            ),
-          ),
-          _buildInfoRow(
-            context.tr('drink_alcohol'),
-            _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'drinkAlcohol',
-              profile.aboutMe?.drinkAlcohol,
-            ),
-          ),
-          _buildInfoRow(
-            context.tr('eat_halal_only'),
-            _translateValue(profile.aboutMe?.eatHalalOnly ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'eatHalalOnly',
-              profile.aboutMe?.eatHalalOnly,
-            ),
-          ),
-        ],
+      builder: (context, state) => CustomBotton(
+        title: state.isUpdating
+            ? context.tr('saving')
+            : context.tr('save_changes'),
+        onPressed: state.isUpdating
+            ? null
+            : () {
+                debugPrint('💾 [SAVE] Button pressed');
+                cubit.saveProfile();
+              },
+        width: double.infinity,
+        height: 54.h,
+        useGradient: !state.isUpdating,
       ),
     );
   }
@@ -1663,9 +1812,7 @@ Future<void> _pickAudio(BuildContext context) async {
           currentValue: currentValue,
           onValueSelected: (value) {
             if (fieldKey == 'interests' || fieldKey == 'hobbies') {
-              final parts = value.split(', ');
-
-              for (var part in parts) {
+              for (var part in value.split(', ')) {
                 final isKey =
                     part.startsWith('interest_') || part.startsWith('faith_');
                 debugPrint(
@@ -1675,7 +1822,6 @@ Future<void> _pickAudio(BuildContext context) async {
             }
             debugPrint('═══════════════════════════════════════════');
             cubit.updateField(fieldKey, value);
-            // cubit.autoSaveFields();
           },
         ),
       ),
@@ -1687,9 +1833,7 @@ Future<void> _pickAudio(BuildContext context) async {
     MarriageProfileCubit cubit,
     String? currentBio,
   ) {
-    final TextEditingController controller = TextEditingController(
-      text: currentBio,
-    );
+    final controller = TextEditingController(text: currentBio);
     CustomSHowDetailsDialog(
       context,
       title: context.tr('edit_bio'),
@@ -1706,7 +1850,6 @@ Future<void> _pickAudio(BuildContext context) async {
         final newBio = controller.text.trim();
         if (newBio.isNotEmpty) {
           cubit.updateField('bio', newBio);
-          // cubit.autoSaveFields();
           Navigator.pop(context);
         }
       },
