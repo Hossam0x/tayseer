@@ -7,6 +7,7 @@ import 'package:tayseer/features/advisor/settings/data/models/setting_item_model
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
+import 'dart:convert';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 
@@ -21,12 +22,51 @@ class UserProfileCubit extends Cubit<UserProfileState> {
   Future<UserProfileModel> _fetchUserProfile() async {
     try {
       final result = await _userProfileRepository.getUserProfile();
-      return result.fold((failure) {
-        throw Exception(failure.message);
-      }, (profile) => profile);
+      return result.fold(
+        (failure) {
+          throw Exception(failure.message);
+        },
+        (profile) {
+          // حفظ في الكاش
+          try {
+            CachNetwork.setData(
+              key: kUserProfileCache,
+              value: jsonEncode(profile.toJson()),
+            );
+          } catch (e) {
+            debugPrint('❌ Error caching user profile: $e');
+          }
+          return profile;
+        },
+      );
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<bool> _loadCachedProfile() async {
+    final cachedData = CachNetwork.getStringData(key: kUserProfileCache);
+    if (cachedData.isNotEmpty) {
+      try {
+        final profile = UserProfileModel.fromJson(jsonDecode(cachedData));
+        final notificationStatus = await _getNotificationStatus();
+        final settings = await _loadSettings(
+          isProfileComplete: false,
+        ); // Default false for cache
+
+        emit(
+          SettingsLoaded(
+            settings: settings,
+            userProfile: profile,
+            isNotificationEnabled: notificationStatus,
+          ),
+        );
+        return true;
+      } catch (e) {
+        debugPrint('❌ Error loading cached user profile: $e');
+      }
+    }
+    return false;
   }
 
   Future<void> updateUserProfile(UserProfileModel updatedProfile) async {
@@ -160,7 +200,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
   }
 
   Future<void> _loadInitialData() async {
-    emit(SettingsLoading());
+    final hasCache = await _loadCachedProfile();
+
+    // لا تظهر Loading إذا كان هناك بيانات كاش بالفعل (silent update)
+    if (!hasCache) {
+      emit(SettingsLoading());
+    }
+
     try {
       final profile = await _fetchUserProfile();
       final isNotificationEnabled = await _getNotificationStatus();
@@ -183,7 +229,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         ),
       );
     } catch (e) {
-      emit(SettingsError(message: 'error_loading_data'));
+      if (state is! SettingsLoaded) {
+        emit(SettingsError(message: 'error_loading_data'));
+      }
     }
   }
 
@@ -574,6 +622,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       // 1️⃣ حدّث الـ state فوراً
       emit(currentState.copyWith(isMarriageSectionDeactivated: value));
+      emit(currentState.copyWith(isMarriageSectionDeactivated: value));
 
       // 2️⃣ احفظ في الـ cache
       await _saveMarriageSectionDeactivated(value);
@@ -681,7 +730,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       await _notificationService.clearAllNotifications();
       _userProfileRepository.logout();
 
-      CachNetwork.clearCache();
+      await CachNetwork.clearCache();
       getIt<tayseerSocketHelper>().disconnect();
 
       emit(

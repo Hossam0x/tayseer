@@ -163,4 +163,42 @@ class UserModel {
       'updatedAt': updatedAt,
     };
   }
+
+  UserModel copyWith({
+    String? id,
+    String? name,
+    String? username,
+    bool? isVerified,
+    String? email,
+    String? gender,
+    String? image,
+    String? phone,
+    bool? inreview,
+    int? notifyCount,
+    int? lastQuestionNumber,
+    bool? active,
+    bool? compeletedData,
+    List<dynamic>? nationalIdImages,
+    String? createdAt,
+    String? updatedAt,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      username: username ?? this.username,
+      isVerified: isVerified ?? this.isVerified,
+      email: email ?? this.email,
+      gender: gender ?? this.gender,
+      image: image ?? this.image,
+      phone: phone ?? this.phone,
+      inreview: inreview ?? this.inreview,
+      notifyCount: notifyCount ?? this.notifyCount,
+      lastQuestionNumber: lastQuestionNumber ?? this.lastQuestionNumber,
+      active: active ?? this.active,
+      compeletedData: compeletedData ?? this.compeletedData,
+      nationalIdImages: nationalIdImages ?? this.nationalIdImages,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

@@ -42,7 +42,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   late int _selectedTabIndex;
   final int _maxImages = 5;
   String? _scrollToSection;
-
+  bool _hasAutoSwitchedToEdit = false;
   // ⭐⭐⭐ DEFAULT IMAGE URL
   static const String _defaultImageUrl =
       "https://cdn-icons-png.flaticon.com/512/149/149071.png";
@@ -72,7 +72,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   // ⭐⭐⭐ CALCULATE TOTAL PROGRESS (Server + Media)
   // ════════════════════════════════════════════════════════════════
   double _calculateTotalProgress(MarriageUserProfileModel profile) {
+  double _calculateTotalProgress(MarriageUserProfileModel profile) {
     // Questions: max 25%
+    double questionProgress = (profile.answerCompletedPercentage ?? 0)
+        .toDouble();
     double questionProgress = (profile.answerCompletedPercentage ?? 0)
         .toDouble();
     questionProgress = questionProgress.clamp(0, 25);
@@ -102,8 +105,15 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     // Verification: 5%
     // int verificationBonus = (profile.isVerified == true) ? 5 : 0;
     int verificationBonus = true ? 5 : 0;
+    // int verificationBonus = (profile.isVerified == true) ? 5 : 0;
+    int verificationBonus = true ? 5 : 0;
 
     double totalProgress =
+        questionProgress +
+        imageBonus +
+        videoBonus +
+        audioBonus +
+        verificationBonus;
         questionProgress +
         imageBonus +
         videoBonus +
@@ -174,6 +184,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 state.pendingVideo != null ||
                 state.pendingDeleteVideo ||
                 state.pendingAudio != null ||
+                state.hasUnsavedFields ||
                 state.hasUnsavedFields ||
                 state.pendingDeleteAudio;
 
@@ -297,6 +308,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   void _showUnsavedChangesDialog(
     BuildContext context,
     MarriageProfileCubit cubit,
+    MarriageProfileState state,
     MarriageProfileState state,
   ) {
     showDialog(
@@ -435,6 +447,47 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                         ),
                 );
               },
+            child: BlocBuilder<MarriageProfileCubit, MarriageProfileState>(
+              bloc: cubit,
+              builder: (context, currentState) {
+                return ElevatedButton(
+                  onPressed: currentState.isUpdating
+                      ? null
+                      : () {
+                          Navigator.pop(dialogContext); // أغلق الـ dialog
+                          cubit
+                              .saveProfile(); // ✅ بس كده - الـ BlocConsumer في _buildSaveButton هيتكلم عنك
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: currentState.isUpdating
+                        ? AppColors.primary300.withOpacity(0.7)
+                        : AppColors.primary300,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                  ),
+                  child: currentState.isUpdating
+                      ? SizedBox(
+                          height: 20.h,
+                          width: 20.h,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          context.tr('save_and_exit'),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                );
+              },
             ),
           ),
           SizedBox(height: 4.h),
@@ -481,6 +534,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
+  Widget _buildViewContent(MarriageUserProfileModel profile) {
   Widget _buildViewContent(MarriageUserProfileModel profile) {
     final totalProgress = _calculateTotalProgress(profile);
     final progressFraction = totalProgress / 100;
@@ -622,6 +676,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
+
   Widget _buildVerifiedCard() {
     return CustomPaint(
       painter: DashedBorderPainter(
@@ -677,6 +732,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   // ════════════════════════════════════════════════════════════════
 
   Widget _buildImageSection(String imageUrl, String heroTag) {
+  Widget _buildImageSection(String imageUrl, String heroTag) {
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       sliver: SliverToBoxAdapter(
@@ -700,6 +756,27 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               child: Container(
                 height: 400.h,
                 width: double.infinity,
+                color: Colors.grey.shade200, // background while loading
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary300,
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: Colors.grey,
+                      size: 48.w,
                 color: Colors.grey.shade200, // background while loading
                 child: Image.network(
                   imageUrl,
@@ -760,6 +837,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade200, // background while loading
+                  color: Colors.grey.shade200, // background while loading
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(33.r),
                   ),
@@ -770,7 +848,33 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   ),
                   child: Image.network(
                     mainImage,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(33.r),
+                  ),
+                  child: Image.network(
+                    mainImage,
                     fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary300,
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => Center(
+                      child: Icon(
+                        Icons.person_outline,
+                        color: Colors.grey,
+                        size: 80.w,
+                      ),
+                    ),
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       return Center(
@@ -844,6 +948,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 Row(
                   children: [
                     Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w),
                       padding: EdgeInsets.symmetric(horizontal: 8.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

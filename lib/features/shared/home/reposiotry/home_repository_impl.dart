@@ -273,8 +273,21 @@ class HomeRepositoryImpl implements HomeRepository {
   @override
   Future<Either<Failure, ImageAndNameModel>> fetchNameAndImage() async {
     try {
-      final response = await apiService.get(endPoint: ApiEndPoint.nameAndImage);
-      return Right(ImageAndNameModel.fromJson(response['data']));
+      final endPoint = isAdvisor ? ApiEndPoint.nameAndImage : '/user/profile';
+      final response = await apiService.get(endPoint: endPoint);
+
+      if (isAdvisor) {
+        return Right(ImageAndNameModel.fromJson(response['data']));
+      } else {
+        final data = response['data'] as Map<String, dynamic>;
+        return Right(
+          ImageAndNameModel(
+            image: data['image'] as String? ?? '',
+            name: data['name'] as String? ?? '',
+            notifications: data['notifyCount'] as int? ?? 0,
+          ),
+        );
+      }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }

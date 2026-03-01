@@ -1468,4 +1468,18 @@
 
 
 
+  "story_deleted_success": "تم حذف القصة بنجاح",
+  "consultancy_session": "جلسة استشارية",
+  "event_booking": "حجز حدث",
+  "transaction": "معاملة",
+  "detils_attendees": "تفاصيل الحاضرين",
+  "unsaved_changes": "تغييرات غير محفوظة",
+  "edit_marriage_profile": "تعديل ملف الزواج",
+  "activate_marriage_subtitle": "لجعل رحلتك نحو الزواج أسهل وأكثر سلاسة، نحن هنا لمساعدتك في كل خطوة!",
+  "activate_marriage_title": "هل تريد استكشاف قسم الزواج في تيسير؟",
+  "deactivate_marriage_title": "هل تريد تعطيل قسم الزواج في تيسير؟",
+  "consultation": "استشارة",
+  "Consulting": "الإستشارات",
+  "story_likers": "المعجبين بالقصة",
+  "no_likers_yet": "لا يوجد معجبين حتى الآن"
 }

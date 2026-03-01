@@ -1442,6 +1442,7 @@
   "consultation": "Consultation",
   "Consulting": "Consulting",
   "detils_attendees": "Attendees Details",
+  "story_deleted_success": "Story deleted successfully",
   "consultancy_session": "Consultancy Session",
   "event_booking": "Event Booking",
   "transaction": "Transaction",
@@ -1470,4 +1471,15 @@
   "start_typing": "Start Typing",
   "video_saved": "Video saved successfully",
   "report_sent_successfully": "Report sent successfully"
+  "transaction": "Transaction",
+  "detils_attendees": "Attendees Details",
+  "unsaved_changes": "Unsaved Changes",
+  "edit_marriage_profile": "Edit Marriage Profile",
+  "activate_marriage_subtitle": "To make your journey towards marriage easier and smoother, we are here to help you every step of the way!",
+  "activate_marriage_title": "Do you want to explore the marriage section in Tayseer?",
+  "deactivate_marriage_title": "Do you want to disable the marriage section in Tayseer?",
+  "consultation": "Consultation",
+  "Consulting": "Consulting",
+  "story_likers": "Story Likers",
+  "no_likers_yet": "No likers yet"
 }

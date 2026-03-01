@@ -13,6 +13,7 @@ class UserProfileEditState extends Equatable {
   final File? imageFile;
   final String? imagePreviewUrl;
   final bool isLoading;
+  final double uploadProgress;
 
   const UserProfileEditState({
     this.state = CubitStates.initial,
@@ -24,6 +25,7 @@ class UserProfileEditState extends Equatable {
     this.imageFile,
     this.imagePreviewUrl,
     this.isLoading = false,
+    this.uploadProgress = 0.0,
   });
 
   UserProfileEditState copyWith({
@@ -36,6 +38,7 @@ class UserProfileEditState extends Equatable {
     File? imageFile,
     String? imagePreviewUrl,
     bool? isLoading,
+    double? uploadProgress,
   }) {
     return UserProfileEditState(
       state: state ?? this.state,
@@ -47,6 +50,7 @@ class UserProfileEditState extends Equatable {
       imageFile: imageFile ?? this.imageFile,
       imagePreviewUrl: imagePreviewUrl ?? this.imagePreviewUrl,
       isLoading: isLoading ?? this.isLoading,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
     );
   }
 
@@ -61,5 +65,6 @@ class UserProfileEditState extends Equatable {
     imageFile,
     imagePreviewUrl,
     isLoading,
+    uploadProgress,
   ];
 }

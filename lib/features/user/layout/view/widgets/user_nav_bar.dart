@@ -45,7 +45,29 @@ class UserNavBar extends StatelessWidget {
                 final entry = visibleNavItems[visibleIndex];
                 final originalIndex = entry.originalIndex;
                 final navItem = entry.item;
+              children: List.generate(visibleNavItems.length, (visibleIndex) {
+                final entry = visibleNavItems[visibleIndex];
+                final originalIndex = entry.originalIndex;
+                final navItem = entry.item;
 
+                return _NavItem(
+                  icon: navItem.icon,
+                  activeIcon: navItem.activeIcon,
+                  label: context.tr(navItem.labelKey),
+                  isActive:
+                      state.currentIndex ==
+                      originalIndex, // ⭐ قارن بالـ original index
+                  onTap: () {
+                    if (originalIndex == state.currentIndex) {
+                      onTabReselect?.call(originalIndex);
+                    } else {
+                      cubit.changeIndex(
+                        originalIndex,
+                      ); // ⭐ استخدم الـ original index
+                    }
+                  },
+                );
+              }),
                 return _NavItem(
                   icon: navItem.icon,
                   activeIcon: navItem.activeIcon,
@@ -196,3 +218,4 @@ class _NavItemState extends State<_NavItem>
     );
   }
 }
+
