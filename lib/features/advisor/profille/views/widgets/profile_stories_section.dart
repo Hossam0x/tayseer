@@ -225,7 +225,8 @@ class _UserStoryItem extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: userStoryModel.allViewed
+                  color:
+                      (userStoryModel.allViewed || userStoryModel.isViewedByMe)
                       ? AppColors.kGreyB3
                       : AppColors.kprimaryColor,
                   width: 2.sp,

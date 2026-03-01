@@ -6,6 +6,8 @@ import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'edit_personal_data_state.dart';
 
@@ -174,7 +176,9 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   Future<void> saveChanges() async {
     if (state.isSaving || !state.hasChanges) return;
 
-    emit(state.copyWith(isSaving: true, errorMessage: null));
+    emit(
+      state.copyWith(isSaving: true, errorMessage: null, uploadProgress: 0.0),
+    );
 
     try {
       // ⭐ إرسال البيانات كما هي بدون تنظيف
@@ -184,6 +188,15 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
         request: requestToSend,
         imageFile: state.imageFile,
         videoFile: state.videoFile,
+        onSendProgress: (sent, total) {
+          if (total > 0) {
+            final progress = sent / total;
+            if ((progress - state.uploadProgress).abs() > 0.01 ||
+                progress == 1.0) {
+              emit(state.copyWith(uploadProgress: progress));
+            }
+          }
+        },
       );
 
       result.fold(
@@ -191,11 +204,17 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
           emit(state.copyWith(isSaving: false, errorMessage: failure.message));
         },
         (response) {
-          // ⭐ مسح cache الصورة القديمة لضمان تحميل الصورة الجديدة
-          if (state.imageFile != null && state.imagePreviewUrl != null) {
+          final newImageUrl =
+              response.data?['image'] as String? ?? state.profile?.image;
+          final oldImageUrl = state.profile?.image;
+
+          // ⭐ مسح cache الصورة القديمة (network URL الحقيقي وليس الـ local path)
+          if (state.imageFile != null &&
+              oldImageUrl != null &&
+              oldImageUrl.isNotEmpty) {
             try {
-              CachedNetworkImage.evictFromCache(state.imagePreviewUrl!);
-              debugPrint('🗑️ تم مسح cache الصورة القديمة');
+              CachedNetworkImage.evictFromCache(oldImageUrl);
+              debugPrint('🗑️ تم مسح cache الصورة القديمة: $oldImageUrl');
             } catch (e) {
               debugPrint('⚠️ خطأ في مسح cache الصورة: $e');
             }
@@ -204,23 +223,26 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
           // تحديث البروفايل بعد الحفظ الناجح
           final updatedProfile = state.profile?.copyWith(
             name: state.currentData.name ?? state.profile!.name,
-            userName:
-                state.currentData.username ??
-                state.profile!.userName, // ⭐ أضف هذا
+            userName: state.currentData.username ?? state.profile!.userName,
             professionalSpecialization:
                 state.currentData.professionalSpecialization ??
                 state.profile!.professionalSpecialization,
             jobGrade: state.currentData.jobGrade ?? state.profile!.jobGrade,
             yearsOfExperience:
-                state.currentData.yearsOfExperience ?? // ⭐ String
+                state.currentData.yearsOfExperience ??
                 state.profile!.yearsOfExperience,
             aboutYou: state.currentData.aboutYou ?? state.profile!.aboutYou,
-            image: response.data?['image'] ?? state.profile!.image,
+            image: newImageUrl,
             video: response.data?['videoLink'] ?? state.profile!.video,
           );
 
           // ⭐ تحديث الكاش للصورة والاسم (للـ HomeAppBar)
           if (updatedProfile != null) {
+            // ⭐ تحديث kCurrentUserData بالصورة الجديدة (reactive update)
+            if (kCurrentUserData != null && newImageUrl != null) {
+              kCurrentUserData = kCurrentUserData!.copyWith(image: newImageUrl);
+            }
+
             CachNetwork.setData(
               key: kMyProfileImage,
               value: updatedProfile.image ?? '',
@@ -229,7 +251,12 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
               key: kMyProfileName,
               value: updatedProfile.name,
             );
-            debugPrint('✅ تم تحديث كاش الصورة والاسم في HomeAppBar');
+
+            // ⭐ تحديث الـ HomeCubit والـ StoriesCubit فوراً
+            getIt<HomeCubit>().refreshUserInfoFromCache();
+            getIt<StoriesCubit>().fetchStoriesSilent();
+
+            debugPrint('✅ تم تحديث كاش الصورة والاسم والـ HomeCubit');
           }
 
           if (response.success) {

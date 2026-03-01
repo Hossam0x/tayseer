@@ -42,20 +42,34 @@ class StoriesRepositoryImpl implements StoriesRepository {
             firstItem.containsKey('userId') &&
             !firstItem.containsKey('stories')) {
           // دي حالة الـ special stories: دي قائمة قصص خام
-          final allStoryModels = data
-              .map((e) => StoryModel.fromJson(e as Map<String, dynamic>))
-              .toList();
-
-          // تجميع القصص حسب الـ userId (غالباً هيكون مستخدم واحد في البروفايل بس بنعملها بشكل عام)
-          final Map<String, List<StoryModel>> grouped = {};
-          for (var story in allStoryModels) {
-            grouped.putIfAbsent(story.userId, () => []).add(story);
+          final Map<String, List<Map<String, dynamic>>> groupedRaw = {};
+          for (var rawItem in data) {
+            final rawMap = rawItem as Map<String, dynamic>;
+            String uid = '';
+            if (rawMap['userId'] is String) {
+              uid = rawMap['userId'];
+            } else if (rawMap['userId'] is Map) {
+              uid = rawMap['userId']['_id'] ?? '';
+            }
+            groupedRaw.putIfAbsent(uid, () => []).add(rawMap);
           }
-
           final List<UserStoriesModel> userStoriesList = [];
-          grouped.forEach((userId, stories) {
-            // نحاول نأخذ الاسم والصورة من بيانات الـ Story لو متاحة
-            // أو سيعتمد التطبيق على الصور الافتراضية
+          groupedRaw.forEach((userId, rawStories) {
+            final List<StoryModel> stories = rawStories
+                .map((e) => StoryModel.fromJson(e))
+                .toList();
+            // isViewedByMe: true if ANY story has isViewedByMe=true in raw JSON
+            final isViewedByMe = rawStories.any(
+              (s) =>
+                  s['isViewedByMe'] == true ||
+                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+            );
+            // allViewed: true if ALL stories are viewed
+            final allViewed = rawStories.every(
+              (s) =>
+                  s['isViewedByMe'] == true ||
+                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+            );
             userStoriesList.add(
               UserStoriesModel(
                 userId: userId,
@@ -64,8 +78,8 @@ class StoriesRepositoryImpl implements StoriesRepository {
                     : "",
                 image: stories.isNotEmpty ? stories.first.image : "",
                 isFollowed: false,
-                isViewedByMe: stories.any((s) => s.isViewed),
-                allViewed: stories.every((s) => s.isViewed),
+                isViewedByMe: isViewedByMe,
+                allViewed: allViewed,
                 storiesCount: stories.length,
                 stories: stories,
               ),
@@ -116,23 +130,40 @@ class StoriesRepositoryImpl implements StoriesRepository {
         if (firstItem.containsKey('id') &&
             firstItem.containsKey('userId') &&
             !firstItem.containsKey('stories')) {
-          final allStoryModels = data
-              .map((e) => StoryModel.fromJson(e as Map<String, dynamic>))
-              .toList();
-          final Map<String, List<StoryModel>> grouped = {};
-          for (var story in allStoryModels) {
-            grouped.putIfAbsent(story.userId, () => []).add(story);
+          final Map<String, List<Map<String, dynamic>>> groupedRaw = {};
+          for (var rawItem in data) {
+            final rawMap = rawItem as Map<String, dynamic>;
+            String uid = '';
+            if (rawMap['userId'] is String) {
+              uid = rawMap['userId'];
+            } else if (rawMap['userId'] is Map) {
+              uid = rawMap['userId']['_id'] ?? '';
+            }
+            groupedRaw.putIfAbsent(uid, () => []).add(rawMap);
           }
           final List<UserStoriesModel> userStoriesList = [];
-          grouped.forEach((userId, stories) {
+          groupedRaw.forEach((userId, rawStories) {
+            final List<StoryModel> stories = rawStories
+                .map((e) => StoryModel.fromJson(e))
+                .toList();
+            final isViewedByMe = rawStories.any(
+              (s) =>
+                  s['isViewedByMe'] == true ||
+                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+            );
+            final allViewed = rawStories.every(
+              (s) =>
+                  s['isViewedByMe'] == true ||
+                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+            );
             userStoriesList.add(
               UserStoriesModel(
                 userId: userId,
                 name: '',
                 image: stories.isNotEmpty ? stories.first.image : '',
                 isFollowed: false,
-                isViewedByMe: stories.any((s) => s.isViewed),
-                allViewed: stories.every((s) => s.isViewed),
+                isViewedByMe: isViewedByMe,
+                allViewed: allViewed,
                 storiesCount: stories.length,
                 stories: stories,
               ),

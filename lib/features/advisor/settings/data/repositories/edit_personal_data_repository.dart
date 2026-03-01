@@ -10,6 +10,7 @@ abstract class EditPersonalDataRepository {
     File? imageFile,
     File? videoFile,
     bool? removeVideo,
+    void Function(int, int)? onSendProgress,
   });
 }
 
@@ -69,6 +70,7 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
     File? imageFile,
     File? videoFile,
     bool? removeVideo,
+    void Function(int, int)? onSendProgress,
   }) async {
     try {
       // ⭐ إنشاء Dio instance منفصلة
@@ -194,6 +196,7 @@ class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
       final response = await dio.patch<Map<String, dynamic>>(
         '/advisor/editPersonalData',
         data: formData,
+        onSendProgress: onSendProgress,
       );
 
       print('📥 Response Status Code: ${response.statusCode}');

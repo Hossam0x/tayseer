@@ -424,7 +424,7 @@ class _SettingsViewState extends State<SettingsView> {
 
     try {
       context.read<SettingsCubit>().logoutFromSever();
-      CachNetwork.clearCache();
+      await CachNetwork.clearCache();
       getIt<tayseerSocketHelper>().disconnect();
       Navigator.pushNamedAndRemoveUntil(
         context,

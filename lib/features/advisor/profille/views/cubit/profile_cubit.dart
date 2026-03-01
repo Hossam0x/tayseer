@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
@@ -16,11 +17,26 @@ class ProfileCubit extends Cubit<ProfileState> {
   // 📌 INITIALIZE PROFILE
   // ═══════════════════════════════════════════════════════════
   Future<void> _initializeProfile() async {
+    _loadCachedProfile();
     await Future.wait([
       fetchProfile(),
       fetchPosts(),
       fetchAnalytics(), // ⭐ جديد: جلب الإحصائيات
     ]);
+  }
+
+  void _loadCachedProfile() {
+    final cachedData = CachNetwork.getStringData(key: kAdvisorProfileCache);
+    if (cachedData.isNotEmpty) {
+      try {
+        final profile = ProfileModel.fromJson(jsonDecode(cachedData));
+        emit(
+          state.copyWith(profile: profile, profileState: CubitStates.success),
+        );
+      } catch (e) {
+        debugPrint('❌ Error loading cached advisor profile: $e');
+      }
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -68,24 +84,41 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<void> fetchProfile() async {
     if (state.profileState == CubitStates.loading) return;
 
-    emit(state.copyWith(profileState: CubitStates.loading));
+    // لا تظهر Loading إذا كان هناك بيانات كاش بالفعل (silent update)
+    if (state.profile == null) {
+      emit(state.copyWith(profileState: CubitStates.loading));
+    }
 
     final result = await _profileRepository.getAdvisorProfile();
     if (isClosed) return;
     result.fold(
       (failure) => emit(
         state.copyWith(
-          profileState: CubitStates.failure,
+          profileState: state.profile != null
+              ? CubitStates.success
+              : CubitStates.failure,
           profileErrorMessage: failure.message,
         ),
       ),
-      (profileModel) => emit(
-        state.copyWith(
-          profileState: CubitStates.success,
-          profile: profileModel,
-          profileErrorMessage: null, // تنظيف رسالة الخطأ عند النجاح
-        ),
-      ),
+      (profileModel) {
+        // حفظ في الكاش
+        try {
+          CachNetwork.setData(
+            key: kAdvisorProfileCache,
+            value: jsonEncode(profileModel.toJson()),
+          );
+        } catch (e) {
+          debugPrint('❌ Error caching advisor profile: $e');
+        }
+
+        emit(
+          state.copyWith(
+            profileState: CubitStates.success,
+            profile: profileModel,
+            profileErrorMessage: null, // تنظيف رسالة الخطأ عند النجاح
+          ),
+        );
+      },
     );
   }
 

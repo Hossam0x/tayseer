@@ -71,6 +71,7 @@ class ApiService {
     required String endPoint,
     dynamic data,
     Map<String, dynamic>? headers,
+    void Function(int, int)? onSendProgress,
   }) async {
     try {
       final mergedHeaders = <String, dynamic>{
@@ -86,11 +87,14 @@ class ApiService {
 
       var response = await _dio.patch(
         "$kbaseUrl$endPoint",
-        data: isFromData ? FormData.fromMap(data) : data,
+        data: isFromData
+            ? (data is FormData ? data : FormData.fromMap(data))
+            : data,
         options: Options(
           headers: mergedHeaders,
           validateStatus: (status) => status! >= 200 && status < 300,
         ),
+        onSendProgress: onSendProgress,
       );
       return response.data;
     } on DioException catch (e) {
