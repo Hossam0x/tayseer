@@ -153,6 +153,21 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final outputPath = '${tempDir.path}/edited_story_$timestamp.mp4';
 
+      // Fix: Don't manual flip. Most modern camera plugins handle front camera
+      // rendering automatically or save correctly. Manual flipping often causes
+      // mirrored text on clothes/backgrounds.
+      // Removed:
+      // Uint8List? overlayImage = parameters.layers.isNotEmpty
+      //     ? parameters.image
+      //     : null;
+      // if (widget.isFrontCamera && overlayImage != null) {
+      //   final decodedOverlay = img.decodeImage(overlayImage);
+      //   if (decodedOverlay != null) {
+      //     final flippedOverlay = img.flipHorizontal(decodedOverlay);
+      //     overlayImage = Uint8List.fromList(img.encodePng(flippedOverlay));
+      //   }
+      // }
+
       final renderModel = VideoRenderData(
         video: EditorVideo.file(widget.file.path),
         outputFormat: VideoOutputFormat.mp4,
@@ -170,12 +185,10 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
                 rotateTurns: parameters.rotateTurns,
                 x: parameters.cropX,
                 y: parameters.cropY,
-                flipX: parameters.flipX || widget.isFrontCamera,
+                flipX: parameters.flipX, // Removed || widget.isFrontCamera
                 flipY: parameters.flipY,
               )
-            : widget.isFrontCamera
-            ? const ExportTransform(flipX: true)
-            : null,
+            : null, // Removed widget.isFrontCamera ? const ExportTransform(flipX: true) : null,
         // Apply trim if any
         startTime: parameters.startTime,
         endTime: parameters.endTime,

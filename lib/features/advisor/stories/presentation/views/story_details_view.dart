@@ -328,37 +328,33 @@ class _UserStoryPageState extends State<_UserStoryPage> {
       children: [
         // ── StoryView directionality determines bar fill direction ──────────
         Directionality(
-          textDirection: TextDirection.ltr,
-          child: Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()..scale(isArabic ? -1.0 : 1.0, 1.0),
-            child: StoryView(
-              storyItems: _storyItems,
-              controller: _storyController,
-              onComplete: widget.onAllStoriesComplete,
-              onStoryShow: (item, index) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    setState(() {
-                      if (index < _reorderedStories.length) {
-                        _currentStoryIndex = index;
-                        _currentStoryTime = _reorderedStories[index].createdAt;
-                        _markCurrentStoryAsViewed();
-                      }
-                    });
-                  }
-                });
-              },
-              progressPosition: ProgressPosition.top,
-              repeat: false,
-              inline: false,
-              // Adjust indicator padding based on direction
-              indicatorOuterPadding: EdgeInsets.fromLTRB(
-                isArabic ? 16.w : 0.w, // Standard 16w
-                20.h,
-                isArabic ? 0.w : 16.w,
-                8.h,
-              ),
+          textDirection:  TextDirection.ltr,
+          child: StoryView(
+            storyItems: _storyItems,
+            controller: _storyController,
+            onComplete: widget.onAllStoriesComplete,
+            onStoryShow: (item, index) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    if (index < _reorderedStories.length) {
+                      _currentStoryIndex = index;
+                      _currentStoryTime = _reorderedStories[index].createdAt;
+                      _markCurrentStoryAsViewed();
+                    }
+                  });
+                }
+              });
+            },
+            progressPosition: ProgressPosition.top,
+            repeat: false,
+            inline: false,
+            // Adjust indicator padding based on direction
+            indicatorOuterPadding: EdgeInsets.fromLTRB(
+              isArabic ? 16.w : 0.w,
+              20.h,
+              isArabic ? 0.w : 16.w,
+              8.h,
             ),
           ),
         ),
