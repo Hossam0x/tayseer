@@ -29,6 +29,9 @@ import 'package:tayseer/features/advisor/settings/view/packages_view.dart';
 import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
+import 'package:tayseer/features/advisor/settings/view/advisor_subscription_view.dart';
+import 'package:tayseer/features/advisor/settings/view_model/advisor_subscription_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_reservation_people_view.dart';
@@ -229,6 +232,7 @@ abstract class AppRouter {
   static const kGeneralSettingsView = '/general-settings';
   static const kEventReservationPeopleView = '/EventReservationPeopleView';
   static const kOrderManagementView = '/order_management_view';
+  static const kAdvisorSubscriptionView = '/advisor_subscription_view';
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
@@ -297,6 +301,16 @@ abstract class AppRouter {
       case AppRouter.kPackagesTabView:
         return SlideLeftRoute(
           page: const PackagesView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kAdvisorSubscriptionView:
+        final packageType = settings.arguments as SelectedPackage;
+        return SlideLeftRoute(
+          page: BlocProvider(
+            create: (context) => AdvisorSubscriptionCubit(packageType),
+            child: const AdvisorSubscriptionView(),
+          ),
           routeSettings: settings,
         );
       case AppRouter.kArchiveView:

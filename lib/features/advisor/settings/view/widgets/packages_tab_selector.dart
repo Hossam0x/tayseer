@@ -43,17 +43,11 @@ class PackagesTabSelector extends StatelessWidget {
                   _buildSelectedIndicator(sectionWidth),
                   // Interactive Overlay for the top part
                   Row(
-                    children: isArabic
-                        ? [
-                            _buildTopClickOverlay(SelectedPackage.basic),
-                            _buildTopClickOverlay(SelectedPackage.pro),
-                            _buildTopClickOverlay(SelectedPackage.elite),
-                          ]
-                        : [
-                            _buildTopClickOverlay(SelectedPackage.elite),
-                            _buildTopClickOverlay(SelectedPackage.pro),
-                            _buildTopClickOverlay(SelectedPackage.basic),
-                          ],
+                    children: [
+                      _buildTopClickOverlay(SelectedPackage.elite),
+                      _buildTopClickOverlay(SelectedPackage.pro),
+                      _buildTopClickOverlay(SelectedPackage.basic),
+                    ],
                   ),
                 ],
               );
@@ -64,17 +58,11 @@ class PackagesTabSelector extends StatelessWidget {
         // Tab Labels
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: isArabic
-              ? [
-                  _buildTabText('Basic', SelectedPackage.basic),
-                  _buildTabText('Pro', SelectedPackage.pro),
-                  _buildTabText('Elite', SelectedPackage.elite),
-                ]
-              : [
-                  _buildTabText('Elite', SelectedPackage.elite),
-                  _buildTabText('Pro', SelectedPackage.pro),
-                  _buildTabText('Basic', SelectedPackage.basic),
-                ],
+          children: [
+            _buildTabText('Elite', SelectedPackage.elite),
+            _buildTabText('Pro', SelectedPackage.pro),
+            _buildTabText('Basic', SelectedPackage.basic),
+          ],
         ),
       ],
     );
@@ -83,9 +71,9 @@ class PackagesTabSelector extends StatelessWidget {
   Widget _buildStaticTriangles(double sectionWidth, Color color) {
     return Stack(
       children: [
-        _buildTriangleAt(sectionWidth * 0.48, color),
+        _buildTriangleAt(sectionWidth * 0.52, color),
         _buildTriangleAt(sectionWidth * 1.49, color),
-        _buildTriangleAt(sectionWidth * 2.52, color),
+        _buildTriangleAt(sectionWidth * 2.48, color),
       ],
     );
   }
@@ -122,7 +110,8 @@ class PackagesTabSelector extends StatelessWidget {
       label = "أساسية";
     }
 
-    double centerX = sectionWidth * (index + 0.5);
+    final int visualIndex = isArabic ? (2 - index) : index;
+    double centerX = sectionWidth * (visualIndex + 0.5);
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
@@ -142,10 +131,10 @@ class PackagesTabSelector extends StatelessWidget {
               borderRadius: BorderRadius.circular(6.r),
               boxShadow: [
                 BoxShadow(
-                  color: colors.last.withOpacity(0.2),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 2),
+                  color: colors.last.withOpacity(0.3),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),

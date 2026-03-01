@@ -2,6 +2,7 @@ import 'package:tayseer/features/advisor/settings/data/models/package_model.dart
 import 'package:tayseer/features/advisor/settings/view/widgets/package_feature_grid.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/packages_tab_selector.dart';
 import 'package:tayseer/features/advisor/settings/view_model/packages_cubit.dart';
+import 'package:tayseer/core/functions/country_helper.dart';
 import 'package:tayseer/my_import.dart';
 
 class PackagesView extends StatelessWidget {
@@ -10,7 +11,7 @@ class PackagesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => PackagesCubit(),
+      create: (context) => getIt<PackagesCubit>()..getPackages(),
       child: const _PackagesViewContent(),
     );
   }
@@ -23,7 +24,8 @@ class _PackagesViewContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<PackagesCubit, PackagesState>(
       builder: (context, state) {
-        final package = _getPackage(context, state.selectedPackage);
+        final packages = state.packages;
+        final package = _getPackage(context, state.selectedPackage, packages);
         return Scaffold(
           extendBodyBehindAppBar: true,
           appBar: AppBar(
@@ -207,15 +209,23 @@ class _PackagesViewContent extends StatelessWidget {
     String buttonText;
     List<Color> gradientColors;
     final bool isElite = selected == SelectedPackage.elite;
+    final bool gulf = isGulfGroup();
+    final String currency = getCurrency();
 
     if (selected == SelectedPackage.basic) {
       buttonText = context.tr('continue_limited_account');
       gradientColors = [AppColors.primary300, AppColors.primary500];
     } else if (selected == SelectedPackage.pro) {
-      buttonText = context.tr('get_all_benefits_for').replaceFirst('{}', '40');
+      final price = gulf ? "200" : "40";
+      buttonText = context
+          .tr('get_all_benefits_for')
+          .replaceFirst('{}', '$price $currency');
       gradientColors = [const Color(0xFFBD8F14), const Color(0xFFF5C003)];
     } else {
-      buttonText = context.tr('subscribe_vip_for').replaceFirst('{}', '80');
+      final price = gulf ? "399" : "80";
+      buttonText = context
+          .tr('subscribe_vip_for')
+          .replaceFirst('{}', '$price $currency');
       gradientColors = [const Color(0xFF4BB8F9), const Color(0xFF6284FF)];
     }
 
@@ -253,11 +263,19 @@ class _PackagesViewContent extends StatelessWidget {
             ),
           ),
           onPressed: () {
-            // Subscription flow logic here
+            if (selected == SelectedPackage.basic) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushNamed(
+                context,
+                AppRouter.kAdvisorSubscriptionView,
+                arguments: selected,
+              );
+            }
           },
           child: Text(
             buttonText,
-            style: Styles.textStyle20SemiBold.copyWith(color: Colors.white),
+            style: Styles.textStyle18SemiBold.copyWith(color: Colors.white),
           ),
         ),
       ),
@@ -266,18 +284,40 @@ class _PackagesViewContent extends StatelessWidget {
 
   // ─── Package Data ────────────────────────────────────────────────────────────
 
-  PackageModel _getPackage(BuildContext context, SelectedPackage pkg) {
+  PackageModel _getPackage(
+    BuildContext context,
+    SelectedPackage pkg,
+    List<AdvisorPackageModel> apiPackages,
+  ) {
+    final bool gulf = isGulfGroup();
+    final String currency = getCurrency();
+
+    // Map API package by type
+    final typeStr = pkg == SelectedPackage.elite
+        ? 'elite'
+        : pkg == SelectedPackage.pro
+        ? 'pro'
+        : 'Free';
+
+    final apiPkg = apiPackages.isEmpty
+        ? null
+        : apiPackages.firstWhere(
+            (e) => e.type.toLowerCase() == typeStr.toLowerCase(),
+            orElse: () => apiPackages.first,
+          );
+
     if (pkg == SelectedPackage.basic) {
+      final price = gulf ? "0" : "0";
       return PackageModel(
         id: 'basic',
-        packageTitle: context.tr('limited_basic_plan'),
-        price: '0',
+        packageTitle: context.tr(apiPkg?.name ?? 'basic_plan_title'),
+        price: '$price $currency',
         buttonText: context.tr('continue_limited_account'),
-        themeColor: AppColors.primary400,
-        backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFEB7A91)],
+        themeColor: AppColors.primary500,
+        backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFFDE9ED)],
         features: [
           PackageFeatureModel(
-            title: context.tr('3_session_monthly'),
+            title: context.tr('8_session_monthly'),
             iconPath: AssetsData.eightSessionMonthIcon,
           ),
           PackageFeatureModel(
@@ -293,21 +333,27 @@ class _PackagesViewContent extends StatelessWidget {
             iconPath: AssetsData.noEvents,
           ),
           PackageFeatureModel(
-            title: context.tr('basic_support'),
-            iconPath: AssetsData.essentialSupport,
-          ),
-          PackageFeatureModel(
             title: context.tr('1_boost_monthly'),
             iconPath: AssetsData.oneBoost,
+          ),
+          PackageFeatureModel(
+            title: context.tr('basic_support'),
+            iconPath: AssetsData.essentialSupport,
           ),
         ],
       );
     } else if (pkg == SelectedPackage.pro) {
+      final price = apiPkg != null
+          ? (gulf ? apiPkg.sarPrice.toString() : apiPkg.egPrice.toString())
+          : (gulf ? "200" : "40");
+
       return PackageModel(
         id: 'pro',
         packageTitle: context.tr('enjoy_more_benefits'),
-        price: '30',
-        buttonText: context.tr('get_all_benefits_for').replaceFirst('{}', '30'),
+        price: '$price $currency',
+        buttonText: context
+            .tr('get_all_benefits_for')
+            .replaceFirst('{}', '$price $currency'),
         themeColor: const Color(0xFFCF9916),
         backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFFFF8E5)],
         features: [
@@ -333,18 +379,24 @@ class _PackagesViewContent extends StatelessWidget {
           ),
           PackageFeatureModel(
             title: context.tr('unlimited_sessions'),
-            iconPath: AssetsData.eightSessionMonthIcon,
+            iconPath: AssetsData.graySessionIcon,
           ),
         ],
       );
     } else {
+      final price = apiPkg != null
+          ? (gulf ? apiPkg.sarPrice.toString() : apiPkg.egPrice.toString())
+          : (gulf ? "399" : "80");
+
       return PackageModel(
         id: 'elite',
         packageTitle: context.tr('enjoy_more_benefits'),
-        price: '60',
-        buttonText: context.tr('subscribe_vip_for').replaceFirst('{}', '60'),
-        themeColor: const Color(0xFFFEC155),
-        backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFE5F3FF)],
+        price: '$price $currency',
+        buttonText: context
+            .tr('subscribe_vip_for')
+            .replaceFirst('{}', '$price $currency'),
+        themeColor: const Color(0xFF4BB8F9),
+        backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFE5F1FF)],
         features: [
           PackageFeatureModel(
             title: context.tr('unlimited_messages'),
@@ -363,7 +415,7 @@ class _PackagesViewContent extends StatelessWidget {
             iconPath: AssetsData.premiumSupport,
           ),
           PackageFeatureModel(
-            title: context.tr('full_official_documentation'),
+            title: context.tr('توثيق رسمى كامل'),
             iconPath: AssetsData.verifiedBegin,
           ),
           PackageFeatureModel(
@@ -376,11 +428,11 @@ class _PackagesViewContent extends StatelessWidget {
           ),
           PackageFeatureModel(
             title: context.tr('appearance_count'),
-            iconPath: AssetsData.normalApperance,
+            iconPath: AssetsData.performanceReports,
           ),
           PackageFeatureModel(
             title: context.tr('who_visited_profile_action'),
-            iconPath: AssetsData.seeProfileVisits,
+            iconPath: AssetsData.normalApperance,
           ),
         ],
       );
