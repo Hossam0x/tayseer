@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
+import 'package:pro_video_editor/pro_video_editor.dart';
 import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 
@@ -123,16 +124,8 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
     super.dispose();
   }
 
+  // ✅ Called when DONE is pressed for IMAGE stories
   Future<void> _onImageEditingComplete(Uint8List bytes) async {
-    if (widget.isVideo) {
-      // For video, the bytes from ProImageEditor are just a frame/thumbnail,
-      // not the actual video. We publish the original video file directly.
-      if (mounted) {
-        _publishStory(videoFile: widget.file);
-      }
-      return;
-    }
-
     final tempDir = await getTemporaryDirectory();
     final file = File(
       '${tempDir.path}/edited_story_${DateTime.now().millisecondsSinceEpoch}.jpg',
@@ -141,6 +134,71 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
 
     if (mounted) {
       _publishStory(imageFile: file);
+    }
+  }
+
+  // ✅ Called when DONE is pressed for VIDEO stories - receives full export parameters
+  Future<void> _onVideoEditingComplete(CompleteParameters parameters) async {
+    if (!mounted) return;
+
+    // Show loading while rendering video (this can take time)
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const CustomloadingApp(),
+    );
+
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final outputPath = '${tempDir.path}/edited_story_$timestamp.mp4';
+
+      final renderModel = VideoRenderData(
+        video: EditorVideo.file(widget.file.path),
+        outputFormat: VideoOutputFormat.mp4,
+        // Apply overlay image (stickers, text, drawings rendered on top of video)
+        imageBytes: parameters.layers.isNotEmpty ? parameters.image : null,
+        // Apply blur if any
+        blur: parameters.blur,
+        // Apply color filters if any
+        colorMatrixList: parameters.colorFilters,
+        // Apply crop/rotate/flip transforms
+        transform: parameters.isTransformed
+            ? ExportTransform(
+                width: parameters.cropWidth,
+                height: parameters.cropHeight,
+                rotateTurns: parameters.rotateTurns,
+                x: parameters.cropX,
+                y: parameters.cropY,
+                flipX: parameters.flipX || widget.isFrontCamera,
+                flipY: parameters.flipY,
+              )
+            : widget.isFrontCamera
+            ? const ExportTransform(flipX: true)
+            : null,
+        // Apply trim if any
+        startTime: parameters.startTime,
+        endTime: parameters.endTime,
+        // Optimize for network streaming (puts metadata at beginning)
+        shouldOptimizeForNetworkUse: true,
+      );
+
+      final renderedPath = await ProVideoEditor.instance.renderVideoToFile(
+        outputPath,
+        renderModel,
+      );
+
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+        _publishStory(videoFile: File(renderedPath));
+      }
+    } catch (e) {
+      debugPrint('Video render error: $e');
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+        // Fallback to original file if rendering fails
+        _publishStory(videoFile: widget.file);
+      }
     }
   }
 
@@ -192,9 +250,10 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
   @override
   Widget build(BuildContext context) {
     final callbacks = ProImageEditorCallbacks(
-      onImageEditingComplete: (bytes) async {
-        await _onImageEditingComplete(bytes);
-      },
+      // For images: called with just bytes
+      onImageEditingComplete: widget.isVideo ? null : _onImageEditingComplete,
+      // For videos: called with full parameters including layers, transforms, blur, etc.
+      onCompleteWithParameters: widget.isVideo ? _onVideoEditingComplete : null,
       onCloseEditor: (mode) => widget.onClose(),
       videoEditorCallbacks: widget.isVideo && _videoController != null
           ? VideoEditorCallbacks(
