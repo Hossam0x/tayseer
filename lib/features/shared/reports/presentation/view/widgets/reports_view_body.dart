@@ -1,7 +1,6 @@
 import 'package:tayseer/features/shared/reports/data/model/report_model.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_state.dart';
-import 'package:tayseer/features/shared/reports/presentation/view/widgets/reports_app_bar.dart';
 import 'package:tayseer/my_import.dart';
 
 class ReportsViewBody extends StatelessWidget {
@@ -9,16 +8,12 @@ class ReportsViewBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ReportsCubit, ReportsState>(
-      builder: (context, state) {
-        return CustomScrollView(
-          slivers: [
-            ReportsAppBar(title: context.tr(AppStrings.reportReason)),
-            SliverToBoxAdapter(child: Gap(40.h)),
-            _buildBody(state, context),
-          ],
-        );
-      },
+    return Expanded(
+      child: BlocBuilder<ReportsCubit, ReportsState>(
+        builder: (context, state) {
+          return CustomScrollView(slivers: [_buildBody(state, context)]);
+        },
+      ),
     );
   }
 
@@ -31,7 +26,7 @@ class ReportsViewBody extends StatelessWidget {
       case CubitStates.failure:
         return _buildFailure(state, context);
       default:
-        return const SizedBox.shrink();
+        return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
   }
 
@@ -95,7 +90,10 @@ class ReportsViewBody extends StatelessWidget {
       onTap: () {
         if (isOther != true) {
           cubit.selectReason(report!);
-          context.pushNamed(AppRouter.kReportDetailsView, arguments: cubit);
+          context.pushNamed(
+            AppRouter.kReportDetailsView,
+            arguments: {'reportsCubit': cubit, 'reportReason': report.reason},
+          );
         }
       },
     );

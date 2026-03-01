@@ -84,4 +84,6 @@ class AppStrings {
       "tell_us_more_about_the_reason";
 
   static const String somethingWentWrong = "something_went_wrong";
+  static const String selectReportOption = "select_report_option";
+  static const String reportSentSuccessfully = "report_sent_successfully";
 }
