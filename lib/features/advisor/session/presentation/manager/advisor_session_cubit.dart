@@ -56,6 +56,7 @@ class AdvisorSessionCubit extends Cubit<AdvisorSessionState> {
       advisorSessionExpired: state.advisorData!.advisorSessionExpired,
       advisorSessionNotExpired: updatedNotExpired,
       advisorTimezone: state.advisorData!.advisorTimezone,
+      pendingSessionscount: state.advisorData!.pendingSessionscount,
     );
 
     emit(state.copyWith(advisorData: updatedAdvisorData));

@@ -27,7 +27,7 @@ class BlockedActionArea extends StatelessWidget {
             Expanded(
               child: CustomBotton(
                 useGradient: true,
-                title: 'الغاء الحظر',
+                title: 'إلغاء الحظر',
                 onPressed: onUnblockTap,
               ),
             ),

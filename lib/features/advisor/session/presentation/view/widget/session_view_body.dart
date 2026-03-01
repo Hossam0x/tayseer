@@ -88,7 +88,6 @@ class _SessionViewBodyState extends State<SessionViewBody> {
               ),
             ),
 
-            // --- قائمة الجلسات القادمة ---
             if (isLoading)
               SliverList(
                 delegate: SliverChildBuilderDelegate(
@@ -114,7 +113,6 @@ class _SessionViewBodyState extends State<SessionViewBody> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final session = sessionsNotExpired[index];
-                    final isFirst = index == 0;
 
                     final otherUser = session.otherUser;
                     final otherUserName = otherUser?.name ?? 'Unknown';

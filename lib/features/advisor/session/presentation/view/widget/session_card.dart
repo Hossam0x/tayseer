@@ -54,11 +54,11 @@ class SessionCard extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         border: border,
         boxShadow: isWhite
             ? [
@@ -70,46 +70,61 @@ class SessionCard extends StatelessWidget {
             : [],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(25),
+              ClipOval(
                 child: ImageFiltered(
                   imageFilter: ImageFilter.blur(
                     sigmaX: isBlur ? 5 : 0,
                     sigmaY: isBlur ? 5 : 0,
                   ),
-                  child: AppImage(width: 50, height: 50, imageUrl),
+                  child: AppImage(
+                    imageUrl,
+                    width: 50.r,
+                    height: 50.r,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-              SizedBox(width: context.width * 0.03),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: Styles.textStyle16Bold),
-                  Text(
-                    handle,
-                    style: Styles.textStyle14.copyWith(
-                      color: (isActive || isNow)
-                          ? Colors.black
-                          : AppColors.kgreyColor,
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      name,
+                      style: Styles.textStyle16Bold,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                    Text(
+                      handle,
+                      style: Styles.textStyle14.copyWith(
+                        color: (isActive || isNow)
+                            ? Colors.black
+                            : AppColors.kgreyColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-              const Spacer(),
+              SizedBox(width: 8.w),
               _buildActionButton(context, showJoinButton, isActive),
             ],
           ),
-          SizedBox(height: context.height * 0.02),
+          SizedBox(height: 16.h),
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
             decoration: BoxDecoration(
               color: (isActive || isNow)
                   ? Colors.white.withOpacity(0.3)
                   : const Color(0xFFFCEFF1).withOpacity(0.5),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               border: (isActive || isNow)
                   ? null
                   : Border.all(color: Colors.white),
@@ -123,21 +138,18 @@ class SessionCard extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.calendar_month_outlined,
-                        size: 18,
+                        size: 18.r,
                         color: Colors.grey.shade700,
                       ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            sessiondate,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Styles.textStyle14.copyWith(
-                              color: Colors.grey.shade700,
-                            ),
+                      SizedBox(width: 6.w),
+                      Expanded(
+                        child: Text(
+                          sessiondate,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Styles.textStyle14.copyWith(
+                            color: Colors.grey.shade700,
+                            fontSize: 12.sp,
                           ),
                         ),
                       ),
@@ -148,7 +160,8 @@ class SessionCard extends StatelessWidget {
                 // الفاصل
                 Container(
                   width: 1,
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                  height: 20.h,
+                  margin: EdgeInsets.symmetric(horizontal: 10.w),
                   color: Colors.grey.shade400,
                 ),
 
@@ -159,21 +172,18 @@ class SessionCard extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.access_time,
-                        size: 18,
+                        size: 18.r,
                         color: Colors.grey.shade700,
                       ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            timeRange,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Styles.textStyle14.copyWith(
-                              color: Colors.grey.shade700,
-                            ),
+                      SizedBox(width: 6.w),
+                      Expanded(
+                        child: Text(
+                          timeRange,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Styles.textStyle14.copyWith(
+                            color: Colors.grey.shade700,
+                            fontSize: 12.sp,
                           ),
                         ),
                       ),
@@ -196,8 +206,8 @@ class SessionCard extends StatelessWidget {
     if (showJoinButton) {
       return CustomBotton(
         useGradient: true,
-        height: context.height * 0.075,
-        width: context.width * 0.3,
+        height: 44.h,
+        width: 100.w,
         onPressed: onTapJoin,
         title: "انضم",
       );
@@ -206,8 +216,8 @@ class SessionCard extends StatelessWidget {
     if (isActive) {
       return CustomBotton(
         useGradient: true,
-        height: context.height * 0.075,
-        width: context.width * 0.3,
+        height: 44.h,
+        width: 100.w,
         onPressed: onTapJoin,
         title: buttonText,
       );
@@ -215,8 +225,8 @@ class SessionCard extends StatelessWidget {
 
     return CustomOutlineButton(
       onTap: onTapDetails,
-      height: context.height * 0.075,
-      width: context.width * 0.3,
+      height: 44.h,
+      width: 100.w,
       text: buttonText,
     );
   }

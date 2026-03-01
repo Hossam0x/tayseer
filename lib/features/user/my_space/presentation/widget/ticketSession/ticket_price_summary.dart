@@ -50,9 +50,9 @@ class TicketPriceSummary extends StatelessWidget {
           _buildPriceRow("سعر الجلسة", "${sessionData.price} ر.س"),
           SizedBox(height: 10.h),
 
-          // الرسوم
-          _buildPriceRow("الرسوم", "${sessionData.fees} ر.س"),
-          SizedBox(height: 10.h),
+          // // الرسوم
+          // _buildPriceRow("الرسوم", "${sessionData.fees} ر.س"),
+          // SizedBox(height: 10.h),
 
           // ضريبة القيمة المضافة
           _buildPriceRow("ضريبة القيمة المضافة", "${sessionData.tax} ر.س"),

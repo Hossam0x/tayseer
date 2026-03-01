@@ -160,11 +160,6 @@ class _SuccessContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = SessionDetailsHelper.parseStatus(data.status);
 
-    // ✅ Log للتأكد من البيانات
-    log(
-      '_SuccessContent: Building with date=${data.date}, time=${data.timeRange.from}-${data.timeRange.to}, duration=${data.duration}',
-    );
-
     return Stack(
       children: [
         SingleChildScrollView(
@@ -178,7 +173,7 @@ class _SuccessContent extends StatelessWidget {
               CardWrapper(
                 child: PersonInfoCard(
                   name: data.advisor.name,
-                  handle: "@${data.advisor.name}",
+                  handle: data.advisor.userName ?? "@${data.advisor.name}",
                   imageUrl: data.advisor.image,
                 ),
               ),
