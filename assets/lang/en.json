@@ -378,6 +378,7 @@
   "password_min_length": "Password must be at least 8 characters",
   "invalid_phone": "Invalid phone number",
   "field_required": "This field is required",
+  "min_3_characters": "Must be at least 3 characters",
   "confirm": "Confirm",
   "select_category_required_to_publish_post": "You must select a group to publish the post",
   "tart_writing_ideas": "Start writing your ideas and let",
@@ -1493,5 +1494,7 @@
   "pro": "Pro",
   "share_app_card_title": "Share our app, collect points quickly, and turn them into cash!",
   "share_app_card_description": "All you have to do is share the app link, collect points with every share, and then easily turn them into money! Don't miss the chance and start your money-making journey today!",
-  "share_app_button": "Share App"
+  "share_app_button": "Share App",
+  "enter_reason": "Enter Reason",
+  "other_reason_hint": "Your opinion helps keep Tayseer reliable and safe ......."
 }

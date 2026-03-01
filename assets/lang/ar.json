@@ -377,6 +377,7 @@
   "password_min_length": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
   "invalid_phone": "رقم الهاتف غير صحيح",
   "field_required": "يجب إدخال هذا الحقل",
+  "min_3_characters": "يجب أن يكون النص 3 أحرف على الأقل",
   "confirm": "تأكيد",
   "select_category_required_to_publish_post": "يجب اختيار المجموع لنشر المنشور",
   "tart_writing_ideas": "ابدأ بكتابة أفكارك ودع",
@@ -1433,6 +1434,7 @@
   "start_typing": "ابدأ الكتابة",
   "video_saved": "تم حفظ الفيديو بنجاح",
 <<<<<<< HEAD
+<<<<<<< HEAD
   "report_sent_successfully": "تم إرسال التقرير بنجاح",
   "images_pending_save": "حفظ الصور معلق",
   "file_not_found": "الملف غير موجود",
@@ -1508,5 +1510,7 @@
   "pro": "Pro",
   "share_app_card_title": "شارك تطبيقنا، جمع النقاط بسرعة، تتحول لفلوس!",
   "share_app_card_description": "كل ما عليك فعله هو مشاركة لينك التطبيق، وجمع النقاط مع كل مشاركة، وبعدها حولهم لفلوس بسهولة! لا تفوت الفرصة وابدأ رحلتك في ربح الأموال اليوم!",
-  "share_app_button": "مشاركة التطبيق"
+  "share_app_button": "مشاركة التطبيق",
+  "enter_reason": "ادخال السبب",
+  "other_reason_hint": "يساعد رأيك في الحفاظ علي تطبيق تيسير بشكل موثوق وامن ......."
 }
