@@ -87,7 +87,7 @@ class _PackagesViewContent extends StatelessWidget {
                 Positioned(
                   left: isArabic ? 65.w : null,
                   right: !isArabic ? 25.w : null,
-                  top: 65.h,
+                  top: 55.h,
                   child: Transform.flip(
                     flipX: isArabic ? false : true,
                     child: SvgPicture.asset(AssetsData.kingIcon, height: 80.h),
@@ -212,10 +212,10 @@ class _PackagesViewContent extends StatelessWidget {
       buttonText = context.tr('continue_limited_account');
       gradientColors = [AppColors.primary300, AppColors.primary500];
     } else if (selected == SelectedPackage.pro) {
-      buttonText = context.tr('get_all_benefits_for').replaceFirst('{}', '30');
+      buttonText = context.tr('get_all_benefits_for').replaceFirst('{}', '40');
       gradientColors = [const Color(0xFFBD8F14), const Color(0xFFF5C003)];
     } else {
-      buttonText = context.tr('subscribe_vip_for').replaceFirst('{}', '60');
+      buttonText = context.tr('subscribe_vip_for').replaceFirst('{}', '80');
       gradientColors = [const Color(0xFF4BB8F9), const Color(0xFF6284FF)];
     }
 
@@ -224,7 +224,7 @@ class _PackagesViewContent extends StatelessWidget {
 
     return Center(
       child: Container(
-        width: 348.w,
+        width: 360.w,
         height: 55.h,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(11.r),
