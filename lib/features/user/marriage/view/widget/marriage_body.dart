@@ -22,13 +22,13 @@ import 'package:tayseer/features/user/marriage/view/widget/life_event_section.da
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 
 class MarriageBody extends StatefulWidget {
-    const MarriageBody({
+  const MarriageBody({
     super.key,
     this.personId,
     this.fromInteractions = false,
     this.onScroll,
   });
-    final String? personId;
+  final String? personId;
   final bool fromInteractions;
   final Function(bool isScrollingDown)? onScroll;
 
@@ -82,26 +82,27 @@ class MarriageBodyState extends State<MarriageBody> {
   // ✅ Scroll Listener
   // ════════════════════════════════════════════════════
   void _scrollListener() {
-  final currentOffset = _mainScrollController.offset;
-  final delta = currentOffset - _lastOffset;
+    final currentOffset = _mainScrollController.offset;
+    final delta = currentOffset - _lastOffset;
 
-  _scrollDelta += delta;
+    _scrollDelta += delta;
 
-  if (_scrollDelta.abs() >= _scrollThreshold) {
-    final isDown = _scrollDelta > 0;
+    if (_scrollDelta.abs() >= _scrollThreshold) {
+      final isDown = _scrollDelta > 0;
 
-    final cubit = context.read<MarriageCubit>();
-    if (cubit.state.isScrollingDown != isDown) {
-      cubit.setScrollingDown(isDown);
+      final cubit = context.read<MarriageCubit>();
+      if (cubit.state.isScrollingDown != isDown) {
+        cubit.setScrollingDown(isDown);
+      }
+
+      // ✅ إبلاغ الـ Layout بالسكرول (لإخفاء NavBar)
+      widget.onScroll?.call(isDown);
+      _scrollDelta = 0;
     }
 
-    // ✅ إبلاغ الـ Layout بالسكرول (لإخفاء NavBar)
-    widget.onScroll?.call(isDown);
-    _scrollDelta = 0;
+    _lastOffset = currentOffset;
   }
 
-  _lastOffset = currentOffset;
-}
   // ✅ Scroll to Top
   void scrollToTop() {
     if (_mainScrollController.hasClients) {
@@ -120,20 +121,20 @@ class MarriageBodyState extends State<MarriageBody> {
     context.read<MarriageCubit>().setScrollingDown(false);
   }
 
-Widget _buildToggle() {
-  final cubit = context.read<MarriageCubit>();
-  return SectionToggle(
-    isMarriage: cubit.state.isMarriageTab,
-    onChanged: (value) {
-      // ✅ لو جاي من التفاعلات وضغط على تاب التفاعلات = ارجع للخلف
-      if (!value && widget.fromInteractions) {
-        context.pop();
-        return;
-      }
-      cubit.setMarriageTab(value);
-    },
-  );
-}
+  Widget _buildToggle() {
+    final cubit = context.read<MarriageCubit>();
+    return SectionToggle(
+      isMarriage: cubit.state.isMarriageTab,
+      onChanged: (value) {
+        // ✅ لو جاي من التفاعلات وضغط على تاب التفاعلات = ارجع للخلف
+        if (!value && widget.fromInteractions) {
+          context.pop();
+          return;
+        }
+        cubit.setMarriageTab(value);
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -353,13 +354,14 @@ Widget _buildToggle() {
                     reportId: user?.id,
                     images: images,
                     name: user?.name ?? '',
-                    age: answers?.aboutMe?.age ?? '',
+                    age: "🎂 ${answers?.aboutMe?.age ?? ''}",
                     location: user?.country ?? answers?.aboutMe?.country ?? '',
-                    tagsjob: user?.about?.job ?? '',
-                    educationLevel: user?.about?.educationLevel,
-                    religiousCommitment: user?.about?.religiousCommitment,
-                    nationality: user?.about?.nationality,
-                    height: user?.about?.height,
+                    tagsjob: "💼 ${user?.about?.job ?? ''}",
+                    educationLevel: "🎓 ${user?.about?.educationLevel ?? ''}",
+                    religiousCommitment:
+                        "🕌 ${user?.about?.religiousCommitment ?? ''}",
+                    nationality: "🌍 ${user?.about?.nationality ?? ''}",
+                    height: "📏 ${user?.about?.height ?? ''}",
                     toggleWidget: _buildToggle(),
                   ),
                   SliverPadding(
@@ -408,15 +410,19 @@ Widget _buildToggle() {
                       child: AboutMeSection(
                         items: [
                           if (answers?.aboutMe?.socialStatus != null)
-                            {'label': answers!.aboutMe!.socialStatus},
+                            {'label': "💍 ${answers!.aboutMe!.socialStatus}"},
+
                           if (answers?.family?.hasChildren != null)
-                            {'label': answers!.family!.hasChildren},
+                            {'label': "👶 ${answers!.family!.hasChildren}"},
+
                           if (answers?.aboutMe?.weight != null)
-                            {'label': "gm ${answers?.aboutMe?.weight}"},
+                            {'label': "⚖️ ${answers?.aboutMe?.weight} gm"},
+
                           if (answers?.professionalLife?.job != null)
-                            {'label': answers!.professionalLife!.job},
+                            {'label': "💼 ${answers!.professionalLife!.job}"},
+
                           if (answers?.aboutMe?.healthStatus != null)
-                            {'label': answers!.aboutMe!.healthStatus},
+                            {'label': "🩺 ${answers!.aboutMe!.healthStatus}"},
                         ],
                       ),
                     ),
@@ -446,10 +452,11 @@ Widget _buildToggle() {
                           if (answers?.professionalLife?.educationLevel != null)
                             {
                               'label':
-                                  answers!.professionalLife!.educationLevel,
+                                  "🎓 ${answers!.professionalLife!.educationLevel}",
                             },
+
                           if (answers?.professionalLife?.job != null)
-                            {'label': answers!.professionalLife!.job},
+                            {'label': "💼 ${answers!.professionalLife!.job}"},
                         ],
                       ),
                     ),
@@ -523,9 +530,13 @@ Widget _buildToggle() {
                       child: ReligiousSection(
                         tags: [
                           if (answers?.aboutMe?.religiousCommitment != null)
-                            {'label': answers!.aboutMe!.religiousCommitment},
+                            {
+                              'label':
+                                  "🕌 ${answers!.aboutMe!.religiousCommitment}",
+                            },
+
                           if (answers?.aboutMe?.smoker != null)
-                            {'label': answers!.aboutMe!.smoker},
+                            {'label': "🚬 ${answers!.aboutMe!.smoker}"},
                         ],
                       ),
                     ),
@@ -634,7 +645,7 @@ Widget _buildToggle() {
             AnimatedPositioned(
               duration: const Duration(milliseconds: 400),
               curve: Curves.easeOutCubic,
-              bottom: state.isScrollingDown ? 50.h : 100.h,
+              bottom: state.isScrollingDown ? 50.h : 130.h,
               left: 0,
               right: 0,
               child: Row(
