@@ -82,11 +82,17 @@ class _PackagesViewContent extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                left: 65.w,
-                top: 65.h,
-                child: SvgPicture.asset(AssetsData.kingIcon, height: 80.h),
-              ),
+              // Flip in Arabic
+              if (state.selectedPackage == SelectedPackage.elite)
+                Positioned(
+                  left: isArabic ? 65.w : null,
+                  right: !isArabic ? 25.w : null,
+                  top: 65.h,
+                  child: Transform.flip(
+                    flipX: isArabic ? false : true,
+                    child: SvgPicture.asset(AssetsData.kingIcon, height: 80.h),
+                  ),
+                ),
             ],
           ),
         );

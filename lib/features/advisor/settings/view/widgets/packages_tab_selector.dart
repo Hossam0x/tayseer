@@ -27,13 +27,10 @@ class PackagesTabSelector extends StatelessWidget {
                 children: [
                   // Horizontal Line (Placed at y=40)
                   Positioned(
-                    top: 40.h,
+                    top: 35.h,
                     left: 0,
                     right: 0,
-                    child: Container(
-                      height: 1.h,
-                      color: Colors.grey.withOpacity(0.3),
-                    ),
+                    child: Container(height: 5.h, color: Color(0xFFD9D9D9)),
                   ),
                   // Triangles at fixed positions
                   _buildStaticTriangles(sectionWidth),
@@ -64,9 +61,9 @@ class PackagesTabSelector extends StatelessWidget {
   Widget _buildStaticTriangles(double sectionWidth) {
     return Stack(
       children: [
-        _buildTriangleAt(sectionWidth * 0.5),
-        _buildTriangleAt(sectionWidth * 1.5),
-        _buildTriangleAt(sectionWidth * 2.5),
+        _buildTriangleAt(sectionWidth * 0.48),
+        _buildTriangleAt(sectionWidth * 1.45),
+        _buildTriangleAt(sectionWidth * 2.52),
       ],
     );
   }
@@ -74,10 +71,10 @@ class PackagesTabSelector extends StatelessWidget {
   Widget _buildTriangleAt(double centerX) {
     return Positioned(
       left: centerX - 10.w,
-      top: 40.h,
+      top: 35.h,
       child: CustomPaint(
         size: Size(20.w, 15.h),
-        painter: TrianglePainter(color: Colors.grey.withOpacity(0.3)),
+        painter: TrianglePainter(color: Color(0xFFD9D9D9)),
       ),
     );
   }
@@ -106,7 +103,7 @@ class PackagesTabSelector extends StatelessWidget {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      left: centerX - 40.w,
+      left: centerX - 36.w,
       top: 0,
       child: Column(
         children: [
@@ -114,7 +111,7 @@ class PackagesTabSelector extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
             decoration: BoxDecoration(
               color: color.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(10.r),
+              borderRadius: BorderRadius.circular(6.r),
               boxShadow: [
                 BoxShadow(
                   color: color.withOpacity(0.3),
@@ -125,7 +122,7 @@ class PackagesTabSelector extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: Styles.textStyle14Bold.copyWith(color: Colors.white),
+              style: Styles.textStyle16SemiBold.copyWith(color: Colors.white),
             ),
           ),
           CustomPaint(
