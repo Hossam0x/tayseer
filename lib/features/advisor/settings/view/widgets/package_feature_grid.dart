@@ -17,6 +17,10 @@ class PackageFeatureGrid extends StatelessWidget {
       iconColor = const Color(0xFFFEC155);
     }
 
+    final textColor = package.id == 'elite'
+        ? Colors.white
+        : const Color(0xFF1A1A1A);
+
     return RepaintBoundary(
       child: Container(
         decoration: BoxDecoration(
@@ -43,7 +47,11 @@ class PackageFeatureGrid extends StatelessWidget {
           itemCount: package.features.length,
           itemBuilder: (context, index) {
             final feature = package.features[index];
-            return _FeatureItem(feature: feature, iconColor: iconColor);
+            return _FeatureItem(
+              feature: feature,
+              iconColor: iconColor,
+              textColor: textColor,
+            );
           },
         ),
       ),
@@ -54,8 +62,13 @@ class PackageFeatureGrid extends StatelessWidget {
 class _FeatureItem extends StatelessWidget {
   final PackageFeatureModel feature;
   final Color iconColor;
+  final Color textColor;
 
-  const _FeatureItem({required this.feature, required this.iconColor});
+  const _FeatureItem({
+    required this.feature,
+    required this.iconColor,
+    required this.textColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -75,9 +88,7 @@ class _FeatureItem extends StatelessWidget {
           child: Text(
             feature.title,
             textAlign: TextAlign.center,
-            style: Styles.textStyle12SemiBold.copyWith(
-              color: const Color(0xFF1A1A1A),
-            ),
+            style: Styles.textStyle12SemiBold.copyWith(color: textColor),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
