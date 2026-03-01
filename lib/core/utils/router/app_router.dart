@@ -26,7 +26,7 @@ import 'package:tayseer/features/advisor/settings/view/edit_personal_data_view.d
 import 'package:tayseer/features/advisor/settings/view/help_support_view.dart';
 import 'package:tayseer/features/advisor/settings/view/hide_story_form_view.dart';
 import 'package:tayseer/features/advisor/settings/view/language_selection_view.dart';
-import 'package:tayseer/features/advisor/settings/view/packages_tab_view.dart';
+import 'package:tayseer/features/advisor/settings/view/packages_view.dart';
 import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
@@ -293,7 +293,7 @@ abstract class AppRouter {
 
       case AppRouter.kPackagesTabView:
         return SlideLeftRoute(
-          page: const PackagesTabView(),
+          page: const PackagesView(),
           routeSettings: settings,
         );
       case AppRouter.kArchiveView:

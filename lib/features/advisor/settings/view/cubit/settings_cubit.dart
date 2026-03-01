@@ -70,12 +70,12 @@ class SettingsCubit extends Cubit<SettingsState> {
           iconAsset: AssetsData.icOrderManagment,
           routeName: AppRouter.kOrderManagementView,
         ),
-        SettingItemModel(
-          id: 'packages',
-          title: 'packages',
-          iconAsset: AssetsData.icPackesSettinngs,
-          routeName: AppRouter.kPackagesTabView,
-        ),
+        // SettingItemModel(
+        //   id: 'packages',
+        //   title: 'packages',
+        //   iconAsset: AssetsData.icPackesSettinngs,
+        //   routeName: AppRouter.kPackagesTabView,
+        // ),
         SettingItemModel(
           id: 'archive',
           title: 'archive_general',
