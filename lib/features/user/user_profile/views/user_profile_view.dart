@@ -7,6 +7,7 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_profil
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_file.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/nav_animation_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserProfileView extends StatefulWidget {
@@ -1063,14 +1064,21 @@ class _UserProfileViewState extends State<UserProfileView> {
       }
     });
   }
+void _showDeactivateMarriageDialog(BuildContext context, bool value) {
+    // ⭐ احفظ reference للـ overlay قبل ما الـ dialog يفتح
+    final overlay = Overlay.of(context);
+    // ⭐ الأيكون اللي هيطير:
+    //   لو value=true  (بيعطّل الزواج) → يطير أيكون الاستشارة
+    //   لو value=false (بيفعّل الزواج) → يطير أيكون الزواج
+    final flyingIcon = value
+        ? AssetsData.consultationIcon   // هيتغير لاستشارة
+        : AssetsData.ringIcon;           // هيتغير لزواج
 
-  void _showDeactivateMarriageDialog(BuildContext context, bool value) {
     CustomshowDialogWithImage(
       context,
       title: context.tr(
         value ? "deactivate_marriage_title" : "activate_marriage_title",
       ),
-
       supTitle: context.tr(
         value ? "activate_marriage_subtitle" : "activate_marriage_subtitle",
       ),
@@ -1079,16 +1087,23 @@ class _UserProfileViewState extends State<UserProfileView> {
       cancelText: context.tr("لا"),
       showCancelButton: true,
       onPressed: () {
-      
-        context.read<UserProfileCubit>().updateSwitch(
-          'deactivate_the_marriage_section',
-          value,
+        // نحتاج BuildContext الـ button نفسه - هنستخدم overlay center كـ fallback
+        NavAnimationService.instance.flyIcon(
+          fromContext: context, // context الـ dialog
+          iconAsset: flyingIcon,
+          overlay: overlay,
+          onComplete: () {
+            // ⭐ بعد ما الأيكون يوصل للـ nav bar، نعمل التغيير الفعلي
+            context.read<UserProfileCubit>().updateSwitch(
+              'deactivate_the_marriage_section',
+              value,
+            );
+          },
         );
       },
       onCancel: () {},
     );
   }
-
   void _submitAppRating(int rating) {
     if (rating > 0) {
       _userProfileCubit.rateApp(rating);

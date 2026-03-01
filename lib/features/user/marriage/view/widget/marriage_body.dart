@@ -1,6 +1,8 @@
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/history_screen.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/history_page.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_FilterChips.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/view/widget/section_toggle.dart';
@@ -50,8 +52,12 @@ class MarriageBodyState extends State<MarriageBody> {
   double _scrollDelta = 0;
   static const double _scrollThreshold = 20.0;
 
-  // ✅ متغير للتحكم في موقع الـ Floating Buttons
-  // Note: scrolling flag moved to cubit state; local tracking variables remain.
+  // ════════════════════════════════════════════════════
+  // ✅ متغيرات الـ History (embedded بدل Navigator.push)
+  // ════════════════════════════════════════════════════
+  bool _showHistory = false;
+  String _selectedHistoryFilter = "liked_you";
+  final GlobalKey<HistorypageState> _historyKey = GlobalKey<HistorypageState>();
 
   InteractionsCubit get interactionsCubit {
     if (_interactionsCubit == null) {
@@ -130,6 +136,10 @@ class MarriageBodyState extends State<MarriageBody> {
         if (!value && widget.fromInteractions) {
           context.pop();
           return;
+        }
+        // ✅ لو بيرجع من الـ history، ارجع للـ interactions أولاً
+        if (_showHistory) {
+          setState(() => _showHistory = false);
         }
         cubit.setMarriageTab(value);
       },
@@ -317,7 +327,7 @@ class MarriageBodyState extends State<MarriageBody> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // MARRIAGE TAB (✅ مع Animated Floating Buttons)
+  // MARRIAGE TAB
   // ═══════════════════════════════════════════════════════════════
   Widget _buildMarriageContent({
     Key? key,
@@ -427,7 +437,6 @@ class MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
                   if (images.length > 2 && images[2].isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -461,7 +470,6 @@ class MarriageBodyState extends State<MarriageBody> {
                       ),
                     ),
                   ),
-
                   if (images.length > 3 && images[3].isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -553,7 +561,6 @@ class MarriageBodyState extends State<MarriageBody> {
                         ),
                       ),
                     ),
-
                   if (images.length > 4 && images[4].isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -651,7 +658,6 @@ class MarriageBodyState extends State<MarriageBody> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // ❤️ Like Button
                   buildCircleButton(
                     onTap: () {
                       context.read<MarriageCubit>().userInteraction(
@@ -670,7 +676,6 @@ class MarriageBodyState extends State<MarriageBody> {
                     AppColors.kprimaryTextColor,
                     HexColor('f8d3da'),
                   ),
-                  // ⭐ Star/Regard Button
                   buildCircleButton(
                     onTap: () {
                       context.read<MarriageCubit>().sendRegard(
@@ -681,7 +686,6 @@ class MarriageBodyState extends State<MarriageBody> {
                     Colors.white,
                     HexColor('cccab3'),
                   ),
-                  // ✖️ Dislike Button
                   buildCircleButton(
                     onTap: () {
                       context.read<MarriageCubit>().userInteraction(
@@ -710,7 +714,7 @@ class MarriageBodyState extends State<MarriageBody> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // INTERACTIONS TAB
+  // ✅ INTERACTIONS TAB — مع embedded history (بدون Navigator.push)
   // ═══════════════════════════════════════════════════════════════
   Widget _buildInteractionsContent({Key? key}) {
     return Directionality(
@@ -723,55 +727,119 @@ class MarriageBodyState extends State<MarriageBody> {
               bottom: false,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Center(child: _buildToggle()),
-                    Positioned(
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          context.pushNamed(AppRouter.kMarriageFilterView);
-                        },
-                        child: CircleAvatar(
-                          backgroundColor: Colors.black12,
-                          child: AppImage(
-                            AssetsData.kfilterIcon,
-                            width: 20,
-                            height: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BlocProvider.value(
-                                value: interactionsCubit,
-                                child: const HistoryScreen(),
+                child: _showHistory
+                    // ══════════════════════════════════════
+                    // ✅ AppBar السجل: SimpleAppBar
+                    // ══════════════════════════════════════
+                    ? SimpleAppBar(
+                        title: context.tr('history'),
+                        isLargeTitle: true,
+                        onBack: () => setState(() => _showHistory = false),
+                      )
+                    // ══════════════════════════════════════
+                    // ✅ AppBar التفاعلات: الأصلي
+                    // ══════════════════════════════════════
+                    : Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Center(child: _buildToggle()),
+                          Positioned(
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () {
+                                context.pushNamed(
+                                  AppRouter.kMarriageFilterView,
+                                );
+                              },
+                              child: CircleAvatar(
+                                backgroundColor: Colors.black12,
+                                child: AppImage(
+                                  AssetsData.kfilterIcon,
+                                  width: 20,
+                                  height: 20,
+                                ),
                               ),
                             ),
-                          );
-                        },
-                        child: AppImage(
-                          AssetsData.archiveIcon,
-                          width: 50.w,
-                          height: 50.h,
-                        ),
+                          ),
+                          Positioned(
+                            left: 0,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _showHistory = true;
+                                  _selectedHistoryFilter = "liked_you";
+                                });
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
+                                  Future.delayed(
+                                    const Duration(milliseconds: 150),
+                                    () =>
+                                        _historyKey.currentState?.scrollToTop(),
+                                  );
+                                });
+                              },
+                              child: AppImage(
+                                AssetsData.archiveIcon,
+                                width: 50.w,
+                                height: 50.h,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
+
+            // ✅ AnimatedSwitcher بين الـ InteractionBody والـ History
             Expanded(
-              child: BlocProvider.value(
-                value: interactionsCubit,
-                child: InteractionBody(key: _interactionBodyKey),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: _showHistory
+                    ? _buildEmbeddedHistory()
+                    : BlocProvider.value(
+                        key: const ValueKey('interaction_body'),
+                        value: interactionsCubit,
+                        child: InteractionBody(key: _interactionBodyKey),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ EMBEDDED HISTORY — بدون Scaffold أو Navigator
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildEmbeddedHistory() {
+    return BlocProvider.value(
+      key: const ValueKey('history_content'),
+      value: interactionsCubit,
+      child: Builder(
+        builder: (context) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ✅ Filter Chips
+            FilterChips(
+              onFilterChanged: (filterKey) {
+                setState(() => _selectedHistoryFilter = filterKey);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Future.delayed(
+                    const Duration(milliseconds: 100),
+                    () => _historyKey.currentState?.scrollToTop(),
+                  );
+                });
+              },
+            ),
+            SizedBox(height: 8.h),
+
+            // ✅ History Page — الـ BlocProvider.value فوق بيوصله للـ Historypage
+            Expanded(
+              child: Historypage(
+                key: _historyKey,
+                selectedFilter: _selectedHistoryFilter,
               ),
             ),
           ],

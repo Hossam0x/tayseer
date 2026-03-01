@@ -1424,7 +1424,6 @@
   "orders_receive_success": "Orders and sessions have been activated successfully",
   "orders_stop_success": "Orders and sessions have been suspended successfully",
   "story_deleted_success": "Story deleted successfully",
-<<<<<<< HEAD
   "images_pending_save": "Images pending save",
   "file_not_found": "File not found",
   "unsaved_changes": "Unsaved Changes",
@@ -1496,5 +1495,9 @@
   "share_app_card_description": "All you have to do is share the app link, collect points with every share, and then easily turn them into money! Don't miss the chance and start your money-making journey today!",
   "share_app_button": "Share App",
   "enter_reason": "Enter Reason",
-  "other_reason_hint": "Your opinion helps keep Tayseer reliable and safe ......."
+  "other_reason_hint": "Your opinion helps keep Tayseer reliable and safe .......",
+  "long_press_to_drag": "Long press to drag",
+  "reorder": "Reorder",
+  "images_pending_save": "Images pending save",
+  "edit_marriage_profile": "Edit Marriage Profile"
 }
