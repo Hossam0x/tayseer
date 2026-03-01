@@ -1064,6 +1064,7 @@ class _UserProfileViewState extends State<UserProfileView> {
       }
     });
   }
+
 void _showDeactivateMarriageDialog(BuildContext context, bool value) {
     // ⭐ احفظ reference للـ overlay قبل ما الـ dialog يفتح
     final overlay = Overlay.of(context);
@@ -1083,10 +1084,11 @@ void _showDeactivateMarriageDialog(BuildContext context, bool value) {
         value ? "activate_marriage_subtitle" : "activate_marriage_subtitle",
       ),
       imageUrl: AssetsData.marriageRingIcon,
-      bottonText: context.tr("نعم"),
-      cancelText: context.tr("لا"),
+      bottonText: context.tr("yes"),
+      cancelText: context.tr("no"),
       showCancelButton: true,
       onPressed: () {
+        // ⭐ زرار "نعم" - شغّل الـ fly animation
         // نحتاج BuildContext الـ button نفسه - هنستخدم overlay center كـ fallback
         NavAnimationService.instance.flyIcon(
           fromContext: context, // context الـ dialog
