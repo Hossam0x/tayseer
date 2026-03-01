@@ -155,8 +155,14 @@ class AddPostCubit extends Cubit<AddPostState> {
       if (state.capturedImages.isNotEmpty || state.selectedImages.isNotEmpty) {
         return;
       }
+      debugPrint(
+        '🎬 [AddPostCubit] addCapturedVideo called with path: ${file.path}',
+      );
       // Only allow a single captured video — replace any existing one
       emit(state.copyWith(capturedVideo: file));
+      debugPrint(
+        '🎬 [AddPostCubit] state.capturedVideo updated to: ${file.path}',
+      );
       _resolvePostType(); // ✅
     } catch (e) {
       debugPrint('addCapturedVideo error: $e');
@@ -167,6 +173,18 @@ class AddPostCubit extends Cubit<AddPostState> {
   void removeCapturedVideo() {
     emit(state.copyWith(capturedVideo: null));
     _resolvePostType(); // ✅
+  }
+
+  /// ✅ تحديث الفيديو المعدل (بدل remove + add)
+  void updateCapturedVideo(XFile newVideo) {
+    debugPrint(
+      '🎬 [AddPostCubit] updateCapturedVideo called with: ${newVideo.path}',
+    );
+    emit(state.copyWith(capturedVideo: newVideo));
+    debugPrint(
+      '🎬 [AddPostCubit] state.capturedVideo updated to: ${newVideo.path}',
+    );
+    _resolvePostType();
   }
 
   Future<void> enhanceTextWithGemini(BuildContext context) async {

@@ -1435,5 +1435,10 @@
   "photos": "صور",
   "add_caption": "إضافة شرح توضيحي...",
   "move_up": "نقل لأعلى",
-  "other_reason": "سبب آخر"
+  "other_reason": "سبب آخر",
+  "trim_video": "اقتطاع",
+  "add_text": "النص",
+  "save_video": "حفظ",
+  "start_typing": "ابدأ الكتابة",
+  "video_saved": "تم حفظ الفيديو بنجاح"
 }

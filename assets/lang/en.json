@@ -1439,5 +1439,10 @@
   "photos": "Photos",
   "add_caption": "Add a caption...",
   "move_up": "Move Up",
-  "other_reason": "Other Reason"
+  "other_reason": "Other Reason",
+  "trim_video": "Trim",
+  "add_text": "Text",
+  "save_video": "Save",
+  "start_typing": "Start Typing",
+  "video_saved": "Video saved successfully"
 }
