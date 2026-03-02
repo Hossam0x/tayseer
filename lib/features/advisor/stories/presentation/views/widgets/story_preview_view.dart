@@ -168,7 +168,7 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
       //   }
       // }
 
-      final renderModel = VideoRenderData(
+      final renderModel = RenderVideoModel(
         video: EditorVideo.file(widget.file.path),
         outputFormat: VideoOutputFormat.mp4,
         // Apply overlay image (stickers, text, drawings rendered on top of video)
@@ -192,8 +192,6 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
         // Apply trim if any
         startTime: parameters.startTime,
         endTime: parameters.endTime,
-        // Optimize for network streaming (puts metadata at beginning)
-        shouldOptimizeForNetworkUse: true,
       );
 
       final renderedPath = await ProVideoEditor.instance.renderVideoToFile(
