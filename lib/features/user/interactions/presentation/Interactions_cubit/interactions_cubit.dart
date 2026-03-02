@@ -118,13 +118,14 @@ class InteractionsCubit extends Cubit<InteractionsState> {
         ),
       ),
       (response) {
-        updateSubscriptionStatus(response.userSubscription);
-
+        // updateSubscriptionStatus(response.userSubscription);
+  final bool isSubscribed = response.userSubscription;
         final section = response.sections[filter];
 
         if (section == null) {
           emit(
             state.copyWith(
+              isSubscribed: isSubscribed,
               historyState: CubitStates.success,
               historyData: {filter: []},
               historyCurrentPage: {filter: 1},
@@ -171,6 +172,7 @@ class InteractionsCubit extends Cubit<InteractionsState> {
         emit(
           state.copyWith(
             historyState: CubitStates.success,
+             isSubscribed: isSubscribed,
             historyData: newData,
             historyCurrentPage: newCurrentPage,
             historyHasMore: newHasMore,

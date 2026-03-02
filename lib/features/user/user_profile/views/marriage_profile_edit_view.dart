@@ -638,25 +638,24 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
 
                   setState(() {});
 
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      CustomSnackBar(
-                        context,
-                        text: context.tr('image_reordered_successfully'),
-                        isError: false,
-                      ),
-                    );
-                  }
-                },
-                children: List.generate(4, (i) => secSlot(i)),
-              ),
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    CustomSnackBar(
+                      context,
+                      text: context.tr('image_reordered_successfully'),
+                      isSuccess: true,
+                    ),
+                  );
+                }
+              },
+              children: List.generate(4, (i) => secSlot(i)),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
+        ),
+      ],
+    ),
+  );
+}
   // ════════════════════════════════════════════════════════════════
   // VIDEO SECTION
   // ════════════════════════════════════════════════════════════════
