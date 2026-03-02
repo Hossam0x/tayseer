@@ -1444,19 +1444,6 @@
   "book_session": "Book Session",
   "recommended": "Recommended",
   "transaction": "Transaction",
-"experience": "Experience",
-"language": "Language",
-"badges": "Badges",
-"influencer": "Influencer",
-"expert": "Expert",
-"fast_response": "Fast Response",
-"trusted": "Trusted",
-"inspired": "Inspired",
-"listener": "Listener",
-"wise": "Wise",
-"search_by_experience": "Search",
-"book_session": "Book Session",
-"recommended": "Recommend",
   "photos": "Photos",
   "add_caption": "Add a caption...",
   "move_up": "Move Up",
@@ -1467,8 +1454,7 @@
   "start_typing": "Start Typing",
   "video_saved": "Video saved successfully",
   "report_sent_successfully": "Report sent successfully",
-  "detils_attendees": "Attendees Details",
-  "unsaved_changes": "Unsaved Changes",
+  
   "edit_marriage_profile": "Edit Marriage Profile",
   "activate_marriage_subtitle": "To make your journey towards marriage easier and smoother, we are here to help you every step of the way!",
   "activate_marriage_title": "Do you want to explore the marriage section in Tayseer?",
@@ -1504,13 +1490,8 @@
   "advanced_performance_reports": "Advanced Performance Reports",
   "subscribe_vip_for": "Subscribe to VIP for {} SAR",
   "elite": "Elite",
-  "pro": "Pro"
-  "other_reason": "Other Reason",
+  "pro": "Pro",
   "long_press_to_drag": "Long press to drag",
-"reorder": "Reorder",
-"images_pending_save": "Images pending save",
-"edit_marriage_profile": "Edit Marriage Profile",
-"activate_marriage_subtitle": "To make your journey toward marriage easier and smoother, we're here to help you every step of the way!",
-"activate_marriage_title": "Would you like to explore the marriage section in Tayseer?",
-"deactivate_marriage_title": "Would you like to disable the marriage section in Tayseer?"
+"reorder": "Reorder"
+
 }
