@@ -492,142 +492,151 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   // ════════════════════════════════════════════════════════════════
   // ✅ DRAG GRID — main image FIXED (non-draggable), secondary draggable
   // ════════════════════════════════════════════════════════════════
-Widget _buildDragGrid(
-  BuildContext context,
-  MarriageProfileCubit cubit,
-  MarriageUserProfileModel profile, {
-  required String? displaySingleUrl,
-  required File? pendingSingle,
-  required bool hasSingleToShow,
-  required List<String> secondaryImages,
-  required List<String> filteredServerImages,
-  required List<String> allDisplayImages,
-}) {
-  final screenWidth = MediaQuery.of(context).size.width - 40.w - 20.w;
-  final cellWidth = (screenWidth - 24) / 3;
-  final cellHeight = cellWidth / 0.7;
+  Widget _buildDragGrid(
+    BuildContext context,
+    MarriageProfileCubit cubit,
+    MarriageUserProfileModel profile, {
+    required String? displaySingleUrl,
+    required File? pendingSingle,
+    required bool hasSingleToShow,
+    required List<String> secondaryImages,
+    required List<String> filteredServerImages,
+    required List<String> allDisplayImages,
+  }) {
+    final screenWidth = MediaQuery.of(context).size.width - 40.w - 20.w;
+    final cellWidth = (screenWidth - 24) / 3;
+    final cellHeight = cellWidth / 0.7;
 
-  // ✅ Fixed Main Image
-  Widget mainFixed = SizedBox(
-    width: cellWidth,
-    height: cellHeight, // spans 2 rows height + gap
-    child: ImageSlotCard(
-      imageUrl: displaySingleUrl,
-      localFile: pendingSingle,
-      isMain: true,
-      onTap: null,
-      onRemove: null,
-    ),
-  );
+    // ✅ Fixed Main Image
+    Widget mainFixed = SizedBox(
+      width: cellWidth,
+      height: cellHeight, // spans 2 rows height + gap
+      child: ImageSlotCard(
+        imageUrl: displaySingleUrl,
+        localFile: pendingSingle,
+        isMain: true,
+        onTap: null,
+        onRemove: null,
+      ),
+    );
 
-  // ✅ Drag hint banner
-  Widget dragHint = Container(
-    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-    decoration: BoxDecoration(
-      color: AppColors.primary50.withOpacity(0.5),
-      borderRadius: BorderRadius.circular(8.r),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.touch_app_outlined, size: 14.w, color: AppColors.primary400),
-        Gap(6.w),
-        Text(
-          context.tr('long_press_to_drag'),
-          style: TextStyle(fontSize: 11.sp, color: AppColors.primary400),
-        ),
-      ],
-    ),
-  );
-
-  // ✅ Build each secondary slot
-  Widget secSlot(int listIndex) {
-    if (listIndex >= secondaryImages.length) {
-      return Container(
-        key: ValueKey('empty_$listIndex'),
-        child: ImageSlotCard(
-          imageUrl: null,
-          isMain: false,
-          onTap: null,
-          onRemove: null,
-        ),
-      );
-    }
-    final isLocal = listIndex >= filteredServerImages.length;
-    final pendingIndex = listIndex - filteredServerImages.length;
-    final imageUrl = isLocal ? null : secondaryImages[listIndex];
-
-    return AnimatedContainer(
-      key: ValueKey('sec_${secondaryImages[listIndex]}'),
-      duration: const Duration(milliseconds: 200),
-      child: Stack(
+    // ✅ Drag hint banner
+    Widget dragHint = Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: AppColors.primary50.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12.r),
-            child: ImageSlotCard(
-              imageUrl: imageUrl,
-              localFile: isLocal ? widget.state.pendingImages[pendingIndex] : null,
-              isMain: false,
-              onTap: null,
-              onRemove: null,
-            ),
+          Icon(
+            Icons.touch_app_outlined,
+            size: 14.w,
+            color: AppColors.primary400,
           ),
-          Positioned(
-            top: 6.h,
-            right: 6.w,
-            child: Container(
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(5.r),
-              ),
-              child: Icon(
-                Icons.drag_indicator_rounded,
-                color: Colors.white,
-                size: 13.w,
-              ),
-            ),
+          Gap(6.w),
+          Text(
+            context.tr('long_press_to_drag'),
+            style: TextStyle(fontSize: 11.sp, color: AppColors.primary400),
           ),
         ],
       ),
     );
-  }
 
-  return Directionality(
-    textDirection: TextDirection.rtl,
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ── LEFT: Main image FIXED (spans full height) ──
-        mainFixed,
+    // ✅ Build each secondary slot
+    Widget secSlot(int listIndex) {
+      if (listIndex >= secondaryImages.length) {
+        return Container(
+          key: ValueKey('empty_$listIndex'),
+          child: ImageSlotCard(
+            imageUrl: null,
+            isMain: false,
+            onTap: null,
+            onRemove: null,
+          ),
+        );
+      }
+      final isLocal = listIndex >= filteredServerImages.length;
+      final pendingIndex = listIndex - filteredServerImages.length;
+      final imageUrl = isLocal ? null : secondaryImages[listIndex];
 
-        SizedBox(width: 12.w),
+      return AnimatedContainer(
+        key: ValueKey('sec_${secondaryImages[listIndex]}'),
+        duration: const Duration(milliseconds: 200),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12.r),
+              child: ImageSlotCard(
+                imageUrl: imageUrl,
+                localFile: isLocal
+                    ? widget.state.pendingImages[pendingIndex]
+                    : null,
+                isMain: false,
+                onTap: null,
+                onRemove: null,
+              ),
+            ),
+            Positioned(
+              top: 6.h,
+              right: 6.w,
+              child: Container(
+                padding: EdgeInsets.all(3.w),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(5.r),
+                ),
+                child: Icon(
+                  Icons.drag_indicator_rounded,
+                  color: Colors.white,
+                  size: 13.w,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
-        // ── RIGHT: ReorderableGridView للـ 4 صور الثانوية ──
-        Expanded(
-          child: SizedBox(
-            // height = 2 rows + 1 gap
-            height: cellHeight * 2 + 12,
-            child: ReorderableGridView.count(
-              crossAxisCount: 2,
-              childAspectRatio: 0.7,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              onReorder: (oldIdx, newIdx) {
-                if (oldIdx == newIdx) return;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── LEFT: Main image FIXED (spans full height) ──
+          mainFixed,
 
-                // ✅ Reorder locally in the list
-                final updatedImages = List<String>.from(secondaryImages);
-                if (newIdx >= updatedImages.length) return;
+          SizedBox(width: 12.w),
 
-                final item = updatedImages.removeAt(oldIdx);
-                updatedImages.insert(newIdx, item);
+          // ── RIGHT: ReorderableGridView للـ 4 صور الثانوية ──
+          Expanded(
+            child: SizedBox(
+              // height = 2 rows + 1 gap
+              height: cellHeight * 2 + 12,
+              child: ReorderableGridView.count(
+                crossAxisCount: 2,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                onReorder: (oldIdx, newIdx) {
+                  if (oldIdx == newIdx) return;
 
-                cubit.reorderSecondaryImages(updatedImages, filteredServerImages);
+                  // ✅ Reorder locally in the list
+                  final updatedImages = List<String>.from(secondaryImages);
+                  if (newIdx >= updatedImages.length) return;
 
-                setState(() {});
+                  final item = updatedImages.removeAt(oldIdx);
+                  updatedImages.insert(newIdx, item);
+
+                  cubit.reorderSecondaryImages(
+                    updatedImages,
+                    filteredServerImages,
+                  );
+
+                  setState(() {});
 
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(

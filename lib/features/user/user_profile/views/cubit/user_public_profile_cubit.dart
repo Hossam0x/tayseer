@@ -301,6 +301,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
       postId: postId,
       isRemove: isCurrentlySaved,
     );
+    if (isClosed) return;
 
     result.fold(
       (failure) {
@@ -338,6 +339,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
     );
 
     final result = await _postsRepository.deletePost(postId: postId);
+    if (isClosed) return;
 
     result.fold(
       (failure) {
@@ -375,6 +377,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
     );
 
     final result = await _postsRepository.archivePost(postId: postId);
+    if (isClosed) return;
 
     result.fold(
       (failure) {
@@ -554,6 +557,8 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
       reason: reason,
       reasonDetails: reasonDetails,
     );
+    if (isClosed) return;
+
     result.fold(
       (failure) => emit(
         state.copyWith(

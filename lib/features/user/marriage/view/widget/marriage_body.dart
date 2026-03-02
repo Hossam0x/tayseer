@@ -106,9 +106,6 @@ class MarriageBodyState extends State<MarriageBody> {
     _scrollDelta = 0;
   }
 
-    _lastOffset = currentOffset;
-  }
-
   // ✅ Scroll to Top
   void scrollToTop() {
     if (_mainScrollController.hasClients) {
@@ -362,14 +359,13 @@ Widget _buildToggle() {
                     reportId: user?.id,
                     images: images,
                     name: user?.name ?? '',
-                    age: "🎂 ${answers?.aboutMe?.age ?? ''}",
+                    age: answers?.aboutMe?.age ?? '',
                     location: user?.country ?? answers?.aboutMe?.country ?? '',
-                    tagsjob: "💼 ${user?.about?.job ?? ''}",
-                    educationLevel: "🎓 ${user?.about?.educationLevel ?? ''}",
-                    religiousCommitment:
-                        "🕌 ${user?.about?.religiousCommitment ?? ''}",
-                    nationality: "🌍 ${user?.about?.nationality ?? ''}",
-                    height: "📏 ${user?.about?.height ?? ''}",
+                    tagsjob: user?.about?.job ?? '',
+                    educationLevel: user?.about?.educationLevel,
+                    religiousCommitment: user?.about?.religiousCommitment,
+                    nationality: user?.about?.nationality,
+                    height: user?.about?.height,
                     toggleWidget: _buildToggle(),
                   ),
                   SliverPadding(
@@ -417,19 +413,15 @@ Widget _buildToggle() {
                       child: AboutMeSection(
                         items: [
                           if (answers?.aboutMe?.socialStatus != null)
-                            {'label': "💍 ${answers!.aboutMe!.socialStatus}"},
-
+                            {'label': answers!.aboutMe!.socialStatus},
                           if (answers?.family?.hasChildren != null)
-                            {'label': "👶 ${answers!.family!.hasChildren}"},
-
+                            {'label': answers!.family!.hasChildren},
                           if (answers?.aboutMe?.weight != null)
-                            {'label': "⚖️ ${answers?.aboutMe?.weight} gm"},
-
+                            {'label': "gm ${answers?.aboutMe?.weight}"},
                           if (answers?.professionalLife?.job != null)
-                            {'label': "💼 ${answers!.professionalLife!.job}"},
-
+                            {'label': answers!.professionalLife!.job},
                           if (answers?.aboutMe?.healthStatus != null)
-                            {'label': "🩺 ${answers!.aboutMe!.healthStatus}"},
+                            {'label': answers!.aboutMe!.healthStatus},
                         ],
                       ),
                     ),
@@ -458,11 +450,10 @@ Widget _buildToggle() {
                           if (answers?.professionalLife?.educationLevel != null)
                             {
                               'label':
-                                  "🎓 ${answers!.professionalLife!.educationLevel}",
+                                  answers!.professionalLife!.educationLevel,
                             },
-
                           if (answers?.professionalLife?.job != null)
-                            {'label': "💼 ${answers!.professionalLife!.job}"},
+                            {'label': answers!.professionalLife!.job},
                         ],
                       ),
                     ),
@@ -535,13 +526,9 @@ Widget _buildToggle() {
                       child: ReligiousSection(
                         tags: [
                           if (answers?.aboutMe?.religiousCommitment != null)
-                            {
-                              'label':
-                                  "🕌 ${answers!.aboutMe!.religiousCommitment}",
-                            },
-
+                            {'label': answers!.aboutMe!.religiousCommitment},
                           if (answers?.aboutMe?.smoker != null)
-                            {'label': "🚬 ${answers!.aboutMe!.smoker}"},
+                            {'label': answers!.aboutMe!.smoker},
                         ],
                       ),
                     ),
@@ -649,7 +636,7 @@ Widget _buildToggle() {
             AnimatedPositioned(
               duration: const Duration(milliseconds: 400),
               curve: Curves.easeOutCubic,
-              bottom: state.isScrollingDown ? 50.h : 130.h,
+              bottom: state.isScrollingDown ? 50.h : 100.h,
               left: 0,
               right: 0,
               child: Row(

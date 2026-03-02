@@ -109,6 +109,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
         advisorId: advisorId,
         page: nextPage,
       );
+      if (isClosed) return;
 
       result.fold((failure) => emit(state.copyWith(isLoadingMore: false)), (
         newPosts,
@@ -141,6 +142,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
         advisorId: advisorId,
         page: 1,
       );
+      if (isClosed) return;
 
       result.fold(
         (failure) => emit(state.copyWith(postsState: CubitStates.failure)),
@@ -165,6 +167,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
         advisorId: advisorId,
         page: 1,
       );
+      if (isClosed) return;
 
       result.fold(
         (failure) {
@@ -328,6 +331,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
       postId: postId,
       action: isRemoving ? "remove" : "add",
     );
+    if (isClosed) return;
 
     result.fold(
       (failure) {
@@ -519,6 +523,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
       postId: postId,
       isRemove: isCurrentlySaved,
     );
+    if (isClosed) return;
 
     result.fold(
       (failure) {
@@ -556,6 +561,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     );
 
     final result = await _repository.deletePost(postId: postId);
+    if (isClosed) return;
 
     result.fold(
       (failure) {
@@ -593,6 +599,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     );
 
     final result = await _repository.archivePost(postId: postId);
+    if (isClosed) return;
 
     result.fold(
       (failure) {
@@ -747,6 +754,8 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
       reason: reason,
       reasonDetails: reasonDetails,
     );
+    if (isClosed) return;
+
     result.fold(
       (failure) => emit(
         state.copyWith(

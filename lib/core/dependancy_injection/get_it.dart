@@ -12,10 +12,12 @@ import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart'
 import 'package:tayseer/features/advisor/session/data/repos/advisor_session_repo.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_cubit.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/advisor_packages_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/user_followings_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -258,6 +260,14 @@ Future<void> setupGetIt() async {
 
   getIt.registerLazySingleton<AccountManagementRepository>(
     () => AccountManagementRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerLazySingleton<AdvisorPackagesRepository>(
+    () => AdvisorPackagesRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<PackagesCubit>(
+    () => PackagesCubit(getIt<AdvisorPackagesRepository>()),
   );
 
   getIt.registerLazySingleton<OrderManagementRepository>(

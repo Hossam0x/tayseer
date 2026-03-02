@@ -529,6 +529,7 @@ class ArchivePostModel extends Equatable {
       myReaction: myReaction,
       isRepostedByMe: isRepostedByMe ?? false,
       isSaved: true, // المنشورات المؤرشفة تكون محفوظة تلقائياً
+      userType: 'Advisor', // Default for archived posts usually
     );
   }
 

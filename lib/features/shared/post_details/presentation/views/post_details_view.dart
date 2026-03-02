@@ -15,6 +15,7 @@ class PostDetailsView extends StatefulWidget {
   final VideoPlayerController? cachedController;
   final PostCallbacks callbacks;
   final bool isFromProfile;
+  final String? heroPrefix;
 
   const PostDetailsView({
     super.key,
@@ -22,6 +23,7 @@ class PostDetailsView extends StatefulWidget {
     this.cachedController,
     this.callbacks = const PostCallbacks(),
     required this.isFromProfile,
+    this.heroPrefix,
   });
 
   @override
@@ -121,6 +123,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                   cachedController: widget.cachedController,
                   scrollController: _scrollController,
                   callbacks: widget.callbacks,
+                  heroPrefix: widget.heroPrefix,
                 ),
               ),
               const CommentInputArea(),
@@ -172,6 +175,7 @@ class _PostDetailsBody extends StatefulWidget {
   final ScrollController scrollController;
   final PostCallbacks callbacks;
   final bool isFromProfile;
+  final String? heroPrefix;
 
   const _PostDetailsBody({
     required this.currentPost,
@@ -179,6 +183,7 @@ class _PostDetailsBody extends StatefulWidget {
     required this.scrollController,
     required this.callbacks,
     required this.isFromProfile,
+    this.heroPrefix,
   });
 
   @override
@@ -261,6 +266,7 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
                   cachedController: widget.cachedController,
                   scrollController: widget.scrollController,
                   callbacks: widget.callbacks,
+                  heroPrefix: widget.heroPrefix,
                   commentCallbacks: commentCallbacks, // ✅ تمرير الـ Bundle
                   onCommentTap: () => cubit.requestInputFocus(),
                   comments: uiState.comments,

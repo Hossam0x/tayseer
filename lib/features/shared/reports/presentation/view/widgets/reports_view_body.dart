@@ -63,9 +63,47 @@ class ReportsViewBody extends StatelessWidget {
     );
   }
 
-  SliverFillRemaining _buildLoading() {
-    return const SliverFillRemaining(
-      child: Center(child: CircularProgressIndicator()),
+  SliverList _buildLoading() {
+    return SliverList.separated(
+      separatorBuilder: (context, index) => Divider(
+        height: 1.h,
+        indent: 16.w,
+        endIndent: 16.w,
+        color: Colors.grey[200],
+      ),
+      itemCount: 12,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: Colors.grey[200]!,
+          highlightColor: Colors.grey[100]!,
+          child: ListTile(
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 4.h,
+            ),
+            title: Row(
+              children: [
+                Container(
+                  height: 20.h,
+                  width: 150.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                ),
+              ],
+            ),
+            trailing: Container(
+              height: 16.sp,
+              width: 16.sp,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -93,6 +131,13 @@ class ReportsViewBody extends StatelessWidget {
           context.pushNamed(
             AppRouter.kReportDetailsView,
             arguments: {'reportsCubit': cubit, 'reportReason': report.reason},
+          );
+        } else {
+          // Send no reason text to clear previous selection, or emit state for 'other'
+          // We don't have to select a reason because the server logic passes it as otherReason
+          context.pushNamed(
+            AppRouter.kOtherReportReasonView,
+            arguments: {'reportsCubit': cubit},
           );
         }
       },

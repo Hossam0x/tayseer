@@ -111,6 +111,7 @@ class PostModel {
   final bool isSaved;
   final bool isMine;
   final bool isBlocked;
+  final String userType; // ✅ Advisor or User
 
   // for commnets
   final bool isCommented;
@@ -141,6 +142,7 @@ class PostModel {
     this.isMine = false,
     this.isHidden = false,
     this.isBlocked = false,
+    required this.userType,
     this.event,
     this.videoData,
 
@@ -198,6 +200,7 @@ class PostModel {
       repostedBy: json['repostedBy'],
       isSaved: json['isSaved'] ?? false,
       isMine: json['isMine'] ?? false,
+      userType: json['userType'] ?? 'Advisor',
 
       isCommented: json['isCommented'] ?? false,
       isAnonymous: json['isAnonymousCommented'],
@@ -238,6 +241,7 @@ class PostModel {
     bool? isMine,
     bool? isHidden,
     bool? isBlocked,
+    String? userType,
     EventModel? event,
 
     bool? isCommented,
@@ -269,6 +273,7 @@ class PostModel {
       isMine: isMine ?? this.isMine,
       isHidden: isHidden ?? this.isHidden,
       isBlocked: isBlocked ?? this.isBlocked,
+      userType: userType ?? this.userType,
       event: event ?? this.event,
       isCommented: isCommented ?? this.isCommented,
       isAnonymous: isAnonymous ?? this.isAnonymous,

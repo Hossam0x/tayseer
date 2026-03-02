@@ -15,6 +15,7 @@ class PostDetailsCard extends StatelessWidget {
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
   final CommentCallbacks commentCallbacks;
+  final String? heroPrefix;
 
   /// Callback when comment input should be focused
   final VoidCallback? onCommentTap;
@@ -80,6 +81,7 @@ class PostDetailsCard extends StatelessWidget {
     this.isReplyLoading = false,
     this.getCommentKey,
     required this.isFromProfile,
+    this.heroPrefix,
   });
 
   @override
@@ -95,6 +97,7 @@ class PostDetailsCard extends StatelessWidget {
           cachedController: cachedController,
           callbacks: callbacks,
           onCommentTap: onCommentTap,
+          heroPrefix: heroPrefix,
         ),
 
         SliverToBoxAdapter(child: Gap(10.h)),
@@ -162,6 +165,7 @@ class _PostSection extends StatelessWidget {
   final PostCallbacks callbacks;
   final VoidCallback? onCommentTap;
   final bool isFromProfile;
+  final String? heroPrefix;
 
   const _PostSection({
     required this.post,
@@ -169,6 +173,7 @@ class _PostSection extends StatelessWidget {
     required this.callbacks,
     this.onCommentTap,
     required this.isFromProfile,
+    this.heroPrefix,
   });
 
   @override
@@ -180,6 +185,7 @@ class _PostSection extends StatelessWidget {
         sharedController: cachedController,
         callbacks: callbacks,
         isFromProfile: isFromProfile,
+        heroPrefix: heroPrefix,
         onNavigateToDetails: (_, __, ___) => onCommentTap?.call(),
       ),
     );
