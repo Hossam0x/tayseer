@@ -33,6 +33,14 @@ class ChatListItem extends StatelessWidget {
     final badgeSize = isMobile ? 22.0 : 24.0;
     final badgeFontSize = isMobile ? 11.0 : 13.0;
 
+    // الحصول على المستخدم الآخر
+    final otherUser = chatRoom.users.isNotEmpty
+        ? chatRoom.users.firstWhere(
+            (user) => user.id == chatRoom.sender.id,
+            orElse: () => chatRoom.sender,
+          )
+        : chatRoom.sender;
+
     return Padding(
       padding: EdgeInsets.only(left: leftPadding, top: 6, bottom: 6),
       child: Slidable(
@@ -186,7 +194,7 @@ class ChatListItem extends StatelessWidget {
                                     'سيتمكن المستخدم من إرسال رسائل إليك مرة أخرى.',
                                 onConfirm: () {
                                   context.read<ChatListCubit>().unblockUser(
-                                    blockedId: chatRoom.sender.id,
+                                    blockedId: otherUser.id,
                                     chatRoomId: chatRoom.id,
                                   );
                                 },
@@ -201,7 +209,7 @@ class ChatListItem extends StatelessWidget {
                                     'لن يتمكن المستخدم من إرسال رسائل إليك.',
                                 onConfirm: () {
                                   context.read<ChatListCubit>().blockUser(
-                                    blockedId: chatRoom.sender.id,
+                                    blockedId: otherUser.id,
                                     chatRoomId: chatRoom.id,
                                   );
                                 },
@@ -228,10 +236,10 @@ class ChatListItem extends StatelessWidget {
                 .pushNamed(
                   AppRouter.kConversitionView,
                   arguments: {
-                    'receiverid': chatRoom.sender.id,
+                    'receiverid': otherUser.id,
                     'chatroomid': chatRoom.id,
-                    'username': chatRoom.sender.name,
-                    'userimage': chatRoom.sender.image,
+                    'username': otherUser.name,
+                    'userimage': otherUser.image,
                     'isBlocked': chatRoom.isBlocked,
                     'onBlockStatusChanged': (bool isBlocked) {
                       if (context.mounted) {
@@ -265,10 +273,7 @@ class ChatListItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                      image: NetworkImage(
-                        chatRoom.sender.image ??
-                            'https://i.pravatar.cc/150?img=12',
-                      ),
+                      image: NetworkImage(otherUser.image!),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -279,7 +284,7 @@ class ChatListItem extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        chatRoom.sender.name,
+                        otherUser.name,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: titleFontSize,
