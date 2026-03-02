@@ -273,6 +273,17 @@ class HomeRepositoryImpl implements HomeRepository {
   @override
   Future<Either<Failure, ImageAndNameModel>> fetchNameAndImage() async {
     try {
+      // Guest users don't have a /user/profile endpoint — read from cache
+      if (isGuest) {
+        final name =
+            (await CachNetwork.getData(key: kGuestName)) as String? ?? '';
+        final image =
+            (await CachNetwork.getData(key: kGuestImage)) as String? ?? '';
+        return Right(
+          ImageAndNameModel(image: image, name: name, notifications: 0),
+        );
+      }
+
       final endPoint = isAdvisor ? ApiEndPoint.nameAndImage : '/user/profile';
       final response = await apiService.get(endPoint: endPoint);
 

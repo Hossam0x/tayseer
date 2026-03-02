@@ -21,6 +21,7 @@ class ImageViewerView extends StatefulWidget {
 
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
+  final String? heroPrefix;
 
   const ImageViewerView({
     super.key,
@@ -31,6 +32,7 @@ class ImageViewerView extends StatefulWidget {
     required this.isFromPostDetails,
     this.callbacks = const PostCallbacks(),
     required this.isFromProfile,
+    this.heroPrefix,
   });
 
   @override
@@ -279,6 +281,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
         // ✅ استخدام الويدجت الجديد المخصص للزوم
         return _ZoomableImage(
           isFromProfile: widget.isFromProfile,
+          heroPrefix: widget.heroPrefix,
           imageUrl: imageUrl,
           postId: widget.postId,
           onTap: _onImageTap,
@@ -383,6 +386,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
 
 class _ZoomableImage extends StatefulWidget {
   final bool isFromProfile;
+  final String? heroPrefix;
   final String imageUrl;
   final String postId;
   final VoidCallback onTap;
@@ -391,6 +395,7 @@ class _ZoomableImage extends StatefulWidget {
 
   const _ZoomableImage({
     required this.isFromProfile,
+    this.heroPrefix,
     required this.imageUrl,
     required this.postId,
     required this.onTap,
@@ -481,7 +486,7 @@ class _ZoomableImageState extends State<_ZoomableImage>
         child: Center(
           child: Hero(
             tag:
-                '${widget.isFromProfile ? 'profile' : 'home'}_post_${widget.postId}_img_${widget.imageUrl}',
+                '${widget.heroPrefix ?? (widget.isFromProfile ? 'profile' : 'home')}_post_${widget.postId}_img_${widget.imageUrl}',
             // ✅ استخدم CachedNetworkImage مباشرة بدل AppImage
             child: CachedNetworkImage(
               imageUrl: widget.imageUrl,

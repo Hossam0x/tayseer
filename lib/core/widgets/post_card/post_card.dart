@@ -21,6 +21,7 @@ class PostCard extends StatefulWidget {
 
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
+  final String? heroPrefix;
 
   /// Callback for navigating to post details
   final NavigateToDetailsCallback? onNavigateToDetails;
@@ -33,6 +34,7 @@ class PostCard extends StatefulWidget {
     this.callbacks = const PostCallbacks(),
     this.onNavigateToDetails,
     required this.isFromProfile,
+    this.heroPrefix,
   });
 
   @override
@@ -138,6 +140,7 @@ class _PostCardState extends State<PostCard> {
             sharedController: widget.sharedController,
             onControllerCreated: (c) => _activeController = c,
             callbacks: widget.callbacks,
+            heroPrefix: widget.heroPrefix,
           ),
           Gap(context.responsiveHeight(15)),
 
@@ -431,6 +434,8 @@ class _PostUserHeader extends StatelessWidget {
       avatar: post.avatar,
       advisorId: post.advisorId,
       isVerified: post.isVerified,
+      userType: post.userType,
+      isMine: post.isMine,
       onMoreTap: onMoreTap ?? () {},
       subtitle: Row(
         children: [
@@ -494,6 +499,7 @@ class _PostMedia extends StatefulWidget {
   final void Function(VideoPlayerController) onControllerCreated;
   final PostCallbacks callbacks;
   final bool isFromProfile;
+  final String? heroPrefix;
 
   const _PostMedia({
     required this.post,
@@ -502,6 +508,7 @@ class _PostMedia extends StatefulWidget {
     required this.onControllerCreated,
     required this.callbacks,
     required this.isFromProfile,
+    this.heroPrefix,
   });
 
   @override
@@ -529,6 +536,7 @@ class _PostMediaState extends State<_PostMedia> {
                 postId: widget.post.postId,
                 post: widget.post,
                 callbacks: widget.callbacks,
+                heroPrefix: widget.heroPrefix,
               )
             : const SizedBox.shrink();
       case PostContentType.event:

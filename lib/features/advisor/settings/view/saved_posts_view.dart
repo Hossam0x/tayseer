@@ -345,6 +345,7 @@ class _PostItemState extends State<_PostItem> {
           padding: EdgeInsets.only(bottom: 16.h),
           child: PostCard(
             isFromProfile: false,
+            heroPrefix: 'saved_posts',
             post: post,
             callbacks: _callbacks,
             onNavigateToDetails: (context, post, controller) {
@@ -354,6 +355,7 @@ class _PostItemState extends State<_PostItem> {
                   builder: (context) => PostDetailsView(
                     post: post,
                     isFromProfile: false,
+                    heroPrefix: 'saved_posts',
                     cachedController: controller,
                     callbacks: _callbacks,
                   ),

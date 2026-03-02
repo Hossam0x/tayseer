@@ -431,6 +431,7 @@ class _PostItemState extends State<_PostItem> {
       MaterialPageRoute(
         builder: (_) => PostDetailsView(
           isFromProfile: true,
+          heroPrefix: 'user_profile',
           post: post,
           cachedController: controller,
           callbacks: _callbacks,
@@ -454,6 +455,7 @@ class _PostItemState extends State<_PostItem> {
             if (post == null) return const SizedBox.shrink();
             return PostCard(
               isFromProfile: true,
+              heroPrefix: 'user_profile',
               post: post,
               callbacks: _callbacks,
               onNavigateToDetails: _onNavigateToDetails,

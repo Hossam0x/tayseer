@@ -88,7 +88,7 @@ class _ProfessionalInfoDashboardViewState
                               onPressed: () {
                                 Navigator.pushNamed(
                                   context,
-                                  AppRouter.kBoostAccountView,
+                                  AppRouter.kPackagesTabView,
                                 );
                               },
                               text: context.tr('boost_button'),
