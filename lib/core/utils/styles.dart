@@ -174,4 +174,8 @@ abstract class Styles {
     fontSize: 30.sp,
     fontWeight: FontWeight.w700,
   );
+  static final textStyle32Meduim = TextStyle(
+    fontSize: 32.sp,
+    fontWeight: FontWeight.w500,
+  );
 }
