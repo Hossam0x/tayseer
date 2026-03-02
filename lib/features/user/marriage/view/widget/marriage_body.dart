@@ -30,7 +30,8 @@ class MarriageBody extends StatefulWidget {
     this.fromInteractions = false,
     this.onScroll,
   });
-    final String? personId;
+
+  final String? personId;
   final bool fromInteractions;
   final Function(bool isScrollingDown)? onScroll;
 
@@ -101,9 +102,11 @@ class MarriageBodyState extends State<MarriageBody> {
         cubit.setScrollingDown(isDown);
       }
 
-    // ✅ إبلاغ الـ Layout بالسكرول (لإخفاء NavBar)
-    widget.onScroll?.call(isDown);
-    _scrollDelta = 0;
+      widget.onScroll?.call(isDown);
+      _scrollDelta = 0;
+    }
+
+    _lastOffset = currentOffset;
   }
 
   // ✅ Scroll to Top
@@ -124,20 +127,23 @@ class MarriageBodyState extends State<MarriageBody> {
     context.read<MarriageCubit>().setScrollingDown(false);
   }
 
-Widget _buildToggle() {
-  final cubit = context.read<MarriageCubit>();
-  return SectionToggle(
-    isMarriage: cubit.state.isMarriageTab,
-    onChanged: (value) {
-      // ✅ لو جاي من التفاعلات وضغط على تاب التفاعلات = ارجع للخلف
-      if (!value && widget.fromInteractions) {
-        context.pop();
-        return;
-      }
-      cubit.setMarriageTab(value);
-    },
-  );
-}
+  Widget _buildToggle() {
+    final cubit = context.read<MarriageCubit>();
+    return SectionToggle(
+      isMarriage: cubit.state.isMarriageTab,
+      onChanged: (value) {
+        if (!value && widget.fromInteractions) {
+          context.pop();
+          return;
+        }
+        // ✅ لو بيرجع من الـ history، ارجع للـ interactions أولاً
+        if (_showHistory) {
+          setState(() => _showHistory = false);
+        }
+        cubit.setMarriageTab(value);
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
