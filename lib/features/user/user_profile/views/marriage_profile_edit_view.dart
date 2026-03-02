@@ -538,7 +538,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           Gap(6.w),
           Text(
             context.tr('long_press_to_drag'),
-            style: TextStyle(fontSize: 11.sp, color: AppColors.primary400),
+            style: TextStyle(fontSize: 14.sp, color: AppColors.primary400),
           ),
         ],
       ),
@@ -638,24 +638,25 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
 
                   setState(() {});
 
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    CustomSnackBar(
-                      context,
-                      text: context.tr('image_reordered_successfully'),
-                      isSuccess: true,
-                    ),
-                  );
-                }
-              },
-              children: List.generate(4, (i) => secSlot(i)),
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      CustomSnackBar(
+                        context,
+                        text: context.tr('image_reordered_successfully'),
+                        isSuccess: true,
+                      ),
+                    );
+                  }
+                },
+                children: List.generate(4, (i) => secSlot(i)),
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
+
   // ════════════════════════════════════════════════════════════════
   // VIDEO SECTION
   // ════════════════════════════════════════════════════════════════
@@ -1700,7 +1701,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
       listener: (context, state) {
         if (state.state == CubitStates.success && !state.isUpdating) {
+        
           widget.onTabChanged?.call(1);
+          
         } else if (state.state == CubitStates.failure) {
           debugPrint('❌ [SAVE] Error: ${state.errorMessage}');
           if (state.errorMessage != null)

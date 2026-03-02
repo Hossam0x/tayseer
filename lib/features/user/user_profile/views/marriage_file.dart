@@ -400,10 +400,11 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 return ElevatedButton(
                   onPressed: currentState.isUpdating
                       ? null
-                      : () {
-                          Navigator.pop(dialogContext); // أغلق الـ dialog
-                          cubit
+                      : () async{
+                        await  cubit
                               .saveProfile(); // ✅ بس كده - الـ BlocConsumer في _buildSaveButton هيتكلم عنك
+                          Navigator.pop(dialogContext); // أغلق الـ dialog
+                    
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: currentState.isUpdating

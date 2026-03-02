@@ -12,16 +12,7 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       child: IgnorePointer(
         ignoring: false,
         child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              colors: [
-                Colors.white.withOpacity(0.98),
-                Colors.white.withOpacity(0.0),
-              ],
-            ),
-          ),
+          
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
           child: SafeArea(
             top: false,
