@@ -9,22 +9,35 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       bottom: 0,
       left: 0,
       right: 0,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 16.h),
-              _interactionSubscriptionButton(
-                context.tr("subscribe_to_see_likes"),
-                context,
-                onPressed: () {
-                  context.pushNamed(AppRouter.kinteractionSubscriptionView);
-                },
-              ),
-            ],
+      child: IgnorePointer(
+        ignoring: false,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+                Colors.white.withOpacity(0.98),
+                Colors.white.withOpacity(0.0),
+              ],
+            ),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: 40.h),
+                _interactionSubscriptionButton(
+                  context.tr("subscribe_to_see_likes"),
+                  context,
+                  onPressed: () {
+                    context.pushNamed(AppRouter.kinteractionSubscriptionView);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
