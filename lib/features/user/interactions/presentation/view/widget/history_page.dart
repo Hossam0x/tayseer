@@ -106,6 +106,7 @@ class HistorypageState extends State<Historypage> {
   Widget build(BuildContext context) {
     return BlocBuilder<InteractionsCubit, InteractionsState>(
       builder: (context, state) {
+        
         if (state.historyState == CubitStates.loading &&
             (state.historyData[widget.selectedFilter]?.isEmpty ?? true)) {
           return _buildSkeletonLoading();
@@ -138,19 +139,22 @@ class HistorypageState extends State<Historypage> {
         // ✅ Empty state — مع overlay لو مش مشترك
         if (data.isEmpty) {
           return Stack(
+            clipBehavior: Clip.none,
             children: [
-              RefreshIndicator.adaptive(
-                onRefresh: _onRefresh,
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: EmptyHistory(
-                        selectedFilter: widget.selectedFilter,
+              Positioned.fill(
+                child: RefreshIndicator.adaptive(
+                  onRefresh: _onRefresh,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: EmptyHistory(
+                          selectedFilter: widget.selectedFilter,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               if (!state.isSubscribed) const SubscriptionPromptOverlay(),
@@ -162,44 +166,47 @@ class HistorypageState extends State<Historypage> {
         final childAspectRatio = _getChildAspectRatio(crossAxisCount);
 
         return Stack(
+          clipBehavior: Clip.none,
           children: [
-            RefreshIndicator.adaptive(
-              onRefresh: _onRefresh,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 22.w),
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverPadding(
-                      padding: EdgeInsets.only(top: 16.h),
-                      sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
-                    ),
-                    SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 12.w,
-                        mainAxisSpacing: 12.h,
-                        childAspectRatio: childAspectRatio,
+            Positioned.fill(
+              child: RefreshIndicator.adaptive(
+                onRefresh: _onRefresh,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 22.w),
+                  child: CustomScrollView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverPadding(
+                        padding: EdgeInsets.only(top: 16.h),
+                        sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
                       ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        if (index >= data.length) return _buildLoadingCard();
-                        return InteractionProfileCard(
-                          item: data[index],
-                          showFavoriteIcon:
-                              widget.selectedFilter == "favorites",
-                          forceBlur: !state.isSubscribed,
-                          showRibbon: widget.selectedFilter != "met_them",
-                        );
-                      }, childCount: data.length + (_isLoadingMore ? 2 : 0)),
-                    ),
-                    SliverPadding(
-                      padding: EdgeInsets.only(
-                        bottom: state.isSubscribed ? 80.h : 160.h,
+                      SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 12.w,
+                          mainAxisSpacing: 12.h,
+                          childAspectRatio: childAspectRatio,
+                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          if (index >= data.length) return _buildLoadingCard();
+                          return InteractionProfileCard(
+                            item: data[index],
+                            showFavoriteIcon:
+                                widget.selectedFilter == "favorites",
+                            forceBlur: !state.isSubscribed,
+                            showRibbon: widget.selectedFilter != "met_them",
+                          );
+                        }, childCount: data.length + (_isLoadingMore ? 2 : 0)),
                       ),
-                      sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
-                    ),
-                  ],
+                      SliverPadding(
+                        padding: EdgeInsets.only(
+                          bottom: state.isSubscribed ? 80.h : 160.h,
+                        ),
+                        sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

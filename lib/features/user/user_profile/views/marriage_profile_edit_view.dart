@@ -634,7 +634,7 @@ Widget _buildDragGrid(
                     CustomSnackBar(
                       context,
                       text: context.tr('image_reordered_successfully'),
-                      isError: false,
+                      isSuccess: true,
                     ),
                   );
                 }
