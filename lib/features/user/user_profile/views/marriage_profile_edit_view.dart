@@ -273,7 +273,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                               _isDragMode
                                   ? Icons.check_rounded
                                   : Icons.swap_vert_rounded,
-                              size: 14.w,
+                              size: 17.w,
                               color: _isDragMode
                                   ? AppColors.primary300
                                   : Colors.grey,
@@ -284,7 +284,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                                   ? context.tr('done')
                                   : context.tr('reorder'),
                               style: TextStyle(
-                                fontSize: 11.sp,
+                                fontSize: 13.sp,
                                 color: _isDragMode
                                     ? AppColors.primary300
                                     : Colors.grey,
@@ -313,14 +313,14 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 children: [
                   Icon(
                     Icons.touch_app_outlined,
-                    size: 14.w,
+                    size: 16.w,
                     color: AppColors.primary400,
                   ),
                   Gap(6.w),
                   Text(
                     context.tr('long_press_to_drag'),
                     style: TextStyle(
-                      fontSize: 11.sp,
+                      fontSize: 13.sp,
                       color: AppColors.primary400,
                     ),
                   ),
