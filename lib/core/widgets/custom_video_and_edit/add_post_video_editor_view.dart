@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
@@ -18,8 +17,10 @@ class VideoEditorView extends StatefulWidget {
 class _VideoEditorViewState extends State<VideoEditorView> {
   VideoPlayerController? _videoController;
   ProVideoController? _proVideoController;
+
   TrimDurationSpan? _durationSpan;
   TrimDurationSpan? _tempDurationSpan;
+
   bool _isVideoInitialized = false;
   bool _isSeeking = false;
   bool _editorPopped = false;
@@ -53,26 +54,24 @@ class _VideoEditorViewState extends State<VideoEditorView> {
       await _videoController!.play();
 
       if (mounted) {
-        setState(() {
-          _isVideoInitialized = true;
-        });
+        setState(() => _isVideoInitialized = true);
       }
     } catch (e) {
       debugPrint('Error initializing video: $e');
       if (mounted) {
-        setState(() {
-          _isVideoInitialized = false;
-        });
+        setState(() => _isVideoInitialized = false);
       }
     }
   }
 
   void _onDurationChange() {
     if (_videoController == null || _proVideoController == null) return;
-    var duration = _videoController!.value.position;
+
+    final duration = _videoController!.value.position;
     _proVideoController!.playTimeNotifier.value = duration;
 
     final totalVideoDuration = _videoController!.value.duration;
+
     if (_durationSpan != null && duration >= _durationSpan!.end) {
       _seekToPosition(_durationSpan!);
     } else if (duration >= totalVideoDuration) {
@@ -89,6 +88,7 @@ class _VideoEditorViewState extends State<VideoEditorView> {
       _tempDurationSpan = span;
       return;
     }
+
     _isSeeking = true;
 
     _proVideoController?.isPlayingNotifier.value = false;
@@ -100,7 +100,7 @@ class _VideoEditorViewState extends State<VideoEditorView> {
     _isSeeking = false;
 
     if (_tempDurationSpan != null) {
-      TrimDurationSpan nextSeek = _tempDurationSpan!;
+      final nextSeek = _tempDurationSpan!;
       _tempDurationSpan = null;
       await _seekToPosition(nextSeek);
     }
@@ -114,20 +114,53 @@ class _VideoEditorViewState extends State<VideoEditorView> {
     super.dispose();
   }
 
-  // ✅ لما يخلص التعديل - يرجع مباشرة
-  Future<void> _onEditingComplete(Uint8List bytes) async {
-    if (!mounted) return;
-    if (_editorPopped) return;
+  // ✅ نفس منطق الاستوري — Full render with parameters
+  Future<void> _onVideoEditingComplete(CompleteParameters parameters) async {
+    if (!mounted || _editorPopped) return;
     _editorPopped = true;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(child: const CustomloadingApp()),
+    );
 
     try {
       final tempDir = await getTemporaryDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final outputPath = '${tempDir.path}/edited_$timestamp.mp4';
+      final outputPath = '${tempDir.path}/edited_post_$timestamp.mp4';
 
       final renderModel = RenderVideoModel(
         video: EditorVideo.file(widget.videoFile.path),
         outputFormat: VideoOutputFormat.mp4,
+
+        // ✅ layers (stickers / text / draw)
+        imageBytes: parameters.layers.isNotEmpty ? parameters.image : null,
+
+        // ✅ blur
+        blur: parameters.blur,
+
+        // ✅ filters
+        colorMatrixList: parameters.colorFilters,
+
+        // ✅ transform
+        transform: parameters.isTransformed
+            ? ExportTransform(
+                width: parameters.cropWidth,
+                height: parameters.cropHeight,
+                rotateTurns: parameters.rotateTurns,
+                x: parameters.cropX,
+                y: parameters.cropY,
+                flipX: parameters.flipX,
+                flipY: parameters.flipY,
+              )
+            : null,
+
+        // ✅ trim
+        startTime: parameters.startTime,
+        endTime: parameters.endTime,
+
+        shouldOptimizeForNetworkUse: true,
       );
 
       final renderedPath = await ProVideoEditor.instance.renderVideoToFile(
@@ -135,16 +168,22 @@ class _VideoEditorViewState extends State<VideoEditorView> {
         renderModel,
       );
 
-      if (mounted) Navigator.of(context).pop(File(renderedPath));
+      if (mounted) {
+        Navigator.pop(context); // dismiss loading
+        Navigator.of(context).pop(File(renderedPath));
+      }
     } catch (e) {
       debugPrint('Video render error: $e');
-      if (mounted) Navigator.of(context).pop(widget.videoFile);
+      if (mounted) {
+        Navigator.pop(context);
+        Navigator.of(context).pop(widget.videoFile);
+      }
     }
   }
 
-  // ✅ لو عاوز يقفل بدون حفظ
   Future<bool> _handleCloseWarning() async {
     final completer = Completer<bool>();
+
     CustomshowDialogWithImage(
       context,
       title: context.tr('unsaved_changes_title'),
@@ -162,6 +201,7 @@ class _VideoEditorViewState extends State<VideoEditorView> {
         if (!completer.isCompleted) completer.complete(false);
       },
     );
+
     return completer.future;
   }
 
@@ -175,9 +215,8 @@ class _VideoEditorViewState extends State<VideoEditorView> {
     }
 
     final callbacks = ProImageEditorCallbacks(
-      onImageEditingComplete: (bytes) async {
-        await _onEditingComplete(bytes);
-      },
+      onImageEditingComplete: null,
+      onCompleteWithParameters: _onVideoEditingComplete,
       onCloseEditor: (mode) {
         if (_editorPopped) return;
         _editorPopped = true;
