@@ -21,6 +21,7 @@ class AppStrings {
   static const String share = "share";
   static const String unshare = "unshare";
   static const String archive = "archive";
+  static const String unarchive = "unarchive";
   static const String delete = "delete";
   static const String block = "block";
   static const String save = "save";
