@@ -12,6 +12,7 @@ import 'package:tayseer/features/advisor/settings/view/cubit/rating_cubit.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/referral_share_card.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -58,13 +59,12 @@ class _SettingsViewState extends State<SettingsView> {
             listener: (context, state) {
               if (state is SettingsLoaded) {
                 if (state.actionSuccess != null) {
-                  showSafeSnackBar(
-                    context: context,
-                    text: state.isActionKey
+                  // Convert to APP toast
+                  AppToast.success(
+                    context,
+                    state.isActionKey
                         ? context.tr(state.actionSuccess!)
                         : state.actionSuccess!,
-                    isSuccess: true,
-                    duration: const Duration(milliseconds: 1500),
                   );
                   // Special handling for language update side effect
                   if (state.actionSuccess == "update_language_success") {
@@ -75,12 +75,12 @@ class _SettingsViewState extends State<SettingsView> {
                   }
                   context.read<SettingsCubit>().clearMessages();
                 } else if (state.actionError != null) {
-                  showSafeSnackBar(
-                    context: context,
-                    text: state.isActionKey
+                  // Convert to APP toast
+                  AppToast.error(
+                    context,
+                    state.isActionKey
                         ? context.tr(state.actionError!)
                         : state.actionError!,
-                    isError: true,
                   );
                   context.read<SettingsCubit>().clearMessages();
                 }
@@ -180,6 +180,25 @@ class _SettingsViewState extends State<SettingsView> {
                     return CustomScrollView(
                       physics: const BouncingScrollPhysics(),
                       slivers: [
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              left: 20.w,
+                              right: 20.w,
+                              top: 40.h,
+                            ),
+                            child: ReferralShareCard(
+                              points: state.points,
+                              referralLink: state.referralLink,
+                              onShare: () {
+                                context.read<SettingsCubit>().shareApp(
+                                  context.tr("share_app_message"),
+                                  context.tr("share_app_subject"),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
                         SliverPadding(
                           padding: EdgeInsets.symmetric(
                             horizontal: 20.w,
@@ -431,19 +450,10 @@ class _SettingsViewState extends State<SettingsView> {
         AppRouter.kRegisrationView,
         (route) => false,
       );
-
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("logout_success"),
-        isSuccess: true,
-      );
+      AppToast.success(context, context.tr("logout_success"));
     } catch (e) {
       Navigator.pop(context);
-      showSafeSnackBar(
-        context: context,
-        text: context.tr("logout_error"),
-        isError: true,
-      );
+      AppToast.error(context, context.tr("logout_error"));
     }
   }
 
