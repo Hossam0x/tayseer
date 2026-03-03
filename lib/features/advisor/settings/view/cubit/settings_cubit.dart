@@ -31,6 +31,12 @@ class SettingsCubit extends Cubit<SettingsState> {
 
       final settings = [
         SettingItemModel(
+          id: 'edit_profile',
+          title: 'edit_personal_data',
+          iconAsset: AssetsData.icEditSettings,
+          routeName: AppRouter.kEditPersonalDataView,
+        ),
+        SettingItemModel(
           id: 'notifications',
           title: 'notifications_settings',
           iconAsset: AssetsData.icNotificationSettings,
@@ -44,12 +50,6 @@ class SettingsCubit extends Cubit<SettingsState> {
               !notificationStatus,
             );
           },
-        ),
-        SettingItemModel(
-          id: 'edit_profile',
-          title: 'edit_personal_data',
-          iconAsset: AssetsData.icEditSettings,
-          routeName: AppRouter.kEditPersonalDataView,
         ),
         SettingItemModel(
           id: 'savers',
@@ -139,10 +139,16 @@ class SettingsCubit extends Cubit<SettingsState> {
         ),
       ];
 
+      // Use user ID to generate a placeholder referral link
+      final userId = kCurrentUserData?.id ?? 'user';
+      final referralLink = 'https://tayseer.app/referral/$userId';
+
       emit(
         SettingsLoaded(
           settings: settings,
           isNotificationEnabled: notificationStatus,
+          points: 0,
+          referralLink: referralLink,
         ),
       );
     } catch (e) {

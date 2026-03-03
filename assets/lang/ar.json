@@ -1491,8 +1491,16 @@
   "subscribe_vip_for": "اشترك في VIP بـ {} ريال",
   "elite": "Elite",
   "pro": "Pro",
+
   "enter_reason": "ادخال السبب",
   "other_reason_hint": "يساعد رأيك في الحفاظ علي تطبيق تيسير بشكل موثوق وامن .......",
   "long_press_to_drag": "اضغط مطولاً للسحب",
-  "reorder": "إعادة ترتيب"
+  "reorder": "إعادة ترتيب",
+  "share_app_card_title": "شارك تطبيقنا، جمع النقاط بسرعة، تتحول لفلوس!",
+  "share_app_card_description": "كل ما عليك فعله هو مشاركة لينك التطبيق، وجمع النقاط مع كل مشاركة، وبعدها حولهم لفلوس بسهولة! لا تفوت الفرصة وابدأ رحلتك في ربح الأموال اليوم!",
+  "share_app_button": "مشاركة التطبيق",
+  "story_archived_success": "تم أرشفة القصة بنجاح",
+  "story_hidden_success": "تم إخفاء القصة بنجاح",
+  "story_created_success": "تم إنشاء القصة بنجاح",
+  "story_unarchived_success": "تم إلغاء أرشفة القصة بنجاح"
 }
