@@ -1702,7 +1702,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   ) {
     return BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
       listener: (context, state) {
-        if (state.state == CubitStates.success && !state.isUpdating) {
+        if (state.state == CubitStates.success && !state.isUpdating && state.savedFromButton) {
           ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
             context,
