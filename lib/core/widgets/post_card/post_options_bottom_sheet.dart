@@ -15,6 +15,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
   final VoidCallback? onArchive;
   final VoidCallback? onDelete;
   final VoidCallback? onDownload;
+  final bool isArchived;
 
   const PostOptionsBottomSheet({
     super.key,
@@ -30,6 +31,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
     this.onArchive,
     this.onDelete,
     this.onDownload,
+    this.isArchived = false,
   });
 
   static void show(
@@ -46,6 +48,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
     VoidCallback? onEdit,
     VoidCallback? onArchive,
     VoidCallback? onDelete,
+    bool isArchived = false,
   }) {
     showModalBottomSheet(
       context: context,
@@ -69,6 +72,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
         onArchive: onArchive,
         onDelete: onDelete,
         onDownload: onDownload,
+        isArchived: isArchived,
       ),
     );
   }
@@ -120,8 +124,12 @@ class PostOptionsBottomSheet extends StatelessWidget {
               onTap: onEdit,
             ),
             OptionItem(
-              text: context.tr(AppStrings.archive),
-              icon: Icons.archive_outlined,
+              text: isArchived
+                  ? context.tr(AppStrings.unarchive)
+                  : context.tr(AppStrings.archive),
+              icon: isArchived
+                  ? Icons.unarchive_outlined
+                  : Icons.archive_outlined,
               onTap: onArchive,
               isArchive: true,
             ),
@@ -243,7 +251,12 @@ class PostOptionsBottomSheet extends StatelessWidget {
         } else if (item.isBlock) {
           _showBlockConfirmation(context); // ✅ إضافة التحقق من البلوك
         } else if (item.isArchive) {
-          _showArchiveConfirmation(context); // ✅ إضافة التحقق من الأرشفة
+          if (isArchived) {
+            Navigator.pop(context);
+            if (item.onTap != null) item.onTap!();
+          } else {
+            _showArchiveConfirmation(context);
+          }
         } else {
           Navigator.pop(context);
           if (item.onTap != null) item.onTap!();

@@ -22,6 +22,7 @@ class PostCard extends StatefulWidget {
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
   final String? heroPrefix;
+  final bool isArchived;
 
   /// Callback for navigating to post details
   final NavigateToDetailsCallback? onNavigateToDetails;
@@ -35,6 +36,7 @@ class PostCard extends StatefulWidget {
     this.onNavigateToDetails,
     required this.isFromProfile,
     this.heroPrefix,
+    this.isArchived = false,
   });
 
   @override
@@ -120,6 +122,7 @@ class _PostCardState extends State<PostCard> {
                 widget.post.postId,
                 widget.post.advisorId,
               ),
+              isArchived: widget.isArchived,
             ),
           ),
           Gap(context.responsiveHeight(15)),
