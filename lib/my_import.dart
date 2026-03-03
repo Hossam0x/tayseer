@@ -1,5 +1,6 @@
 export 'package:flutter/material.dart';
 export 'package:tayseer/core/errors/failure.dart';
+export 'package:tayseer/core/appLocalizations/appLocalizations.dart';
 export 'package:tayseer/core/utils/extensions/extensions.dart';
 export 'package:tayseer/core/utils/assets.dart';
 export 'package:tayseer/core/utils/styles.dart';
