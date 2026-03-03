@@ -12,3 +12,5 @@ const String kUserProfileCache = 'user_profile_cache';
 
 const String kGuestName = 'guest_name';
 const String kGuestImage = 'guest_image';
+
+const String kAppLanguage = 'app_language';
