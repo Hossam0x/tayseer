@@ -98,6 +98,9 @@ class AppImage extends StatelessWidget {
           fit: fit,
           height: height,
           width: width,
+          fadeInDuration: Duration.zero,
+          fadeOutDuration: Duration.zero,
+          placeholderFadeInDuration: Duration.zero,
           placeholder: (context, url) => placeholderImage != null
               ? Image.asset(
                   placeholderImage!,
@@ -123,6 +126,9 @@ class AppImage extends StatelessWidget {
         height: height,
         width: width,
         color: color,
+        fadeInDuration: Duration.zero,
+        fadeOutDuration: Duration.zero,
+        placeholderFadeInDuration: Duration.zero,
         placeholder: (context, url) => placeholderImage != null
             ? Image.asset(
                 placeholderImage!,

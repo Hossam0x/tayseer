@@ -198,19 +198,31 @@ class _UserStoryPageState extends State<_UserStoryPage> {
   int _currentStoryIndex = 0;
   DateTime? _currentStoryTime;
 
+  bool _storyItemsInitialized = false;
+
   @override
   void initState() {
     super.initState();
     _storyController = CustomStoryController();
     // Only the active page is allowed to trigger play
     _storyController.isAllowedToPlay = widget.isActive;
-    _initStoryItems();
+    // Note: _initStoryItems is called in didChangeDependencies (needs context)
 
     // Immediately pause inactive pages so the media loader doesn't fire play
     if (!widget.isActive) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _storyController.pause();
       });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Build story items once — needs context for isArabicLang
+    if (!_storyItemsInitialized) {
+      _storyItemsInitialized = true;
+      _initStoryItems();
     }
   }
 
@@ -270,6 +282,8 @@ class _UserStoryPageState extends State<_UserStoryPage> {
       _currentStoryIndex = startIndex;
     }
 
+    final isArabic = context.isArabicLang;
+
     for (var story in _reorderedStories) {
       final hasVideo = story.video != null && story.video!.isNotEmpty;
       if (hasVideo) {
@@ -278,18 +292,37 @@ class _UserStoryPageState extends State<_UserStoryPage> {
             ? Duration(milliseconds: (story.videoDuration! * 1000).round())
             : const Duration(seconds: 15);
         _storyItems.add(
-          StoryItem.pageVideo(
-            story.video!,
-            controller: _storyController,
+          StoryItem(
+            // Black bg (replaces pageVideo's Container(color: Colors.black))
+            // Counter-flip restores content orientation while outer StoryView flip makes bars RTL
+            Container(
+              color: Colors.black,
+              child: Transform.scale(
+                scaleX: isArabic ? -1.0 : 1.0,
+                child: StoryVideo.url(
+                  story.video!,
+                  controller: _storyController,
+                ),
+              ),
+            ),
             duration: duration,
           ),
         );
       } else {
         _storyItems.add(
-          StoryItem.pageImage(
-            url: story.image,
-            controller: _storyController,
-            imageFit: BoxFit.contain,
+          StoryItem(
+            // Black bg (replaces pageImage's Container(color: Colors.black))
+            Container(
+              color: Colors.black,
+              child: Transform.scale(
+                scaleX: isArabic ? -1.0 : 1.0,
+                child: StoryImage.url(
+                  story.image,
+                  controller: _storyController,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
             duration: const Duration(seconds: 5),
           ),
         );
@@ -326,35 +359,37 @@ class _UserStoryPageState extends State<_UserStoryPage> {
 
     return Stack(
       children: [
-        // ── StoryView directionality determines bar fill direction ──────────
-        Directionality(
-          textDirection:  TextDirection.ltr,
-          child: StoryView(
-            storyItems: _storyItems,
-            controller: _storyController,
-            onComplete: widget.onAllStoriesComplete,
-            onStoryShow: (item, index) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  setState(() {
-                    if (index < _reorderedStories.length) {
-                      _currentStoryIndex = index;
-                      _currentStoryTime = _reorderedStories[index].createdAt;
-                      _markCurrentStoryAsViewed();
-                    }
-                  });
-                }
-              });
-            },
-            progressPosition: ProgressPosition.top,
-            repeat: false,
-            inline: false,
-            // Adjust indicator padding based on direction
-            indicatorOuterPadding: EdgeInsets.fromLTRB(
-              isArabic ? 16.w : 0.w,
-              20.h,
-              isArabic ? 0.w : 16.w,
-              8.h,
+        // ── StoryView: outer flip makes bars go RTL; inner flip per item restores content ──
+        // In Arabic: scaleX(-1) flips the whole StoryView so:
+        //   - Bars are ordered right→left ✅
+        //   - Fill inside each bar goes right→left ✅
+        //   - Content (images/videos) have a counter-flip inside each StoryItem ✅
+        Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()..scale(isArabic ? -1.0 : 1.0, 1.0),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: StoryView(
+              storyItems: _storyItems,
+              controller: _storyController,
+              onComplete: widget.onAllStoriesComplete,
+              onStoryShow: (item, index) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    setState(() {
+                      if (index < _reorderedStories.length) {
+                        _currentStoryIndex = index;
+                        _currentStoryTime = _reorderedStories[index].createdAt;
+                        _markCurrentStoryAsViewed();
+                      }
+                    });
+                  }
+                });
+              },
+              progressPosition: ProgressPosition.top,
+              repeat: false,
+              inline: false,
+              indicatorOuterPadding: const EdgeInsets.fromLTRB(0, 20, 0, 8),
             ),
           ),
         ),

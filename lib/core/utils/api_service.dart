@@ -46,6 +46,7 @@ class ApiService {
       final mergedHeaders = {
         // 'Accept-Language': selectedLanguage ?? 'ar',
         // 'Accept': 'application/json',
+        "lang": selectedLanguage ?? 'ar',
         'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
         ...?headers,
       };
@@ -74,9 +75,7 @@ class ApiService {
     void Function(int, int)? onSendProgress,
   }) async {
     try {
-      final mergedHeaders = <String, dynamic>{
-        'Accept-Language': selectedLanguage ?? 'ar',
-      };
+      final mergedHeaders = <String, dynamic>{'lang': selectedLanguage ?? 'ar'};
       mergedHeaders['Authorization'] =
           'Bearer ${CachNetwork.getStringData(key: 'token')}';
       mergedHeaders["Accept"] = "application/json";
@@ -113,7 +112,7 @@ class ApiService {
   }) async {
     try {
       final mergedHeaders = <String, dynamic>{
-        'Accept-Language': selectedLanguage ?? 'ar',
+        'lang': selectedLanguage ?? 'ar',
         'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
         'Accept': 'application/json',
         ...?headers,

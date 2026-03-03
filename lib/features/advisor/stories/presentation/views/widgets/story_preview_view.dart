@@ -5,6 +5,7 @@ import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_video_editor/pro_video_editor.dart';
 import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 
 class StoryPreviewView extends StatefulWidget {
   final File file;
@@ -31,6 +32,7 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
   TrimDurationSpan? _tempDurationSpan;
   bool _isVideoInitialized = false;
   bool _isSeeking = false;
+  bool _isMuted = false;
 
   @override
   void initState() {
@@ -153,26 +155,23 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final outputPath = '${tempDir.path}/edited_story_$timestamp.mp4';
 
-      // Fix: Don't manual flip. Most modern camera plugins handle front camera
-      // rendering automatically or save correctly. Manual flipping often causes
-      // mirrored text on clothes/backgrounds.
-      // Removed:
-      // Uint8List? overlayImage = parameters.layers.isNotEmpty
-      //     ? parameters.image
-      //     : null;
-      // if (widget.isFrontCamera && overlayImage != null) {
-      //   final decodedOverlay = img.decodeImage(overlayImage);
-      //   if (decodedOverlay != null) {
-      //     final flippedOverlay = img.flipHorizontal(decodedOverlay);
-      //     overlayImage = Uint8List.fromList(img.encodePng(flippedOverlay));
-      //   }
-      // }
+      Uint8List? overlayImage = parameters.layers.isNotEmpty
+          ? parameters.image
+          : null;
+      if (widget.isFrontCamera && overlayImage != null) {
+        final decodedOverlay = img.decodeImage(overlayImage);
+        if (decodedOverlay != null) {
+          final flippedOverlay = img.flipHorizontal(decodedOverlay);
+          overlayImage = Uint8List.fromList(img.encodePng(flippedOverlay));
+        }
+      }
 
-      final renderModel = VideoRenderData(
+      final renderModel = RenderVideoModel(
         video: EditorVideo.file(widget.file.path),
         outputFormat: VideoOutputFormat.mp4,
+        enableAudio: !_isMuted,
         // Apply overlay image (stickers, text, drawings rendered on top of video)
-        imageBytes: parameters.layers.isNotEmpty ? parameters.image : null,
+        imageBytes: overlayImage,
         // Apply blur if any
         blur: parameters.blur,
         // Apply color filters if any
@@ -185,15 +184,15 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
                 rotateTurns: parameters.rotateTurns,
                 x: parameters.cropX,
                 y: parameters.cropY,
-                flipX: parameters.flipX, // Removed || widget.isFrontCamera
+                flipX: parameters.flipX || widget.isFrontCamera,
                 flipY: parameters.flipY,
               )
-            : null, // Removed widget.isFrontCamera ? const ExportTransform(flipX: true) : null,
+            : (widget.isFrontCamera
+                  ? const ExportTransform(flipX: true)
+                  : null),
         // Apply trim if any
         startTime: parameters.startTime,
         endTime: parameters.endTime,
-        // Optimize for network streaming (puts metadata at beginning)
-        shouldOptimizeForNetworkUse: true,
       );
 
       final renderedPath = await ProVideoEditor.instance.renderVideoToFile(
@@ -273,6 +272,7 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
               onPause: _videoController!.pause,
               onPlay: _videoController!.play,
               onMuteToggle: (isMuted) {
+                _isMuted = isMuted;
                 _videoController!.setVolume(isMuted ? 0 : 100);
               },
               onTrimSpanUpdate: (span) {

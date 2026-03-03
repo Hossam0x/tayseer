@@ -21,24 +21,34 @@ class PackagesTabSelector extends StatelessWidget {
             builder: (context, constraints) {
               final width = constraints.maxWidth;
               final sectionWidth = width / 3;
+              final bool isEliteSelected =
+                  selectedPackage == SelectedPackage.elite;
+              final Color barColor = isEliteSelected
+                  ? Colors.white
+                  : const Color(0xFFD9D9D9);
 
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
                   // Horizontal Line (Placed at y=40)
                   Positioned(
-                    top: 40.h,
+                    top: 35.h,
                     left: 0,
                     right: 0,
-                    child: Container(
-                      height: 1.h,
-                      color: Colors.grey.withOpacity(0.3),
-                    ),
+                    child: Container(height: 5.h, color: barColor),
                   ),
                   // Triangles at fixed positions
-                  _buildStaticTriangles(sectionWidth),
+                  _buildStaticTriangles(sectionWidth, barColor),
                   // Selected Indicator (Bubble + Arrow)
                   _buildSelectedIndicator(sectionWidth),
+                  // Interactive Overlay for the top part
+                  Row(
+                    children: [
+                      _buildTopClickOverlay(SelectedPackage.elite),
+                      _buildTopClickOverlay(SelectedPackage.pro),
+                      _buildTopClickOverlay(SelectedPackage.basic),
+                    ],
+                  ),
                 ],
               );
             },
@@ -46,106 +56,128 @@ class PackagesTabSelector extends StatelessWidget {
         ),
         Gap(10.h),
         // Tab Labels
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildTabText('Elite', SelectedPackage.elite),
-              _buildTabText('Pro', SelectedPackage.pro),
-              _buildTabText('Basic', SelectedPackage.basic),
-            ],
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildTabText('Elite', SelectedPackage.elite),
+            _buildTabText('Pro', SelectedPackage.pro),
+            _buildTabText('Basic', SelectedPackage.basic),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildStaticTriangles(double sectionWidth) {
+  Widget _buildStaticTriangles(double sectionWidth, Color color) {
     return Stack(
       children: [
-        _buildTriangleAt(sectionWidth * 0.5),
-        _buildTriangleAt(sectionWidth * 1.5),
-        _buildTriangleAt(sectionWidth * 2.5),
+        _buildTriangleAt(sectionWidth * 0.52, color),
+        _buildTriangleAt(sectionWidth * 1.49, color),
+        _buildTriangleAt(sectionWidth * 2.48, color),
       ],
     );
   }
 
-  Widget _buildTriangleAt(double centerX) {
+  Widget _buildTriangleAt(double centerX, Color color) {
     return Positioned(
       left: centerX - 10.w,
-      top: 40.h,
+      top: 35.h,
       child: CustomPaint(
         size: Size(20.w, 15.h),
-        painter: TrianglePainter(color: Colors.grey.withOpacity(0.3)),
+        painter: TrianglePainter(color: color),
       ),
     );
   }
 
   Widget _buildSelectedIndicator(double sectionWidth) {
     int index = 0;
-    Color color = AppColors.primary400;
+    List<Color> colors = [AppColors.primary400, AppColors.primary400];
     String label = '';
+    bool isVertical = true;
 
     if (selectedPackage == SelectedPackage.elite) {
       index = 0;
-      color = const Color(0xFFFEC155);
-      label = "Elite";
+      colors = [const Color(0xFF4BB8F9), const Color(0xFF6284FF)];
+      label = "مميزة";
     } else if (selectedPackage == SelectedPackage.pro) {
       index = 1;
-      color = const Color(0xFFCF9916);
-      label = "Pro";
+      colors = [const Color(0xFFBD8F14), const Color(0xFFF5C003)];
+      label = "ذهبية";
+      isVertical = false;
     } else {
       index = 2;
-      color = AppColors.primary400;
-      label = "اساسية";
+      colors = [AppColors.primary300, AppColors.primary500];
+      label = "أساسية";
     }
 
-    double centerX = sectionWidth * (index + 0.5);
+    final int visualIndex = isArabic ? (2 - index) : index;
+    double centerX = sectionWidth * (visualIndex + 0.5);
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      left: centerX - 40.w,
+      left: centerX - 36.w,
       top: 0,
       child: Column(
         children: [
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(10.r),
+              gradient: LinearGradient(
+                colors: colors,
+                begin: isVertical ? Alignment.topCenter : Alignment.centerRight,
+                end: isVertical ? Alignment.bottomCenter : Alignment.centerLeft,
+              ),
+              borderRadius: BorderRadius.circular(6.r),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: colors.last.withOpacity(0.3),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: Text(
               label,
-              style: Styles.textStyle14Bold.copyWith(color: Colors.white),
+              style: Styles.textStyle16SemiBold.copyWith(color: Colors.white),
             ),
           ),
           CustomPaint(
             size: Size(15.w, 10.h),
-            painter: TrianglePainter(color: color.withOpacity(0.8)),
+            painter: TrianglePainter(colors: colors, isVertical: isVertical),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildTopClickOverlay(SelectedPackage pkg) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onSelected(pkg),
+        behavior: HitTestBehavior.opaque,
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+
   Widget _buildTabText(String text, SelectedPackage pkg) {
-    final isSelected = selectedPackage == pkg;
-    return GestureDetector(
-      onTap: () => onSelected(pkg),
-      behavior: HitTestBehavior.opaque,
-      child: Text(
-        text,
-        style: Styles.textStyle16Bold.copyWith(
-          color: isSelected ? Colors.black87 : Colors.grey,
+    final bool isEliteSelected = selectedPackage == SelectedPackage.elite;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onSelected(pkg),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          alignment: Alignment.center,
+          padding: EdgeInsets.symmetric(vertical: 20.h),
+          child: Text(
+            text,
+            style: Styles.textStyle16.copyWith(
+              color: isEliteSelected ? Colors.white : Colors.black,
+            ),
+          ),
         ),
       ),
     );
@@ -153,21 +185,52 @@ class PackagesTabSelector extends StatelessWidget {
 }
 
 class TrianglePainter extends CustomPainter {
-  final Color color;
+  final List<Color>? colors;
+  final Color? color;
+  final bool isVertical;
 
-  TrianglePainter({required this.color});
+  TrianglePainter({this.colors, this.color, this.isVertical = true});
 
   @override
   void paint(Canvas canvas, Size size) {
-    var paint = Paint()..color = color;
+    var paint = Paint()..style = PaintingStyle.fill;
+
+    if (colors != null) {
+      paint.shader = LinearGradient(
+        colors: colors!,
+        begin: isVertical ? Alignment.topCenter : Alignment.centerRight,
+        end: isVertical ? Alignment.bottomCenter : Alignment.centerLeft,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    } else if (color != null) {
+      paint.color = color!;
+    }
+
     var path = Path();
-    path.moveTo(0, 0);
-    path.lineTo(size.width, 0);
-    path.lineTo(size.width / 2, size.height);
+    const double radius = 2.0;
+
+    // Drawing a rounded triangle (pointing down)
+    path.moveTo(radius, 0);
+    path.lineTo(size.width - radius, 0);
+    path.arcToPoint(
+      Offset(size.width, radius),
+      radius: const Radius.circular(radius),
+    );
+    path.lineTo(size.width / 2 + radius, size.height - radius);
+    path.arcToPoint(
+      Offset(size.width / 2 - radius, size.height - radius),
+      radius: const Radius.circular(radius),
+    );
+    path.lineTo(0, radius);
+    path.arcToPoint(Offset(radius, 0), radius: const Radius.circular(radius));
+
     path.close();
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant TrianglePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.isVertical != isVertical ||
+        oldDelegate.colors != colors;
+  }
 }

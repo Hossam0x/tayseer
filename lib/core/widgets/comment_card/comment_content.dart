@@ -397,7 +397,7 @@ class NavToProfile extends StatelessWidget {
           // لا تفعل شيئًا أو أظهر رسالة
           return;
         }
-        userType == 'Advisor'
+        userType.toLowerCase() == 'advisor'
             ? _navigateToUserAdvisorProfile(context)
             : _navigateToUserProfile(context);
       },

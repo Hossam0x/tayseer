@@ -64,10 +64,10 @@ class LayoutCubit extends Cubit<LayoutState> {
     emit(state.copyWith(userType: userType, currentIndex: 0));
   }
 
-  void updateMarriageVisibility(bool isVisible) {
-    final newIndex = (!isVisible && state.currentIndex == 1)
-        ? 0
-        : state.currentIndex;
-    emit(state.copyWith(isMarriageVisible: isVisible, currentIndex: newIndex));
-  }
+void updateMarriageVisibility(bool isVisible) {
+  emit(state.copyWith(
+    isMarriageVisible: isVisible,
+    marriageToggleTrigger: state.marriageToggleTrigger + 1, // ⭐ trigger
+  ));
+}
 }

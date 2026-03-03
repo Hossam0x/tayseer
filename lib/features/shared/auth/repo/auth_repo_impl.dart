@@ -474,6 +474,15 @@ class AuthRepoImpl implements AuthRepo {
           key: kUserType,
           value: UserTypeEnum.guest.name,
         );
+        // Cache guest name and image to be used in home app bar
+        await CachNetwork.setData(
+          key: kGuestName,
+          value: guestResponse.data?.name ?? '',
+        );
+        await CachNetwork.setData(
+          key: kGuestImage,
+          value: guestResponse.data?.image ?? '',
+        );
         return right(guestResponse);
       } else {
         final message = response['message'] ?? 'فشل تسجيل الدخول كزائر.';

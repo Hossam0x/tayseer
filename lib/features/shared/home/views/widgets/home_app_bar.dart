@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
@@ -38,7 +39,16 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 child: Row(
                   children: [
                     // ⭐ Use state.homeInfo?.image which updates reactively via HomeCubit
-                    MyProfileImage(imageUrl: state.homeInfo?.image),
+                    CustomClick(
+                      onTap: () {
+                        if (isUser) {
+                          context.read<LayoutCubit>().changeIndex(4);
+                        } else if (isAdvisor) {
+                          context.read<LayoutCubit>().changeIndex(3);
+                        }
+                      },
+                      child: MyProfileImage(imageUrl: state.homeInfo?.image),
+                    ),
                     Gap(context.responsiveWidth(14)),
                     Expanded(
                       child: Column(

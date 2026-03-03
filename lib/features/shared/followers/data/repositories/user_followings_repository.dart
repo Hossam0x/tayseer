@@ -81,7 +81,7 @@ class UserFollowingsRepositoryImpl implements UserFollowingsRepository {
   Future<Either<Failure, String>> toggleFollow(String targetUserId) async {
     try {
       final response = await _apiService.post(
-        endPoint: '/user/toggle-follow/$targetUserId',
+        endPoint: '/advisor/toggle-follow/$targetUserId',
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
     } on DioException catch (e) {

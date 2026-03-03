@@ -7,6 +7,14 @@ class AppLocalizations {
   Locale? locale;
   AppLocalizations(this.locale);
 
+  // كاش ثابت لكل اللغات اللي اتحملت
+  static final Map<String, Map<String, String>> _cache = {};
+
+  /// ترجمة مفتاح بلغة معينة بدون context
+  static String translateFor(String key, String langCode) {
+    return _cache[langCode]?[key] ?? key;
+  }
+
   static AppLocalizations? of(BuildContext context) {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
@@ -26,6 +34,9 @@ class AppLocalizations {
     jsonString = jsons.map((key, value) {
       return MapEntry(key, value.toString());
     });
+
+    // تخزين في الكاش
+    _cache[locale!.languageCode] = jsonString;
   }
 
   String translate(String key) => jsonString[key] ?? key;

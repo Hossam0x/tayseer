@@ -244,7 +244,9 @@ class _UserStoryItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: userStoryModel.allViewed
+                      color:
+                          (userStoryModel.allViewed ||
+                              userStoryModel.isViewedByMe)
                           ? AppColors.kGreyB3
                           : AppColors.kprimaryColor,
                       width: 2.sp,
@@ -364,30 +366,31 @@ class _AddStoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<StoriesCubit, StoriesState>(
-      buildWhen: (previous, current) {
-        final myUserId = kCurrentUserData?.id;
-        final prevMyStory = previous.storiesList
-            .where((s) => s.userId == myUserId)
-            .firstOrNull;
-        final currentMyStory = current.storiesList
-            .where((s) => s.userId == myUserId)
-            .firstOrNull;
+    return BlocSelector<HomeCubit, HomeState, String?>(
+      selector: (homeState) => homeState.homeInfo?.image,
+      builder: (context, profileImage) {
+        return BlocBuilder<StoriesCubit, StoriesState>(
+          buildWhen: (previous, current) {
+            final myUserId = kCurrentUserData?.id;
+            final prevMyStory = previous.storiesList
+                .where((s) => s.userId == myUserId)
+                .firstOrNull;
+            final currentMyStory = current.storiesList
+                .where((s) => s.userId == myUserId)
+                .firstOrNull;
 
-        return previous.createStoryState != current.createStoryState ||
-            previous.uploadProgress != current.uploadProgress ||
-            prevMyStory != currentMyStory;
-      },
-      builder: (context, storyState) {
-        final myUserId = kCurrentUserData?.id;
-        final myStory = storyState.storiesList
-            .where((s) => s.userId == myUserId)
-            .firstOrNull;
-        final isUploading = storyState.createStoryState == CubitStates.loading;
+            return previous.createStoryState != current.createStoryState ||
+                previous.uploadProgress != current.uploadProgress ||
+                prevMyStory != currentMyStory;
+          },
+          builder: (context, storyState) {
+            final myUserId = kCurrentUserData?.id;
+            final myStory = storyState.storiesList
+                .where((s) => s.userId == myUserId)
+                .firstOrNull;
+            final isUploading =
+                storyState.createStoryState == CubitStates.loading;
 
-        return BlocSelector<HomeCubit, HomeState, String?>(
-          selector: (homeState) => homeState.homeInfo?.image,
-          builder: (context, profileImage) {
             return Column(
               children: [
                 Stack(
@@ -473,7 +476,9 @@ class _AddStoryItem extends StatelessWidget {
                               ? BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: myStory.allViewed
+                                    color:
+                                        (myStory.allViewed ||
+                                            myStory.isViewedByMe)
                                         ? AppColors.kGreyB3
                                         : AppColors.kprimaryColor,
                                     width: 2.sp,

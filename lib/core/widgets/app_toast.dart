@@ -160,8 +160,9 @@ class _ToastWidgetState extends State<_ToastWidget>
 
   @override
   Widget build(BuildContext context) {
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     return Positioned(
-      bottom: MediaQuery.of(context).padding.bottom + 70.h,
+      bottom: keyboardHeight + MediaQuery.of(context).padding.bottom + 70.h,
       left: 16.w,
       right: 16.w,
       child: SlideTransition(

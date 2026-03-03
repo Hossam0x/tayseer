@@ -9,3 +9,8 @@ const String kMarriageSectionDeactivatedKey = 'marriage_section_deactivated';
 
 const String kAdvisorProfileCache = 'advisor_profile_cache';
 const String kUserProfileCache = 'user_profile_cache';
+
+const String kGuestName = 'guest_name';
+const String kGuestImage = 'guest_image';
+
+const String kAppLanguage = 'app_language';

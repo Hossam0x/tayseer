@@ -60,26 +60,22 @@ class StoriesRepositoryImpl implements StoriesRepository {
                 .toList();
             // isViewedByMe: true if ANY story has isViewedByMe=true in raw JSON
             final isViewedByMe = rawStories.any(
-              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
+              (s) =>
+                  s['isViewedByMe'] == true ||
+                  (s['viewsCount'] is int && s['viewsCount'] > 0),
             );
             // allViewed: true if ALL stories are viewed
             final allViewed = rawStories.every(
-              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
+              (s) =>
+                  s['isViewedByMe'] == true ||
+                  (s['viewsCount'] is int && s['viewsCount'] > 0),
             );
-            String advisorName = "";
-            if (rawStories.isNotEmpty) {
-              final firstRaw = rawStories.first;
-              if (firstRaw['userId'] is Map) {
-                advisorName = firstRaw['userId']['name'] ?? "";
-              }
-            }
-
             userStoriesList.add(
               UserStoriesModel(
                 userId: userId,
-                name: stories.isNotEmpty && stories.first.isMine
-                    ? context.tr("your_story")
-                    : advisorName,
+                name: stories.isNotEmpty
+                    ? (stories.first.isMine ? context.tr("your_story") : "")
+                    : "",
                 image: stories.isNotEmpty ? stories.first.image : "",
                 isFollowed: false,
                 isViewedByMe: isViewedByMe,
@@ -98,6 +94,14 @@ class StoriesRepositoryImpl implements StoriesRepository {
           return Right(storiesList);
         }
       } else if (data is Map) {
+        // الباك بيرجع special stories كـ object واحد (UserStoriesModel) مباشرة في data
+        if (data.containsKey('stories')) {
+          final userStories = UserStoriesModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+          return Right([userStories]);
+        }
+        // الحالة العادية: data فيها result + pagination
         final storiesResponse = StoriesResponseModel.fromJson(response);
         return Right(storiesResponse.data.result);
       } else {
@@ -151,25 +155,19 @@ class StoriesRepositoryImpl implements StoriesRepository {
                 .map((e) => StoryModel.fromJson(e))
                 .toList();
             final isViewedByMe = rawStories.any(
-              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
+              (s) =>
+                  s['isViewedByMe'] == true ||
+                  (s['viewsCount'] is int && s['viewsCount'] > 0),
             );
             final allViewed = rawStories.every(
-              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
+              (s) =>
+                  s['isViewedByMe'] == true ||
+                  (s['viewsCount'] is int && s['viewsCount'] > 0),
             );
-            String advisorName = "";
-            if (rawStories.isNotEmpty) {
-              final firstRaw = rawStories.first;
-              if (firstRaw['userId'] is Map) {
-                advisorName = firstRaw['userId']['name'] ?? "";
-              }
-            }
-
             userStoriesList.add(
               UserStoriesModel(
                 userId: userId,
-                name: stories.isNotEmpty && stories.first.isMine
-                    ? "your_story" // Hardcoded for silent if no context
-                    : advisorName,
+                name: '',
                 image: stories.isNotEmpty ? stories.first.image : '',
                 isFollowed: false,
                 isViewedByMe: isViewedByMe,
@@ -187,6 +185,14 @@ class StoriesRepositoryImpl implements StoriesRepository {
           return Right(storiesList);
         }
       } else if (data is Map) {
+        // الباك بيرجع special stories كـ object واحد (UserStoriesModel) مباشرة في data
+        if (data.containsKey('stories')) {
+          final userStories = UserStoriesModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+          return Right([userStories]);
+        }
+        // الحالة العادية: data فيها result + pagination
         final storiesResponse = StoriesResponseModel.fromJson(response);
         return Right(storiesResponse.data.result);
       } else {

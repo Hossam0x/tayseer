@@ -9,23 +9,26 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       bottom: 0,
       left: 0,
       right: 0,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
-  
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 16.h),
-              _interactionSubscriptionButton(
-                context.tr("subscribe_to_see_likes"),
-                context,
-                onPressed: () {
-                  context.pushNamed(AppRouter.kinteractionSubscriptionView);
-                },
-              ),
-            ],
+      child: IgnorePointer(
+        ignoring: false,
+        child: Container(
+          
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: 40.h),
+                _interactionSubscriptionButton(
+                  context.tr("subscribe_to_see_likes"),
+                  context,
+                  onPressed: () {
+                    context.pushNamed(AppRouter.kinteractionSubscriptionView);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -41,12 +44,11 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       width: MediaQuery.of(context).size.width * 0.8,
       height: 55.h,
       decoration: BoxDecoration(
-        // Linear Gradient implementation from Figma data
         gradient: const LinearGradient(
           begin: Alignment.centerRight,
           end: Alignment.centerLeft,
           colors: [
-            Color(0xFFEB7A91), // primary/300
+            Color(0xFFEB7A91),
             Color.fromRGBO(245, 192, 3, 1),
           ],
         ),
@@ -55,9 +57,8 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              Colors.transparent, 
-          shadowColor: Colors.transparent, 
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
           ),
