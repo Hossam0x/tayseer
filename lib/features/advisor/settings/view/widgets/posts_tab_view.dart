@@ -229,6 +229,7 @@ class _PostItem extends StatelessWidget {
           child: PostCard(
             isFromProfile: true,
             heroPrefix: 'archived_posts',
+            isArchived: true,
             post: currentPost,
             callbacks: PostCallbacks(
               onReactionChanged: (postId, reaction) =>
@@ -248,6 +249,7 @@ class _PostItem extends StatelessWidget {
                   builder: (context) => PostDetailsView(
                     post: post,
                     isFromProfile: true,
+                    isArchived: true,
                     heroPrefix: 'archived_posts',
                     cachedController: controller,
                   ),

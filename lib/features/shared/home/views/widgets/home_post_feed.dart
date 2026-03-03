@@ -371,7 +371,7 @@ class _PostItemState extends State<_PostItem>
     widget.homeCubit.archivePost(postId: postId);
   }
 
-  void _blockUser(String userId, String postId) {
+  void _blockUser(String postId, String userId) {
     widget.homeCubit.blockUser(visiblePostId: postId, advisorId: userId);
   }
 

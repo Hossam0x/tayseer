@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 
 import 'package:tayseer/core/cubits/toggle_cubit.dart';
@@ -59,19 +57,29 @@ class _SettingsViewState extends State<SettingsView> {
             listener: (context, state) {
               if (state is SettingsLoaded) {
                 if (state.actionSuccess != null) {
-                  // Convert to APP toast
-                  AppToast.success(
-                    context,
-                    state.isActionKey
-                        ? context.tr(state.actionSuccess!)
-                        : state.actionSuccess!,
-                  );
-                  // Special handling for language update side effect
                   if (state.actionSuccess == "update_language_success") {
+                    // الـ toast لازم يظهر بلغة الإعداد الجديد
                     SharedPreferences.getInstance().then((p) {
-                      final lang = p.getString('app_language') ?? 'ar';
-                      context.read<LanguageCubit>().setLanguage(lang);
+                      final lang = p.getString(kAppLanguage) ?? 'ar';
+                      if (context.mounted) {
+                        final message = AppLocalizations.translateFor(
+                          'update_language_success',
+                          lang,
+                        );
+                        AppToast.success(context, message);
+                        context.read<LanguageCubit>().setLanguage(
+                          lang,
+                          context,
+                        );
+                      }
                     });
+                  } else {
+                    AppToast.success(
+                      context,
+                      state.isActionKey
+                          ? context.tr(state.actionSuccess!)
+                          : state.actionSuccess!,
+                    );
                   }
                   context.read<SettingsCubit>().clearMessages();
                 } else if (state.actionError != null) {

@@ -36,6 +36,8 @@ class _CommentInputEditorState extends State<CommentInputEditor> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
   bool _isEmpty = true;
+  TextDirection _defaultDirection = TextDirection.rtl;
+  TextDirection _textDirection = TextDirection.rtl;
 
   static const _pinkColor = Color(0xFFD65A73);
   static const _greyColor = Color(0xFFE5E5E5);
@@ -51,6 +53,18 @@ class _CommentInputEditorState extends State<CommentInputEditor> {
     _autoFocus();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dir = Directionality.of(context);
+    if (_defaultDirection != dir) {
+      _defaultDirection = dir;
+      if (_controller.text.trim().isEmpty) {
+        setState(() => _textDirection = dir);
+      }
+    }
+  }
+
   void _autoFocus() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) FocusScope.of(context).requestFocus(_focusNode);
@@ -58,9 +72,22 @@ class _CommentInputEditorState extends State<CommentInputEditor> {
   }
 
   void _onTextChanged() {
-    final isEmpty = _controller.text.trim().isEmpty;
+    final text = _controller.text;
+    final isEmpty = text.trim().isEmpty;
     if (_isEmpty != isEmpty) {
       setState(() => _isEmpty = isEmpty);
+    }
+
+    if (text.trim().isEmpty) {
+      if (_textDirection != _defaultDirection) {
+        setState(() => _textDirection = _defaultDirection);
+      }
+      return;
+    }
+    final isArabic = RegExp(r'^[\u0600-\u06FF]').hasMatch(text.trim());
+    final newDir = isArabic ? TextDirection.rtl : TextDirection.ltr;
+    if (_textDirection != newDir) {
+      setState(() => _textDirection = newDir);
     }
   }
 
@@ -132,11 +159,15 @@ class _CommentInputEditorState extends State<CommentInputEditor> {
         controller: _controller,
         maxLines: 3,
         minLines: 1,
-        textAlign: TextAlign.right,
+        textDirection: _textDirection,
+        textAlign: _textDirection == TextDirection.rtl
+            ? TextAlign.right
+            : TextAlign.left,
         style: Styles.textStyle12.copyWith(color: Colors.black, height: 1.5),
         decoration: InputDecoration(
           hintText: context.tr(AppStrings.writeHere),
           hintStyle: Styles.textStyle12.copyWith(color: Colors.grey.shade400),
+          hintTextDirection: _defaultDirection,
           border: InputBorder.none,
           contentPadding: EdgeInsets.zero,
           isDense: true,

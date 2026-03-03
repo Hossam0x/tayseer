@@ -106,6 +106,7 @@ class UserInfoHeader extends StatelessWidget {
             ),
           ),
         ),
+        Gap(8.w),
         if (onMoreTap != null)
           CustomClick(
             onTap: onMoreTap,

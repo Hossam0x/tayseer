@@ -109,21 +109,34 @@ class _UserProfileViewState extends State<UserProfileView> {
                           return;
                         }
 
-                        showSafeSnackBar(
-                          context: context,
-                          text: context.tr(state.actionMessage ?? ""),
-                          isSuccess: state.isActionSuccess ?? false,
-                          isError: !(state.isActionSuccess ?? true),
-                        );
-
-                        // Special case for language: also update context provider
                         if (state.actionMessage == "update_language_success") {
+                          // الـ toast لازم يظهر بلغة الإعداد الجديد
                           SharedPreferences.getInstance().then((p) {
-                            final lang = p.getString('app_language') ?? 'ar';
+                            final lang = p.getString(kAppLanguage) ?? 'ar';
                             if (context.mounted) {
-                              context.read<LanguageCubit>().setLanguage(lang);
+                              final message = AppLocalizations.translateFor(
+                                'update_language_success',
+                                lang,
+                              );
+                              showSafeSnackBar(
+                                context: context,
+                                text: message,
+                                isSuccess: true,
+                                isError: false,
+                              );
+                              context.read<LanguageCubit>().setLanguage(
+                                lang,
+                                context,
+                              );
                             }
                           });
+                        } else {
+                          showSafeSnackBar(
+                            context: context,
+                            text: context.tr(state.actionMessage ?? ""),
+                            isSuccess: state.isActionSuccess ?? false,
+                            isError: !(state.isActionSuccess ?? true),
+                          );
                         }
                       }
                     },
@@ -1065,15 +1078,16 @@ class _UserProfileViewState extends State<UserProfileView> {
     });
   }
 
-void _showDeactivateMarriageDialog(BuildContext context, bool value) {
+  void _showDeactivateMarriageDialog(BuildContext context, bool value) {
     // ⭐ احفظ reference للـ overlay قبل ما الـ dialog يفتح
     final overlay = Overlay.of(context);
     // ⭐ الأيكون اللي هيطير:
     //   لو value=true  (بيعطّل الزواج) → يطير أيكون الاستشارة
     //   لو value=false (بيفعّل الزواج) → يطير أيكون الزواج
     final flyingIcon = value
-        ? AssetsData.consultationIcon   // هيتغير لاستشارة
-        : AssetsData.ringIcon;           // هيتغير لزواج
+        ? AssetsData
+              .consultationIcon // هيتغير لاستشارة
+        : AssetsData.ringIcon; // هيتغير لزواج
 
     CustomshowDialogWithImage(
       context,
@@ -1106,6 +1120,7 @@ void _showDeactivateMarriageDialog(BuildContext context, bool value) {
       onCancel: () {},
     );
   }
+
   void _submitAppRating(int rating) {
     if (rating > 0) {
       _userProfileCubit.rateApp(rating);

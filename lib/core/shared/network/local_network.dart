@@ -42,7 +42,7 @@ class CachNetwork {
       selectedUserType = UserTypeEnum.user;
     }
 
-    selectedLanguage = sharedPref.getString('app_language') ?? 'ar';
+    selectedLanguage = sharedPref.getString(kAppLanguage) ?? 'ar';
     debugPrint("selectedLanguage initialized to: $selectedLanguage");
   }
 
@@ -95,10 +95,16 @@ class CachNetwork {
   }
 
   static Future<void> clearCache() async {
+    // حفظ اللغة قبل المسح عشان متتأثرش
+    final savedLanguage = sharedPref.getString(kAppLanguage);
     await sharedPref.clear();
+    // إعادة حفظ اللغة بعد المسح
+    if (savedLanguage != null) {
+      await sharedPref.setString(kAppLanguage, savedLanguage);
+    }
     kCurrentUserData = null;
     selectedUserType = UserTypeEnum.user;
-    selectedLanguage = 'ar';
+    // selectedLanguage بتفضل زي ما هي - مش بنريسيتها
     kIsUserGuest = false;
   }
 }

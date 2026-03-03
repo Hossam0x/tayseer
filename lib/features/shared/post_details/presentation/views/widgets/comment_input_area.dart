@@ -17,8 +17,21 @@ class CommentInputAreaState extends State<CommentInputArea> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
+  TextDirection _defaultDirection = TextDirection.rtl;
   TextDirection _textDirection = TextDirection.rtl;
   bool _showEmojiPicker = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dir = Directionality.of(context);
+    if (_defaultDirection != dir) {
+      _defaultDirection = dir;
+      if (_controller.text.trim().isEmpty) {
+        _textDirection = dir;
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -42,8 +55,8 @@ class CommentInputAreaState extends State<CommentInputArea> {
   void _updateTextDirection() {
     final text = _controller.text;
     if (text.trim().isEmpty) {
-      if (_textDirection != TextDirection.rtl) {
-        setState(() => _textDirection = TextDirection.rtl);
+      if (_textDirection != _defaultDirection) {
+        setState(() => _textDirection = _defaultDirection);
       }
       return;
     }
@@ -75,7 +88,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
     // 1️⃣ مسح الـ TextField فوراً (قبل الـ API call)
     _controller.clear();
     setState(() {
-      _textDirection = TextDirection.rtl;
+      _textDirection = _defaultDirection;
       _showEmojiPicker = false;
     });
     _focusNode.unfocus();
@@ -221,7 +234,9 @@ class CommentInputAreaState extends State<CommentInputArea> {
                                         fontSize: 12.sp,
                                         color: Colors.grey.shade400,
                                       ),
-                                      hintTextDirection: TextDirection.rtl,
+                                      hintTextDirection: Directionality.of(
+                                        context,
+                                      ),
                                       border: InputBorder.none,
                                       isDense: true,
                                       contentPadding: EdgeInsets.symmetric(
@@ -256,6 +271,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
                         CustomClick(
                           onTap: _sendComment,
                           child: AppImage(
+                            flipOnLtr: true,
                             AssetsData.send,
                             height: 26.w,
                             width: 26.w,
