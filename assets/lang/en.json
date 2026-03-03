@@ -1517,5 +1517,9 @@
   "explore_other_categories": "Try exploring other categories",
   "explore_all_posts": "Explore all posts",
   "poll_vote_error": "Error while voting",
-  "success_process": "Operation successful"
+  "success_process": "Operation successful",
+  "permissions_required_title": "Permissions Required",
+  "permissions_required_message": "We need access to your camera, microphone, and photos to share your stories. Please grant the required permissions.",
+  "grant_permissions": "Grant Permissions",
+  "open_settings": "Open Settings"
 }

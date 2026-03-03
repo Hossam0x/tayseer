@@ -1517,5 +1517,9 @@
   "explore_other_categories": "جرب استكشاف فئات أخرى",
   "explore_all_posts": "استكشف كل المنشورات",
   "poll_vote_error": "حدث خطأ أثناء التصويت",
-  "success_process": "تمت العملية بنجاح"
+  "success_process": "تمت العملية بنجاح",
+  "permissions_required_title": "الأذونات مطلوبة",
+  "permissions_required_message": "نحتاج للوصول إلى الكاميرا، الميكروفون والصور لنتمكن من مشاركة قصصك. يرجى منح الأذونات المطلوبة.",
+  "grant_permissions": "منح الأذونات",
+  "open_settings": "فتح الإعدادات"
 }
