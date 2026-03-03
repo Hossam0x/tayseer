@@ -7,6 +7,7 @@ class AppImage extends StatelessWidget {
   final Color? color;
   final Gradient? gradientColorSvg;
   final String? placeholderImage;
+  final bool flipOnLtr;
 
   const AppImage(
     this.path, {
@@ -17,7 +18,15 @@ class AppImage extends StatelessWidget {
     this.color,
     this.placeholderImage,
     this.gradientColorSvg,
+    this.flipOnLtr = false,
   });
+
+  Widget _flipIfLtr(Widget child, BuildContext context) {
+    if (!flipOnLtr) return child;
+    final isLtr = Directionality.of(context) == TextDirection.ltr;
+    if (!isLtr) return child;
+    return Transform.scale(scaleX: -1, child: child);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,16 +81,19 @@ class AppImage extends StatelessWidget {
 
       // لو فيه Gradient Wrap بـ ShaderMask
       if (gradientColorSvg != null) {
-        return ShaderMask(
-          shaderCallback: (bounds) {
-            return gradientColorSvg!.createShader(bounds);
-          },
-          blendMode: BlendMode.srcIn,
-          child: svgWidget,
+        return _flipIfLtr(
+          ShaderMask(
+            shaderCallback: (bounds) {
+              return gradientColorSvg!.createShader(bounds);
+            },
+            blendMode: BlendMode.srcIn,
+            child: svgWidget,
+          ),
+          context,
         );
       }
 
-      return svgWidget;
+      return _flipIfLtr(svgWidget, context);
     }
 
     // Lottie
@@ -113,7 +125,10 @@ class AppImage extends StatelessWidget {
               const Icon(Icons.error, color: Colors.red),
         );
       } else {
-        return Image.asset(path!, height: height, width: width, fit: fit);
+        return _flipIfLtr(
+          Image.asset(path!, height: height, width: width, fit: fit),
+          context,
+        );
       }
     }
 
@@ -149,12 +164,9 @@ class AppImage extends StatelessWidget {
     }
 
     // Asset image
-    return Image.asset(
-      path!,
-      height: height,
-      width: width,
-      fit: fit,
-      color: color,
+    return _flipIfLtr(
+      Image.asset(path!, height: height, width: width, fit: fit, color: color),
+      context,
     );
   }
 
