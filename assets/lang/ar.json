@@ -1502,5 +1502,9 @@
   "story_archived_success": "تم أرشفة القصة بنجاح",
   "story_hidden_success": "تم إخفاء القصة بنجاح",
   "story_created_success": "تم إنشاء القصة بنجاح",
-  "story_unarchived_success": "تم إلغاء أرشفة القصة بنجاح"
+  "story_unarchived_success": "تم إلغاء أرشفة القصة بنجاح",
+  "tap_to_record": "اضغط للتسجيل",
+"initializing_recorder": "جاري تهيئة المسجل...",
+"enable_microphone_settings": "يرجى تفعيل الميكروفون من الإعدادات",
+"failed_to_start_recording": "فشل في بدء التسجيل"
 }

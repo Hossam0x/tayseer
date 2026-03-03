@@ -664,10 +664,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final serverVideoUrl = widget.profile.userMedia?.video;
     final pendingVideo = widget.state.pendingVideo;
     final pendingDeleteVideo = widget.state.pendingDeleteVideo;
-    final hasVideo =
-        !pendingDeleteVideo &&
-        (pendingVideo != null ||
-            (serverVideoUrl != null && serverVideoUrl.isNotEmpty));
+  final hasVideo =
+    pendingVideo != null ||
+    (!pendingDeleteVideo &&
+        serverVideoUrl != null &&
+        serverVideoUrl.isNotEmpty);
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -719,9 +720,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final pendingAudio = widget.state.pendingAudio;
     final pendingDeleteAudio = widget.state.pendingDeleteAudio;
     final hasAudio =
-        !pendingDeleteAudio &&
-        (pendingAudio != null ||
-            (serverAudioUrl != null && serverAudioUrl.isNotEmpty));
+    pendingAudio != null ||
+    (!pendingDeleteAudio &&
+        serverAudioUrl != null &&
+        serverAudioUrl.isNotEmpty);
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -1701,7 +1703,13 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
       listener: (context, state) {
         if (state.state == CubitStates.success && !state.isUpdating) {
-        
+          ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('changes_saved_successfully'),
+            isSuccess: true,  // ← isSuccess مش isError
+          ),
+        );
           widget.onTabChanged?.call(1);
           
         } else if (state.state == CubitStates.failure) {

@@ -89,9 +89,10 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Please enable microphone from Settings'),
+            content: Text(context.tr('enable_microphone_settings')),
+
             action: SnackBarAction(
-              label: 'Settings',
+              label: context.tr('settings'),
               onPressed: () => openAppSettings(),
             ),
           ),
@@ -145,7 +146,9 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       debugPrint('❌ Error starting recording: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to start recording: $e')),
+          SnackBar(
+            content: Text('${context.tr('failed_to_start_recording')}: $e'),
+          ),
         );
       }
     }
@@ -293,7 +296,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     if (!_isInitialized) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-        child: const Row(
+        child: Row(
           children: [
             SizedBox(
               width: 20,
@@ -301,7 +304,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             SizedBox(width: 12),
-            Text('Initializing recorder...'),
+            Text(context.tr('initializing_recorder')),
           ],
         ),
       );
@@ -335,8 +338,9 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
             ),
           ),
           SizedBox(width: 12.w),
+
           Text(
-            'اضغط للتسجيل',
+            context.tr('tap_to_record'),
             style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
           ),
         ],

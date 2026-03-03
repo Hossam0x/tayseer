@@ -1321,7 +1321,7 @@
   "verified_profile_desc": "All personal data has been verified by the application.",
   "deactivate_the_marriage_section": "Deactivate the marriage section",
   "audio_pending_save": "audio pending save",
-  "video_pending_save": "audio pending save",
+  "video_pending_save": "video pending save",
   "logout_confirmation": "Are you sure you want to logout?",
   "interactions_tab": "Interactions",
   "unblock_user": "Unblock User",
@@ -1504,5 +1504,9 @@
   "story_archived_success": "Story archived successfully",
   "story_hidden_success": "Story hidden successfully",
   "story_created_success": "Story created successfully",
-  "story_unarchived_success": "Story unarchived successfully"
+  "story_unarchived_success": "Story unarchived successfully",
+  "tap_to_record": "Tap to record",
+"initializing_recorder": "Initializing recorder...",
+"enable_microphone_settings": "Please enable microphone from Settings",
+"failed_to_start_recording": "Failed to start recording"
 }
