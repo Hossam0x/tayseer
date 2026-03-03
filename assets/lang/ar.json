@@ -1491,7 +1491,6 @@
   "subscribe_vip_for": "اشترك في VIP بـ {} ريال",
   "elite": "Elite",
   "pro": "Pro",
-
   "enter_reason": "ادخال السبب",
   "other_reason_hint": "يساعد رأيك في الحفاظ علي تطبيق تيسير بشكل موثوق وامن .......",
   "long_press_to_drag": "اضغط مطولاً للسحب",
@@ -1502,5 +1501,21 @@
   "story_archived_success": "تم أرشفة القصة بنجاح",
   "story_hidden_success": "تم إخفاء القصة بنجاح",
   "story_created_success": "تم إنشاء القصة بنجاح",
-  "story_unarchived_success": "تم إلغاء أرشفة القصة بنجاح"
+  "story_unarchived_success": "تم إلغاء أرشفة القصة بنجاح",
+  "saved_success": "تم حفظ المنشور بنجاح",
+  "save_error": "حدث خطأ أثناء حفظ المنشور",
+  "delete_success": "تم حذف المنشور بنجاح",
+  "delete_error": "حدث خطأ أثناء حذف المنشور",
+  "archive_success": "تم أرشفة المنشور بنجاح",
+  "archive_error": "حدث خطأ أثناء أرشفة المنشور",
+  "no_saved_posts": "لا توجد منشورات محفوظة",
+  "saved_posts_empty_hint": "المنشورات التي ستقوم بحفظها ستظهر هنا",
+  "end_of_feed": "تم الوصول لنهاية المنشورات",
+  "end_of_category_feed": "تم الوصول لنهاية المنشورات في هذه الفئة",
+  "show_all_posts": "عرض كل المنشورات",
+  "no_posts_in_category": "لا توجد منشورات في هذه الفئة",
+  "explore_other_categories": "جرب استكشاف فئات أخرى",
+  "explore_all_posts": "استكشف كل المنشورات",
+  "poll_vote_error": "حدث خطأ أثناء التصويت",
+  "success_process": "تمت العملية بنجاح"
 }
