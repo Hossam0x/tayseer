@@ -94,6 +94,14 @@ class StoriesRepositoryImpl implements StoriesRepository {
           return Right(storiesList);
         }
       } else if (data is Map) {
+        // الباك بيرجع special stories كـ object واحد (UserStoriesModel) مباشرة في data
+        if (data.containsKey('stories')) {
+          final userStories = UserStoriesModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+          return Right([userStories]);
+        }
+        // الحالة العادية: data فيها result + pagination
         final storiesResponse = StoriesResponseModel.fromJson(response);
         return Right(storiesResponse.data.result);
       } else {
@@ -177,6 +185,14 @@ class StoriesRepositoryImpl implements StoriesRepository {
           return Right(storiesList);
         }
       } else if (data is Map) {
+        // الباك بيرجع special stories كـ object واحد (UserStoriesModel) مباشرة في data
+        if (data.containsKey('stories')) {
+          final userStories = UserStoriesModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+          return Right([userStories]);
+        }
+        // الحالة العادية: data فيها result + pagination
         final storiesResponse = StoriesResponseModel.fromJson(response);
         return Right(storiesResponse.data.result);
       } else {
