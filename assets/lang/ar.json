@@ -1512,5 +1512,9 @@
   "enter_reason": "ادخال السبب",
   "other_reason_hint": "يساعد رأيك في الحفاظ علي تطبيق تيسير بشكل موثوق وامن .......",
   "long_press_to_drag": "اضغط مطولاً للسحب",
-  "reorder": "إعادة ترتيب"
+  "reorder": "إعادة ترتيب",
+  "story_archived_success": "تم أرشفة القصة بنجاح",
+  "story_hidden_success": "تم إخفاء القصة بنجاح",
+  "story_created_success": "تم إنشاء القصة بنجاح",
+  "story_unarchived_success": "تم إلغاء أرشفة القصة بنجاح"
 }

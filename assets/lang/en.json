@@ -1498,9 +1498,8 @@
   "other_reason_hint": "Your opinion helps keep Tayseer reliable and safe .......",
   "long_press_to_drag": "Long press to drag",
   "reorder": "Reorder",
-  "images_pending_save": "Images pending save",
-  "edit_marriage_profile": "Edit Marriage Profile",
-  "activate_marriage_subtitle": "To make your journey toward marriage easier and smoother, we're here to help you every step of the way!",
-  "activate_marriage_title": "Would you like to explore the marriage section in Tayseer?",
-  "deactivate_marriage_title": "Would you like to disable the marriage section in Tayseer?"
+  "story_archived_success": "Story archived successfully",
+  "story_hidden_success": "Story hidden successfully",
+  "story_created_success": "Story created successfully",
+  "story_unarchived_success": "Story unarchived successfully"
 }

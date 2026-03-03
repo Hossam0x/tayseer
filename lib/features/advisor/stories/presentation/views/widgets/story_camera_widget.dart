@@ -1,7 +1,17 @@
 import 'dart:async';
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_cubit.dart';
 import 'package:tayseer/my_import.dart';
+
+Future<Uint8List> _flipImageData(Uint8List bytes) async {
+  final image = img.decodeImage(bytes);
+  if (image != null) {
+    return Uint8List.fromList(img.encodeJpg(img.flipHorizontal(image)));
+  }
+  return bytes;
+}
 
 class StoryCameraWidget extends StatefulWidget {
   final CameraController controller;
@@ -49,9 +59,17 @@ class _StoryCameraWidgetState extends State<StoryCameraWidget> {
     try {
       final XFile photo = await widget.controller.takePicture();
 
-      // Fix: Don't manual flip. Most modern camera plugins handle front camera
-      // rendering automatically. Manual flipping often causes mirrored text.
       File imageFile = File(photo.path);
+
+      if (_isFrontCamera()) {
+        try {
+          final bytes = await imageFile.readAsBytes();
+          final flippedBytes = await compute(_flipImageData, bytes);
+          await imageFile.writeAsBytes(flippedBytes);
+        } catch (e) {
+          debugPrint("Error flipping front camera image: $e");
+        }
+      }
 
       if (mounted) {
         final cubit = context.read<AddStoryCubit>();
