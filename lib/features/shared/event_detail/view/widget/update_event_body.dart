@@ -126,7 +126,6 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                           hint: context.tr('event_duration'),
                           value: state.duration,
                           items: [
-                            DropdownMenuItem(value: '', child: Text('')),
                             DropdownMenuItem(
                               value: '15 minutes',
                               child: Text(
