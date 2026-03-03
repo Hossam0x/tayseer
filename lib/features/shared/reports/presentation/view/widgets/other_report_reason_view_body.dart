@@ -63,23 +63,29 @@ class _OtherReportReasonViewBodyState extends State<OtherReportReasonViewBody> {
                 child: CustomBotton(
                   useGradient: true,
                   width: context.width * 0.9,
-                  title: context.tr("send"),
+                  title: context.tr(AppStrings.send),
                   onPressed: () {
                     final text = _reasonController.text.trim();
                     if (text.isEmpty) {
-                      AppToast.warning(context, context.tr("field_required"));
+                      AppToast.warning(
+                        context,
+                        context.tr(AppStrings.fieldRequired),
+                      );
                       return;
                     }
                     if (text.length < 3) {
-                      AppToast.warning(context, context.tr("min_3_characters"));
+                      AppToast.warning(
+                        context,
+                        context.tr(AppStrings.min3Characters),
+                      );
                       return;
                     }
                     CustomshowDialogWithImage(
                       context,
-                      bottonText: context.tr("send_report"),
+                      bottonText: context.tr(AppStrings.send),
                       imageUrl: AssetsData.kWoriningImage,
-                      title: context.tr("confirm_report"),
-                      supTitle: context.tr("sup_confirm_report"),
+                      title: context.tr(AppStrings.confirmReport),
+                      supTitle: context.tr(AppStrings.supConfirmReport),
                       onPressed: () {
                         context.read<ReportsCubit>().sendReport(
                           otherReason: text,

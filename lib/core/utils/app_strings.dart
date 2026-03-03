@@ -89,4 +89,11 @@ class AppStrings {
   static const String somethingWentWrong = "something_went_wrong";
   static const String selectReportOption = "select_report_option";
   static const String reportSentSuccessfully = "report_sent_successfully";
+  static const String send = "send";
+  static const String fieldRequired = "field_required";
+  static const String min3Characters = "min_3_characters";
+  static const String sendReport = "send_report";
+  static const String confirmReport = "confirm_report";
+  static const String supConfirmReport = "sup_confirm_report";
+  static const String reportProfile = "report_profile";
 }
