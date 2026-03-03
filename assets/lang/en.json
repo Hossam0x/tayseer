@@ -1501,7 +1501,6 @@
   "story_archived_success": "Story archived successfully",
   "story_hidden_success": "Story hidden successfully",
   "story_created_success": "Story created successfully",
-  "story_unarchived_success": "Story unarchived successfully",
   "saved_success": "Post saved successfully",
   "save_error": "Error saving post",
   "delete_success": "Post deleted successfully",
@@ -1521,7 +1520,7 @@
   "permissions_required_title": "Permissions Required",
   "permissions_required_message": "We need access to your camera, microphone, and photos to share your stories. Please grant the required permissions.",
   "grant_permissions": "Grant Permissions",
-  "open_settings": "Open Settings"
+  "open_settings": "Open Settings",
   "story_unarchived_success": "Story unarchived successfully",
   "tap_to_record": "Tap to record",
 "initializing_recorder": "Initializing recorder...",
