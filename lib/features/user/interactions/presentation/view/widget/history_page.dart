@@ -106,7 +106,6 @@ class HistorypageState extends State<Historypage> {
   Widget build(BuildContext context) {
     return BlocBuilder<InteractionsCubit, InteractionsState>(
       builder: (context, state) {
-        
         if (state.historyState == CubitStates.loading &&
             (state.historyData[widget.selectedFilter]?.isEmpty ?? true)) {
           return _buildSkeletonLoading();
@@ -252,6 +251,18 @@ class HistorypageState extends State<Historypage> {
         ),
       ),
     );
+  }
+
+  bool _shouldShowSubscriptionOverlay(InteractionsState state) {
+    if (state.isSubscribed) return false;
+
+    final data = state.historyData[widget.selectedFilter] ?? [];
+    if (data.isEmpty) return false; // no data = no overlay
+
+    if (state.historyState == CubitStates.loading) return false;
+    if (state.historyState == CubitStates.failure) return false;
+
+    return true;
   }
 
   Widget _buildLoadingCard() {
