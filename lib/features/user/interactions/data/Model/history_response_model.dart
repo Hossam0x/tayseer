@@ -21,7 +21,6 @@ class HistoryResponseModel {
       message: json['message'] ?? '',
       userSubscription: data['userSubscription'] ?? false,
       sections: {
-        // ✅ استخدام مفاتيح ثابتة بدلاً من النصوص المترجمة
         'favorites': HistoryDataSection.fromJson(data['userIamFavorites'] ?? {}),
         'liked_you': HistoryDataSection.fromJson(data['userIamLikes'] ?? {}),
         'met_them': HistoryDataSection.fromJson(data['userIamEncounteredThem'] ?? {}),
