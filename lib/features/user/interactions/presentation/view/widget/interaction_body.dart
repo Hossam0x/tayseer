@@ -135,17 +135,26 @@ class InteractionBodyState extends State<InteractionBody> {
       },
     );
   }
+
   bool _shouldShowSubscriptionOverlay(InteractionsState state) {
     if (state.isSubscribed) return false;
+
     if (!state.answerCompleted) return false;
+
     if (state.explorationState == CubitStates.loading &&
-        state.explorationData.isEmpty)
+        state.explorationData.isEmpty) {
       return false;
+    }
+
     if (state.explorationState == CubitStates.failure &&
-        state.explorationData.isEmpty)
+        state.explorationData.isEmpty) {
       return false;
+    }
+
     final hasData = state.explorationData.values.any((list) => list.isNotEmpty);
+
     if (!hasData) return false;
+
     return true;
   }
 }
