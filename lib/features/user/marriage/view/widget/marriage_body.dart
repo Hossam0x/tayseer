@@ -346,6 +346,7 @@ class MarriageBodyState extends State<MarriageBody>
         child: Stack(
           children: [
             CustomScrollView(
+              physics: const ClampingScrollPhysics(),
               key: ValueKey<int>(profileIndex),
               controller: _mainScrollController,
               slivers: [
