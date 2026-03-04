@@ -301,8 +301,20 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       bottonText: context.tr('add_image'),
       showCancelButton: false,
       onPressed: () async {
-        // ✅ اضطر تعمل setState لو الـ tab مش على edit
-        setState(() => _selectedTabIndex = 0);
+        // ✅ روح لـ edit tab مع scroll للـ images section
+        setState(() {
+          _selectedTabIndex = 0;
+          _scrollToSection = 'images'; // ✅ زي ما بيحصل في complete page
+        });
+
+        // ✅ clear الـ scroll section بعد شوية
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) {
+            setState(() {
+              _scrollToSection = null;
+            });
+          }
+        });
       },
     );
   }

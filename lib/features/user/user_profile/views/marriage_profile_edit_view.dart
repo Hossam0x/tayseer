@@ -8,7 +8,7 @@ import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bot
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/audioWidget.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/audio_widget.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/image_slot_card.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_field_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/voiceWidget.dart';
@@ -59,7 +59,17 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       });
     }
   }
-
+@override
+void didUpdateWidget(MarriageProfileEditView oldWidget) {
+  super.didUpdateWidget(oldWidget);
+  // ✅ لو الـ scrollToSection اتغير، اعمل scroll
+  if (widget.scrollToSection != null &&
+      widget.scrollToSection != oldWidget.scrollToSection) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToSection(widget.scrollToSection!);
+    });
+  }
+}
   @override
   void dispose() {
     _scrollController.dispose();

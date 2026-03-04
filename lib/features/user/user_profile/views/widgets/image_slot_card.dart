@@ -1,4 +1,3 @@
-
 // ════════════════════════════════════════════════════════════════
 // ✅ ImageSlotCard - يدعم local files و network images
 // ════════════════════════════════════════════════════════════════
@@ -83,18 +82,23 @@ class ImageSlotCard extends StatelessWidget {
               ),
             ),
 
-          if (isMain && hasImage)
+          if (isMain)
             Positioned(
-              bottom: 2,
-              right: 3,
+              bottom: 0,
+              left: 0,
+              right: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
                   color: HexColor('b11b39'),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
                 ),
                 child: Text(
                   context.tr('main_Image'),
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -103,7 +107,6 @@ class ImageSlotCard extends StatelessWidget {
                 ),
               ),
             ),
-
           if (hasImage && onRemove != null)
             Positioned(
               top: 4,

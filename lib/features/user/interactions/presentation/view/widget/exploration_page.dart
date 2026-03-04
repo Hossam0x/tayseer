@@ -44,8 +44,7 @@ class ExplorationState extends State<Exploration> {
       children: [titleWidget, SizedBox(width: 12.w), showMoreWidget],
     );
 
-    // عربي → RTL عادي (عنوان يمين، show more شمال)
-    // إنجليزي → force LTR (عنوان يسار، show more يمين)
+  
     return isArabic
         ? row
         : Directionality(
