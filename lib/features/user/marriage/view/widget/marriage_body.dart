@@ -1,4 +1,4 @@
-// // lib/features/user/marriage/view/marriage_body.dart
+// marriage_body.dart
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
@@ -47,27 +47,12 @@ class MarriageBodyState extends State<MarriageBody>
 
   final GlobalKey<InteractionBodyState> _interactionBodyKey =
       GlobalKey<InteractionBodyState>();
+  final GlobalKey<HistorypageState> _historyKey = GlobalKey<HistorypageState>();
 
   // Scroll tracking
   double _lastOffset = 0;
   double _scrollDelta = 0;
   static const double _scrollThreshold = 20.0;
-
-  // ════════════════════════════════════════════════════
-  // ✅ متغيرات الـ History (embedded بدل Navigator.push)
-  // ════════════════════════════════════════════════════
-  bool _showHistory = false;
-  String _selectedHistoryFilter = "liked_you";
-  final GlobalKey<HistorypageState> _historyKey = GlobalKey<HistorypageState>();
-
-  // اتجاه السوايب للكارت (الهيدر فقط)
-  //  1  = يمين (قلب)
-  // -1  = شمال (X)
-  double _swipeDirection = 0;
-
-  // أنيميشن الكارت
-  late AnimationController _cardController;
-  late Animation<double> _cardAnimation;
 
   InteractionsCubit get interactionsCubit {
     if (_interactionsCubit == null) {
@@ -83,21 +68,11 @@ class MarriageBodyState extends State<MarriageBody>
   void initState() {
     super.initState();
     _mainScrollController.addListener(_scrollListener);
-    context.read<MarriageCubit>().fetchMarriageProfile();
 
-    _cardController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 350),
-    );
-    _cardAnimation = CurvedAnimation(
-      parent: _cardController,
-      curve: Curves.easeOutCubic,
-    );
-
-    _cardController.addListener(() {
-      // يعيد بناء الواجهة علشان SliverProfileHeader ياخد قيمة progress الجديدة
-      setState(() {});
-    });
+    final cubit = context.read<MarriageCubit>();
+    cubit.fetchMarriageProfile();
+    // ✅ نمرر الـ TickerProvider للـ Cubit مرة واحدة
+    cubit.initAnimation(this);
   }
 
   @override
@@ -105,7 +80,6 @@ class MarriageBodyState extends State<MarriageBody>
     _mainScrollController.removeListener(_scrollListener);
     _mainScrollController.dispose();
     _interactionsCubit?.close();
-    _cardController.dispose();
     super.dispose();
   }
 
@@ -155,10 +129,7 @@ class MarriageBodyState extends State<MarriageBody>
           context.pop();
           return;
         }
-        // ✅ لو بيرجع من الـ history، ارجع للـ interactions أولاً
-        if (_showHistory) {
-          setState(() => _showHistory = false);
-        }
+        // ✅ بدل setState — الـ Cubit بيتعامل مع الـ history تلقائياً
         cubit.setMarriageTab(value);
       },
     );
@@ -230,6 +201,7 @@ class MarriageBodyState extends State<MarriageBody>
                   )
                 : _buildInteractionsContent(
                     key: const ValueKey('interactions'),
+                    state: state,
                   ),
           );
         }
@@ -254,7 +226,10 @@ class MarriageBodyState extends State<MarriageBody>
                   profileIndex: profileIndex,
                   users: users,
                 )
-              : _buildInteractionsContent(key: const ValueKey('interactions')),
+              : _buildInteractionsContent(
+                  key: const ValueKey('interactions'),
+                  state: state,
+                ),
         );
       },
     );
@@ -362,15 +337,15 @@ class MarriageBodyState extends State<MarriageBody>
     final nextAnswers = nextProfile?.answers;
     final List<String> nextImages = nextAnswers?.userMedia?.image ?? [];
 
+    final cubit = context.read<MarriageCubit>();
+
     return Directionality(
       key: key,
       textDirection: TextDirection.rtl,
       child: CustomBackground(
         child: Stack(
           children: [
-            // مفيش AnimatedSwitcher حوالين الشاشة كلها
             CustomScrollView(
-              physics: ClampingScrollPhysics(),
               key: ValueKey<int>(profileIndex),
               controller: _mainScrollController,
               slivers: [
@@ -388,9 +363,9 @@ class MarriageBodyState extends State<MarriageBody>
                   height: "📏 ${user?.about?.height ?? ''}",
                   toggleWidget: _buildToggle(),
 
-                  // قيم الأنيميشن:
-                  swipeDirection: _swipeDirection,
-                  swipeProgress: _cardAnimation.value,
+                  // ✅ القيم من الـ State بدل متغيرات محلية
+                  swipeDirection: state.swipeDirection,
+                  swipeProgress: state.swipeProgress,
 
                   // بيانات اليوزر اللي بعده (الكارت الخلفي)
                   nextImages: hasNext ? nextImages : null,
@@ -684,96 +659,74 @@ class MarriageBodyState extends State<MarriageBody>
               ],
             ),
 
-            // أزرار Like / Star / Dislike زي ما هي (بأنيميشن الكارت)
+            // أزرار Like / Star / Dislike
             AnimatedPositioned(
-              duration: const Duration(milliseconds: 400),
+              duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,
-              bottom: state.isScrollingDown ? 50.h : 100.h,
+              bottom: state.isScrollingDown ? 30.h : 130.h,
               left: 0,
               right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // ❤️ Like - يمين
-                  buildCircleButton(
-                    onTap: () {
-                      if (_cardController.isAnimating) return;
+              child: IgnorePointer(
+                // ✅ يمنع الضغط أثناء الأنيميشن
+                ignoring: state.isAnimating,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // ❤️ Like - يمين
+                    buildCircleButton(
+                      onTap: () {
+                        // ✅ بدل setState — الـ Cubit بيتعامل مع كل حاجة
+                        cubit
+                            .swipeLike(
+                              personId: profile.user?.id ?? '',
+                              usersLength: users.length,
+                              hasSinglePerson: widget.personId != null,
+                            )
+                            .then((_) {
+                              if (widget.personId == null && users.length > 1) {
+                                _resetScrollTracking();
+                                scrollToTop();
+                              }
+                            });
+                      },
+                      Icons.favorite_outline,
+                      AppColors.kprimaryTextColor,
+                      HexColor('f8d3da'),
+                    ),
 
-                      setState(() {
-                        _swipeDirection = 1; // يمين
-                      });
+                    // ⭐ Regard
+                    buildCircleButton(
+                      onTap: () {
+                        cubit.sendRegard(personId: profile.user?.id ?? '');
+                      },
+                      Icons.star,
+                      Colors.white,
+                      HexColor('cccab3'),
+                    ),
 
-                      context.read<MarriageCubit>().userInteraction(
-                        personId: profile.user?.id ?? '',
-                        interactionType: 'like',
-                      );
-
-                      _cardController.forward(from: 0).then((_) {
-                        if (widget.personId == null && users.length > 1) {
-                          context.read<MarriageCubit>().advanceProfile(
-                            usersLength: users.length,
-                          );
-                          _resetScrollTracking();
-                          scrollToTop();
-                        }
-
-                        _cardController.value = 0;
-                        setState(() {
-                          _swipeDirection = 0;
-                        });
-                      });
-                    },
-                    Icons.favorite_outline,
-                    AppColors.kprimaryTextColor,
-                    HexColor('f8d3da'),
-                  ),
-
-                  // ⭐ Regard
-                  buildCircleButton(
-                    onTap: () {
-                      context.read<MarriageCubit>().sendRegard(
-                        personId: profile.user?.id ?? '',
-                      );
-                    },
-                    Icons.star,
-                    Colors.white,
-                    HexColor('cccab3'),
-                  ),
-
-                  // ✖️ Dislike - شمال
-                  buildCircleButton(
-                    onTap: () {
-                      if (_cardController.isAnimating) return;
-
-                      setState(() {
-                        _swipeDirection = -1; // شمال
-                      });
-
-                      context.read<MarriageCubit>().userInteraction(
-                        personId: profile.user?.id ?? '',
-                        interactionType: 'dislike',
-                      );
-
-                      _cardController.forward(from: 0).then((_) {
-                        if (widget.personId == null && users.length > 1) {
-                          context.read<MarriageCubit>().advanceProfile(
-                            usersLength: users.length,
-                          );
-                          _resetScrollTracking();
-                          scrollToTop();
-                        }
-
-                        _cardController.value = 0;
-                        setState(() {
-                          _swipeDirection = 0;
-                        });
-                      });
-                    },
-                    Icons.close,
-                    Colors.white,
-                    HexColor('e44e6c'),
-                  ),
-                ],
+                    // ✖️ Dislike - شمال
+                    buildCircleButton(
+                      onTap: () {
+                        // ✅ بدل setState — الـ Cubit بيتعامل مع كل حاجة
+                        cubit
+                            .swipeDislike(
+                              personId: profile.user?.id ?? '',
+                              usersLength: users.length,
+                              hasSinglePerson: widget.personId != null,
+                            )
+                            .then((_) {
+                              if (widget.personId == null && users.length > 1) {
+                                _resetScrollTracking();
+                                scrollToTop();
+                              }
+                            });
+                      },
+                      Icons.close,
+                      Colors.white,
+                      HexColor('e44e6c'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -783,9 +736,11 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ INTERACTIONS TAB — مع embedded history (بدون Navigator.push)
+  // ✅ INTERACTIONS TAB — بدون أي setState
   // ═══════════════════════════════════════════════════════════════
-  Widget _buildInteractionsContent({Key? key}) {
+  Widget _buildInteractionsContent({Key? key, required MarriageState state}) {
+    final cubit = context.read<MarriageCubit>();
+
     return Directionality(
       key: key,
       textDirection: TextDirection.rtl,
@@ -796,14 +751,15 @@ class MarriageBodyState extends State<MarriageBody>
               bottom: false,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                child: _showHistory
+                child: state.showHistory
                     // ══════════════════════════════════════
                     // ✅ AppBar السجل: SimpleAppBar
                     // ══════════════════════════════════════
                     ? SimpleAppBar(
                         title: context.tr('history'),
                         isLargeTitle: true,
-                        onBack: () => setState(() => _showHistory = false),
+                        // ✅ بدل setState
+                        onBack: () => cubit.hideHistoryView(),
                       )
                     // ══════════════════════════════════════
                     // ✅ AppBar التفاعلات: الأصلي
@@ -834,10 +790,8 @@ class MarriageBodyState extends State<MarriageBody>
                             left: 0,
                             child: GestureDetector(
                               onTap: () {
-                                setState(() {
-                                  _showHistory = true;
-                                  _selectedHistoryFilter = "liked_you";
-                                });
+                                // ✅ بدل setState
+                                cubit.showHistoryView();
                                 WidgetsBinding.instance.addPostFrameCallback((
                                   _,
                                 ) {
@@ -864,8 +818,8 @@ class MarriageBodyState extends State<MarriageBody>
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
-                child: _showHistory
-                    ? _buildEmbeddedHistory()
+                child: state.showHistory
+                    ? _buildEmbeddedHistory(state)
                     : BlocProvider.value(
                         key: const ValueKey('interaction_body'),
                         value: interactionsCubit,
@@ -880,9 +834,11 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ EMBEDDED HISTORY — بدون Scaffold أو Navigator
+  // ✅ EMBEDDED HISTORY — بدون أي setState
   // ═══════════════════════════════════════════════════════════════
-  Widget _buildEmbeddedHistory() {
+  Widget _buildEmbeddedHistory(MarriageState state) {
+    final cubit = context.read<MarriageCubit>();
+
     return BlocProvider.value(
       key: const ValueKey('history_content'),
       value: interactionsCubit,
@@ -893,7 +849,8 @@ class MarriageBodyState extends State<MarriageBody>
             // ✅ Filter Chips
             FilterChips(
               onFilterChanged: (filterKey) {
-                setState(() => _selectedHistoryFilter = filterKey);
+                // ✅ بدل setState
+                cubit.setHistoryFilter(filterKey);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Future.delayed(
                     const Duration(milliseconds: 100),
@@ -904,11 +861,11 @@ class MarriageBodyState extends State<MarriageBody>
             ),
             SizedBox(height: 8.h),
 
-            // ✅ History Page — الـ BlocProvider.value فوق بيوصله للـ Historypage
+            // ✅ History Page — القيمة من الـ State
             Expanded(
               child: Historypage(
                 key: _historyKey,
-                selectedFilter: _selectedHistoryFilter,
+                selectedFilter: state.selectedHistoryFilter,
               ),
             ),
           ],

@@ -260,6 +260,7 @@
 // }
 // lib/features/user/marriage/view/widget/sliver_profile_header.dart
 
+// sliver_profile_header.dart
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
@@ -300,7 +301,6 @@ class SliverProfileHeader extends StatelessWidget {
 
   const SliverProfileHeader({
     super.key,
-    // الأمامي
     required this.images,
     required this.name,
     required this.age,
@@ -312,7 +312,6 @@ class SliverProfileHeader extends StatelessWidget {
     this.height,
     this.toggleWidget,
     this.reportId,
-    // الخلفي (اختياري)
     this.nextImages,
     this.nextName,
     this.nextAge,
@@ -322,23 +321,20 @@ class SliverProfileHeader extends StatelessWidget {
     this.nextReligiousCommitment,
     this.nextNationality,
     this.nextHeight,
-    // أنيميشن
     this.swipeDirection = 0,
     this.swipeProgress = 0,
   });
+
+  // ✅ هل الأنيميشن شغالة دلوقتي؟
+  bool get _isAnimating => swipeProgress > 0.01;
 
   @override
   Widget build(BuildContext context) {
     final String coverImage = images.isNotEmpty ? images.first : '';
     final bool hasNext = nextName != null;
 
-    // زاوية أقصى لفة 30 درجة
     final double maxAngleRad = 30 * math.pi / 180;
-
-    // قيمة الزاوية الحالية حسب الـ progress والاتجاه
     final double currentAngle = swipeDirection * swipeProgress * maxAngleRad;
-
-    // مسافة الطيران أفقياً
     final double maxTranslateX = 250.w;
     final double currentTranslateX =
         swipeDirection * swipeProgress * maxTranslateX;
@@ -358,7 +354,6 @@ class SliverProfileHeader extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             if (toggleWidget != null) Center(child: toggleWidget!),
-
             Positioned(
               right: 0,
               child: GestureDetector(
@@ -375,7 +370,6 @@ class SliverProfileHeader extends StatelessWidget {
                 ),
               ),
             ),
-
             Positioned(
               left: 0,
               child: AnimatedBeFirstButton(
@@ -389,35 +383,103 @@ class SliverProfileHeader extends StatelessWidget {
       ),
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.pin,
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // ========= الكارت الخلفي (اليوزر اللي بعده) =========
-            if (hasNext) _buildBackProfileCard(context),
+        background: RepaintBoundary(
+          // ✅ يعزل الـ repaint عن باقي الـ tree
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // ========= الكارت الخلفي =========
+              // ✅ يتبني بس لما الأنيميشن شغالة
+              if (hasNext && _isAnimating)
+                RepaintBoundary(
+                  child: _BackProfileCard(
+                    nextImages: nextImages,
+                    nextName: nextName,
+                    nextAge: nextAge,
+                    nextLocation: nextLocation,
+                    nextTagsjob: nextTagsjob,
+                    nextEducationLevel: nextEducationLevel,
+                    nextReligiousCommitment: nextReligiousCommitment,
+                    nextNationality: nextNationality,
+                    nextHeight: nextHeight,
+                  ),
+                ),
 
-            // ========= الكارت الأمامي (اليوزر الحالي) مع اللفة والطيران =========
-            Transform.translate(
-              offset: Offset(currentTranslateX, 0),
-              child: Transform.rotate(
-                angle: currentAngle,
+              // ========= الكارت الأمامي =========
+              // ✅ نستخدم Transform واحد بدل اتنين
+              Transform(
                 alignment: Alignment.center,
-                child: _buildFrontProfileCard(context, coverImage),
+                transform: Matrix4.identity()
+                  ..translate(currentTranslateX, 0.0)
+                  ..rotateZ(currentAngle),
+                child: RepaintBoundary(
+                  child: _FrontProfileCard(
+                    images: images,
+                    coverImage: coverImage,
+                    reportId: reportId,
+                    name: name,
+                    age: age,
+                    location: location,
+                    tagsjob: tagsjob,
+                    educationLevel: educationLevel,
+                    religiousCommitment: religiousCommitment,
+                    nationality: nationality,
+                    height: height,
+                    swipeProgress: swipeProgress,
+                    isAnimating: _isAnimating,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  // ================= FRONT CARD =================
-  Widget _buildFrontProfileCard(BuildContext context, String coverImage) {
-    // قيمة الـ border radius السفلي تكبر مع الـ progress
+// ═══════════════════════════════════════════════════════════════
+// ✅ FRONT CARD — Widget مستقلة
+// ═══════════════════════════════════════════════════════════════
+class _FrontProfileCard extends StatelessWidget {
+  final List<String> images;
+  final String coverImage;
+  final String? reportId;
+  final String name;
+  final String age;
+  final String location;
+  final String? tagsjob;
+  final String? educationLevel;
+  final String? religiousCommitment;
+  final String? nationality;
+  final String? height;
+  final double swipeProgress;
+  final bool isAnimating;
+
+  const _FrontProfileCard({
+    required this.images,
+    required this.coverImage,
+    required this.reportId,
+    required this.name,
+    required this.age,
+    required this.location,
+    this.tagsjob,
+    this.educationLevel,
+    this.religiousCommitment,
+    this.nationality,
+    this.height,
+    required this.swipeProgress,
+    required this.isAnimating,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final double bottomRadius = 80 * swipeProgress;
 
     return Stack(
       fit: StackFit.expand,
       children: [
+        // ✅ الصورة
         GestureDetector(
           onTap: () {
             if (images.isNotEmpty) {
@@ -434,47 +496,72 @@ class SliverProfileHeader extends StatelessWidget {
             }
           },
           child: ClipRRect(
-            // ✅ الحواف السفلية بتتدور مع الـ swipeProgress
             borderRadius: BorderRadius.only(
-              topLeft: Radius.zero,
-              topRight: Radius.zero,
               bottomLeft: Radius.circular(bottomRadius),
               bottomRight: Radius.circular(bottomRadius),
             ),
-            child: Hero(
-              tag: coverImage,
-              child: AppImage(coverImage, fit: BoxFit.cover),
-            ),
+            // ✅ Hero بس لما مفيش أنيميشن — يمنع conflict
+            child: isAnimating
+                ? AppImage(coverImage, fit: BoxFit.cover)
+                : Hero(
+                    tag: coverImage,
+                    child: AppImage(coverImage, fit: BoxFit.cover),
+                  ),
           ),
         ),
+
+        // ✅ معلومات اليوزر
         Positioned(
           bottom: 60.h,
           right: 16.w,
           left: 16.w,
-          child: glassCard(
-            borderRadius: 24,
-            blur: 18,
+          child: _InfoCard(
+            name: name,
+            age: age,
+            location: location,
+            tagsjob: tagsjob,
+            educationLevel: educationLevel,
+            religiousCommitment: religiousCommitment,
+            nationality: nationality,
+            height: height,
+            // ✅ أثناء الأنيميشن — نخفف الـ blur أو نشيله
+            useBlur: !isAnimating,
             opacity: 0.18,
-            paddingAll: 16,
-            child: _buildInfoContent(
-              context,
-              name: name,
-              age: age,
-              location: location,
-              tagsjob: tagsjob,
-              educationLevel: educationLevel,
-              religiousCommitment: religiousCommitment,
-              nationality: nationality,
-              height: height,
-            ),
           ),
         ),
       ],
     );
   }
+}
 
-  // ================= BACK CARD =================
-  Widget _buildBackProfileCard(BuildContext context) {
+// ═══════════════════════════════════════════════════════════════
+// ✅ BACK CARD — Widget مستقلة
+// ═══════════════════════════════════════════════════════════════
+class _BackProfileCard extends StatelessWidget {
+  final List<String>? nextImages;
+  final String? nextName;
+  final String? nextAge;
+  final String? nextLocation;
+  final String? nextTagsjob;
+  final String? nextEducationLevel;
+  final String? nextReligiousCommitment;
+  final String? nextNationality;
+  final String? nextHeight;
+
+  const _BackProfileCard({
+    this.nextImages,
+    this.nextName,
+    this.nextAge,
+    this.nextLocation,
+    this.nextTagsjob,
+    this.nextEducationLevel,
+    this.nextReligiousCommitment,
+    this.nextNationality,
+    this.nextHeight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final String backCover = (nextImages != null && nextImages!.isNotEmpty)
         ? nextImages!.first
         : '';
@@ -482,108 +569,137 @@ class SliverProfileHeader extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ممكن تستخدم صورة اليوزر اللي بعده كخلفية خفيفة
         if (backCover.isNotEmpty) AppImage(backCover, fit: BoxFit.cover),
+        // ✅ ColoredBox أخف من Container
+        const ColoredBox(color: Color(0x40000000)),
 
-        // Layer شفافة فوق عشان الكارت الأمامي يبقى واضح
-        Container(color: Colors.black.withOpacity(0.25)),
-
-        // الكارت الخلفي في نفس مكان الكارت الأمامي
         Positioned(
           bottom: 60.h,
           right: 16.w,
           left: 16.w,
-          child: glassCard(
-            borderRadius: 24,
-            blur: 18,
+          child: _InfoCard(
+            name: nextName ?? '',
+            age: nextAge ?? '',
+            location: nextLocation ?? '',
+            tagsjob: nextTagsjob,
+            educationLevel: nextEducationLevel,
+            religiousCommitment: nextReligiousCommitment,
+            nationality: nextNationality,
+            height: nextHeight,
+            // ✅ الكارت الخلفي — بدون blur دايماً (مش هيبان)
+            useBlur: false,
             opacity: 0.14,
-            paddingAll: 16,
-            child: _buildInfoContent(
-              context,
-              name: nextName ?? '',
-              age: nextAge ?? '',
-              location: nextLocation ?? '',
-              tagsjob: nextTagsjob,
-              educationLevel: nextEducationLevel,
-              religiousCommitment: nextReligiousCommitment,
-              nationality: nextNationality,
-              height: nextHeight,
-            ),
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildInfoContent(
-    BuildContext context, {
-    required String name,
-    required String age,
-    required String location,
-    String? tagsjob,
-    String? educationLevel,
-    String? religiousCommitment,
-    String? nationality,
-    String? height,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              name,
-              style: Styles.textStyle18Bold.copyWith(color: Colors.white),
-            ),
-            Gap(5.w),
-            if (age.isNotEmpty)
-              Text(
-                "$age ${context.tr("age")}",
-                style: Styles.textStyle14.copyWith(color: Colors.white),
-              ),
-            if (name.isNotEmpty) ...[
-              Gap(8.w),
-              const Icon(Icons.verified, color: Colors.blue, size: 20),
-            ],
-          ],
-        ),
-        Gap(5.h),
-        if (location.isNotEmpty)
+// ═══════════════════════════════════════════════════════════════
+// ✅ INFO CARD — الجزء اللي فيه الاسم والتاجات
+//    بتتحكم في الـ blur حسب الأنيميشن
+// ═══════════════════════════════════════════════════════════════
+class _InfoCard extends StatelessWidget {
+  final String name;
+  final String age;
+  final String location;
+  final String? tagsjob;
+  final String? educationLevel;
+  final String? religiousCommitment;
+  final String? nationality;
+  final String? height;
+  final bool useBlur;
+  final double opacity;
+
+  const _InfoCard({
+    required this.name,
+    required this.age,
+    required this.location,
+    this.tagsjob,
+    this.educationLevel,
+    this.religiousCommitment,
+    this.nationality,
+    this.height,
+    required this.useBlur,
+    required this.opacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _glassCard(
+      borderRadius: 24,
+      blur: useBlur ? 18 : 0,
+      opacity: opacity,
+      paddingAll: 16,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Row(
             children: [
-              const Icon(Icons.flag, color: Colors.white, size: 16),
-              Gap(5.w),
-              Text(
-                location,
-                style: Styles.textStyle12.copyWith(color: Colors.white70),
+              Flexible(
+                child: Text(
+                  name,
+                  style: Styles.textStyle18Bold.copyWith(color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              Gap(5.w),
+              if (age.isNotEmpty)
+                Text(
+                  "$age ${context.tr("age")}",
+                  style: Styles.textStyle14.copyWith(color: Colors.white),
+                ),
+              if (name.isNotEmpty) ...[
+                Gap(8.w),
+                const Icon(Icons.verified, color: Colors.blue, size: 20),
+              ],
             ],
           ),
-        Gap(10.h),
-        Wrap(
-          spacing: 8.w,
-          runSpacing: 8.h,
-          children: [
-            if (tagsjob != null && tagsjob.isNotEmpty)
-              _buildTransparentTag(tagsjob),
-            if (educationLevel != null && educationLevel.isNotEmpty)
-              _buildTransparentTag(educationLevel),
-            if (religiousCommitment != null && religiousCommitment.isNotEmpty)
-              _buildTransparentTag(religiousCommitment),
-            if (nationality != null && nationality.isNotEmpty)
-              _buildTransparentTag(nationality),
-          ],
-        ),
-      ],
+          Gap(5.h),
+          if (location.isNotEmpty)
+            Row(
+              children: [
+                const Icon(Icons.flag, color: Colors.white, size: 16),
+                Gap(5.w),
+                Flexible(
+                  child: Text(
+                    location,
+                    style: Styles.textStyle12.copyWith(color: Colors.white70),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          Gap(10.h),
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 8.h,
+            children: [
+              if (tagsjob != null && tagsjob!.isNotEmpty) _buildTag(tagsjob!),
+              if (educationLevel != null && educationLevel!.isNotEmpty)
+                _buildTag(educationLevel!),
+              if (religiousCommitment != null &&
+                  religiousCommitment!.isNotEmpty)
+                _buildTag(religiousCommitment!),
+              if (nationality != null && nationality!.isNotEmpty)
+                _buildTag(nationality!),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildTransparentTag(String text) {
-    return glassCard(
-      borderRadius: 24,
-      blur: 18,
-      opacity: 0.18,
-      paddingAll: 6,
+  Widget _buildTag(String text) {
+    // ✅ التاجات — بدون blur نهائي (مش محتاج + بيأثر على الأداء)
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Colors.white.withOpacity(opacity),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.2),
+      ),
       child: Text(
         text,
         style: Styles.textStyle10.copyWith(color: Colors.white),
@@ -591,34 +707,45 @@ class SliverProfileHeader extends StatelessWidget {
     );
   }
 
-  Widget glassCard({
+  Widget _glassCard({
     required Widget child,
     double borderRadius = 20,
     double blur = 20,
     double opacity = 0.25,
     double paddingAll = 0.0,
   }) {
+    final decoration = BoxDecoration(
+      borderRadius: BorderRadius.circular(borderRadius),
+      gradient: LinearGradient(
+        colors: [
+          Colors.white.withOpacity(opacity),
+          Colors.white.withOpacity(opacity / 2),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.2),
+    );
+
+    // ✅ لو مفيش blur — نشيل BackdropFilter خالص
+    if (blur <= 0) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Container(
+          padding: EdgeInsets.all(paddingAll),
+          decoration: decoration,
+          child: child,
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Container(
           padding: EdgeInsets.all(paddingAll),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(borderRadius),
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(opacity),
-                Colors.white.withOpacity(opacity / 2),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-              width: 1.2,
-            ),
-          ),
+          decoration: decoration,
           child: child,
         ),
       ),
