@@ -143,12 +143,12 @@ class EventDetailBody extends StatelessWidget {
                           bottom: 100,
                         ),
                         child: EventBodyContent(
-                          attendeesCountValue:
-                              (event?.numberOfReservations ?? 0).toString(),
+                          attendeesCountValue: (event?.numberOfAttendees ?? 0)
+                              .toString(),
                           eventDescriptionText:
                               event?.description ??
                               context.tr('event_description_text'),
-                          eventDurationValue: event?.date ?? '',
+                          eventDurationValue: event?.duration ?? '',
                           latitude: event?.latitude ?? 30.0444,
                           longitude: event?.longitude ?? 31.2357,
                         ),
@@ -176,8 +176,8 @@ class EventDetailBody extends StatelessWidget {
                           attendeesLabel: context.tr('attendees_label'),
                           attendeesCount: event?.numberOfReservations ?? 0,
                           showAttendeesImages: event?.isMyEvent ?? false,
-
                           attendeesImages: event?.reservationsImages,
+                          numberOfTickets: event?.numberOfTickets,
                         ),
                       ),
                     ),
@@ -200,6 +200,9 @@ class EventDetailBody extends StatelessWidget {
                 AppRouter.kUpdateEventView,
                 arguments: context.read<EventDetailCubit>(),
               );
+            },
+            onBoostPressed: () {
+              context.pushNamed(AppRouter.kBoostAccountView);
             },
           );
         },

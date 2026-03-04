@@ -7,6 +7,7 @@ class TimePickerFormField extends FormField<TimeOfDay> {
     super.initialValue,
     required String placeholder,
     bool enabled = true,
+    bool disablePastTime = false, // ✅ الخاصية الجديدة
     super.validator,
     ValueChanged<TimeOfDay?>? onChanged,
     DateTime? minDateForTime,
@@ -18,14 +19,48 @@ class TimePickerFormField extends FormField<TimeOfDay> {
                GestureDetector(
                  onTap: enabled
                      ? () async {
-                        final picked = await pickTime(
-                          state.context,
-                          minDate: minDateForTime,
-                        );
-                         if (picked != null) {
-                           state.didChange(picked);
-                           onChanged?.call(picked);
+                         // Determine minDate for the time picker.
+                         // If a min date for the event is provided and it is today,
+                         // then prevent selecting past times by using `DateTime.now()`.
+                         // Otherwise do not restrict time selection.
+                         DateTime? minTime;
+                         final now = DateTime.now();
+                         if (minDateForTime != null) {
+                           if (minDateForTime.year == now.year &&
+                               minDateForTime.month == now.month &&
+                               minDateForTime.day == now.day) {
+                             // event date is today -> restrict to current time
+                             minTime = now;
+                           } else {
+                             // event date is in future -> no restriction
+                             minTime = null;
+                           }
+                         } else if (disablePastTime) {
+                           // no event date provided but caller asked to disable past times
+                           minTime = now;
+                         } else {
+                           minTime = null;
                          }
+
+                         final result = await pickTime(
+                           state.context,
+                           minDate: minTime,
+                         );
+
+                         // If user cancelled -> do nothing
+                         if (result.time == null && !result.wasInvalid) return;
+
+                         // If user picked an invalid (past) time -> clear value so validator fails
+                         if (result.wasInvalid) {
+                           state.didChange(null);
+                           onChanged?.call(null);
+                           return;
+                         }
+
+                         // Valid pick
+                         final picked = result.time!;
+                         state.didChange(picked);
+                         onChanged?.call(picked);
                        }
                      : null,
                  child: Container(

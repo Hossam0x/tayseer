@@ -76,6 +76,7 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                       children: [
                         /// 1. العنوان
                         CustomTextFormField(
+                          maxLength: 20,
                           hintText: context.tr('title_events'),
                           controller: cubit.titleController,
                         ),
@@ -86,12 +87,14 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                           hintText: context.tr('event_description'),
                           maxLines: 5,
                           controller: cubit.descriptionController,
+                          onChanged: (val) =>
+                              cubit.setDescriptionLength(val.length),
                         ),
                         Gap(context.responsiveHeight(3)),
                         Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '${cubit.descriptionController.text.length}/250',
+                            '${state.descriptionLength}/250',
                             style: Styles.textStyle12.copyWith(
                               color: AppColors.kGreyColor,
                             ),
@@ -122,45 +125,45 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                         Gap(context.responsiveHeight(16)),
 
                         /// 5. المدة
-                        CustomDropdownFormField<String>(
-                          hint: context.tr('event_duration'),
-                          value: state.duration,
-                          items: [
-                            DropdownMenuItem(
-                              value: '15 minutes',
-                              child: Text(
-                                '15 minutes',
-                                style: Styles.textStyle12,
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: '30 minutes',
-                              child: Text(
-                                '30 minutes',
-                                style: Styles.textStyle12,
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: '1 hour',
-                              child: Text('1 hour', style: Styles.textStyle12),
-                            ),
-                            DropdownMenuItem(
-                              value: '2 hours',
-                              child: Text('2 hours', style: Styles.textStyle12),
-                            ),
-                            DropdownMenuItem(
-                              value: '3 hours',
-                              child: Text('3 hours', style: Styles.textStyle12),
-                            ),
-                            DropdownMenuItem(
-                              value: '4 hours',
-                              child: Text('4 hours', style: Styles.textStyle12),
-                            ),
-                          ],
-                          onChanged: (val) => cubit.setDuration(val),
-                          validator: (value) =>
-                              value == null ? context.tr('required') : null,
-                        ),
+                        // CustomDropdownFormField<String>(
+                        //   hint: context.tr('event_duration'),
+                        //   value: state.duration,
+                        //   items: [
+                        //     DropdownMenuItem(
+                        //       value: '15 minutes',
+                        //       child: Text(
+                        //         '15 minutes',
+                        //         style: Styles.textStyle12,
+                        //       ),
+                        //     ),
+                        //     DropdownMenuItem(
+                        //       value: '30 minutes',
+                        //       child: Text(
+                        //         '30 minutes',
+                        //         style: Styles.textStyle12,
+                        //       ),
+                        //     ),
+                        //     DropdownMenuItem(
+                        //       value: '1 hour',
+                        //       child: Text('1 hour', style: Styles.textStyle12),
+                        //     ),
+                        //     DropdownMenuItem(
+                        //       value: '2 hours',
+                        //       child: Text('2 hours', style: Styles.textStyle12),
+                        //     ),
+                        //     DropdownMenuItem(
+                        //       value: '3 hours',
+                        //       child: Text('3 hours', style: Styles.textStyle12),
+                        //     ),
+                        //     DropdownMenuItem(
+                        //       value: '4 hours',
+                        //       child: Text('4 hours', style: Styles.textStyle12),
+                        //     ),
+                        //   ],
+                        //   onChanged: (val) => cubit.setDuration(val),
+                        //   validator: (value) =>
+                        //       value == null ? context.tr('required') : null,
+                        // ),
                         Gap(context.responsiveHeight(16)),
 
                         /// 6. السعر قبل الخصم
@@ -216,8 +219,8 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                           onChanged: (val) => cubit.setNumberOfAttendees(val),
                           validator: (value) =>
                               (value == null || value.trim().isEmpty)
-                                  ? context.tr('required')
-                                  : null,
+                              ? context.tr('required')
+                              : null,
                         ),
                         Gap(context.responsiveHeight(24)),
 
@@ -225,7 +228,7 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                         CustomUploadContainer(
                           icon: Icons.camera_alt,
                           title: context.tr('add_event_image'),
-                          subtitle: context.tr('add_image_hint'),
+                          subtitle: context.tr('add_4_images_hint'),
                           onTap: () async {
                             final images = await _imagePicker
                                 .pickMultipleFromGallery();

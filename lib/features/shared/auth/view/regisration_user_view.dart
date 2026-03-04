@@ -365,7 +365,7 @@ class _RegisrationViewState extends State<RegisrationView> {
                                   },
                                   child: Text(
                                     context.tr('user_guest'),
-                                    style: Styles.textStyle16.copyWith(
+                                    style: Styles.textStyle14Bold.copyWith(
                                       color: AppColors.kprimaryTextColor,
                                     ),
                                   ),

@@ -6,7 +6,9 @@ class FloatingInfoCard extends StatelessWidget {
   final String consultant;
   final String dateTime;
   final String attendeesLabel;
+
   final int attendeesCount;
+  final int? numberOfTickets;
   final VoidCallback? onShowDetails;
 
   final List<String>? attendeesImages;
@@ -21,6 +23,7 @@ class FloatingInfoCard extends StatelessWidget {
     required this.dateTime,
     required this.attendeesLabel,
     required this.attendeesCount,
+    this.numberOfTickets,
     this.onShowDetails,
     this.attendeesImages,
     this.showAttendeesImages = false,
@@ -96,6 +99,14 @@ class FloatingInfoCard extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
+                  ),
+                ),
+
+              if (!showAttendeesImages)
+                Text(
+                  "${context.tr('number_of_tickets')}: $numberOfTickets",
+                  style: Styles.textStyle10SemiBold.copyWith(
+                    color: AppColors.kprimaryColor,
                   ),
                 ),
 

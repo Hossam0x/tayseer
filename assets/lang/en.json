@@ -1504,5 +1504,8 @@
   "story_archived_success": "Story archived successfully",
   "story_hidden_success": "Story hidden successfully",
   "story_created_success": "Story created successfully",
-  "story_unarchived_success": "Story unarchived successfully"
+  "story_unarchived_success": "Story unarchived successfully",
+  "number_of_tickets": "Number of tickets remaining",
+  "max_length_exceeded": "Maximum length exceeded",
+  "location_selected_successfully": "Location selected successfully"
 }

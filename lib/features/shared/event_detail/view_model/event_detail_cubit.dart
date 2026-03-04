@@ -45,6 +45,8 @@ class EventDetailCubit extends Cubit<EventDetailState> {
   //============ Populate Form - Direct from Model ============//
 
   void _populateForm(EventDetailModel event) {
+    debugPrint('[_populateForm] EventDetailModel.date: ${event.date}');
+    debugPrint('[_populateForm] EventDetailModel.startTime: ${event.startTime}');
     // Controllers
     titleController.text = event.title;
     descriptionController.text = event.description;
@@ -56,13 +58,30 @@ class EventDetailCubit extends Cubit<EventDetailState> {
       state.copyWith(
         eventDate: _parseDate(event.date),
         startTime: _parseTime(event.startTime),
-        duration: event.duration, // 👈 مباشرة
-        numberOfAttendees: event.numberOfReservations.toString(), // 👈 مباشرة
-        // existingImages: event.images ?? [],
+        duration: event.duration,
+        numberOfAttendees: event.numberOfAttendees.toString(),
+        descriptionLength: event.description.length,
+        existingImages: (event.images.trim().isEmpty)
+            ? []
+            : event.images
+                  .split(RegExp(r',\s*'))
+                  .map((s) => s.trim())
+                  .where((s) => s.isNotEmpty)
+                  .toList(),
       ),
     );
     // keep controller in sync
-    numberOfAttendeesController.text = event.numberOfReservations.toString();
+    numberOfAttendeesController.text = event.numberOfAttendees.toString();
+
+    debugPrint('[_populateForm] parsed eventDate: ${state.eventDate}');
+    debugPrint('[_populateForm] parsed startTime: ${state.startTime}');
+  }
+
+  int get descriptionLength => state.descriptionLength;
+
+  void setDescriptionLength(int length) {
+    final safe = length < 0 ? 0 : (length > 250 ? 250 : length);
+    emit(state.copyWith(descriptionLength: safe));
   }
 
   //============ Update ============//
@@ -161,9 +180,62 @@ class EventDetailCubit extends Cubit<EventDetailState> {
     if (dateStr == null || dateStr.isEmpty) return null;
     try {
       return DateTime.parse(dateStr);
-    } catch (_) {
-      return null;
-    }
+    } catch (_) {}
+
+    try {
+      // try parsing localized Arabic month names like "3 مارس 2026"
+      return DateFormat('d MMMM yyyy', 'ar').parse(dateStr);
+    } catch (_) {}
+
+    try {
+      // fallback to more generic localized parser
+      return DateFormat.yMMMMd('ar').parse(dateStr);
+    } catch (_) {}
+
+    // Final fallback: parse manually using Arabic month name mapping
+    try {
+      final match = RegExp(r"(\d{1,2})\s+([^\d,]+?)\s+(\d{4})").firstMatch(dateStr);
+      if (match != null) {
+        final day = int.parse(match.group(1)!);
+        var monthName = match.group(2)!.trim();
+        final year = int.parse(match.group(3)!);
+
+        // normalize common variants
+        monthName = monthName
+            .replaceAll(RegExp(r'[إأآ]'), 'ا')
+            .replaceAll('ى', 'ي')
+            .replaceAll(RegExp(r'[ؤئ]'), 'و')
+            .replaceAll('ـ', '')
+            .trim()
+            .toLowerCase();
+
+        final arabicMonths = {
+          'يناير': 1,
+          'فبراير': 2,
+          'مارس': 3,
+          'ابريل': 4,
+          'أبريل': 4,
+          'مايو': 5,
+          'يونيو': 6,
+          'يوليو': 7,
+          'اغسطس': 8,
+          'أغسطس': 8,
+          'سبتمبر': 9,
+          'اكتوبر': 10,
+          'أكتوبر': 10,
+          'نوفمبر': 11,
+          'ديسمبر': 12,
+        };
+
+        // try direct lookup
+        final month = arabicMonths[monthName];
+        if (month != null) {
+          return DateTime(year, month, day);
+        }
+      }
+    } catch (_) {}
+
+    return null;
   }
 
   TimeOfDay? _parseTime(String? timeStr) {

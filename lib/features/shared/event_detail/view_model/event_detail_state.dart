@@ -12,6 +12,7 @@ class EventDetailState {
   final DateTime? eventDate;
   final TimeOfDay? startTime;
   final String? duration;
+  final int descriptionLength;
   final String? numberOfAttendees;
 
   final List<XFile> pickedImages;
@@ -26,6 +27,7 @@ class EventDetailState {
     this.eventDate,
     this.startTime,
     this.duration,
+    this.descriptionLength = 0,
     this.numberOfAttendees,
     this.eventPeople = const [],
     this.pickedImages = const [],
@@ -42,6 +44,7 @@ class EventDetailState {
     TimeOfDay? startTime,
     String? duration,
     String? numberOfAttendees,
+    int? descriptionLength,
     List<XFile>? pickedImages,
     List<String>? existingImages,
     List<EventPeopleModel>? eventPeople,
@@ -56,6 +59,7 @@ class EventDetailState {
       eventDate: eventDate ?? this.eventDate,
       startTime: startTime ?? this.startTime,
       duration: duration ?? this.duration,
+      descriptionLength: descriptionLength ?? this.descriptionLength,
       numberOfAttendees: numberOfAttendees ?? this.numberOfAttendees,
       pickedImages: pickedImages ?? this.pickedImages,
       existingImages: existingImages ?? this.existingImages,

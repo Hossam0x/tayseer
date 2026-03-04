@@ -119,14 +119,14 @@ class _CustomProfileHeaderState extends State<CustomProfileHeader> {
                         Text(
                           selectedSubtitle,
                           style: Styles.textStyle12.copyWith(
-                            color: HexColor('666666'),
+                            color: AppColors.kGreyColor,
                           ),
                         ),
                         const SizedBox(width: 4),
                         Icon(
                           Icons.keyboard_arrow_down,
                           size: 18,
-                          color: HexColor('666666'),
+                          color: AppColors.kGreyColor,
                         ),
                       ],
                     ),

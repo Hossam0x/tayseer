@@ -135,10 +135,7 @@ class MyEventsContent extends StatelessWidget {
                       useGradient: true,
                       title: context.tr('creat_event'),
                       onPressed: () {
-                        context.pushNamed(
-                          AppRouter.kCreatEventView,
-                          arguments: {'cubit': eventsCubit},
-                        );
+                        context.pushNamed(AppRouter.kCreatEventView);
                       },
                     ),
                   ),

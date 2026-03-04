@@ -124,6 +124,14 @@ class EventsCubit extends Cubit<EventsState> {
 
   void numberOfffAttendees(String? value) => setnumberOfAttendees(value);
 
+  // ==================== Description length ====================
+  int get eventDescriptionLength => state.eventDescriptionLength;
+
+  void setEventDescriptionLength(int length) {
+    final safeLength = length < 0 ? 0 : (length > 250 ? 250 : length);
+    emit(state.copyWith(eventDescriptionLength: safeLength));
+  }
+
   //                      LOCATION METHODS
 
   double? get latitude => state.latitude;
@@ -521,8 +529,6 @@ class EventsCubit extends Cubit<EventsState> {
       );
     }
   }
-
-
 
   Future _clearForm() async {
     eventTitleController.clear();
