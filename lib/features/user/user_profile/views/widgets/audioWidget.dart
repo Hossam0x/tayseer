@@ -29,39 +29,28 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
   String? _recordingPath;
   bool _isInitialized = false;
 
-  // ⭐ للموجات الديناميكية
   List<double> _waveHeights = List.generate(40, (_) => 4.0);
   StreamSubscription? _recorderSubscription;
 
   Timer? _durationTimer;
   DateTime? _startTime;
-
-  // ✅ للأنيميشن السلس
   double _currentAmplitude = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _initializeRecorder();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 100),
       vsync: this,
     )..repeat(reverse: true);
+    _initializeRecorder();
   }
 
   Future<void> _initializeRecorder() async {
     _recorder = FlutterSoundRecorder();
 
     try {
-      // ✅ على iOS: اطلب الـ permission الأول قبل openRecorder
-      if (Platform.isIOS) {
-        final status = await Permission.microphone.request();
-        if (!status.isGranted) {
-          debugPrint('❌ Microphone permission denied on iOS');
-          return; // مش نكمل
-        }
-      }
-
+      // ✅ على iOS و Android: افتح الـ recorder الأول دايماً
       await _recorder!.openRecorder();
 
       await _recorder!.setSubscriptionDuration(
@@ -69,12 +58,14 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       );
 
       if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
+        setState(() => _isInitialized = true);
       }
     } catch (e) {
       debugPrint('❌ Error initializing recorder: $e');
+      // ✅ حتى لو في error، خلي الـ UI يظهر عشان المستخدم يحاول
+      if (mounted) {
+        setState(() => _isInitialized = true);
+      }
     }
   }
 
@@ -88,59 +79,44 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     super.dispose();
   }
 
-  // ✅ الحل: على iOS نتحقق فقط من الـ status ومش نطلب تاني
-  // لأن الـ permission اتطلب من برا (في _startRecordingInPlace)
-  Future<bool> _checkPermissions() async {
-    final microphoneStatus = await Permission.microphone.status;
+  Future<bool> _requestPermission() async {
+    // ✅ نفس المنطق على iOS و Android
+    var status = await Permission.microphone.status;
 
-    // ✅ لو granted خلاص - مش محتاج نطلب تاني
-    if (microphoneStatus == PermissionStatus.granted) {
-      return true;
-    }
+    if (status.isGranted) return true;
 
-    // ✅ لو permanentlyDenied - مش نطلب، نرجع false بس
-    if (microphoneStatus == PermissionStatus.permanentlyDenied) {
+    if (status.isPermanentlyDenied) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr('enable_microphone_settings')),
+
+            action: SnackBarAction(
+              label: context.tr('settings'),
+              onPressed: () => openAppSettings(),
+            ),
+          ),
+        );
+      }
       return false;
     }
 
-    // ✅ iOS: مش نطلب من جوا الـ widget عشان متعارضش مع الطلب من برا
-    if (Platform.isIOS) {
-      // على iOS الـ permission اتطلب من _startRecordingInPlace
-      // لو وصلنا هنا ومش granted، يبقى المستخدم رفض
-      return false;
-    }
-
-    // Android: اطلب عادي
-    final result = await Permission.microphone.request();
-    return result == PermissionStatus.granted;
+    // اطلب الـ permission
+    status = await Permission.microphone.request();
+    return status.isGranted;
   }
 
   Future<void> _startRecording() async {
     if (!_isInitialized || _recorder == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recorder not initialized. Please try again.'),
-          ),
-        );
-      }
-      return;
+      // حاول تعمل initialize تاني
+      await _initializeRecorder();
+      if (!_isInitialized) return;
     }
 
     try {
-      final hasPermission = await _checkPermissions();
-      if (!hasPermission) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Microphone permission is required to record audio',
-              ),
-            ),
-          );
-        }
-        return;
-      }
+      // ✅ اطلب الـ permission قبل التسجيل مباشرة
+      final hasPermission = await _requestPermission();
+      if (!hasPermission) return;
 
       final directory = await getTemporaryDirectory();
       final fileName =
@@ -170,7 +146,9 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       debugPrint('❌ Error starting recording: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to start recording: $e')),
+          SnackBar(
+            content: Text('${context.tr('failed_to_start_recording')}: $e'),
+          ),
         );
       }
     }
@@ -180,12 +158,9 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     _durationTimer?.cancel();
     _durationTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (!mounted || !_isRecording || _isPaused) return;
-
-      if (mounted) {
-        setState(() {
-          _recordingDuration = DateTime.now().difference(_startTime!);
-        });
-      }
+      setState(() {
+        _recordingDuration = DateTime.now().difference(_startTime!);
+      });
     });
   }
 
@@ -199,25 +174,19 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         final decibels = event.decibels ?? -160.0;
 
         double amplitude;
-
         if (decibels <= -80) {
           amplitude = 0.01;
         } else {
           amplitude = ((decibels + 80) / 100).clamp(0.04, 0.4);
         }
 
-        // ✅ تنعيم التغييرات (Smoothing)
         _currentAmplitude = (_currentAmplitude * 0.7) + (amplitude * 0.3);
 
         if (mounted) {
-          setState(() {
-            _addNewWave(_currentAmplitude);
-          });
+          setState(() => _addNewWave(_currentAmplitude));
         }
       },
-      onError: (error) {
-        debugPrint('❌ Recorder stream error: $error');
-      },
+      onError: (error) => debugPrint('❌ Recorder stream error: $error'),
       cancelOnError: false,
     );
   }
@@ -237,15 +206,10 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
   Future<void> _pauseRecording() async {
     if (_recorder == null) return;
-
     try {
       await _recorder!.pauseRecorder();
       _durationTimer?.cancel();
-      if (mounted) {
-        setState(() {
-          _isPaused = true;
-        });
-      }
+      if (mounted) setState(() => _isPaused = true);
     } catch (e) {
       debugPrint('❌ Error pausing recording: $e');
     }
@@ -253,15 +217,10 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
   Future<void> _resumeRecording() async {
     if (_recorder == null) return;
-
     try {
       await _recorder!.resumeRecorder();
       _startDurationTimer();
-      if (mounted) {
-        setState(() {
-          _isPaused = false;
-        });
-      }
+      if (mounted) setState(() => _isPaused = false);
     } catch (e) {
       debugPrint('❌ Error resuming recording: $e');
     }
@@ -269,7 +228,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
   Future<void> _stopRecording() async {
     if (_recorder == null) return;
-
     try {
       await _recorder!.stopRecorder();
       _recorderSubscription?.cancel();
@@ -282,12 +240,9 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         });
       }
 
-      debugPrint('⏹️ Recording stopped');
-
       if (_recordingPath != null) {
         final audioFile = File(_recordingPath!);
         if (await audioFile.exists()) {
-          debugPrint('✅ Audio file exists: $_recordingPath');
           widget.onAudioRecorded(audioFile);
         } else {
           debugPrint('❌ Audio file does not exist!');
@@ -295,19 +250,15 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       }
     } catch (e) {
       debugPrint('❌ Error stopping recording: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to stop recording: $e')));
-      }
     }
   }
 
   Future<void> _cancelRecording() async {
     if (_recorder == null) return;
-
     try {
-      await _recorder!.stopRecorder();
+      if (_isRecording) {
+        await _recorder!.stopRecorder();
+      }
       _recorderSubscription?.cancel();
       _durationTimer?.cancel();
 
@@ -323,10 +274,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
       if (_recordingPath != null) {
         final file = File(_recordingPath!);
-        if (await file.exists()) {
-          await file.delete();
-          debugPrint('🗑️ Recording file deleted');
-        }
+        if (await file.exists()) await file.delete();
       }
 
       widget.onCancel?.call();
@@ -344,8 +292,10 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
   @override
   Widget build(BuildContext context) {
+    // ✅ لو لسه بيـ initialize، اظهر loading بسيط
     if (!_isInitialized) {
       return Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         child: Row(
           children: [
             SizedBox(
@@ -354,7 +304,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             SizedBox(width: 12),
-            Text('Initializing recorder...'),
+            Text(context.tr('initializing_recorder')),
           ],
         ),
       );
@@ -365,198 +315,208 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(25),
       ),
+      child: !_isRecording ? _buildIdleState() : _buildRecordingState(),
+    );
+  }
+
+  // ── Idle: زرار الميكروفون فقط ──────────────────────────────────
+  Widget _buildIdleState() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       child: Row(
         children: [
-          if (!_isRecording) ...[
-            GestureDetector(
-              onTap: _startRecording,
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.mic, color: Colors.white, size: 24),
+          GestureDetector(
+            onTap: _startRecording,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
               ),
+              child: const Icon(Icons.mic, color: Colors.white, size: 24),
             ),
-          ] else ...[
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          _formatDuration(_recordingDuration),
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
+          ),
+          SizedBox(width: 12.w),
 
-                        // النقطة النابضة
-                        AnimatedBuilder(
-                          animation: _animationController,
-                          builder: (context, child) {
-                            return Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                color: _isPaused ? Colors.orange : Colors.red,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        (_isPaused ? Colors.orange : Colors.red)
-                                            .withOpacity(
-                                              0.3 +
-                                                  (_animationController.value *
-                                                      0.4),
-                                            ),
-                                    blurRadius:
-                                        4 + (_animationController.value * 4),
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
+          Text(
+            context.tr('tap_to_record'),
+            style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
+          ),
+        ],
+      ),
+    );
+  }
 
-                        SizedBox(width: 12.w),
-
-                        // الموجات
-                        Expanded(
-                          child: SizedBox(
-                            height: 40,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: List.generate(_waveHeights.length, (
-                                index,
-                              ) {
-                                final height = _waveHeights[index];
-
-                                final color = Color.lerp(
-                                  AppColors.secondary200.withOpacity(0.5),
-                                  AppColors.secondary600,
-                                  (height / 35.0).clamp(0.0, 1.0),
-                                )!;
-
-                                return AnimatedContainer(
-                                  duration: Duration(milliseconds: 400),
-                                  curve: Curves.easeOut,
-                                  width: 2.5,
-                                  height: height,
-                                  margin: EdgeInsets.symmetric(horizontal: 0.8),
-                                  decoration: BoxDecoration(
-                                    color: color,
-                                    borderRadius: BorderRadius.circular(2),
-                                    boxShadow: height > 20
-                                        ? [
-                                            BoxShadow(
-                                              color: color.withOpacity(0.3),
-                                              blurRadius: 2,
-                                            ),
-                                          ]
-                                        : null,
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 12.h),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        GestureDetector(
-                          onTap: _cancelRecording,
-                          child: Container(
-                            width: 40.w,
-                            height: 40.h,
-                            decoration: BoxDecoration(
-                              color: Colors.red[400],
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.withOpacity(0.3),
-                                  blurRadius: 6,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.delete_outline,
-                              color: Colors.white,
-                              size: 22,
-                            ),
-                          ),
-                        ),
-
-                        GestureDetector(
-                          onTap: _isPaused ? _resumeRecording : _pauseRecording,
-                          child: Container(
-                            width: 40.w,
-                            height: 40.h,
-                            decoration: BoxDecoration(
-                              color: Colors.orange[400],
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.orange.withOpacity(0.3),
-                                  blurRadius: 6,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              _isPaused ? Icons.play_arrow : Icons.pause,
-                              color: Colors.white,
-                              size: 22,
-                            ),
-                          ),
-                        ),
-
-                        GestureDetector(
-                          onTap: _stopRecording,
-                          child: Container(
-                            width: 45.w,
-                            height: 45.h,
-                            decoration: BoxDecoration(
-                              color: Colors.green[600],
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.green.withOpacity(0.4),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.send,
-                              color: Colors.white,
-                              size: 22.w,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+  // ── Recording state ────────────────────────────────────────────
+  Widget _buildRecordingState() {
+    return Expanded(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Top row: timer + dot + waves ──
+            Row(
+              children: [
+                Text(
+                  _formatDuration(_recordingDuration),
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14.sp,
+                  ),
                 ),
-              ),
+                SizedBox(width: 8.w),
+
+                // النقطة النابضة
+                AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    return Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: _isPaused ? Colors.orange : Colors.red,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_isPaused ? Colors.orange : Colors.red)
+                                .withOpacity(
+                                  0.3 + (_animationController.value * 0.4),
+                                ),
+                            blurRadius: 4 + (_animationController.value * 4),
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+
+                SizedBox(width: 12.w),
+
+                // الموجات
+                Expanded(
+                  child: SizedBox(
+                    height: 40,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: List.generate(_waveHeights.length, (index) {
+                        final height = _waveHeights[index];
+                        final color = Color.lerp(
+                          AppColors.secondary200.withOpacity(0.5),
+                          AppColors.secondary600,
+                          (height / 35.0).clamp(0.0, 1.0),
+                        )!;
+
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeOut,
+                          width: 2.5,
+                          height: height,
+                          margin: const EdgeInsets.symmetric(horizontal: 0.8),
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(2),
+                            boxShadow: height > 20
+                                ? [
+                                    BoxShadow(
+                                      color: color.withOpacity(0.3),
+                                      blurRadius: 2,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 12.h),
+
+            // ── Bottom row: cancel + pause + send ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // ❌ حذف
+                GestureDetector(
+                  onTap: _cancelRecording,
+                  child: Container(
+                    width: 40.w,
+                    height: 40.h,
+                    decoration: BoxDecoration(
+                      color: Colors.red[400],
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.3),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+
+                // ⏸ / ▶ pause/resume
+                GestureDetector(
+                  onTap: _isPaused ? _resumeRecording : _pauseRecording,
+                  child: Container(
+                    width: 40.w,
+                    height: 40.h,
+                    decoration: BoxDecoration(
+                      color: Colors.orange[400],
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orange.withOpacity(0.3),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      _isPaused ? Icons.play_arrow : Icons.pause,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+
+                // ✅ إرسال
+                GestureDetector(
+                  onTap: _stopRecording,
+                  child: Container(
+                    width: 45.w,
+                    height: 45.h,
+                    decoration: BoxDecoration(
+                      color: Colors.green[600],
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.4),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Icon(Icons.send, color: Colors.white, size: 22.w),
+                  ),
+                ),
+              ],
             ),
           ],
-        ],
+        ),
       ),
     );
   }

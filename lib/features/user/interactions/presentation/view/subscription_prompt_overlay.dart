@@ -1,77 +1,48 @@
 import 'package:tayseer/my_import.dart';
 
-class SubscriptionPromptOverlay extends StatelessWidget {
-  const SubscriptionPromptOverlay({super.key});
+// ════════════════════════════════════════════════════════════════
+// ✅ Shared Widget — يتستخدم في Exploration و History
+// ════════════════════════════════════════════════════════════════
+class SubscriptionButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+
+  const SubscriptionButton({super.key, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: IgnorePointer(
-        ignoring: false,
-        child: Container(
-          
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(height: 40.h),
-                _interactionSubscriptionButton(
-                  context.tr("subscribe_to_see_likes"),
-                  context,
-                  onPressed: () {
-                    context.pushNamed(AppRouter.kinteractionSubscriptionView);
-                  },
-                ),
-              ],
+    return GestureDetector(
+      onTap: onPressed ??
+          () => context.pushNamed(AppRouter.kinteractionSubscriptionView),
+      child: Container(
+        width: double.infinity,
+        height: 55.h,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.centerRight,
+            end: Alignment.centerLeft,
+            colors: [
+              Color(0xFFEB7A91),
+              Color.fromRGBO(245, 192, 3, 1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFEB7A91).withOpacity(0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _interactionSubscriptionButton(
-    String label,
-    BuildContext context, {
-    required void Function()? onPressed,
-  }) {
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      height: 55.h,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.centerRight,
-          end: Alignment.centerLeft,
-          colors: [
-            Color(0xFFEB7A91),
-            Color.fromRGBO(245, 192, 3, 1),
           ],
-        ),
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AppImage(AssetsData.diamondIcon, width: 24.w, height: 24.h),
-            SizedBox(width: 20.w),
+            SizedBox(width: 12.w),
             Text(
-              label,
+              context.tr("subscribe_to_see_likes"),
               style: Styles.textStyle20SemiBold.copyWith(
-                fontSize: 20.sp,
+                fontSize: 18.sp,
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
@@ -79,6 +50,26 @@ class SubscriptionPromptOverlay extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// ✅ Exploration overlay — يتحط جوا Stack مع Positioned
+// ════════════════════════════════════════════════════════════════
+class SubscriptionPromptOverlay extends StatelessWidget {
+  final double? bottomOffset; // ✅ اختياري
+  const SubscriptionPromptOverlay({super.key, this.bottomOffset});
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = bottomOffset ??8.h;
+
+    return Positioned(
+      bottom: bottom,
+      left: 24.w,
+      right: 24.w,
+      child: SubscriptionButton(),
     );
   }
 }

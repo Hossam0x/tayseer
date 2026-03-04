@@ -13,12 +13,7 @@ class ReportsCubit extends Cubit<ReportsState> {
   }
 
   void selectReason(ReportModel reason) {
-    emit(
-      state.copyWith(
-        selectedReason: reason,
-        selectedDetailIndex: selectedReasonDetails.isEmpty ? null : 0,
-      ),
-    );
+    emit(state.copyWith(selectedReason: reason, selectedDetailIndex: null));
   }
 
   // ✅ جديد - اختيار التفصيل

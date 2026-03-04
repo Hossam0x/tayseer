@@ -1000,7 +1000,7 @@
   "no_archived_chats_message": "سيتم عرض المحادثات المؤرشفة هنا",
   "no_messages": "لا توجد رسائل",
   "unknown_user": "مستخدم غير معروف",
-  "unarchive": "إلغاء الأرشفة",
+  "unarchive": "إزالة من الأرشيف",
   "unarchived_chat": "تم إلغاء الأرشفة",
   "new_chat": "بدء محادثة جديدة",
   "image": "📷 صورة",
@@ -1505,4 +1505,9 @@
   "number_of_tickets": "عدد التذاكر المتبقيه",
   "max_length_exceeded": "تم تجاوز الحد الأقصى ",
   "location_selected_successfully": "تم اختيار الموقع بنجاح"
+  "story_unarchived_success": "تم إلغاء أرشفة القصة بنجاح",
+  "tap_to_record": "اضغط للتسجيل",
+"initializing_recorder": "جاري تهيئة المسجل...",
+"enable_microphone_settings": "يرجى تفعيل الميكروفون من الإعدادات",
+"failed_to_start_recording": "فشل في بدء التسجيل"
 }

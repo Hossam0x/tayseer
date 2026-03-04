@@ -322,10 +322,12 @@ class _ShowRepliesButton extends StatelessWidget {
           padding: EdgeInsets.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        icon: Icon(
-          Icons.subdirectory_arrow_left,
-          size: 16.sp,
-          color: Colors.grey.shade600,
+        icon: DirectionalMirror(
+          child: Icon(
+            Icons.subdirectory_arrow_left,
+            size: 16.sp,
+            color: Colors.grey.shade600,
+          ),
         ),
         label: Text(
           // ✅ التعديل هنا: نترجم النص أولاً ثم نستبدل العلامة {} بالرقم
