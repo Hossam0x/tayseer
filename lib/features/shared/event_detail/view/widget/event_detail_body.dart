@@ -1,3 +1,4 @@
+import 'package:tayseer/features/shared/event_detail/view/widget/eventImage_slider.dart';
 import 'package:tayseer/features/shared/event_detail/view_model/event_detail_cubit.dart';
 import 'package:tayseer/features/shared/event_detail/view_model/event_detail_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -96,15 +97,7 @@ class EventDetailBody extends StatelessWidget {
               children: [
                 Stack(
                   children: [
-                    SizedBox(
-                      height: headerHeight,
-                      width: double.infinity,
-                      child: AppImage(
-                        event?.images ??
-                            'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2070&auto=format&fit=crop',
-                        fit: BoxFit.fill,
-                      ),
-                    ),
+                    EventImageSlider(images: event?.images ?? []),
                     Positioned(
                       top: context.responsiveHeight(40),
                       right: 16,

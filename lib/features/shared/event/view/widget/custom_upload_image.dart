@@ -10,11 +10,21 @@ class CustomUploadContainer extends FormField<List<String>> {
     String? subtitle,
     required VoidCallback onTap,
     List<String>? initialValue,
+    ValueGetter<List<String>>? valueGetter,
     super.validator,
     AutovalidateMode super.autovalidateMode = AutovalidateMode.disabled,
   }) : super(
          initialValue: initialValue ?? [],
          builder: (state) {
+           // if an external value provider is given, sync the field value with it
+           if (valueGetter != null) {
+             WidgetsBinding.instance.addPostFrameCallback((_) {
+               try {
+                 final external = valueGetter();
+                 if (external != state.value) state.didChange(external);
+               } catch (_) {}
+             });
+           }
            return Column(
              crossAxisAlignment: CrossAxisAlignment.start,
              children: [

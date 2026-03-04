@@ -84,7 +84,7 @@ class AddPostCubit extends Cubit<AddPostState> {
   Future<void> getALLCategory() async {
     emit(state.copyWith(categoryState: CubitStates.loading));
 
-    final response = await _repo.getALLCategory();
+    final response = await _repo.getALLCategory("1");
 
     response.fold(
       (failure) {
@@ -95,15 +95,39 @@ class AddPostCubit extends Cubit<AddPostState> {
           ),
         );
       },
-      (categories) {
+      (data) {
         emit(
           state.copyWith(
             categoryState: CubitStates.success,
-            categories: categories,
+            categories: data.categories,
+            currentPage: data.pagination.currentPage,
+            totalPages: data.pagination.totalPages,
           ),
         );
       },
     );
+  }
+
+  Future<void> loadMoreCategories() async {
+    if (state.isLoadingMore) return;
+    if (state.currentPage >= state.totalPages) return;
+
+    emit(state.copyWith(isLoadingMore: true));
+
+    final nextPage = state.currentPage + 1;
+
+    final response = await _repo.getALLCategory(nextPage.toString());
+
+    response.fold((_) => emit(state.copyWith(isLoadingMore: false)), (data) {
+      emit(
+        state.copyWith(
+          isLoadingMore: false,
+          categories: [...state.categories, ...data.categories],
+          currentPage: data.pagination.currentPage,
+          totalPages: data.pagination.totalPages,
+        ),
+      );
+    });
   }
 
   /// حذف صورة من اللي تحت الـ TextField

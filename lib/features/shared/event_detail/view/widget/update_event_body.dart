@@ -35,8 +35,8 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
               isSuccess: true,
             ),
           );
-          context.pop();
           context.read<EventDetailCubit>().fetchEventDetail(state.event!.id);
+          context.pop();
         } else if (state.updateEventStatus == CubitStates.failure) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
@@ -49,7 +49,7 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (context) => const CustomloadingApp(),
+            builder: (context) => Center(child: const CustomloadingApp()),
           );
         }
       },
@@ -76,7 +76,7 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                       children: [
                         /// 1. العنوان
                         CustomTextFormField(
-                          maxLength: 20,
+                          maxLength: 30,
                           hintText: context.tr('title_events'),
                           controller: cubit.titleController,
                         ),
@@ -124,46 +124,46 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                         ),
                         Gap(context.responsiveHeight(16)),
 
-                        /// 5. المدة
-                        // CustomDropdownFormField<String>(
-                        //   hint: context.tr('event_duration'),
-                        //   value: state.duration,
-                        //   items: [
-                        //     DropdownMenuItem(
-                        //       value: '15 minutes',
-                        //       child: Text(
-                        //         '15 minutes',
-                        //         style: Styles.textStyle12,
-                        //       ),
-                        //     ),
-                        //     DropdownMenuItem(
-                        //       value: '30 minutes',
-                        //       child: Text(
-                        //         '30 minutes',
-                        //         style: Styles.textStyle12,
-                        //       ),
-                        //     ),
-                        //     DropdownMenuItem(
-                        //       value: '1 hour',
-                        //       child: Text('1 hour', style: Styles.textStyle12),
-                        //     ),
-                        //     DropdownMenuItem(
-                        //       value: '2 hours',
-                        //       child: Text('2 hours', style: Styles.textStyle12),
-                        //     ),
-                        //     DropdownMenuItem(
-                        //       value: '3 hours',
-                        //       child: Text('3 hours', style: Styles.textStyle12),
-                        //     ),
-                        //     DropdownMenuItem(
-                        //       value: '4 hours',
-                        //       child: Text('4 hours', style: Styles.textStyle12),
-                        //     ),
-                        //   ],
-                        //   onChanged: (val) => cubit.setDuration(val),
-                        //   validator: (value) =>
-                        //       value == null ? context.tr('required') : null,
-                        // ),
+                        // 5. المدة
+                        CustomDropdownFormField<String>(
+                          hint: context.tr('event_duration'),
+                          value: state.duration,
+                          items: [
+                            DropdownMenuItem(
+                              value: '15 minutes',
+                              child: Text(
+                                '15 minutes',
+                                style: Styles.textStyle12,
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: '30 minutes',
+                              child: Text(
+                                '30 minutes',
+                                style: Styles.textStyle12,
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: '1 hour',
+                              child: Text('1 hour', style: Styles.textStyle12),
+                            ),
+                            DropdownMenuItem(
+                              value: '2 hours',
+                              child: Text('2 hours', style: Styles.textStyle12),
+                            ),
+                            DropdownMenuItem(
+                              value: '3 hours',
+                              child: Text('3 hours', style: Styles.textStyle12),
+                            ),
+                            DropdownMenuItem(
+                              value: '4 hours',
+                              child: Text('4 hours', style: Styles.textStyle12),
+                            ),
+                          ],
+                          onChanged: (val) => cubit.setDuration(val),
+                          validator: (value) =>
+                              value == null ? context.tr('required') : null,
+                        ),
                         Gap(context.responsiveHeight(16)),
 
                         /// 6. السعر قبل الخصم
@@ -236,6 +236,9 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                               cubit.addPickedImages(images);
                             }
                           },
+                          valueGetter: () => cubit.state.pickedImages
+                              .map((e) => e.path)
+                              .toList(),
                         ),
                         Gap(context.responsiveHeight(16)),
 

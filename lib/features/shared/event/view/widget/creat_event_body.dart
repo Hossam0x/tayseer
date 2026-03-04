@@ -81,7 +81,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                 child: Column(
                   children: [
                     CustomTextFormField(
-                      maxLength: 20,
+                      maxLength: 30,
                       hintText: context.tr('title_events'),
                       controller: eventsCubit.eventTitleController,
                     ),
@@ -364,6 +364,8 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                           eventsCubit.addPickedImages(images);
                         }
                       },
+                      valueGetter: () =>
+                          eventsCubit.pickedImages.map((e) => e.path).toList(),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return context.tr('required_images');

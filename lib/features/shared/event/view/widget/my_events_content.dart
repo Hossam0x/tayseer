@@ -1,4 +1,3 @@
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/shared/event/view/widget/empty_event_section.dart';
 import 'package:tayseer/features/shared/event/view/widget/event_cart_item.dart';
 import 'package:tayseer/features/shared/event/view_model/events_cubit.dart';
@@ -81,7 +80,7 @@ class MyEventsContent extends StatelessWidget {
                                       arguments: {'eventId': event.id},
                                     );
                                   },
-                                  imageUrl: event.image,
+                                  imageUrl: event.images.first,
                                   sessionTitle: event.title,
                                   location: event.location,
                                   advisorName: event.advisor,
@@ -128,7 +127,7 @@ class MyEventsContent extends StatelessWidget {
 
                   // Create Event Button
                   Positioned(
-                    bottom: context.responsiveHeight(30),
+                    bottom: context.responsiveHeight(15),
                     left: context.responsiveWidth(16),
                     right: context.responsiveWidth(16),
                     child: CustomBotton(

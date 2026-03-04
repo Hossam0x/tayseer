@@ -107,7 +107,7 @@ class AllEventsContent extends StatelessWidget {
               AppRouter.kEventDetailView,
               arguments: {'eventId': event.id},
             ),
-            imageUrl: event.image,
+            imageUrl: event.images.first,
             sessionTitle: event.title,
             location: event.location,
             advisorName: event.advisor,

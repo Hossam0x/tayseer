@@ -17,7 +17,9 @@ class EventDetailModel {
   final double priceAfterDiscount;
   final double priceBeforeDiscount;
   final String location;
-  final String images;
+
+  /// ✅ الآن أصبحت قائمة صور
+  final List<String> images;
 
   EventDetailModel({
     required this.id,
@@ -62,6 +64,7 @@ class EventDetailModel {
       endTime: json['endTime']?.toString() ?? '',
       latitude: double.tryParse(json['latitude']?.toString() ?? '0') ?? 0.0,
       longitude: double.tryParse(json['longitude']?.toString() ?? '0') ?? 0.0,
+
       reservationsImages: reservations == null
           ? []
           : reservations
@@ -70,13 +73,21 @@ class EventDetailModel {
                 )
                 .where((s) => s.isNotEmpty)
                 .toList(),
+
       priceAfterDiscount:
           double.tryParse(json['priceAfterDiscount']?.toString() ?? '0') ?? 0.0,
       priceBeforeDiscount:
           double.tryParse(json['priceBeforeDiscount']?.toString() ?? '0') ??
           0.0,
+
       location: json['location']?.toString() ?? '',
-      images: json['images']?.toString() ?? '',
+
+      /// ✅ معالجة الصور كـ List
+      images: json['images'] == null
+          ? []
+          : json['images'] is List
+          ? List<String>.from(json['images'])
+          : [json['images'].toString()],
     );
   }
 
@@ -99,6 +110,8 @@ class EventDetailModel {
     'priceAfterDiscount': priceAfterDiscount,
     'priceBeforeDiscount': priceBeforeDiscount,
     'location': location,
+
+    /// ✅ الآن ترجع كـ List
     'images': images,
   };
 }

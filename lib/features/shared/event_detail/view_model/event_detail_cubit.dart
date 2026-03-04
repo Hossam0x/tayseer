@@ -46,14 +46,17 @@ class EventDetailCubit extends Cubit<EventDetailState> {
 
   void _populateForm(EventDetailModel event) {
     debugPrint('[_populateForm] EventDetailModel.date: ${event.date}');
-    debugPrint('[_populateForm] EventDetailModel.startTime: ${event.startTime}');
+    debugPrint(
+      '[_populateForm] EventDetailModel.startTime: ${event.startTime}',
+    );
+
     // Controllers
     titleController.text = event.title;
     descriptionController.text = event.description;
     priceBeforeDiscountController.text = event.priceBeforeDiscount.toString();
     priceAfterDiscountController.text = event.priceAfterDiscount.toString();
 
-    // State - مباشرة من الموديل
+    // State
     emit(
       state.copyWith(
         eventDate: _parseDate(event.date),
@@ -61,20 +64,15 @@ class EventDetailCubit extends Cubit<EventDetailState> {
         duration: event.duration,
         numberOfAttendees: event.numberOfAttendees.toString(),
         descriptionLength: event.description.length,
-        existingImages: (event.images.trim().isEmpty)
-            ? []
-            : event.images
-                  .split(RegExp(r',\s*'))
-                  .map((s) => s.trim())
-                  .where((s) => s.isNotEmpty)
-                  .toList(),
+        existingImages: event.images, // ✅ مباشرة بدون أي parsing
       ),
     );
-    // keep controller in sync
+
     numberOfAttendeesController.text = event.numberOfAttendees.toString();
 
     debugPrint('[_populateForm] parsed eventDate: ${state.eventDate}');
     debugPrint('[_populateForm] parsed startTime: ${state.startTime}');
+    debugPrint('[_populateForm] images count: ${event.images.length}');
   }
 
   int get descriptionLength => state.descriptionLength;
@@ -194,7 +192,9 @@ class EventDetailCubit extends Cubit<EventDetailState> {
 
     // Final fallback: parse manually using Arabic month name mapping
     try {
-      final match = RegExp(r"(\d{1,2})\s+([^\d,]+?)\s+(\d{4})").firstMatch(dateStr);
+      final match = RegExp(
+        r"(\d{1,2})\s+([^\d,]+?)\s+(\d{4})",
+      ).firstMatch(dateStr);
       if (match != null) {
         final day = int.parse(match.group(1)!);
         var monthName = match.group(2)!.trim();
