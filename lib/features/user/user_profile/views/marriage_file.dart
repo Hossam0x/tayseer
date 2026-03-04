@@ -188,83 +188,96 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             return false;
           },
           child: Scaffold(
-            body: SafeArea(
-              child: BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
-                listener: (context, state) {
-                  if (state.state == CubitStates.success &&
-                      state.successMessage != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      CustomSnackBar(
-                        context,
-                        text: state.successMessage!,
-                        isSuccess: true,
-                      ),
-                    );
-                  }
-                  if (state.state == CubitStates.failure &&
-                      state.errorMessage != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      CustomSnackBar(
-                        context,
-                        text: state.errorMessage!,
-                        isError: true,
-                      ),
-                    );
-                  }
-                },
-                builder: (context, state) {
-                  final cubit = context.read<MarriageProfileCubit>();
-
-                  if (state.isLoading && state.profile == null) {
-                    return Column(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 24.h,
-                            vertical: 10.h,
-                          ),
-                          child: _buildFixedHeader(context),
-                        ),
-                        const Expanded(child: MarriageProfileSkeleton()),
-                      ],
-                    );
-                  }
-
-                  if (state.state == CubitStates.failure &&
-                      state.profile == null) {
-                    return _buildError(context, state.errorMessage);
-                  }
-
-                  final profile = state.profile;
-                  if (profile == null) {
-                    return Center(child: Text(context.tr("data_load_error")));
-                  }
-
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 24.h,
-                          vertical: 10.h,
-                        ),
-                        child: _buildFixedHeader(context),
-                      ),
-                      Expanded(
-                        child: _selectedTabIndex == 1
-                            ? _buildViewContent(profile)
-                            : MarriageProfileEditView(
-                                profile: profile,
-                                state: state,
-                                cubit: cubit,
-                                maxImages: _maxImages,
-                                selectedTabIndex: _selectedTabIndex,
-                                scrollToSection: _scrollToSection,
+            body: Stack(
+              children: [
+                // ⭐⭐⭐ Background Image
+                Positioned.fill(
+                  child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
+                ),
+                SafeArea(
+                  child:
+                      BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
+                        listener: (context, state) {
+                          if (state.state == CubitStates.success &&
+                              state.successMessage != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              CustomSnackBar(
+                                context,
+                                text: state.successMessage!,
+                                isSuccess: true,
                               ),
+                            );
+                          }
+                          if (state.state == CubitStates.failure &&
+                              state.errorMessage != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              CustomSnackBar(
+                                context,
+                                text: state.errorMessage!,
+                                isError: true,
+                              ),
+                            );
+                          }
+                        },
+                        builder: (context, state) {
+                          final cubit = context.read<MarriageProfileCubit>();
+
+                          if (state.isLoading && state.profile == null) {
+                            return Column(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 24.h,
+                                    vertical: 10.h,
+                                  ),
+                                  child: _buildFixedHeader(context),
+                                ),
+                                const Expanded(
+                                  child: MarriageProfileSkeleton(),
+                                ),
+                              ],
+                            );
+                          }
+
+                          if (state.state == CubitStates.failure &&
+                              state.profile == null) {
+                            return _buildError(context, state.errorMessage);
+                          }
+
+                          final profile = state.profile;
+                          if (profile == null) {
+                            return Center(
+                              child: Text(context.tr("data_load_error")),
+                            );
+                          }
+
+                          return Column(
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 24.h,
+                                  vertical: 10.h,
+                                ),
+                                child: _buildFixedHeader(context),
+                              ),
+                              Expanded(
+                                child: _selectedTabIndex == 1
+                                    ? _buildViewContent(profile)
+                                    : MarriageProfileEditView(
+                                        profile: profile,
+                                        state: state,
+                                        cubit: cubit,
+                                        maxImages: _maxImages,
+                                        selectedTabIndex: _selectedTabIndex,
+                                        scrollToSection: _scrollToSection,
+                                      ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
-                    ],
-                  );
-                },
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -400,11 +413,9 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 return ElevatedButton(
                   onPressed: currentState.isUpdating
                       ? null
-                      : () async{
-                        await  cubit
-                              .saveProfile(); // ✅ بس كده - الـ BlocConsumer في _buildSaveButton هيتكلم عنك
+                      : () async {
+                          await cubit.saveProfile();
                           Navigator.pop(dialogContext); // أغلق الـ dialog
-                    
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: currentState.isUpdating
@@ -459,7 +470,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
 
   Widget _buildFixedHeader(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: Colors.transparent,
       child: Column(
         children: [
           SimpleAppBar(title: context.tr('my_profile'), isLargeTitle: true),
@@ -572,12 +583,14 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           ),
 
           // Video
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-            sliver: SliverToBoxAdapter(
-              child: VideoSection(videoUrl: profile.userMedia?.video),
+          if (profile.userMedia?.video != null &&
+              profile.userMedia!.video!.isNotEmpty)
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+              sliver: SliverToBoxAdapter(
+                child: VideoSection(videoUrl: profile.userMedia?.video),
+              ),
             ),
-          ),
 
           // Hobbies / Interests
           if (profile.hobbies.isNotEmpty)

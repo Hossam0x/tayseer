@@ -223,7 +223,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color:  const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -673,7 +673,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(252, 255, 255, 0.22)),
       ),
@@ -728,7 +728,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(252, 255, 255, 0.22)),
       ),
@@ -1327,7 +1327,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -1452,7 +1452,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -1518,7 +1518,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -1585,7 +1585,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -1652,7 +1652,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -1742,7 +1742,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        color: AppColors.kWhiteColor,
+        color:  const Color.fromRGBO(251, 251, 251, 0.64),
         padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
