@@ -6,6 +6,7 @@ import 'dart:developer';
 
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/main.dart';
 
 import '../../../../my_import.dart';
 
@@ -63,15 +64,31 @@ class _SplashScreenState extends State<SplashScreen>
         if (selectedUserType == UserTypeEnum.asConsultant) {
           if (kCurrentUserData?.compeletedData == true) {
             context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+            go();
           } else {
             context.pushReplacementNamed(AppRouter.kRegisrationView);
+            go();
           }
         } else {
           context.pushReplacementNamed(AppRouter.kUserLayoutView);
+          go();
         }
       } else {
         context.pushReplacementNamed(AppRouter.kRegisrationView);
       }
+    }
+  }
+
+  go() {
+    if (pendingNotificationMessage != null) {
+      // ✅ تأجيل الملاحة لضمان استقرار الـ Navigator
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (navigatorKey.currentState != null &&
+            navigatorKey.currentState!.mounted) {
+          navigatorKey.currentState!.pushNamed(AppRouter.notification);
+          pendingNotificationMessage = null;
+        }
+      });
     }
   }
   // @override

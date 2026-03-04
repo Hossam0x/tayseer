@@ -7,12 +7,15 @@ import 'package:tayseer/features/advisor/settings/data/models/setting_item_model
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
+import 'package:tayseer/main.dart';
 import 'dart:convert';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 
 class UserProfileCubit extends Cubit<UserProfileState> {
-  final LocalNotification _notificationService = LocalNotification();
+  final LocalNotification _notificationService = LocalNotification(
+    navigatorKey: navigatorKey,
+  );
   final UserProfileRepository _userProfileRepository;
 
   UserProfileCubit(this._userProfileRepository) : super(SettingsInitial()) {
@@ -671,7 +674,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     try {
       final messaging = FirebaseMessaging.instance;
       await messaging.unsubscribeFromTopic("all");
-      await _notificationService.clearAllNotifications();
+       await _notificationService.clearAllNotifications();
 
       if (Platform.isIOS) {
         await messaging.setForegroundNotificationPresentationOptions(
@@ -727,7 +730,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     final currentState = state;
 
     try {
-      await _notificationService.clearAllNotifications();
+       await _notificationService.clearAllNotifications();
       _userProfileRepository.logout();
 
       await CachNetwork.clearCache();

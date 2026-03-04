@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
@@ -10,6 +11,11 @@ import 'package:tayseer/core/utils/simple_bloc_observer.dart';
 import 'package:tayseer/core/video/video_controller_manager.dart';
 import 'package:tayseer/my_import.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+// ✅ متغير global - HomeScreen هتاخده وتعمل Navigate
+RemoteMessage? pendingNotificationMessage;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([
@@ -20,14 +26,23 @@ void main() async {
   await dotenv.load(fileName: '.env');
   await Hive.initFlutter();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  LocalNotification().initialize();
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
   await _initializeVideoSystem();
   await GlobalMuteManager.instance.init();
 
   Bloc.observer = SimpleBlocObserver();
+
+  // ✅ أولاً runApp عشان الـ Navigator يكون جاهز
   runApp(const TayseerApp());
+
+  // ✅ بعدين initialize الإشعارات بعد ما التطبيق يشتغل
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final LocalNotification localNotification = LocalNotification(
+      navigatorKey: navigatorKey,
+    );
+    await localNotification.initialize();
+  });
 }
 
 Future<void> _initializeVideoSystem() async {

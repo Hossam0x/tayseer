@@ -1,6 +1,7 @@
 import 'package:tayseer/core/appLocalizations/appLocalizations.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
+import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
 
 class TayseerApp extends StatelessWidget {
@@ -18,6 +19,7 @@ class TayseerApp extends StatelessWidget {
           child: BlocBuilder<LanguageCubit, Locale>(
             builder: (context, state) {
               return MaterialApp(
+                navigatorKey: navigatorKey,
                 builder: (context, child) {
                   return MediaQuery(
                     data: MediaQuery.of(
