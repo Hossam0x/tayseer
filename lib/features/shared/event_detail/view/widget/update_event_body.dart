@@ -226,6 +226,12 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
 
                         /// 9. رفع صور جديدة
                         CustomUploadContainer(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return context.tr('required_images');
+                            }
+                            return null;
+                          },
                           icon: Icons.camera_alt,
                           title: context.tr('add_event_image'),
                           subtitle: context.tr('add_4_images_hint'),
