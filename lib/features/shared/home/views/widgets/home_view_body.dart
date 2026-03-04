@@ -1,4 +1,5 @@
 import 'package:tayseer/core/utils/video_playback_manager.dart';
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/features/advisor/add_post/view/widget/upload_post_banner.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_state.dart';
@@ -90,6 +91,9 @@ class HomeViewBodyState extends State<HomeViewBody> {
     _lastOffset = currentOffset;
     context.read<LayoutCubit>().setHomeAtTop(currentOffset <= 0);
 
+    // Don't trigger pagination when offline
+    if (getIt<ConnectivityCubit>().isOffline) return;
+
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
       homeCubit.loadMorePosts();
@@ -97,6 +101,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
   }
 
   Future<void> scrollToTopAndRefresh() async {
+    if (getIt<ConnectivityCubit>().isOffline) return;
     scrollToTop();
     VideoManager.instance.stopAll();
     await Future.wait([
@@ -111,58 +116,74 @@ class HomeViewBodyState extends State<HomeViewBody> {
       providers: [
         BlocProvider.value(value: storiesCubit),
         BlocProvider.value(value: homeCubit),
+        BlocProvider.value(value: getIt<ConnectivityCubit>()),
         // ✅ إضافة الـ UploadPostCubit
         BlocProvider.value(value: uploadPostCubit),
       ],
-      child: RefreshIndicator(
-        color: AppColors.kprimaryColor,
-        onRefresh: () async {
-          VideoManager.instance.stopAll();
-          await Future.wait([
-            storiesCubit.fetchStories(context: context),
-            homeCubit.refreshHome(),
-          ]);
+      child: BlocListener<ConnectivityCubit, ConnectivityState>(
+        listenWhen: (prev, curr) =>
+            !prev.isConnected && curr.isConnected, // offline → online
+        listener: (context, connState) {
+          // لما النت يرجع → جلب الاستوريز لو كانت فاشلة أو فاضية
+          final storiesState = storiesCubit.state;
+          if (storiesState.storiesState == CubitStates.failure ||
+              storiesState.storiesList.isEmpty) {
+            storiesCubit.fetchStories(context: context);
+          }
         },
-        child: Stack(
-          children: [
-            CustomScrollView(
-              physics: const ClampingScrollPhysics(),
-              cacheExtent: 1000,
-              controller: _scrollController,
-              slivers: [
-                const HomeAppBar(notificationCount: 3),
-                const HomeSearchBar(),
-                const StoriesSection(),
+        child: RefreshIndicator(
+          color: AppColors.kprimaryColor,
+          onRefresh: () async {
+            // Don't refresh when offline
+            if (getIt<ConnectivityCubit>().isOffline) return;
+            VideoManager.instance.stopAll();
+            await Future.wait([
+              storiesCubit.fetchStories(context: context),
+              homeCubit.refreshHome(),
+            ]);
+          },
+          child: Stack(
+            children: [
+              CustomScrollView(
+                physics: const ClampingScrollPhysics(),
+                cacheExtent: 1000,
+                controller: _scrollController,
+                slivers: [
+                  const HomeAppBar(notificationCount: 3),
+                  const HomeSearchBar(),
+                  const StoriesSection(),
 
-                // ────────────────────────────────────
-                // ✅ شريط رفع البوست (يظهر بين الستوريز والفلتر)
-                // ────────────────────────────────────
-                SliverToBoxAdapter(
-                  child: BlocConsumer<UploadPostCubit, UploadPostProgressState>(
-                    listener: (context, state) {
-                      // ✅ لما ينجح الرفع → نعمل ريفرش للبوستات
-                      if (state.status == UploadPostStatus.success) {
-                        homeCubit.refreshHome();
-                      }
-                    },
-                    builder: (context, state) {
-                      return const UploadPostBanner();
-                    },
+                  // ────────────────────────────────────
+                  // ✅ شريط رفع البوست (يظهر بين الستوريز والفلتر)
+                  // ────────────────────────────────────
+                  SliverToBoxAdapter(
+                    child:
+                        BlocConsumer<UploadPostCubit, UploadPostProgressState>(
+                          listener: (context, state) {
+                            // ✅ لما ينجح الرفع → نعمل ريفرش للبوستات
+                            if (state.status == UploadPostStatus.success) {
+                              homeCubit.refreshHome();
+                            }
+                          },
+                          builder: (context, state) {
+                            return const UploadPostBanner();
+                          },
+                        ),
                   ),
-                ),
 
-                HomeFilterSection(
-                  key: _filterSectionKey,
-                  scrollController: _filterScrollController,
-                ),
-                HomePostFeed(
-                  homeCubit: homeCubit,
-                  scrollToTopCallback: scrollToFilterSection,
-                ),
-              ],
-            ),
-            SessionStartedListener(),
-          ],
+                  HomeFilterSection(
+                    key: _filterSectionKey,
+                    scrollController: _filterScrollController,
+                  ),
+                  HomePostFeed(
+                    homeCubit: homeCubit,
+                    scrollToTopCallback: scrollToFilterSection,
+                  ),
+                ],
+              ),
+              SessionStartedListener(),
+            ],
+          ),
         ),
       ),
     );

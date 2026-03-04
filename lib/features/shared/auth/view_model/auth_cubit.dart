@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -672,6 +673,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       await CachNetwork.clearCache();
+      await getIt<CacheCleanupService>().clearAllUserCache();
       cacheCleared = true;
       debugPrint('Cache cleared successfully');
     } catch (e) {

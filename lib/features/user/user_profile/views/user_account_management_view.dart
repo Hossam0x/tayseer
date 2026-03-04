@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_state.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
@@ -300,6 +301,7 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
 
       // 1. مسح جميع البيانات من SharedPreferences
       await CachNetwork.clearCache();
+      await getIt<CacheCleanupService>().clearAllUserCache();
 
       // 2. إعادة التوجيه إلى شاشة التسجيل/تسجيل الدخول
       Navigator.pushNamedAndRemoveUntil(

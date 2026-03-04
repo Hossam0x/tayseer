@@ -2,6 +2,8 @@ import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/widgets/end_of_cached_posts.dart';
+import 'package:tayseer/core/widgets/offline_empty_state.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -155,6 +157,8 @@ class HomePostFeed extends StatelessWidget {
     isLoadingMore: state.isLoadingMore,
     error: state.postsErrorMessage,
     isAllCategory: state.selectedCategoryId == null,
+    isOffline: state.isOffline,
+    isShowingCachedData: state.isShowingCachedData,
   );
 
   void _handleBlockFeedback(BuildContext context, HomeState state) {
@@ -205,6 +209,10 @@ class HomePostFeed extends StatelessWidget {
 
   Widget _buildContent(BuildContext context, _FeedState state) {
     if (state.isLoading && state.isEmpty) return _buildShimmerList();
+    // Offline with no cache → show friendly offline empty state
+    if (state.isError && state.isEmpty && state.isOffline) {
+      return const OfflineEmptyState();
+    }
     if (state.isError && state.isEmpty) return _buildError(state.error);
     if (state.isEmpty && !state.isAllCategory) {
       return _EmptyCategoryIndicator(onViewAllTap: _goToAllCategory);
@@ -248,8 +256,14 @@ class HomePostFeed extends StatelessWidget {
           );
         }
 
-        if (state.isLoadingMore) {
+        // Don't show loading spinner when offline
+        if (state.isLoadingMore && !state.isOffline) {
           return const _LoadingMoreIndicator();
+        }
+
+        // Show cached-data footer when viewing cache
+        if (state.isShowingCachedData) {
+          return const EndOfCachedPosts();
         }
 
         if (state.isAllCategory) {
@@ -274,6 +288,8 @@ class _FeedState extends Equatable {
   final bool isLoadingMore;
   final String? error;
   final bool isAllCategory;
+  final bool isOffline;
+  final bool isShowingCachedData;
 
   const _FeedState({
     required this.postIds,
@@ -281,6 +297,8 @@ class _FeedState extends Equatable {
     required this.isLoadingMore,
     required this.isAllCategory,
     this.error,
+    this.isOffline = false,
+    this.isShowingCachedData = false,
   });
 
   bool get isEmpty => postIds.isEmpty;
@@ -294,6 +312,8 @@ class _FeedState extends Equatable {
     isLoadingMore,
     error,
     isAllCategory,
+    isOffline,
+    isShowingCachedData,
   ];
 }
 

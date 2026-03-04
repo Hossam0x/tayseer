@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
@@ -13,10 +16,78 @@ import '../reposiotry/home_repository.dart';
 
 class HomeCubit extends Cubit<HomeState> {
   final HomeRepository homeRepository;
+  final ConnectivityCubit connectivityCubit;
+  final PostsLocalDatasource localDatasource;
   static const int _pageSize = 5;
 
-  HomeCubit(this.homeRepository) : super(const HomeState()) {
+  // تتبع حالة الاتصال للتحكم في التصفح
+  bool _isPaginationEnabled = true;
+  StreamSubscription? _connectivitySubscription;
+
+  HomeCubit(
+    this.homeRepository, {
+    required this.connectivityCubit,
+    required this.localDatasource,
+  }) : super(const HomeState()) {
     _loadCachedUserData();
+    _listenToConnectivity();
+  }
+
+  /// الاستماع لتغييرات الاتصال
+  void _listenToConnectivity() {
+    final isCurrentlyOnline = connectivityCubit.isOnline;
+    _isPaginationEnabled = isCurrentlyOnline;
+
+    // ✅ مزامنة حالة الاتصال الأولية — لو التطبيق اتفتح أوفلاين
+    // Stream الـ ConnectivityCubit بيبعت التغييرات بس، مش الحالة الحالية
+    if (!isCurrentlyOnline) {
+      emit(state.copyWith(isOffline: true));
+    }
+
+    _connectivitySubscription = connectivityCubit.stream.listen((connState) {
+      final wasOffline = state.isOffline;
+      final isNowOnline = connState.isConnected;
+      final isNowOffline = !connState.isConnected;
+
+      // تحديث علم التصفح
+      _isPaginationEnabled = isNowOnline;
+
+      // تحديث حالة الاتصال في الـ state
+      emit(state.copyWith(isOffline: isNowOffline));
+
+      // لو رجع الاتصال بعد ما كان أوفلاين → استأنف التصفح + جلب البيانات
+      if (wasOffline && isNowOnline) {
+        _onReconnected();
+      }
+    });
+  }
+
+  /// عند استعادة الاتصال — جلب الكاتيجوريز + استكمال التصفح
+  void _onReconnected() {
+    // 1. جلب الكاتيجوريز لو فاشلين أو فاضيين أو لسه ما اتحملوش
+    if (state.categoriesState == CubitStates.failure ||
+        state.categoriesState == CubitStates.initial ||
+        state.categories.isEmpty) {
+      fetchCategories();
+    }
+
+    // 2. لو كان بيعرض كاش → استكمل من الصفحة التالية أونلاين
+    if (state.isShowingCachedData) {
+      final categoryId = state.selectedCategoryId;
+      // فتح الـ hasMore عشان الـ loadMore يشتغل
+      emit(
+        state
+            .updateCategoryPosts(
+              categoryId,
+              (data) => data.copyWith(hasMore: true),
+            )
+            .copyWith(isShowingCachedData: false),
+      );
+      // جلب الصفحة التالية تلقائياً — microtask لضمان تحديث الـ state قبل القراءة
+      Future.microtask(() {
+        if (!isClosed) loadMorePosts();
+      });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -68,6 +139,9 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// ريفريش كامل للصفحة - يعيد كل شيء للقيم الأولية ويحمل من جديد
   Future<void> refreshHome() async {
+    // لو أوفلاين → لا تحدث، ابقي على البيانات الحالية
+    if (connectivityCubit.isOffline) return;
+
     // إعادة تعيين كل شيء للقيم الأولية (مع الحفاظ على بيانات اليوزر المخزنة)
     emit(state.reset());
 
@@ -232,6 +306,9 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// تحميل المزيد من البوستات للكاتيجوري الحالية
   Future<void> loadMorePosts() async {
+    // ⚠️ حارس الاتصال — لا ترسل طلبات أوفلاين
+    if (!_isPaginationEnabled) return;
+
     final categoryId = state.selectedCategoryId;
     final currentData = state.currentCategoryPosts;
 
@@ -308,18 +385,29 @@ class HomeCubit extends Cubit<HomeState> {
           ),
         ),
       ),
-      (response) => emit(
-        state.updateCategoryPosts(
-          categoryId,
-          (data) => data.copyWith(
-            state: CubitStates.success,
-            posts: response.posts,
-            currentPage: 1,
-            hasMore: response.posts.length >= _pageSize,
-            nextCursor: response.nextCursor,
-          ),
-        ),
-      ),
+      (response) {
+        // هل البيانات جاية من الكاش؟
+        final isFromCache = response.message == 'from_cache';
+
+        emit(
+          state
+              .updateCategoryPosts(
+                categoryId,
+                (data) => data.copyWith(
+                  state: CubitStates.success,
+                  posts: _deduplicatePosts(response.posts),
+                  currentPage: isFromCache
+                      ? (response.pagination.currentPage)
+                      : 1,
+                  hasMore: isFromCache
+                      ? false
+                      : response.posts.length >= _pageSize,
+                  nextCursor: response.nextCursor,
+                ),
+              )
+              .copyWith(isShowingCachedData: isFromCache),
+        );
+      },
     );
   }
 
@@ -403,6 +491,7 @@ class HomeCubit extends Cubit<HomeState> {
             },
             (_) {
               log('>>>>>>>>>>>>>>>>> React To Post Success');
+              _syncPostToCacheById(postId);
             },
           );
         });
@@ -463,6 +552,7 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (message) {
         log('>>>>>>>>>>>>>>>>>Share Post Success: $message');
+        _syncPostToCacheById(postId);
         emit(
           state.copyWith(
             shareActionState: CubitStates.success,
@@ -525,6 +615,7 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (message) {
         log('>>>>>>>>>>>>>>>>> Save Post Success: $message');
+        _syncPostToCacheById(postId);
 
         // النجاح: الـ UI متحدث بالفعل (Optimistic)، بس محتاجين نبعت Success عشان التوست الأخضر
         emit(
@@ -906,6 +997,7 @@ class HomeCubit extends Cubit<HomeState> {
         },
         (_) {
           log('>>>>>>>>>>>>>>>>> Vote In Poll Success');
+          _syncPostToCacheById(postId);
         },
       );
     });
@@ -919,6 +1011,20 @@ class HomeCubit extends Cubit<HomeState> {
     final posts = state.posts;
     final index = posts.indexWhere((p) => p.postId == postId);
     return index != -1 ? posts[index] : null;
+  }
+
+  /// إزالة البوستات المكررة بالـ postId
+  List<PostModel> _deduplicatePosts(List<PostModel> posts) {
+    final seen = <String>{};
+    return posts.where((p) => seen.add(p.postId)).toList();
+  }
+
+  /// مزامنة بوست محدد مع الكاش بعد تفاعل ناجح
+  void _syncPostToCacheById(String postId) {
+    final post = _findPost(postId);
+    if (post != null) {
+      localDatasource.updateSinglePost(postId, post).catchError((_) {});
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -938,6 +1044,7 @@ class HomeCubit extends Cubit<HomeState> {
         ),
       ),
     );
+    _syncPostToCacheById(postId);
   }
 
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
@@ -956,5 +1063,11 @@ class HomeCubit extends Cubit<HomeState> {
         emit(state.copyWith(sessionStartModel: null));
       });
     });
+  }
+
+  @override
+  Future<void> close() {
+    _connectivitySubscription?.cancel();
+    return super.close();
   }
 }

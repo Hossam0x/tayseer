@@ -65,5 +65,22 @@ class ServerFailure extends Failure {
   }
 }
 
-//كلاس للتعامل مع مشاكل الكاش
-//class CacheFailure extends Failure {}
+// كلاس للتعامل مع مشاكل الكاش
+class CacheFailure extends Failure {
+  CacheFailure(super.message);
+
+  factory CacheFailure.generic() =>
+      CacheFailure('حدث خطأ في تحميل البيانات المحفوظة');
+}
+
+// كلاس للتعامل مع مشاكل الاتصال
+class NetworkFailure extends Failure {
+  final bool hasCachedData;
+
+  NetworkFailure(super.message, {this.hasCachedData = false});
+
+  factory NetworkFailure.offline() => NetworkFailure('أنت غير متصل بالإنترنت');
+
+  factory NetworkFailure.offlineNoCache() =>
+      NetworkFailure('offline_no_cache', hasCachedData: false);
+}

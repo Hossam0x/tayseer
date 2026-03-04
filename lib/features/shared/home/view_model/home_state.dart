@@ -72,8 +72,12 @@ class HomeState extends Equatable {
   final String? blockUserMessage;
   final CubitStates blockUserActionState;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 🗳️ Poll Vote
+  // ─────────────────────────────────────────────────────────────────────────  // 📡 Connectivity
+  // ───────────────────────────────────────────────────────────────────────
+  final bool isOffline;
+  final bool isShowingCachedData;
+
+  // ───────────────────────────────────────────────────────────────────────  // 🗳️ Poll Vote
   // ─────────────────────────────────────────────────────────────────────────
   final String? pollVoteMessage;
   final CubitStates pollVoteActionState;
@@ -121,6 +125,10 @@ class HomeState extends Equatable {
     // poll vote
     this.pollVoteMessage,
     this.pollVoteActionState = CubitStates.initial,
+
+    // connectivity
+    this.isOffline = false,
+    this.isShowingCachedData = false,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -167,6 +175,10 @@ class HomeState extends Equatable {
     // poll vote
     String? pollVoteMessage,
     CubitStates? pollVoteActionState,
+
+    // connectivity
+    bool? isOffline,
+    bool? isShowingCachedData,
   }) {
     return HomeState(
       // Posts
@@ -216,6 +228,10 @@ class HomeState extends Equatable {
       // poll vote
       pollVoteMessage: pollVoteMessage ?? this.pollVoteMessage,
       pollVoteActionState: pollVoteActionState ?? this.pollVoteActionState,
+
+      // connectivity
+      isOffline: isOffline ?? this.isOffline,
+      isShowingCachedData: isShowingCachedData ?? this.isShowingCachedData,
     );
   }
 
@@ -304,6 +320,8 @@ class HomeState extends Equatable {
       // الحفاظ على بيانات اليوزر المخزنة
       homeInfo: homeInfo,
       fetchNameAndImageState: fetchNameAndImageState,
+      // الحفاظ على حالة الاتصال
+      isOffline: isOffline,
     );
   }
 
@@ -349,6 +367,10 @@ class HomeState extends Equatable {
     // poll vote
     pollVoteMessage,
     pollVoteActionState,
+
+    // connectivity
+    isOffline,
+    isShowingCachedData,
   ];
 }
 

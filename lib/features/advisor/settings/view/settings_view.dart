@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
@@ -452,6 +453,7 @@ class _SettingsViewState extends State<SettingsView> {
     try {
       context.read<SettingsCubit>().logoutFromSever();
       await CachNetwork.clearCache();
+      await getIt<CacheCleanupService>().clearAllUserCache();
       getIt<tayseerSocketHelper>().disconnect();
       Navigator.pushNamedAndRemoveUntil(
         context,

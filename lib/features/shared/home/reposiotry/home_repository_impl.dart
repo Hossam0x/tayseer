@@ -1,10 +1,14 @@
 // lib/features/advisor/home/repository/home_repository_impl.dart
 
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/core/services/connectivity_service.dart';
+import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
+import 'package:tayseer/features/shared/home/data_source/posts_remote_datasource.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/categories_response_model.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/models/pagination_model.dart';
 import 'package:tayseer/features/shared/home/model/post_response_model.dart';
 import 'package:tayseer/features/shared/home/model/comments_response_model.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -12,8 +16,16 @@ import '../../../../my_import.dart';
 
 class HomeRepositoryImpl implements HomeRepository {
   final ApiService apiService;
+  final PostsLocalDatasource localDatasource;
+  final PostsRemoteDatasource remoteDatasource;
+  final ConnectivityService connectivityService;
 
-  HomeRepositoryImpl(this.apiService);
+  HomeRepositoryImpl(
+    this.apiService, {
+    required this.localDatasource,
+    required this.remoteDatasource,
+    required this.connectivityService,
+  });
 
   // ================= Posts =================
 
@@ -23,20 +35,113 @@ class HomeRepositoryImpl implements HomeRepository {
     double? nextCursor,
     String? categoryId,
   }) async {
-    try {
-      final response = await apiService.get(
-        endPoint: ApiEndPoint.posts,
-        query: {
-          'page': page,
-          if (categoryId != null) 'categoryId': categoryId,
-          if (nextCursor != null) 'nextCursor': nextCursor,
-        },
+    final isOnline = connectivityService.isConnected;
+
+    if (isOnline) {
+      return _fetchPostsOnline(
+        page: page,
+        nextCursor: nextCursor,
+        categoryId: categoryId,
       );
-      final postsResponse = PostsResponseModel.fromJson(response);
-      return Right(postsResponse);
+    } else {
+      return _fetchPostsOffline(page: page, categoryId: categoryId);
+    }
+  }
+
+  /// جلب البوستات أونلاين — مع حفظ صامت في الكاش
+  Future<Either<Failure, PostsResponseModel>> _fetchPostsOnline({
+    required int page,
+    double? nextCursor,
+    String? categoryId,
+  }) async {
+    try {
+      final response = await remoteDatasource.fetchPosts(
+        page: page,
+        nextCursor: nextCursor,
+        categoryId: categoryId,
+      );
+
+      // حفظ صامت في الكاش للـ "All" category فقط
+      if (categoryId == null) {
+        localDatasource
+            .cachePosts(
+              response.posts,
+              nextCursor: response.nextCursor,
+              page: page,
+            )
+            .catchError((_) {});
+      }
+
+      return Right(response);
     } on DioException catch (e) {
+      // لو فشل الـ API وموجود كاش — استخدم الكاش كـ fallback
+      if (categoryId == null && page == 1) {
+        final cachedResult = await localDatasource.getCachedPosts();
+        if (cachedResult != null && cachedResult.posts.isNotEmpty) {
+          return Right(
+            PostsResponseModel(
+              success: true,
+              message: 'from_cache',
+              posts: cachedResult.posts,
+              pagination: PaginationModel(
+                totalCount: cachedResult.posts.length,
+                totalPages: cachedResult.lastPage,
+                currentPage: 1,
+                pageSize: cachedResult.posts.length,
+              ),
+              nextCursor: cachedResult.nextCursor,
+            ),
+          );
+        }
+      }
       return Left(ServerFailure.fromDioError(e));
     }
+  }
+
+  /// جلب البوستات أوفلاين — من الكاش فقط
+  Future<Either<Failure, PostsResponseModel>> _fetchPostsOffline({
+    required int page,
+    String? categoryId,
+  }) async {
+    // نعرض الكاش فقط للـ "All" category وصفحة 1
+    if (categoryId == null && page == 1) {
+      final cachedResult = await localDatasource.getCachedPosts();
+      if (cachedResult != null && cachedResult.posts.isNotEmpty) {
+        return Right(
+          PostsResponseModel(
+            success: true,
+            message: 'from_cache',
+            posts: cachedResult.posts,
+            pagination: PaginationModel(
+              totalCount: cachedResult.posts.length,
+              totalPages: cachedResult.lastPage,
+              currentPage: 1,
+              pageSize: cachedResult.posts.length,
+            ),
+            nextCursor: cachedResult.nextCursor,
+          ),
+        );
+      } else {
+        return Left(NetworkFailure.offlineNoCache());
+      }
+    }
+
+    // أي كاتيجوري أو صفحة ثانية أوفلاين → خطأ
+    return Left(NetworkFailure.offline());
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔄 Cache Sync Helpers — تحديث الكاش بعد التفاعلات الناجحة
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// حذف بوست من الكاش
+  void _removePostFromCache(String postId) {
+    localDatasource.removePost(postId).catchError((_) {});
+  }
+
+  /// حذف كل بوستات مستشار من الكاش
+  void _removeAdvisorPostsFromCache(String advisorId) {
+    localDatasource.removePostsByAdvisor(advisorId).catchError((_) {});
   }
 
   @override
@@ -348,6 +453,7 @@ class HomeRepositoryImpl implements HomeRepository {
       );
 
       if (response['success'] == true || response['status'] == 'success') {
+        _removePostFromCache(postId);
         return Right(response['message'] ?? 'تم حذف المنشور بنجاح');
       }
       return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
@@ -363,6 +469,7 @@ class HomeRepositoryImpl implements HomeRepository {
       query: {'action': isHide ? 'add' : 'remove'},
       data: {"postId": postId},
     );
+    if (isHide) _removePostFromCache(postId);
   }
 
   @override
@@ -374,6 +481,7 @@ class HomeRepositoryImpl implements HomeRepository {
       );
 
       if (response['success'] == true || response['status'] == 'success') {
+        _removeAdvisorPostsFromCache(userId);
         return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
       }
       return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
@@ -391,6 +499,7 @@ class HomeRepositoryImpl implements HomeRepository {
       );
 
       if (response['success'] == true || response['status'] == 'success') {
+        _removePostFromCache(postId);
         return Right(response['message'] ?? 'تم أرشفة المنشور بنجاح');
       }
       return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));

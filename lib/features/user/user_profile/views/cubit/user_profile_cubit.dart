@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
+import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
@@ -731,6 +732,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       _userProfileRepository.logout();
 
       await CachNetwork.clearCache();
+      await getIt<CacheCleanupService>().clearAllUserCache();
       getIt<tayseerSocketHelper>().disconnect();
 
       emit(

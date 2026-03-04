@@ -36,11 +36,9 @@ class StoriesSection extends StatelessWidget {
       case CubitStates.loading:
         return const _StoriesLoadingShimmer();
       case CubitStates.failure:
-        return _StoriesErrorWidget(
-          message: state.storiesMessage,
-          onRetry: () =>
-              context.read<StoriesCubit>().fetchStories(context: context),
-        );
+        // أوفلاين أو فشل → لا تعرض أي حاجة، لما النت يرجع هيتحمل تلقائي
+        if (state.storiesList.isEmpty) return const SizedBox.shrink();
+        return const _StoriesListView();
       case CubitStates.success:
       case CubitStates.initial:
         return const _StoriesListView();

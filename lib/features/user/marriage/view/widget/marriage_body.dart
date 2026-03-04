@@ -254,9 +254,7 @@ class MarriageBodyState extends State<MarriageBody>
                   profileIndex: profileIndex,
                   users: users,
                 )
-              : _buildInteractionsContent(
-                  key: const ValueKey('interactions'),
-                ),
+              : _buildInteractionsContent(key: const ValueKey('interactions')),
         );
       },
     );
@@ -433,7 +431,8 @@ class MarriageBodyState extends State<MarriageBody>
                       subtitle: user?.similarity != null
                           ? '${user!.similarity}%'
                           : '',
-                      tags: user?.matchingTags
+                      tags:
+                          user?.matchingTags
                               ?.where(
                                 (t) =>
                                     t.value != null &&
@@ -597,9 +596,7 @@ class MarriageBodyState extends State<MarriageBody>
                       vertical: 10.h,
                     ),
                     sliver: SliverToBoxAdapter(
-                      child: VideoSection(
-                        videoUrl: answers!.userMedia!.video!,
-                      ),
+                      child: VideoSection(videoUrl: answers!.userMedia!.video!),
                     ),
                   ),
                 if (images.length > 4 && images[4].isNotEmpty)
@@ -818,8 +815,9 @@ class MarriageBodyState extends State<MarriageBody>
                             right: 0,
                             child: GestureDetector(
                               onTap: () {
-                                context
-                                    .pushNamed(AppRouter.kMarriageFilterView);
+                                context.pushNamed(
+                                  AppRouter.kMarriageFilterView,
+                                );
                               },
                               child: CircleAvatar(
                                 backgroundColor: Colors.black12,
@@ -839,8 +837,9 @@ class MarriageBodyState extends State<MarriageBody>
                                   _showHistory = true;
                                   _selectedHistoryFilter = "liked_you";
                                 });
-                                WidgetsBinding.instance
-                                    .addPostFrameCallback((_) {
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
                                   Future.delayed(
                                     const Duration(milliseconds: 150),
                                     () =>
