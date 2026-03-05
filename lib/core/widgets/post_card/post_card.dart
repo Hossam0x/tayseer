@@ -238,6 +238,7 @@ class _BlockedPostUIState extends State<_BlockedPostUI> {
                                 width: 28.w,
                                 height: 28.w,
                                 fit: BoxFit.cover,
+                                isAvatar: true,
                               ),
                             ),
                           ),

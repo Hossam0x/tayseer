@@ -61,8 +61,9 @@ class HomeRepositoryImpl implements HomeRepository {
         categoryId: categoryId,
       );
 
-      // حفظ صامت في الكاش للـ "All" category فقط
-      if (categoryId == null) {
+      // ✅ الكاش التراكمي ينحفظ من الـ Cubit بعد تجميع كل البوستات
+      // هنا نحفظ فقط لو صفحة 1 (أول تحميل)
+      if (categoryId == null && page == 1) {
         localDatasource
             .cachePosts(
               response.posts,
@@ -94,18 +95,26 @@ class HomeRepositoryImpl implements HomeRepository {
           );
         }
       }
+      // لو خطأ اتصال وما فيش كاش → يرجع NetworkFailure بدل ServerFailure
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        return Left(NetworkFailure.offlineNoCache());
+      }
       return Left(ServerFailure.fromDioError(e));
     }
   }
 
-  /// جلب البوستات أوفلاين — من الكاش فقط
+  /// جلب البوستات أوفلاين — من الكاش مع باجنيشن محلي
   Future<Either<Failure, PostsResponseModel>> _fetchPostsOffline({
     required int page,
     String? categoryId,
   }) async {
-    // نعرض الكاش فقط للـ "All" category وصفحة 1
-    if (categoryId == null && page == 1) {
-      final cachedResult = await localDatasource.getCachedPosts();
+    // نعرض الكاش فقط للـ "All" category
+    if (categoryId == null) {
+      final cachedResult = await localDatasource.getCachedPostsPaginated(
+        page: page,
+        pageSize: 5,
+      );
       if (cachedResult != null && cachedResult.posts.isNotEmpty) {
         return Right(
           PostsResponseModel(
@@ -115,18 +124,21 @@ class HomeRepositoryImpl implements HomeRepository {
             pagination: PaginationModel(
               totalCount: cachedResult.posts.length,
               totalPages: cachedResult.lastPage,
-              currentPage: 1,
+              currentPage: page,
               pageSize: cachedResult.posts.length,
             ),
             nextCursor: cachedResult.nextCursor,
           ),
         );
       } else {
-        return Left(NetworkFailure.offlineNoCache());
+        // صفحة 1 فاضية = مافيش كاش أصلاً
+        if (page == 1) return Left(NetworkFailure.offlineNoCache());
+        // صفحة > 1 فاضية = خلصنا الكاش
+        return Left(NetworkFailure.offline());
       }
     }
 
-    // أي كاتيجوري أو صفحة ثانية أوفلاين → خطأ
+    // أي كاتيجوري ثانية أوفلاين → خطأ
     return Left(NetworkFailure.offline());
   }
 

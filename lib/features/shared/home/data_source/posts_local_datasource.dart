@@ -170,6 +170,42 @@ class PostsLocalDatasource {
     }
   }
 
+  /// قراءة البوستات المحفوظة مع تقسيم صفحات محلي
+  /// يرجع شريحة من البوستات حسب رقم الصفحة وحجمها
+  Future<CachedPostsResult?> getCachedPostsPaginated({
+    required int page,
+    int pageSize = 5,
+  }) async {
+    final allCached = await getCachedPosts();
+    if (allCached == null || allCached.posts.isEmpty) return null;
+
+    final totalPosts = allCached.posts.length;
+    final startIndex = (page - 1) * pageSize;
+
+    // لو الـ startIndex أكبر من عدد البوستات → مافيش بيانات
+    if (startIndex >= totalPosts) return null;
+
+    final endIndex = (startIndex + pageSize) > totalPosts
+        ? totalPosts
+        : (startIndex + pageSize);
+    final pageSlice = allCached.posts.sublist(startIndex, endIndex);
+
+    final totalPages = (totalPosts / pageSize).ceil();
+
+    return CachedPostsResult(
+      posts: pageSlice,
+      nextCursor: allCached.nextCursor,
+      lastPage: totalPages,
+      cachedAt: allCached.cachedAt,
+    );
+  }
+
+  /// عدد البوستات المحفوظة في الكاش
+  Future<int> getCachedPostsCount() async {
+    final allCached = await getCachedPosts();
+    return allCached?.posts.length ?? 0;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // ✏️ تعديل بوست واحد (للتفاعلات)
   // ═══════════════════════════════════════════════════════════════════════════

@@ -91,9 +91,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
     _lastOffset = currentOffset;
     context.read<LayoutCubit>().setHomeAtTop(currentOffset <= 0);
 
-    // Don't trigger pagination when offline
-    if (getIt<ConnectivityCubit>().isOffline) return;
-
+    // السماح بالباجنيشن أوفلاين لو بيعرض كاش — الـ cubit هيهاندل الباقي
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
       homeCubit.loadMorePosts();

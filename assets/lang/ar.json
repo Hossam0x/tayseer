@@ -1,4 +1,4 @@
-{
+﻿{
   "joinUs": "انضم لنا",
   "guest_login_first": "يجب عليك تسجيل الدخول أولاً للاستفادة من هذه الميزة.",
   "login": "تسجيل الدخول",
@@ -1505,5 +1505,27 @@
   "tap_to_record": "اضغط للتسجيل",
 "initializing_recorder": "جاري تهيئة المسجل...",
 "enable_microphone_settings": "يرجى تفعيل الميكروفون من الإعدادات",
-"failed_to_start_recording": "فشل في بدء التسجيل"
+"failed_to_start_recording": "فشل في بدء التسجيل",
+  "offline_no_connection": "أنت غير متصل بالإنترنت",
+  "offline_connect_to_view": "اتصل بالإنترنت لعرض المنشورات",
+  "offline_viewing_cached_posts": "أنت تشاهد منشورات محفوظة",
+  "offline_connect_for_more": "اتصل بالإنترنت لتحميل المزيد",
+  "share_success": "تمت المشاركة بنجاح",
+  "share_cancelled": "تم إلغاء المشاركة",
+  "share_error": "حدث خطأ أثناء المشاركة",
+  "operation_success": "تمت العملية بنجاح",
+  "delete_error": "حدث خطأ أثناء الحذف",
+  "save_error": "حدث خطأ أثناء الحفظ",
+  "block_success": "تم حظر المستخدم بنجاح",
+  "block_error": "حدث خطأ أثناء الحظر",
+  "archive_error": "حدث خطأ أثناء الأرشفة",
+  "poll_vote_error": "حدث خطأ أثناء التصويت",
+  "generic_error": "حدث خطأ ما",
+  "end_of_feed": "تم الوصول لنهاية المنشورات",
+  "end_of_category_feed": "تم الوصول لنهاية المنشورات في هذه الفئة",
+  "view_all_posts": "عرض كل المنشورات",
+  "no_category_posts": "لا توجد منشورات في هذه الفئة",
+  "try_other_categories": "جرب استكشاف فئات أخرى",
+  "explore_all_posts": "استكشف كل المنشورات",
+  "connection_restored": "تم استعادة الاتصال"
 }

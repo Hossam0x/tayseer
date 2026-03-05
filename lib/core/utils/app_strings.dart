@@ -97,4 +97,31 @@ class AppStrings {
   static const String confirmReport = "confirm_report";
   static const String supConfirmReport = "sup_confirm_report";
   static const String reportProfile = "report_profile";
+
+  // Offline
+  static const String offlineNoConnection = "offline_no_connection";
+  static const String offlineConnectToView = "offline_connect_to_view";
+  static const String offlineViewingCachedPosts =
+      "offline_viewing_cached_posts";
+  static const String offlineConnectForMore = "offline_connect_for_more";
+  static const String connectionRestored = "connection_restored";
+
+  // Home Feed
+  static const String shareSuccess = "share_success";
+  static const String shareCancelled = "share_cancelled";
+  static const String shareError = "share_error";
+  static const String operationSuccess = "operation_success";
+  static const String deleteError = "delete_error";
+  static const String saveError = "save_error";
+  static const String blockSuccess = "block_success";
+  static const String blockError = "block_error";
+  static const String archiveError = "archive_error";
+  static const String pollVoteError = "poll_vote_error";
+  static const String genericError = "generic_error";
+  static const String endOfFeed = "end_of_feed";
+  static const String endOfCategoryFeed = "end_of_category_feed";
+  static const String viewAllPosts = "view_all_posts";
+  static const String noCategoryPosts = "no_category_posts";
+  static const String tryOtherCategories = "try_other_categories";
+  static const String exploreAllPosts = "explore_all_posts";
 }

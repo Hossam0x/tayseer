@@ -87,6 +87,23 @@ class HomeCubit extends Cubit<HomeState> {
       Future.microtask(() {
         if (!isClosed) loadMorePosts();
       });
+      return;
+    }
+
+    // 3. لو البوستات فاشلة أو فاضية (فتح أوفلاين بدون كاش) → جلب من الأول
+    final postsState = state.currentCategoryPosts.state;
+    if (postsState == CubitStates.failure ||
+        (postsState != CubitStates.loading && state.posts.isEmpty)) {
+      _fetchPostsForCategory(state.selectedCategoryId);
+      return;
+    }
+
+    // 4. لو النت فصل وسط السيشن والباجنيشن اتوقف → استكمل تلقائياً
+    final currentData = state.currentCategoryPosts;
+    if (currentData.hasMore && !currentData.isLoadingMore) {
+      Future.microtask(() {
+        if (!isClosed) loadMorePosts();
+      });
     }
   }
 
@@ -306,8 +323,8 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// تحميل المزيد من البوستات للكاتيجوري الحالية
   Future<void> loadMorePosts() async {
-    // ⚠️ حارس الاتصال — لا ترسل طلبات أوفلاين
-    if (!_isPaginationEnabled) return;
+    // ⚠️ حارس الاتصال — السماح بالباجنيشن أوفلاين لو بيعرض كاش
+    if (!_isPaginationEnabled && !state.isShowingCachedData) return;
 
     final categoryId = state.selectedCategoryId;
     final currentData = state.currentCategoryPosts;
@@ -330,27 +347,56 @@ class HomeCubit extends Cubit<HomeState> {
     );
 
     result.fold(
-      (failure) => emit(
-        state.updateCategoryPosts(
-          categoryId,
-          (data) => data.copyWith(
-            isLoadingMore: false,
-            errorMessage: failure.message,
+      (failure) {
+        // لو فشل وأوفلاين → وقّف الـ hasMore (خلص الكاش أو مفيش نت)
+        final isOfflineFailure = failure is NetworkFailure;
+        emit(
+          state.updateCategoryPosts(
+            categoryId,
+            (data) => data.copyWith(
+              isLoadingMore: false,
+              hasMore: isOfflineFailure ? false : data.hasMore,
+              errorMessage: failure.message,
+            ),
           ),
-        ),
-      ),
-      (response) => emit(
-        state.updateCategoryPosts(
-          categoryId,
-          (data) => data.copyWith(
-            posts: [...data.posts, ...response.posts],
-            currentPage: nextPage,
-            hasMore: response.posts.length >= _pageSize,
-            isLoadingMore: false,
-            nextCursor: response.nextCursor,
-          ),
-        ),
-      ),
+        );
+      },
+      (response) {
+        final isFromCache = response.message == 'from_cache';
+        final allPosts = [...currentData.posts, ...response.posts];
+
+        emit(
+          state
+              .updateCategoryPosts(
+                categoryId,
+                (data) => data.copyWith(
+                  posts: allPosts,
+                  currentPage: nextPage,
+                  hasMore: response.posts.length >= _pageSize,
+                  isLoadingMore: false,
+                  nextCursor: isFromCache
+                      ? data.nextCursor
+                      : response.nextCursor,
+                ),
+              )
+              .copyWith(
+                isShowingCachedData: isFromCache
+                    ? true
+                    : state.isShowingCachedData,
+              ),
+        );
+
+        // ✅ حفظ تراكمي في الكاش بعد كل صفحة أونلاين ناجحة (All category فقط)
+        if (!isFromCache && categoryId == null) {
+          localDatasource
+              .cachePosts(
+                allPosts,
+                nextCursor: response.nextCursor,
+                page: nextPage,
+              )
+              .catchError((_) {});
+        }
+      },
     );
   }
 
@@ -400,7 +446,7 @@ class HomeCubit extends Cubit<HomeState> {
                       ? (response.pagination.currentPage)
                       : 1,
                   hasMore: isFromCache
-                      ? false
+                      ? response.posts.length >= _pageSize
                       : response.posts.length >= _pageSize,
                   nextCursor: response.nextCursor,
                 ),

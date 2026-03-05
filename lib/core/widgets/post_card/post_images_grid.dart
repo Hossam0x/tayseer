@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/connectivity_cached_image.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/views/image_viewer_view.dart';
@@ -61,15 +62,10 @@ class PostImagesGrid extends StatelessWidget {
             borderRadius: BorderRadius.circular(8.r),
             child: AspectRatio(
               aspectRatio: aspectRatio,
-              child: CachedNetworkImage(
+              child: ConnectivityCachedImage(
                 imageUrl: image.image,
                 fit: BoxFit.cover,
-                alignment: Alignment.center,
-                fadeInDuration: Duration.zero,
-                fadeOutDuration: Duration.zero,
-                placeholderFadeInDuration: Duration.zero,
                 placeholder: (context, url) => _buildShimmerPlaceholder(),
-                errorWidget: (context, url, error) => _buildErrorWidget(),
               ),
             ),
           ),
@@ -86,13 +82,6 @@ class PostImagesGrid extends StatelessWidget {
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
       child: Container(color: Colors.white),
-    );
-  }
-
-  Widget _buildErrorWidget() {
-    return Container(
-      color: Colors.grey[200],
-      child: Center(child: Icon(Icons.broken_image, color: Colors.grey[400])),
     );
   }
 
@@ -148,14 +137,10 @@ class PostImagesGrid extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                CachedNetworkImage(
+                ConnectivityCachedImage(
                   imageUrl: image.image,
                   fit: BoxFit.cover,
-                  fadeInDuration: Duration.zero,
-                  fadeOutDuration: Duration.zero,
-                  placeholderFadeInDuration: Duration.zero,
                   placeholder: (_, __) => _buildShimmerPlaceholder(),
-                  errorWidget: (_, __, ___) => _buildErrorWidget(),
                 ),
                 if (moreCount > 0)
                   Container(

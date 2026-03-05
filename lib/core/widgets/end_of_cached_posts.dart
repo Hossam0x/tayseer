@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tayseer/core/utils/colors.dart';
-import 'package:tayseer/core/utils/styles.dart';
+import 'package:tayseer/core/utils/app_strings.dart';
+import 'package:tayseer/my_import.dart';
 
 /// ويدجت نهاية البوستات المحفوظة — تظهر في آخر القائمة أثناء الأوفلاين
 class EndOfCachedPosts extends StatelessWidget {
@@ -14,14 +12,10 @@ class EndOfCachedPosts extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.wifi_off_rounded,
-            size: 36.sp,
-            color: Colors.grey.shade400,
-          ),
+          Image.asset(AssetsData.noInternet, width: 64.w, height: 64.w),
           SizedBox(height: 12.h),
           Text(
-            'أنت تشاهد منشورات محفوظة',
+            context.tr(AppStrings.offlineViewingCachedPosts),
             style: Styles.textStyle14.copyWith(
               color: Colors.grey.shade600,
               fontWeight: FontWeight.w600,
@@ -30,7 +24,7 @@ class EndOfCachedPosts extends StatelessWidget {
           ),
           SizedBox(height: 4.h),
           Text(
-            'اتصل بالإنترنت لتحميل المزيد',
+            context.tr(AppStrings.offlineConnectForMore),
             style: Styles.textStyle12.copyWith(color: Colors.grey.shade400),
             textAlign: TextAlign.center,
           ),

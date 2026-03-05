@@ -196,6 +196,7 @@ class _ShimmerItem extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // ❌ Error State Widget
 // ─────────────────────────────────────────────────────────────────────────────
+// ignore: unused_element
 class _ErrorState extends StatelessWidget {
   final VoidCallback onRetry;
 

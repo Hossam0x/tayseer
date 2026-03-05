@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tayseer/core/utils/colors.dart';
-import 'package:tayseer/core/utils/styles.dart';
+import 'package:tayseer/core/utils/app_strings.dart';
+import 'package:tayseer/my_import.dart';
 
 /// شاشة فارغة ودودة عند عدم وجود إنترنت وبدون كاش
 class OfflineEmptyState extends StatelessWidget {
@@ -31,7 +29,7 @@ class OfflineEmptyState extends StatelessWidget {
               ),
               SizedBox(height: 24.h),
               Text(
-                'أنت غير متصل بالإنترنت',
+                context.tr(AppStrings.offlineNoConnection),
                 style: Styles.textStyle16.copyWith(
                   color: Colors.grey.shade700,
                   fontWeight: FontWeight.w600,
@@ -40,7 +38,7 @@ class OfflineEmptyState extends StatelessWidget {
               ),
               SizedBox(height: 8.h),
               Text(
-                'اتصل بالإنترنت لعرض المنشورات',
+                context.tr(AppStrings.offlineConnectToView),
                 style: Styles.textStyle14.copyWith(color: Colors.grey.shade400),
                 textAlign: TextAlign.center,
               ),
