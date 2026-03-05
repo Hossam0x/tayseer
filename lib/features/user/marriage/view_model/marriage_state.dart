@@ -1,4 +1,3 @@
-// marriage_state.dart
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
@@ -13,13 +12,16 @@ class MarriageState extends Equatable {
   final bool isScrollingDown;
   final bool isMarriageTab;
   final String? errorMessage;
-
-  // ═══ الحقول الجديدة ═══
-  final double swipeDirection; // 1 = يمين، -1 = شمال، 0 = ثبات
-  final double swipeProgress; // 0 → 1
+  final double swipeDirection;
+  final double swipeProgress;
   final bool isAnimating;
   final bool showHistory;
   final String selectedHistoryFilter;
+  final List<UserItem> allUsers;
+  final int currentPage;
+  final int totalPages;
+  final bool isLoadingMore;
+  final Map<String, dynamic> activeFilters; // ✅
 
   const MarriageState({
     this.marriageProfileState = CubitStates.initial,
@@ -36,6 +38,11 @@ class MarriageState extends Equatable {
     this.isAnimating = false,
     this.showHistory = false,
     this.selectedHistoryFilter = "liked_you",
+    this.allUsers = const [],
+    this.currentPage = 1,
+    this.totalPages = 1,
+    this.isLoadingMore = false,
+    this.activeFilters = const {}, // ✅
   });
 
   MarriageState copyWith({
@@ -53,6 +60,11 @@ class MarriageState extends Equatable {
     bool? isAnimating,
     bool? showHistory,
     String? selectedHistoryFilter,
+    List<UserItem>? allUsers,
+    int? currentPage,
+    int? totalPages,
+    bool? isLoadingMore,
+    Map<String, dynamic>? activeFilters, // ✅
   }) {
     return MarriageState(
       marriageProfileState: marriageProfileState ?? this.marriageProfileState,
@@ -70,6 +82,11 @@ class MarriageState extends Equatable {
       showHistory: showHistory ?? this.showHistory,
       selectedHistoryFilter:
           selectedHistoryFilter ?? this.selectedHistoryFilter,
+      allUsers: allUsers ?? this.allUsers,
+      currentPage: currentPage ?? this.currentPage,
+      totalPages: totalPages ?? this.totalPages,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      activeFilters: activeFilters ?? this.activeFilters, // ✅
     );
   }
 
@@ -89,5 +106,10 @@ class MarriageState extends Equatable {
     isAnimating,
     showHistory,
     selectedHistoryFilter,
+    allUsers,
+    currentPage,
+    totalPages,
+    isLoadingMore,
+    activeFilters, // ✅
   ];
 }

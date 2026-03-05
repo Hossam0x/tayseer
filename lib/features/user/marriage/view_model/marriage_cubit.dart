@@ -1,5 +1,6 @@
-// marriage_cubit.dart
+import 'dart:async';
 import 'package:flutter/animation.dart';
+import 'package:tayseer/features/user/marriage/view_model/marriage_event_bus.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
 import 'package:tayseer/features/user/marriage/repositories/marriage_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -7,9 +8,15 @@ import 'package:tayseer/my_import.dart';
 class MarriageCubit extends Cubit<MarriageState> {
   MarriageCubit({MarriageRepository? repository})
     : _repo = repository ?? getIt<MarriageRepository>(),
-      super(const MarriageState());
+      super(const MarriageState()) {
+    // ✅ يسمع على الـ filter events
+    _filterSubscription = MarriageEventBus.instance.onFilterApplied.listen(
+      (filters) => fetchMarriageProfile(filters: filters),
+    );
+  }
 
   final MarriageRepository _repo;
+  late final StreamSubscription<Map<String, dynamic>> _filterSubscription;
 
   // ═══ Animation ═══
   AnimationController? _cardController;
@@ -38,8 +45,75 @@ class MarriageCubit extends Cubit<MarriageState> {
     }
   }
 
-  // ═══ Swipe Actions ═══
+  // ═══════════════════════════════════════════════════════════
+  // FETCH — الصفحة الأولى
+  // ═══════════════════════════════════════════════════════════
+  Future<void> fetchMarriageProfile({Map<String, dynamic>? filters}) async {
+    emit(
+      state.copyWith(
+        marriageProfileState: CubitStates.loading,
+        errorMessage: null,
+        // ✅ لو في فلاتر جديدة احفظها، لو لا استخدم القديمة
+        activeFilters: filters ?? state.activeFilters,
+      ),
+    );
 
+    final result = await _repo.getMarriageProfile(
+      "1",
+      filters: state.activeFilters, // ✅ نمرر الفلاتر
+    );
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          marriageProfileState: CubitStates.failure,
+          errorMessage: failure.message,
+        ),
+      ),
+      (profile) => emit(
+        state.copyWith(
+          marriageProfileState: CubitStates.success,
+          profile: profile,
+          currentIndex: 0,
+          allUsers: profile.data?.users ?? [],
+          currentPage: profile.data?.pagination?.currentPage ?? 1,
+          totalPages: profile.data?.pagination?.totalPages ?? 1,
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // LOAD MORE — تحميل الصفحة التالية
+  // ═══════════════════════════════════════════════════════════
+  Future<void> loadMoreUsers() async {
+    if (state.isLoadingMore) return;
+    if (state.currentPage >= state.totalPages) return;
+
+    emit(state.copyWith(isLoadingMore: true));
+
+    final result = await _repo.getMarriageProfile(
+      (state.currentPage + 1).toString(),
+      filters: state.activeFilters, // ✅ نفس الفلاتر تلقائي
+    );
+
+    result.fold(
+      (_) => emit(state.copyWith(isLoadingMore: false)),
+      (profile) => emit(
+        state.copyWith(
+          isLoadingMore: false,
+          allUsers: [...state.allUsers, ...profile.data?.users ?? []],
+          currentPage:
+              profile.data?.pagination?.currentPage ?? state.currentPage,
+          totalPages: profile.data?.pagination?.totalPages ?? state.totalPages,
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // SWIPE LIKE
+  // ═══════════════════════════════════════════════════════════
   Future<void> swipeLike({
     required String personId,
     required int usersLength,
@@ -53,12 +127,12 @@ class MarriageCubit extends Cubit<MarriageState> {
 
     await _cardController!.forward(from: 0);
 
-    _onSwipeComplete(
-      usersLength: usersLength,
-      hasSinglePerson: hasSinglePerson,
-    );
+    _onSwipeComplete(personId: personId, hasSinglePerson: hasSinglePerson);
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // SWIPE DISLIKE
+  // ═══════════════════════════════════════════════════════════
   Future<void> swipeDislike({
     required String personId,
     required int usersLength,
@@ -72,34 +146,59 @@ class MarriageCubit extends Cubit<MarriageState> {
 
     await _cardController!.forward(from: 0);
 
-    _onSwipeComplete(
-      usersLength: usersLength,
-      hasSinglePerson: hasSinglePerson,
-    );
+    _onSwipeComplete(personId: personId, hasSinglePerson: hasSinglePerson);
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // ON SWIPE COMPLETE
+  // ═══════════════════════════════════════════════════════════
   void _onSwipeComplete({
-    required int usersLength,
+    required String personId,
     required bool hasSinglePerson,
   }) {
-    if (!hasSinglePerson && usersLength > 1) {
-      advanceProfile(usersLength: usersLength);
-    }
-
     _cardController!.value = 0;
 
-    emit(
-      state.copyWith(
-        swipeDirection: 0,
-        swipeProgress: 0,
-        isAnimating: false,
-        isScrollingDown: false,
-      ),
-    );
+    if (!hasSinglePerson) {
+      final updatedUsers = state.allUsers
+          .where((u) => u.user?.id != personId)
+          .toList();
+
+      final newLength = updatedUsers.length;
+
+      if (newLength <= 3) {
+        loadMoreUsers();
+      }
+
+      int newIndex = state.currentIndex;
+      if (newIndex >= newLength) {
+        newIndex = newLength > 0 ? newLength - 1 : 0;
+      }
+
+      emit(
+        state.copyWith(
+          allUsers: updatedUsers,
+          currentIndex: newIndex,
+          swipeDirection: 0,
+          swipeProgress: 0,
+          isAnimating: false,
+          isScrollingDown: false,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          swipeDirection: 0,
+          swipeProgress: 0,
+          isAnimating: false,
+          isScrollingDown: false,
+        ),
+      );
+    }
   }
 
-  // ═══ History ═══
-
+  // ═══════════════════════════════════════════════════════════
+  // HISTORY
+  // ═══════════════════════════════════════════════════════════
   void showHistoryView() {
     emit(state.copyWith(showHistory: true, selectedHistoryFilter: "liked_you"));
   }
@@ -112,53 +211,17 @@ class MarriageCubit extends Cubit<MarriageState> {
     emit(state.copyWith(selectedHistoryFilter: filter));
   }
 
-  // ═══ باقي الميثودز زي ما هي ═══
-
-  Future<void> fetchMarriageProfile() async {
-    emit(
-      state.copyWith(
-        marriageProfileState: CubitStates.loading,
-        errorMessage: null,
-      ),
-    );
-    final result = await _repo.getMarriageProfile();
-    result.fold(
-      (failure) => emit(
-        state.copyWith(
-          marriageProfileState: CubitStates.failure,
-          errorMessage: failure.message,
-        ),
-      ),
-      (profile) => emit(
-        state.copyWith(
-          marriageProfileState: CubitStates.success,
-          profile: profile,
-          currentIndex: 0,
-        ),
-      ),
-    );
-  }
-
-  void advanceProfile({required int usersLength}) {
-    if (usersLength <= 0) return;
-    final next = (state.currentIndex + 1) >= usersLength
-        ? 0
-        : (state.currentIndex + 1);
-    emit(state.copyWith(currentIndex: next));
-  }
-
-  void clampCurrentIndex({required int usersLength}) {
-    if (usersLength <= 0) return;
-    if (state.currentIndex >= usersLength) {
-      emit(state.copyWith(currentIndex: usersLength - 1));
-    }
-  }
-
+  // ═══════════════════════════════════════════════════════════
+  // SCROLL
+  // ═══════════════════════════════════════════════════════════
   void setScrollingDown(bool isDown) {
     if (state.isScrollingDown == isDown) return;
     emit(state.copyWith(isScrollingDown: isDown));
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // TABS
+  // ═══════════════════════════════════════════════════════════
   void setMarriageTab(bool isMarriage) {
     if (state.isMarriageTab == isMarriage) return;
     if (state.showHistory) {
@@ -168,6 +231,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // INTERACTIONS
+  // ═══════════════════════════════════════════════════════════
   Future<void> userInteraction({
     required String personId,
     required String interactionType,
@@ -193,6 +259,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // REGARD
+  // ═══════════════════════════════════════════════════════════
   Future<void> sendRegard({required String personId}) async {
     emit(
       state.copyWith(sendRegardState: CubitStates.initial, errorMessage: null),
@@ -231,6 +300,16 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // HELPERS
+  // ═══════════════════════════════════════════════════════════
+  void clampCurrentIndex({required int usersLength}) {
+    if (usersLength <= 0) return;
+    if (state.currentIndex >= usersLength) {
+      emit(state.copyWith(currentIndex: usersLength - 1));
+    }
+  }
+
   void resetState() {
     emit(
       state.copyWith(
@@ -244,6 +323,7 @@ class MarriageCubit extends Cubit<MarriageState> {
 
   @override
   Future<void> close() {
+    _filterSubscription.cancel(); // ✅ نلغي الاشتراك
     _cardController?.removeListener(_onAnimationTick);
     _cardController?.dispose();
     return super.close();

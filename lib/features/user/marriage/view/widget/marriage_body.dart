@@ -1,4 +1,3 @@
-// marriage_body.dart
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
@@ -71,7 +70,6 @@ class MarriageBodyState extends State<MarriageBody>
 
     final cubit = context.read<MarriageCubit>();
     cubit.fetchMarriageProfile();
-    // ✅ نمرر الـ TickerProvider للـ Cubit مرة واحدة
     cubit.initAnimation(this);
   }
 
@@ -129,7 +127,6 @@ class MarriageBodyState extends State<MarriageBody>
           context.pop();
           return;
         }
-        // ✅ بدل setState — الـ Cubit بيتعامل مع الـ history تلقائياً
         cubit.setMarriageTab(value);
       },
     );
@@ -186,7 +183,8 @@ class MarriageBodyState extends State<MarriageBody>
           );
         }
 
-        final List<UserItem> allUsers = state.profile?.data?.users ?? [];
+        // ✅ نستخدم state.allUsers بدل state.profile?.data?.users
+        final List<UserItem> allUsers = state.allUsers;
         final List<UserItem> users = widget.personId != null
             ? allUsers.where((p) => p.user?.id == widget.personId).toList()
             : allUsers;
@@ -328,7 +326,6 @@ class MarriageBodyState extends State<MarriageBody>
     final answers = profile.answers;
     final images = answers?.userMedia?.image ?? [];
 
-    // تجهيز بيانات اليوزر اللي بعده (للكارت الخلفي)
     final bool hasNext =
         widget.personId == null && profileIndex + 1 < users.length;
 
@@ -363,12 +360,8 @@ class MarriageBodyState extends State<MarriageBody>
                   nationality: "🌍 ${user?.about?.nationality ?? ''}",
                   height: "📏 ${user?.about?.height ?? ''}",
                   toggleWidget: _buildToggle(),
-
-                  // ✅ القيم من الـ State بدل متغيرات محلية
                   swipeDirection: state.swipeDirection,
                   swipeProgress: state.swipeProgress,
-
-                  // بيانات اليوزر اللي بعده (الكارت الخلفي)
                   nextImages: hasNext ? nextImages : null,
                   nextName: hasNext ? (nextUser?.name ?? '') : null,
                   nextAge: hasNext
@@ -395,8 +388,6 @@ class MarriageBodyState extends State<MarriageBody>
                       ? "📏 ${nextUser?.about?.height ?? ''}"
                       : null,
                 ),
-
-                // باقي السكاشن عادي بدون سوايب
                 SliverPadding(
                   padding: EdgeInsets.symmetric(
                     horizontal: 16.w,
@@ -660,7 +651,7 @@ class MarriageBodyState extends State<MarriageBody>
               ],
             ),
 
-            // أزرار Like / Star / Dislike
+            // ✅ أزرار Like / Star / Dislike
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,
@@ -668,15 +659,13 @@ class MarriageBodyState extends State<MarriageBody>
               left: 0,
               right: 0,
               child: IgnorePointer(
-                // ✅ يمنع الضغط أثناء الأنيميشن
                 ignoring: state.isAnimating,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // ❤️ Like - يمين
+                    // ❤️ Like
                     buildCircleButton(
                       onTap: () {
-                        // ✅ بدل setState — الـ Cubit بيتعامل مع كل حاجة
                         cubit
                             .swipeLike(
                               personId: profile.user?.id ?? '',
@@ -684,7 +673,7 @@ class MarriageBodyState extends State<MarriageBody>
                               hasSinglePerson: widget.personId != null,
                             )
                             .then((_) {
-                              if (widget.personId == null && users.length > 1) {
+                              if (widget.personId == null) {
                                 _resetScrollTracking();
                                 scrollToTop();
                               }
@@ -705,10 +694,9 @@ class MarriageBodyState extends State<MarriageBody>
                       HexColor('cccab3'),
                     ),
 
-                    // ✖️ Dislike - شمال
+                    // ✖️ Dislike
                     buildCircleButton(
                       onTap: () {
-                        // ✅ بدل setState — الـ Cubit بيتعامل مع كل حاجة
                         cubit
                             .swipeDislike(
                               personId: profile.user?.id ?? '',
@@ -716,7 +704,7 @@ class MarriageBodyState extends State<MarriageBody>
                               hasSinglePerson: widget.personId != null,
                             )
                             .then((_) {
-                              if (widget.personId == null && users.length > 1) {
+                              if (widget.personId == null) {
                                 _resetScrollTracking();
                                 scrollToTop();
                               }
@@ -737,7 +725,7 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ INTERACTIONS TAB — بدون أي setState
+  // INTERACTIONS TAB
   // ═══════════════════════════════════════════════════════════════
   Widget _buildInteractionsContent({Key? key, required MarriageState state}) {
     final cubit = context.read<MarriageCubit>();
@@ -753,18 +741,11 @@ class MarriageBodyState extends State<MarriageBody>
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                 child: state.showHistory
-                    // ══════════════════════════════════════
-                    // ✅ AppBar السجل: SimpleAppBar
-                    // ══════════════════════════════════════
                     ? SimpleAppBar(
                         title: context.tr('history'),
                         isLargeTitle: true,
-                        // ✅ بدل setState
                         onBack: () => cubit.hideHistoryView(),
                       )
-                    // ══════════════════════════════════════
-                    // ✅ AppBar التفاعلات: الأصلي
-                    // ══════════════════════════════════════
                     : Stack(
                         alignment: Alignment.center,
                         children: [
@@ -791,7 +772,6 @@ class MarriageBodyState extends State<MarriageBody>
                             left: 0,
                             child: GestureDetector(
                               onTap: () {
-                                // ✅ بدل setState
                                 cubit.showHistoryView();
                                 WidgetsBinding.instance.addPostFrameCallback((
                                   _,
@@ -814,8 +794,6 @@ class MarriageBodyState extends State<MarriageBody>
                       ),
               ),
             ),
-
-            // ✅ AnimatedSwitcher بين الـ InteractionBody والـ History
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
@@ -835,7 +813,7 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ EMBEDDED HISTORY — بدون أي setState
+  // EMBEDDED HISTORY
   // ═══════════════════════════════════════════════════════════════
   Widget _buildEmbeddedHistory(MarriageState state) {
     final cubit = context.read<MarriageCubit>();
@@ -847,10 +825,8 @@ class MarriageBodyState extends State<MarriageBody>
         builder: (context) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ✅ Filter Chips
             FilterChips(
               onFilterChanged: (filterKey) {
-                // ✅ بدل setState
                 cubit.setHistoryFilter(filterKey);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Future.delayed(
@@ -861,8 +837,6 @@ class MarriageBodyState extends State<MarriageBody>
               },
             ),
             SizedBox(height: 8.h),
-
-            // ✅ History Page — القيمة من الـ State
             Expanded(
               child: Historypage(
                 key: _historyKey,
