@@ -130,6 +130,85 @@ class ArchivedChatsCubit extends Cubit<ArchivedChatsState> {
     );
   }
 
+  Future<void> deleteChatRoom(String chatId) async {
+    final originalChats = List<ArchiveChatRoomModel>.from(state.chatRooms);
+    final updatedChats = state.chatRooms
+        .where((chat) => chat.id != chatId)
+        .toList();
+
+    // Optimistic update
+    emit(state.copyWith(chatRooms: updatedChats));
+
+    final result = await _archiveRepository.deleteChatRoom(chatId);
+
+    result.fold(
+      (failure) {
+        // Rollback
+        emit(
+          state.copyWith(
+            chatRooms: originalChats,
+            errorMessage: failure.message,
+            state: CubitStates.failure,
+          ),
+        );
+      },
+      (_) {
+        // Success - already updated list
+        emit(state.copyWith(errorMessage: null));
+      },
+    );
+  }
+
+  Future<void> blockUser({
+    required String userId,
+    required String chatId,
+  }) async {
+    final result = await _archiveRepository.blockUser(userId: userId);
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            errorMessage: failure.message,
+            state: CubitStates.failure,
+          ),
+        );
+      },
+      (message) {
+        _updateChatBlockStatus(chatId, true);
+      },
+    );
+  }
+
+  Future<void> unblockUser({
+    required String userId,
+    required String chatId,
+  }) async {
+    final result = await _archiveRepository.unblockUser(userId: userId);
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            errorMessage: failure.message,
+            state: CubitStates.failure,
+          ),
+        );
+      },
+      (message) {
+        _updateChatBlockStatus(chatId, false);
+      },
+    );
+  }
+
+  void _updateChatBlockStatus(String chatId, bool isBlocked) {
+    final updatedChats = state.chatRooms.map((chat) {
+      if (chat.id == chatId) {
+        return chat.copyWith(isBlocked: isBlocked);
+      }
+      return chat;
+    }).toList();
+    emit(state.copyWith(chatRooms: updatedChats));
+  }
+
   void resetUnarchiveState() {
     emit(
       state.copyWith(
