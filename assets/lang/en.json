@@ -1411,6 +1411,8 @@
   "add_caption_optional": "Add caption (optional)",
   "after_application_discount": "Price after app discount",
   "publishing_post": "Publishing post...",
+  "post_publish_failed": "Failed to publish post",
+  "retry_button": "Retry",
   "no_events_title_user": "No events currently",
   "no_events_sub_title_user": "No consultants have created events yet. Wait and they will appear automatically.",
   "book_ticket": "Book Ticket",

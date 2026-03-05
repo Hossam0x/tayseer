@@ -124,4 +124,8 @@ class AppStrings {
   static const String noCategoryPosts = "no_category_posts";
   static const String tryOtherCategories = "try_other_categories";
   static const String exploreAllPosts = "explore_all_posts";
+
+  // Upload Post
+  static const String postPublishFailed = "post_publish_failed";
+  static const String retryButton = "retry_button";
 }

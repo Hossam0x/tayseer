@@ -1390,6 +1390,8 @@
   "add_caption_optional": "إضافة تعليق (اختياري)",
   "after_application_discount": "السعر بعد خصم التطبيق",
   "publishing_post": "جاري نشر المنشور...",
+  "post_publish_failed": "فشل نشر المنشور",
+  "retry_button": "إعادة",
   "reel_saved_success": "تم حفظ الريل بنجاح",
   "reel_unsaved_success": "تم إلغاء حفظ الريل",
   "reel_save_error": "حدث خطأ أثناء حفظ الريل",

@@ -213,7 +213,7 @@ class _FailureBanner extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'فشل نشر المنشور',
+                  context.tr(AppStrings.postPublishFailed),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -244,7 +244,7 @@ class _FailureBanner extends StatelessWidget {
               minimumSize: const Size(0, 0),
             ),
             child: Text(
-              'إعادة',
+              context.tr(AppStrings.retryButton),
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
