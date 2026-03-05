@@ -15,18 +15,8 @@ class OfflineEmptyState extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: EdgeInsets.all(24.w),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.cloud_off_rounded,
-                  size: 64.sp,
-                  color: Colors.grey.shade400,
-                ),
-              ),
+              Image.asset(AssetsData.noInternet, width: 150.w, height: 150.h),
+
               SizedBox(height: 24.h),
               Text(
                 context.tr(AppStrings.offlineNoConnection),

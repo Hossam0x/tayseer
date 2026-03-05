@@ -41,7 +41,7 @@ class CustomClick extends StatelessWidget {
       showCancelButton: true,
       cancelText: context.tr('skip'),
       onPressed: () {
-        CachNetwork.removeData(key: 'token');
+        CachNetwork.clearGuestAndProfileCache();
         Navigator.pushNamedAndRemoveUntil(
           context,
           AppRouter.kRegisrationView,

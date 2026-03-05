@@ -18,6 +18,18 @@ class _OfflineBannerState extends State<OfflineBanner> {
   Timer? _hideTimer;
 
   @override
+  void initState() {
+    super.initState();
+    // فحص حالة الاتصال عند بداية التطبيق
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final isConnected = context.read<ConnectivityCubit>().state.isConnected;
+      if (!isConnected && mounted) {
+        setState(() => _mode = _BannerMode.offline);
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _hideTimer?.cancel();
     super.dispose();
