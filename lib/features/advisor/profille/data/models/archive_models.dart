@@ -118,6 +118,34 @@ class ArchiveChatRoomModel extends Equatable {
     required this.unreadCount,
   });
 
+  ArchiveChatRoomModel copyWith({
+    String? id,
+    bool? isBlocked,
+    bool? isHaveSession,
+    List<ArchiveUserModel>? users,
+    ArchiveLastMessageModel? lastMessage,
+    String? lastMessageAt,
+    String? status,
+    ArchiveUserModel? sender,
+    String? createdAt,
+    String? updatedAt,
+    int? unreadCount,
+  }) {
+    return ArchiveChatRoomModel(
+      id: id ?? this.id,
+      isBlocked: isBlocked ?? this.isBlocked,
+      isHaveSession: isHaveSession ?? this.isHaveSession,
+      users: users ?? this.users,
+      lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+      status: status ?? this.status,
+      sender: sender ?? this.sender,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      unreadCount: unreadCount ?? this.unreadCount,
+    );
+  }
+
   factory ArchiveChatRoomModel.fromJson(Map<String, dynamic> json) {
     // معالجة users
     List<ArchiveUserModel> usersList = [];

@@ -8,6 +8,7 @@ import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/state/chat_messages_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/input/chat_input_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_cubit.dart';
@@ -171,23 +172,37 @@ class _AdvisorChatContentState
 
   @override
   Widget buildAppBar(BuildContext context) {
-    return ConversationAppBar(
-      username: widget.username,
-      userimage: widget.userimage,
-      phoneIcon: AssetsData.phoneIcon,
-      receiverId: widget.receiverId,
-      onProfileTap: isUser
-          ? () {
-              Navigator.pushNamed(
-                context,
-                AppRouter.advisorchatprofile,
-                arguments: {'advisorid': widget.receiverId},
-              );
-            }
-          : null,
-      onBlockUser: (blockedId) async {
-        await context.read<ChatMessagesCubit>().blockUser(blockedId: blockedId);
-        widget.onBlockStatusChanged?.call(true);
+    return BlocBuilder<ChatMessagesCubit, ChatMessagesState>(
+      buildWhen: (previous, current) => previous.isBlocked != current.isBlocked,
+      builder: (context, chatState) {
+        return ConversationAppBar(
+          username: widget.username,
+          userimage: widget.userimage,
+          phoneIcon: AssetsData.phoneIcon,
+          receiverId: widget.receiverId,
+          isBlocked: chatState.isBlocked,
+          onProfileTap: isUser
+              ? () {
+                  Navigator.pushNamed(
+                    context,
+                    AppRouter.advisorchatprofile,
+                    arguments: {'advisorid': widget.receiverId},
+                  );
+                }
+              : null,
+          onBlockUser: (blockedId) async {
+            await context.read<ChatMessagesCubit>().blockUser(
+              blockedId: blockedId,
+            );
+            widget.onBlockStatusChanged?.call(true);
+          },
+          onUnblockUser: (blockedId) async {
+            await context.read<ChatMessagesCubit>().unblockUser(
+              blockedId: blockedId,
+            );
+            widget.onBlockStatusChanged?.call(false);
+          },
+        );
       },
     );
   }
