@@ -1,11 +1,7 @@
 import 'package:tayseer/my_import.dart';
 
-// ════════════════════════════════════════════════════════════════
-// ✅ Shared Widget — يتستخدم في Exploration و History
-// ════════════════════════════════════════════════════════════════
 class SubscriptionButton extends StatelessWidget {
   final VoidCallback? onPressed;
-
   const SubscriptionButton({super.key, this.onPressed});
 
   @override
@@ -20,10 +16,7 @@ class SubscriptionButton extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.centerRight,
             end: Alignment.centerLeft,
-            colors: [
-              Color(0xFFEB7A91),
-              Color.fromRGBO(245, 192, 3, 1),
-            ],
+            colors: [Color(0xFFEB7A91), Color.fromRGBO(245, 192, 3, 1)],
           ),
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
@@ -54,22 +47,35 @@ class SubscriptionButton extends StatelessWidget {
   }
 }
 
-// ════════════════════════════════════════════════════════════════
-// ✅ Exploration overlay — يتحط جوا Stack مع Positioned
-// ════════════════════════════════════════════════════════════════
+// ✅ isInsideStack: true  → Exploration (داخل Stack) → Positioned
+// ✅ isInsideStack: false → History (داخل Column) → Padding مع NavBar height
 class SubscriptionPromptOverlay extends StatelessWidget {
-  final double? bottomOffset; // ✅ اختياري
-  const SubscriptionPromptOverlay({super.key, this.bottomOffset});
+  final bool isInsideStack;
+  const SubscriptionPromptOverlay({super.key, this.isInsideStack = true});
 
   @override
   Widget build(BuildContext context) {
-    final bottom = bottomOffset ??8.h;
+    if (isInsideStack) {
+      return Positioned(
+        bottom: 12.h,
+        left: 24.w,
+        right: 24.w,
+        child: const SubscriptionButton(),
+      );
+    }
 
-    return Positioned(
-      bottom: bottom,
-      left: 24.w,
-      right: 24.w,
-      child: SubscriptionButton(),
+    // ✅ History: بنحسب ارتفاع الـ NavBar + SafeArea عشان الزرار ميتحطش تحتيهم
+    final navBarHeight = kBottomNavigationBarHeight; // = 56.0
+    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 24.w,
+        right: 24.w,
+        top: 8.h,
+        bottom: navBarHeight + safeAreaBottom + 33.h,
+      ),
+      child: const SubscriptionButton(),
     );
   }
 }
