@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/services.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tayseer/my_import.dart';
@@ -28,6 +29,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
   late AnimationController _animationController;
   String? _recordingPath;
   bool _isInitialized = false;
+  bool _permissionDenied = false;
 
   List<double> _waveHeights = List.generate(40, (_) => 4.0);
   StreamSubscription? _recorderSubscription;
@@ -35,6 +37,10 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
   Timer? _durationTimer;
   DateTime? _startTime;
   double _currentAmplitude = 0.0;
+
+  // ✅ Method channel لـ iOS Audio Session
+  static const _audioSessionChannel =
+  MethodChannel('com.athr.tayser/audio_session');
 
   @override
   void initState() {
@@ -46,26 +52,64 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     _initializeRecorder();
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ✅ INIT — Permission أولاً، ثم AudioSession، ثم openRecorder
+  // ════════════════════════════════════════════════════════════════
   Future<void> _initializeRecorder() async {
     _recorder = FlutterSoundRecorder();
 
     try {
-      // ✅ على iOS و Android: افتح الـ recorder الأول دايماً
+      // 1️⃣ اطلب الـ permission أولاً
+      final granted = await _requestPermission();
+      if (!granted) {
+        if (mounted) {
+          setState(() {
+            _isInitialized = true;
+            _permissionDenied = true;
+          });
+        }
+        return;
+      }
+
+      // 2️⃣ اضبط الـ Audio Session على iOS قبل openRecorder
+      if (Platform.isIOS) {
+        await _configureIOSAudioSession();
+      }
+
+      // 3️⃣ افتح الـ recorder
       await _recorder!.openRecorder();
 
+      // 4️⃣ اضبط مدة الاشتراك
       await _recorder!.setSubscriptionDuration(
         const Duration(milliseconds: 150),
       );
 
       if (mounted) {
-        setState(() => _isInitialized = true);
+        setState(() {
+          _isInitialized = true;
+          _permissionDenied = false;
+        });
       }
     } catch (e) {
       debugPrint('❌ Error initializing recorder: $e');
-      // ✅ حتى لو في error، خلي الـ UI يظهر عشان المستخدم يحاول
       if (mounted) {
         setState(() => _isInitialized = true);
       }
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ✅ iOS Audio Session via MethodChannel
+  //    لو الـ channel مش موجود، مفيش مشكلة — بيكمل عادي
+  // ════════════════════════════════════════════════════════════════
+  Future<void> _configureIOSAudioSession() async {
+    try {
+      await _audioSessionChannel.invokeMethod('configureForRecording');
+      debugPrint('✅ iOS Audio Session configured');
+    } on MissingPluginException {
+      debugPrint('ℹ️ Audio session channel not registered — using defaults');
+    } catch (e) {
+      debugPrint('⚠️ Audio session config failed: $e');
     }
   }
 
@@ -79,8 +123,10 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     super.dispose();
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ✅ REQUEST PERMISSION
+  // ════════════════════════════════════════════════════════════════
   Future<bool> _requestPermission() async {
-    // ✅ نفس المنطق على iOS و Android
     var status = await Permission.microphone.status;
 
     if (status.isGranted) return true;
@@ -90,7 +136,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(context.tr('enable_microphone_settings')),
-
             action: SnackBarAction(
               label: context.tr('settings'),
               onPressed: () => openAppSettings(),
@@ -101,23 +146,27 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       return false;
     }
 
-    // اطلب الـ permission
     status = await Permission.microphone.request();
     return status.isGranted;
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ✅ START RECORDING
+  // ════════════════════════════════════════════════════════════════
   Future<void> _startRecording() async {
     if (!_isInitialized || _recorder == null) {
-      // حاول تعمل initialize تاني
+      if (mounted) setState(() { _isInitialized = false; _permissionDenied = false; });
       await _initializeRecorder();
-      if (!_isInitialized) return;
+      if (!_isInitialized || _permissionDenied) return;
+    }
+
+    if (_permissionDenied) {
+      final granted = await _requestPermission();
+      if (!granted) return;
+      if (mounted) setState(() => _permissionDenied = false);
     }
 
     try {
-      // ✅ اطلب الـ permission قبل التسجيل مباشرة
-      final hasPermission = await _requestPermission();
-      if (!hasPermission) return;
-
       final directory = await getTemporaryDirectory();
       final fileName =
           'voice_message_${DateTime.now().millisecondsSinceEpoch}.m4a';
@@ -166,25 +215,18 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
   void _startListeningToRecorder() {
     _recorderSubscription?.cancel();
-
     _recorderSubscription = _recorder!.onProgress!.listen(
-      (event) {
+          (event) {
         if (!mounted || _isPaused) return;
-
         final decibels = event.decibels ?? -160.0;
-
         double amplitude;
         if (decibels <= -80) {
           amplitude = 0.01;
         } else {
           amplitude = ((decibels + 80) / 100).clamp(0.04, 0.4);
         }
-
         _currentAmplitude = (_currentAmplitude * 0.7) + (amplitude * 0.3);
-
-        if (mounted) {
-          setState(() => _addNewWave(_currentAmplitude));
-        }
+        if (mounted) setState(() => _addNewWave(_currentAmplitude));
       },
       onError: (error) => debugPrint('❌ Recorder stream error: $error'),
       cancelOnError: false,
@@ -194,9 +236,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
   void _addNewWave(double amplitude) {
     final random = math.Random();
     final baseHeight = 5.0 + (amplitude * 30.0);
-
     _waveHeights.removeRange(0, 3);
-
     for (int i = 0; i < 3; i++) {
       final variation = 0.7 + (random.nextDouble() * 0.6);
       final height = (baseHeight * variation).clamp(4.0, 35.0);
@@ -211,7 +251,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       _durationTimer?.cancel();
       if (mounted) setState(() => _isPaused = true);
     } catch (e) {
-      debugPrint('❌ Error pausing recording: $e');
+      debugPrint('❌ Error pausing: $e');
     }
   }
 
@@ -222,7 +262,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       _startDurationTimer();
       if (mounted) setState(() => _isPaused = false);
     } catch (e) {
-      debugPrint('❌ Error resuming recording: $e');
+      debugPrint('❌ Error resuming: $e');
     }
   }
 
@@ -232,14 +272,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       await _recorder!.stopRecorder();
       _recorderSubscription?.cancel();
       _durationTimer?.cancel();
-
-      if (mounted) {
-        setState(() {
-          _isRecording = false;
-          _isPaused = false;
-        });
-      }
-
+      if (mounted) setState(() { _isRecording = false; _isPaused = false; });
       if (_recordingPath != null) {
         final audioFile = File(_recordingPath!);
         if (await audioFile.exists()) {
@@ -249,19 +282,16 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         }
       }
     } catch (e) {
-      debugPrint('❌ Error stopping recording: $e');
+      debugPrint('❌ Error stopping: $e');
     }
   }
 
   Future<void> _cancelRecording() async {
     if (_recorder == null) return;
     try {
-      if (_isRecording) {
-        await _recorder!.stopRecorder();
-      }
+      if (_isRecording) await _recorder!.stopRecorder();
       _recorderSubscription?.cancel();
       _durationTimer?.cancel();
-
       if (mounted) {
         setState(() {
           _isRecording = false;
@@ -271,44 +301,44 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
           _currentAmplitude = 0.0;
         });
       }
-
       if (_recordingPath != null) {
         final file = File(_recordingPath!);
         if (await file.exists()) await file.delete();
       }
-
       widget.onCancel?.call();
     } catch (e) {
-      debugPrint('❌ Error canceling recording: $e');
+      debugPrint('❌ Error canceling: $e');
     }
   }
 
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(duration.inMinutes);
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$minutes:$seconds';
+    return '${twoDigits(duration.inMinutes)}:${twoDigits(duration.inSeconds.remainder(60))}';
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // BUILD
+  // ════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
-    // ✅ لو لسه بيـ initialize، اظهر loading بسيط
     if (!_isInitialized) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         child: Row(
           children: [
-            SizedBox(
+            const SizedBox(
               width: 20,
               height: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            SizedBox(width: 12),
+            SizedBox(width: 12.w),
             Text(context.tr('initializing_recorder')),
           ],
         ),
       );
     }
+
+    if (_permissionDenied) return _buildPermissionDeniedState();
 
     return Container(
       decoration: BoxDecoration(
@@ -319,7 +349,44 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     );
   }
 
-  // ── Idle: زرار الميكروفون فقط ──────────────────────────────────
+  Widget _buildPermissionDeniedState() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.red.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.mic_off, color: Colors.red[400], size: 24.w),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Text(
+              context.tr('microphone_permission_required'),
+              style: TextStyle(color: Colors.red[700], fontSize: 13.sp),
+            ),
+          ),
+          SizedBox(width: 8.w),
+          GestureDetector(
+            onTap: () => openAppSettings(),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: Colors.red[400],
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Text(
+                context.tr('settings'),
+                style: TextStyle(color: Colors.white, fontSize: 12.sp),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildIdleState() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
@@ -338,7 +405,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
             ),
           ),
           SizedBox(width: 12.w),
-
           Text(
             context.tr('tap_to_record'),
             style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
@@ -348,7 +414,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     );
   }
 
-  // ── Recording state ────────────────────────────────────────────
   Widget _buildRecordingState() {
     return Expanded(
       child: Padding(
@@ -356,7 +421,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ── Top row: timer + dot + waves ──
             Row(
               children: [
                 Text(
@@ -368,35 +432,27 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                   ),
                 ),
                 SizedBox(width: 8.w),
-
-                // النقطة النابضة
                 AnimatedBuilder(
                   animation: _animationController,
-                  builder: (context, child) {
-                    return Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: _isPaused ? Colors.orange : Colors.red,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: (_isPaused ? Colors.orange : Colors.red)
-                                .withOpacity(
-                                  0.3 + (_animationController.value * 0.4),
-                                ),
-                            blurRadius: 4 + (_animationController.value * 4),
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                  builder: (context, child) => Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: _isPaused ? Colors.orange : Colors.red,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: (_isPaused ? Colors.orange : Colors.red)
+                              .withOpacity(
+                              0.3 + (_animationController.value * 0.4)),
+                          blurRadius: 4 + (_animationController.value * 4),
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-
                 SizedBox(width: 12.w),
-
-                // الموجات
                 Expanded(
                   child: SizedBox(
                     height: 40,
@@ -410,7 +466,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                           AppColors.secondary600,
                           (height / 35.0).clamp(0.0, 1.0),
                         )!;
-
                         return AnimatedContainer(
                           duration: const Duration(milliseconds: 400),
                           curve: Curves.easeOut,
@@ -421,12 +476,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                             color: color,
                             borderRadius: BorderRadius.circular(2),
                             boxShadow: height > 20
-                                ? [
-                                    BoxShadow(
-                                      color: color.withOpacity(0.3),
-                                      blurRadius: 2,
-                                    ),
-                                  ]
+                                ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 2)]
                                 : null,
                           ),
                         );
@@ -436,14 +486,10 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                 ),
               ],
             ),
-
             SizedBox(height: 12.h),
-
-            // ── Bottom row: cancel + pause + send ──
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // ❌ حذف
                 GestureDetector(
                   onTap: _cancelRecording,
                   child: Container(
@@ -452,23 +498,11 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                     decoration: BoxDecoration(
                       color: Colors.red[400],
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.withOpacity(0.3),
-                          blurRadius: 6,
-                          spreadRadius: 1,
-                        ),
-                      ],
+                      boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 6, spreadRadius: 1)],
                     ),
-                    child: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.white,
-                      size: 22,
-                    ),
+                    child: const Icon(Icons.delete_outline, color: Colors.white, size: 22),
                   ),
                 ),
-
-                // ⏸ / ▶ pause/resume
                 GestureDetector(
                   onTap: _isPaused ? _resumeRecording : _pauseRecording,
                   child: Container(
@@ -477,23 +511,11 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                     decoration: BoxDecoration(
                       color: Colors.orange[400],
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.orange.withOpacity(0.3),
-                          blurRadius: 6,
-                          spreadRadius: 1,
-                        ),
-                      ],
+                      boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 6, spreadRadius: 1)],
                     ),
-                    child: Icon(
-                      _isPaused ? Icons.play_arrow : Icons.pause,
-                      color: Colors.white,
-                      size: 22,
-                    ),
+                    child: Icon(_isPaused ? Icons.play_arrow : Icons.pause, color: Colors.white, size: 22),
                   ),
                 ),
-
-                // ✅ إرسال
                 GestureDetector(
                   onTap: _stopRecording,
                   child: Container(
@@ -502,13 +524,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
                     decoration: BoxDecoration(
                       color: Colors.green[600],
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.4),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
+                      boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 8, spreadRadius: 2)],
                     ),
                     child: Icon(Icons.send, color: Colors.white, size: 22.w),
                   ),

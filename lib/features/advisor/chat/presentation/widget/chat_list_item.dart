@@ -273,7 +273,9 @@ class ChatListItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                      image: NetworkImage(otherUser.image!),
+                      image: NetworkImage(
+                        otherUser.image ?? "",
+                      ),
                       fit: BoxFit.cover,
                     ),
                   ),

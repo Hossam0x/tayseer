@@ -424,7 +424,7 @@
   "my_interests": "اهتماماتي",
   "my_cv": "السيرة الذاتية",
   "messge_profil_title": "عبر عن اعجابك وابدأ بالدردشة مع",
-  "messge_profil_sub_title": "انت واحمد متشابهين ألق عليه التحية ",
+  "messge_profil_sub_title": "انت و {name} متشابهين ألق عليه التحية",
   "type_your_message": "سجل اعجابك",
   "share_profil": "مشاركة الملف",
   "ban": "حظر",
@@ -1502,8 +1502,12 @@
   "story_hidden_success": "تم إخفاء القصة بنجاح",
   "story_created_success": "تم إنشاء القصة بنجاح",
   "story_unarchived_success": "تم إلغاء أرشفة القصة بنجاح",
+  "number_of_tickets": "عدد التذاكر المتبقيه",
+  "max_length_exceeded": "تم تجاوز الحد الأقصى ",
+  "location_selected_successfully": "تم اختيار الموقع بنجاح",
   "tap_to_record": "اضغط للتسجيل",
-"initializing_recorder": "جاري تهيئة المسجل...",
-"enable_microphone_settings": "يرجى تفعيل الميكروفون من الإعدادات",
-"failed_to_start_recording": "فشل في بدء التسجيل"
+  "initializing_recorder": "جاري تهيئة المسجل...",
+  "enable_microphone_settings": "يرجى تفعيل الميكروفون من الإعدادات",
+  "failed_to_start_recording": "فشل في بدء التسجيل",
+  "select_category": "اخترالمجموعه"
 }

@@ -28,6 +28,7 @@ class EventsState {
   final String? duration;
   final DateTime? eventDate;
   final TimeOfDay? startTime;
+  final int eventDescriptionLength;
   final String? numberOfAttendees;
 
   // ==================== Location ====================
@@ -60,6 +61,7 @@ class EventsState {
     this.duration,
     this.eventDate,
     this.startTime,
+    this.eventDescriptionLength = 0,
     this.numberOfAttendees,
     // Location
     this.latitude,
@@ -95,6 +97,7 @@ class EventsState {
     String? duration,
     DateTime? eventDate,
     TimeOfDay? startTime,
+    int? eventDescriptionLength,
     String? numberOfAttendees,
     // Location
     double? latitude,
@@ -128,6 +131,7 @@ class EventsState {
       duration: duration ?? this.duration,
       eventDate: eventDate ?? this.eventDate,
       startTime: startTime ?? this.startTime,
+      eventDescriptionLength: eventDescriptionLength ?? this.eventDescriptionLength,
       numberOfAttendees: numberOfAttendees ?? this.numberOfAttendees,
       // Location
       latitude: latitude ?? this.latitude,

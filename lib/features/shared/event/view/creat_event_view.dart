@@ -3,12 +3,11 @@ import 'package:tayseer/features/shared/event/view_model/events_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class CreatEventView extends StatelessWidget {
-  const CreatEventView({super.key, required this.cubit});
-  final EventsCubit cubit;
+  const CreatEventView({super.key});
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: cubit,
+    return BlocProvider(
+      create: (context) => EventsCubit(),
       child: Scaffold(body: AdvisorBackground(child: const CreatEventBody())),
     );
   }

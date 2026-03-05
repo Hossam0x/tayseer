@@ -546,7 +546,7 @@ class _PostMediaState extends State<_PostMedia> {
         return EventCardItem(
           key: ValueKey('event_${widget.post.postId}'), // 👈 أضف ده
 
-          imageUrl: widget.post.event?.image ?? '',
+          imageUrl: widget.post.event?.images.first ?? '',
           sessionTitle: widget.post.event?.title ?? '',
           location: widget.post.event?.location ?? '',
           advisorName: widget.post.event?.advisor ?? '',

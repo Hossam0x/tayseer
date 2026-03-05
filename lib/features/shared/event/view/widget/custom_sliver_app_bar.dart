@@ -28,7 +28,8 @@ class CustomSliverAppBarEvent extends StatelessWidget {
                   Positioned(
                     top: context.responsiveHeight(50),
                     bottom: 0,
-                    right: 1,
+                    right: isArabic ? 1 : 0,
+                    left: isArabic ? null : 1,
                     child: Center(
                       child: IconButton(
                         onPressed: () => context.pop(),

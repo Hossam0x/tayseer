@@ -17,11 +17,9 @@ class AgreementText extends StatelessWidget {
           const TextSpan(text: ' '),
           TextSpan(
             text: context.tr('privacy_policy'),
-            style: Styles.textStyle14.copyWith(
-              color: AppColors.kprimaryColor,
-              fontWeight: FontWeight.bold,
-              decoration: TextDecoration.underline,
-              decorationColor: AppColors.kprimaryColor,
+            style: Styles.textStyle14Bold.copyWith(
+              color: AppColors.kprimaryTextColor,
+              decorationColor: AppColors.kprimaryTextColor,
             ),
             recognizer: TapGestureRecognizer()
               ..onTap = () {

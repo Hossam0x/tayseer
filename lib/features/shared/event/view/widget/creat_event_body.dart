@@ -6,6 +6,7 @@ import 'package:tayseer/core/widgets/custom_date_picker_field.dart';
 import 'package:tayseer/features/shared/event/view/widget/custom_sliver_app_bar.dart';
 import 'package:tayseer/features/shared/event/view/widget/custom_upload_image.dart';
 import 'package:tayseer/features/shared/event/view/widget/discount_price_container.dart';
+import 'package:tayseer/features/shared/event/view/widget/locationp_picker_form_field.dart';
 import 'package:tayseer/features/shared/event/view_model/events_cubit.dart';
 import 'package:tayseer/features/shared/event/view_model/events_state.dart';
 import 'package:tayseer/core/widgets/custom_video_and_edit/custom_uploaded_video_preview.dart';
@@ -80,24 +81,35 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                 child: Column(
                   children: [
                     CustomTextFormField(
+                      maxLength: 30,
                       hintText: context.tr('title_events'),
                       controller: eventsCubit.eventTitleController,
                     ),
                     Gap(context.responsiveHeight(16)),
                     CustomTextFormField(
+                      maxLength: 250,
                       hintText: context.tr('event_description'),
                       maxLines: 5,
                       controller: eventsCubit.eventDescriptionController,
+                      onChanged: (val) =>
+                          eventsCubit.setEventDescriptionLength(val.length),
                     ),
                     Gap(context.responsiveHeight(3)),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        '${eventsCubit.eventDescriptionController.text.length}/250',
-                        style: Styles.textStyle12.copyWith(
-                          color: AppColors.kGreyColor,
-                        ),
-                      ),
+                    BlocBuilder<EventsCubit, EventsState>(
+                      buildWhen: (previous, current) =>
+                          previous.eventDescriptionLength !=
+                          current.eventDescriptionLength,
+                      builder: (context, s) {
+                        return Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '${s.eventDescriptionLength}/250',
+                            style: Styles.textStyle12.copyWith(
+                              color: AppColors.kGreyColor,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     Gap(context.responsiveHeight(16)),
 
@@ -120,6 +132,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                     Gap(context.responsiveHeight(16)),
 
                     TimePickerFormField(
+                      disablePastTime: true,
                       initialValue: state.startTime,
                       onChanged: (value) {
                         eventsCubit.setStartTime(value);
@@ -183,88 +196,74 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                     ),
                     Gap(context.responsiveHeight(16)),
 
-                    ///map
-                    GestureDetector(
+                    LocationPickerFormField(
+                      initialValue:
+                          state.locationAddress != null &&
+                          state.locationAddress!.isNotEmpty,
+
                       onTap: () async {
-                        final result = await context.pushNamed(
+                        await context.pushNamed(
                           AppRouter.kMapView,
                           arguments: {'cubit': eventsCubit},
                         );
-                        if (result == true && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            CustomSnackBar(
-                              context,
-                              text: 'تم تحديد الموقع بنجاح',
-                              isSuccess: true,
-                            ),
-                          );
-                        }
+
+                        // if (result == true && context.mounted) {
+                        //   ScaffoldMessenger.of(context).showSnackBar(
+                        //     CustomSnackBar(
+                        //       context,
+                        //       text: context.tr(
+                        //         'location_selected_successfully',
+                        //       ),
+                        //       isSuccess: true,
+                        //     ),
+                        //   );
+                        // }
                       },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 14.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(
-                            color: AppColors.kprimaryColor.withOpacity(0.3),
-                            width: state.hasLocation ? 1.5 : 1,
+
+                      validator: (value) {
+                        if (state.locationAddress == null ||
+                            state.locationAddress!.isEmpty) {
+                          return context.tr('required');
+                        }
+                        return null;
+                      },
+                      child: Row(
+                        children: [
+                          Icon(
+                            state.hasLocation
+                                ? Icons.location_on
+                                : Icons.location_on_outlined,
+                            color: state.hasLocation
+                                ? AppColors.kprimaryColor.withOpacity(0.8)
+                                : AppColors.kprimaryColor.withOpacity(0.3),
+                            size: 22.sp,
                           ),
-                          boxShadow: state.hasLocation
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.kprimaryColor.withOpacity(
-                                      0.1,
-                                    ),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  state.hasLocation
+                                      ? context.tr('event_location_selected')
+                                      : context.tr('event_location'),
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: state.hasLocation
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: state.hasLocation
+                                        ? Colors.grey.shade600
+                                        : AppColors.kprimaryColor.withOpacity(
+                                            0.5,
+                                          ),
                                   ),
-                                ]
-                              : null,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              state.hasLocation
-                                  ? Icons.location_on
-                                  : Icons.location_on_outlined,
-                              color: state.hasLocation
-                                  ? AppColors.kprimaryColor.withOpacity(0.8)
-                                  : AppColors.kprimaryColor.withOpacity(0.3),
-                              size: 22.sp,
-                            ),
-                            SizedBox(width: 12.w),
-
-                            // 📝 Text
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // العنوان الرئيسي
-                                  Text(
-                                    state.hasLocation
-                                        ? context.tr('event_location_selected')
-                                        : context.tr('event_location'),
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      fontWeight: state.hasLocation
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                      color: state.hasLocation
-                                          ? Colors.grey.shade600
-                                          : AppColors.kprimaryColor.withOpacity(
-                                              0.5,
-                                            ),
-                                    ),
-                                  ),
-
-                                  // العنوان التفصيلي
-                                  if (state.locationAddress != null &&
-                                      state.locationAddress!.isNotEmpty) ...[
-                                    SizedBox(height: 4.h),
-                                    Text(
+                                ),
+                                if (state.locationAddress != null &&
+                                    state.locationAddress!.isNotEmpty)
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 4.h),
+                                    child: Text(
                                       state.locationAddress!,
                                       style: Styles.textStyle12SemiBold
                                           .copyWith(
@@ -274,18 +273,18 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                  ],
-                                ],
-                              ),
+                                  ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                     Gap(context.responsiveHeight(16)),
 
                     /// 6. الأسعار
                     CustomTextFormField(
+                      maxLength: 5,
                       isNumber: true,
                       controller:
                           eventsCubit.eventPriceBeforeDiscountController,
@@ -306,6 +305,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                     ),
                     Gap(context.responsiveHeight(16)),
                     CustomTextFormField(
+                      maxLength: 5,
                       isNumber: true,
                       controller: eventsCubit.eventPriceAfterDiscountController,
                       hintText: context.tr('event_price_after_discount'),
@@ -341,6 +341,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
 
                     /// 7. عدد الحضور (Text field)
                     CustomTextFormField(
+                      maxLength: 5,
                       isNumber: true,
                       controller: eventsCubit.numberOfAttendeesController,
                       hintText: context.tr('attendees_count'),
@@ -362,6 +363,14 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                         if (images != null && images.isNotEmpty) {
                           eventsCubit.addPickedImages(images);
                         }
+                      },
+                      valueGetter: () =>
+                          eventsCubit.pickedImages.map((e) => e.path).toList(),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return context.tr('required_images');
+                        }
+                        return null;
                       },
                     ),
 

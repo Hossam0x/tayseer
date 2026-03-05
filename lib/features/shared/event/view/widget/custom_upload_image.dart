@@ -1,61 +1,94 @@
-
 import 'dart:ui';
 
 import 'package:tayseer/my_import.dart';
 
-class CustomUploadContainer extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final VoidCallback onTap;
-
-  const CustomUploadContainer({
+class CustomUploadContainer extends FormField<List<String>> {
+  CustomUploadContainer({
     super.key,
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    required this.onTap,
-  });
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+    List<String>? initialValue,
+    ValueGetter<List<String>>? valueGetter,
+    super.validator,
+    AutovalidateMode super.autovalidateMode = AutovalidateMode.disabled,
+  }) : super(
+         initialValue: initialValue ?? [],
+         builder: (state) {
+           // if an external value provider is given, sync the field value with it
+           if (valueGetter != null) {
+             WidgetsBinding.instance.addPostFrameCallback((_) {
+               try {
+                 final external = valueGetter();
+                 if (external != state.value) state.didChange(external);
+               } catch (_) {}
+             });
+           }
+           return Column(
+             crossAxisAlignment: CrossAxisAlignment.start,
+             children: [
+               GestureDetector(
+                 onTap: onTap,
+                 child: CustomPaint(
+                   painter: _DottedBorderPainter(
+                     color: state.hasError
+                         ? Colors.red
+                         : const Color(0xFFEFA6A8),
+                   ),
+                   child: Container(
+                     width: double.infinity,
+                     height: 180,
+                     decoration: BoxDecoration(
+                       color: Colors.white,
+                       borderRadius: BorderRadius.circular(12),
+                     ),
+                     child: Column(
+                       mainAxisAlignment: MainAxisAlignment.center,
+                       children: [
+                         Icon(
+                           icon,
+                           color: state.hasError
+                               ? Colors.red
+                               : const Color(0xFFEFA6A8),
+                           size: 30,
+                         ),
+                         const SizedBox(height: 12),
+                         Text(
+                           title,
+                           style: Styles.textStyle14.copyWith(
+                             color: state.hasError
+                                 ? Colors.red
+                                 : const Color(0xFFEFA6A8),
+                             fontWeight: FontWeight.bold,
+                           ),
+                         ),
+                         if (subtitle != null) ...[
+                           const SizedBox(height: 4),
+                           Text(
+                             subtitle,
+                             style: Styles.textStyle12.copyWith(
+                               color: Colors.grey,
+                             ),
+                           ),
+                         ],
+                       ],
+                     ),
+                   ),
+                 ),
+               ),
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: CustomPaint(
-        painter: _DottedBorderPainter(color: const Color(0xFFEFA6A8)),
-        child: Container(
-          width: double.infinity,
-          height: context.height * 0.3,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: const Color(0xFFEFA6A8), size: 30),
-              const SizedBox(height: 12),
-
-              Text(
-                title,
-                style: Styles.textStyle14.copyWith(
-                  color: const Color(0xFFEFA6A8),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  subtitle!,
-                  style: Styles.textStyle12.copyWith(color: Colors.grey),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+               if (state.hasError) ...[
+                 const SizedBox(height: 6),
+                 Text(
+                   state.errorText ?? '',
+                   style: Styles.textStyle10.copyWith(color: Colors.red),
+                 ),
+               ],
+             ],
+           );
+         },
+       );
 }
 
 class SelectedImageItem extends StatelessWidget {
@@ -109,19 +142,18 @@ class _DottedBorderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint =
-        Paint()
-          ..color = color.withOpacity(0.5)
-          ..strokeWidth = 1.5
-          ..style = PaintingStyle.stroke;
+    final Paint paint = Paint()
+      ..color = color.withOpacity(0.5)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
 
-    final Path path =
-        Path()..addRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(0, 0, size.width, size.height),
-            const Radius.circular(12),
-          ),
-        );
+    final Path path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          const Radius.circular(12),
+        ),
+      );
 
     // تحويل المسار المتصل إلى منقط
     final Path dashPath = Path();

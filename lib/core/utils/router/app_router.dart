@@ -673,10 +673,9 @@ abstract class AppRouter {
           builder: (_) => MapView(eventsCubit: args['cubit']),
         );
       case kCreatEventView:
-        final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => CreatEventView(cubit: args['cubit']),
+          builder: (_) => CreatEventView(),
         );
       case kUpdateEventView:
         final cubit = settings.arguments as EventDetailCubit;

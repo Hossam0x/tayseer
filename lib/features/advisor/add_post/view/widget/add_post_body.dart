@@ -74,6 +74,7 @@ class AddPostBody extends StatelessWidget {
                   // Profile Header + Category
                   // ════════════════════════════════════════════
                   CustomProfileHeader(
+                    cubit: cubit,
                     name: kCurrentUserData?.name ?? 'user',
                     initialSubtitle: context.tr('select_group'),
                     isVerified: false,

@@ -15,13 +15,11 @@ class CustomTextFormField extends StatefulWidget {
     this.isConfirmPasswordFiled = false,
     this.isPhoneWithCountryCode = false,
     this.isNumber = false,
-
     this.controller,
-    this.countryCodeController, // ✅ جديد
+    this.countryCodeController,
     this.maxLines = 1,
     this.enable = true,
     this.hintText,
-
     this.prefixIcon,
     this.suffixIcon,
     this.keyboardType,
@@ -32,6 +30,8 @@ class CustomTextFormField extends StatefulWidget {
     this.onChanged,
     this.onTap,
     this.readOnly = false,
+
+    this.maxLength, // ✅ الجديد
   });
 
   final bool isName;
@@ -45,7 +45,7 @@ class CustomTextFormField extends StatefulWidget {
   final bool isNumber;
 
   final TextEditingController? controller;
-  final TextEditingController? countryCodeController; // ✅ جديد
+  final TextEditingController? countryCodeController;
 
   final int maxLines;
   final bool enable;
@@ -61,6 +61,9 @@ class CustomTextFormField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onTap;
   final bool readOnly;
+
+  /// ✅ الحد الأقصى للحروف
+  final int? maxLength;
 
   @override
   State<CustomTextFormField> createState() => _CustomTextFormFieldState();
@@ -97,12 +100,21 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
   Widget build(BuildContext context) {
     return TextFormField(
       autovalidateMode: widget.autovalidateMode ?? AutovalidateMode.disabled,
-      inputFormatters: widget.inputFormatters,
+
+      /// ✅ دمج formatter القديم + منع تجاوز الحد
+      inputFormatters: widget.maxLength != null
+          ? [
+              ...?widget.inputFormatters,
+              LengthLimitingTextInputFormatter(widget.maxLength),
+            ]
+          : widget.inputFormatters,
+
       onTapOutside: (event) {
         SchedulerBinding.instance.addPostFrameCallback((_) {
           FocusScope.of(context).unfocus();
         });
       },
+
       autocorrect: false,
       controller: widget.controller,
       keyboardType: _resolveKeyboardType(),
@@ -116,10 +128,10 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       obscureText: widget.isPasswordFiled || widget.isConfirmPasswordFiled
           ? _showPassword
           : false,
+
       decoration: InputDecoration(
         filled: true,
         fillColor: AppColors.kWhiteColor,
-        enabled: widget.enable,
         isDense: true,
         contentPadding: EdgeInsets.symmetric(
           vertical: widget.maxLines > 1 ? 12 : context.height * .022,
@@ -148,14 +160,13 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         ),
         errorStyle: Styles.textStyle10.copyWith(color: Colors.red),
 
-        /// ✅ Country Code Picker
         prefixIcon: widget.isPhoneWithCountryCode
             ? GestureDetector(
                 onTap: _openCountryPicker,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Text(
                       _selectedCountry.flagEmoji,
                       style: const TextStyle(fontSize: 18),
@@ -209,6 +220,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           color: AppColors.kprimaryColor.withOpacity(0.5),
         ),
       ),
+
       validator: widget.validator ?? _defaultValidator,
     );
   }
@@ -235,6 +247,12 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       if (!regex.hasMatch(text)) {
         return context.tr("invalid_email");
       }
+
+      /// ✅ إضافة الحد الأقصى هنا بدون حذف القديم
+      if (widget.maxLength != null && text.length > widget.maxLength!) {
+        return "${context.tr("max_length_exceeded")} ${widget.maxLength}";
+      }
+
       return null;
     }
 
@@ -242,15 +260,31 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       if (text.length < 8) {
         return context.tr("password_min_length");
       }
+
+      if (widget.maxLength != null && text.length > widget.maxLength!) {
+        return "${context.tr("max_length_exceeded")} ${widget.maxLength}";
+      }
+
       return null;
     }
 
     if (widget.isPhone || widget.isPhoneWithCountryCode) {
       if (text.length < 7) return context.tr("invalid_phone");
+
+      if (widget.maxLength != null && text.length > widget.maxLength!) {
+        return "${context.tr("max_length_exceeded")} ${widget.maxLength}";
+      }
+
       return null;
     }
 
     if (text.isEmpty) return context.tr("field_required");
+
+    /// ✅ إضافة عامة لباقي الحالات
+    if (widget.maxLength != null && text.length > widget.maxLength!) {
+      return "${context.tr("max_length_exceeded")} ${widget.maxLength}";
+    }
+
     return null;
   }
 }
