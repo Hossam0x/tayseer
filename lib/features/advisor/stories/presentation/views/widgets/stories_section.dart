@@ -244,9 +244,7 @@ class _UserStoryItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color:
-                          (userStoryModel.allViewed ||
-                              userStoryModel.isViewedByMe)
+                      color: (userStoryModel.allViewed)
                           ? AppColors.kGreyB3
                           : AppColors.kprimaryColor,
                       width: 2.sp,
@@ -476,9 +474,7 @@ class _AddStoryItem extends StatelessWidget {
                               ? BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color:
-                                        (myStory.allViewed ||
-                                            myStory.isViewedByMe)
+                                    color: (myStory.allViewed)
                                         ? AppColors.kGreyB3
                                         : AppColors.kprimaryColor,
                                     width: 2.sp,
