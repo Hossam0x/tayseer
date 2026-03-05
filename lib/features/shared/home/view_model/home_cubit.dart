@@ -113,6 +113,25 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// تحميل بيانات اليوزر من الكاش عند البداية
   void _loadCachedUserData() {
+    // الجيست بياناته في كاش مختلف (kGuestName / kGuestImage)
+    if (isGuest) {
+      final cachedImage = CachNetwork.getStringData(key: kGuestImage);
+      final cachedName = CachNetwork.getStringData(key: kGuestName);
+      if (cachedImage.isNotEmpty || cachedName.isNotEmpty) {
+        emit(
+          state.copyWith(
+            homeInfo: ImageAndNameModel(
+              image: cachedImage,
+              name: cachedName,
+              notifications: 0,
+            ),
+            fetchNameAndImageState: CubitStates.success,
+          ),
+        );
+      }
+      return;
+    }
+
     final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
     final cachedName = CachNetwork.getStringData(key: kMyProfileName);
 
@@ -197,9 +216,11 @@ class HomeCubit extends Cubit<HomeState> {
         }
       },
       (data) {
-        // حفظ في الكاش
-        CachNetwork.setData(key: kMyProfileImage, value: data.image);
-        CachNetwork.setData(key: kMyProfileName, value: data.name);
+        // حفظ في الكاش — الجيست بياناته في كاش منفصل فمنحفظش بيانات الجيست في كاش اليوزر العادي
+        if (!isGuest) {
+          CachNetwork.setData(key: kMyProfileImage, value: data.image);
+          CachNetwork.setData(key: kMyProfileName, value: data.name);
+        }
 
         // تحديث الـ State فقط لو البيانات اتغيرت
         if (_isUserInfoChanged(data)) {

@@ -3,6 +3,7 @@ import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 
 import 'package:tayseer/core/cubits/toggle_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
@@ -455,6 +456,11 @@ class _SettingsViewState extends State<SettingsView> {
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();
       getIt<tayseerSocketHelper>().disconnect();
+
+      // ✅ ريسيت الـ HomeCubit Singleton عشان يتعمل instance جديد بعد اللوجن الجديد
+      if (getIt.isRegistered<HomeCubit>()) {
+        getIt.resetLazySingleton<HomeCubit>();
+      }
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRouter.kRegisrationView,

@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/widgets/offline_banner.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/consultation_filtter/consultation_standalone_page.dart';
@@ -152,11 +153,14 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
           HomeView(onScroll: cubit.onScroll),
           GuestLockWidget(
             onTap: () {
+              CachNetwork.clearGuestAndProfileCache();
+              if (getIt.isRegistered<HomeCubit>()) {
+                getIt.resetLazySingleton<HomeCubit>();
+              }
               context.pushNamedAndRemoveUntil(
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
-              CachNetwork.removeData(key: ktoken);
             },
             message: 'فرص التوافق تبدأ بعد التسجيل',
             description:
@@ -167,11 +171,14 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
             onTap: () {
+              CachNetwork.clearGuestAndProfileCache();
+              if (getIt.isRegistered<HomeCubit>()) {
+                getIt.resetLazySingleton<HomeCubit>();
+              }
               context.pushNamedAndRemoveUntil(
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
-              CachNetwork.removeData(key: ktoken);
             },
           ),
           GuestLockWidget(
@@ -179,11 +186,14 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
             onTap: () {
+              CachNetwork.clearGuestAndProfileCache();
+              if (getIt.isRegistered<HomeCubit>()) {
+                getIt.resetLazySingleton<HomeCubit>();
+              }
               context.pushNamedAndRemoveUntil(
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
-              CachNetwork.removeData(key: ktoken);
             },
           ),
           GuestLockWidget(
@@ -191,11 +201,14 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
             onTap: () {
+              CachNetwork.clearGuestAndProfileCache();
+              if (getIt.isRegistered<HomeCubit>()) {
+                getIt.resetLazySingleton<HomeCubit>();
+              }
               context.pushNamedAndRemoveUntil(
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
-              CachNetwork.removeData(key: ktoken);
             },
           ),
         ];

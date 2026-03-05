@@ -165,8 +165,9 @@ Future<void> setupGetIt() async {
       connectivityService: getIt<ConnectivityService>(),
     ),
   );
-  // Home Cubit
-  getIt.registerFactory<HomeCubit>(
+  // Home Cubit — LazySingleton عشان كل الأماكن اللي بتعمل
+  // getIt<HomeCubit>().refreshUserInfoFromCache() تشتغل على نفس الـ instance
+  getIt.registerLazySingleton<HomeCubit>(
     () => HomeCubit(
       getIt<HomeRepository>(),
       connectivityCubit: getIt<ConnectivityCubit>(),
