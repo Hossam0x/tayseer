@@ -15,7 +15,6 @@ class GreetingProfileCard extends StatelessWidget {
     this.forceBlur = false,
   });
 
-
   @override
   Widget build(BuildContext context) {
     final shouldBlur = forceBlur || item.isImageBlurred;
@@ -53,59 +52,61 @@ class GreetingProfileCard extends StatelessWidget {
         child: Row(
           children: [
             // Profile Image
-  GestureDetector(
-                          onTap: () {
-                            context.pushNamed(
-                              AppRouter.kMarriageView,
-                              arguments: {
-                                'personId':item.userId,
-                                'fromInteractions': true,
-                              },
-                            );
-                          },
-  child: ClipRRect(
-    borderRadius: BorderRadius.circular(16.r),
-    child: Stack(
-      children: [
-        shouldBlur
-            ? ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: AppImage(
-                  item.image,
-                  width: 130.w,
-                  height: 117.h,
-                  fit: BoxFit.cover,
+            GestureDetector(
+              onTap: () {
+                context.pushNamed(
+                  AppRouter.kMarriageView,
+                  arguments: {
+                    'personId': item.userId,
+                    'fromInteractions': true,
+                  },
+                );
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16.r),
+                child: Stack(
+                  children: [
+                    shouldBlur
+                        ? ImageFiltered(
+                            imageFilter: ImageFilter.blur(
+                              sigmaX: 15,
+                              sigmaY: 15,
+                            ),
+                            child: AppImage(
+                              item.image,
+                              width: 130.w,
+                              height: 117.h,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : AppImage(
+                            item.image,
+                            width: 130.w,
+                            height: 117.h,
+                            fit: BoxFit.cover,
+                          ),
+                    if (shouldBlur)
+                      Positioned.fill(
+                        child: Container(color: Colors.black.withOpacity(0.2)),
+                      ),
+                  ],
                 ),
-              )
-            : AppImage(
-                item.image,
-                width: 130.w,
-                height: 117.h,
-                fit: BoxFit.cover,
               ),
-        if (shouldBlur)
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.2),
             ),
-          ),
-      ],
-    ),
-  ),
-),  SizedBox(width: 12.w),
+            SizedBox(width: 12.w),
 
             // User Info
             Expanded(
               child: GestureDetector(
-                  onTap: () {
-                    context.pushNamed(
-                      AppRouter.kMarriageView,
-                      arguments: {
-                        'personId': item.userId,
-                        'fromInteractions': true,
-                      },
-                    );
-                  },
+                onTap: () {
+                  context.pushNamed(
+                    AppRouter.kMarriageView,
+                    arguments: {
+                      'personId': item.userId,
+                      'fromInteractions': true,
+                    },
+                  );
+                },
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -140,9 +141,9 @@ class GreetingProfileCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                
+
                     SizedBox(height: 8.h),
-                
+
                     Row(
                       children: [
                         _buildBadge(text: item.day),
@@ -154,9 +155,9 @@ class GreetingProfileCard extends StatelessWidget {
                           ),
                       ],
                     ),
-                
+
                     SizedBox(height: 4.h),
-                
+
                     if (item.job.isNotEmpty)
                       _buildBadge(text: item.job, icon: AssetsData.workIcon),
                   ],
@@ -207,7 +208,8 @@ class GreetingProfileCard extends StatelessWidget {
       builder: (_) {
         return Opacity(
           opacity: 0.6,
-          child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie));
+          child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
+        );
       },
     );
     Future.delayed(const Duration(seconds: 4), () {

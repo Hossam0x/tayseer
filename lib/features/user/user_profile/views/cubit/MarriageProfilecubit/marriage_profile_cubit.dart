@@ -95,12 +95,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   }
 
   void discardAllPending() {
-    emit(
-      state.copyWith(
-        clearAllPending: true,
-        hasUnsavedFields: false,
-      ),
-    );
+    emit(state.copyWith(clearAllPending: true, hasUnsavedFields: false));
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -247,6 +242,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         state: CubitStates.loading,
         isUpdating: true,
         clearMessages: true,
+        savedFromButton: true,
       ),
     );
     try {
@@ -334,7 +330,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
             ),
           );
           await loadProfile();
-          emit(state.copyWith(state: CubitStates.success, isUpdating: false));
+          emit(
+            state.copyWith(
+              state: CubitStates.success,
+              isUpdating: false,
+              savedFromButton: true,
+            ),
+          );
         },
       );
     } catch (e) {
@@ -364,15 +366,12 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         .toList();
 
     final updatedProfile = state.profile!.copyWith(
-      userMedia: state.profile!.userMedia?.copyWith(
-        images: newServerOrder,
-      ),
+      userMedia: state.profile!.userMedia?.copyWith(images: newServerOrder),
     );
 
-    emit(state.copyWith(
-      profile: updatedProfile,
-      pendingImages: newPendingOrder,
-    ));
+    emit(
+      state.copyWith(profile: updatedProfile, pendingImages: newPendingOrder),
+    );
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -560,12 +559,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       updatedProfile = profile;
     }
 
-    emit(
-      state.copyWith(
-        profile: updatedProfile,
-        hasUnsavedFields: true,
-      ),
-    );
+    emit(state.copyWith(profile: updatedProfile, hasUnsavedFields: true, savedFromButton: false));
   }
 
   // ════════════════════════════════════════════════════════════════

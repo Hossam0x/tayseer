@@ -20,7 +20,7 @@ class EmptyHistory extends StatelessWidget {
           SizedBox(height: 24.h),
 
           Text(
-            context.tr("subscribe_to_see_marriage_history"), // ✅ ترجمة
+            context.tr("subscribe_to_see_marriage_history"), 
             textAlign: TextAlign.center,
             style: Styles.textStyle16SemiBold.copyWith(
               fontWeight: FontWeight.w600,
@@ -31,7 +31,7 @@ class EmptyHistory extends StatelessWidget {
           SizedBox(height: 11.w),
 
           Text(
-            context.tr("subscribe_to_see_history_desc"), // ✅ ترجمة
+            context.tr("subscribe_to_see_history_desc"), 
             textAlign: TextAlign.center,
             style: Styles.textStyle14.copyWith(
               color: AppColors.secondary200,
