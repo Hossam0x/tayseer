@@ -73,22 +73,41 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
 
                     // Main Content
                     Expanded(
-                      child:
-                          BlocConsumer<ArchivedChatsCubit, ArchivedChatsState>(
-                            listener: (context, state) {
-                              if (state.errorMessage != null) {
-                                showSafeSnackBar(
-                                  context: context,
-                                  text: state.errorMessage!,
-                                  isError: true,
-                                );
-                                context.read<ArchivedChatsCubit>().clearError();
-                              }
-                            },
-                            builder: (context, state) {
-                              return _buildContent(context, state);
-                            },
-                          ),
+                      child: BlocConsumer<ArchivedChatsCubit, ArchivedChatsState>(
+                        listener: (context, state) {
+                          // ⭐ Handle General Error (e.g. initial fetch failure)
+                          if (state.errorMessage != null &&
+                              state.state == CubitStates.failure) {
+                            AppToast.error(context, state.errorMessage!);
+                            context.read<ArchivedChatsCubit>().clearError();
+                          }
+
+                          // ⭐ Handle Unarchive Action result
+                          if (state.unarchiveActionState ==
+                              CubitStates.success) {
+                            if (state.unarchiveMessage != null) {
+                              AppToast.success(
+                                context,
+                                context.tr(state.unarchiveMessage!),
+                              );
+                            }
+                            context
+                                .read<ArchivedChatsCubit>()
+                                .resetUnarchiveState();
+                          } else if (state.unarchiveActionState ==
+                              CubitStates.failure) {
+                            if (state.unarchiveMessage != null) {
+                              AppToast.error(context, state.unarchiveMessage!);
+                            }
+                            context
+                                .read<ArchivedChatsCubit>()
+                                .resetUnarchiveState();
+                          }
+                        },
+                        builder: (context, state) {
+                          return _buildContent(context, state);
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -317,10 +336,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
             Gap(8.w),
             Text(
               context.tr('unarchive'),
-              style: Styles.textStyle14.copyWith(
-                color: AppColors.kWhiteColor,
-                fontWeight: FontWeight.w500,
-              ),
+              style: Styles.textStyle14.copyWith(fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -333,13 +349,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
         );
       },
       onDismissed: (direction) {
-        context.read<ArchivedChatsCubit>().unarchiveChat(context, chatRoom.id);
-
-        showSafeSnackBar(
-          context: context,
-          text: '${context.tr('unarchive_chat_success')} $displayName',
-          isSuccess: true,
-        );
+        context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
       },
       child: Material(
         color: Colors.transparent,
@@ -392,7 +402,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10.w),
                       child: Text(
-                        chatRoom.lastMessage!.timeAgo,
+                        chatRoom.lastMessage?.timeAgo ?? '',
                         style: Styles.textStyle12.copyWith(
                           color: AppColors.secondary400,
                         ),

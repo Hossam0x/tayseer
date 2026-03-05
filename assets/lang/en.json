@@ -1525,5 +1525,7 @@
   "tap_to_record": "Tap to record",
 "initializing_recorder": "Initializing recorder...",
 "enable_microphone_settings": "Please enable microphone from Settings",
-"failed_to_start_recording": "Failed to start recording"
+"failed_to_start_recording": "Failed to start recording",
+  "chat_unarchived_success": "Chat unarchived successfully",
+  "post_unarchived_success": "Post unarchived successfully"
 }

@@ -26,9 +26,24 @@ class _ChatsTabViewBody extends StatelessWidget {
       builder: (context, uiState) {
         return BlocConsumer<ArchivedChatsCubit, ArchivedChatsState>(
           listener: (context, state) {
-            if (state.errorMessage != null) {
-              AppToast.error(context, state.errorMessage.toString());
+            // ⭐ Handle General Error
+            if (state.errorMessage != null &&
+                state.state == CubitStates.failure) {
+              AppToast.error(context, state.errorMessage!);
               context.read<ArchivedChatsCubit>().clearError();
+            }
+
+            // ⭐ Handle Unarchive Action result
+            if (state.unarchiveActionState == CubitStates.success) {
+              if (state.unarchiveMessage != null) {
+                AppToast.success(context, context.tr(state.unarchiveMessage!));
+              }
+              context.read<ArchivedChatsCubit>().resetUnarchiveState();
+            } else if (state.unarchiveActionState == CubitStates.failure) {
+              if (state.unarchiveMessage != null) {
+                AppToast.error(context, state.unarchiveMessage!);
+              }
+              context.read<ArchivedChatsCubit>().resetUnarchiveState();
             }
           },
           builder: (context, state) {
@@ -272,11 +287,7 @@ class _ChatsTabViewBody extends StatelessWidget {
         );
       },
       onDismissed: (direction) {
-        context.read<ArchivedChatsCubit>().unarchiveChat(context, chatRoom.id);
-        AppToast.success(
-          context,
-          '${context.tr('unarchived_chat')} $displayName',
-        );
+        context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
       },
       child: Material(
         color: Colors.transparent,
@@ -323,7 +334,7 @@ class _ChatsTabViewBody extends StatelessWidget {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10.w),
                       child: Text(
-                        chatRoom.lastMessage!.timeAgo,
+                        chatRoom.lastMessage?.timeAgo ?? '',
                         style: Styles.textStyle12.copyWith(
                           color: AppColors.secondary400,
                         ),

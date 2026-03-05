@@ -3,6 +3,7 @@ import 'package:tayseer/features/advisor/profille/data/repositories/archive_repo
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
 import 'archive_states.dart';
 
 // ============================================
@@ -91,26 +92,50 @@ class ArchivedChatsCubit extends Cubit<ArchivedChatsState> {
     }
   }
 
-  Future<void> unarchiveChat(BuildContext context, String chatId) async {
+  Future<void> unarchiveChat(String chatId) async {
+    final originalChats = List<ArchiveChatRoomModel>.from(state.chatRooms);
+    final updatedChatsBefore = state.chatRooms
+        .where((chat) => chat.id != chatId)
+        .toList();
+
+    // ⚡ Optimistic update: Remove from list immediately to satisfy Dismissible
+    emit(
+      state.copyWith(
+        chatRooms: updatedChatsBefore,
+        unarchiveActionState: CubitStates.loading,
+      ),
+    );
+
     final result = await _archiveRepository.unarchiveChat(chatId);
 
     result.fold(
       (failure) {
-        emit(state.copyWith(errorMessage: failure.message));
-        if (context.mounted) {
-          AppToast.error(context, failure.message);
-        }
+        // 🔙 Rollback: Restore the list if unarchive fails
+        emit(
+          state.copyWith(
+            chatRooms: originalChats,
+            unarchiveActionState: CubitStates.failure,
+            unarchiveMessage: failure.message,
+          ),
+        );
       },
       (_) {
-        // إزالة المحادثة من القائمة
-        final updatedChats = state.chatRooms
-            .where((chat) => chat.id != chatId)
-            .toList();
-        emit(state.copyWith(chatRooms: updatedChats));
-        if (context.mounted) {
-          AppToast.success(context, context.tr('chat_unarchived_success'));
-        }
+        emit(
+          state.copyWith(
+            unarchiveActionState: CubitStates.success,
+            unarchiveMessage: 'chat_unarchived_success',
+          ),
+        );
       },
+    );
+  }
+
+  void resetUnarchiveState() {
+    emit(
+      state.copyWith(
+        unarchiveActionState: CubitStates.initial,
+        unarchiveMessage: null,
+      ),
     );
   }
 
@@ -334,7 +359,12 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
     final originalPosts = List<PostModel>.from(state.posts);
     final updatedPosts = state.posts.where((p) => p.postId != postId).toList();
 
-    emit(state.copyWith(posts: updatedPosts));
+    emit(
+      state.copyWith(
+        posts: updatedPosts,
+        archivePostActionState: CubitStates.loading,
+      ),
+    );
 
     final result = await _archiveRepository.archivePost(
       postId: postId,
@@ -354,10 +384,19 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
         emit(
           state.copyWith(
             archivePostActionState: CubitStates.success,
-            archivePostMessage: message,
+            archivePostMessage: 'post_unarchived_success',
           ),
         );
       },
+    );
+  }
+
+  void resetArchivePostState() {
+    emit(
+      state.copyWith(
+        archivePostActionState: CubitStates.initial,
+        archivePostMessage: null,
+      ),
     );
   }
 
@@ -453,6 +492,36 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
     emit(state.copyWith(posts: updatedPosts));
   }
 
+  void resetSharePostActionState() {
+    emit(
+      state.copyWith(shareActionState: CubitStates.initial, shareMessage: null),
+    );
+  }
+
+  void resetSavePostActionState() {
+    emit(
+      state.copyWith(saveActionState: CubitStates.initial, saveMessage: null),
+    );
+  }
+
+  void resetDeletePostActionState() {
+    emit(
+      state.copyWith(
+        deletePostActionState: CubitStates.initial,
+        deletePostMessage: null,
+      ),
+    );
+  }
+
+  void resetBlockUserActionState() {
+    emit(
+      state.copyWith(
+        blockUserActionState: CubitStates.initial,
+        blockUserMessage: null,
+      ),
+    );
+  }
+
   Future<void> refresh() async {
     await fetchArchivedPosts();
   }
@@ -500,18 +569,20 @@ class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
   }
 
   Future<void> deleteStory({
-    required BuildContext context,
     required String storyId,
     required String userId,
   }) async {
+    emit(state.copyWith(deleteActionState: CubitStates.loading));
     final result = await _storiesRepository.deleteStory(storyId: storyId);
 
     result.fold(
       (failure) {
-        emit(state.copyWith(errorMessage: failure.message));
-        if (context.mounted) {
-          AppToast.error(context, failure.message);
-        }
+        emit(
+          state.copyWith(
+            deleteActionState: CubitStates.failure,
+            deleteMessage: failure.message,
+          ),
+        );
       },
       (_) {
         final userStoryIndex = state.stories.indexWhere(
@@ -533,19 +604,22 @@ class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
             storiesCount: updatedStories.length,
           );
         }
-        emit(state.copyWith(stories: updatedList));
-        if (context.mounted) {
-          AppToast.success(context, context.tr('story_deleted_success'));
-        }
+        emit(
+          state.copyWith(
+            stories: updatedList,
+            deleteActionState: CubitStates.success,
+            deleteMessage: 'story_deleted_success',
+          ),
+        );
       },
     );
   }
 
   Future<void> unarchiveStory({
-    required BuildContext context,
     required String storyId,
     required String userId,
   }) async {
+    emit(state.copyWith(unarchiveActionState: CubitStates.loading));
     final result = await _storiesRepository.toggleArchiveStory(
       storyId: storyId,
       isArchive: false,
@@ -553,10 +627,12 @@ class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
 
     result.fold(
       (failure) {
-        emit(state.copyWith(errorMessage: failure.message));
-        if (context.mounted) {
-          AppToast.error(context, failure.message);
-        }
+        emit(
+          state.copyWith(
+            unarchiveActionState: CubitStates.failure,
+            unarchiveMessage: failure.message,
+          ),
+        );
       },
       (_) {
         final userStoryIndex = state.stories.indexWhere(
@@ -578,11 +654,32 @@ class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
             storiesCount: updatedStories.length,
           );
         }
-        emit(state.copyWith(stories: updatedList));
-        if (context.mounted) {
-          AppToast.success(context, context.tr('story_unarchived_success'));
-        }
+        emit(
+          state.copyWith(
+            stories: updatedList,
+            unarchiveActionState: CubitStates.success,
+            unarchiveMessage: 'story_unarchived_success',
+          ),
+        );
       },
+    );
+  }
+
+  void resetDeleteStoryState() {
+    emit(
+      state.copyWith(
+        deleteActionState: CubitStates.initial,
+        deleteMessage: null,
+      ),
+    );
+  }
+
+  void resetUnarchiveStoryState() {
+    emit(
+      state.copyWith(
+        unarchiveActionState: CubitStates.initial,
+        unarchiveMessage: null,
+      ),
     );
   }
 

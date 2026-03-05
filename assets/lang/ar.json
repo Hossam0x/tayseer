@@ -1505,5 +1505,7 @@
   "tap_to_record": "اضغط للتسجيل",
 "initializing_recorder": "جاري تهيئة المسجل...",
 "enable_microphone_settings": "يرجى تفعيل الميكروفون من الإعدادات",
-"failed_to_start_recording": "فشل في بدء التسجيل"
+"failed_to_start_recording": "فشل في بدء التسجيل",
+  "chat_unarchived_success": "تم إلغاء أرشفة المحادثة بنجاح",
+  "post_unarchived_success": "تم إلغاء أرشفة المنشور بنجاح"
 }
