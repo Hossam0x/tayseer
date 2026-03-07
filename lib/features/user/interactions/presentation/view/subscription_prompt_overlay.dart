@@ -46,34 +46,28 @@ class SubscriptionButton extends StatelessWidget {
     );
   }
 }
-
-// ✅ isInsideStack: true  → Exploration (داخل Stack) → Positioned
-// ✅ isInsideStack: false → History (داخل Column) → Padding مع NavBar height
 class SubscriptionPromptOverlay extends StatelessWidget {
   final bool isInsideStack;
   const SubscriptionPromptOverlay({super.key, this.isInsideStack = true});
 
   @override
   Widget build(BuildContext context) {
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+
     if (isInsideStack) {
       return Positioned(
-        bottom: 12.h,
+        bottom: 100.h + safeBottom,
         left: 24.w,
         right: 24.w,
         child: const SubscriptionButton(),
       );
     }
 
-    // ✅ History: بنحسب ارتفاع الـ NavBar + SafeArea عشان الزرار ميتحطش تحتيهم
-    final navBarHeight = kBottomNavigationBarHeight; // = 56.0
-    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
-
     return Padding(
       padding: EdgeInsets.only(
         left: 24.w,
         right: 24.w,
-        top: 8.h,
-        bottom: navBarHeight + safeAreaBottom + 33.h,
+        bottom: 100.h + safeBottom,
       ),
       child: const SubscriptionButton(),
     );

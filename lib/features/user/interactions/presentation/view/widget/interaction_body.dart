@@ -99,7 +99,7 @@ class InteractionBodyState extends State<InteractionBody> {
           // ✅ Exploration title فقط
           _buildExplorationTitle(),
           Expanded(child: _buildExplorationContent()),
-          SizedBox(height: 90.h),
+          // SizedBox(height: 90.h),
         ],
       ),
     );
