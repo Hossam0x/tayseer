@@ -1,4 +1,7 @@
+import 'package:tayseer/core/widgets/account_review_content.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/account_review_dialog_listener.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/bio_information.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_header.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
@@ -47,7 +50,14 @@ class ProfileView extends StatelessWidget {
                       ),
                   ),
                 ],
-                child: _ProfileContent(),
+                child: Stack(
+                  children: [
+                    _ProfileContent(),
+
+                    // ⭐ إضافة AccountReviewDialogListener
+                    const AccountReviewDialogListener(),
+                  ],
+                ),
               ),
             ),
           ],
@@ -121,8 +131,28 @@ class _ProfileContentState extends State<_ProfileContent> {
             // Spacing
             SliverToBoxAdapter(child: Gap(20.h)),
 
-            // Posts Tabs Section
-            const ProfileTabsSection(),
+            // Posts Tabs Section or Account Review Content
+            BlocBuilder<ProfileCubit, ProfileState>(
+              buildWhen: (previous, current) =>
+                  previous.profile?.isApproved != current.profile?.isApproved,
+              builder: (context, state) {
+                final isApproved = state.profile?.isApproved ?? true;
+
+                if (!isApproved) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: const AccountReviewContent(
+                        isDialog: false,
+                        showButton: false,
+                      ),
+                    ),
+                  );
+                }
+
+                return const ProfileTabsSection();
+              },
+            ),
 
             // Bottom padding for better scrolling
             SliverToBoxAdapter(child: Gap(100.h)),
