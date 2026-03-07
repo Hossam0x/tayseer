@@ -180,6 +180,7 @@ class HomePostFeed extends StatelessWidget {
     isAllCategory: state.selectedCategoryId == null,
     isOffline: state.isOffline,
     isShowingCachedData: state.isShowingCachedData,
+    loadMoreServerFailed: state.loadMoreServerFailed,
   );
 
   void _handleHideFeedback(BuildContext context, HomeState state) {
@@ -324,6 +325,11 @@ class HomePostFeed extends StatelessWidget {
           return const EndOfCachedPosts();
         }
 
+        // السيرفر فشل واللوكال خلص → زرار إعادة المحاولة
+        if (state.loadMoreServerFailed) {
+          return _LoadMoreFailedRetry(onRetry: () => homeCubit.retryLoadMore());
+        }
+
         if (state.isAllCategory) {
           return const EndOfFeedIndicator();
         }
@@ -349,6 +355,7 @@ class _FeedState extends Equatable {
   final bool isAllCategory;
   final bool isOffline;
   final bool isShowingCachedData;
+  final bool loadMoreServerFailed;
 
   const _FeedState({
     required this.postIds,
@@ -359,6 +366,7 @@ class _FeedState extends Equatable {
     this.error,
     this.isOffline = false,
     this.isShowingCachedData = false,
+    this.loadMoreServerFailed = false,
   });
 
   bool get isEmpty => postIds.isEmpty;
@@ -375,6 +383,7 @@ class _FeedState extends Equatable {
     isAllCategory,
     isOffline,
     isShowingCachedData,
+    loadMoreServerFailed,
   ];
 }
 
@@ -553,6 +562,50 @@ class _LoadingMoreIndicator extends StatelessWidget {
     padding: EdgeInsets.symmetric(vertical: 16.h),
     child: const Center(child: PostCardShimmer()),
   );
+}
+
+class _LoadMoreFailedRetry extends StatelessWidget {
+  const _LoadMoreFailedRetry({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 24.w),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            context.tr(AppStrings.loadMoreFailed),
+            style: Styles.textStyle14.copyWith(
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 12.h),
+          SizedBox(
+            height: 36.h,
+            child: OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: Icon(Icons.refresh, size: 18.w),
+              label: Text(context.tr(AppStrings.retry)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.kprimaryColor,
+                side: BorderSide(color: AppColors.kprimaryColor),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+              ),
+            ),
+          ),
+          SizedBox(height: 16.h),
+        ],
+      ),
+    );
+  }
 }
 
 class EndOfFeedIndicator extends StatelessWidget {

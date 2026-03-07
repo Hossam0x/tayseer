@@ -1536,6 +1536,7 @@
   "archive_error": "حدث خطأ أثناء الأرشفة",
   "poll_vote_error": "حدث خطأ أثناء التصويت",
   "generic_error": "حدث خطأ ما",
+  "load_more_failed": "فشل تحميل المزيد",
   "end_of_feed": "تم الوصول لنهاية المنشورات",
   "end_of_category_feed": "تم الوصول لنهاية المنشورات في هذه الفئة",
   "view_all_posts": "عرض كل المنشورات",
