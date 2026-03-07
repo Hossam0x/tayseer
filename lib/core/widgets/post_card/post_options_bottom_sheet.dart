@@ -11,7 +11,6 @@ class PostOptionsBottomSheet extends StatelessWidget {
   final VoidCallback? onBlock;
   final VoidCallback? onHide;
   final VoidCallback? onSave;
-  final VoidCallback? onEdit;
   final VoidCallback? onArchive;
   final VoidCallback? onDelete;
   final VoidCallback? onDownload;
@@ -27,7 +26,6 @@ class PostOptionsBottomSheet extends StatelessWidget {
     this.onBlock,
     this.onHide,
     this.onSave,
-    this.onEdit,
     this.onArchive,
     this.onDelete,
     this.onDownload,
@@ -45,7 +43,6 @@ class PostOptionsBottomSheet extends StatelessWidget {
     VoidCallback? onBlock,
     VoidCallback? onHide,
     VoidCallback? onSave,
-    VoidCallback? onEdit,
     VoidCallback? onArchive,
     VoidCallback? onDelete,
     bool isArchived = false,
@@ -68,7 +65,6 @@ class PostOptionsBottomSheet extends StatelessWidget {
         onBlock: onBlock,
         onHide: onHide,
         onSave: onSave,
-        onEdit: onEdit,
         onArchive: onArchive,
         onDelete: onDelete,
         onDownload: onDownload,
@@ -121,7 +117,12 @@ class PostOptionsBottomSheet extends StatelessWidget {
             OptionItem(
               text: context.tr(AppStrings.edit),
               icon: Icons.drive_file_rename_outline_rounded,
-              onTap: onEdit,
+              onTap: () {
+                context.pushNamed(
+                  AppRouter.kAddPostView,
+                  arguments: {"isEdit": true, "post": post},
+                );
+              },
             ),
             OptionItem(
               text: isArchived
