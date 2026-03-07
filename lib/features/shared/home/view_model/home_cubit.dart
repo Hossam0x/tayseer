@@ -739,6 +739,7 @@ class HomeCubit extends Cubit<HomeState> {
         },
         (message) {
           log('>>>>>>>>>>>>>>>>> Delete Post Success: $message');
+          localDatasource.removePost(postId).catchError((_) {});
 
           emit(
             state.copyWith(
@@ -797,6 +798,7 @@ class HomeCubit extends Cubit<HomeState> {
         },
         (message) {
           log('>>>>>>>>>>>>>>>>> Archive Post Success: $message');
+          localDatasource.removePost(postId).catchError((_) {});
 
           emit(
             state.copyWith(
@@ -856,6 +858,7 @@ class HomeCubit extends Cubit<HomeState> {
                 hidePostMessage: message,
               ),
         );
+        localDatasource.removePost(postId).catchError((_) {});
       },
     );
   }
@@ -920,6 +923,14 @@ class HomeCubit extends Cubit<HomeState> {
             blockUserMessage: message,
           ),
         );
+
+        // ✅ مزامنة الكاش: حدث البوست الظاهر + احذف باقي بوستات اليوزر المحظور
+        _syncPostToCacheById(visiblePostId);
+        for (final post in state.posts) {
+          if (post.advisorId == advisorId && post.postId != visiblePostId) {
+            localDatasource.removePost(post.postId).catchError((_) {});
+          }
+        }
       },
     );
   }
