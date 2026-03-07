@@ -6,8 +6,6 @@ import 'package:tayseer/features/user/interactions/data/Model/history_response_m
 import 'package:tayseer/features/user/interactions/data/Model/exploration_response_model.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 
-
-
 class InteractionsRepositoryImpl implements InteractionsRepository {
   final ApiService apiService;
 
@@ -26,15 +24,11 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
       // ✅ Real API Call
       final response = await apiService.get(
         endPoint: '/user/discovered-users',
-        query: {
-          'page': page.toString(),
-          'limit': '10',
-        },
+        query: {'page': page.toString(), 'limit': '10'},
       );
 
       final explorationResponse = ExplorationResponseModel.fromJson(response);
       return Right(explorationResponse);
-
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -64,7 +58,6 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
 
       final historyResponse = HistoryResponseModel.fromJson(response);
       return Right(historyResponse);
-
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -73,21 +66,22 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
   }
 
   String _mapFilterToApiType(String filterKey) {
-  switch (filterKey) {
-    case 'favorites':
-      return 'favorites';
-    case 'liked_you':
-      return 'likes';
-    case 'met_them':
-      return 'encountered';
-    case 'sent_compliment':
-      return 'regards';
-    case 'liked_me':
-      return 'likedMe';
-    default:
-      return 'likes';
+    switch (filterKey) {
+      case 'favorites':
+        return 'favorites';
+      case 'liked_you':
+        return 'likes';
+      case 'met_them':
+        return 'encountered';
+      case 'sent_compliment':
+        return 'regards';
+      case 'liked_me':
+        return 'likedMe';
+      default:
+        return 'likes';
+    }
   }
-}
+
   // ═══════════════════════════════════════════════════════════════════
   // ACTIONS
   // ═══════════════════════════════════════════════════════════════════
@@ -110,20 +104,15 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
 
         final message = response['message'] ?? 'تمت الإضافة للمفضلة بنجاح';
         return Right(message);
-        
       } else {
         final response = await apiService.post(
           endPoint: '/user/user-interaction?action=remove',
-          data: {
-            'personInteractedWith': userId,
-            'interactionType': 'favorite',
-          },
+          data: {'personInteractedWith': userId, 'interactionType': 'favorite'},
         );
 
         final message = response['message'] ?? 'تمت الإزالة من المفضلة بنجاح';
         return Right(message);
       }
-
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -131,7 +120,7 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
     }
   }
 
-@override
+  @override
   Future<Either<Failure, void>> sendCompliment({
     required String personId,
     String? text,
@@ -157,16 +146,11 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
     }
   }
 
-
   @override
-  Future<Either<Failure, String>> likeUser({
-    required String userId,
-  }) async {
+  Future<Either<Failure, String>> likeUser({required String userId}) async {
     try {
-      // TODO: Replace with actual API call when backend is ready
       await Future.delayed(const Duration(milliseconds: 600));
       return const Right('تم الإعجاب بنجاح');
-
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {

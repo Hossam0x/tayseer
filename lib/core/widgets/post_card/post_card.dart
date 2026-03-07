@@ -107,7 +107,6 @@ class _PostCardState extends State<PostCard> {
             onMoreTap: () => PostOptionsBottomSheet.show(
               context,
               post: widget.post,
-              onEdit: () => widget.callbacks.onEdit?.call(widget.post),
               onDelete: () =>
                   widget.callbacks.onDelete?.call(widget.post.postId),
               onArchive: () =>
@@ -547,7 +546,7 @@ class _PostMediaState extends State<_PostMedia> {
         return EventCardItem(
           key: ValueKey('event_${widget.post.postId}'), // 👈 أضف ده
 
-          imageUrl: widget.post.event?.image ?? '',
+          imageUrl: widget.post.event?.images.first ?? '',
           sessionTitle: widget.post.event?.title ?? '',
           location: widget.post.event?.location ?? '',
           advisorName: widget.post.event?.advisor ?? '',

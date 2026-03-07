@@ -60,15 +60,11 @@ class StoriesRepositoryImpl implements StoriesRepository {
                 .toList();
             // isViewedByMe: true if ANY story has isViewedByMe=true in raw JSON
             final isViewedByMe = rawStories.any(
-              (s) =>
-                  s['isViewedByMe'] == true ||
-                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
             );
             // allViewed: true if ALL stories are viewed
             final allViewed = rawStories.every(
-              (s) =>
-                  s['isViewedByMe'] == true ||
-                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
             );
             userStoriesList.add(
               UserStoriesModel(
@@ -155,14 +151,10 @@ class StoriesRepositoryImpl implements StoriesRepository {
                 .map((e) => StoryModel.fromJson(e))
                 .toList();
             final isViewedByMe = rawStories.any(
-              (s) =>
-                  s['isViewedByMe'] == true ||
-                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
             );
             final allViewed = rawStories.every(
-              (s) =>
-                  s['isViewedByMe'] == true ||
-                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
             );
             userStoriesList.add(
               UserStoriesModel(

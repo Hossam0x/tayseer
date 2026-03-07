@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'dart:developer';
-
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
@@ -815,7 +813,7 @@ class HomeCubit extends Cubit<HomeState> {
   // 👁️ TOGGLE HIDE POST
   // ═══════════════════════════════════════════════════════════════════════════
 
-  void toggleHidePost({required String postId}) {
+  Future<void> toggleHidePost({required String postId}) async {
     // 1. جيب البوست الحالي
     final post = _findPost(postId);
     if (post == null) return;
@@ -823,16 +821,43 @@ class HomeCubit extends Cubit<HomeState> {
     // 2. اعكس الحالة
     final newHideState = !post.isHidden;
 
-    // 3. Update UI فوراً
-    emit(
-      state.updatePostInAllCategories(
-        postId,
-        (p) => p.copyWith(isHidden: newHideState),
-      ),
+    // 3. Loading State
+    emit(state.copyWith(hidePostActionState: CubitStates.loading));
+
+    // 4. Server Request
+    final result = await homeRepository.hidePost(
+      postId: postId,
+      isHide: newHideState,
     );
 
-    // 4. بعت للسيرفر في الـ Background
-    homeRepository.hidePost(postId: postId, isHide: newHideState);
+    result.fold(
+      (failure) {
+        log('>>>>>>>>>>>>>>>>> Hide Post Failed: ${failure.message}');
+
+        emit(
+          state.copyWith(
+            hidePostActionState: CubitStates.failure,
+            hidePostMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        log('>>>>>>>>>>>>>>>>> Hide Post Success: $message');
+
+        // ✅ نجاح: حدث الـ UI
+        emit(
+          state
+              .updatePostInAllCategories(
+                postId,
+                (p) => p.copyWith(isHidden: newHideState),
+              )
+              .copyWith(
+                hidePostActionState: CubitStates.success,
+                hidePostMessage: message,
+              ),
+        );
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

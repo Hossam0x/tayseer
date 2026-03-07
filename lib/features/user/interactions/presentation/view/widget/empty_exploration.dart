@@ -17,7 +17,7 @@ class EmptyExploration extends StatelessWidget {
           SizedBox(height: 24.h),
 
           Text(
-            context.tr("complete_your_profile"), // ✅ ترجمة
+            context.tr("complete_your_profile"), 
             textAlign: TextAlign.center,
             style: Styles.textStyle16SemiBold.copyWith(
               fontWeight: FontWeight.w600,
@@ -28,7 +28,7 @@ class EmptyExploration extends StatelessWidget {
           SizedBox(height: 11.h),
 
           Text(
-            context.tr("complete_your_profile_description"), // ✅ ترجمة
+            context.tr("complete_your_profile_description"), 
             textAlign: TextAlign.center,
             style: Styles.textStyle14.copyWith(
               color: AppColors.secondary600,
@@ -42,7 +42,7 @@ class EmptyExploration extends StatelessWidget {
           CustomBotton(
             radius: 16,
             useGradient: true,
-            title: context.tr("complete_your_profile_bott"), // ✅ ترجمة
+            title: context.tr("complete_your_profile_bott"), 
             onPressed: () {
               final layoutCubit = context.read<LayoutCubit>();
               layoutCubit.changeIndex(1); // Marriage tab index

@@ -10,7 +10,7 @@ class MarriageProfileState extends Equatable {
   final String? successMessage;
   final bool isLoading;
   final bool isUpdating;
-
+final bool savedFromButton;
   // ⭐ Pending Media (local files, not uploaded yet)
   final File? pendingSingleImage;
   final List<File> pendingImages;
@@ -40,7 +40,9 @@ class MarriageProfileState extends Equatable {
     this.deletedImageUrls = const [],
     this.pendingDeleteVideo = false,
     this.pendingDeleteAudio = false,
+    this.savedFromButton = false,
   });
+
 
   // ⭐ Helper getters
   bool get hasPendingSingleImage => pendingSingleImage != null;
@@ -77,6 +79,7 @@ class MarriageProfileState extends Equatable {
     bool clearPendingVideo = false,
     bool clearPendingAudio = false,
     bool clearAllPending = false,
+    bool? savedFromButton,
   }) {
     return MarriageProfileState(
       state: state ?? this.state,
@@ -87,6 +90,7 @@ class MarriageProfileState extends Equatable {
       isLoading: isLoading ?? this.isLoading,
       isUpdating: isUpdating ?? this.isUpdating,
       hasUnsavedFields: hasUnsavedFields ?? this.hasUnsavedFields,
+      savedFromButton: savedFromButton ?? this.savedFromButton, 
       // ⭐ Pending Media
       pendingSingleImage: clearAllPending || clearPendingSingleImage
           ? null
@@ -128,5 +132,6 @@ class MarriageProfileState extends Equatable {
         deletedImageUrls,
         pendingDeleteVideo,
         pendingDeleteAudio,
+        savedFromButton,
       ];
 }

@@ -12,6 +12,12 @@ class DatePickerField extends FormField<DateTime> {
     ValueChanged<DateTime?>? onDateChanged,
   }) : super(
          builder: (FormFieldState<DateTime> state) {
+           // keep FormField state in sync when parent provides a new initialValue
+           if (state.widget.initialValue != state.value) {
+             WidgetsBinding.instance.addPostFrameCallback((_) {
+               state.didChange(state.widget.initialValue as DateTime?);
+             });
+           }
            return Column(
              crossAxisAlignment: CrossAxisAlignment.start,
              children: [

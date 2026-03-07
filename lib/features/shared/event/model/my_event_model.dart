@@ -8,7 +8,7 @@ class EventModel {
   final int priceAfterDiscount;
   final int priceBeforeDiscount;
   final String location;
-  final String image;
+  final List<String> images; // ✅ بدل String
   final int totalReservedUsers;
   final List<ReservationModel> reservations;
 
@@ -22,12 +22,27 @@ class EventModel {
     required this.priceAfterDiscount,
     required this.priceBeforeDiscount,
     required this.location,
-    required this.image,
+    required this.images, // ✅
     required this.totalReservedUsers,
     required this.reservations,
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
+    // ✅ images هندل الحالتين Array أو String
+    final rawImages = json['images'];
+    final List<String> parsedImages;
+
+    if (rawImages is List) {
+      parsedImages = rawImages
+          .map((e) => e?.toString() ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+    } else if (rawImages is String && rawImages.isNotEmpty) {
+      parsedImages = [rawImages];
+    } else {
+      parsedImages = [];
+    }
+
     return EventModel(
       id: json['id'] ?? '',
       title: json['title'] ?? '',
@@ -38,9 +53,8 @@ class EventModel {
       priceAfterDiscount: json['priceAfterDiscount'] ?? 0,
       priceBeforeDiscount: json['priceBeforeDiscount'] ?? 0,
       location: json['location'] ?? '',
-      image: json['images'] ?? '',
+      images: parsedImages, // ✅
       totalReservedUsers: json['totalReservedUsers'] ?? 0,
-
       reservations: json['reservations'] != null
           ? (json['reservations'] as List)
                 .map((e) => ReservationModel.fromJson(e))
@@ -60,7 +74,7 @@ class EventModel {
       'priceAfterDiscount': priceAfterDiscount,
       'priceBeforeDiscount': priceBeforeDiscount,
       'location': location,
-      'images': image,
+      'images': images, // ✅
       'totalReservedUsers': totalReservedUsers,
       'reservations': reservations.map((e) => e.toJson()).toList(),
     };

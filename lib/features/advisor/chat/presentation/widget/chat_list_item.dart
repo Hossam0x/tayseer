@@ -18,22 +18,8 @@ class ChatListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color dividerColor = Color(0xFFD9D9D9);
-    const Color archiveColor = Color(0xFFA12042);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-    final leftPadding = isMobile ? 12.0 : 16.0;
-    final containerPadding = isMobile ? 14.0 : 16.0;
-    final avatarRadius = isMobile ? 25.0 : 30.0;
-    final spacing1 = isMobile ? 14.0 : 18.0;
-    final spacing2 = isMobile ? 5.0 : 6.0;
-    final spacing3 = isMobile ? 5.0 : 7.0;
-    final titleFontSize = isMobile ? 15.0 : 17.0;
-    final subtitleFontSize = isMobile ? 13.0 : 15.0;
-    final timeFontSize = isMobile ? 11.0 : 13.0;
-    final badgeSize = isMobile ? 22.0 : 24.0;
-    final badgeFontSize = isMobile ? 11.0 : 13.0;
+    final archiveColor = AppColors.kprimaryColor;
 
-    // الحصول على المستخدم الآخر
     final otherUser = chatRoom.users.isNotEmpty
         ? chatRoom.users.firstWhere(
             (user) => user.id == chatRoom.sender.id,
@@ -41,54 +27,59 @@ class ChatListItem extends StatelessWidget {
           )
         : chatRoom.sender;
 
-    return Padding(
-      padding: EdgeInsets.only(left: leftPadding, top: 6, bottom: 6),
-      child: Slidable(
-        key: ValueKey(chatRoom.id),
+    final displayName = otherUser.name;
+    final displayImage = otherUser.image;
+    final lastMessageText =
+        chatRoom.lastMessage?.content ?? context.tr('no_messages');
 
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h),
+      child: Slidable(
+        key: Key('chat_room_${chatRoom.id}'),
         startActionPane: ActionPane(
           motion: const ScrollMotion(),
-          extentRatio: 0.22,
+          extentRatio: 0.25,
           children: [
             CustomSlidableAction(
               onPressed: (context) {
-                Slidable.of(context)?.close();
                 context.read<ChatListCubit>().archiveChatRoom(chatRoom.id);
-                AppToast.success(context, 'تم أرشفة المحادثة بنجاح');
+                AppToast.success(context, context.tr('chat_archived_success'));
               },
               backgroundColor: Colors.transparent,
               foregroundColor: archiveColor,
               autoClose: true,
               padding: EdgeInsets.zero,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                   child: Container(
-                    width: isMobile ? 60 : 70,
-                    height: isMobile ? 60 : 66,
+                    width: 70.w,
+                    height: 66.h,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFFFF).withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(color: Colors.white.withOpacity(0.2)),
                     ),
-                    padding: EdgeInsets.symmetric(vertical: isMobile ? 4 : 6),
+                    padding: EdgeInsets.symmetric(vertical: 6.h),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SvgPicture.asset(
                           chatArchiveIcon,
-                          height: isMobile ? 28 : 32,
-                          width: isMobile ? 28 : 32,
+                          height: 28.h,
+                          width: 28.w,
+                          colorFilter: ColorFilter.mode(
+                            archiveColor,
+                            BlendMode.srcIn,
+                          ),
                         ),
-                        SizedBox(height: isMobile ? 0 : 1),
+                        SizedBox(height: 2.h),
                         Text(
-                          'أرشيف',
-                          style: TextStyle(
-                            fontSize: isMobile ? 10 : 12,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
+                          context.tr('archive'),
+                          style: Styles.textStyle10Bold.copyWith(
                             color: archiveColor,
+                            height: 1.2,
                           ),
                         ),
                       ],
@@ -99,11 +90,9 @@ class ChatListItem extends StatelessWidget {
             ),
           ],
         ),
-
         endActionPane: ActionPane(
           motion: const ScrollMotion(),
-
-          extentRatio: 0.6,
+          extentRatio: 0.65,
           children: [
             CustomSlidableAction(
               onPressed: (context) {
@@ -113,16 +102,15 @@ class ChatListItem extends StatelessWidget {
               backgroundColor: Colors.transparent,
               padding: EdgeInsets.zero,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-
+                borderRadius: BorderRadius.circular(12.r),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                   child: Container(
-                    width: isMobile ? 160 : 183,
-                    height: isMobile ? 60 : 66,
+                    width: 180.w,
+                    height: 66.h,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFFFF).withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(color: Colors.white.withOpacity(0.2)),
                     ),
                     child: Row(
@@ -131,67 +119,54 @@ class ChatListItem extends StatelessWidget {
                         _buildActionButton(
                           context,
                           svgIcon: deleteIcon,
-                          label: 'حذف',
-                          color: Colors.red,
+                          label: context.tr('delete'),
+                          color: AppColors.kRedColor,
                           onTap: () {
                             Slidable.of(context)?.close();
                             showConfirmationDialog(
                               context: context,
                               imagePath: AssetsData.deleteIcon,
-                              title: 'هل أنت متأكد من حذف المحادثة؟',
-                              subtitle:
-                                  'لن تتمكن من استعادة المحادثة بعد حذفها.',
+                              title: context.tr('confirm_delete_chat'),
+                              subtitle: context.tr(
+                                'confirm_delete_chat_message',
+                              ),
                               onConfirm: () {
                                 context.read<ChatListCubit>().deleteChatRoom(
                                   chatRoom.id,
                                 );
-                                // deleteConversation();
                               },
                             );
                           },
-                          isMobile: isMobile,
                         ),
-
-                        Container(
-                          width: 1,
-                          height: isMobile ? 20 : 25,
-                          color: dividerColor,
-                        ),
-
+                        Container(width: 1, height: 25.h, color: dividerColor),
                         _buildActionButton(
                           context,
                           svgIcon: reportIcon,
-                          label: 'ابلاغ',
+                          label: context.tr('report'),
                           color: Colors.orange,
                           onTap: () {
-                            print("Report Clicked");
                             Slidable.of(context)?.close();
+                            print("تم اختيار ابلاغ");
                           },
-                          isMobile: isMobile,
                         ),
-
-                        Container(
-                          width: 1,
-                          height: isMobile ? 20 : 25,
-                          color: dividerColor,
-                        ),
-
+                        Container(width: 1, height: 25.h, color: dividerColor),
                         _buildActionButton(
                           context,
                           icon: Icons.block,
-                          label: chatRoom.isBlocked ? 'إلغاء الحظر' : 'حظر',
+                          label: chatRoom.isBlocked
+                              ? context.tr('unblock')
+                              : context.tr('block'),
                           color: const Color(0xFF581C25),
                           onTap: () {
                             Slidable.of(context)?.close();
                             if (chatRoom.isBlocked) {
-                              // Unblock
                               showConfirmationDialog(
                                 context: context,
                                 imagePath: AssetsData.deleteIcon,
-                                title:
-                                    'هل أنت متأكد من إلغاء حظر هذا المستخدم؟',
-                                subtitle:
-                                    'سيتمكن المستخدم من إرسال رسائل إليك مرة أخرى.',
+                                title: context.tr('confirm_unblock_user'),
+                                subtitle: context.tr(
+                                  'confirm_unblock_user_message',
+                                ),
                                 onConfirm: () {
                                   context.read<ChatListCubit>().unblockUser(
                                     blockedId: otherUser.id,
@@ -200,13 +175,13 @@ class ChatListItem extends StatelessWidget {
                                 },
                               );
                             } else {
-                              // Block
                               showConfirmationDialog(
                                 context: context,
                                 imagePath: AssetsData.deleteIcon,
-                                title: 'هل أنت متأكد من حظر هذا المستخدم؟',
-                                subtitle:
-                                    'لن يتمكن المستخدم من إرسال رسائل إليك.',
+                                title: context.tr('confirm_block_user'),
+                                subtitle: context.tr(
+                                  'confirm_block_user_message',
+                                ),
                                 onConfirm: () {
                                   context.read<ChatListCubit>().blockUser(
                                     blockedId: otherUser.id,
@@ -216,7 +191,6 @@ class ChatListItem extends StatelessWidget {
                               );
                             }
                           },
-                          isMobile: isMobile,
                         ),
                       ],
                     ),
@@ -226,121 +200,172 @@ class ChatListItem extends StatelessWidget {
             ),
           ],
         ),
-
-        child: GestureDetector(
-          onTap: () {
-            context.read<ChatListCubit>().setActiveChatRoom(chatRoom.id);
-            context.read<ChatListCubit>().markMessageRed(chatRoom.id);
-            context.read<ChatListCubit>().markChatAsRead(chatRoom.id);
-            context
-                .pushNamed(
-                  AppRouter.kConversitionView,
-                  arguments: {
-                    'receiverid': otherUser.id,
-                    'chatroomid': chatRoom.id,
-                    'username': otherUser.name,
-                    'userimage': otherUser.image,
-                    'isBlocked': chatRoom.isBlocked,
-                    'onBlockStatusChanged': (bool isBlocked) {
-                      if (context.mounted) {
-                        context.read<ChatListCubit>().updateBlockStatus(
-                          chatRoom.id,
-                          isBlocked,
-                        );
-                      }
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              context.read<ChatListCubit>().setActiveChatRoom(chatRoom.id);
+              context.read<ChatListCubit>().markMessageRed(chatRoom.id);
+              context.read<ChatListCubit>().markChatAsRead(chatRoom.id);
+              context
+                  .pushNamed(
+                    AppRouter.kConversitionView,
+                    arguments: {
+                      'receiverid': otherUser.id,
+                      'chatroomid': chatRoom.id,
+                      'username': otherUser.name,
+                      'userimage': otherUser.image,
+                      'isBlocked': chatRoom.isBlocked,
+                      'onBlockStatusChanged': (bool isBlocked) {
+                        if (context.mounted) {
+                          context.read<ChatListCubit>().updateBlockStatus(
+                            chatRoom.id,
+                            isBlocked,
+                          );
+                        }
+                      },
                     },
-                  },
-                )
-                .then((_) {
-                  if (context.mounted) {
-                    context.read<ChatListCubit>().setActiveChatRoom(null);
-                  }
-                });
-          },
-          child: Container(
-            color: Colors.transparent,
-            padding: EdgeInsets.only(
-              left: isMobile ? 4 : 6,
-              right: 20,
-              top: containerPadding,
-              bottom: containerPadding,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: avatarRadius * 2,
-                  height: avatarRadius * 2,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: NetworkImage(otherUser.image!),
-                      fit: BoxFit.cover,
+                  )
+                  .then((_) {
+                    if (context.mounted) {
+                      context.read<ChatListCubit>().setActiveChatRoom(null);
+                    }
+                  });
+            },
+            borderRadius: BorderRadius.circular(12.r),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+              child: Row(
+                children: [
+                  _buildUserAvatar(displayImage, chatRoom.isBlocked),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          style: Styles.textStyle16.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.secondary800,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          lastMessageText,
+                          style: Styles.textStyle14.copyWith(
+                            color: AppColors.secondary600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                SizedBox(width: spacing1),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  SizedBox(width: 12.w),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        otherUser.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: titleFontSize,
-                        ),
-                      ),
-                      SizedBox(height: spacing2),
-                      Text(
-                        chatRoom.lastMessage?.content ?? "",
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: subtitleFontSize,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      formatTime(chatRoom.lastMessageAt ?? chatRoom.createdAt!),
-                      style: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: timeFontSize,
-                      ),
-                    ),
-                    SizedBox(height: spacing3),
-                    if (chatRoom.unreadCount > 0)
-                      Container(
-                        width: badgeSize,
-                        height: badgeSize,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE96E88),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            "${chatRoom.unreadCount}",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: badgeFontSize,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w),
+                        child: Text(
+                          chatRoom.lastMessage?.timeAgo ??
+                              (chatRoom.lastMessageAt != null
+                                  ? formatTime(chatRoom.lastMessageAt!)
+                                  : ''),
+                          style: Styles.textStyle12.copyWith(
+                            color: AppColors.secondary400,
                           ),
                         ),
                       ),
-                  ],
-                ),
-              ],
+                      SizedBox(height: 4.h),
+                      if (chatRoom.unreadCount > 0)
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.kprimaryColor,
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          child: Text(
+                            "${chatRoom.unreadCount}",
+                            style: Styles.textStyle10Bold.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildUserAvatar(String? imageUrl, bool isBlocked) {
+    return Stack(
+      children: [
+        Container(
+          width: 56.r,
+          height: 56.r,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.secondary100,
+            border: Border.all(color: AppColors.secondary200, width: 1),
+          ),
+          child: ClipOval(child: _buildAvatarImage(imageUrl)),
+        ),
+        if (isBlocked)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withOpacity(0.3),
+              ),
+              child: Center(
+                child: Icon(Icons.block, color: Colors.white, size: 20.w),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAvatarImage(String? imageUrl) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(AssetsData.avatarImage, fit: BoxFit.cover);
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                width: 56.r,
+                height: 56.r,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[300],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
+    return Image.asset(AssetsData.avatarImage, fit: BoxFit.cover);
   }
 
   Widget _buildActionButton(
@@ -350,7 +375,6 @@ class ChatListItem extends StatelessWidget {
     required String label,
     required Color color,
     required VoidCallback onTap,
-    required bool isMobile,
   }) {
     return Expanded(
       child: InkWell(
@@ -361,15 +385,18 @@ class ChatListItem extends StatelessWidget {
             if (svgIcon != null)
               SvgPicture.asset(
                 svgIcon,
-                height: isMobile ? 18 : 22,
-                width: isMobile ? 18 : 22,
+                height: 20.h,
+                width: 20.w,
                 colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
               )
             else if (icon != null)
-              Icon(icon, size: isMobile ? 18 : 22, color: color),
+              Icon(icon, size: 20.h, color: color),
+            SizedBox(height: 4.h),
             Text(
               label,
-              style: TextStyle(fontSize: isMobile ? 9 : 11, color: color),
+              style: Styles.textStyle10.copyWith(color: color, fontSize: 9.sp),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

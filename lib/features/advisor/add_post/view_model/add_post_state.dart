@@ -5,7 +5,13 @@ import 'package:tayseer/my_import.dart';
 class AddPostState {
   final CubitStates addPostState;
   final CubitStates categoryState;
+
   final List<CategoryModel> categories;
+
+  final int currentPage;
+  final int totalPages;
+  final bool isLoadingMore;
+
   final List<AssetEntity> galleryImages;
   final List<AssetPathEntity> galleryAlbums;
   final List<AssetPathEntity> galleryVideoAlbums;
@@ -15,18 +21,23 @@ class AddPostState {
   final XFile? capturedVideo;
   final List<AssetEntity> selectedVideos;
   final List<String> availableGifs;
+
   final bool loading;
   final String draftText;
   final String? selectedCategoryId;
   final String? errorMessage;
   final bool isAiLoading;
-
-  // ✅ نوع البوست يتحدد تلقائياً من المحتوى
   final AddPostEnum resolvedPostType;
 
   const AddPostState({
     this.addPostState = CubitStates.initial,
     this.categoryState = CubitStates.initial,
+    this.categories = const [],
+
+    this.currentPage = 1,
+    this.totalPages = 1,
+    this.isLoadingMore = false,
+
     this.galleryImages = const [],
     this.galleryAlbums = const [],
     this.selectedImages = const [],
@@ -40,15 +51,19 @@ class AddPostState {
     this.draftText = '',
     this.errorMessage,
     this.selectedCategoryId,
-    this.categories = const [],
     this.isAiLoading = false,
-    this.resolvedPostType = AddPostEnum.post, // ✅
+    this.resolvedPostType = AddPostEnum.post,
   });
 
   AddPostState copyWith({
     CubitStates? addPostState,
     CubitStates? categoryState,
     List<CategoryModel>? categories,
+
+    int? currentPage,
+    int? totalPages,
+    bool? isLoadingMore,
+
     List<AssetEntity>? galleryImages,
     List<AssetPathEntity>? galleryAlbums,
     List<AssetPathEntity>? galleryVideoAlbums,
@@ -60,12 +75,17 @@ class AddPostState {
     String? errorMessage,
     String? selectedCategoryId,
     bool? isAiLoading,
-    AddPostEnum? resolvedPostType, // ✅
+    AddPostEnum? resolvedPostType,
   }) {
     return AddPostState(
       addPostState: addPostState ?? this.addPostState,
       categoryState: categoryState ?? this.categoryState,
       categories: categories ?? this.categories,
+
+      currentPage: currentPage ?? this.currentPage,
+      totalPages: totalPages ?? this.totalPages,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+
       galleryImages: galleryImages ?? this.galleryImages,
       galleryAlbums: galleryAlbums ?? this.galleryAlbums,
       galleryVideoAlbums: galleryVideoAlbums ?? this.galleryVideoAlbums,
@@ -79,7 +99,7 @@ class AddPostState {
       selectedCategoryId: selectedCategoryId ?? this.selectedCategoryId,
       errorMessage: errorMessage,
       isAiLoading: isAiLoading ?? this.isAiLoading,
-      resolvedPostType: resolvedPostType ?? this.resolvedPostType, // ✅
+      resolvedPostType: resolvedPostType ?? this.resolvedPostType,
     );
   }
 }

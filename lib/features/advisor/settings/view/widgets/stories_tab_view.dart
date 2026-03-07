@@ -1,5 +1,4 @@
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
@@ -12,15 +11,10 @@ class StoriesTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final SnackBarService snackBarService = SnackBarService();
     return BlocConsumer<ArchivedStoriesCubit, ArchivedStoriesState>(
       listener: (context, state) {
-        if (state.errorMessage != null) {
-          snackBarService.showSnackBar(
-            context: context,
-            text: state.errorMessage!,
-            isError: true,
-          );
+        if (state.errorMessage != null && state.state == CubitStates.failure) {
+          AppToast.error(context, state.errorMessage!);
           context.read<ArchivedStoriesCubit>().clearError();
         }
       },

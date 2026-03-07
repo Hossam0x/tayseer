@@ -2,8 +2,8 @@
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_ProfileCard.dart';
 import 'package:tayseer/my_import.dart';
 
-class historyGridView extends StatelessWidget {
-  const historyGridView({
+class HistoryGridview extends StatelessWidget {
+  const HistoryGridview({
     super.key,
     required this.data,
   });

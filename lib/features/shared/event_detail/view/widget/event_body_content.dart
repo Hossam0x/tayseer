@@ -103,6 +103,7 @@ class EventBodyContent extends StatelessWidget {
             ),
           ),
         ),
+        SizedBox(height: context.responsiveHeight(24)),
       ],
     );
   }

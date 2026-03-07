@@ -77,7 +77,7 @@ class CompleteMarriageFile extends StatelessWidget {
                     SizedBox(height: 20.h),
 
                     // Verification Section
-                     profile.isVerified == true
+                    profile.isVerified == true
                         ? const SizedBox.shrink()
                         : _buildVerificationCard(
                             context,
@@ -163,38 +163,31 @@ class CompleteMarriageFile extends StatelessWidget {
         children: [
           // Icon with dynamic percentage
           Container(
-            padding: EdgeInsets.all(8.w),
-            height: 88.h,
+            padding: EdgeInsets.all(6.h),
             decoration: BoxDecoration(
               color: AppColors.primary200.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(16.r),
             ),
-            child: Stack(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Positioned(
-                  child: Icon(
-                    Icons.verified_user,
-                    color: AppColors.primary200,
-                    size: 44.sp,
-                  ),
+                Icon(
+                  Icons.verified_user,
+                  color: AppColors.primary200,
+                  size: MediaQuery.of(context).size.width >= 600 ? 56 : 44,
                 ),
-                Positioned(
-                  bottom: 0,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 4.h,
-                      horizontal: 8.w,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.all(Radius.circular(12.r)),
-                    ),
-                    child: Text(
-                      "$percentage%",
-                      style: Styles.textStyle12.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary200,
-                      ),
+                SizedBox(height: 3.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Text(
+                    "$percentage%",
+                    style: Styles.textStyle12.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary200,
                     ),
                   ),
                 ),

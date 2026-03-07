@@ -40,7 +40,7 @@ class EventBottomBar extends StatelessWidget {
             children: [
               Text(
                 context.tr('session_price_label'),
-                style: Styles.textStyle10,
+                style: Styles.textStyle14SemiBold,
               ),
               Text(
                 priceAfterDiscount,

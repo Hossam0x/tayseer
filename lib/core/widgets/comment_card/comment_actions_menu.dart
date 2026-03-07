@@ -1,5 +1,6 @@
 // lib/core/widgets/comment_card/comment_actions_menu.dart
 
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -21,7 +22,7 @@ class CommentActionsMenu extends StatelessWidget {
     required this.callbacks,
   });
 
-  void _handleAction(CommentMenuAction action) {
+  void _handleAction(BuildContext context, CommentMenuAction action) {
     // Use Future.delayed to allow the popup menu to finish closing
     // before triggering state changes that rebuild the layout
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -40,7 +41,13 @@ class CommentActionsMenu extends StatelessWidget {
           callbacks.onReplyToggle?.call(commentId);
           break;
         case CommentMenuAction.report:
-          callbacks.onReport?.call(commentId);
+          context.pushNamed(
+            AppRouter.kReportsView,
+            arguments: {
+              'type': isReply ? ReportType.reply : ReportType.comment,
+              'id': commentId,
+            },
+          );
           break;
         case CommentMenuAction.hide:
           if (isReply) {
@@ -61,7 +68,7 @@ class CommentActionsMenu extends StatelessWidget {
       color: AppColors.secondary50,
       // icon: Icon(Icons.more_vert, color: Colors.grey.shade400, size: 20.sp),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26.r)),
-      onSelected: _handleAction,
+      onSelected: (action) => _handleAction(context, action),
       child: Container(
         // ممكن تشيل الـ color: Colors.transparent لو مش محتاجه، بس مفيد للضغط
         color: Colors.transparent,

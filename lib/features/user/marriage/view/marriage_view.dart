@@ -38,7 +38,8 @@ class MarriageView extends StatelessWidget {
                   if (state.lastQuestionNumberState == CubitStates.success) {
                     context.pop();
                     final lastQuestionNumber =
-                        state.lastQuestionNumberResponse?.lastQuestionNumber ?? 0;
+                        state.lastQuestionNumberResponse?.lastQuestionNumber ??
+                        0;
 
                     if (lastQuestionNumber >= 29) {
                       context.pushNamed(AppRouter.kAccountReviewUserView);
@@ -46,7 +47,8 @@ class MarriageView extends StatelessWidget {
                       context.pushNamed(AppRouter.kCommitmentView);
                     } else if (lastQuestionNumber >= 27) {
                       context.pushNamed(AppRouter.kPersonalInfoView);
-                    } else if (lastQuestionNumber >= 1 && lastQuestionNumber < 27) {
+                    } else if (lastQuestionNumber >= 1 &&
+                        lastQuestionNumber < 27) {
                       context.pushNamed(
                         AppRouter.kQuestionsPageView,
                         arguments: {'lastQuestionNumber': lastQuestionNumber},
@@ -54,16 +56,20 @@ class MarriageView extends StatelessWidget {
                     } else if (lastQuestionNumber == 0) {
                       context.pushNamed(AppRouter.kChooseGenderView);
                     }
-                  } else if (state.lastQuestionNumberState == CubitStates.failure) {
+                  } else if (state.lastQuestionNumberState ==
+                      CubitStates.failure) {
                     context.pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       CustomSnackBar(
                         context,
-                        text: state.errorMessage ?? context.tr('failed_to_fetch_data'),
+                        text:
+                            state.errorMessage ??
+                            context.tr('failed_to_fetch_data'),
                         isSuccess: false,
                       ),
                     );
-                  } else if (state.lastQuestionNumberState == CubitStates.loading) {
+                  } else if (state.lastQuestionNumberState ==
+                      CubitStates.loading) {
                     showDialog(
                       context: context,
                       barrierDismissible: false,
@@ -76,7 +82,9 @@ class MarriageView extends StatelessWidget {
                   return GuestLockWidget(
                     titleBott: context.tr('complete_your_profile_bott'),
                     message: context.tr('complete_your_profile'),
-                    description: context.tr('complete_your_profile_description'),
+                    description: context.tr(
+                      'complete_your_profile_description',
+                    ),
                     onTap: () {
                       cubit.fetchLastQuestionNumber();
                     },

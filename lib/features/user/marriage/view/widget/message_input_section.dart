@@ -36,7 +36,9 @@ class _MessageInputSectionState extends State<MessageInputSection> {
           style: Styles.textStyle14Bold,
         ),
         Text(
-          context.tr('messge_profil_sub_title'),
+          context
+              .tr('messge_profil_sub_title')
+              .replaceAll('{name}', widget.name),
           style: Styles.textStyle10.copyWith(color: Colors.grey),
         ),
         Gap(10.h),

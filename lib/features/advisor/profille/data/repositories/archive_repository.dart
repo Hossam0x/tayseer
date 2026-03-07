@@ -11,6 +11,7 @@ abstract class ArchiveRepository {
   });
 
   Future<Either<Failure, void>> unarchiveChat(String chatId);
+  Future<Either<Failure, void>> deleteChatRoom(String chatId);
 
   Future<Either<Failure, List<UserStoriesModel>>> getArchivedStories({
     int page = 1,
@@ -44,6 +45,7 @@ abstract class ArchiveRepository {
   void toggleHidePost({required String postId, required bool isHide});
 
   Future<Either<Failure, String>> blockUser({required String userId});
+  Future<Either<Failure, String>> unblockUser({required String userId});
 
   Future<Either<Failure, String>> archivePost({
     required String postId,
@@ -133,6 +135,27 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
       print('❌ General Error in unarchiveChat: $e');
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteChatRoom(String chatId) async {
+    try {
+      final response = await _apiService.delete(
+        endPoint: ApiEndPoint.deleteChatRoom(chatId),
+      );
+
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(
+          ServerFailure(response['message']?.toString() ?? 'فشل حذف المحادثة'),
+        );
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
@@ -285,6 +308,24 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
       );
       if (response['success'] == true || response['status'] == 'success') {
         return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> unblockUser({required String userId}) async {
+    try {
+      final response = await _apiService.delete(
+        endPoint: ApiEndPoint.unblockuser,
+        data: {"blockedId": userId},
+      );
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تم إلغاء حظر المستخدم بنجاح');
       }
       return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
     } on DioException catch (e) {

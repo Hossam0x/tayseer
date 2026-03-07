@@ -101,11 +101,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                           Navigator.pop(
                             context,
                           ); // Close loading dialog if open
-                          showSafeSnackBar(
-                            context: context,
-                            text: context.tr("logout_error"),
-                            isError: true,
-                          );
+                          AppToast.error(context, context.tr("logout_error"));
                           return;
                         }
 
@@ -118,12 +114,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                                 'update_language_success',
                                 lang,
                               );
-                              showSafeSnackBar(
-                                context: context,
-                                text: message,
-                                isSuccess: true,
-                                isError: false,
-                              );
+                              AppToast.success(context, message);
                               context.read<LanguageCubit>().setLanguage(
                                 lang,
                                 context,
@@ -131,12 +122,17 @@ class _UserProfileViewState extends State<UserProfileView> {
                             }
                           });
                         } else {
-                          showSafeSnackBar(
-                            context: context,
-                            text: context.tr(state.actionMessage ?? ""),
-                            isSuccess: state.isActionSuccess ?? false,
-                            isError: !(state.isActionSuccess ?? true),
-                          );
+                          if (state.isActionSuccess ?? false) {
+                            AppToast.success(
+                              context,
+                              context.tr(state.actionMessage ?? ""),
+                            );
+                          } else {
+                            AppToast.error(
+                              context,
+                              context.tr(state.actionMessage ?? ""),
+                            );
+                          }
                         }
                       }
                     },
@@ -775,7 +771,14 @@ class _UserProfileViewState extends State<UserProfileView> {
                             activeColor: const Color(0xFFF06C88),
                             trackColor: AppColors.dropDownArrow,
                             onChanged: (value) {
-                              _showDeactivateMarriageDialog(context, value);
+                              if (setting.id == 'notifications') {
+                                context.read<UserProfileCubit>().updateSwitch(
+                                  setting.id,
+                                  value,
+                                );
+                              } else {
+                                _showDeactivateMarriageDialog(context, value);
+                              }
                             },
                           ),
                         ),
@@ -925,12 +928,7 @@ class _UserProfileViewState extends State<UserProfileView> {
       AppRouter.kRegisrationView,
       (route) => false,
     );
-
-    showSafeSnackBar(
-      context: context,
-      text: context.tr("logout_success"),
-      isSuccess: true,
-    );
+    AppToast.success(context, context.tr("logout_success"));
   }
 
   void _showRateAppDialog() {

@@ -1,5 +1,7 @@
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/core/models/category_model.dart';
+import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
+import 'package:tayseer/features/advisor/add_post/view_model/add_post_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class CustomProfileHeader extends StatefulWidget {
@@ -9,7 +11,7 @@ class CustomProfileHeader extends StatefulWidget {
   final bool isVerified;
   final List<CategoryModel>? groups;
   final Function(String)? onGroupSelectedId;
-
+  final AddPostCubit cubit;
   const CustomProfileHeader({
     super.key,
     required this.name,
@@ -18,6 +20,7 @@ class CustomProfileHeader extends StatefulWidget {
     this.isVerified = false,
     this.groups,
     this.onGroupSelectedId,
+    required this.cubit,
   });
 
   @override
@@ -42,8 +45,9 @@ class _CustomProfileHeaderState extends State<CustomProfileHeader> {
           /// الصورة الشخصية
           ClipRRect(
             borderRadius: BorderRadius.circular(30),
-            child: MyProfileImage(size: 60, imageUrl: kCurrentUserData?.image),
+            child: MyProfileImage(size: 60, imageUrl: widget.imageUrl),
           ),
+
           Gap(context.responsiveWidth(12)),
 
           /// معلومات الاسم + المجموعة
@@ -76,29 +80,26 @@ class _CustomProfileHeaderState extends State<CustomProfileHeader> {
 
                 const SizedBox(height: 6),
 
-                /// زر اختيار المجموعة
-                PopupMenuButton<String>(
-                  enabled: widget.groups != null && widget.groups!.isNotEmpty,
-                  onSelected: (value) {
-                    final selected = widget.groups?.firstWhere(
-                      (g) => g.id == value,
-                      orElse: () => widget.groups!.first,
+                /// زر اختيار المجموعة (BottomSheet)
+                GestureDetector(
+                  onTap: () async {
+                    final result = await showModalBottomSheet<CategoryModel>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
+                      ),
+                      builder: (_) => CategoryBottomSheet(cubit: widget.cubit),
                     );
-                    setState(() => selectedSubtitle = selected!.name);
-                    widget.onGroupSelectedId?.call(value);
-                  },
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  itemBuilder: (context) {
-                    return widget.groups!
-                        .map(
-                          (e) => PopupMenuItem<String>(
-                            value: e.id,
-                            child: Text(e.name),
-                          ),
-                        )
-                        .toList();
+
+                    if (result != null) {
+                      setState(() => selectedSubtitle = result.name);
+
+                      widget.onGroupSelectedId?.call(result.id);
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -119,14 +120,14 @@ class _CustomProfileHeaderState extends State<CustomProfileHeader> {
                         Text(
                           selectedSubtitle,
                           style: Styles.textStyle12.copyWith(
-                            color: HexColor('666666'),
+                            color: AppColors.kGreyColor,
                           ),
                         ),
                         const SizedBox(width: 4),
                         Icon(
                           Icons.keyboard_arrow_down,
                           size: 18,
-                          color: HexColor('666666'),
+                          color: AppColors.kGreyColor,
                         ),
                       ],
                     ),
@@ -136,6 +137,102 @@ class _CustomProfileHeaderState extends State<CustomProfileHeader> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class CategoryBottomSheet extends StatefulWidget {
+  final AddPostCubit cubit;
+  const CategoryBottomSheet({super.key, required this.cubit});
+
+  @override
+  State<CategoryBottomSheet> createState() => _CategoryBottomSheetState();
+}
+
+class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.cubit.state.categories.isEmpty) {
+      widget.cubit.getALLCategory();
+    }
+
+    _controller.addListener(() {
+      if (_controller.position.pixels >=
+          _controller.position.maxScrollExtent - 200) {
+        widget.cubit.loadMoreCategories();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: widget.cubit,
+      child: BlocBuilder<AddPostCubit, AddPostState>(
+        builder: (context, state) {
+          return SizedBox(
+            height: context.height * 0.7,
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Text(
+                  context.tr('select_category'),
+                  style: Styles.textStyle16SemiBold,
+                ),
+
+                const SizedBox(height: 16),
+
+                Expanded(
+                  child: state.categoryState == CubitStates.loading
+                      ? const Center(child: CustomloadingApp())
+                      : ListView.builder(
+                          controller: _controller,
+                          itemCount: state.categories.length + 1,
+                          itemBuilder: (context, index) {
+                            if (index < state.categories.length) {
+                              final category = state.categories[index];
+
+                              return ListTile(
+                                title: Text(
+                                  category.name,
+                                  style: Styles.textStyle16SemiBold,
+                                ),
+                                onTap: () {
+                                  Navigator.pop(context, category);
+                                },
+                              );
+                            } else {
+                              return state.isLoadingMore
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: Center(child: CustomloadingApp()),
+                                    )
+                                  : const SizedBox();
+                            }
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

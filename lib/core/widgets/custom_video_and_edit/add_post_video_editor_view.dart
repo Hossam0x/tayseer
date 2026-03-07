@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:typed_data';
-
 import 'package:path_provider/path_provider.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_video_editor/pro_video_editor.dart';
@@ -23,6 +22,9 @@ class _VideoEditorViewState extends State<VideoEditorView> {
   bool _isVideoInitialized = false;
   bool _isSeeking = false;
   bool _editorPopped = false;
+
+  // ✅ متغير جديد لحفظ حالة كتم الصوت وتطبيقها عند الحفظ
+  bool _isMuted = false;
 
   @override
   void initState() {
@@ -114,20 +116,52 @@ class _VideoEditorViewState extends State<VideoEditorView> {
     super.dispose();
   }
 
-  // ✅ لما يخلص التعديل - يرجع مباشرة
-  Future<void> _onEditingComplete(Uint8List bytes) async {
+  // ✅ الدالة المحدثة بالكامل لعمل Render حقيقي للفيديو بكل التعديلات
+  Future<void> _onVideoEditingComplete(CompleteParameters parameters) async {
     if (!mounted) return;
     if (_editorPopped) return;
     _editorPopped = true;
+
+    // إظهار اللودينج أثناء الحفظ
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: const CustomloadingApp()),
+    );
 
     try {
       final tempDir = await getTemporaryDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final outputPath = '${tempDir.path}/edited_$timestamp.mp4';
 
+      // استخراج الملصقات والنصوص كطبقة فوق الفيديو
+      Uint8List? overlayImage = parameters.layers.isNotEmpty
+          ? parameters.image
+          : null;
+
+      // دمج كل الإعدادات والتعديلات لتطبيقها على الفيديو النهائي
       final renderModel = RenderVideoModel(
         video: EditorVideo.file(widget.videoFile.path),
         outputFormat: VideoOutputFormat.mp4,
+        enableAudio: !_isMuted, // تفعيل أو كتم الصوت
+        imageBytes: overlayImage, // النصوص والستيكرز
+        blur: parameters.blur, // الفلاتر الضبابية
+        colorMatrixList: parameters.colorFilters, // فلاتر الألوان
+        transform:
+            parameters
+                .isTransformed // القص والتدوير
+            ? ExportTransform(
+                width: parameters.cropWidth,
+                height: parameters.cropHeight,
+                rotateTurns: parameters.rotateTurns,
+                x: parameters.cropX,
+                y: parameters.cropY,
+                flipX: parameters.flipX,
+                flipY: parameters.flipY,
+              )
+            : null,
+        startTime: parameters.startTime, // وقت بداية القص (Trim)
+        endTime: parameters.endTime, // وقت نهاية القص (Trim)
       );
 
       final renderedPath = await ProVideoEditor.instance.renderVideoToFile(
@@ -135,10 +169,18 @@ class _VideoEditorViewState extends State<VideoEditorView> {
         renderModel,
       );
 
-      if (mounted) Navigator.of(context).pop(File(renderedPath));
+      if (mounted) {
+        Navigator.pop(context); // قفل اللودينج
+        Navigator.of(context).pop(File(renderedPath)); // إرجاع الفيديو المعدل
+      }
     } catch (e) {
       debugPrint('Video render error: $e');
-      if (mounted) Navigator.of(context).pop(widget.videoFile);
+      if (mounted) {
+        Navigator.pop(context); // قفل اللودينج
+        Navigator.of(
+          context,
+        ).pop(widget.videoFile); // إرجاع الفيديو الأصلي لو حصل خطأ
+      }
     }
   }
 
@@ -175,9 +217,8 @@ class _VideoEditorViewState extends State<VideoEditorView> {
     }
 
     final callbacks = ProImageEditorCallbacks(
-      onImageEditingComplete: (bytes) async {
-        await _onEditingComplete(bytes);
-      },
+      // ✅ تم تغيير الدالة لتأخذ جميع باراميترات التعديل
+      onCompleteWithParameters: _onVideoEditingComplete,
       onCloseEditor: (mode) {
         if (_editorPopped) return;
         _editorPopped = true;
@@ -187,6 +228,8 @@ class _VideoEditorViewState extends State<VideoEditorView> {
         onPause: _videoController!.pause,
         onPlay: _videoController!.play,
         onMuteToggle: (isMuted) {
+          // ✅ تحديث حالة المتغير لحفظ الصوت مع الفيديو النهائي
+          _isMuted = isMuted;
           _videoController!.setVolume(isMuted ? 0 : 100);
         },
         onTrimSpanUpdate: (span) {

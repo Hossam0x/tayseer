@@ -1,8 +1,12 @@
+import 'dart:ui';
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/chats_tab_ui_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
 class ChatsTabView extends StatelessWidget {
@@ -26,9 +30,24 @@ class _ChatsTabViewBody extends StatelessWidget {
       builder: (context, uiState) {
         return BlocConsumer<ArchivedChatsCubit, ArchivedChatsState>(
           listener: (context, state) {
-            if (state.errorMessage != null) {
-              AppToast.error(context, state.errorMessage.toString());
+            // ⭐ Handle General Error
+            if (state.errorMessage != null &&
+                state.state == CubitStates.failure) {
+              AppToast.error(context, state.errorMessage!);
               context.read<ArchivedChatsCubit>().clearError();
+            }
+
+            // ⭐ Handle Unarchive Action result
+            if (state.unarchiveActionState == CubitStates.success) {
+              if (state.unarchiveMessage != null) {
+                AppToast.success(context, context.tr(state.unarchiveMessage!));
+              }
+              context.read<ArchivedChatsCubit>().resetUnarchiveState();
+            } else if (state.unarchiveActionState == CubitStates.failure) {
+              if (state.unarchiveMessage != null) {
+                AppToast.error(context, state.unarchiveMessage!);
+              }
+              context.read<ArchivedChatsCubit>().resetUnarchiveState();
             }
           },
           builder: (context, state) {
@@ -234,50 +253,181 @@ class _ChatsTabViewBody extends StatelessWidget {
         ? lastMessageContent
         : context.tr('no_messages');
 
-    return Dismissible(
+    return Slidable(
       key: Key('archived_chat_${chatRoom.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16.r),
-          color: AppColors.kWhiteColor,
-          border: Border.all(color: AppColors.kprimaryColor),
-        ),
-        alignment: Alignment.centerRight,
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Icon(
-              Icons.unarchive_rounded,
-              color: AppColors.kprimaryColor,
-              size: 24.w,
-            ),
-            Gap(8.w),
-            Text(
-              context.tr('unarchive'),
-              style: Styles.textStyle14.copyWith(
-                color: AppColors.kprimaryColor,
-                fontWeight: FontWeight.w500,
+      startActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        extentRatio: 0.25,
+        children: [
+          CustomSlidableAction(
+            onPressed: (context) {
+              context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
+            },
+            backgroundColor: Colors.transparent,
+            foregroundColor: AppColors.kprimaryColor,
+            autoClose: true,
+            padding: EdgeInsets.zero,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12.r),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                child: Container(
+                  width: 70.w,
+                  height: 66.h,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 6.h),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.unarchive_rounded,
+                        color: AppColors.kprimaryColor,
+                        size: 28.h,
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        context.tr('unarchive'),
+                        style: Styles.textStyle10Bold.copyWith(
+                          color: AppColors.kprimaryColor,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      confirmDismiss: (direction) async {
-        return await _showUnarchiveConfirmation(
-          context,
-          chatRoom.id,
-          displayName,
-        );
-      },
-      onDismissed: (direction) {
-        context.read<ArchivedChatsCubit>().unarchiveChat(context, chatRoom.id);
-        AppToast.success(
-          context,
-          '${context.tr('unarchived_chat')} $displayName',
-        );
-      },
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        extentRatio: 0.65,
+        children: [
+          CustomSlidableAction(
+            onPressed: (context) {
+              Slidable.of(context)?.close();
+            },
+            autoClose: true,
+            backgroundColor: Colors.transparent,
+            padding: EdgeInsets.zero,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12.r),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                child: Container(
+                  width: 180.w,
+                  height: 66.h,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildActionButton(
+                        context,
+                        svgIcon: AssetsData.deleteIcon,
+                        label: context.tr('delete'),
+                        color: AppColors.kRedColor,
+                        onTap: () {
+                          Slidable.of(context)?.close();
+                          showConfirmationDialog(
+                            context: context,
+                            imagePath: AssetsData.deleteIcon,
+                            title: context.tr('confirm_delete_chat'),
+                            subtitle: context.tr('confirm_delete_chat_message'),
+                            onConfirm: () {
+                              context.read<ArchivedChatsCubit>().deleteChatRoom(
+                                chatRoom.id,
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      Container(
+                        width: 1,
+                        height: 25.h,
+                        color: const Color(0xFFD9D9D9),
+                      ),
+                      _buildActionButton(
+                        context,
+                        svgIcon: AssetsData.reportIcon,
+                        label: context.tr('report'),
+                        color: Colors.orange,
+                        onTap: () {
+                          Slidable.of(context)?.close();
+                          if (otherUser != null) {
+                            context.pushNamed(
+                              AppRouter.kReportsView,
+                              arguments: {
+                                'type': ReportType.user,
+                                'id': otherUser.id,
+                              },
+                            );
+                          }
+                        },
+                      ),
+                      Container(
+                        width: 1,
+                        height: 25.h,
+                        color: const Color(0xFFD9D9D9),
+                      ),
+                      _buildActionButton(
+                        context,
+                        icon: Icons.block,
+                        label: chatRoom.isBlocked
+                            ? context.tr('unblock')
+                            : context.tr('block'),
+                        color: const Color(0xFF581C25),
+                        onTap: () {
+                          Slidable.of(context)?.close();
+                          if (chatRoom.isBlocked) {
+                            showConfirmationDialog(
+                              context: context,
+                              imagePath: AssetsData.deleteIcon,
+                              title: context.tr('confirm_unblock_user'),
+                              subtitle: context.tr(
+                                'confirm_unblock_user_message',
+                              ),
+                              onConfirm: () {
+                                context.read<ArchivedChatsCubit>().unblockUser(
+                                  userId: otherUser?.id ?? '',
+                                  chatId: chatRoom.id,
+                                );
+                              },
+                            );
+                          } else {
+                            showConfirmationDialog(
+                              context: context,
+                              imagePath: AssetsData.deleteIcon,
+                              title: context.tr('confirm_block_user'),
+                              subtitle: context.tr(
+                                'confirm_block_user_message',
+                              ),
+                              onConfirm: () {
+                                context.read<ArchivedChatsCubit>().blockUser(
+                                  userId: otherUser?.id ?? '',
+                                  chatId: chatRoom.id,
+                                );
+                              },
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -323,7 +473,7 @@ class _ChatsTabViewBody extends StatelessWidget {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10.w),
                       child: Text(
-                        chatRoom.lastMessage!.timeAgo,
+                        chatRoom.lastMessage?.timeAgo ?? '',
                         style: Styles.textStyle12.copyWith(
                           color: AppColors.secondary400,
                         ),
@@ -454,9 +604,17 @@ class _ChatsTabViewBody extends StatelessWidget {
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Center(
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: AppColors.kprimaryColor,
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                width: 56.r,
+                height: 56.r,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[300],
+                ),
+              ),
             ),
           );
         },
@@ -487,171 +645,6 @@ class _ChatsTabViewBody extends StatelessWidget {
     );
   }
 
-  Future<bool> _showUnarchiveConfirmation(
-    BuildContext context,
-    String chatId,
-    String userName,
-  ) async {
-    bool result = false;
-
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.3),
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28.r),
-          ),
-          backgroundColor: Colors.transparent,
-          child: Container(
-            constraints: BoxConstraints(maxWidth: 380.w),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 30.r,
-                  offset: Offset(0.w, 15.h),
-                  spreadRadius: 5.r,
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28.r),
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFFE8B4B8),
-                        Color(0xFFF5E6E8),
-                        Color(0xFFFAF5F5),
-                        Colors.white,
-                      ],
-                    ),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(24.w, 32.h, 24.w, 24.h),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 90.w,
-                          height: 90.h,
-                          decoration: BoxDecoration(
-                            color: AppColors.kprimaryColor.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.unarchive_rounded,
-                            size: 50.w,
-                            color: AppColors.kprimaryColor,
-                          ),
-                        ),
-                        Gap(24.h),
-                        Text(
-                          context.tr('unarchive'),
-                          style: Styles.textStyle16.copyWith(
-                            color: const Color(0xFF2D2D2D),
-                            fontWeight: FontWeight.bold,
-                            height: 1.4,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        Gap(12.h),
-                        Text(
-                          '${context.tr('are_you_want_to_unarchive')} $userName؟',
-                          style: Styles.textStyle12.copyWith(
-                            color: const Color(0xFF6B6B6B),
-                            height: 1.5,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        Gap(28.h),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildDialogButton(
-                                text: context.tr('yes'),
-                                backgroundColor: Colors.green,
-                                textColor: Colors.white,
-                                onPressed: () {
-                                  result = true;
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                            ),
-                            Gap(12.w),
-                            Expanded(
-                              child: _buildDialogButton(
-                                text: context.tr('no'),
-                                backgroundColor: AppColors.kprimaryColor,
-                                textColor: Colors.white,
-                                onPressed: () {
-                                  result = false;
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    return result;
-  }
-
-  Widget _buildDialogButton({
-    required String text,
-    required Color backgroundColor,
-    required Color textColor,
-    required VoidCallback onPressed,
-    bool fullWidth = false,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12.r),
-        child: Container(
-          width: fullWidth ? double.infinity : null,
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(12.r),
-            boxShadow: [
-              BoxShadow(
-                color: backgroundColor.withOpacity(0.35),
-                blurRadius: 10.r,
-                offset: Offset(0.w, 5.h),
-              ),
-            ],
-          ),
-          child: Text(
-            text,
-            style: Styles.textStyle14Meduim.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    );
-  }
-
   void _openArchivedChat(
     BuildContext context,
     ArchiveChatRoomModel chatRoom,
@@ -661,18 +654,51 @@ class _ChatsTabViewBody extends StatelessWidget {
       AppToast.error(context, context.tr('user_not_found'));
       return;
     }
-
     context.pushNamed(
       AppRouter.kConversitionView,
       arguments: {
-        'chatroomid': chatRoom.id,
         'receiverid': otherUser.id,
+        'chatroomid': chatRoom.id,
         'username': otherUser.name,
         'userimage': otherUser.image,
-        'usertype': otherUser.userType,
         'isBlocked': chatRoom.isBlocked,
-        'isHaveSession': chatRoom.isHaveSession,
       },
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context, {
+    IconData? icon,
+    String? svgIcon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (svgIcon != null)
+              SvgPicture.asset(
+                svgIcon,
+                height: 20.h,
+                width: 20.w,
+                colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+              )
+            else if (icon != null)
+              Icon(icon, size: 20.h, color: color),
+            SizedBox(height: 4.h),
+            Text(
+              label,
+              style: Styles.textStyle10.copyWith(color: color, fontSize: 9.sp),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

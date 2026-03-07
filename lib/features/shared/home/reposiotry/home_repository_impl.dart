@@ -1,5 +1,3 @@
-// lib/features/advisor/home/repository/home_repository_impl.dart
-
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
@@ -475,13 +473,24 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  void hidePost({required String postId, required bool isHide}) {
-    apiService.post(
-      endPoint: ApiEndPoint.hidePost,
-      query: {'action': isHide ? 'add' : 'remove'},
-      data: {"postId": postId},
-    );
-    if (isHide) _removePostFromCache(postId);
+  Future<Either<Failure, String>> hidePost({
+    required String postId,
+    required bool isHide,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.hidePost,
+        query: {'action': isHide ? 'add' : 'remove'},
+        data: {"postId": postId},
+      );
+
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تمت العملية بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
   }
 
   @override
