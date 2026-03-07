@@ -1542,5 +1542,10 @@
   "no_category_posts": "لا توجد منشورات في هذه الفئة",
   "try_other_categories": "جرب استكشاف فئات أخرى",
   "explore_all_posts": "استكشف كل المنشورات",
-  "connection_restored": "تم استعادة الاتصال"
+  "connection_restored": "تم استعادة الاتصال",
+  "no_saved_posts": "لا توجد منشورات محفوظة",
+  "saved_posts_empty_hint": "المنشورات التي تحفظها ستظهر هنا",
+  "saved_success": "تم حفظ المنشور بنجاح",
+  "delete_success": "تم حذف المنشور بنجاح",
+  "archive_success": "تم أرشفة المنشور بنجاح"
 }
