@@ -67,6 +67,12 @@ class HomeState extends Equatable {
   final CubitStates archivePostActionState;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 📦 hide post
+  // ─────────────────────────────────────────────────────────────────────────
+  final String? hidePostMessage;
+  final CubitStates hidePostActionState;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 📦 block user
   // ─────────────────────────────────────────────────────────────────────────
   final String? blockUserMessage;
@@ -108,6 +114,10 @@ class HomeState extends Equatable {
     // delete post
     this.deletePostMessage,
     this.deletePostActionState = CubitStates.initial,
+
+    // hide post
+    this.hidePostMessage,
+    this.hidePostActionState = CubitStates.initial,
 
     // block user
     this.blockUserMessage,
@@ -154,6 +164,10 @@ class HomeState extends Equatable {
     // delete post
     String? deletePostMessage,
     CubitStates? deletePostActionState,
+
+    // hide post
+    String? hidePostMessage,
+    CubitStates? hidePostActionState,
 
     // block user
     String? blockUserMessage,
@@ -202,6 +216,10 @@ class HomeState extends Equatable {
       deletePostMessage: deletePostMessage ?? this.deletePostMessage,
       deletePostActionState:
           deletePostActionState ?? this.deletePostActionState,
+
+      // hide post
+      hidePostMessage: hidePostMessage ?? this.hidePostMessage,
+      hidePostActionState: hidePostActionState ?? this.hidePostActionState,
 
       // block user
       blockUserMessage: blockUserMessage ?? this.blockUserMessage,
@@ -337,6 +355,9 @@ class HomeState extends Equatable {
     // delete post
     deletePostMessage,
     deletePostActionState,
+    // hide post
+    hidePostMessage,
+    hidePostActionState,
     // block user
     blockUserMessage,
     blockUserActionState,

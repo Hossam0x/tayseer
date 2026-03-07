@@ -45,20 +45,27 @@ class HomePostFeed extends StatelessWidget {
             listener: _handleDeleteFeedback,
           ),
 
-          // 4. block user Listener
+          // 4. hide post Listener
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: (prev, curr) =>
+                prev.hidePostActionState != curr.hidePostActionState,
+            listener: _handleHideFeedback,
+          ),
+
+          // 5. block user Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: (prev, curr) =>
                 prev.blockUserActionState != curr.blockUserActionState,
             listener: _handleBlockFeedback,
           ),
 
-          // 5. archive post Listener
+          // 6. archive post Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: _shouldListenToArchive,
             listener: _handleArchiveFeedback,
           ),
 
-          // 6. poll vote Listener
+          // 7. poll vote Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: _shouldListenToPollVote,
             listener: _handlePollVoteFeedback,
@@ -156,6 +163,30 @@ class HomePostFeed extends StatelessWidget {
     error: state.postsErrorMessage,
     isAllCategory: state.selectedCategoryId == null,
   );
+
+  void _handleHideFeedback(BuildContext context, HomeState state) {
+    switch (state.hidePostActionState) {
+      case CubitStates.loading:
+        CustomloadingApp.show(context);
+        break;
+      case CubitStates.success:
+        CustomloadingApp.hide(context);
+        AppToast.success(
+          context,
+          state.hidePostMessage ?? 'تم إخفاء المنشور بنجاح',
+        );
+        break;
+      case CubitStates.failure:
+        CustomloadingApp.hide(context);
+        AppToast.error(
+          context,
+          state.hidePostMessage ?? 'حدث خطأ أثناء الإخفاء',
+        );
+        break;
+      default:
+        break;
+    }
+  }
 
   void _handleBlockFeedback(BuildContext context, HomeState state) {
     switch (state.blockUserActionState) {

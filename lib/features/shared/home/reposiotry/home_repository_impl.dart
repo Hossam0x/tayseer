@@ -357,12 +357,24 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  void hidePost({required String postId, required bool isHide}) {
-    apiService.post(
-      endPoint: ApiEndPoint.hidePost,
-      query: {'action': isHide ? 'add' : 'remove'},
-      data: {"postId": postId},
-    );
+  Future<Either<Failure, String>> hidePost({
+    required String postId,
+    required bool isHide,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.hidePost,
+        query: {'action': isHide ? 'add' : 'remove'},
+        data: {"postId": postId},
+      );
+
+      if (response['success'] == true || response['status'] == 'success') {
+        return Right(response['message'] ?? 'تمت العملية بنجاح');
+      }
+      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
   }
 
   @override
