@@ -1,3 +1,4 @@
+import 'package:tayseer/features/shared/reports/data/model/report_model.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -49,7 +50,7 @@ class ReportDetailsViewBody extends StatelessWidget {
   SliverList _buildDetailsList(
     BuildContext context,
     ReportsState state,
-    List<String> details,
+    List<ReasonDetail> details,
   ) {
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
@@ -61,14 +62,14 @@ class ReportDetailsViewBody extends StatelessWidget {
   Widget _buildDetailItem(
     BuildContext context,
     ReportsState state,
-    List<String> details,
+    List<ReasonDetail> details,
     int index,
   ) {
     return RadioListTile<int>(
       value: index,
       groupValue: state.selectedDetailIndex,
       activeColor: const Color(0xFF4CD964),
-      title: Text(details[index], style: Styles.textStyle16SemiBold),
+      title: Text(details[index].reason, style: Styles.textStyle16SemiBold),
       onChanged: (value) {
         context.read<ReportsCubit>().selectDetail(value!);
       },

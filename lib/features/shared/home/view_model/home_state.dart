@@ -67,13 +67,23 @@ class HomeState extends Equatable {
   final CubitStates archivePostActionState;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 📦 hide post
+  // ─────────────────────────────────────────────────────────────────────────
+  final String? hidePostMessage;
+  final CubitStates hidePostActionState;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 📦 block user
   // ─────────────────────────────────────────────────────────────────────────
   final String? blockUserMessage;
   final CubitStates blockUserActionState;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 🗳️ Poll Vote
+  // ─────────────────────────────────────────────────────────────────────────  // 📡 Connectivity
+  // ───────────────────────────────────────────────────────────────────────
+  final bool isOffline;
+  final bool isShowingCachedData;
+
+  // ───────────────────────────────────────────────────────────────────────  // 🗳️ Poll Vote
   // ─────────────────────────────────────────────────────────────────────────
   final String? pollVoteMessage;
   final CubitStates pollVoteActionState;
@@ -109,6 +119,10 @@ class HomeState extends Equatable {
     this.deletePostMessage,
     this.deletePostActionState = CubitStates.initial,
 
+    // hide post
+    this.hidePostMessage,
+    this.hidePostActionState = CubitStates.initial,
+
     // block user
     this.blockUserMessage,
     this.blockUserActionState = CubitStates.initial,
@@ -121,6 +135,10 @@ class HomeState extends Equatable {
     // poll vote
     this.pollVoteMessage,
     this.pollVoteActionState = CubitStates.initial,
+
+    // connectivity
+    this.isOffline = false,
+    this.isShowingCachedData = false,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -155,6 +173,10 @@ class HomeState extends Equatable {
     String? deletePostMessage,
     CubitStates? deletePostActionState,
 
+    // hide post
+    String? hidePostMessage,
+    CubitStates? hidePostActionState,
+
     // block user
     String? blockUserMessage,
     CubitStates? blockUserActionState,
@@ -167,6 +189,10 @@ class HomeState extends Equatable {
     // poll vote
     String? pollVoteMessage,
     CubitStates? pollVoteActionState,
+
+    // connectivity
+    bool? isOffline,
+    bool? isShowingCachedData,
   }) {
     return HomeState(
       // Posts
@@ -203,6 +229,10 @@ class HomeState extends Equatable {
       deletePostActionState:
           deletePostActionState ?? this.deletePostActionState,
 
+      // hide post
+      hidePostMessage: hidePostMessage ?? this.hidePostMessage,
+      hidePostActionState: hidePostActionState ?? this.hidePostActionState,
+
       // block user
       blockUserMessage: blockUserMessage ?? this.blockUserMessage,
       blockUserActionState: blockUserActionState ?? this.blockUserActionState,
@@ -216,6 +246,10 @@ class HomeState extends Equatable {
       // poll vote
       pollVoteMessage: pollVoteMessage ?? this.pollVoteMessage,
       pollVoteActionState: pollVoteActionState ?? this.pollVoteActionState,
+
+      // connectivity
+      isOffline: isOffline ?? this.isOffline,
+      isShowingCachedData: isShowingCachedData ?? this.isShowingCachedData,
     );
   }
 
@@ -304,6 +338,8 @@ class HomeState extends Equatable {
       // الحفاظ على بيانات اليوزر المخزنة
       homeInfo: homeInfo,
       fetchNameAndImageState: fetchNameAndImageState,
+      // الحفاظ على حالة الاتصال
+      isOffline: isOffline,
     );
   }
 
@@ -337,6 +373,9 @@ class HomeState extends Equatable {
     // delete post
     deletePostMessage,
     deletePostActionState,
+    // hide post
+    hidePostMessage,
+    hidePostActionState,
     // block user
     blockUserMessage,
     blockUserActionState,
@@ -349,6 +388,10 @@ class HomeState extends Equatable {
     // poll vote
     pollVoteMessage,
     pollVoteActionState,
+
+    // connectivity
+    isOffline,
+    isShowingCachedData,
   ];
 }
 

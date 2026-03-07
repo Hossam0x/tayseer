@@ -17,6 +17,7 @@ class SubscriptionButton extends StatelessWidget {
             begin: Alignment.centerRight,
             end: Alignment.centerLeft,
             colors: [Color(0xFFEB7A91), Color.fromRGBO(245, 192, 3, 1)],
+            colors: [Color(0xFFEB7A91), Color.fromRGBO(245, 192, 3, 1)],
           ),
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
@@ -47,6 +48,8 @@ class SubscriptionButton extends StatelessWidget {
   }
 }
 class SubscriptionPromptOverlay extends StatelessWidget {
+  final bool isInsideStack;
+  const SubscriptionPromptOverlay({super.key, this.isInsideStack = true});
   final bool isInsideStack;
   const SubscriptionPromptOverlay({super.key, this.isInsideStack = true});
 

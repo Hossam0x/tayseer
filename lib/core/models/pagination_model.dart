@@ -13,12 +13,19 @@ class PaginationModel {
 
   factory PaginationModel.fromJson(Map<String, dynamic> json) {
     return PaginationModel(
-      totalCount: json['totalCount'],
-      totalPages: json['totalPages'],
-      currentPage: json['currentPage'],
-      pageSize: json['pageSize'],
+      totalCount: json['totalCount'] ?? 0,
+      totalPages: json['totalPages'] ?? 0,
+      currentPage: json['currentPage'] ?? 0,
+      pageSize: json['pageSize'] ?? 0,
     );
   }
 
- 
+  Map<String, dynamic> toJson() {
+    return {
+      'totalCount': totalCount,
+      'totalPages': totalPages,
+      'currentPage': currentPage,
+      'pageSize': pageSize,
+    };
+  }
 }

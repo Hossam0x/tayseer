@@ -30,9 +30,8 @@ class HomeFilterSection extends StatelessWidget {
             }
 
             if (state.categoriesState == CubitStates.failure) {
-              return _ErrorState(
-                onRetry: () => context.read<HomeCubit>().fetchCategories(),
-              );
+              // أوفلاين أو فشل → لا تعرض أي حاجة، لما النت يرجع هيتحمل تلقائي
+              return const SizedBox.shrink();
             }
 
             return _FilterList(
@@ -197,6 +196,7 @@ class _ShimmerItem extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // ❌ Error State Widget
 // ─────────────────────────────────────────────────────────────────────────────
+// ignore: unused_element
 class _ErrorState extends StatelessWidget {
   final VoidCallback onRetry;
 

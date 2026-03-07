@@ -2,6 +2,9 @@ import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/utils/app_strings.dart';
+import 'package:tayseer/core/widgets/end_of_cached_posts.dart';
+import 'package:tayseer/core/widgets/offline_empty_state.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -45,20 +48,27 @@ class HomePostFeed extends StatelessWidget {
             listener: _handleDeleteFeedback,
           ),
 
-          // 4. block user Listener
+          // 4. hide post Listener
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: (prev, curr) =>
+                prev.hidePostActionState != curr.hidePostActionState,
+            listener: _handleHideFeedback,
+          ),
+
+          // 5. block user Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: (prev, curr) =>
                 prev.blockUserActionState != curr.blockUserActionState,
             listener: _handleBlockFeedback,
           ),
 
-          // 5. archive post Listener
+          // 6. archive post Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: _shouldListenToArchive,
             listener: _handleArchiveFeedback,
           ),
 
-          // 6. poll vote Listener
+          // 7. poll vote Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: _shouldListenToPollVote,
             listener: _handlePollVoteFeedback,
@@ -110,11 +120,17 @@ class HomePostFeed extends StatelessWidget {
     switch (state.shareActionState) {
       case CubitStates.success:
         state.isShareAdded == true
-            ? AppToast.success(context, message ?? 'تمت المشاركة بنجاح')
-            : AppToast.info(context, message ?? 'تم إلغاء المشاركة');
+            ? AppToast.success(
+                context,
+                message ?? context.tr(AppStrings.shareSuccess),
+              )
+            : AppToast.info(
+                context,
+                message ?? context.tr(AppStrings.shareCancelled),
+              );
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء المشاركة');
+        AppToast.error(context, message ?? context.tr(AppStrings.shareError));
         break;
       default:
         break;
@@ -125,10 +141,13 @@ class HomePostFeed extends StatelessWidget {
     final message = state.deletePostMessage;
     switch (state.deletePostActionState) {
       case CubitStates.success:
-        AppToast.success(context, message ?? 'تمت العملية بنجاح');
+        AppToast.success(
+          context,
+          message ?? context.tr(AppStrings.operationSuccess),
+        );
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء الحذف');
+        AppToast.error(context, message ?? context.tr(AppStrings.deleteError));
         break;
       default:
         break;
@@ -139,10 +158,13 @@ class HomePostFeed extends StatelessWidget {
     final message = state.saveMessage;
     switch (state.saveActionState) {
       case CubitStates.success:
-        AppToast.success(context, message ?? 'تمت العملية بنجاح');
+        AppToast.success(
+          context,
+          message ?? context.tr(AppStrings.operationSuccess),
+        );
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء الحفظ');
+        AppToast.error(context, message ?? context.tr(AppStrings.saveError));
         break;
       default:
         break;
@@ -153,9 +175,36 @@ class HomePostFeed extends StatelessWidget {
     postIds: state.posts.map((p) => p.postId).toList(),
     status: state.postsState,
     isLoadingMore: state.isLoadingMore,
+    hasMore: state.hasMore,
     error: state.postsErrorMessage,
     isAllCategory: state.selectedCategoryId == null,
+    isOffline: state.isOffline,
+    isShowingCachedData: state.isShowingCachedData,
   );
+
+  void _handleHideFeedback(BuildContext context, HomeState state) {
+    switch (state.hidePostActionState) {
+      case CubitStates.loading:
+        CustomloadingApp.show(context);
+        break;
+      case CubitStates.success:
+        CustomloadingApp.hide(context);
+        AppToast.success(
+          context,
+          state.hidePostMessage ?? 'تم إخفاء المنشور بنجاح',
+        );
+        break;
+      case CubitStates.failure:
+        CustomloadingApp.hide(context);
+        AppToast.error(
+          context,
+          state.hidePostMessage ?? 'حدث خطأ أثناء الإخفاء',
+        );
+        break;
+      default:
+        break;
+    }
+  }
 
   void _handleBlockFeedback(BuildContext context, HomeState state) {
     switch (state.blockUserActionState) {
@@ -166,14 +215,14 @@ class HomePostFeed extends StatelessWidget {
         CustomloadingApp.hide(context);
         AppToast.success(
           context,
-          state.blockUserMessage ?? 'تم حظر المستخدم بنجاح',
+          state.blockUserMessage ?? context.tr(AppStrings.blockSuccess),
         );
         break;
       case CubitStates.failure:
         CustomloadingApp.hide(context);
         AppToast.error(
           context,
-          state.blockUserMessage ?? 'حدث خطأ أثناء الحظر',
+          state.blockUserMessage ?? context.tr(AppStrings.blockError),
         );
         break;
       default:
@@ -185,10 +234,13 @@ class HomePostFeed extends StatelessWidget {
     final message = state.archivePostMessage;
     switch (state.archivePostActionState) {
       case CubitStates.success:
-        AppToast.success(context, message ?? 'تمت العملية بنجاح');
+        AppToast.success(
+          context,
+          message ?? context.tr(AppStrings.operationSuccess),
+        );
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء الأرشفة');
+        AppToast.error(context, message ?? context.tr(AppStrings.archiveError));
         break;
       default:
         break;
@@ -196,7 +248,10 @@ class HomePostFeed extends StatelessWidget {
   }
 
   void _handlePollVoteFeedback(BuildContext context, HomeState state) {
-    AppToast.error(context, state.pollVoteMessage ?? 'حدث خطأ أثناء التصويت');
+    AppToast.error(
+      context,
+      state.pollVoteMessage ?? context.tr(AppStrings.pollVoteError),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -205,6 +260,10 @@ class HomePostFeed extends StatelessWidget {
 
   Widget _buildContent(BuildContext context, _FeedState state) {
     if (state.isLoading && state.isEmpty) return _buildShimmerList();
+    // Offline with no cache → show friendly offline empty state
+    if (state.isError && state.isEmpty && state.isOffline) {
+      return const OfflineEmptyState();
+    }
     if (state.isError && state.isEmpty) return _buildError(state.error);
     if (state.isEmpty && !state.isAllCategory) {
       return _EmptyCategoryIndicator(onViewAllTap: _goToAllCategory);
@@ -226,10 +285,12 @@ class HomePostFeed extends StatelessWidget {
 
   Widget _buildError(String? error) => SliverFillRemaining(
     child: Center(
-      child: Text(
-        error ?? 'حدث خطأ ما',
-        style: Styles.textStyle16,
-        textAlign: TextAlign.center,
+      child: Builder(
+        builder: (context) => Text(
+          error ?? context.tr(AppStrings.genericError),
+          style: Styles.textStyle16,
+          textAlign: TextAlign.center,
+        ),
       ),
     ),
   );
@@ -248,8 +309,19 @@ class HomePostFeed extends StatelessWidget {
           );
         }
 
+        // Don't show loading spinner when offline (unless loading from cache)
         if (state.isLoadingMore) {
           return const _LoadingMoreIndicator();
+        }
+
+        // Show cached-data footer when viewing cache
+        if (state.isShowingCachedData && !state.hasMore) {
+          return const EndOfCachedPosts();
+        }
+
+        // أوفلاين ولسه فيه بوستات على السيرفر → عرض رسالة اتصل بالنت
+        if (state.isOffline && state.hasMore) {
+          return const EndOfCachedPosts();
         }
 
         if (state.isAllCategory) {
@@ -272,15 +344,21 @@ class _FeedState extends Equatable {
   final List<String> postIds;
   final CubitStates status;
   final bool isLoadingMore;
+  final bool hasMore;
   final String? error;
   final bool isAllCategory;
+  final bool isOffline;
+  final bool isShowingCachedData;
 
   const _FeedState({
     required this.postIds,
     required this.status,
     required this.isLoadingMore,
+    required this.hasMore,
     required this.isAllCategory,
     this.error,
+    this.isOffline = false,
+    this.isShowingCachedData = false,
   });
 
   bool get isEmpty => postIds.isEmpty;
@@ -292,8 +370,11 @@ class _FeedState extends Equatable {
     postIds,
     status,
     isLoadingMore,
+    hasMore,
     error,
     isAllCategory,
+    isOffline,
+    isShowingCachedData,
   ];
 }
 
@@ -486,7 +567,7 @@ class EndOfFeedIndicator extends StatelessWidget {
         children: [
           AppImage(AssetsData.postsEndIcon, height: 110.h),
           Text(
-            'تم الوصول لنهاية المنشورات',
+            context.tr(AppStrings.endOfFeed),
             style: Styles.textStyle14.copyWith(
               color: Colors.grey.shade500,
               fontWeight: FontWeight.w600,
@@ -525,7 +606,7 @@ class _EndOfCategoryIndicator extends StatelessWidget {
           AppImage(AssetsData.postsEndIcon, height: 110.h),
           Gap(8.h),
           Text(
-            'تم الوصول لنهاية المنشورات في هذه الفئة',
+            context.tr(AppStrings.endOfCategoryFeed),
             style: Styles.textStyle14.copyWith(
               color: Colors.grey.shade500,
               fontWeight: FontWeight.w600,
@@ -554,7 +635,7 @@ class _EndOfCategoryIndicator extends StatelessWidget {
                   ),
                   Gap(6.w),
                   Text(
-                    'عرض كل المنشورات',
+                    context.tr(AppStrings.viewAllPosts),
                     style: Styles.textStyle12.copyWith(
                       color: AppColors.kprimaryColor,
                       fontWeight: FontWeight.w600,
@@ -587,7 +668,7 @@ class _EmptyCategoryIndicator extends StatelessWidget {
             AppImage(AssetsData.noPosts, height: 217.h),
             Gap(16.h),
             Text(
-              'لا توجد منشورات في هذه الفئة',
+              context.tr(AppStrings.noCategoryPosts),
               style: Styles.textStyle16.copyWith(
                 color: Colors.grey.shade600,
                 fontWeight: FontWeight.w600,
@@ -596,7 +677,7 @@ class _EmptyCategoryIndicator extends StatelessWidget {
             ),
             Gap(8.h),
             Text(
-              'جرب استكشاف فئات أخرى',
+              context.tr(AppStrings.tryOtherCategories),
               style: Styles.textStyle14.copyWith(color: Colors.grey.shade400),
               textAlign: TextAlign.center,
             ),
@@ -631,7 +712,7 @@ class _EmptyCategoryIndicator extends StatelessWidget {
                     ),
                     Gap(8.w),
                     Text(
-                      'استكشف كل المنشورات',
+                      context.tr(AppStrings.exploreAllPosts),
                       style: Styles.textStyle14.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,

@@ -94,7 +94,12 @@ class _HomeAppBarState extends State<HomeAppBar> {
                                   showCancelButton: true,
                                   cancelText: context.tr('skip'),
                                   onPressed: () {
-                                    CachNetwork.removeData(key: ktoken);
+                                    // ✅ مسح كاش البروفايل القديم عشان اللوجن الجديد يبدأ نضيف
+                                    CachNetwork.clearGuestAndProfileCache();
+                                    // ✅ ريسيت الـ HomeCubit Singleton
+                                    if (getIt.isRegistered<HomeCubit>()) {
+                                      getIt.resetLazySingleton<HomeCubit>();
+                                    }
                                     context.pushNamedAndRemoveUntil(
                                       AppRouter.kRegisrationView,
                                       predicate: (_) => false,

@@ -29,4 +29,16 @@ class PostsResponseModel {
       nextCursor: json['data']?['nextCursor'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'message': message,
+      'data': {
+        'postsDto': posts.map((e) => e.toJson()).toList(),
+        'pagination': pagination.toJson(),
+        'nextCursor': nextCursor,
+      },
+    };
+  }
 }

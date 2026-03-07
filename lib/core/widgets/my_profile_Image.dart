@@ -32,6 +32,7 @@ class MyProfileImage extends StatelessWidget {
         child: AppImage(
           isAnnonymous ? AssetsData.anonymousProfile : image,
           fit: BoxFit.cover,
+          isAvatar: true,
         ),
       ),
     );

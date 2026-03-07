@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/firebase_options.dart';
 import 'package:tayseer/tayser_app.dart';
@@ -23,6 +24,7 @@ void main() async {
   LocalNotification().initialize();
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
+  await getIt<ConnectivityService>().initialize();
   await _initializeVideoSystem();
   await GlobalMuteManager.instance.init();
 
