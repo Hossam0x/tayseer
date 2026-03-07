@@ -20,7 +20,6 @@ class ChatListItem extends StatelessWidget {
     const Color dividerColor = Color(0xFFD9D9D9);
     final archiveColor = AppColors.kprimaryColor;
 
-    // الحصول على المستخدم الآخر
     final otherUser = chatRoom.users.isNotEmpty
         ? chatRoom.users.firstWhere(
             (user) => user.id == chatRoom.sender.id,
