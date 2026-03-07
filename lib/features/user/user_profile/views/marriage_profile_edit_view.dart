@@ -59,17 +59,19 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       });
     }
   }
-@override
-void didUpdateWidget(MarriageProfileEditView oldWidget) {
-  super.didUpdateWidget(oldWidget);
-  // ✅ لو الـ scrollToSection اتغير، اعمل scroll
-  if (widget.scrollToSection != null &&
-      widget.scrollToSection != oldWidget.scrollToSection) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToSection(widget.scrollToSection!);
-    });
+
+  @override
+  void didUpdateWidget(MarriageProfileEditView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // ✅ لو الـ scrollToSection اتغير، اعمل scroll
+    if (widget.scrollToSection != null &&
+        widget.scrollToSection != oldWidget.scrollToSection) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToSection(widget.scrollToSection!);
+      });
+    }
   }
-}
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -101,11 +103,12 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
         } else {
           debugPrint('⚠️ Retrying scroll for $section...');
           Future.delayed(const Duration(milliseconds: 200), () {
-            if (targetKey?.currentContext != null)
+            if (targetKey?.currentContext != null) {
               Scrollable.ensureVisible(
                 targetKey!.currentContext!,
                 alignment: 0.1,
               );
+            }
           });
         }
       });
@@ -123,8 +126,10 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
   }
 
   String _translateValue(String value, BuildContext context) {
-    if (value.isEmpty || value == 'اختر' || value == 'select')
+    if (value.isEmpty || value == 'اختر' || value == 'select') {
       return context.tr('select');
+    }
+    
     final translated = context.tr(value);
     if (translated == value && !value.contains(' ')) return value;
     return translated;
@@ -233,7 +238,7 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color:  const Color.fromRGBO(251, 251, 251, 0.64),
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -674,11 +679,11 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
     final serverVideoUrl = widget.profile.userMedia?.video;
     final pendingVideo = widget.state.pendingVideo;
     final pendingDeleteVideo = widget.state.pendingDeleteVideo;
-  final hasVideo =
-    pendingVideo != null ||
-    (!pendingDeleteVideo &&
-        serverVideoUrl != null &&
-        serverVideoUrl.isNotEmpty);
+    final hasVideo =
+        pendingVideo != null ||
+        (!pendingDeleteVideo &&
+            serverVideoUrl != null &&
+            serverVideoUrl.isNotEmpty);
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -730,10 +735,10 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
     final pendingAudio = widget.state.pendingAudio;
     final pendingDeleteAudio = widget.state.pendingDeleteAudio;
     final hasAudio =
-    pendingAudio != null ||
-    (!pendingDeleteAudio &&
-        serverAudioUrl != null &&
-        serverAudioUrl.isNotEmpty);
+        pendingAudio != null ||
+        (!pendingDeleteAudio &&
+            serverAudioUrl != null &&
+            serverAudioUrl.isNotEmpty);
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -933,25 +938,27 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
   }
 
   Future<void> _pickVideoFromCamera(BuildContext context) async {
+     final messenger = ScaffoldMessenger.of(context);
+  final tr = context.tr; // أو احفظ الـ strings مباشرة
     try {
       if (Platform.isAndroid) {
         final s = await Permission.camera.request();
         if (!mounted) return;
         if (s.isDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('camera_permission_required'),
+              text: tr('camera_permission_required'),
               isError: true,
             ),
           );
           return;
         }
         if (s.isPermanentlyDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('enable_camera_from_settings'),
+              text: tr('enable_camera_from_settings'),
               isError: true,
             ),
           );
@@ -978,6 +985,9 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
   }
 
   Future<void> _pickVideoFromGallery(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final tr = context.tr;
+
     try {
       if (Platform.isAndroid) {
         final info = await DeviceInfoPlugin().androidInfo;
@@ -986,20 +996,20 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
             : await Permission.storage.request();
         if (!mounted) return;
         if (s.isDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('gallery_permission_required'),
+              text: tr('gallery_permission_required'),
               isError: true,
             ),
           );
           return;
         }
         if (s.isPermanentlyDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('enable_gallery_from_settings'),
+              text: tr('enable_gallery_from_settings'),
               isError: true,
             ),
           );
@@ -1131,6 +1141,8 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
   }
 
   Future<void> _pickAudio(BuildContext context) async {
+     final messenger = ScaffoldMessenger.of(context);
+  final tr = context.tr; // أو احفظ الـ strings مباشرة
     try {
       if (Platform.isAndroid) {
         final info = await DeviceInfoPlugin().androidInfo;
@@ -1139,20 +1151,20 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
             : await Permission.storage.request();
         if (!mounted) return;
         if (s.isDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('allow_files_access'),
+              text:tr('allow_files_access'),
               isError: true,
             ),
           );
           return;
         }
         if (s.isPermanentlyDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('enable_permission_settings'),
+              text: tr('enable_permission_settings'),
               isError: true,
             ),
           );
@@ -1170,10 +1182,10 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
         final file = File(result.files.single.path!);
         if (!await file.exists()) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('file_not_found'),
+              text:tr('file_not_found'),
               isError: true,
             ),
           );
@@ -1181,10 +1193,10 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
         }
         if (await file.length() > 10 * 1024 * 1024) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('file_too_large'),
+              text: tr('file_too_large'),
               isError: true,
             ),
           );
@@ -1712,16 +1724,17 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
   ) {
     return BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
       listener: (context, state) {
-        if (state.state == CubitStates.success && !state.isUpdating && state.savedFromButton) {
+        if (state.state == CubitStates.success &&
+            !state.isUpdating &&
+            state.savedFromButton) {
           ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(
-            context,
-            text: context.tr('changes_saved_successfully'),
-            isSuccess: true,  // ← isSuccess مش isError
-          ),
-        );
+            CustomSnackBar(
+              context,
+              text: context.tr('changes_saved_successfully'),
+              isSuccess: true, // ← isSuccess مش isError
+            ),
+          );
           widget.onTabChanged?.call(1);
-          
         } else if (state.state == CubitStates.failure) {
           debugPrint('❌ [SAVE] Error: ${state.errorMessage}');
           if (state.errorMessage != null)
@@ -1752,7 +1765,7 @@ void didUpdateWidget(MarriageProfileEditView oldWidget) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        color:  const Color.fromRGBO(251, 251, 251, 0.64),
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

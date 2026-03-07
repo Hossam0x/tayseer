@@ -192,11 +192,7 @@ class _SettingsViewState extends State<SettingsView> {
                       slivers: [
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: EdgeInsets.only(
-                              left: 20.w,
-                              right: 20.w,
-                              top: 40.h,
-                            ),
+                            padding: EdgeInsets.only(left: 20.w, right: 20.w),
                             child: ReferralShareCard(
                               points: state.points,
                               referralLink: state.referralLink,

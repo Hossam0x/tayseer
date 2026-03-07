@@ -70,16 +70,21 @@ class MarriageCubit extends Cubit<MarriageState> {
           errorMessage: failure.message,
         ),
       ),
-      (profile) => emit(
-        state.copyWith(
-          marriageProfileState: CubitStates.success,
-          profile: profile,
-          currentIndex: 0,
-          allUsers: profile.data?.users ?? [],
-          currentPage: profile.data?.pagination?.currentPage ?? 1,
-          totalPages: profile.data?.pagination?.totalPages ?? 1,
-        ),
-      ),
+      (profile) {
+        if (isClosed) {
+          return;
+        }
+        emit(
+          state.copyWith(
+            marriageProfileState: CubitStates.success,
+            profile: profile,
+            currentIndex: 0,
+            allUsers: profile.data?.users ?? [],
+            currentPage: profile.data?.pagination?.currentPage ?? 1,
+            totalPages: profile.data?.pagination?.totalPages ?? 1,
+          ),
+        );
+      },
     );
   }
 
