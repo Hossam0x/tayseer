@@ -50,15 +50,21 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       try {
         final profile = UserProfileModel.fromJson(jsonDecode(cachedData));
         final notificationStatus = await _getNotificationStatus();
+        final isMarriageDeactivated =
+            await _getMarriageSectionDeactivated(); // ✅ أضف هذا
+        final isMarriageComplete = await _getMarriageComplete(); // ✅ أضف هذا
+
         final settings = await _loadSettings(
-          isProfileComplete: false,
-        ); // Default false for cache
+          isProfileComplete: isMarriageComplete, // ✅ استخدم القيمة الصح
+        );
 
         emit(
           SettingsLoaded(
             settings: settings,
             userProfile: profile,
             isNotificationEnabled: notificationStatus,
+            isMarriageSectionDeactivated: isMarriageDeactivated, // ✅ أضف هذا
+            isMarriageProfileComplete: isMarriageComplete, // ✅ أضف هذا
           ),
         );
         return true;
