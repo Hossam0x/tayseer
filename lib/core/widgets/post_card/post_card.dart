@@ -107,7 +107,6 @@ class _PostCardState extends State<PostCard> {
             onMoreTap: () => PostOptionsBottomSheet.show(
               context,
               post: widget.post,
-              onEdit: () => widget.callbacks.onEdit?.call(widget.post),
               onDelete: () =>
                   widget.callbacks.onDelete?.call(widget.post.postId),
               onArchive: () =>

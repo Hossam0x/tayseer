@@ -79,9 +79,9 @@ void showConfirmationDialog({
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'نعم',
-                            style: TextStyle(
+                          child: Text(
+                            context.tr('yes'),
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -103,9 +103,9 @@ void showConfirmationDialog({
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'لا',
-                            style: TextStyle(
+                          child: Text(
+                            context.tr('no'),
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
