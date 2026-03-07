@@ -622,7 +622,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       // 1️⃣ حدّث الـ state فوراً
       emit(currentState.copyWith(isMarriageSectionDeactivated: value));
-      emit(currentState.copyWith(isMarriageSectionDeactivated: value));
 
       // 2️⃣ احفظ في الـ cache
       await _saveMarriageSectionDeactivated(value);
