@@ -2,7 +2,6 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/otp_view_user.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class EmailEditView extends StatefulWidget {
@@ -36,19 +35,11 @@ class _EmailEditViewState extends State<EmailEditView> {
         body: BlocConsumer<EmailEditCubit, EmailEditState>(
           listener: (context, state) {
             if (state.errorMessage.isNotEmpty) {
-              showSafeSnackBar(
-                context: context,
-                text: context.tr(state.errorMessage),
-                isError: true,
-              );
+              AppToast.error(context, context.tr(state.errorMessage));
               context.read<EmailEditCubit>().clearMessages();
             } else if (state.successMessage.isNotEmpty &&
                 state.status == CubitStates.success) {
-              showSafeSnackBar(
-                context: context,
-                text: context.tr(state.successMessage),
-                isSuccess: true,
-              );
+              AppToast.success(context, context.tr(state.successMessage));
 
               Future.delayed(const Duration(milliseconds: 1400), () {
                 if (!mounted) return;
