@@ -403,10 +403,7 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (response) {
         final isFromCache = response.message == 'from_cache';
-        final allPosts = _deduplicatePosts([
-          ...currentData.posts,
-          ...response.posts,
-        ]);
+        final allPosts = [...currentData.posts, ...response.posts];
         final hasMorePages = response.posts.length >= _pageSize;
 
         emit(
@@ -487,10 +484,7 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (response) {
         final isFromCache = response.message == 'from_cache';
-        final allPosts = _deduplicatePosts([
-          ...currentData.posts,
-          ...response.posts,
-        ]);
+        final allPosts = [...currentData.posts, ...response.posts];
         final hasMorePages = response.posts.length >= _pageSize;
 
         if (!isFromCache) {

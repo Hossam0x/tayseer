@@ -245,7 +245,7 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
       context,
       title: context.tr('unblock'),
       supTitle:
-          '${context.tr('are_you_sure_unblock')} ${blockedUser.blockedUser.name}؟',
+          '${context.tr('are_you_sure_unblock')} ${blockedUser.blockedUser.name}',
       icon: Icons.block,
       iconColor: AppColors.kprimaryColor,
       iconBackgroundColor: AppColors.primary100,
