@@ -381,7 +381,8 @@ class ExplorationState extends State<Exploration> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
     final cardWidth = isTablet ? 220.w : 190.w;
-    final cardHeight = isTablet ? 320.h : 280.h;
+    final cardHeight = isTablet ? 260.0 : 230.0;
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
