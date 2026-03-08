@@ -1,6 +1,11 @@
 part of 'post_details_cubit.dart';
 
 class PostDetailsState extends Equatable {
+  // Post Loading State (from Notification)
+  final CubitStates postLoadingState;
+  final String? postLoadingError;
+  final PostModel? loadedPost;
+
   // Comments List State
   final CubitStates commentsState;
   final List<CommentModel> comments;
@@ -41,6 +46,9 @@ class PostDetailsState extends Equatable {
   final bool selectedAnonymous;
 
   const PostDetailsState({
+    this.postLoadingState = CubitStates.initial,
+    this.postLoadingError,
+    this.loadedPost,
     this.commentsState = CubitStates.initial,
     this.comments = const [],
     this.errorMessage,
@@ -67,6 +75,10 @@ class PostDetailsState extends Equatable {
   bool get hasMoreComments => currentPage < totalPages;
 
   PostDetailsState copyWith({
+    CubitStates? postLoadingState,
+    String? postLoadingError,
+    bool? clearPostLoadingError,
+    PostModel? loadedPost,
     CubitStates? commentsState,
     List<CommentModel>? comments,
     String? errorMessage,
@@ -101,6 +113,11 @@ class PostDetailsState extends Equatable {
     bool? selectedAnonymous,
   }) {
     return PostDetailsState(
+      postLoadingState: postLoadingState ?? this.postLoadingState,
+      postLoadingError: (clearPostLoadingError == true)
+          ? null
+          : (postLoadingError ?? this.postLoadingError),
+      loadedPost: loadedPost ?? this.loadedPost,
       commentsState: commentsState ?? this.commentsState,
       comments: comments ?? this.comments,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -139,6 +156,9 @@ class PostDetailsState extends Equatable {
 
   @override
   List<Object?> get props => [
+    postLoadingState,
+    postLoadingError,
+    loadedPost,
     commentsState,
     comments,
     errorMessage,

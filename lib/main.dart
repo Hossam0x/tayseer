@@ -30,7 +30,11 @@ void main() async {
   await setupGetIt();
   await _initializeVideoSystem();
   await GlobalMuteManager.instance.init();
-
+  final RemoteMessage? initialMessage = await FirebaseMessaging.instance
+      .getInitialMessage();
+  if (initialMessage != null) {
+    pendingNotificationMessage = initialMessage;
+  }
   Bloc.observer = SimpleBlocObserver();
 
   // ✅ أولاً runApp عشان الـ Navigator يكون جاهز
@@ -53,3 +57,5 @@ Future<void> _initializeVideoSystem() async {
     debugPrint('⚠️ Error initializing video system: $e');
   }
 }
+
+

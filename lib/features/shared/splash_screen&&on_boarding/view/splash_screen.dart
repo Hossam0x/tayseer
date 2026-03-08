@@ -1,52 +1,30 @@
-// import 'dart:developer';
-
-// import 'package:tayseer/core/utils/helper/socket_helper.dart';
-
 import 'dart:developer';
-
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/notifications/notificationHelper.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/main.dart';
-
 import '../../../../my_import.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _SplashScreenState createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  // double _opacity = 0.0;
-  // late AnimationController _controller;
-
   @override
   void initState() {
-    _initializeSocket();
     super.initState();
-    // _controller = AnimationController(
-    //   duration: const Duration(seconds: 2),
-    //   vsync: this,
-    // )..repeat();
-    // Future.delayed(const Duration(seconds: 1), () {
-    //   // if (mounted) {
-    //   //   setState(() {
-    //   //     _opacity = 1.0;
-    //   //   });
-    //   // }
-    // });
+    _initializeSocket();
     _navigateBasedOnToken();
   }
 
   Future<void> _initializeSocket() async {
     try {
       final socketHelper = getIt<tayseerSocketHelper>();
-
       final connected = await socketHelper.connect();
-
       if (connected) {
         log('✅ Socket connected successfully');
       }
@@ -58,44 +36,44 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateBasedOnToken() async {
     await Future.delayed(const Duration(seconds: 6));
     if (!mounted) return;
+
     String? token = CachNetwork.getStringData(key: ktoken);
-    if (mounted) {
-      if (token.isNotEmpty) {
-        if (selectedUserType == UserTypeEnum.asConsultant) {
-          if (kCurrentUserData?.compeletedData == true) {
-            context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
-            go();
-          } else {
-            context.pushReplacementNamed(AppRouter.kRegisrationView);
-            go();
-          }
+
+    if (token.isNotEmpty) {
+      if (selectedUserType == UserTypeEnum.asConsultant) {
+        if (kCurrentUserData?.compeletedData == true) {
+          navigatorKey.currentState?.pushReplacementNamed(
+            AppRouter.kAdvisorLayoutView,
+          );
         } else {
-          context.pushReplacementNamed(AppRouter.kUserLayoutView);
-          go();
+          navigatorKey.currentState?.pushReplacementNamed(
+            AppRouter.kRegisrationView,
+          );
         }
       } else {
-        context.pushReplacementNamed(AppRouter.kRegisrationView);
+        navigatorKey.currentState?.pushReplacementNamed(
+          AppRouter.kUserLayoutView,
+        );
       }
-    }
-  }
 
-  go() {
-    if (pendingNotificationMessage != null) {
-      // ✅ تأجيل الملاحة لضمان استقرار الـ Navigator
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (navigatorKey.currentState != null &&
-            navigatorKey.currentState!.mounted) {
-          navigatorKey.currentState!.pushNamed(AppRouter.notification);
-          pendingNotificationMessage = null;
-        }
+      // ✅ استخدام NotificationHelper بدل go()
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (pendingNotificationMessage != null) {
+            debugPrint('✅ Handling pending notification from terminated state');
+            NotificationHelper.handleNotificationClick(
+              message: pendingNotificationMessage,
+            );
+            pendingNotificationMessage = null;
+          }
+        });
       });
+    } else {
+      navigatorKey.currentState?.pushReplacementNamed(
+        AppRouter.kRegisrationView,
+      );
     }
   }
-  // @override
-  // void dispose() {
-  //   _controller.dispose();
-  //   super.dispose();
-  // }
 
   @override
   Widget build(BuildContext context) {

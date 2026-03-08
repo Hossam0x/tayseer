@@ -5,6 +5,7 @@ import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
+import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/advisor_chat_screen.dart';
@@ -59,6 +60,7 @@ import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/report_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/reports_view.dart';
@@ -124,7 +126,7 @@ abstract class AppRouter {
   static const kRegisterView = '/RegisterView';
   static const kOtpView = '/OtpView';
   static const kUserLayoutView = '/UserLayoutView';
-
+static const kPostDetailsView = '/PostDetailsView';
   static const kChooseGenderView = '/ChooseGenderView';
   static const kNationalityView = '/NationalityView';
   static const kCountryView = '/CountryView';
@@ -249,6 +251,16 @@ abstract class AppRouter {
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case kPostDetailsView:
+final args = settings.arguments as Map<String, dynamic>;
+return MaterialPageRoute(
+  settings: settings,
+  builder: (_) => PostDetailsView(
+  postId_fromNotifc:args["postID"] as String?,
+    isFromProfile:  false,
+   
+  ),
+);
       case kSettingsView:
         return SlideLeftRoute(
           page: const SettingsView(),

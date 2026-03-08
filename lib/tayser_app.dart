@@ -1,9 +1,9 @@
 import 'package:tayseer/core/appLocalizations/appLocalizations.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
+import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
 import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
-
 class TayseerApp extends StatelessWidget {
   const TayseerApp({super.key});
 
@@ -49,7 +49,8 @@ class TayseerApp extends StatelessWidget {
                 ),
                 navigatorObservers: [DrawerRouteObserver(), videoRouteObserver],
                 onGenerateRoute: AppRouter.onGenerateRoute,
-                initialRoute: AppRouter.kSplashView,
+                // ✅ go directly to SplashScreen without route
+                home: const SplashScreen(),
               );
             },
           ),
