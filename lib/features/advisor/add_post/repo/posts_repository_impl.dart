@@ -1,6 +1,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/core/models/category_model.dart';
+import 'package:tayseer/core/models/pagination_model.dart';
+import 'package:tayseer/features/advisor/add_post/model/category_response_model.dart';
 import 'package:tayseer/my_import.dart';
 
 import 'posts_repository.dart';
@@ -76,24 +78,40 @@ class PostsRepositoryImpl implements PostsRepository {
   }
 
   @override
-  Future<Either<Failure, List<CategoryModel>>> getALLCategory() async {
+  Future<Either<Failure, CategoryResponse>> getALLCategory(String? page) async {
     try {
-      final response = await apiService.get(endPoint: '/category');
+      final response = await apiService.get(
+        endPoint: '/category',
+        query: {if (page != null) 'page': page},
+      );
 
       final data = response['data'];
+
+      // 📌 Categories
       final categoriesJson = data['categories'] as List;
 
       List<CategoryModel> results = categoriesJson
           .map((category) => CategoryModel.fromJson(category))
           .toList();
 
-      debugPrint('category fetched: $results');
+      // 📌 Pagination
+      final paginationJson = data['pagination'];
 
-      return Right(results);
+      final pagination = PaginationModel.fromJson(paginationJson);
+
+      debugPrint(
+        'Category fetched: ${results.length} | Page: ${pagination.currentPage}/${pagination.totalPages}',
+      );
+
+      return Right(
+        CategoryResponse(categories: results, pagination: pagination),
+      );
     } on DioException catch (error) {
-      return left(error.response?.data['message']);
+      return Left(
+        ServerFailure(error.response?.data['message'] ?? 'حدث خطأ في السيرفر'),
+      );
     } catch (e) {
-      debugPrint('Error fetching packages: $e');
+      debugPrint('Error fetching categories: $e');
       return Left(ServerFailure('حدث خطأ أثناء الاتصال بالخادم'));
     }
   }

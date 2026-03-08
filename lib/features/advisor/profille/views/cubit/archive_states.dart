@@ -15,6 +15,8 @@ class ArchivedChatsState extends Equatable {
   final bool hasMore;
   final bool isLoadingMore;
   final bool isRefreshing;
+  final CubitStates unarchiveActionState;
+  final String? unarchiveMessage;
 
   const ArchivedChatsState({
     this.state = CubitStates.initial,
@@ -24,6 +26,8 @@ class ArchivedChatsState extends Equatable {
     this.hasMore = true,
     this.isLoadingMore = false,
     this.isRefreshing = false,
+    this.unarchiveActionState = CubitStates.initial,
+    this.unarchiveMessage,
   });
 
   ArchivedChatsState copyWith({
@@ -34,6 +38,8 @@ class ArchivedChatsState extends Equatable {
     bool? hasMore,
     bool? isLoadingMore,
     bool? isRefreshing,
+    CubitStates? unarchiveActionState,
+    String? unarchiveMessage,
   }) {
     return ArchivedChatsState(
       state: state ?? this.state,
@@ -43,6 +49,8 @@ class ArchivedChatsState extends Equatable {
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
+      unarchiveActionState: unarchiveActionState ?? this.unarchiveActionState,
+      unarchiveMessage: unarchiveMessage ?? this.unarchiveMessage,
     );
   }
 
@@ -55,6 +63,8 @@ class ArchivedChatsState extends Equatable {
     hasMore,
     isLoadingMore,
     isRefreshing,
+    unarchiveActionState,
+    unarchiveMessage,
   ];
 }
 
@@ -212,6 +222,12 @@ class ArchivedStoriesState extends Equatable {
   final bool isLoadingMore;
   final bool isRefreshing;
 
+  final CubitStates unarchiveActionState;
+  final String? unarchiveMessage;
+
+  final CubitStates deleteActionState;
+  final String? deleteMessage;
+
   const ArchivedStoriesState({
     this.state = CubitStates.initial,
     this.stories = const [],
@@ -220,6 +236,10 @@ class ArchivedStoriesState extends Equatable {
     this.hasMore = true,
     this.isLoadingMore = false,
     this.isRefreshing = false,
+    this.unarchiveActionState = CubitStates.initial,
+    this.unarchiveMessage,
+    this.deleteActionState = CubitStates.initial,
+    this.deleteMessage,
   });
 
   ArchivedStoriesState copyWith({
@@ -230,6 +250,10 @@ class ArchivedStoriesState extends Equatable {
     bool? hasMore,
     bool? isLoadingMore,
     bool? isRefreshing,
+    CubitStates? unarchiveActionState,
+    String? unarchiveMessage,
+    CubitStates? deleteActionState,
+    String? deleteMessage,
   }) {
     return ArchivedStoriesState(
       state: state ?? this.state,
@@ -239,6 +263,10 @@ class ArchivedStoriesState extends Equatable {
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
+      unarchiveActionState: unarchiveActionState ?? this.unarchiveActionState,
+      unarchiveMessage: unarchiveMessage ?? this.unarchiveMessage,
+      deleteActionState: deleteActionState ?? this.deleteActionState,
+      deleteMessage: deleteMessage ?? this.deleteMessage,
     );
   }
 
@@ -251,5 +279,9 @@ class ArchivedStoriesState extends Equatable {
     hasMore,
     isLoadingMore,
     isRefreshing,
+    unarchiveActionState,
+    unarchiveMessage,
+    deleteActionState,
+    deleteMessage,
   ];
 }

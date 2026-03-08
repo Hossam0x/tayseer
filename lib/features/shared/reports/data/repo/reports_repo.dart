@@ -11,7 +11,7 @@ abstract class ReportsRepo {
     required String id,
     required ReportType reportType,
     String? reasonId,
-    String? details,
+    String? detailsId,
     String? otherReason,
   });
 }

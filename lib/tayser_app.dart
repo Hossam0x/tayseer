@@ -1,4 +1,5 @@
 import 'package:tayseer/core/appLocalizations/appLocalizations.dart';
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
@@ -14,8 +15,11 @@ class TayseerApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return BlocProvider(
-          create: (context) => LanguageCubit(),
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (context) => LanguageCubit()),
+            BlocProvider.value(value: getIt<ConnectivityCubit>()),
+          ],
           child: BlocBuilder<LanguageCubit, Locale>(
             builder: (context, state) {
               return MaterialApp(

@@ -22,6 +22,7 @@ class PostCard extends StatefulWidget {
   /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
   final String? heroPrefix;
+  final bool isArchived;
 
   /// Callback for navigating to post details
   final NavigateToDetailsCallback? onNavigateToDetails;
@@ -35,6 +36,7 @@ class PostCard extends StatefulWidget {
     this.onNavigateToDetails,
     required this.isFromProfile,
     this.heroPrefix,
+    this.isArchived = false,
   });
 
   @override
@@ -105,7 +107,6 @@ class _PostCardState extends State<PostCard> {
             onMoreTap: () => PostOptionsBottomSheet.show(
               context,
               post: widget.post,
-              onEdit: () => widget.callbacks.onEdit?.call(widget.post),
               onDelete: () =>
                   widget.callbacks.onDelete?.call(widget.post.postId),
               onArchive: () =>
@@ -120,6 +121,7 @@ class _PostCardState extends State<PostCard> {
                 widget.post.postId,
                 widget.post.advisorId,
               ),
+              isArchived: widget.isArchived,
             ),
           ),
           Gap(context.responsiveHeight(15)),
@@ -235,6 +237,7 @@ class _BlockedPostUIState extends State<_BlockedPostUI> {
                                 width: 28.w,
                                 height: 28.w,
                                 fit: BoxFit.cover,
+                                isAvatar: true,
                               ),
                             ),
                           ),
@@ -543,7 +546,7 @@ class _PostMediaState extends State<_PostMedia> {
         return EventCardItem(
           key: ValueKey('event_${widget.post.postId}'), // 👈 أضف ده
 
-          imageUrl: widget.post.event?.image ?? '',
+          imageUrl: widget.post.event?.images.first ?? '',
           sessionTitle: widget.post.event?.title ?? '',
           location: widget.post.event?.location ?? '',
           advisorName: widget.post.event?.advisor ?? '',

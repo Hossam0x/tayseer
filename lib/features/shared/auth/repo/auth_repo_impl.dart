@@ -129,6 +129,16 @@ class AuthRepoImpl implements AuthRepo {
         );
         kCurrentUserData = registerResponse.data?.user;
 
+        // ✅ حفظ الاسم والصورة في الكاش عشان الـ HomeCubit يلاقيهم فوراً
+        await CachNetwork.setData(
+          key: kMyProfileImage,
+          value: kCurrentUserData?.image ?? '',
+        );
+        await CachNetwork.setData(
+          key: kMyProfileName,
+          value: kCurrentUserData?.name ?? '',
+        );
+
         return right(registerResponse);
       } else {
         final message = response['message'] ?? 'فشل التحقق من الكود.';
@@ -192,6 +202,17 @@ class AuthRepoImpl implements AuthRepo {
         kCurrentUserData = authGoogleResponse.data?.user;
         await CachNetwork.setBool(key: 'userGuest', value: false);
         kIsUserGuest = false;
+
+        // ✅ حفظ الاسم والصورة في الكاش عشان الـ HomeCubit يلاقيهم فوراً
+        await CachNetwork.setData(
+          key: kMyProfileImage,
+          value: kCurrentUserData?.image ?? '',
+        );
+        await CachNetwork.setData(
+          key: kMyProfileName,
+          value: kCurrentUserData?.name ?? '',
+        );
+
         return right(authGoogleResponse);
       } else {
         final message =
@@ -256,6 +277,17 @@ class AuthRepoImpl implements AuthRepo {
         kCurrentUserData = authAppleResponse.data?.user;
 
         kIsUserGuest = false;
+
+        // ✅ حفظ الاسم والصورة في الكاش عشان الـ HomeCubit يلاقيهم فوراً
+        await CachNetwork.setData(
+          key: kMyProfileImage,
+          value: kCurrentUserData?.image ?? '',
+        );
+        await CachNetwork.setData(
+          key: kMyProfileName,
+          value: kCurrentUserData?.name ?? '',
+        );
+
         return right(authAppleResponse);
       } else {
         final message =

@@ -207,6 +207,42 @@ class PostModel {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': postId,
+      'name': name,
+      'userName': userName,
+      'advisorId': advisorId,
+      'isFollowing': isFollowing,
+      'avatar': avatar,
+      'isVerified': isVerified,
+      'category': category,
+      'timeAgo': timeAgo,
+      'content': content,
+      'images': images.map((e) => e.toJson()).toList(),
+      'video': videoData?.toJson(),
+      'contentType': contentType.name,
+      'videoUrl': videoUrl,
+      'pollModel': pollModel?.toJson(),
+      'totalPollVotes': pollModel?.totalPollVotes ?? 0,
+      'event': event?.toJson(),
+      'commentsCount': commentsCount,
+      'sharesCount': sharesCount,
+      'likesCount': likesCount,
+      'topReactions': topReactions.map((e) => e.toJson()).toList(),
+      'myReaction': myReaction?.name,
+      'isRepostedByMe': isRepostedByMe,
+      'repostedBy': repostedBy,
+      'isSaved': isSaved,
+      'isMine': isMine,
+      'isHidden': isHidden,
+      'isBlocked': isBlocked,
+      'userType': userType,
+      'isCommented': isCommented,
+      'isAnonymousCommented': isAnonymous,
+    };
+  }
+
   // Helper Getters
   bool get hasNoReactions => likesCount == 0 && topReactions.isEmpty;
   bool get hasReactions => likesCount > 0 || topReactions.isNotEmpty;
@@ -308,6 +344,13 @@ class PollModel {
     return PollModel(pollChoices: choices, totalPollVotes: calculatedTotal);
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'pollChoices': pollChoices.map((e) => e.toJson()).toList(),
+      'totalPollVotes': totalPollVotes,
+    };
+  }
+
   PollModel copyWith({List<PollChoice>? pollChoices, int? totalPollVotes}) {
     return PollModel(
       pollChoices: pollChoices ?? this.pollChoices,
@@ -346,6 +389,16 @@ class PollChoice {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'choice': choice,
+      'votes': votes,
+      'percentage': percentage,
+      'isSelectedByMe': isSelected,
+      'voters': votersAvatars,
+    };
+  }
+
   PollChoice copyWith({
     String? choice,
     int? votes,
@@ -370,6 +423,10 @@ class ImageModel {
   double get aspectRatio => width / height;
 
   ImageModel({required this.image, required this.width, required this.height});
+
+  Map<String, dynamic> toJson() {
+    return {'image': image, 'width': width, 'height': height};
+  }
 }
 
 // lib/core/models/video_model.dart
@@ -396,6 +453,15 @@ class VideoModel {
       height: json['height'] ?? 0,
       thumbnail: json['thumbnail'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'video': video,
+      'width': width,
+      'height': height,
+      'thumbnail': thumbnail,
+    };
   }
 }
 // // --- Data Generator (Mock Backend) ---

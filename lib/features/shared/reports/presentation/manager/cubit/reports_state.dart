@@ -31,7 +31,7 @@ class ReportsState extends Equatable {
     String? errMessage,
     CubitStates? fetchReportReasonsState,
     ReportModel? selectedReason,
-    int? selectedDetailIndex, // ✅ جديد
+    Object? selectedDetailIndex = _unset, // ✅ sentinel لدعم null صريح
     CubitStates? sendReportState,
   }) {
     return ReportsState(
@@ -42,11 +42,14 @@ class ReportsState extends Equatable {
       reportReasons: reportReasons ?? this.reportReasons,
       errMessage: errMessage ?? this.errMessage,
       selectedReason: selectedReason ?? this.selectedReason,
-      selectedDetailIndex:
-          selectedDetailIndex ?? this.selectedDetailIndex, // ✅ جديد
+      selectedDetailIndex: selectedDetailIndex == _unset
+          ? this.selectedDetailIndex
+          : selectedDetailIndex as int?,
       sendReportState: sendReportState ?? this.sendReportState,
     );
   }
+
+  static const _unset = Object();
 
   @override
   List<Object?> get props => [

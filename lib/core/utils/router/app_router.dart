@@ -1,6 +1,4 @@
 import 'dart:developer';
-
-import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
@@ -671,9 +669,8 @@ return MaterialPageRoute(
           builder: (_) => BlocProvider(
             create: (context) => AddPostCubit()..getALLCategory(),
             child: AddPostView(
-              addPostEnum: args!['addPostEnum'] as AddPostEnum?,
-              post: args['post'] as PostModel?,
-              isEdit: args['isEdit'] as bool? ?? false,
+              post: args?['post'] as PostModel?,
+              isEdit: args?['isEdit'] as bool? ?? false,
             ),
           ),
         );
@@ -685,10 +682,9 @@ return MaterialPageRoute(
           builder: (_) => MapView(eventsCubit: args['cubit']),
         );
       case kCreatEventView:
-        final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => CreatEventView(cubit: args['cubit']),
+          builder: (_) => CreatEventView(),
         );
       case kUpdateEventView:
         final cubit = settings.arguments as EventDetailCubit;

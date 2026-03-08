@@ -60,15 +60,11 @@ class StoriesRepositoryImpl implements StoriesRepository {
                 .toList();
             // isViewedByMe: true if ANY story has isViewedByMe=true in raw JSON
             final isViewedByMe = rawStories.any(
-              (s) =>
-                  s['isViewedByMe'] == true ||
-                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
             );
             // allViewed: true if ALL stories are viewed
             final allViewed = rawStories.every(
-              (s) =>
-                  s['isViewedByMe'] == true ||
-                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
             );
             userStoriesList.add(
               UserStoriesModel(
@@ -94,6 +90,14 @@ class StoriesRepositoryImpl implements StoriesRepository {
           return Right(storiesList);
         }
       } else if (data is Map) {
+        // الباك بيرجع special stories كـ object واحد (UserStoriesModel) مباشرة في data
+        if (data.containsKey('stories')) {
+          final userStories = UserStoriesModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+          return Right([userStories]);
+        }
+        // الحالة العادية: data فيها result + pagination
         final storiesResponse = StoriesResponseModel.fromJson(response);
         return Right(storiesResponse.data.result);
       } else {
@@ -147,14 +151,10 @@ class StoriesRepositoryImpl implements StoriesRepository {
                 .map((e) => StoryModel.fromJson(e))
                 .toList();
             final isViewedByMe = rawStories.any(
-              (s) =>
-                  s['isViewedByMe'] == true ||
-                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
             );
             final allViewed = rawStories.every(
-              (s) =>
-                  s['isViewedByMe'] == true ||
-                  (s['viewsCount'] is int && s['viewsCount'] > 0),
+              (s) => s['isViewedByMe'] == true || s['isViewed'] == true,
             );
             userStoriesList.add(
               UserStoriesModel(
@@ -177,6 +177,14 @@ class StoriesRepositoryImpl implements StoriesRepository {
           return Right(storiesList);
         }
       } else if (data is Map) {
+        // الباك بيرجع special stories كـ object واحد (UserStoriesModel) مباشرة في data
+        if (data.containsKey('stories')) {
+          final userStories = UserStoriesModel.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+          return Right([userStories]);
+        }
+        // الحالة العادية: data فيها result + pagination
         final storiesResponse = StoriesResponseModel.fromJson(response);
         return Right(storiesResponse.data.result);
       } else {
@@ -204,7 +212,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
   }
 
   @override
-  Future<Either<Failure, void>> createStories({
+  Future<Either<Failure, StoryModel>> createStories({
     String? content,
     List<File>? images,
     List<XFile>? videos,
@@ -251,8 +259,9 @@ class StoriesRepositoryImpl implements StoriesRepository {
 
       final success = response['success'] ?? false;
 
-      if (success) {
-        return right(null);
+      if (success && response['data'] != null) {
+        final createdStory = StoryModel.fromJson(response['data']);
+        return right(createdStory);
       } else {
         return left(ServerFailure(response['message'] ?? 'فشل إنشاء القصة'));
       }

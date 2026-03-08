@@ -9,13 +9,23 @@ class MarriageRepositoryImpl implements MarriageRepository {
   MarriageRepositoryImpl(this._apiService);
 
   @override
-  Future<Either<Failure, UsersMarriageResponse>> getMarriageProfile() async {
+  Future<Either<Failure, UsersMarriageResponse>> getMarriageProfile(
+    String? page, {
+    Map<String, dynamic>? filters, // ✅
+  }) async {
     try {
-      final response = await _apiService.get(endPoint: '/user/users-for-marry');
+      final query = <String, dynamic>{
+        'page': page,
+        if (filters != null && filters.isNotEmpty) ...filters, // ✅
+      };
+
+      final response = await _apiService.get(
+        endPoint: '/user/users-for-marry',
+        query: query,
+      );
 
       if (response['success'] == true) {
-        final profile = UsersMarriageResponse.fromJson(response);
-        return Right(profile);
+        return Right(UsersMarriageResponse.fromJson(response));
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل جلب الملف'));
       }
@@ -48,9 +58,9 @@ class MarriageRepositoryImpl implements MarriageRepository {
         );
       }
     } on DioException catch (e) {
-      return Future.value(Left(ServerFailure.fromDioError(e)));
+      return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      return Future.value(Left(ServerFailure(e.toString())));
+      return Left(ServerFailure(e.toString()));
     }
   }
 
@@ -74,9 +84,9 @@ class MarriageRepositoryImpl implements MarriageRepository {
         return Left(ServerFailure(response['message'] ?? 'فشل ارسال التحيه'));
       }
     } on DioException catch (e) {
-      return Future.value(Left(ServerFailure.fromDioError(e)));
+      return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      return Future.value(Left(ServerFailure(e.toString())));
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

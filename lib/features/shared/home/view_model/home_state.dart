@@ -44,9 +44,9 @@ class HomeState extends Equatable {
   CubitStates get postsState => currentCategoryPosts.state;
   List<PostModel> get posts => currentCategoryPosts.posts;
   String? get postsErrorMessage => currentCategoryPosts.errorMessage;
-  int get currentPage => currentCategoryPosts.currentPage;
   bool get hasMore => currentCategoryPosts.hasMore;
   bool get isLoadingMore => currentCategoryPosts.isLoadingMore;
+  bool get loadMoreServerFailed => currentCategoryPosts.loadMoreServerFailed;
 
   // ─────────────────────────────────────────────────────────────────────────
   // 📦 Save Action State
@@ -67,13 +67,23 @@ class HomeState extends Equatable {
   final CubitStates archivePostActionState;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 📦 hide post
+  // ─────────────────────────────────────────────────────────────────────────
+  final String? hidePostMessage;
+  final CubitStates hidePostActionState;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 📦 block user
   // ─────────────────────────────────────────────────────────────────────────
   final String? blockUserMessage;
   final CubitStates blockUserActionState;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 🗳️ Poll Vote
+  // ─────────────────────────────────────────────────────────────────────────  // 📡 Connectivity
+  // ───────────────────────────────────────────────────────────────────────
+  final bool isOffline;
+  final bool isShowingCachedData;
+
+  // ───────────────────────────────────────────────────────────────────────  // 🗳️ Poll Vote
   // ─────────────────────────────────────────────────────────────────────────
   final String? pollVoteMessage;
   final CubitStates pollVoteActionState;
@@ -109,6 +119,10 @@ class HomeState extends Equatable {
     this.deletePostMessage,
     this.deletePostActionState = CubitStates.initial,
 
+    // hide post
+    this.hidePostMessage,
+    this.hidePostActionState = CubitStates.initial,
+
     // block user
     this.blockUserMessage,
     this.blockUserActionState = CubitStates.initial,
@@ -121,6 +135,10 @@ class HomeState extends Equatable {
     // poll vote
     this.pollVoteMessage,
     this.pollVoteActionState = CubitStates.initial,
+
+    // connectivity
+    this.isOffline = false,
+    this.isShowingCachedData = false,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -155,6 +173,10 @@ class HomeState extends Equatable {
     String? deletePostMessage,
     CubitStates? deletePostActionState,
 
+    // hide post
+    String? hidePostMessage,
+    CubitStates? hidePostActionState,
+
     // block user
     String? blockUserMessage,
     CubitStates? blockUserActionState,
@@ -167,6 +189,10 @@ class HomeState extends Equatable {
     // poll vote
     String? pollVoteMessage,
     CubitStates? pollVoteActionState,
+
+    // connectivity
+    bool? isOffline,
+    bool? isShowingCachedData,
   }) {
     return HomeState(
       // Posts
@@ -203,6 +229,10 @@ class HomeState extends Equatable {
       deletePostActionState:
           deletePostActionState ?? this.deletePostActionState,
 
+      // hide post
+      hidePostMessage: hidePostMessage ?? this.hidePostMessage,
+      hidePostActionState: hidePostActionState ?? this.hidePostActionState,
+
       // block user
       blockUserMessage: blockUserMessage ?? this.blockUserMessage,
       blockUserActionState: blockUserActionState ?? this.blockUserActionState,
@@ -216,6 +246,10 @@ class HomeState extends Equatable {
       // poll vote
       pollVoteMessage: pollVoteMessage ?? this.pollVoteMessage,
       pollVoteActionState: pollVoteActionState ?? this.pollVoteActionState,
+
+      // connectivity
+      isOffline: isOffline ?? this.isOffline,
+      isShowingCachedData: isShowingCachedData ?? this.isShowingCachedData,
     );
   }
 
@@ -304,6 +338,8 @@ class HomeState extends Equatable {
       // الحفاظ على بيانات اليوزر المخزنة
       homeInfo: homeInfo,
       fetchNameAndImageState: fetchNameAndImageState,
+      // الحفاظ على حالة الاتصال
+      isOffline: isOffline,
     );
   }
 
@@ -337,6 +373,9 @@ class HomeState extends Equatable {
     // delete post
     deletePostMessage,
     deletePostActionState,
+    // hide post
+    hidePostMessage,
+    hidePostActionState,
     // block user
     blockUserMessage,
     blockUserActionState,
@@ -349,6 +388,10 @@ class HomeState extends Equatable {
     // poll vote
     pollVoteMessage,
     pollVoteActionState,
+
+    // connectivity
+    isOffline,
+    isShowingCachedData,
   ];
 }
 
@@ -359,19 +402,25 @@ class CategoryPostsData extends Equatable {
   final CubitStates state;
   final List<PostModel> posts;
   final String? errorMessage;
-  final int currentPage;
-  final bool hasMore;
+  final int currentLocalPage;
+  final int currentServerPage;
+  final bool hasMoreLocal;
+  final bool hasMoreServer;
   final bool isLoadingMore;
   final double? nextCursor;
+  final bool loadMoreServerFailed;
 
   const CategoryPostsData({
     this.state = CubitStates.initial,
     this.posts = const [],
     this.errorMessage,
-    this.currentPage = 1,
-    this.hasMore = true,
+    this.currentLocalPage = 0,
+    this.currentServerPage = 0,
+    this.hasMoreLocal = true,
+    this.hasMoreServer = true,
     this.isLoadingMore = false,
     this.nextCursor,
+    this.loadMoreServerFailed = false,
   });
 
   /// هل البيانات محملة وجاهزة للعرض
@@ -383,23 +432,32 @@ class CategoryPostsData extends Equatable {
   /// هل فشل التحميل
   bool get isError => state == CubitStates.failure;
 
+  /// هل فيه صفحات تانية ممكن نحملها (حسب المصدر الحالي)
+  bool get hasMore => hasMoreLocal || hasMoreServer;
+
   CategoryPostsData copyWith({
     CubitStates? state,
     List<PostModel>? posts,
     String? errorMessage,
-    int? currentPage,
-    bool? hasMore,
+    int? currentLocalPage,
+    int? currentServerPage,
+    bool? hasMoreLocal,
+    bool? hasMoreServer,
     bool? isLoadingMore,
     double? nextCursor,
+    bool? loadMoreServerFailed,
   }) {
     return CategoryPostsData(
       state: state ?? this.state,
       posts: posts ?? this.posts,
       errorMessage: errorMessage ?? this.errorMessage,
-      currentPage: currentPage ?? this.currentPage,
-      hasMore: hasMore ?? this.hasMore,
+      currentLocalPage: currentLocalPage ?? this.currentLocalPage,
+      currentServerPage: currentServerPage ?? this.currentServerPage,
+      hasMoreLocal: hasMoreLocal ?? this.hasMoreLocal,
+      hasMoreServer: hasMoreServer ?? this.hasMoreServer,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       nextCursor: nextCursor ?? this.nextCursor,
+      loadMoreServerFailed: loadMoreServerFailed ?? this.loadMoreServerFailed,
     );
   }
 
@@ -408,9 +466,12 @@ class CategoryPostsData extends Equatable {
     state,
     posts,
     errorMessage,
-    currentPage,
-    hasMore,
+    currentLocalPage,
+    currentServerPage,
+    hasMoreLocal,
+    hasMoreServer,
     isLoadingMore,
     nextCursor,
+    loadMoreServerFailed,
   ];
 }

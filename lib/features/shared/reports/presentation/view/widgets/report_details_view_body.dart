@@ -1,3 +1,4 @@
+import 'package:tayseer/features/shared/reports/data/model/report_model.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -36,7 +37,7 @@ class ReportDetailsViewBody extends StatelessWidget {
             Text(reportReason, style: Styles.textStyle20Bold),
             Gap(5.h),
             Text(
-              context.tr('select_report_option'),
+              context.tr(AppStrings.selectReportOption),
               style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
             ),
             Gap(20.h),
@@ -49,7 +50,7 @@ class ReportDetailsViewBody extends StatelessWidget {
   SliverList _buildDetailsList(
     BuildContext context,
     ReportsState state,
-    List<String> details,
+    List<ReasonDetail> details,
   ) {
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
@@ -61,14 +62,14 @@ class ReportDetailsViewBody extends StatelessWidget {
   Widget _buildDetailItem(
     BuildContext context,
     ReportsState state,
-    List<String> details,
+    List<ReasonDetail> details,
     int index,
   ) {
     return RadioListTile<int>(
       value: index,
       groupValue: state.selectedDetailIndex,
       activeColor: const Color(0xFF4CD964),
-      title: Text(details[index], style: Styles.textStyle16SemiBold),
+      title: Text(details[index].reason, style: Styles.textStyle16SemiBold),
       onChanged: (value) {
         context.read<ReportsCubit>().selectDetail(value!);
       },
@@ -86,15 +87,15 @@ class ReportDetailsViewBody extends StatelessWidget {
           child: CustomBotton(
             useGradient: true,
             width: context.width * 0.9,
-            title: context.tr('report_profile'),
+            title: context.tr(AppStrings.reportProfile),
             onPressed: state.selectedDetailIndex != null
                 ? () {
                     CustomshowDialogWithImage(
                       context,
-                      bottonText: context.tr("send_report"),
+                      bottonText: context.tr(AppStrings.send),
                       imageUrl: AssetsData.kWoriningImage,
-                      title: context.tr("confirm_report"),
-                      supTitle: context.tr("sup_confirm_report"),
+                      title: context.tr(AppStrings.confirmReport),
+                      supTitle: context.tr(AppStrings.supConfirmReport),
                       onPressed: () {
                         context.read<ReportsCubit>().sendReport();
                       },

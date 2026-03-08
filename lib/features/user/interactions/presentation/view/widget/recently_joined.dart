@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:tayseer/my_import.dart';
 import '../../../data/Model/interaction_usermodel .dart';
+
 class RecentlyJoined extends StatelessWidget {
   final InteractionUserModel item;
   final bool forceBlur;
@@ -17,16 +18,13 @@ class RecentlyJoined extends StatelessWidget {
   Widget build(BuildContext context) {
     final shouldBlur = forceBlur || item.isImageBlurred;
 
-    return   GestureDetector(
-                          onTap: () {
-                            context.pushNamed(
-                              AppRouter.kMarriageView,
-                              arguments: {
-                                'personId': item.userId,
-                                'fromInteractions': true,
-                              },
-                            );
-                          },
+    return GestureDetector(
+      onTap: () {
+        context.pushNamed(
+          AppRouter.kMarriageView,
+          arguments: {'personId': item.userId, 'fromInteractions': true},
+        );
+      },
       child: Container(
         margin: EdgeInsets.only(top: 10.h, left: 4.w),
         padding: EdgeInsets.all(8.w),

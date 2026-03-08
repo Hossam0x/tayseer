@@ -65,6 +65,53 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
   Widget build(BuildContext context) {
     final opacity = (1.0 - (_vOffset / 400)).clamp(0.0, 1.0);
 
+    if (widget.isArchive) {
+      return MultiBlocListener(
+        listeners: [
+          BlocListener<ArchivedStoriesCubit, ArchivedStoriesState>(
+            listenWhen: (prev, curr) =>
+                prev.unarchiveActionState != curr.unarchiveActionState ||
+                prev.deleteActionState != curr.deleteActionState,
+            listener: (context, state) {
+              if (state.unarchiveActionState == CubitStates.success) {
+                if (state.unarchiveMessage != null) {
+                  AppToast.success(
+                    context,
+                    context.tr(state.unarchiveMessage!),
+                  );
+                }
+                context.read<ArchivedStoriesCubit>().resetUnarchiveStoryState();
+                if (mounted) Navigator.pop(context);
+              } else if (state.unarchiveActionState == CubitStates.failure) {
+                if (state.unarchiveMessage != null) {
+                  AppToast.error(context, state.unarchiveMessage!);
+                }
+                context.read<ArchivedStoriesCubit>().resetUnarchiveStoryState();
+              }
+
+              if (state.deleteActionState == CubitStates.success) {
+                if (state.deleteMessage != null) {
+                  AppToast.success(context, context.tr(state.deleteMessage!));
+                }
+                context.read<ArchivedStoriesCubit>().resetDeleteStoryState();
+                if (mounted) Navigator.pop(context);
+              } else if (state.deleteActionState == CubitStates.failure) {
+                if (state.deleteMessage != null) {
+                  AppToast.error(context, state.deleteMessage!);
+                }
+                context.read<ArchivedStoriesCubit>().resetDeleteStoryState();
+              }
+            },
+          ),
+        ],
+        child: _buildScaffold(context, opacity),
+      );
+    }
+
+    return _buildScaffold(context, opacity);
+  }
+
+  Widget _buildScaffold(BuildContext context, double opacity) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Listener(
@@ -629,18 +676,14 @@ class _UserStoryPageState extends State<_UserStoryPage> {
                 final cubit = context.read<ArchivedStoriesCubit>();
                 if (value == 'delete') {
                   await cubit.deleteStory(
-                    context: context,
                     storyId: currentStory.id,
                     userId: widget.userStories.userId,
                   );
-                  if (mounted) Navigator.pop(context);
                 } else if (value == 'unarchive') {
                   await cubit.unarchiveStory(
-                    context: context,
                     storyId: currentStory.id,
                     userId: widget.userStories.userId,
                   );
-                  if (mounted) Navigator.pop(context);
                 }
               } else {
                 final cubit = context.read<StoriesCubit>();
@@ -907,7 +950,7 @@ class _LikersBottomSheetState extends State<_LikersBottomSheet> {
   }
 
   void _navigateToProfile(BuildContext context, StoryUserModel user) {
-    Navigator.pop(context);
+    // Don't close the bottom sheet - keep story paused
     final isAdvisor = user.userType.toLowerCase() == 'advisor';
     if (isAdvisor) {
       Navigator.push(

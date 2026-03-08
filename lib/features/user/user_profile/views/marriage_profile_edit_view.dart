@@ -8,7 +8,7 @@ import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bot
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/audioWidget.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/audio_widget.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/image_slot_card.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_field_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/voiceWidget.dart';
@@ -61,6 +61,18 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   @override
+  void didUpdateWidget(MarriageProfileEditView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // ✅ لو الـ scrollToSection اتغير، اعمل scroll
+    if (widget.scrollToSection != null &&
+        widget.scrollToSection != oldWidget.scrollToSection) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToSection(widget.scrollToSection!);
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
@@ -91,11 +103,12 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         } else {
           debugPrint('⚠️ Retrying scroll for $section...');
           Future.delayed(const Duration(milliseconds: 200), () {
-            if (targetKey?.currentContext != null)
+            if (targetKey?.currentContext != null) {
               Scrollable.ensureVisible(
                 targetKey!.currentContext!,
                 alignment: 0.1,
               );
+            }
           });
         }
       });
@@ -113,8 +126,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   String _translateValue(String value, BuildContext context) {
-    if (value.isEmpty || value == 'اختر' || value == 'select')
+    if (value.isEmpty || value == 'اختر' || value == 'select') {
       return context.tr('select');
+    }
+    
     final translated = context.tr(value);
     if (translated == value && !value.contains(' ')) return value;
     return translated;
@@ -223,7 +238,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -273,7 +288,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                               _isDragMode
                                   ? Icons.check_rounded
                                   : Icons.swap_vert_rounded,
-                              size: 14.w,
+                              size: 17.w,
                               color: _isDragMode
                                   ? AppColors.primary300
                                   : Colors.grey,
@@ -284,7 +299,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                                   ? context.tr('done')
                                   : context.tr('reorder'),
                               style: TextStyle(
-                                fontSize: 11.sp,
+                                fontSize: 13.sp,
                                 color: _isDragMode
                                     ? AppColors.primary300
                                     : Colors.grey,
@@ -313,14 +328,14 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 children: [
                   Icon(
                     Icons.touch_app_outlined,
-                    size: 14.w,
+                    size: 16.w,
                     color: AppColors.primary400,
                   ),
                   Gap(6.w),
                   Text(
                     context.tr('long_press_to_drag'),
                     style: TextStyle(
-                      fontSize: 11.sp,
+                      fontSize: 13.sp,
                       color: AppColors.primary400,
                     ),
                   ),
@@ -538,7 +553,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           Gap(6.w),
           Text(
             context.tr('long_press_to_drag'),
-            style: TextStyle(fontSize: 11.sp, color: AppColors.primary400),
+            style: TextStyle(fontSize: 14.sp, color: AppColors.primary400),
           ),
         ],
       ),
@@ -638,24 +653,25 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
 
                   setState(() {});
 
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    CustomSnackBar(
-                      context,
-                      text: context.tr('image_reordered_successfully'),
-                      isSuccess: true,
-                    ),
-                  );
-                }
-              },
-              children: List.generate(4, (i) => secSlot(i)),
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      CustomSnackBar(
+                        context,
+                        text: context.tr('image_reordered_successfully'),
+                        isSuccess: true,
+                      ),
+                    );
+                  }
+                },
+                children: List.generate(4, (i) => secSlot(i)),
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
+
   // ════════════════════════════════════════════════════════════════
   // VIDEO SECTION
   // ════════════════════════════════════════════════════════════════
@@ -664,14 +680,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final pendingVideo = widget.state.pendingVideo;
     final pendingDeleteVideo = widget.state.pendingDeleteVideo;
     final hasVideo =
-        !pendingDeleteVideo &&
-        (pendingVideo != null ||
-            (serverVideoUrl != null && serverVideoUrl.isNotEmpty));
+        pendingVideo != null ||
+        (!pendingDeleteVideo &&
+            serverVideoUrl != null &&
+            serverVideoUrl.isNotEmpty);
 
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(252, 255, 255, 0.22)),
       ),
@@ -718,14 +735,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final pendingAudio = widget.state.pendingAudio;
     final pendingDeleteAudio = widget.state.pendingDeleteAudio;
     final hasAudio =
-        !pendingDeleteAudio &&
-        (pendingAudio != null ||
-            (serverAudioUrl != null && serverAudioUrl.isNotEmpty));
+        pendingAudio != null ||
+        (!pendingDeleteAudio &&
+            serverAudioUrl != null &&
+            serverAudioUrl.isNotEmpty);
 
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(252, 255, 255, 0.22)),
       ),
@@ -920,25 +938,27 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   Future<void> _pickVideoFromCamera(BuildContext context) async {
+     final messenger = ScaffoldMessenger.of(context);
+  final tr = context.tr; // أو احفظ الـ strings مباشرة
     try {
       if (Platform.isAndroid) {
         final s = await Permission.camera.request();
         if (!mounted) return;
         if (s.isDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('camera_permission_required'),
+              text: tr('camera_permission_required'),
               isError: true,
             ),
           );
           return;
         }
         if (s.isPermanentlyDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('enable_camera_from_settings'),
+              text: tr('enable_camera_from_settings'),
               isError: true,
             ),
           );
@@ -965,6 +985,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   Future<void> _pickVideoFromGallery(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final tr = context.tr;
+
     try {
       if (Platform.isAndroid) {
         final info = await DeviceInfoPlugin().androidInfo;
@@ -973,20 +996,20 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             : await Permission.storage.request();
         if (!mounted) return;
         if (s.isDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('gallery_permission_required'),
+              text: tr('gallery_permission_required'),
               isError: true,
             ),
           );
           return;
         }
         if (s.isPermanentlyDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('enable_gallery_from_settings'),
+              text: tr('enable_gallery_from_settings'),
               isError: true,
             ),
           );
@@ -1118,6 +1141,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   Future<void> _pickAudio(BuildContext context) async {
+     final messenger = ScaffoldMessenger.of(context);
+  final tr = context.tr; // أو احفظ الـ strings مباشرة
     try {
       if (Platform.isAndroid) {
         final info = await DeviceInfoPlugin().androidInfo;
@@ -1126,20 +1151,20 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             : await Permission.storage.request();
         if (!mounted) return;
         if (s.isDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('allow_files_access'),
+              text:tr('allow_files_access'),
               isError: true,
             ),
           );
           return;
         }
         if (s.isPermanentlyDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('enable_permission_settings'),
+              text: tr('enable_permission_settings'),
               isError: true,
             ),
           );
@@ -1157,10 +1182,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         final file = File(result.files.single.path!);
         if (!await file.exists()) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('file_not_found'),
+              text:tr('file_not_found'),
               isError: true,
             ),
           );
@@ -1168,10 +1193,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         }
         if (await file.length() > 10 * 1024 * 1024) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('file_too_large'),
+              text: tr('file_too_large'),
               isError: true,
             ),
           );
@@ -1324,7 +1349,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -1449,7 +1474,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -1515,7 +1540,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -1582,7 +1607,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -1649,7 +1674,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
       ),
@@ -1699,7 +1724,16 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   ) {
     return BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
       listener: (context, state) {
-        if (state.state == CubitStates.success && !state.isUpdating) {
+        if (state.state == CubitStates.success &&
+            !state.isUpdating &&
+            state.savedFromButton) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('changes_saved_successfully'),
+              isSuccess: true, // ← isSuccess مش isError
+            ),
+          );
           widget.onTabChanged?.call(1);
         } else if (state.state == CubitStates.failure) {
           debugPrint('❌ [SAVE] Error: ${state.errorMessage}');
@@ -1731,7 +1765,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        color: AppColors.kWhiteColor,
+        color: const Color.fromRGBO(251, 251, 251, 0.64),
         padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

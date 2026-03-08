@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:tayseer/core/models/category_model.dart';
+import 'package:tayseer/features/advisor/add_post/model/category_response_model.dart';
 import 'package:tayseer/my_import.dart';
 
 abstract class PostsRepository {
@@ -12,5 +12,5 @@ abstract class PostsRepository {
     List<File>? imageFiles,
     XFile? videoFile,
   });
-  Future<Either<Failure, List<CategoryModel>>> getALLCategory();
+  Future<Either<Failure, CategoryResponse>> getALLCategory(String? page);
 }

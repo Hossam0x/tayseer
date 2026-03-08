@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 
-Future<TimeOfDay?> pickTime(
+class PickTimeResult {
+  final TimeOfDay? time;
+  final bool wasInvalid; // true if user picked a past time (invalid)
+
+  PickTimeResult({this.time, this.wasInvalid = false});
+}
+
+Future<PickTimeResult> pickTime(
   BuildContext context, {
   DateTime? minDate,
 }) async {
@@ -17,7 +24,7 @@ Future<TimeOfDay?> pickTime(
     },
   );
 
-  if (picked == null) return null;
+  if (picked == null) return PickTimeResult(time: null, wasInvalid: false);
 
   // If a minimum date is provided and it's today, disallow selecting a past time
   if (minDate != null) {
@@ -30,14 +37,14 @@ Future<TimeOfDay?> pickTime(
       final nowMinutes = nowTime.hour * 60 + nowTime.minute;
       if (pickedMinutes < nowMinutes) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('الرجاء اختيار وقت لاحق من الوقت الحالي'),
           ),
         );
-        return null;
+        return PickTimeResult(time: null, wasInvalid: true);
       }
     }
   }
 
-  return picked;
+  return PickTimeResult(time: picked, wasInvalid: false);
 }

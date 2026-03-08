@@ -32,75 +32,82 @@ class _PostsTabBody extends StatelessWidget {
     return MultiBlocListener(
       listeners: [
         BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
-          listenWhen: (p, c) =>
-              p.state != c.state && c.state == CubitStates.failure,
           listener: (context, state) {
-            if (state.errorMessage != null) {
+            final cubit = context.read<ArchivedPostsCubit>();
+
+            // ⭐ Handle General Error
+            if (state.errorMessage != null &&
+                state.state == CubitStates.failure) {
               AppToast.error(context, state.errorMessage!);
+              cubit.clearError();
             }
-          },
-        ),
-        // 📢 SHARE FEEDBACK
-        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
-          listenWhen: (p, c) => p.shareActionState != c.shareActionState,
-          listener: (context, state) {
+
+            // 📢 SHARE FEEDBACK
             if (state.shareActionState == CubitStates.success) {
-              AppToast.success(context, state.shareMessage ?? 'تمت المشاركة');
+              if (state.shareMessage != null) {
+                AppToast.success(context, context.tr(state.shareMessage!));
+              }
+              cubit.resetSharePostActionState();
             } else if (state.shareActionState == CubitStates.failure) {
-              AppToast.error(context, state.shareMessage ?? 'فشل المشاركة');
+              if (state.shareMessage != null) {
+                AppToast.error(context, state.shareMessage!);
+              }
+              cubit.resetSharePostActionState();
             }
-          },
-        ),
-        // 💾 SAVE FEEDBACK
-        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
-          listenWhen: (p, c) => p.saveActionState != c.saveActionState,
-          listener: (context, state) {
+
+            // 💾 SAVE FEEDBACK
             if (state.saveActionState == CubitStates.success) {
-              AppToast.success(context, state.saveMessage ?? 'تم الحفظ');
+              if (state.saveMessage != null) {
+                AppToast.success(context, context.tr(state.saveMessage!));
+              }
+              cubit.resetSavePostActionState();
             } else if (state.saveActionState == CubitStates.failure) {
-              AppToast.error(context, state.saveMessage ?? 'فشل الحفظ');
+              if (state.saveMessage != null) {
+                AppToast.error(context, state.saveMessage!);
+              }
+              cubit.resetSavePostActionState();
             }
-          },
-        ),
-        // 🗑 DELETE FEEDBACK
-        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
-          listenWhen: (p, c) =>
-              p.deletePostActionState != c.deletePostActionState,
-          listener: (context, state) {
+
+            // 🗑 DELETE FEEDBACK
             if (state.deletePostActionState == CubitStates.success) {
-              AppToast.success(context, state.deletePostMessage ?? 'تم الحذف');
+              if (state.deletePostMessage != null) {
+                AppToast.success(context, context.tr(state.deletePostMessage!));
+              }
+              cubit.resetDeletePostActionState();
             } else if (state.deletePostActionState == CubitStates.failure) {
-              AppToast.error(context, state.deletePostMessage ?? 'فشل الحذف');
+              if (state.deletePostMessage != null) {
+                AppToast.error(context, state.deletePostMessage!);
+              }
+              cubit.resetDeletePostActionState();
             }
-          },
-        ),
-        // 📦 ARCHIVE FEEDBACK (Unarchive in this case)
-        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
-          listenWhen: (p, c) =>
-              p.archivePostActionState != c.archivePostActionState,
-          listener: (context, state) {
+
+            // 📦 ARCHIVE FEEDBACK (Unarchive)
             if (state.archivePostActionState == CubitStates.success) {
-              AppToast.success(
-                context,
-                state.archivePostMessage ?? 'تم إلغاء الأرشفة',
-              );
+              if (state.archivePostMessage != null) {
+                AppToast.success(
+                  context,
+                  context.tr(state.archivePostMessage!),
+                );
+              }
+              cubit.resetArchivePostState();
             } else if (state.archivePostActionState == CubitStates.failure) {
-              AppToast.error(
-                context,
-                state.archivePostMessage ?? 'فشل إلغاء الأرشفة',
-              );
+              if (state.archivePostMessage != null) {
+                AppToast.error(context, state.archivePostMessage!);
+              }
+              cubit.resetArchivePostState();
             }
-          },
-        ),
-        // 🚫 BLOCK FEEDBACK
-        BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
-          listenWhen: (p, c) =>
-              p.blockUserActionState != c.blockUserActionState,
-          listener: (context, state) {
+
+            // 🚫 BLOCK FEEDBACK
             if (state.blockUserActionState == CubitStates.success) {
-              AppToast.success(context, state.blockUserMessage ?? 'تم الحظر');
+              if (state.blockUserMessage != null) {
+                AppToast.success(context, context.tr(state.blockUserMessage!));
+              }
+              cubit.resetBlockUserActionState();
             } else if (state.blockUserActionState == CubitStates.failure) {
-              AppToast.error(context, state.blockUserMessage ?? 'فشل الحظر');
+              if (state.blockUserMessage != null) {
+                AppToast.error(context, state.blockUserMessage!);
+              }
+              cubit.resetBlockUserActionState();
             }
           },
         ),
@@ -114,7 +121,7 @@ class _PostsTabBody extends StatelessWidget {
               return _buildErrorPosts(context, state.errorMessage);
             case CubitStates.success:
               if (state.posts.isEmpty) {
-                return const SharedEmptyState(title: "لا توجد منشورات مؤرشفة");
+                return SharedEmptyState(title: context.tr("no_archived_posts"));
               }
               return _buildPostsContent(context, state);
             default:
@@ -145,7 +152,7 @@ class _PostsTabBody extends StatelessWidget {
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(16.h),
           Text(
-            errorMessage ?? 'حدث خطأ في تحميل المنشورات المؤرشفة',
+            errorMessage ?? context.tr('error_loading_archived_posts'),
             style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
             textAlign: TextAlign.center,
           ),
@@ -160,7 +167,7 @@ class _PostsTabBody extends StatelessWidget {
             ),
             onPressed: () => context.read<ArchivedPostsCubit>().refresh(),
             child: Text(
-              'إعادة المحاولة',
+              context.tr('retry'),
               style: Styles.textStyle14Meduim.copyWith(
                 color: AppColors.kWhiteColor,
               ),
@@ -229,6 +236,7 @@ class _PostItem extends StatelessWidget {
           child: PostCard(
             isFromProfile: true,
             heroPrefix: 'archived_posts',
+            isArchived: true,
             post: currentPost,
             callbacks: PostCallbacks(
               onReactionChanged: (postId, reaction) =>
@@ -248,6 +256,7 @@ class _PostItem extends StatelessWidget {
                   builder: (context) => PostDetailsView(
                     post: post,
                     isFromProfile: true,
+                    isArchived: true,
                     heroPrefix: 'archived_posts',
                     cachedController: controller,
                   ),

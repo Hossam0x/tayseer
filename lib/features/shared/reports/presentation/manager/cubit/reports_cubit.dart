@@ -13,12 +13,7 @@ class ReportsCubit extends Cubit<ReportsState> {
   }
 
   void selectReason(ReportModel reason) {
-    emit(
-      state.copyWith(
-        selectedReason: reason,
-        selectedDetailIndex: selectedReasonDetails.isEmpty ? null : 0,
-      ),
-    );
+    emit(state.copyWith(selectedReason: reason, selectedDetailIndex: null));
   }
 
   // ✅ جديد - اختيار التفصيل
@@ -26,7 +21,7 @@ class ReportsCubit extends Cubit<ReportsState> {
     emit(state.copyWith(selectedDetailIndex: index));
   }
 
-  List<String> get selectedReasonDetails =>
+  List<ReasonDetail> get selectedReasonDetails =>
       state.selectedReason?.reasonDetails ?? [];
 
   Future<void> fetchReportReasons() async {
@@ -56,8 +51,8 @@ class ReportsCubit extends Cubit<ReportsState> {
       id: state.id!,
       reportType: state.reportType!,
       reasonId: state.selectedReason?.id,
-      details: state.selectedDetailIndex != null
-          ? state.selectedReason?.reasonDetails[state.selectedDetailIndex!]
+      detailsId: state.selectedDetailIndex != null
+          ? state.selectedReason?.reasonDetails[state.selectedDetailIndex!].id
           : null,
       otherReason: otherReason,
     );

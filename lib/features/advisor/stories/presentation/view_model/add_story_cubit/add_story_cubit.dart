@@ -8,13 +8,50 @@ class AddStoryCubit extends Cubit<AddStoryState> {
   final contentController = TextEditingController();
 
   AddStoryCubit(this.storiesRepository) : super(const AddStoryState()) {
-    loadGalleryAssets();
+    requestAllPermissions();
+  }
+
+  Future<void> requestAllPermissions() async {
+    emit(state.copyWith(isLoadingAssets: true));
+    try {
+      // 1. PhotoManager request (Gallery)
+      final PermissionState ps = await PhotoManager.requestPermissionExtend();
+      final bool isGalleryGranted = ps.isAuth || ps.hasAccess;
+
+      // 2. Camera + Mic using permission_handler
+      final Map<Permission, PermissionStatus> camMicResults = await [
+        Permission.camera,
+        Permission.microphone,
+      ].request();
+
+      final bool isCamGranted =
+          camMicResults[Permission.camera]?.isGranted ?? false;
+      final bool isMicGranted =
+          camMicResults[Permission.microphone]?.isGranted ?? false;
+
+      emit(
+        state.copyWith(
+          permissionsGranted: isCamGranted && isMicGranted && isGalleryGranted,
+        ),
+      );
+
+      // Load assets if gallery granted
+      if (isGalleryGranted) {
+        await loadGalleryAssets(refresh: true);
+      } else {
+        emit(state.copyWith(isLoadingAssets: false));
+      }
+    } catch (e) {
+      debugPrint("Error in permission request: $e");
+      emit(state.copyWith(isLoadingAssets: false, permissionsGranted: false));
+    }
   }
 
   final int _pageSize = 60;
 
   Future<void> loadGalleryAssets({bool refresh = false}) async {
-    if (state.isLoadingAssets || (!refresh && !state.hasMoreAssets)) return;
+    if (state.isLoadingAssets && !refresh) return;
+    if (!refresh && !state.hasMoreAssets) return;
 
     if (refresh) {
       emit(
@@ -30,8 +67,7 @@ class AddStoryCubit extends Cubit<AddStoryState> {
     }
 
     try {
-      // Request permissions using PhotoManager natively
-      await PhotoManager.clearFileCache();
+      // Request permissions using PhotoManager natively (fallback check)
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
       if (!ps.isAuth && !ps.hasAccess) {
         emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));

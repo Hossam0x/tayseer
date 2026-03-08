@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'dart:developer';
-
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
@@ -13,10 +14,95 @@ import '../reposiotry/home_repository.dart';
 
 class HomeCubit extends Cubit<HomeState> {
   final HomeRepository homeRepository;
+  final ConnectivityCubit connectivityCubit;
+  final PostsLocalDatasource localDatasource;
   static const int _pageSize = 5;
 
-  HomeCubit(this.homeRepository) : super(const HomeState()) {
+  // تتبع حالة الاتصال للتحكم في التصفح
+  bool _isPaginationEnabled = true;
+  StreamSubscription? _connectivitySubscription;
+
+  HomeCubit(
+    this.homeRepository, {
+    required this.connectivityCubit,
+    required this.localDatasource,
+  }) : super(const HomeState()) {
     _loadCachedUserData();
+    _listenToConnectivity();
+  }
+
+  /// الاستماع لتغييرات الاتصال
+  void _listenToConnectivity() {
+    final isCurrentlyOnline = connectivityCubit.isOnline;
+    _isPaginationEnabled = isCurrentlyOnline;
+
+    // ✅ مزامنة حالة الاتصال الأولية — لو التطبيق اتفتح أوفلاين
+    // Stream الـ ConnectivityCubit بيبعت التغييرات بس، مش الحالة الحالية
+    if (!isCurrentlyOnline) {
+      emit(state.copyWith(isOffline: true));
+    }
+
+    _connectivitySubscription = connectivityCubit.stream.listen((connState) {
+      final wasOffline = state.isOffline;
+      final isNowOnline = connState.isConnected;
+      final isNowOffline = !connState.isConnected;
+
+      // تحديث علم التصفح
+      _isPaginationEnabled = isNowOnline;
+
+      // تحديث حالة الاتصال في الـ state
+      emit(state.copyWith(isOffline: isNowOffline));
+
+      // لو رجع الاتصال بعد ما كان أوفلاين → استأنف التصفح + جلب البيانات
+      if (wasOffline && isNowOnline) {
+        _onReconnected();
+      }
+    });
+  }
+
+  /// عند استعادة الاتصال — جلب الكاتيجوريز + استكمال التصفح
+  void _onReconnected() {
+    // 1. جلب الكاتيجوريز لو فاشلين أو فاضيين أو لسه ما اتحملوش
+    if (state.categoriesState == CubitStates.failure ||
+        state.categoriesState == CubitStates.initial ||
+        state.categories.isEmpty) {
+      fetchCategories();
+    }
+
+    // 2. لو كان بيعرض كاش → ابدأ من أول صفحة سيرفر (مش مكمل علي اللوكال)
+    if (state.isShowingCachedData) {
+      final categoryId = state.selectedCategoryId;
+      // فتح الـ hasMoreServer عشان الـ loadMore يشتغل من السيرفر
+      emit(
+        state
+            .updateCategoryPosts(
+              categoryId,
+              (data) => data.copyWith(hasMoreServer: true),
+            )
+            .copyWith(isShowingCachedData: false),
+      );
+      // جلب الصفحة التالية تلقائياً — microtask لضمان تحديث الـ state قبل القراءة
+      Future.microtask(() {
+        if (!isClosed) loadMorePosts();
+      });
+      return;
+    }
+
+    // 3. لو البوستات فاشلة أو فاضية (فتح أوفلاين بدون كاش) → جلب من الأول
+    final postsState = state.currentCategoryPosts.state;
+    if (postsState == CubitStates.failure ||
+        (postsState != CubitStates.loading && state.posts.isEmpty)) {
+      _fetchPostsForCategory(state.selectedCategoryId);
+      return;
+    }
+
+    // 4. لو النت فصل وسط السيشن والباجنيشن اتوقف → استكمل تلقائياً
+    final currentData = state.currentCategoryPosts;
+    if (currentData.hasMore && !currentData.isLoadingMore) {
+      Future.microtask(() {
+        if (!isClosed) loadMorePosts();
+      });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -25,6 +111,25 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// تحميل بيانات اليوزر من الكاش عند البداية
   void _loadCachedUserData() {
+    // الجيست بياناته في كاش مختلف (kGuestName / kGuestImage)
+    if (isGuest) {
+      final cachedImage = CachNetwork.getStringData(key: kGuestImage);
+      final cachedName = CachNetwork.getStringData(key: kGuestName);
+      if (cachedImage.isNotEmpty || cachedName.isNotEmpty) {
+        emit(
+          state.copyWith(
+            homeInfo: ImageAndNameModel(
+              image: cachedImage,
+              name: cachedName,
+              notifications: 0,
+            ),
+            fetchNameAndImageState: CubitStates.success,
+          ),
+        );
+      }
+      return;
+    }
+
     final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
     final cachedName = CachNetwork.getStringData(key: kMyProfileName);
 
@@ -68,6 +173,9 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// ريفريش كامل للصفحة - يعيد كل شيء للقيم الأولية ويحمل من جديد
   Future<void> refreshHome() async {
+    // لو أوفلاين → لا تحدث، ابقي على البيانات الحالية
+    if (connectivityCubit.isOffline) return;
+
     // إعادة تعيين كل شيء للقيم الأولية (مع الحفاظ على بيانات اليوزر المخزنة)
     emit(state.reset());
 
@@ -106,9 +214,11 @@ class HomeCubit extends Cubit<HomeState> {
         }
       },
       (data) {
-        // حفظ في الكاش
-        CachNetwork.setData(key: kMyProfileImage, value: data.image);
-        CachNetwork.setData(key: kMyProfileName, value: data.name);
+        // حفظ في الكاش — الجيست بياناته في كاش منفصل فمنحفظش بيانات الجيست في كاش اليوزر العادي
+        if (!isGuest) {
+          CachNetwork.setData(key: kMyProfileImage, value: data.image);
+          CachNetwork.setData(key: kMyProfileName, value: data.name);
+        }
 
         // تحديث الـ State فقط لو البيانات اتغيرت
         if (_isUserInfoChanged(data)) {
@@ -232,10 +342,23 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// تحميل المزيد من البوستات للكاتيجوري الحالية
   Future<void> loadMorePosts() async {
+    // ⚠️ حارس الاتصال — السماح بالباجنيشن أوفلاين لو بيعرض كاش
+    if (!_isPaginationEnabled && !state.isShowingCachedData) return;
+
     final categoryId = state.selectedCategoryId;
     final currentData = state.currentCategoryPosts;
 
     if (currentData.isLoadingMore || !currentData.hasMore) return;
+
+    // تحديد المصدر ورقم الصفحة حسب حالة الاتصال
+    final bool isLoadingFromLocal = !_isPaginationEnabled;
+    final nextPage = isLoadingFromLocal
+        ? currentData.currentLocalPage + 1
+        : currentData.currentServerPage + 1;
+
+    // لو المصدر الحالي خلص صفحاته
+    if (isLoadingFromLocal && !currentData.hasMoreLocal) return;
+    if (!isLoadingFromLocal && !currentData.hasMoreServer) return;
 
     // تحديث حالة الـ loading more
     emit(
@@ -245,36 +368,170 @@ class HomeCubit extends Cubit<HomeState> {
       ),
     );
 
-    final nextPage = currentData.currentPage + 1;
     final result = await homeRepository.fetchPosts(
       page: nextPage,
       categoryId: categoryId,
-      nextCursor: currentData.nextCursor,
+      nextCursor: isLoadingFromLocal ? null : currentData.nextCursor,
     );
 
     result.fold(
-      (failure) => emit(
-        state.updateCategoryPosts(
-          categoryId,
-          (data) => data.copyWith(
-            isLoadingMore: false,
-            errorMessage: failure.message,
+      (failure) {
+        // السيرفر فشل وفيه لوكال متبقي → كمّل من اللوكال
+        if (!isLoadingFromLocal && currentData.hasMoreLocal) {
+          emit(
+            state.updateCategoryPosts(
+              categoryId,
+              (data) => data.copyWith(isLoadingMore: false),
+            ),
+          );
+          _loadMoreFromLocal(categoryId);
+          return;
+        }
+
+        // مفيش لوكال متبقي → عرض حالة فشل السيرفر
+        emit(
+          state.updateCategoryPosts(
+            categoryId,
+            (data) => data.copyWith(
+              isLoadingMore: false,
+              loadMoreServerFailed: !isLoadingFromLocal,
+              hasMoreLocal: isLoadingFromLocal ? false : data.hasMoreLocal,
+              errorMessage: failure.message,
+            ),
           ),
-        ),
-      ),
-      (response) => emit(
-        state.updateCategoryPosts(
-          categoryId,
-          (data) => data.copyWith(
-            posts: [...data.posts, ...response.posts],
-            currentPage: nextPage,
-            hasMore: response.posts.length >= _pageSize,
-            isLoadingMore: false,
-            nextCursor: response.nextCursor,
-          ),
-        ),
+        );
+      },
+      (response) {
+        final isFromCache = response.message == 'from_cache';
+        final allPosts = [...currentData.posts, ...response.posts];
+        final hasMorePages = response.posts.length >= _pageSize;
+
+        emit(
+          state
+              .updateCategoryPosts(
+                categoryId,
+                (data) => data.copyWith(
+                  posts: allPosts,
+                  currentLocalPage: isFromCache
+                      ? nextPage
+                      : data.currentLocalPage,
+                  currentServerPage: isFromCache
+                      ? data.currentServerPage
+                      : nextPage,
+                  hasMoreLocal: isFromCache ? hasMorePages : data.hasMoreLocal,
+                  hasMoreServer: isFromCache
+                      ? data.hasMoreServer
+                      : hasMorePages,
+                  isLoadingMore: false,
+                  loadMoreServerFailed: false,
+                  nextCursor: isFromCache
+                      ? data.nextCursor
+                      : response.nextCursor,
+                ),
+              )
+              .copyWith(
+                isShowingCachedData: isFromCache
+                    ? true
+                    : state.isShowingCachedData,
+              ),
+        );
+
+        // ✅ حفظ تراكمي في الكاش بعد كل صفحة أونلاين ناجحة (All category فقط)
+        if (!isFromCache && categoryId == null) {
+          localDatasource
+              .cachePosts(
+                allPosts,
+                nextCursor: response.nextCursor,
+                page: nextPage,
+              )
+              .catchError((_) {});
+        }
+      },
+    );
+  }
+
+  /// فولباك للوكال لما السيرفر يفشل
+  Future<void> _loadMoreFromLocal(String? categoryId) async {
+    final currentData = state.currentCategoryPosts;
+    final nextLocalPage = currentData.currentLocalPage + 1;
+
+    emit(
+      state.updateCategoryPosts(
+        categoryId,
+        (data) => data.copyWith(isLoadingMore: true),
       ),
     );
+
+    final result = await homeRepository.fetchPosts(
+      page: nextLocalPage,
+      categoryId: categoryId,
+    );
+
+    result.fold(
+      (failure) {
+        // اللوكال كمان فشل (خلص) → عرض حالة فشل السيرفر
+        emit(
+          state.updateCategoryPosts(
+            categoryId,
+            (data) => data.copyWith(
+              isLoadingMore: false,
+              hasMoreLocal: false,
+              loadMoreServerFailed: true,
+              errorMessage: failure.message,
+            ),
+          ),
+        );
+      },
+      (response) {
+        final isFromCache = response.message == 'from_cache';
+        final allPosts = [...currentData.posts, ...response.posts];
+        final hasMorePages = response.posts.length >= _pageSize;
+
+        if (!isFromCache) {
+          // لو رجع أونلاين فجأة — بيانات سيرفر
+          emit(
+            state.updateCategoryPosts(
+              categoryId,
+              (data) => data.copyWith(
+                posts: allPosts,
+                currentServerPage: nextLocalPage,
+                hasMoreServer: hasMorePages,
+                isLoadingMore: false,
+                loadMoreServerFailed: false,
+                nextCursor: response.nextCursor,
+              ),
+            ),
+          );
+          return;
+        }
+
+        emit(
+          state
+              .updateCategoryPosts(
+                categoryId,
+                (data) => data.copyWith(
+                  posts: allPosts,
+                  currentLocalPage: nextLocalPage,
+                  hasMoreLocal: hasMorePages,
+                  isLoadingMore: false,
+                ),
+              )
+              .copyWith(isShowingCachedData: true),
+        );
+      },
+    );
+  }
+
+  /// إعادة محاولة تحميل المزيد من السيرفر (يستدعيها الـ UI)
+  Future<void> retryLoadMore() async {
+    final categoryId = state.selectedCategoryId;
+    emit(
+      state.updateCategoryPosts(
+        categoryId,
+        (data) => data.copyWith(loadMoreServerFailed: false),
+      ),
+    );
+    await loadMorePosts();
   }
 
   /// تحميل البوستات لكاتيجوري معينة (داخلي)
@@ -286,8 +543,10 @@ class HomeCubit extends Cubit<HomeState> {
         (data) => data.copyWith(
           state: CubitStates.loading,
           posts: [],
-          currentPage: 1,
-          hasMore: true,
+          currentLocalPage: 0,
+          currentServerPage: 0,
+          hasMoreLocal: true,
+          hasMoreServer: true,
           nextCursor: null,
         ),
       ),
@@ -308,18 +567,30 @@ class HomeCubit extends Cubit<HomeState> {
           ),
         ),
       ),
-      (response) => emit(
-        state.updateCategoryPosts(
-          categoryId,
-          (data) => data.copyWith(
-            state: CubitStates.success,
-            posts: response.posts,
-            currentPage: 1,
-            hasMore: response.posts.length >= _pageSize,
-            nextCursor: response.nextCursor,
-          ),
-        ),
-      ),
+      (response) {
+        // هل البيانات جاية من الكاش؟
+        final isFromCache = response.message == 'from_cache';
+        final hasMorePages = response.posts.length >= _pageSize;
+
+        emit(
+          state
+              .updateCategoryPosts(
+                categoryId,
+                (data) => data.copyWith(
+                  state: CubitStates.success,
+                  posts: _deduplicatePosts(response.posts),
+                  currentLocalPage: isFromCache
+                      ? (response.pagination.currentPage)
+                      : 0,
+                  currentServerPage: isFromCache ? 0 : 1,
+                  hasMoreLocal: isFromCache ? hasMorePages : true,
+                  hasMoreServer: isFromCache ? true : hasMorePages,
+                  nextCursor: response.nextCursor,
+                ),
+              )
+              .copyWith(isShowingCachedData: isFromCache),
+        );
+      },
     );
   }
 
@@ -403,6 +674,7 @@ class HomeCubit extends Cubit<HomeState> {
             },
             (_) {
               log('>>>>>>>>>>>>>>>>> React To Post Success');
+              _syncPostToCacheById(postId);
             },
           );
         });
@@ -463,6 +735,7 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (message) {
         log('>>>>>>>>>>>>>>>>>Share Post Success: $message');
+        _syncPostToCacheById(postId);
         emit(
           state.copyWith(
             shareActionState: CubitStates.success,
@@ -525,6 +798,7 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (message) {
         log('>>>>>>>>>>>>>>>>> Save Post Success: $message');
+        _syncPostToCacheById(postId);
 
         // النجاح: الـ UI متحدث بالفعل (Optimistic)، بس محتاجين نبعت Success عشان التوست الأخضر
         emit(
@@ -583,6 +857,7 @@ class HomeCubit extends Cubit<HomeState> {
         },
         (message) {
           log('>>>>>>>>>>>>>>>>> Delete Post Success: $message');
+          localDatasource.removePost(postId).catchError((_) {});
 
           emit(
             state.copyWith(
@@ -641,6 +916,7 @@ class HomeCubit extends Cubit<HomeState> {
         },
         (message) {
           log('>>>>>>>>>>>>>>>>> Archive Post Success: $message');
+          localDatasource.removePost(postId).catchError((_) {});
 
           emit(
             state.copyWith(
@@ -657,7 +933,7 @@ class HomeCubit extends Cubit<HomeState> {
   // 👁️ TOGGLE HIDE POST
   // ═══════════════════════════════════════════════════════════════════════════
 
-  void toggleHidePost({required String postId}) {
+  Future<void> toggleHidePost({required String postId}) async {
     // 1. جيب البوست الحالي
     final post = _findPost(postId);
     if (post == null) return;
@@ -665,16 +941,44 @@ class HomeCubit extends Cubit<HomeState> {
     // 2. اعكس الحالة
     final newHideState = !post.isHidden;
 
-    // 3. Update UI فوراً
-    emit(
-      state.updatePostInAllCategories(
-        postId,
-        (p) => p.copyWith(isHidden: newHideState),
-      ),
+    // 3. Loading State
+    emit(state.copyWith(hidePostActionState: CubitStates.loading));
+
+    // 4. Server Request
+    final result = await homeRepository.hidePost(
+      postId: postId,
+      isHide: newHideState,
     );
 
-    // 4. بعت للسيرفر في الـ Background
-    homeRepository.hidePost(postId: postId, isHide: newHideState);
+    result.fold(
+      (failure) {
+        log('>>>>>>>>>>>>>>>>> Hide Post Failed: ${failure.message}');
+
+        emit(
+          state.copyWith(
+            hidePostActionState: CubitStates.failure,
+            hidePostMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        log('>>>>>>>>>>>>>>>>> Hide Post Success: $message');
+
+        // ✅ نجاح: حدث الـ UI
+        emit(
+          state
+              .updatePostInAllCategories(
+                postId,
+                (p) => p.copyWith(isHidden: newHideState),
+              )
+              .copyWith(
+                hidePostActionState: CubitStates.success,
+                hidePostMessage: message,
+              ),
+        );
+        localDatasource.removePost(postId).catchError((_) {});
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -737,6 +1041,14 @@ class HomeCubit extends Cubit<HomeState> {
             blockUserMessage: message,
           ),
         );
+
+        // ✅ مزامنة الكاش: حدث البوست الظاهر + احذف باقي بوستات اليوزر المحظور
+        _syncPostToCacheById(visiblePostId);
+        for (final post in state.posts) {
+          if (post.advisorId == advisorId && post.postId != visiblePostId) {
+            localDatasource.removePost(post.postId).catchError((_) {});
+          }
+        }
       },
     );
   }
@@ -906,6 +1218,7 @@ class HomeCubit extends Cubit<HomeState> {
         },
         (_) {
           log('>>>>>>>>>>>>>>>>> Vote In Poll Success');
+          _syncPostToCacheById(postId);
         },
       );
     });
@@ -919,6 +1232,20 @@ class HomeCubit extends Cubit<HomeState> {
     final posts = state.posts;
     final index = posts.indexWhere((p) => p.postId == postId);
     return index != -1 ? posts[index] : null;
+  }
+
+  /// إزالة البوستات المكررة بالـ postId
+  List<PostModel> _deduplicatePosts(List<PostModel> posts) {
+    final seen = <String>{};
+    return posts.where((p) => seen.add(p.postId)).toList();
+  }
+
+  /// مزامنة بوست محدد مع الكاش بعد تفاعل ناجح
+  void _syncPostToCacheById(String postId) {
+    final post = _findPost(postId);
+    if (post != null) {
+      localDatasource.updateSinglePost(postId, post).catchError((_) {});
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -938,6 +1265,7 @@ class HomeCubit extends Cubit<HomeState> {
         ),
       ),
     );
+    _syncPostToCacheById(postId);
   }
 
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
@@ -956,5 +1284,11 @@ class HomeCubit extends Cubit<HomeState> {
         emit(state.copyWith(sessionStartModel: null));
       });
     });
+  }
+
+  @override
+  Future<void> close() {
+    _connectivitySubscription?.cancel();
+    return super.close();
   }
 }

@@ -328,8 +328,8 @@ class _PostItemState extends State<_PostItem> {
       onDelete: (postId) => widget.cubit.deletePost(postId: postId),
       onArchive: (postId) => widget.cubit.archivePost(postId: postId),
       onHide: (postId) => widget.cubit.toggleHidePost(postId: postId),
-      onBlock: (postId, advisorId) =>
-          widget.cubit.blockUser(visiblePostId: postId, advisorId: advisorId),
+      onBlock: (postId, userId) =>
+          widget.cubit.blockUser(visiblePostId: postId, advisorId: userId),
     );
   }
 

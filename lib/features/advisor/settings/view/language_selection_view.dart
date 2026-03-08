@@ -30,23 +30,24 @@ class _LanguageSelectionViewBodyState
     extends State<_LanguageSelectionViewBody> {
   final _searchController = TextEditingController();
 
-  final Map<String, String> _languageKeys = const {
-    'ar': 'arabic',
-    'en': 'english',
-    'fa': 'persian',
-    'ru': 'russian',
-    'fr': 'french',
-    'es': 'spanish',
-    'de': 'german',
-    'tr': 'turkish',
-    'ur': 'urdu',
-    'hi': 'hindi',
-    'bn': 'bengali',
-    'pt': 'portuguese',
-    'it': 'italian',
-    'ja': 'japanese',
-    'ko': 'korean',
-    'zh': 'chinese',
+  // أسماء اللغات بلغتها الأصلية - لا تتغير مع لغة التطبيق
+  final Map<String, String> _nativeLanguageNames = const {
+    'ar': 'العربية',
+    'en': 'English',
+    'fa': 'فارسی',
+    'ru': 'Русский',
+    'fr': 'Français',
+    'es': 'Español',
+    'de': 'Deutsch',
+    'tr': 'Türkçe',
+    'ur': 'اردو',
+    'hi': 'हिन्दी',
+    'bn': 'বাংলা',
+    'pt': 'Português',
+    'it': 'Italiano',
+    'ja': '日本語',
+    'ko': '한국어',
+    'zh': '中文',
   };
 
   @override
@@ -66,7 +67,6 @@ class _LanguageSelectionViewBodyState
   }
 
   List<AppLanguage> _getFilteredLanguages(
-    BuildContext context,
     String query,
     List<AppLanguage> allLanguages,
   ) {
@@ -75,10 +75,9 @@ class _LanguageSelectionViewBodyState
     }
     final lowerQuery = query.toLowerCase();
     return allLanguages.where((lang) {
-      final localizedTitle = context
-          .tr(_languageKeys[lang.code] ?? lang.title)
+      final nativeName = (_nativeLanguageNames[lang.code] ?? lang.title)
           .toLowerCase();
-      return localizedTitle.contains(lowerQuery) ||
+      return nativeName.contains(lowerQuery) ||
           lang.code.toLowerCase().contains(lowerQuery);
     }).toList();
   }
@@ -154,7 +153,6 @@ class _LanguageSelectionViewBodyState
                               }
 
                               final filteredLanguages = _getFilteredLanguages(
-                                context,
                                 state.searchQuery,
                                 LanguageSelectionUiCubit.allLanguages,
                               );
@@ -163,6 +161,7 @@ class _LanguageSelectionViewBodyState
                                 return Padding(
                                   padding: EdgeInsets.symmetric(vertical: 40.h),
                                   child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
                                         Icons.language_outlined,
@@ -186,9 +185,9 @@ class _LanguageSelectionViewBodyState
                                 child: Column(
                                   children: filteredLanguages.map((lang) {
                                     return SelectionItem(
-                                      title: context.tr(
-                                        _languageKeys[lang.code] ?? lang.title,
-                                      ),
+                                      title:
+                                          _nativeLanguageNames[lang.code] ??
+                                          lang.title,
                                       isSelected:
                                           state.selectedLanguage?.code ==
                                           lang.code,

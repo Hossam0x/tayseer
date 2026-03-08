@@ -35,8 +35,8 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
               isSuccess: true,
             ),
           );
-          context.pop();
           context.read<EventDetailCubit>().fetchEventDetail(state.event!.id);
+          context.pop();
         } else if (state.updateEventStatus == CubitStates.failure) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
@@ -49,7 +49,7 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (context) => const CustomloadingApp(),
+            builder: (context) => Center(child: const CustomloadingApp()),
           );
         }
       },
@@ -76,6 +76,7 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                       children: [
                         /// 1. العنوان
                         CustomTextFormField(
+                          maxLength: 30,
                           hintText: context.tr('title_events'),
                           controller: cubit.titleController,
                         ),
@@ -86,12 +87,14 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                           hintText: context.tr('event_description'),
                           maxLines: 5,
                           controller: cubit.descriptionController,
+                          onChanged: (val) =>
+                              cubit.setDescriptionLength(val.length),
                         ),
                         Gap(context.responsiveHeight(3)),
                         Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '${cubit.descriptionController.text.length}/250',
+                            '${state.descriptionLength}/250',
                             style: Styles.textStyle12.copyWith(
                               color: AppColors.kGreyColor,
                             ),
@@ -121,12 +124,11 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                         ),
                         Gap(context.responsiveHeight(16)),
 
-                        /// 5. المدة
+                        // 5. المدة
                         CustomDropdownFormField<String>(
                           hint: context.tr('event_duration'),
                           value: state.duration,
                           items: [
-                            DropdownMenuItem(value: '', child: Text('')),
                             DropdownMenuItem(
                               value: '15 minutes',
                               child: Text(
@@ -217,16 +219,22 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                           onChanged: (val) => cubit.setNumberOfAttendees(val),
                           validator: (value) =>
                               (value == null || value.trim().isEmpty)
-                                  ? context.tr('required')
-                                  : null,
+                              ? context.tr('required')
+                              : null,
                         ),
                         Gap(context.responsiveHeight(24)),
 
                         /// 9. رفع صور جديدة
                         CustomUploadContainer(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return context.tr('required_images');
+                            }
+                            return null;
+                          },
                           icon: Icons.camera_alt,
                           title: context.tr('add_event_image'),
-                          subtitle: context.tr('add_image_hint'),
+                          subtitle: context.tr('add_4_images_hint'),
                           onTap: () async {
                             final images = await _imagePicker
                                 .pickMultipleFromGallery();
@@ -234,6 +242,9 @@ class _UpdateEventBodyState extends State<UpdateEventBody> {
                               cubit.addPickedImages(images);
                             }
                           },
+                          valueGetter: () => cubit.state.pickedImages
+                              .map((e) => e.path)
+                              .toList(),
                         ),
                         Gap(context.responsiveHeight(16)),
 

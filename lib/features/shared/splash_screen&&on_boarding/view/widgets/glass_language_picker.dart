@@ -20,35 +20,35 @@ class GlassLanguagePicker extends StatelessWidget {
             ListTile(
               title: const Text('العربية'),
               onTap: () {
-                cubit.setLanguage('ar');
+                cubit.setLanguage('ar', context, navigate: false);
                 Navigator.pop(context);
               },
             ),
             ListTile(
               title: const Text('English'),
               onTap: () {
-                cubit.setLanguage('en');
+                cubit.setLanguage('en', context, navigate: false);
                 Navigator.pop(context);
               },
             ),
             ListTile(
               title: const Text('English'),
               onTap: () {
-                cubit.setLanguage('en');
+                cubit.setLanguage('en', context, navigate: false);
                 Navigator.pop(context);
               },
             ),
             ListTile(
               title: const Text('English'),
               onTap: () {
-                cubit.setLanguage('en');
+                cubit.setLanguage('en', context, navigate: false);
                 Navigator.pop(context);
               },
             ),
             ListTile(
               title: const Text('English'),
               onTap: () {
-                cubit.setLanguage('en');
+                cubit.setLanguage('en', context, navigate: false);
                 Navigator.pop(context);
               },
             ),

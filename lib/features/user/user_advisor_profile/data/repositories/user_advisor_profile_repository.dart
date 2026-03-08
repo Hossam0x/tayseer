@@ -93,7 +93,9 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         final profile = UserAdvisorProfileModel.fromJson(profileData);
         return Right(profile);
       } else {
-        return Left(ServerFailure(response['message'] ?? 'فشل جلب البروفايل'));
+        return Left(
+          ServerFailure(response['message'] ?? 'profile_fetch_failed'),
+        );
       }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
@@ -121,7 +123,7 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
             [];
         return Right(postsList);
       } else {
-        return Left(ServerFailure(response['message'] ?? 'فشل جلب المنشورات'));
+        return Left(ServerFailure(response['message'] ?? 'posts_fetch_failed'));
       }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
@@ -136,7 +138,7 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
       final response = await _apiService.post(
         endPoint: '/advisor/toggle-follow/$advisorId',
       );
-      return Right(response['message'] ?? 'تمت العملية بنجاح');
+      return Right(response['message'] ?? 'operation_success');
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -171,7 +173,7 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         endPoint: "${ApiEndPoint.share}?action=$action",
         data: requestData,
       );
-      return Right(response['message'] ?? 'تمت العملية بنجاح');
+      return Right(response['message'] ?? 'operation_success');
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -187,9 +189,9 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         data: {"blockedId": advisorId},
       );
       if (response['success'] == true || response['status'] == 'success') {
-        return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
+        return Right(response['message'] ?? 'user_blocked_success');
       }
-      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+      return Left(ServerFailure(response['message'] ?? 'error_occurred'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -207,7 +209,7 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         endPoint: ApiEndPoint.savePost,
         data: {"postId": postId, "action": isRemove ? "remove" : "add"},
       );
-      return Right(response['message'] ?? 'تمت العملية بنجاح');
+      return Right(response['message'] ?? 'operation_success');
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -221,7 +223,7 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
       final response = await _apiService.delete(
         endPoint: "/posts/delete/$postId",
       );
-      return Right(response['message'] ?? 'تمت العملية بنجاح');
+      return Right(response['message'] ?? 'operation_success');
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -245,9 +247,9 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         data: {"blockedId": advisorId},
       );
       if (response['success'] == true || response['status'] == 'success') {
-        return Right(response['message'] ?? 'تم إلغاء الحظر بنجاح');
+        return Right(response['message'] ?? 'unblock_success');
       }
-      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+      return Left(ServerFailure(response['message'] ?? 'error_occurred'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -262,7 +264,7 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         endPoint: "/posts/toggle-archive-post",
         data: {"postId": postId},
       );
-      return Right(response['message'] ?? 'تمت العملية بنجاح');
+      return Right(response['message'] ?? 'operation_success');
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -287,9 +289,9 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
         },
       );
       if (response['success'] == true || response['status'] == 'success') {
-        return Right(response['message'] ?? 'تم إرسال الإبلاغ بنجاح');
+        return Right(response['message'] ?? 'report_sent_success');
       }
-      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+      return Left(ServerFailure(response['message'] ?? 'error_occurred'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
+import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
 import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 
@@ -12,7 +14,9 @@ class ConversationAppBar extends StatefulWidget {
   final String? userimage;
   final String? receiverId;
   final VoidCallback? onProfileTap;
+  final bool isBlocked;
   final Function(String blockedId)? onBlockUser;
+  final Function(String blockedId)? onUnblockUser;
 
   const ConversationAppBar({
     super.key,
@@ -22,6 +26,8 @@ class ConversationAppBar extends StatefulWidget {
     this.receiverId,
     this.onProfileTap,
     this.onBlockUser,
+    this.onUnblockUser,
+    this.isBlocked = false,
   });
 
   @override
@@ -181,9 +187,28 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                     } else if (value == 'block') {
                       if (widget.receiverId != null &&
                           widget.onBlockUser != null) {
-                        widget.onBlockUser!(widget.receiverId!);
-                      } else {
-                        print("❌ receiverId is null or onBlockUser is null");
+                        showConfirmationDialog(
+                          context: context,
+                          imagePath: AssetsData.deleteIcon,
+                          title: context.tr('confirm_block_user'),
+                          subtitle: context.tr('confirm_block_user_message'),
+                          onConfirm: () {
+                            widget.onBlockUser!(widget.receiverId!);
+                          },
+                        );
+                      }
+                    } else if (value == 'unblock') {
+                      if (widget.receiverId != null &&
+                          widget.onUnblockUser != null) {
+                        showConfirmationDialog(
+                          context: context,
+                          imagePath: AssetsData.deleteIcon,
+                          title: context.tr('confirm_unblock_user'),
+                          subtitle: context.tr('confirm_unblock_user_message'),
+                          onConfirm: () {
+                            widget.onUnblockUser!(widget.receiverId!);
+                          },
+                        );
                       }
                     }
                   },
@@ -194,17 +219,17 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                           height: 45,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
-                            children: const [
+                            children: [
                               Text(
-                                "ابلاغ",
-                                style: TextStyle(
+                                context.tr('report'),
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black87,
                                 ),
                               ),
-                              Spacer(),
-                              Icon(
+                              const Spacer(),
+                              const Icon(
                                 Icons.info_outline,
                                 color: Colors.black,
                                 size: 22,
@@ -223,20 +248,28 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                           ),
                         ),
                         PopupMenuItem<String>(
-                          value: 'block',
+                          value: widget.isBlocked ? 'unblock' : 'block',
                           height: 45,
                           child: Row(
-                            children: const [
+                            children: [
                               Text(
-                                "حظر",
-                                style: TextStyle(
+                                widget.isBlocked
+                                    ? context.tr('unblock')
+                                    : context.tr('block'),
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black87,
                                 ),
                               ),
-                              Spacer(),
-                              Icon(Icons.block, color: Colors.black, size: 22),
+                              const Spacer(),
+                              Icon(
+                                widget.isBlocked
+                                    ? Icons.lock_open
+                                    : Icons.block,
+                                color: Colors.black,
+                                size: 22,
+                              ),
                             ],
                           ),
                         ),

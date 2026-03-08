@@ -68,7 +68,7 @@ class UserInfoHeader extends StatelessWidget {
                   decoration: BoxDecoration(shape: BoxShape.circle),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(100.r),
-                    child: AppImage(avatar, fit: BoxFit.cover),
+                    child: AppImage(avatar, fit: BoxFit.cover, isAvatar: true),
                   ),
                 ),
                 Gap(10.w),
@@ -106,6 +106,7 @@ class UserInfoHeader extends StatelessWidget {
             ),
           ),
         ),
+        Gap(8.w),
         if (onMoreTap != null)
           CustomClick(
             onTap: onMoreTap,

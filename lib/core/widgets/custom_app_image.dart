@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import '../../my_import.dart';
 
 class AppImage extends StatelessWidget {
@@ -7,6 +8,10 @@ class AppImage extends StatelessWidget {
   final Color? color;
   final Gradient? gradientColorSvg;
   final String? placeholderImage;
+  final bool flipOnLtr;
+
+  /// لو true → الـ errorWidget تبقى Icons.person (للأفاتار/البروفايل)
+  final bool isAvatar;
 
   const AppImage(
     this.path, {
@@ -17,7 +22,16 @@ class AppImage extends StatelessWidget {
     this.color,
     this.placeholderImage,
     this.gradientColorSvg,
+    this.flipOnLtr = false,
+    this.isAvatar = false,
   });
+
+  Widget _flipIfLtr(Widget child, BuildContext context) {
+    if (!flipOnLtr) return child;
+    final isLtr = Directionality.of(context) == TextDirection.ltr;
+    if (!isLtr) return child;
+    return Transform.scale(scaleX: -1, child: child);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,16 +86,19 @@ class AppImage extends StatelessWidget {
 
       // لو فيه Gradient Wrap بـ ShaderMask
       if (gradientColorSvg != null) {
-        return ShaderMask(
-          shaderCallback: (bounds) {
-            return gradientColorSvg!.createShader(bounds);
-          },
-          blendMode: BlendMode.srcIn,
-          child: svgWidget,
+        return _flipIfLtr(
+          ShaderMask(
+            shaderCallback: (bounds) {
+              return gradientColorSvg!.createShader(bounds);
+            },
+            blendMode: BlendMode.srcIn,
+            child: svgWidget,
+          ),
+          context,
         );
       }
 
-      return svgWidget;
+      return _flipIfLtr(svgWidget, context);
     }
 
     // Lottie
@@ -92,69 +109,44 @@ class AppImage extends StatelessWidget {
     // GIF ✅
     if (path!.endsWith("gif")) {
       if (path!.startsWith("http")) {
-        return CachedNetworkImage(
-          memCacheWidth: 600,
+        return _ConnectivityNetworkImage(
           imageUrl: path!,
           fit: fit,
           height: height,
           width: width,
-          fadeInDuration: Duration.zero,
-          fadeOutDuration: Duration.zero,
-          placeholderFadeInDuration: Duration.zero,
-          placeholder: (context, url) => placeholderImage != null
-              ? Image.asset(
-                  placeholderImage!,
-                  height: height,
-                  width: width,
-                  fit: fit,
-                )
-              : _buildLoadingPlaceholder(),
-          errorWidget: (context, url, error) =>
-              const Icon(Icons.error, color: Colors.red),
+          color: null,
+          placeholderImage: placeholderImage,
+          isAvatar: isAvatar,
+          loadingPlaceholder: _buildLoadingPlaceholder(),
+          memCacheWidth: 600,
         );
       } else {
-        return Image.asset(path!, height: height, width: width, fit: fit);
+        return _flipIfLtr(
+          Image.asset(path!, height: height, width: width, fit: fit),
+          context,
+        );
       }
     }
 
     // Network image
     if (path!.startsWith("http")) {
-      return CachedNetworkImage(
-        memCacheWidth: 600,
+      return _ConnectivityNetworkImage(
         imageUrl: path!,
         fit: fit,
         height: height,
         width: width,
         color: color,
-        fadeInDuration: Duration.zero,
-        fadeOutDuration: Duration.zero,
-        placeholderFadeInDuration: Duration.zero,
-        placeholder: (context, url) => placeholderImage != null
-            ? Image.asset(
-                placeholderImage!,
-                height: height,
-                width: width,
-                fit: fit,
-              )
-            : _buildLoadingPlaceholder(),
-        errorWidget: (context, url, error) => placeholderImage != null
-            ? Image.asset(
-                placeholderImage!,
-                height: height,
-                width: width,
-                fit: fit,
-              )
-            : const Icon(Icons.error, color: Colors.red),
+        placeholderImage: placeholderImage,
+        isAvatar: isAvatar,
+        loadingPlaceholder: _buildLoadingPlaceholder(),
+        memCacheWidth: 600,
       );
     }
 
     // Asset image
-    return Image.asset(
-      path!,
-      height: height,
-      width: width,
-      fit: fit,
-      color: color,
+    return _flipIfLtr(
+      Image.asset(path!, height: height, width: width, fit: fit, color: color),
+      context,
     );
   }
 
@@ -163,6 +155,128 @@ class AppImage extends StatelessWidget {
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
       child: Container(height: height, width: width, color: Colors.white),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔄 صورة شبكة مع إعادة تحميل تلقائية عند عودة الاتصال
+// ══════════════════════════════════════════════════════════════════════════════
+class _ConnectivityNetworkImage extends StatefulWidget {
+  final String imageUrl;
+  final BoxFit fit;
+  final double? height;
+  final double? width;
+  final Color? color;
+  final String? placeholderImage;
+  final bool isAvatar;
+  final Widget loadingPlaceholder;
+  final int? memCacheWidth;
+
+  const _ConnectivityNetworkImage({
+    required this.imageUrl,
+    required this.fit,
+    this.height,
+    this.width,
+    this.color,
+    this.placeholderImage,
+    required this.isAvatar,
+    required this.loadingPlaceholder,
+    this.memCacheWidth,
+  });
+
+  @override
+  State<_ConnectivityNetworkImage> createState() =>
+      _ConnectivityNetworkImageState();
+}
+
+class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
+  int _retryKey = 0;
+  bool _hasFailed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<ConnectivityCubit, ConnectivityState>(
+      listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
+      listener: (_, __) {
+        if (_hasFailed && mounted) {
+          setState(() {
+            _retryKey++;
+            _hasFailed = false;
+          });
+        }
+      },
+      child: CachedNetworkImage(
+        key: ValueKey('${widget.imageUrl}_$_retryKey'),
+        memCacheWidth: widget.memCacheWidth,
+        imageUrl: widget.imageUrl,
+        fit: widget.fit,
+        height: widget.height,
+        width: widget.width,
+        color: widget.color,
+        fadeInDuration: Duration.zero,
+        fadeOutDuration: Duration.zero,
+        placeholderFadeInDuration: Duration.zero,
+        placeholder: (_, __) => _buildPlaceholder(),
+        errorWidget: (_, __, ___) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_hasFailed) _hasFailed = true;
+          });
+          return _buildErrorWidget();
+        },
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    if (widget.placeholderImage != null) {
+      return Image.asset(
+        widget.placeholderImage!,
+        height: widget.height,
+        width: widget.width,
+        fit: widget.fit,
+      );
+    }
+    // أفاتار → صورة بروفايل افتراضية
+    if (widget.isAvatar) {
+      return Image.asset(
+        AssetsData.defaultProfileImage,
+        height: widget.height,
+        width: widget.width,
+        fit: BoxFit.cover,
+      );
+    }
+    return widget.loadingPlaceholder;
+  }
+
+  Widget _buildErrorWidget() {
+    if (widget.placeholderImage != null) {
+      return Image.asset(
+        widget.placeholderImage!,
+        height: widget.height,
+        width: widget.width,
+        fit: widget.fit,
+      );
+    }
+
+    // أفاتار → صورة بروفايل افتراضية
+    if (widget.isAvatar) {
+      return Image.asset(
+        AssetsData.defaultProfileImage,
+        height: widget.height,
+        width: widget.width,
+        fit: BoxFit.cover,
+      );
+    }
+
+    // صورة عادية → placeholder رمادي ثابت (زي الفيسبوك)
+    return Container(
+      height: widget.height,
+      width: widget.width,
+      color: Colors.grey[200],
+      child: Center(
+        child: Icon(Icons.image_outlined, color: Colors.grey[350], size: 32.sp),
+      ),
     );
   }
 }

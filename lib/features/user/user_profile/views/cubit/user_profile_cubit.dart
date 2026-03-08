@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
+import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
@@ -53,15 +55,21 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       try {
         final profile = UserProfileModel.fromJson(jsonDecode(cachedData));
         final notificationStatus = await _getNotificationStatus();
+        final isMarriageDeactivated =
+            await _getMarriageSectionDeactivated(); // ✅ أضف هذا
+        final isMarriageComplete = await _getMarriageComplete(); // ✅ أضف هذا
+
         final settings = await _loadSettings(
-          isProfileComplete: false,
-        ); // Default false for cache
+          isProfileComplete: isMarriageComplete, // ✅ استخدم القيمة الصح
+        );
 
         emit(
           SettingsLoaded(
             settings: settings,
             userProfile: profile,
             isNotificationEnabled: notificationStatus,
+            isMarriageSectionDeactivated: isMarriageDeactivated, // ✅ أضف هذا
+            isMarriageProfileComplete: isMarriageComplete, // ✅ أضف هذا
           ),
         );
         return true;
@@ -625,7 +633,6 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       // 1️⃣ حدّث الـ state فوراً
       emit(currentState.copyWith(isMarriageSectionDeactivated: value));
-      emit(currentState.copyWith(isMarriageSectionDeactivated: value));
 
       // 2️⃣ احفظ في الـ cache
       await _saveMarriageSectionDeactivated(value);
@@ -734,7 +741,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       _userProfileRepository.logout();
 
       await CachNetwork.clearCache();
+      await getIt<CacheCleanupService>().clearAllUserCache();
       getIt<tayseerSocketHelper>().disconnect();
+
+      // ✅ ريسيت الـ HomeCubit Singleton عشان يتعمل instance جديد بعد اللوجن الجديد
+      if (getIt.isRegistered<HomeCubit>()) {
+        getIt.resetLazySingleton<HomeCubit>();
+      }
 
       emit(
         currentState is SettingsLoaded

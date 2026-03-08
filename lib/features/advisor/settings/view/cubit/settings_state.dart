@@ -21,6 +21,8 @@ class SettingsLoaded extends SettingsState {
   final String? actionError; // Key or message
   final bool isActionKey; // If true, View should translate the message
   final int actionTimestamp;
+  final int points;
+  final String referralLink;
 
   const SettingsLoaded({
     required this.settings,
@@ -30,6 +32,8 @@ class SettingsLoaded extends SettingsState {
     this.actionError,
     this.isActionKey = false,
     this.actionTimestamp = 0,
+    this.points = 0,
+    this.referralLink = '',
   });
 
   SettingsLoaded copyWith({
@@ -40,6 +44,8 @@ class SettingsLoaded extends SettingsState {
     String? actionError,
     bool? isActionKey,
     int? actionTimestamp,
+    int? points,
+    String? referralLink,
   }) {
     return SettingsLoaded(
       settings: settings ?? this.settings,
@@ -50,6 +56,8 @@ class SettingsLoaded extends SettingsState {
       actionError: actionError, // Intentionally not keeping previous
       isActionKey: isActionKey ?? false,
       actionTimestamp: actionTimestamp ?? this.actionTimestamp,
+      points: points ?? this.points,
+      referralLink: referralLink ?? this.referralLink,
     );
   }
 
@@ -62,6 +70,8 @@ class SettingsLoaded extends SettingsState {
     actionError,
     isActionKey,
     actionTimestamp,
+    points,
+    referralLink,
   ];
 }
 

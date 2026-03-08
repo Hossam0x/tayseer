@@ -145,7 +145,6 @@ class StoriesCubit extends Cubit<StoriesState> {
     final story = userStory.stories[storyIndex];
 
     // ⭐ Always update local state so border turns grey immediately
-    bool isLastStory = storyIndex == userStory.stories.length - 1;
     final List<StoryModel> updatedStories = List.from(userStory.stories);
     if (!story.isViewedByMe) {
       updatedStories[storyIndex] = story.copyWith(
@@ -154,8 +153,8 @@ class StoriesCubit extends Cubit<StoriesState> {
       );
     }
 
-    final bool allViewedLocally =
-        isLastStory || updatedStories.every((s) => s.isViewedByMe);
+    // ⭐ allViewed = true فقط لو كل القصص اتشافت فعلاً
+    final bool allViewedLocally = updatedStories.every((s) => s.isViewedByMe);
 
     final updatedUserStory = userStory.copyWith(
       stories: updatedStories,
@@ -419,13 +418,47 @@ class StoriesCubit extends Cubit<StoriesState> {
           ),
         );
       },
-      (_) {
+      (createdStory) {
         emit(state.copyWith(createStoryState: CubitStates.success));
 
-        // Refetch stories after a delay to allow backend processing
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          fetchStoriesSilent();
-        });
+        // Add the new story to the state instead of fetching all stories
+        final myUserId = kCurrentUserData?.id;
+        if (myUserId != null) {
+          final currentList = List<UserStoriesModel>.from(state.storiesList);
+
+          // Find if user already has stories
+          final myStoryIndex = currentList.indexWhere(
+            (userStory) => userStory.userId == myUserId,
+          );
+
+          if (myStoryIndex != -1) {
+            // User already has stories - add the new one
+            final myUserStory = currentList[myStoryIndex];
+            final updatedStories = [createdStory, ...myUserStory.stories];
+
+            currentList[myStoryIndex] = myUserStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
+            );
+          } else {
+            // First story for this user - create new UserStoriesModel
+            final newUserStory = UserStoriesModel(
+              userId: myUserId,
+              name: kCurrentUserData?.name ?? '',
+              image: kCurrentUserData?.image ?? '',
+              isFollowed: false,
+              isViewedByMe: false,
+              allViewed: false,
+              storiesCount: 1,
+              stories: [createdStory],
+            );
+
+            // Add at the beginning of the list
+            currentList.insert(0, newUserStory);
+          }
+
+          emit(state.copyWith(storiesList: currentList));
+        }
 
         if (context != null && context.mounted) {
           AppToast.success(context, context.tr('story_created_success'));
