@@ -1171,6 +1171,7 @@
   "search_by_name": "Search by name...",
   "result": "result",
   "searching": "Searching...",
+  "no_search_results": "No search results",
   "no_followers": "No followers",
   "chats": "Chats",
   "select_all": "Select All",

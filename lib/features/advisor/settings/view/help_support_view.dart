@@ -88,27 +88,16 @@ class _HelpSupportContentState extends State<_HelpSupportContent> {
                                 >(
                                   listener: (context, state) {
                                     if (state.isSuccess) {
-                                      ScaffoldMessenger.of(
+                                      AppToast.success(
                                         context,
-                                      ).showSnackBar(
-                                        CustomSnackBar(
-                                          context,
-                                          text: context.tr(
-                                            'problem_sent_success',
-                                          ),
-                                          isSuccess: true,
-                                        ),
+                                        context.tr('problem_sent_success'),
                                       );
                                       _problemController.clear();
+                                      Navigator.pop(context);
                                     } else if (state.errorMessage != null) {
-                                      ScaffoldMessenger.of(
+                                      AppToast.error(
                                         context,
-                                      ).showSnackBar(
-                                        CustomSnackBar(
-                                          context,
-                                          text: state.errorMessage!,
-                                          isSuccess: false,
-                                        ),
+                                        state.errorMessage!,
                                       );
                                     }
                                   },

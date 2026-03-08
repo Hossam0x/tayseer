@@ -1023,6 +1023,7 @@
   "search_by_name": "ابحث بالاسم...",
   "result": "نتيجة",
   "searching": "جاري البحث...",
+  "no_search_results": "لا توجد نتائج بحث",
   "no_followers": "لا يوجد متابعين بعد",
   "chats": "المحادثات",
   "select_all": "اختيار الكل",
