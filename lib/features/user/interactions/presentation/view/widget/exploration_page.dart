@@ -343,7 +343,7 @@ class ExplorationState extends State<Exploration> {
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   itemCount:
-                      state.explorationData["ارسل تحية"]!.take(3).length,
+                      state.explorationData["ارسل تحية"]!.take(4).length,
                   itemBuilder: (context, index) {
                     final item = state.explorationData["ارسل تحية"]![index];
                     return Padding(

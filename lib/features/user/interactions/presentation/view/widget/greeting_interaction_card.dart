@@ -188,22 +188,27 @@ class GreetingProfileCard extends StatelessWidget {
     );
   }
 
-  void _showSuccessAnimation(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return Opacity(
-          opacity: 0.6,
+void _showSuccessAnimation(context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.transparent, // ✅ transparent لأن rootNavigator هيغطي كل حاجة
+    useRootNavigator: true, // ✅ هذا هو الحل
+    builder: (_) {
+      return Center(
+        child: Opacity(
+          opacity: 0.9,
           child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
-        );
-      },
-    );
-    Future.delayed(const Duration(seconds: 4), () {
-      context.pop();
-    });
-  }
-
+        ),
+      );
+    },
+  );
+  Future.delayed(const Duration(seconds: 4), () {
+    if (Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop(); // ✅ نفس الـ rootNavigator
+    }
+  });
+}
   Widget _buildBadge({required String text, String? icon}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
