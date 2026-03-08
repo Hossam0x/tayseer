@@ -118,6 +118,7 @@ class AppStrings {
   static const String archiveError = "archive_error";
   static const String pollVoteError = "poll_vote_error";
   static const String genericError = "generic_error";
+  static const String loadMoreFailed = "load_more_failed";
   static const String endOfFeed = "end_of_feed";
   static const String endOfCategoryFeed = "end_of_category_feed";
   static const String viewAllPosts = "view_all_posts";

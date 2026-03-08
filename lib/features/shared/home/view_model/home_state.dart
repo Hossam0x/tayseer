@@ -44,9 +44,9 @@ class HomeState extends Equatable {
   CubitStates get postsState => currentCategoryPosts.state;
   List<PostModel> get posts => currentCategoryPosts.posts;
   String? get postsErrorMessage => currentCategoryPosts.errorMessage;
-  int get currentPage => currentCategoryPosts.currentPage;
   bool get hasMore => currentCategoryPosts.hasMore;
   bool get isLoadingMore => currentCategoryPosts.isLoadingMore;
+  bool get loadMoreServerFailed => currentCategoryPosts.loadMoreServerFailed;
 
   // ─────────────────────────────────────────────────────────────────────────
   // 📦 Save Action State
@@ -402,19 +402,25 @@ class CategoryPostsData extends Equatable {
   final CubitStates state;
   final List<PostModel> posts;
   final String? errorMessage;
-  final int currentPage;
-  final bool hasMore;
+  final int currentLocalPage;
+  final int currentServerPage;
+  final bool hasMoreLocal;
+  final bool hasMoreServer;
   final bool isLoadingMore;
   final double? nextCursor;
+  final bool loadMoreServerFailed;
 
   const CategoryPostsData({
     this.state = CubitStates.initial,
     this.posts = const [],
     this.errorMessage,
-    this.currentPage = 1,
-    this.hasMore = true,
+    this.currentLocalPage = 0,
+    this.currentServerPage = 0,
+    this.hasMoreLocal = true,
+    this.hasMoreServer = true,
     this.isLoadingMore = false,
     this.nextCursor,
+    this.loadMoreServerFailed = false,
   });
 
   /// هل البيانات محملة وجاهزة للعرض
@@ -426,23 +432,32 @@ class CategoryPostsData extends Equatable {
   /// هل فشل التحميل
   bool get isError => state == CubitStates.failure;
 
+  /// هل فيه صفحات تانية ممكن نحملها (حسب المصدر الحالي)
+  bool get hasMore => hasMoreLocal || hasMoreServer;
+
   CategoryPostsData copyWith({
     CubitStates? state,
     List<PostModel>? posts,
     String? errorMessage,
-    int? currentPage,
-    bool? hasMore,
+    int? currentLocalPage,
+    int? currentServerPage,
+    bool? hasMoreLocal,
+    bool? hasMoreServer,
     bool? isLoadingMore,
     double? nextCursor,
+    bool? loadMoreServerFailed,
   }) {
     return CategoryPostsData(
       state: state ?? this.state,
       posts: posts ?? this.posts,
       errorMessage: errorMessage ?? this.errorMessage,
-      currentPage: currentPage ?? this.currentPage,
-      hasMore: hasMore ?? this.hasMore,
+      currentLocalPage: currentLocalPage ?? this.currentLocalPage,
+      currentServerPage: currentServerPage ?? this.currentServerPage,
+      hasMoreLocal: hasMoreLocal ?? this.hasMoreLocal,
+      hasMoreServer: hasMoreServer ?? this.hasMoreServer,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       nextCursor: nextCursor ?? this.nextCursor,
+      loadMoreServerFailed: loadMoreServerFailed ?? this.loadMoreServerFailed,
     );
   }
 
@@ -451,9 +466,12 @@ class CategoryPostsData extends Equatable {
     state,
     posts,
     errorMessage,
-    currentPage,
-    hasMore,
+    currentLocalPage,
+    currentServerPage,
+    hasMoreLocal,
+    hasMoreServer,
     isLoadingMore,
     nextCursor,
+    loadMoreServerFailed,
   ];
 }

@@ -212,7 +212,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
   }
 
   @override
-  Future<Either<Failure, void>> createStories({
+  Future<Either<Failure, StoryModel>> createStories({
     String? content,
     List<File>? images,
     List<XFile>? videos,
@@ -259,8 +259,9 @@ class StoriesRepositoryImpl implements StoriesRepository {
 
       final success = response['success'] ?? false;
 
-      if (success) {
-        return right(null);
+      if (success && response['data'] != null) {
+        final createdStory = StoryModel.fromJson(response['data']);
+        return right(createdStory);
       } else {
         return left(ServerFailure(response['message'] ?? 'فشل إنشاء القصة'));
       }

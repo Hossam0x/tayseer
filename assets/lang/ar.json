@@ -1536,11 +1536,17 @@
   "archive_error": "حدث خطأ أثناء الأرشفة",
   "poll_vote_error": "حدث خطأ أثناء التصويت",
   "generic_error": "حدث خطأ ما",
+  "load_more_failed": "فشل تحميل المزيد",
   "end_of_feed": "تم الوصول لنهاية المنشورات",
   "end_of_category_feed": "تم الوصول لنهاية المنشورات في هذه الفئة",
   "view_all_posts": "عرض كل المنشورات",
   "no_category_posts": "لا توجد منشورات في هذه الفئة",
   "try_other_categories": "جرب استكشاف فئات أخرى",
   "explore_all_posts": "استكشف كل المنشورات",
-  "connection_restored": "تم استعادة الاتصال"
+  "connection_restored": "تم استعادة الاتصال",
+  "no_saved_posts": "لا توجد منشورات محفوظة",
+  "saved_posts_empty_hint": "المنشورات التي تحفظها ستظهر هنا",
+  "saved_success": "تم حفظ المنشور بنجاح",
+  "delete_success": "تم حذف المنشور بنجاح",
+  "archive_success": "تم أرشفة المنشور بنجاح"
 }

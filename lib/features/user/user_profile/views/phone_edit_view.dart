@@ -3,7 +3,6 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/otp_view_user.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class PhoneEditView extends StatefulWidget {
@@ -40,19 +39,11 @@ class _PhoneEditViewState extends State<PhoneEditView> {
         body: BlocConsumer<PhoneEditCubit, PhoneEditState>(
           listener: (context, state) {
             if (state.errorMessage.isNotEmpty) {
-              showSafeSnackBar(
-                context: context,
-                text: context.tr(state.errorMessage),
-                isError: true,
-              );
+              AppToast.error(context, context.tr(state.errorMessage));
               context.read<PhoneEditCubit>().clearMessages();
             } else if (state.successMessage.isNotEmpty &&
                 state.updatePhoneStatus == CubitStates.success) {
-              showSafeSnackBar(
-                context: context,
-                text: context.tr(state.successMessage),
-                isSuccess: true,
-              );
+              AppToast.success(context, context.tr(state.successMessage));
 
               // التنقل عند النجاح فقط
               Future.delayed(const Duration(milliseconds: 1500), () {

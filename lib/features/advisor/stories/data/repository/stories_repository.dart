@@ -18,7 +18,7 @@ abstract class StoriesRepository {
   });
   void markStoryAsViewed({required String storyId});
   void likeStory({required String storyId});
-  Future<Either<Failure, void>> createStories({
+  Future<Either<Failure, StoryModel>> createStories({
     String? content,
     List<File>? images,
     List<XFile>? videos,

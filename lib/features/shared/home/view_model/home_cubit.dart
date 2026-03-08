@@ -69,15 +69,15 @@ class HomeCubit extends Cubit<HomeState> {
       fetchCategories();
     }
 
-    // 2. لو كان بيعرض كاش → استكمل من الصفحة التالية أونلاين
+    // 2. لو كان بيعرض كاش → ابدأ من أول صفحة سيرفر (مش مكمل علي اللوكال)
     if (state.isShowingCachedData) {
       final categoryId = state.selectedCategoryId;
-      // فتح الـ hasMore عشان الـ loadMore يشتغل
+      // فتح الـ hasMoreServer عشان الـ loadMore يشتغل من السيرفر
       emit(
         state
             .updateCategoryPosts(
               categoryId,
-              (data) => data.copyWith(hasMore: true),
+              (data) => data.copyWith(hasMoreServer: true),
             )
             .copyWith(isShowingCachedData: false),
       );
@@ -350,6 +350,16 @@ class HomeCubit extends Cubit<HomeState> {
 
     if (currentData.isLoadingMore || !currentData.hasMore) return;
 
+    // تحديد المصدر ورقم الصفحة حسب حالة الاتصال
+    final bool isLoadingFromLocal = !_isPaginationEnabled;
+    final nextPage = isLoadingFromLocal
+        ? currentData.currentLocalPage + 1
+        : currentData.currentServerPage + 1;
+
+    // لو المصدر الحالي خلص صفحاته
+    if (isLoadingFromLocal && !currentData.hasMoreLocal) return;
+    if (!isLoadingFromLocal && !currentData.hasMoreServer) return;
+
     // تحديث حالة الـ loading more
     emit(
       state.updateCategoryPosts(
@@ -358,23 +368,34 @@ class HomeCubit extends Cubit<HomeState> {
       ),
     );
 
-    final nextPage = currentData.currentPage + 1;
     final result = await homeRepository.fetchPosts(
       page: nextPage,
       categoryId: categoryId,
-      nextCursor: currentData.nextCursor,
+      nextCursor: isLoadingFromLocal ? null : currentData.nextCursor,
     );
 
     result.fold(
       (failure) {
-        // لو فشل وأوفلاين → وقّف الـ hasMore (خلص الكاش أو مفيش نت)
-        final isOfflineFailure = failure is NetworkFailure;
+        // السيرفر فشل وفيه لوكال متبقي → كمّل من اللوكال
+        if (!isLoadingFromLocal && currentData.hasMoreLocal) {
+          emit(
+            state.updateCategoryPosts(
+              categoryId,
+              (data) => data.copyWith(isLoadingMore: false),
+            ),
+          );
+          _loadMoreFromLocal(categoryId);
+          return;
+        }
+
+        // مفيش لوكال متبقي → عرض حالة فشل السيرفر
         emit(
           state.updateCategoryPosts(
             categoryId,
             (data) => data.copyWith(
               isLoadingMore: false,
-              hasMore: isOfflineFailure ? false : data.hasMore,
+              loadMoreServerFailed: !isLoadingFromLocal,
+              hasMoreLocal: isLoadingFromLocal ? false : data.hasMoreLocal,
               errorMessage: failure.message,
             ),
           ),
@@ -382,7 +403,11 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (response) {
         final isFromCache = response.message == 'from_cache';
-        final allPosts = [...currentData.posts, ...response.posts];
+        final allPosts = _deduplicatePosts([
+          ...currentData.posts,
+          ...response.posts,
+        ]);
+        final hasMorePages = response.posts.length >= _pageSize;
 
         emit(
           state
@@ -390,9 +415,18 @@ class HomeCubit extends Cubit<HomeState> {
                 categoryId,
                 (data) => data.copyWith(
                   posts: allPosts,
-                  currentPage: nextPage,
-                  hasMore: response.posts.length >= _pageSize,
+                  currentLocalPage: isFromCache
+                      ? nextPage
+                      : data.currentLocalPage,
+                  currentServerPage: isFromCache
+                      ? data.currentServerPage
+                      : nextPage,
+                  hasMoreLocal: isFromCache ? hasMorePages : data.hasMoreLocal,
+                  hasMoreServer: isFromCache
+                      ? data.hasMoreServer
+                      : hasMorePages,
                   isLoadingMore: false,
+                  loadMoreServerFailed: false,
                   nextCursor: isFromCache
                       ? data.nextCursor
                       : response.nextCursor,
@@ -419,6 +453,93 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
+  /// فولباك للوكال لما السيرفر يفشل
+  Future<void> _loadMoreFromLocal(String? categoryId) async {
+    final currentData = state.currentCategoryPosts;
+    final nextLocalPage = currentData.currentLocalPage + 1;
+
+    emit(
+      state.updateCategoryPosts(
+        categoryId,
+        (data) => data.copyWith(isLoadingMore: true),
+      ),
+    );
+
+    final result = await homeRepository.fetchPosts(
+      page: nextLocalPage,
+      categoryId: categoryId,
+    );
+
+    result.fold(
+      (failure) {
+        // اللوكال كمان فشل (خلص) → عرض حالة فشل السيرفر
+        emit(
+          state.updateCategoryPosts(
+            categoryId,
+            (data) => data.copyWith(
+              isLoadingMore: false,
+              hasMoreLocal: false,
+              loadMoreServerFailed: true,
+              errorMessage: failure.message,
+            ),
+          ),
+        );
+      },
+      (response) {
+        final isFromCache = response.message == 'from_cache';
+        final allPosts = _deduplicatePosts([
+          ...currentData.posts,
+          ...response.posts,
+        ]);
+        final hasMorePages = response.posts.length >= _pageSize;
+
+        if (!isFromCache) {
+          // لو رجع أونلاين فجأة — بيانات سيرفر
+          emit(
+            state.updateCategoryPosts(
+              categoryId,
+              (data) => data.copyWith(
+                posts: allPosts,
+                currentServerPage: nextLocalPage,
+                hasMoreServer: hasMorePages,
+                isLoadingMore: false,
+                loadMoreServerFailed: false,
+                nextCursor: response.nextCursor,
+              ),
+            ),
+          );
+          return;
+        }
+
+        emit(
+          state
+              .updateCategoryPosts(
+                categoryId,
+                (data) => data.copyWith(
+                  posts: allPosts,
+                  currentLocalPage: nextLocalPage,
+                  hasMoreLocal: hasMorePages,
+                  isLoadingMore: false,
+                ),
+              )
+              .copyWith(isShowingCachedData: true),
+        );
+      },
+    );
+  }
+
+  /// إعادة محاولة تحميل المزيد من السيرفر (يستدعيها الـ UI)
+  Future<void> retryLoadMore() async {
+    final categoryId = state.selectedCategoryId;
+    emit(
+      state.updateCategoryPosts(
+        categoryId,
+        (data) => data.copyWith(loadMoreServerFailed: false),
+      ),
+    );
+    await loadMorePosts();
+  }
+
   /// تحميل البوستات لكاتيجوري معينة (داخلي)
   Future<void> _fetchPostsForCategory(String? categoryId) async {
     // تحديث حالة الـ loading
@@ -428,8 +549,10 @@ class HomeCubit extends Cubit<HomeState> {
         (data) => data.copyWith(
           state: CubitStates.loading,
           posts: [],
-          currentPage: 1,
-          hasMore: true,
+          currentLocalPage: 0,
+          currentServerPage: 0,
+          hasMoreLocal: true,
+          hasMoreServer: true,
           nextCursor: null,
         ),
       ),
@@ -453,6 +576,7 @@ class HomeCubit extends Cubit<HomeState> {
       (response) {
         // هل البيانات جاية من الكاش؟
         final isFromCache = response.message == 'from_cache';
+        final hasMorePages = response.posts.length >= _pageSize;
 
         emit(
           state
@@ -461,12 +585,12 @@ class HomeCubit extends Cubit<HomeState> {
                 (data) => data.copyWith(
                   state: CubitStates.success,
                   posts: _deduplicatePosts(response.posts),
-                  currentPage: isFromCache
+                  currentLocalPage: isFromCache
                       ? (response.pagination.currentPage)
-                      : 1,
-                  hasMore: isFromCache
-                      ? response.posts.length >= _pageSize
-                      : response.posts.length >= _pageSize,
+                      : 0,
+                  currentServerPage: isFromCache ? 0 : 1,
+                  hasMoreLocal: isFromCache ? hasMorePages : true,
+                  hasMoreServer: isFromCache ? true : hasMorePages,
                   nextCursor: response.nextCursor,
                 ),
               )

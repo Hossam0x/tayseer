@@ -11,7 +11,7 @@ import 'archive_states.dart';
 // ============================================
 class ArchivedChatsCubit extends Cubit<ArchivedChatsState> {
   final ArchiveRepository _archiveRepository;
-  final int _pageSize = 20;
+  final int _pageSize = 10;
 
   ArchivedChatsCubit(this._archiveRepository)
     : super(const ArchivedChatsState()) {
@@ -616,7 +616,7 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
 class ArchivedStoriesCubit extends Cubit<ArchivedStoriesState> {
   final ArchiveRepository _archiveRepository;
   final StoriesRepository _storiesRepository;
-  final int _pageSize = 20;
+  final int _pageSize = 10;
 
   ArchivedStoriesCubit(this._archiveRepository, this._storiesRepository)
     : super(const ArchivedStoriesState()) {

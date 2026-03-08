@@ -1549,6 +1549,7 @@
   "archive_error": "Error while archiving",
   "poll_vote_error": "Error while voting",
   "generic_error": "Something went wrong",
+  "load_more_failed": "Failed to load more",
   "end_of_feed": "You've reached the end of posts",
   "end_of_category_feed": "You've reached the end of posts in this category",
   "view_all_posts": "View all posts",
