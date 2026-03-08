@@ -2,7 +2,6 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_state.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class HideStoryFromView extends StatefulWidget {
@@ -14,23 +13,26 @@ class HideStoryFromView extends StatefulWidget {
 
 class _HideStoryFromViewState extends State<HideStoryFromView> {
   final TextEditingController _searchController = TextEditingController();
+  bool _hasText = false;
 
   @override
   void initState() {
     super.initState();
-    // _searchController.addListener(_onSearchChanged);
+    _searchController.addListener(_onSearchTextChanged);
+  }
+
+  void _onSearchTextChanged() {
+    setState(() {
+      _hasText = _searchController.text.isNotEmpty;
+    });
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchTextChanged);
     _searchController.dispose();
     super.dispose();
   }
-
-  // void _onSearchChanged() {
-  //   final cubit = context.read<StoryVisibilityCubit>();
-  //   cubit.updateSearchQuery(_searchController.text);
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +110,9 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.grey.shade200),
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                        ),
                         suffixIcon: state.isLoading
                             ? SizedBox(
                                 width: 20.w,
@@ -120,6 +124,20 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                                     color: AppColors.primary300,
                                   ),
                                 ),
+                              )
+                            : _hasText
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.clear,
+                                  color: AppColors.gray2,
+                                  size: 20.sp,
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  context
+                                      .read<StoryVisibilityCubit>()
+                                      .updateSearchQuery('');
+                                },
                               )
                             : null,
                       ),
@@ -247,87 +265,18 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
       );
     }
 
-    return ListView.builder(
+    return ListView.separated(
       padding: EdgeInsets.symmetric(horizontal: 30.w),
       itemCount: state.users.length,
+      separatorBuilder: (context, index) =>
+          Divider(color: Colors.grey.shade100, height: 1),
       itemBuilder: (context, index) {
         final user = state.users[index];
 
-        return Column(
-          children: [
-            GestureDetector(
-              onTap: () {
-                cubit.toggleUserSelection(user.userId);
-              },
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 10.h),
-                child: Row(
-                  children: [
-                    // الصورة
-                    _buildUserAvatar(user.image),
-
-                    Gap(12.w),
-
-                    // الاسم + اليوزرنيم
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.name,
-                            style: Styles.textStyle16.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.secondary800,
-                            ),
-                          ),
-                          if (user.userName.isNotEmpty)
-                            Text(
-                              user.userName,
-                              style: Styles.textStyle14.copyWith(
-                                color: AppColors.gray2,
-                              ),
-                            ),
-                          if (user.email != null && user.email!.isNotEmpty)
-                            Text(
-                              user.email!,
-                              style: Styles.textStyle12.copyWith(
-                                color: AppColors.gray2,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    Spacer(),
-
-                    // زر التحديد
-                    Container(
-                      width: 24.w,
-                      height: 24.w,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: user.isSelected
-                            ? const Color(0xFFD65670)
-                            : Colors.transparent,
-                        border: Border.all(
-                          color: user.isSelected
-                              ? const Color(0xFFD65670)
-                              : Colors.grey.shade300,
-                          width: 2,
-                        ),
-                      ),
-                      child: user.isSelected
-                          ? Icon(Icons.check, color: Colors.white, size: 16.sp)
-                          : null,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Divider(color: Colors.grey.shade100, height: 1),
-          ],
+        return _UserListItem(
+          key: ValueKey(user.userId),
+          user: user,
+          onTap: () => cubit.toggleUserSelection(user.userId),
         );
       },
     );
@@ -336,86 +285,70 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
   Widget _buildSkeletonLoading() {
     return Skeletonizer(
       enabled: true,
-      child: ListView.builder(
+      child: ListView.separated(
         padding: EdgeInsets.symmetric(horizontal: 30.w),
         itemCount: 5,
+        separatorBuilder: (context, index) =>
+            Container(height: 1, color: Colors.grey.shade200),
         itemBuilder: (context, index) {
-          return Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 10.h),
-                child: Row(
-                  children: [
-                    // صورة Skeleton
-                    Container(
-                      width: 52.r,
-                      height: 52.r,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-
-                    Gap(12.w),
-
-                    // معلومات Skeleton
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 120.w,
-                            height: 18.h,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                          ),
-                          Gap(6.h),
-                          Container(
-                            width: 80.w,
-                            height: 14.h,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    Spacer(),
-
-                    // زر Skeleton
-                    Container(
-                      width: 24.w,
-                      height: 24.w,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey.shade300,
-                      ),
-                    ),
-                  ],
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 10.h),
+            child: Row(
+              children: [
+                // صورة Skeleton
+                Container(
+                  width: 52.r,
+                  height: 52.r,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              Container(height: 1, color: Colors.grey.shade200),
-            ],
+
+                Gap(12.w),
+
+                // معلومات Skeleton
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 120.w,
+                        height: 18.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                      ),
+                      Gap(6.h),
+                      Container(
+                        width: 80.w,
+                        height: 14.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Spacer(),
+
+                // زر Skeleton
+                Container(
+                  width: 24.w,
+                  height: 24.w,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.grey.shade300,
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
-    );
-  }
-
-  Widget _buildUserAvatar(String? imageUrl) {
-    return CircleAvatar(
-      radius: 26.r,
-      backgroundColor: Colors.grey.shade200,
-      backgroundImage: imageUrl != null && imageUrl.isNotEmpty
-          ? NetworkImage(imageUrl) as ImageProvider
-          : AssetImage(AssetsData.avatarImage),
-      child: imageUrl == null || imageUrl.isEmpty
-          ? Icon(Icons.person, color: Colors.grey.shade400, size: 24.sp)
-          : null,
     );
   }
 
@@ -514,6 +447,100 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
           ],
         );
       },
+    );
+  }
+}
+
+// Extracted widget for better performance
+class _UserListItem extends StatelessWidget {
+  final dynamic user;
+  final VoidCallback onTap;
+
+  const _UserListItem({super.key, required this.user, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 10.h),
+        child: Row(
+          children: [
+            // الصورة
+            _buildUserAvatar(user.image),
+
+            Gap(12.w),
+
+            // الاسم + اليوزرنيم
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.name,
+                    style: Styles.textStyle16.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.secondary800,
+                    ),
+                  ),
+                  if (user.userName.isNotEmpty)
+                    Text(
+                      user.userName,
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.gray2,
+                      ),
+                    ),
+                  if (user.email != null && user.email!.isNotEmpty)
+                    Text(
+                      user.email!,
+                      style: Styles.textStyle12.copyWith(
+                        color: AppColors.gray2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+
+            const Spacer(),
+
+            // زر التحديد
+            Container(
+              width: 24.w,
+              height: 24.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: user.isSelected
+                    ? const Color(0xFFD65670)
+                    : Colors.transparent,
+                border: Border.all(
+                  color: user.isSelected
+                      ? const Color(0xFFD65670)
+                      : Colors.grey.shade300,
+                  width: 2,
+                ),
+              ),
+              child: user.isSelected
+                  ? Icon(Icons.check, color: Colors.white, size: 16.sp)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserAvatar(String? imageUrl) {
+    return CircleAvatar(
+      radius: 26.r,
+      backgroundColor: Colors.grey.shade200,
+      backgroundImage: imageUrl != null && imageUrl.isNotEmpty
+          ? NetworkImage(imageUrl) as ImageProvider
+          : AssetImage(AssetsData.avatarImage),
+      child: imageUrl == null || imageUrl.isEmpty
+          ? Icon(Icons.person, color: Colors.grey.shade400, size: 24.sp)
+          : null,
     );
   }
 }

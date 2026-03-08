@@ -72,15 +72,17 @@ class AddCertificateView extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              SimpleAppBar(title: 'إضافة شهادة'),
+                              SimpleAppBar(
+                                title: context.tr('add_certificate'),
+                              ),
                               // Certificate Image / Preview
-                              _buildImagePickerSection(cubit, state),
+                              _buildImagePickerSection(cubit, state, context),
                               Gap(32.h),
                               // Name Certificate field
                               ProfileTextField(
                                 controller: state.nameCertificateController!,
                                 onChanged: cubit.updateNameCertificate,
-                                hint: 'اسم الشهادة (مثال: بكالوريوس علم النفس)',
+                                hint: context.tr('certificate_name_hint'),
                               ),
 
                               Gap(20.h),
@@ -88,7 +90,7 @@ class AddCertificateView extends StatelessWidget {
                               ProfileTextField(
                                 controller: state.fromWhereController!,
                                 onChanged: cubit.updateFromWhere,
-                                hint: 'من أين (مثال: جامعة الملك فيصل)',
+                                hint: context.tr('certificate_from_where_hint'),
                               ),
                               Gap(20.h),
                               // Date picker
@@ -99,8 +101,8 @@ class AddCertificateView extends StatelessWidget {
                                 height: 54.h,
                                 width: context.width * 0.8,
                                 title: state.isLoading
-                                    ? 'جاري الإضافة....'
-                                    : 'إضافة',
+                                    ? context.tr('adding_certificate')
+                                    : context.tr('add'),
                                 useGradient: true,
                                 onPressed: state.isLoading
                                     ? null
@@ -125,6 +127,7 @@ class AddCertificateView extends StatelessWidget {
   Widget _buildImagePickerSection(
     AddCertificateCubit cubit,
     AddCertificateState state,
+    BuildContext context,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -161,7 +164,7 @@ class AddCertificateView extends StatelessWidget {
                             AppImage(AssetsData.uplaodCertificate, width: 35.w),
                             Gap(8.h),
                             Text(
-                              'تحميل صورة أو pdf',
+                              context.tr('upload_image_or_pdf'),
                               style: Styles.textStyle16Meduim.copyWith(
                                 color: AppColors.mentionBlue,
                               ),
@@ -169,7 +172,7 @@ class AddCertificateView extends StatelessWidget {
                             Gap(8.h),
                             Text(
                               textAlign: TextAlign.center,
-                              ' يجب ان تكون واضحة مع التأكد من أن جميع التفاصيل قابلة للقراءة دون تشويش',
+                              context.tr('certificate_image_requirements'),
                               style: Styles.textStyle12.copyWith(
                                 color: AppColors.secondary400,
                               ),
@@ -241,7 +244,7 @@ class AddCertificateView extends StatelessWidget {
               child: Text(
                 state.date != null
                     ? DateFormat('yyyy').format(state.date!)
-                    : 'سنة الحصول عليها',
+                    : context.tr('certificate_year_obtained'),
                 style: Styles.textStyle14.copyWith(
                   color: state.date == null
                       ? AppColors.primary200

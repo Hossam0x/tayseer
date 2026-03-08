@@ -44,7 +44,7 @@ class UserPublicProfileRepositoryImpl implements UserPublicProfileRepository {
         return Right(profile);
       } else {
         return Left(
-          ServerFailure(response['message'] ?? 'فشل جلب ملف المستخدم'),
+          ServerFailure(response['message'] ?? 'user_profile_fetch_failed'),
         );
       }
     } on DioException catch (e) {
@@ -60,9 +60,11 @@ class UserPublicProfileRepositoryImpl implements UserPublicProfileRepository {
       final response = await _apiService.patch(endPoint: '/user/delete-user');
 
       if (response['success'] == true) {
-        return Right(response['message'] ?? 'تم حذف الحساب بنجاح');
+        return Right(response['message'] ?? 'account_deleted_success');
       } else {
-        return Left(ServerFailure(response['message'] ?? 'فشل حذف الحساب'));
+        return Left(
+          ServerFailure(response['message'] ?? 'account_delete_failed'),
+        );
       }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
@@ -79,9 +81,9 @@ class UserPublicProfileRepositoryImpl implements UserPublicProfileRepository {
         data: {"blockedId": userId},
       );
       if (response['success'] == true || response['status'] == 'success') {
-        return Right(response['message'] ?? 'تم حظر المستخدم بنجاح');
+        return Right(response['message'] ?? 'user_blocked_success');
       }
-      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+      return Left(ServerFailure(response['message'] ?? 'error_occurred'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -97,9 +99,9 @@ class UserPublicProfileRepositoryImpl implements UserPublicProfileRepository {
         data: {"blockedId": userId},
       );
       if (response['success'] == true || response['status'] == 'success') {
-        return Right(response['message'] ?? 'تم إلغاء الحظر بنجاح');
+        return Right(response['message'] ?? 'unblock_success');
       }
-      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+      return Left(ServerFailure(response['message'] ?? 'error_occurred'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -123,9 +125,9 @@ class UserPublicProfileRepositoryImpl implements UserPublicProfileRepository {
         },
       );
       if (response['success'] == true || response['status'] == 'success') {
-        return Right(response['message'] ?? 'تم إرسال الإبلاغ بنجاح');
+        return Right(response['message'] ?? 'report_sent_success');
       }
-      return Left(ServerFailure(response['message'] ?? 'حدث خطأ'));
+      return Left(ServerFailure(response['message'] ?? 'error_occurred'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
@@ -145,11 +147,9 @@ class UserPublicProfileRepositoryImpl implements UserPublicProfileRepository {
       );
 
       if (response['success'] == true || response['status'] == 'success') {
-        return Right(response['message'] ?? 'تم إرسال التحية بنجاح');
+        return Right(response['message'] ?? 'greeting_sent_success');
       }
-      return Left(
-        ServerFailure(response['message'] ?? 'حدث خطأ أثناء إرسال التحية'),
-      );
+      return Left(ServerFailure(response['message'] ?? 'greeting_send_error'));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {

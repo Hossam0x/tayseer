@@ -19,7 +19,10 @@ class StoryVisibilityCubit extends Cubit<StoryVisibilityState> {
   void _initialize() {
     // إعداد listener للبحث المتباطئ
     _searchDebouncer.values.listen((searchQuery) {
-      loadRestrictedUsers(searchQuery: searchQuery);
+      // Only search if query is not empty
+      if (searchQuery.isNotEmpty) {
+        loadRestrictedUsers(searchQuery: searchQuery);
+      }
     });
 
     // تحميل البيانات الأولية
@@ -27,10 +30,15 @@ class StoryVisibilityCubit extends Cubit<StoryVisibilityState> {
   }
 
   Future<void> loadRestrictedUsers({String searchQuery = ''}) async {
+    // Don't show full loading state if we already have data and just searching
+    // Show full loading only on initial load or when clearing search
+    final shouldShowLoading = state.users.isEmpty;
+
     emit(
       state.copyWith(
-        state: CubitStates.loading,
-        isLoading: true,
+        state: shouldShowLoading ? CubitStates.loading : state.state,
+        isLoading:
+            searchQuery.isNotEmpty, // Show small indicator only when searching
         searchQuery: searchQuery,
       ),
     );
@@ -60,8 +68,20 @@ class StoryVisibilityCubit extends Cubit<StoryVisibilityState> {
   }
 
   void updateSearchQuery(String searchQuery) {
-    emit(state.copyWith(searchQuery: searchQuery));
-    _searchDebouncer.setValue(searchQuery);
+    emit(
+      state.copyWith(
+        searchQuery: searchQuery,
+        isLoading: searchQuery.isNotEmpty,
+      ),
+    );
+
+    // If search is cleared, reload all users immediately without debounce
+    if (searchQuery.isEmpty) {
+      loadRestrictedUsers(searchQuery: '');
+    } else {
+      // Use debounce for actual search queries
+      _searchDebouncer.setValue(searchQuery);
+    }
   }
 
   void toggleUserSelection(String userId) {

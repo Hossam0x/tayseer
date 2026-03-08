@@ -161,6 +161,7 @@ class _LanguageSelectionViewBodyState
                                 return Padding(
                                   padding: EdgeInsets.symmetric(vertical: 40.h),
                                   child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
                                         Icons.language_outlined,
