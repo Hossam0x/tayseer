@@ -27,6 +27,7 @@ class StoriesCubit extends Cubit<StoriesState> {
       final nextPage = state.currentPage + 1;
       final result = await storiesRepository.fetchStories(
         page: nextPage,
+        limit: pageSize,
         advisorId: effectiveAdvisorId,
         isSpecial: effectiveIsSpecial,
         context: context,
@@ -69,6 +70,7 @@ class StoriesCubit extends Cubit<StoriesState> {
       }
       final result = await storiesRepository.fetchStories(
         page: 1,
+        limit: pageSize,
         advisorId: effectiveAdvisorId,
         isSpecial: effectiveIsSpecial,
         context: context,
@@ -106,6 +108,7 @@ class StoriesCubit extends Cubit<StoriesState> {
 
     final result = await storiesRepository.fetchStoriesSilent(
       page: 1,
+      limit: pageSize,
       advisorId: effectiveAdvisorId,
       isSpecial: effectiveIsSpecial,
     );
