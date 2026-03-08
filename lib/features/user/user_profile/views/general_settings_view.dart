@@ -255,8 +255,15 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           onTap: () async {
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => EmailEditView()),
+              MaterialPageRoute(
+                builder: (context) =>
+                    EmailEditView(initialEmail: userProfile?.email ?? ''),
+              ),
             );
+            // Refresh data after returning
+            if (mounted) {
+              context.read<UserProfileCubit>().refresh();
+            }
           },
           child: _buildSettingRow(label: context.tr('email'), value: ''),
         ),
@@ -264,8 +271,15 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           onTap: () async {
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => PhoneEditView()),
+              MaterialPageRoute(
+                builder: (context) =>
+                    PhoneEditView(initialPhone: userProfile?.phone ?? ''),
+              ),
             );
+            // Refresh data after returning
+            if (mounted) {
+              context.read<UserProfileCubit>().refresh();
+            }
           },
           child: _buildSettingRow(
             label: context.tr('phone'),

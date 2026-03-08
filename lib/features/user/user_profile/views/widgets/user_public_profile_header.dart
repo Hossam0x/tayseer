@@ -118,6 +118,10 @@ class UserPublicProfileHeader extends StatelessWidget {
     required BuildContext context,
     required UserProfileModel profile,
   }) {
+    final isBlocked = context.select<UserPublicProfileCubit, bool>(
+      (cubit) => cubit.state.profile?.isBlockedByMe ?? false,
+    );
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
       child: Row(
@@ -133,7 +137,7 @@ class UserPublicProfileHeader extends StatelessWidget {
                   width: 90.w,
                   imageUrl: imageUrl,
                   heroTag: 'profile_image_${profile.id}',
-                  onTap: imageUrl.isNotEmpty
+                  onTap: imageUrl.isNotEmpty && !isBlocked
                       ? () {
                           Navigator.push(
                             context,
@@ -182,13 +186,19 @@ class UserPublicProfileHeader extends StatelessWidget {
     required BuildContext context,
     required String userId,
   }) {
+    final isBlocked = context.select<UserPublicProfileCubit, bool>(
+      (cubit) => cubit.state.profile?.isBlockedByMe ?? false,
+    );
+
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => UserFollowingsView(userId: userId),
-        ),
-      ),
+      onTap: isBlocked
+          ? null
+          : () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserFollowingsView(userId: userId),
+              ),
+            ),
       child: Column(
         children: [
           Text(value, style: Styles.textStyle16SemiBold),

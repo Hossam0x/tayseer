@@ -1,5 +1,4 @@
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/repos/otp_repository.dart';
 import 'package:tayseer/my_import.dart' hide PinTheme;
@@ -82,19 +81,11 @@ class _OtpViewUserState extends State<OtpViewUser> {
           child: BlocConsumer<OtpCubit, OtpState>(
             listener: (context, state) {
               if (state.errorMessage.isNotEmpty) {
-                showSafeSnackBar(
-                  context: context,
-                  text: context.tr(state.errorMessage),
-                  isError: true,
-                );
+                AppToast.error(context, context.tr(state.errorMessage));
                 context.read<OtpCubit>().clearMessages();
               } else if (state.successMessage.isNotEmpty &&
                   state.otpStatus == OtpStatus.success) {
-                showSafeSnackBar(
-                  context: context,
-                  text: context.tr(state.successMessage),
-                  isSuccess: true,
-                );
+                AppToast.success(context, context.tr(state.successMessage));
 
                 Future.delayed(const Duration(milliseconds: 1500), () {
                   if (mounted) {
@@ -105,11 +96,8 @@ class _OtpViewUserState extends State<OtpViewUser> {
                 context.read<OtpCubit>().clearMessages();
               } else if (state.successMessage.isNotEmpty) {
                 // If success but not success status (like resend)
-                showSafeSnackBar(
-                  context: context,
-                  text: context.tr(state.successMessage),
-                  isSuccess: true,
-                );
+
+                AppToast.success(context, context.tr(state.successMessage));
                 context.read<OtpCubit>().clearMessages();
               }
             },
@@ -199,11 +187,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
                                 if (state.otpCode.length == 6) {
                                   context.read<OtpCubit>().verifyOtp();
                                 } else {
-                                  showSafeSnackBar(
-                                    context: context,
-                                    text: context.tr('otp_digit_6_error'),
-                                    isError: true,
-                                  );
+                                  AppToast.error(context, context.tr('otp_digit_6_error'));
                                 }
                               },
                       ),

@@ -41,9 +41,10 @@ class _EmailEditViewState extends State<EmailEditView> {
                 state.status == CubitStates.success) {
               AppToast.success(context, context.tr(state.successMessage));
 
-              Future.delayed(const Duration(milliseconds: 1400), () {
+              Future.delayed(const Duration(milliseconds: 1400), () async {
                 if (!mounted) return;
-                Navigator.push(
+
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => OtpViewUser(
@@ -54,7 +55,15 @@ class _EmailEditViewState extends State<EmailEditView> {
                     ),
                   ),
                 );
-                context.read<EmailEditCubit>().reset();
+
+                // If OTP was successful, pop back to GeneralSettingsView
+                if (mounted && result == null) {
+                  Navigator.pop(context);
+                }
+
+                if (mounted) {
+                  context.read<EmailEditCubit>().reset();
+                }
               });
               context.read<EmailEditCubit>().clearMessages();
             }
@@ -96,7 +105,7 @@ class _EmailEditViewState extends State<EmailEditView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // حقل الإيميل
+                          // Email field
                           Container(
                             decoration: BoxDecoration(
                               color: AppColors.kWhiteColor,
@@ -111,8 +120,12 @@ class _EmailEditViewState extends State<EmailEditView> {
                             child: TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
-                              textDirection: TextDirection.ltr,
-                              textAlign: TextAlign.left,
+                              textDirection: isArabic
+                                  ? TextDirection.rtl
+                                  : TextDirection.ltr,
+                              textAlign: isArabic
+                                  ? TextAlign.right
+                                  : TextAlign.left,
                               style: Styles.textStyle14.copyWith(
                                 color: AppColors.secondary800,
                                 fontWeight: FontWeight.w500,

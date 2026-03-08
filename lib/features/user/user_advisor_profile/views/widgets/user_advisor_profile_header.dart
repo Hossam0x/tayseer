@@ -77,6 +77,10 @@ class UserAdvisorProfileHeader extends StatelessWidget {
     required String profileId,
     String? profileName,
   }) {
+    final isBlocked = context.select<UserAdvisorProfileCubit, bool>(
+      (cubit) => cubit.state.profile?.room?.isBlocked ?? false,
+    );
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
       child: Row(
@@ -90,7 +94,7 @@ class UserAdvisorProfileHeader extends StatelessWidget {
                 width: 85.w,
                 imageUrl: imageUrl,
                 heroTag: 'advisor_profile_image_$profileId',
-                onTap: imageUrl.isNotEmpty
+                onTap: imageUrl.isNotEmpty && !isBlocked
                     ? () {
                         Navigator.push(
                           context,
@@ -110,11 +114,13 @@ class UserAdvisorProfileHeader extends StatelessWidget {
           Gap(10.w),
           // Stats
           GestureDetector(
-            onTap: () => Navigator.pushNamed(
-              context,
-              AppRouter.kFollowingView,
-              arguments: profileId, // ⭐ استخدام الـ profileId
-            ),
+            onTap: isBlocked
+                ? null
+                : () => Navigator.pushNamed(
+                    context,
+                    AppRouter.kFollowingView,
+                    arguments: profileId,
+                  ),
             child: Column(
               children: [
                 Text(following, style: Styles.textStyle16SemiBold),
@@ -124,11 +130,13 @@ class UserAdvisorProfileHeader extends StatelessWidget {
           ),
           Gap(20.w),
           GestureDetector(
-            onTap: () => Navigator.pushNamed(
-              context,
-              AppRouter.kFollowersView,
-              arguments: profileId, // ⭐ استخدام الـ profileId
-            ),
+            onTap: isBlocked
+                ? null
+                : () => Navigator.pushNamed(
+                    context,
+                    AppRouter.kFollowersView,
+                    arguments: profileId,
+                  ),
             child: Column(
               children: [
                 Text(followers, style: Styles.textStyle16SemiBold),
