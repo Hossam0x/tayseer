@@ -85,8 +85,13 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   String? _currentVideoUrl;
   bool _controllersInitialized = false;
 
-  bool get _isFormValid =>
-      _uiCubit.state.nameError == null && _uiCubit.state.usernameError == null;
+  bool get _isFormValid {
+    final bioLength = _bioController.text.trim().length;
+    final isBioValid = bioLength >= 3 && bioLength <= 250;
+    return _uiCubit.state.nameError == null &&
+        _uiCubit.state.usernameError == null &&
+        isBioValid;
+  }
 
   @override
   void initState() {
@@ -525,40 +530,23 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                             EditPersonalDataUiState
                                           >(
                                             builder: (context, uiState) {
-                                              return Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  ProfileTextField(
-                                                    controller: _nameController,
-                                                    maxLength: 24,
-                                                    onChanged: (value) {
-                                                      _uiCubit.validateName(
-                                                        value,
-                                                      );
-                                                      cubit.updateName(value);
-                                                    },
-                                                    hint: context.tr(
-                                                      "enter_name",
+                                              return ProfileTextField(
+                                                controller: _nameController,
+                                                maxLength: 24,
+                                                minLength: 4,
+                                                showCharacterCount: true,
+                                                validationErrorKey:
+                                                    'full_name_length_error',
+                                                onChanged: (value) {
+                                                  _uiCubit.validateName(
+                                                    value,
+                                                    context.tr(
+                                                      'full_name_length_error',
                                                     ),
-                                                  ),
-                                                  if (uiState.nameError != null)
-                                                    Padding(
-                                                      padding: EdgeInsets.only(
-                                                        top: 4.h,
-                                                        right: 8.w,
-                                                      ),
-                                                      child: Text(
-                                                        uiState.nameError!,
-                                                        style: Styles
-                                                            .textStyle12
-                                                            .copyWith(
-                                                              color: AppColors
-                                                                  .kRedColor,
-                                                            ),
-                                                      ),
-                                                    ),
-                                                ],
+                                                  );
+                                                  cubit.updateName(value);
+                                                },
+                                                hint: context.tr("enter_name"),
                                               );
                                             },
                                           ),
@@ -581,24 +569,11 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                                 cubit.updateBio(value),
                                             hint: context.tr("bio_hint"),
                                             maxLines: 4,
-                                          ),
-                                          Gap(6.h),
-                                          ValueListenableBuilder(
-                                            valueListenable: _bioController,
-                                            builder: (context, value, child) {
-                                              return Text(
-                                                '${value.text.length}/250',
-                                                style: Styles.textStyle14
-                                                    .copyWith(
-                                                      color:
-                                                          value.text.length >
-                                                              250
-                                                          ? AppColors.kRedColor
-                                                          : AppColors
-                                                                .secondary400,
-                                                    ),
-                                              );
-                                            },
+                                            maxLength: 250,
+                                            minLength: 3,
+                                            showCharacterCount: true,
+                                            validationErrorKey:
+                                                'bio_min_3_chars',
                                           ),
                                           Gap(12.h),
                                           CusttomGlassButton(
@@ -802,7 +777,10 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                               );
                           value = cleaned;
                         }
-                        _uiCubit.validateUsername(value);
+                        _uiCubit.validateUsername(
+                          value,
+                          context.tr('username_length_error'),
+                        );
                         cubit.updateUsername('@$value');
                       },
                     ),

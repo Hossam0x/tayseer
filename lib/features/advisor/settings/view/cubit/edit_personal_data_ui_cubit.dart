@@ -68,23 +68,19 @@ class EditPersonalDataUiState extends Equatable {
 class EditPersonalDataUiCubit extends Cubit<EditPersonalDataUiState> {
   EditPersonalDataUiCubit() : super(const EditPersonalDataUiState());
 
-  void validateName(String value) {
+  void validateName(String value, String errorMessage) {
     if (value.trim().length < 4 || value.trim().length > 24) {
-      emit(state.copyWith(nameError: 'الاسم يجب أن يكون بين 4 و 24 حرف'));
+      emit(state.copyWith(nameError: errorMessage));
     } else {
       emit(state.copyWith(clearNameError: true));
     }
   }
 
-  void validateUsername(String value) {
+  void validateUsername(String value, String errorMessage) {
     final cleaned = value.startsWith('@') ? value.substring(1) : value;
     final trimmed = cleaned.trim();
     if (trimmed.length < 4 || trimmed.length > 24) {
-      emit(
-        state.copyWith(
-          usernameError: 'اسم المستخدم يجب أن يكون بين 4 و 24 حرف',
-        ),
-      );
+      emit(state.copyWith(usernameError: errorMessage));
     } else {
       emit(state.copyWith(clearUsernameError: true));
     }

@@ -48,6 +48,19 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
 
   Future<void> _updateDescription() async {
     final newDescription = _descriptionController.text.trim();
+
+    // Validate minimum length (required field)
+    if (newDescription.length < 3) {
+      AppToast.error(context, context.tr('bio_min_length_error'));
+      return;
+    }
+
+    // Validate maximum length
+    if (newDescription.length > 250) {
+      AppToast.error(context, context.tr('bio_max_length_error'));
+      return;
+    }
+
     if (newDescription == (widget.initialProfile.description ?? '')) {
       Navigator.pop(context);
       return;
@@ -115,12 +128,24 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
                     children: [
                       Gap(32.h),
 
-                      // حقل النص
+                      // Text field
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
                             color: AppColors.whiteCard2Back,
                             borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(
+                              color:
+                                  _currentCharacterCount < 3 ||
+                                      _currentCharacterCount > 250
+                                  ? AppColors.errorColor
+                                  : AppColors.primary100,
+                              width:
+                                  _currentCharacterCount < 3 ||
+                                      _currentCharacterCount > 250
+                                  ? 1.5
+                                  : 1,
+                            ),
                           ),
                           child: TextField(
                             controller: _descriptionController,
@@ -128,7 +153,7 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
                               color: AppColors.secondary800,
                             ),
                             maxLines: null,
-                            maxLength: 200,
+                            maxLength: 250,
                             decoration: InputDecoration(
                               contentPadding: EdgeInsets.all(16.w),
                               border: InputBorder.none,
@@ -143,12 +168,26 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
                       ),
                       Gap(8.h),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
+                          if (_currentCharacterCount < 3)
+                            Expanded(
+                              child: Text(
+                                context.tr('bio_min_3_chars'),
+                                style: Styles.textStyle12.copyWith(
+                                  color: AppColors.errorColor,
+                                ),
+                                textAlign: isArabic
+                                    ? TextAlign.right
+                                    : TextAlign.left,
+                              ),
+                            ),
                           Text(
-                            '$_currentCharacterCount/200',
+                            '$_currentCharacterCount/250',
                             style: Styles.textStyle12.copyWith(
-                              color: _currentCharacterCount > 200
+                              color:
+                                  _currentCharacterCount < 3 ||
+                                      _currentCharacterCount > 250
                                   ? AppColors.errorColor
                                   : AppColors.secondary400,
                             ),
@@ -159,18 +198,29 @@ class _EditDescriptionViewState extends State<EditDescriptionView> {
 
                       Spacer(),
 
-                      // زر التأكيد
+                      // Confirm button
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8.w),
                         child: CustomBotton(
                           height: 52.h,
                           width: double.infinity,
                           title: context.tr('confirm'),
-                          onPressed: _isLoading ? null : _updateDescription,
+                          onPressed:
+                              _isLoading ||
+                                  _currentCharacterCount < 3 ||
+                                  _currentCharacterCount > 250
+                              ? null
+                              : _updateDescription,
                           isLoading: _isLoading,
-                          backGroundcolor: AppColors.kprimaryColor,
+                          backGroundcolor:
+                              _currentCharacterCount < 3 ||
+                                  _currentCharacterCount > 250
+                              ? Colors.grey
+                              : AppColors.kprimaryColor,
                           titleColor: AppColors.kWhiteColor,
-                          useGradient: true,
+                          useGradient:
+                              _currentCharacterCount >= 3 &&
+                              _currentCharacterCount <= 250,
                         ),
                       ),
                     ],

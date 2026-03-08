@@ -1,8 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/widgets.dart';
-import 'package:tayseer/core/constant/constans_keys.dart';
-import 'package:tayseer/core/shared/network/local_network.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
@@ -66,7 +61,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
       emit(
         state.copyWith(
           state: CubitStates.failure,
-          errorMessage: 'حدث خطأ غير متوقع: ${e.toString()}',
+          errorMessage: 'unexpected_error: ${e.toString()}',
         ),
       );
     }
@@ -266,14 +261,14 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                 errorMessage: null,
                 profile: updatedProfile,
                 state: CubitStates.success,
-                successMessage: 'تم تحديث البيانات بنجاح',
+                successMessage: 'data_updated_successfully',
                 // مسح الملفات المؤقتة بعد الحفظ
                 imageFile: null,
                 videoFile: null,
               ),
             );
           } else {
-            emit(state.copyWith(isSaving: false, errorMessage: 'فشل الحفظ'));
+            emit(state.copyWith(isSaving: false, errorMessage: 'save_failed'));
           }
         },
       );
@@ -281,7 +276,7 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
       emit(
         state.copyWith(
           isSaving: false,
-          errorMessage: 'حدث خطأ أثناء الحفظ: ${e.toString()}',
+          errorMessage: 'error_during_save: ${e.toString()}',
         ),
       );
     }
