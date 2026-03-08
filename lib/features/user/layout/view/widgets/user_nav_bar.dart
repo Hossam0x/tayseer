@@ -23,6 +23,7 @@ class _UserNavBarState extends State<UserNavBar>
   @override
   void initState() {
     super.initState();
+      NavAnimationService.instance.resetKey();
     _toggleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),

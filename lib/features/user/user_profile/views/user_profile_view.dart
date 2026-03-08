@@ -21,17 +21,12 @@ class _UserProfileViewState extends State<UserProfileView> {
   final int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();
   int _rating = 0;
-  late UserProfileCubit _userProfileCubit;
 
-  @override
-  void initState() {
-    super.initState();
-    _userProfileCubit = UserProfileCubit(getIt<UserProfileRepository>());
-  }
+  // ✅ حذف _userProfileCubit - BlocProvider هيتحكم في الـ lifecycle
 
   @override
   void dispose() {
-    _userProfileCubit.close();
+    // ✅ حذف _userProfileCubit.close() - BlocProvider بيعمل ده تلقائياً
     _scrollController.dispose();
     super.dispose();
   }
@@ -39,7 +34,8 @@ class _UserProfileViewState extends State<UserProfileView> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => _userProfileCubit,
+      // ✅ BlocProvider بيعمل الـ cubit ويتحكم في lifecycle بشكل صح
+      create: (context) => UserProfileCubit(getIt<UserProfileRepository>()),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
@@ -55,10 +51,9 @@ class _UserProfileViewState extends State<UserProfileView> {
                 listeners: [
                   BlocListener<UserProfileCubit, UserProfileState>(
                     listenWhen: (previous, current) {
-                      // ⭐ اسمع لما يتحول من loading/initial لـ loaded (initial load)
                       if (previous is! SettingsLoaded &&
                           current is SettingsLoaded) {
-                        return true; // ⭐ ده هيمسك الـ initial load
+                        return true;
                       }
 
                       if (current is SettingsLoaded &&
@@ -98,15 +93,12 @@ class _UserProfileViewState extends State<UserProfileView> {
                         }
 
                         if (isLogoutError) {
-                          Navigator.pop(
-                            context,
-                          ); // Close loading dialog if open
+                          Navigator.pop(context);
                           AppToast.error(context, context.tr("logout_error"));
                           return;
                         }
 
                         if (state.actionMessage == "update_language_success") {
-                          // الـ toast لازم يظهر بلغة الإعداد الجديد
                           SharedPreferences.getInstance().then((p) {
                             final lang = p.getString(kAppLanguage) ?? 'ar';
                             if (context.mounted) {
@@ -534,7 +526,11 @@ class _UserProfileViewState extends State<UserProfileView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(width: 12.w, height: 12.w, color: AppColors.secondary200),
+            Container(
+              width: 12.w,
+              height: 12.w,
+              color: AppColors.secondary200,
+            ),
             Gap(10.w),
             Container(
               width: 120.w,
@@ -699,7 +695,12 @@ class _UserProfileViewState extends State<UserProfileView> {
             : null,
         child: Container(
           padding: isNotificationsItem || isDeactiveTheMarriageSection
-              ? EdgeInsets.only(top: 12.h, bottom: 12.h, right: 12.w, left: 8.w)
+              ? EdgeInsets.only(
+                  top: 12.h,
+                  bottom: 12.h,
+                  right: 12.w,
+                  left: 8.w,
+                )
               : EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16.r),
@@ -726,12 +727,10 @@ class _UserProfileViewState extends State<UserProfileView> {
                     Builder(
                       builder: (context) {
                         String title = setting.title;
-
                         return Text(
                           context.tr(title),
                           style: Styles.textStyle16Meduim.copyWith(
-                            color:
-                                isNotificationsItem ||
+                            color: isNotificationsItem ||
                                     isDeactiveTheMarriageSection
                                 ? AppColors.secondary800.withOpacity(0.9)
                                 : AppColors.secondary800,
@@ -749,13 +748,11 @@ class _UserProfileViewState extends State<UserProfileView> {
                   BlocSelector<UserProfileCubit, UserProfileState, bool>(
                     selector: (state) {
                       if (state is SettingsLoaded) {
-                        // ✅ Each switch reads its own state
                         if (setting.id == 'notifications') {
                           return state.isNotificationEnabled;
                         } else if (setting.id ==
                             'deactivate_the_marriage_section') {
-                          return state
-                              .isMarriageSectionDeactivated; // ⭐ new field
+                          return state.isMarriageSectionDeactivated;
                         }
                       }
                       return false;
@@ -842,7 +839,8 @@ class _UserProfileViewState extends State<UserProfileView> {
             children: [
               Text(
                 context.tr(setting.subtitle!),
-                style: Styles.textStyle16.copyWith(color: AppColors.secondary),
+                style:
+                    Styles.textStyle16.copyWith(color: AppColors.secondary),
               ),
               Gap(4.w),
               Icon(Icons.arrow_forward_ios_rounded, size: 16.w),
@@ -854,7 +852,12 @@ class _UserProfileViewState extends State<UserProfileView> {
   Widget _buildLogoutButton(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.only(left: 50.w, right: 50.w, top: 32.h, bottom: 30.h),
+      margin: EdgeInsets.only(
+        left: 50.w,
+        right: 50.w,
+        top: 32.h,
+        bottom: 30.h,
+      ),
       child: InkWell(
         onTap: () => _showLogoutConfirmation(context),
         borderRadius: BorderRadius.circular(16.r),
@@ -916,8 +919,9 @@ class _UserProfileViewState extends State<UserProfileView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) =>
-          Center(child: CircularProgressIndicator(color: AppColors.primary100)),
+      builder: (context) => Center(
+        child: CircularProgressIndicator(color: AppColors.primary100),
+      ),
     );
     cubit.logout();
   }
@@ -1077,15 +1081,10 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   void _showDeactivateMarriageDialog(BuildContext context, bool value) {
-    // ⭐ احفظ reference للـ overlay قبل ما الـ dialog يفتح
     final overlay = Overlay.of(context);
-    // ⭐ الأيكون اللي هيطير:
-    //   لو value=true  (بيعطّل الزواج) → يطير أيكون الاستشارة
-    //   لو value=false (بيفعّل الزواج) → يطير أيكون الزواج
     final flyingIcon = value
-        ? AssetsData
-              .consultationIcon // هيتغير لاستشارة
-        : AssetsData.ringIcon; // هيتغير لزواج
+        ? AssetsData.consultationIcon
+        : AssetsData.ringIcon;
 
     CustomshowDialogWithImage(
       context,
@@ -1100,14 +1099,11 @@ class _UserProfileViewState extends State<UserProfileView> {
       cancelText: context.tr("no"),
       showCancelButton: true,
       onPressed: () {
-        // ⭐ زرار "نعم" - شغّل الـ fly animation
-        // نحتاج BuildContext الـ button نفسه - هنستخدم overlay center كـ fallback
         NavAnimationService.instance.flyIcon(
-          fromContext: context, // context الـ dialog
+          fromContext: context,
           iconAsset: flyingIcon,
           overlay: overlay,
           onComplete: () {
-            // ⭐ بعد ما الأيكون يوصل للـ nav bar، نعمل التغيير الفعلي
             context.read<UserProfileCubit>().updateSwitch(
               'deactivate_the_marriage_section',
               value,
@@ -1119,9 +1115,10 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
+  // ✅ استخدام context.read بدل _userProfileCubit مباشرة
   void _submitAppRating(int rating) {
-    if (rating > 0) {
-      _userProfileCubit.rateApp(rating);
+    if (rating > 0 && context.mounted) {
+      context.read<UserProfileCubit>().rateApp(rating);
     }
   }
 }
