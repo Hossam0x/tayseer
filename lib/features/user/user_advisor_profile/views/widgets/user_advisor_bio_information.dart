@@ -437,6 +437,60 @@ class UserAdvisorBioInformation extends StatelessWidget {
                 ),
               ),
 
+              // Book Session Button (only for users)
+              if (!isBlocked && isFollowing && isUser) ...[
+                Gap(13.w),
+                GestureDetector(
+                  onTap: isSomeActionLoading
+                      ? null
+                      : () {
+                          if (isGuest) {
+                            CustomshowDialogWithImage(
+                              context,
+                              title: context.tr('joinUs'),
+                              supTitle: context.tr("guest_login_first"),
+                              icon: Icons.lock_person_outlined,
+                              iconColor: AppColors.kprimaryColor,
+                              bottonText: context.tr("login"),
+                              showCancelButton: true,
+                              cancelText: context.tr('skip'),
+                              onPressed: () {
+                                CachNetwork.removeData(key: ktoken);
+                                context.pushNamedAndRemoveUntil(
+                                  AppRouter.kRegisrationView,
+                                  predicate: (_) => false,
+                                );
+                              },
+                              onCancel: () {},
+                            );
+                            return;
+                          }
+
+                          Navigator.pushNamed(
+                            context,
+                            AppRouter.advisorchatprofile,
+                            arguments: {'advisorid': profile.id},
+                          );
+                        },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 13.h,
+                      horizontal: 16.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary100,
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(color: AppColors.kprimaryColor),
+                    ),
+                    child: AppImage(
+                      AssetsData.icBookSession,
+                      width: 22.w,
+                      color: AppColors.kprimaryColor,
+                    ),
+                  ),
+                ),
+              ],
+
               if (!isBlocked && isFollowing) ...[
                 Gap(13.w),
                 GestureDetector(

@@ -423,7 +423,7 @@ class _SettingsViewState extends State<SettingsView> {
       context,
       title: context.tr("logout"),
       supTitle: context.tr("logout_confirmation"),
-      imageUrl: AssetsData.pauseIcon,
+      imageUrl: AssetsData.kWoriningImage,
       bottonText: context.tr("cancel"),
       cancelText: context.tr("yes"),
       showCancelButton: true,
