@@ -19,41 +19,51 @@ class TayseerApp extends StatelessWidget {
             BlocProvider(create: (context) => LanguageCubit()),
             BlocProvider.value(value: getIt<ConnectivityCubit>()),
           ],
-          child: BlocBuilder<LanguageCubit, Locale>(
-            builder: (context, state) {
-              return MaterialApp(
-                builder: (context, child) {
-                  return MediaQuery(
-                    data: MediaQuery.of(
-                      context,
-                    ).copyWith(textScaler: const TextScaler.linear(1.0)),
-                    child: child!,
-                  );
-                },
-                locale: state,
-                supportedLocales: const [Locale('ar'), Locale('en')],
-                localizationsDelegates: [
-                  AppLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                ],
-                title: isArabic ? kAppNameAr : kAppNameEn,
-                debugShowCheckedModeBanner: false,
-                useInheritedMediaQuery: true,
-                theme: ThemeData(
-                  scaffoldBackgroundColor: AppColors.kScaffoldColor,
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: AppColors.kprimaryColor,
+          child: ColoredBox(
+            color: AppColors.kScaffoldColor,
+            child: BlocBuilder<LanguageCubit, Locale>(
+              builder: (context, state) {
+                final cubit = context.read<LanguageCubit>();
+                final pendingRoute = cubit.consumePendingRoute();
+
+                return MaterialApp(
+                  key: ValueKey(state.languageCode),
+                  builder: (context, child) {
+                    return MediaQuery(
+                      data: MediaQuery.of(
+                        context,
+                      ).copyWith(textScaler: const TextScaler.linear(1.0)),
+                      child: child!,
+                    );
+                  },
+                  locale: state,
+                  supportedLocales: const [Locale('ar'), Locale('en')],
+                  localizationsDelegates: [
+                    AppLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                  ],
+                  title: isArabic ? kAppNameAr : kAppNameEn,
+                  debugShowCheckedModeBanner: false,
+                  useInheritedMediaQuery: true,
+                  theme: ThemeData(
+                    scaffoldBackgroundColor: AppColors.kScaffoldColor,
+                    colorScheme: ColorScheme.fromSeed(
+                      seedColor: AppColors.kprimaryColor,
+                    ),
+                    useMaterial3: true,
+                    fontFamily: kAppFont,
                   ),
-                  useMaterial3: true,
-                  fontFamily: kAppFont,
-                ),
-                navigatorObservers: [DrawerRouteObserver(), videoRouteObserver],
-                onGenerateRoute: AppRouter.onGenerateRoute,
-                initialRoute: AppRouter.kSplashView,
-              );
-            },
+                  navigatorObservers: [
+                    DrawerRouteObserver(),
+                    videoRouteObserver,
+                  ],
+                  onGenerateRoute: AppRouter.onGenerateRoute,
+                  initialRoute: pendingRoute ?? AppRouter.kSplashView,
+                );
+              },
+            ),
           ),
         );
       },

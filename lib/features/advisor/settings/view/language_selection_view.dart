@@ -219,9 +219,8 @@ class _LanguageSelectionViewBodyState
                     final result = await context
                         .read<LanguageSelectionUiCubit>()
                         .confirmSelection();
-                    if (result != null && context.mounted) {
-                      Navigator.pop(context, result);
-                    }
+                    if (!context.mounted) return;
+                    Navigator.pop(context, result);
                   },
                 ),
               ),
