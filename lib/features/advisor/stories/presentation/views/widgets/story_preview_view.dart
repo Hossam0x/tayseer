@@ -166,7 +166,7 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
         }
       }
 
-      final renderModel = VideoRenderData(
+      final renderModel = RenderVideoModel(
         video: EditorVideo.file(widget.file.path),
         outputFormat: VideoOutputFormat.mp4,
         enableAudio: !_isMuted,
