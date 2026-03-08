@@ -60,15 +60,10 @@ class _SettingsViewState extends State<SettingsView> {
               if (state is SettingsLoaded) {
                 if (state.actionSuccess != null) {
                   if (state.actionSuccess == "update_language_success") {
-                    // الـ toast لازم يظهر بلغة الإعداد الجديد
+                    // Update language without showing toast
                     SharedPreferences.getInstance().then((p) {
                       final lang = p.getString(kAppLanguage) ?? 'ar';
                       if (context.mounted) {
-                        final message = AppLocalizations.translateFor(
-                          'update_language_success',
-                          lang,
-                        );
-                        AppToast.success(context, message);
                         context.read<LanguageCubit>().setLanguage(
                           lang,
                           context,

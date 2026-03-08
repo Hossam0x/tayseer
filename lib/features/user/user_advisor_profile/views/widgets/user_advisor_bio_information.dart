@@ -19,6 +19,12 @@ class UserAdvisorBioInformation extends StatelessWidget {
         ),
         BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
           listenWhen: (previous, current) =>
+              previous.blockActionState != current.blockActionState &&
+              current.blockActionState != CubitStates.initial,
+          listener: _handleBlockState,
+        ),
+        BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+          listenWhen: (previous, current) =>
               previous.chatActionState != current.chatActionState &&
               current.chatActionState == CubitStates.failure,
           listener: (context, state) {
@@ -70,6 +76,33 @@ class UserAdvisorBioInformation extends StatelessWidget {
         break;
       case CubitStates.failure:
         AppToast.error(context, message ?? context.tr('follow_error'));
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _handleBlockState(BuildContext context, UserAdvisorProfileState state) {
+    final message = state.blockMessage;
+    final isBlocked = state.profile?.room?.isBlocked ?? false;
+
+    switch (state.blockActionState) {
+      case CubitStates.success:
+        AppToast.success(
+          context,
+          isBlocked
+              ? (message ?? context.tr('user_blocked_successfully'))
+              : (message ?? context.tr('unblocked_successfully')),
+        );
+        break;
+      case CubitStates.failure:
+        AppToast.error(
+          context,
+          message ??
+              (isBlocked
+                  ? context.tr('failed_to_block')
+                  : context.tr('failed_to_unblock')),
+        );
         break;
       default:
         break;
@@ -318,7 +351,8 @@ class UserAdvisorBioInformation extends StatelessWidget {
           previous.profile?.isFollowing != current.profile?.isFollowing ||
           previous.profile?.room != current.profile?.room ||
           previous.isChatLoading != current.isChatLoading ||
-          previous.followActionState != current.followActionState,
+          previous.followActionState != current.followActionState ||
+          previous.blockActionState != current.blockActionState,
       listener: (context, state) {
         // ⭐ معالجة رسائل المتابعة (ليست هناك حاجة للتكرار إذا كانت في BlocListener بالأعلى)
         // لكن بما أنه BlocConsumer يمكننا تركها أو إزالتها.
@@ -328,7 +362,8 @@ class UserAdvisorBioInformation extends StatelessWidget {
           previous.profile?.isFollowing != current.profile?.isFollowing ||
           previous.profile?.room != current.profile?.room ||
           previous.isChatLoading != current.isChatLoading ||
-          previous.followActionState != current.followActionState,
+          previous.followActionState != current.followActionState ||
+          previous.blockActionState != current.blockActionState,
       builder: (context, state) {
         final isBlocked = state.profile?.room?.isBlocked ?? false;
         final isFollowing = state.profile?.isFollowing ?? false;

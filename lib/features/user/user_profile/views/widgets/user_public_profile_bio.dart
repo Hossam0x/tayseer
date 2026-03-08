@@ -49,23 +49,20 @@ class UserPublicProfileBio extends StatelessWidget {
 
     switch (state.blockActionState) {
       case CubitStates.success:
-        showSafeSnackBar(
-          context: context,
-          text: isBlocked
-              ? context.tr('user_blocked_successfully')
-              : context.tr('unblocked_successfully'),
-          isSuccess: true,
+        AppToast.success(
+          context,
+          isBlocked
+              ? (message ?? context.tr('user_blocked_successfully'))
+              : (message ?? context.tr('unblocked_successfully')),
         );
         break;
       case CubitStates.failure:
-        showSafeSnackBar(
-          context: context,
-          text:
-              message ??
+        AppToast.error(
+          context,
+          message ??
               (isBlocked
-                  ? context.tr('failed_to_unblock')
-                  : context.tr('failed_to_unblock')), // or generic error
-          isError: true,
+                  ? context.tr('failed_to_block')
+                  : context.tr('failed_to_unblock')),
         );
         break;
       default:

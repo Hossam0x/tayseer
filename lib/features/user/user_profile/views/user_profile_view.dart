@@ -99,14 +99,10 @@ class _UserProfileViewState extends State<UserProfileView> {
                         }
 
                         if (state.actionMessage == "update_language_success") {
+                          // Update language without showing toast
                           SharedPreferences.getInstance().then((p) {
                             final lang = p.getString(kAppLanguage) ?? 'ar';
                             if (context.mounted) {
-                              final message = AppLocalizations.translateFor(
-                                'update_language_success',
-                                lang,
-                              );
-                              AppToast.success(context, message);
                               context.read<LanguageCubit>().setLanguage(
                                 lang,
                                 context,
@@ -526,11 +522,7 @@ class _UserProfileViewState extends State<UserProfileView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 12.w,
-              height: 12.w,
-              color: AppColors.secondary200,
-            ),
+            Container(width: 12.w, height: 12.w, color: AppColors.secondary200),
             Gap(10.w),
             Container(
               width: 120.w,
@@ -695,12 +687,7 @@ class _UserProfileViewState extends State<UserProfileView> {
             : null,
         child: Container(
           padding: isNotificationsItem || isDeactiveTheMarriageSection
-              ? EdgeInsets.only(
-                  top: 12.h,
-                  bottom: 12.h,
-                  right: 12.w,
-                  left: 8.w,
-                )
+              ? EdgeInsets.only(top: 12.h, bottom: 12.h, right: 12.w, left: 8.w)
               : EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16.r),
@@ -730,7 +717,8 @@ class _UserProfileViewState extends State<UserProfileView> {
                         return Text(
                           context.tr(title),
                           style: Styles.textStyle16Meduim.copyWith(
-                            color: isNotificationsItem ||
+                            color:
+                                isNotificationsItem ||
                                     isDeactiveTheMarriageSection
                                 ? AppColors.secondary800.withOpacity(0.9)
                                 : AppColors.secondary800,
@@ -839,8 +827,7 @@ class _UserProfileViewState extends State<UserProfileView> {
             children: [
               Text(
                 context.tr(setting.subtitle!),
-                style:
-                    Styles.textStyle16.copyWith(color: AppColors.secondary),
+                style: Styles.textStyle16.copyWith(color: AppColors.secondary),
               ),
               Gap(4.w),
               Icon(Icons.arrow_forward_ios_rounded, size: 16.w),
@@ -852,12 +839,7 @@ class _UserProfileViewState extends State<UserProfileView> {
   Widget _buildLogoutButton(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.only(
-        left: 50.w,
-        right: 50.w,
-        top: 32.h,
-        bottom: 30.h,
-      ),
+      margin: EdgeInsets.only(left: 50.w, right: 50.w, top: 32.h, bottom: 30.h),
       child: InkWell(
         onTap: () => _showLogoutConfirmation(context),
         borderRadius: BorderRadius.circular(16.r),
@@ -919,9 +901,8 @@ class _UserProfileViewState extends State<UserProfileView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
-        child: CircularProgressIndicator(color: AppColors.primary100),
-      ),
+      builder: (context) =>
+          Center(child: CircularProgressIndicator(color: AppColors.primary100)),
     );
     cubit.logout();
   }
