@@ -663,7 +663,6 @@
   "unexpected_error": "An unexpected error occurred",
   "save_failed": "Save failed",
   "error_during_save": "An error occurred while saving",
-  "please_write_text_first": "Please write text first",
   "update_age_failed": "Failed to update age",
   "update_age_success": "Age updated successfully",
   "update_age_error": "Error updating age",
@@ -708,6 +707,7 @@
   "years_experience": "of experience",
   "certificates": "Qualifications",
   "ratings": "Ratings",
+  "rate": "the Rate",
   "share_profile": "Share Profile",
   "copied_to_clipboard": "Link copied",
   "blocked_successfully": "User blocked successfully",
@@ -1595,7 +1595,7 @@
   "account_deleted_success": "Account deleted successfully",
   "account_delete_failed": "Failed to delete account",
   "greeting_send_error": "Error sending greeting",
-  "unexpected_error": "An unexpected error occurred",
+  "Medals": "Medals",
   "unblock_error": "Error unblocking user",
   "block_user_error": "Error blocking user"
 }

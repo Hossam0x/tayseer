@@ -340,7 +340,7 @@ class ExplorationState extends State<Exploration> {
                     ),
                   ),
                 ),
-                SizedBox(height: 16.h),
+                // SizedBox(height: 16.h),
                 ListView.builder(
                   scrollDirection: Axis.vertical,
                   physics: const NeverScrollableScrollPhysics(),
