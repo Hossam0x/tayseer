@@ -21,6 +21,7 @@ class _UserProfileViewState extends State<UserProfileView> {
   final int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();
   int _rating = 0;
+  UserProfileCubit? _cubit;
 
   // ✅ حذف _userProfileCubit - BlocProvider هيتحكم في الـ lifecycle
 
@@ -35,7 +36,10 @@ class _UserProfileViewState extends State<UserProfileView> {
   Widget build(BuildContext context) {
     return BlocProvider(
       // ✅ BlocProvider بيعمل الـ cubit ويتحكم في lifecycle بشكل صح
-      create: (context) => UserProfileCubit(getIt<UserProfileRepository>()),
+      create: (context) {
+        _cubit = UserProfileCubit(getIt<UserProfileRepository>());
+        return _cubit!;
+      },
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
@@ -573,7 +577,7 @@ class _UserProfileViewState extends State<UserProfileView> {
       children: [
         for (var i = 0; i < settings.length; i++) ...[
           _buildSettingItem(context, settings[i], state),
-          if (i < settings.length - 1)
+          if (i < settings.length)
             Divider(color: AppColors.secondary100, height: 1),
         ],
       ],
@@ -919,12 +923,12 @@ class _UserProfileViewState extends State<UserProfileView> {
   void _showRateAppDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20.r),
         ),
         child: StatefulBuilder(
-          builder: (context, setState) {
+          builder: (builderContext, setState) {
             return Container(
               padding: EdgeInsets.all(24.w),
               decoration: BoxDecoration(
@@ -938,11 +942,11 @@ class _UserProfileViewState extends State<UserProfileView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => Navigator.pop(dialogContext),
                         child: Icon(Icons.close, size: 24.w),
                       ),
                       Text(
-                        context.tr("rate_app"),
+                        builderContext.tr("rate_app"),
                         style: Styles.textStyle20Meduim.copyWith(
                           color: AppColors.primary500,
                         ),
@@ -978,7 +982,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                   if (_rating > 0) ...[
                     Gap(12.h),
                     Text(
-                      '${context.tr("rating")}: $_rating / 5',
+                      '${builderContext.tr("rating")}: $_rating / 5',
                       style: Styles.textStyle14.copyWith(
                         color: AppColors.primary500,
                       ),
@@ -988,7 +992,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                   Gap(24.h),
 
                   Text(
-                    context.tr("rate_app_message"),
+                    builderContext.tr("rate_app_message"),
                     style: Styles.textStyle16.copyWith(
                       color: AppColors.secondary700,
                     ),
@@ -998,10 +1002,11 @@ class _UserProfileViewState extends State<UserProfileView> {
                   Gap(32.h),
 
                   CustomBotton(
-                    title: context.tr("send_rating"),
+                    title: builderContext.tr("send_rating"),
                     onPressed: () {
-                      Navigator.pop(context);
-                      _submitAppRating(_rating);
+                      final ratingToSubmit = _rating;
+                      Navigator.pop(dialogContext);
+                      _submitAppRating(ratingToSubmit);
                       setState(() {
                         _rating = 0;
                       });
@@ -1096,10 +1101,10 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  // ✅ استخدام context.read بدل _userProfileCubit مباشرة
+  // ✅ استخدام _cubit المحفوظ بدلاً من context.read
   void _submitAppRating(int rating) {
-    if (rating > 0 && context.mounted) {
-      context.read<UserProfileCubit>().rateApp(rating);
+    if (rating > 0 && _cubit != null) {
+      _cubit!.rateApp(rating);
     }
   }
 }

@@ -248,7 +248,7 @@ class _SettingsViewState extends State<SettingsView> {
         final itemIndex = index ~/ 2;
         final setting = settings[itemIndex];
         return _buildSettingItem(context, setting);
-      }, childCount: settings.length * 2 - 1),
+      }, childCount: settings.length * 2),
     );
   }
 
