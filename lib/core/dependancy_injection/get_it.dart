@@ -24,7 +24,7 @@ import 'package:tayseer/features/advisor/settings/data/repositories/blocked_user
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view_model/packages_cubit.dart';
+import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/user_followings_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -177,7 +177,7 @@ Future<void> setupGetIt() async {
   );
 
   // Reels cubit
-  getIt.registerFactoryParam<ReelsCubit, PostModel, void>(
+  getIt.registerFactoryParam<ReelsCubit, PostModel?, void>(
     (post, _) => ReelsCubit(getIt<HomeRepository>(), initialPost: post),
   );
   // Stories Feature

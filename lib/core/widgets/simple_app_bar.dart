@@ -5,6 +5,7 @@ class SimpleAppBar extends StatelessWidget {
   final bool? isLargeTitle;
   final IconData? icon; // خليناه nullable عشان نقدر نميّز
   final VoidCallback? onBack;
+  final bool isUserTicket; // ✅ إضافة معامل isUserTicket
 
   const SimpleAppBar({
     super.key,
@@ -12,6 +13,7 @@ class SimpleAppBar extends StatelessWidget {
     this.isLargeTitle,
     this.icon,
     this.onBack,
+    this.isUserTicket = false, // ✅ القيمة الافتراضية false
   });
 
   @override
@@ -67,7 +69,30 @@ class SimpleAppBar extends StatelessWidget {
           ),
         ),
 
-        SizedBox(width: 40.w),
+        /// ✅ أيقونة التذاكر (تظهر فقط للـ user)
+        if (isUserTicket)
+          Padding(
+            padding: EdgeInsets.only(bottom: 2.h),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  context.pushNamed(AppRouter.kMyTicketsView);
+                },
+                borderRadius: BorderRadius.circular(24.r),
+                child: Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primary100,
+                  ),
+                  child: AppImage(AssetsData.kTicketIcon, width: 20.w),
+                ),
+              ),
+            ),
+          )
+        else
+          SizedBox(width: 40.w),
       ],
     );
   }

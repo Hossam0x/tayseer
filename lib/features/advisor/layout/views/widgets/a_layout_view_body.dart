@@ -4,7 +4,7 @@ import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/add_post_button.dart';
 import 'package:tayseer/features/advisor/profille/views/profile_view.dart';
-import 'package:tayseer/features/shared/event/view/event_view.dart';
+import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -17,7 +17,7 @@ class ALayOutViewBody extends StatelessWidget {
     final pages = [
       HomeView(onScroll: cubit.onScroll),
       const ChatView(),
-      EventView(),
+      const ReelsNavView(tabIndex: 2),
       ProfileView(),
     ];
     return BlocBuilder<LayoutCubit, LayoutState>(

@@ -52,6 +52,12 @@ class SettingsCubit extends Cubit<SettingsState> {
           },
         ),
         SettingItemModel(
+          id: 'events',
+          title: 'events',
+          iconAsset: AssetsData.eventIcon,
+          routeName: AppRouter.kEventView,
+        ),
+        SettingItemModel(
           id: 'savers',
           title: 'wallet',
           iconAsset: AssetsData.icWalletSettings,
@@ -74,7 +80,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           id: 'packages',
           title: 'packages',
           iconAsset: AssetsData.icPackesSettinngs,
-          routeName: AppRouter.kPackagesTabView,
+          routeName: AppRouter.kPackagesView,
         ),
         SettingItemModel(
           id: 'archive',
