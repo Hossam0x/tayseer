@@ -662,7 +662,6 @@
   "unexpected_error": "حدث خطأ غير متوقع",
   "save_failed": "فشل الحفظ",
   "error_during_save": "حدث خطأ أثناء الحفظ",
-  "please_write_text_first": "الرجاء كتابة نص أولاً",
   "update_age_failed": "فشل تحديث السن",
   "update_age_success": "تم تحديث السن بنجاح",
   "update_age_error": "حدث خطأ في تحديث السن",
@@ -1541,8 +1540,7 @@
   "purpose_title": "ما هو هدفك من استخدام التطبيق؟",
   "purpose_subtitle": "اختر الغرض الذي يناسبك",
   "purpose_consultation": "الاستشارات",
-  "purpose_marriage": "الزواج"
-  "select_category": "اخترالمجموعه",
+  "purpose_marriage": "الزواج",
   "offline_no_connection": "أنت غير متصل بالإنترنت",
   "offline_connect_to_view": "اتصل بالإنترنت لعرض المنشورات",
   "offline_viewing_cached_posts": "أنت تشاهد منشورات محفوظة",
@@ -1595,7 +1593,6 @@
   "account_deleted_success": "تم حذف الحساب بنجاح",
   "account_delete_failed": "فشل حذف الحساب",
   "greeting_send_error": "حدث خطأ أثناء إرسال التحية",
-  "unexpected_error": "حدث خطأ غير متوقع",
   "unblock_error": "حدث خطأ في إلغاء الحظر",
   "block_user_error": "حدث خطأ في حظر المستخدم"
 }

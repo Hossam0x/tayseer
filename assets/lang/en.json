@@ -663,7 +663,6 @@
   "unexpected_error": "An unexpected error occurred",
   "save_failed": "Save failed",
   "error_during_save": "An error occurred while saving",
-  "please_write_text_first": "Please write text first",
   "update_age_failed": "Failed to update age",
   "update_age_success": "Age updated successfully",
   "update_age_error": "Error updating age",
@@ -1547,14 +1546,13 @@
   "failed_to_start_recording": "Failed to start recording",
   "chat_unarchived_success": "Chat unarchived successfully",
   "post_unarchived_success": "Post unarchived successfully",
-  "select_category": "Select Category",
   "post_updated_successfully": "Post updated successfully",
   "post_update_failed": "Failed to update post",
   "edit_post": "Edit Post",
   "purpose_title": "What is your purpose for using the app?",
   "purpose_subtitle": "Choose the option that suits you",
   "purpose_consultation": "Consultations",
-  "purpose_marriage": "Marriage"
+  "purpose_marriage": "Marriage",
   "select_category": "Select Category",
   "offline_no_connection": "You are offline",
   "offline_connect_to_view": "Connect to the internet to view posts",
@@ -1603,7 +1601,6 @@
   "account_deleted_success": "Account deleted successfully",
   "account_delete_failed": "Failed to delete account",
   "greeting_send_error": "Error sending greeting",
-  "unexpected_error": "An unexpected error occurred",
   "unblock_error": "Error unblocking user",
   "block_user_error": "Error blocking user"
 }
