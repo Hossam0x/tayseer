@@ -1,11 +1,7 @@
 import 'package:tayseer/my_import.dart';
 
-// ════════════════════════════════════════════════════════════════
-// ✅ Shared Widget — يتستخدم في Exploration و History
-// ════════════════════════════════════════════════════════════════
 class SubscriptionButton extends StatelessWidget {
   final VoidCallback? onPressed;
-
   const SubscriptionButton({super.key, this.onPressed});
 
   @override
@@ -20,10 +16,8 @@ class SubscriptionButton extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.centerRight,
             end: Alignment.centerLeft,
-            colors: [
-              Color(0xFFEB7A91),
-              Color.fromRGBO(245, 192, 3, 1),
-            ],
+            colors: [Color(0xFFEB7A91), Color.fromRGBO(245, 192, 3, 1)],
+        
           ),
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
@@ -53,23 +47,35 @@ class SubscriptionButton extends StatelessWidget {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════
-// ✅ Exploration overlay — يتحط جوا Stack مع Positioned
-// ════════════════════════════════════════════════════════════════
 class SubscriptionPromptOverlay extends StatelessWidget {
-  final double? bottomOffset; // ✅ اختياري
-  const SubscriptionPromptOverlay({super.key, this.bottomOffset});
+  final bool isInsideStack;
+  const SubscriptionPromptOverlay({super.key, this.isInsideStack = true});
 
   @override
   Widget build(BuildContext context) {
-    final bottom = bottomOffset ??8.h;
+    // ✅ احصل على ارتفاع الـ bottom nav bar الفعلي
+    final bottomNavHeight = kBottomNavigationBarHeight; 
+    final safeBottom = MediaQuery.of(context).padding.bottom; 
 
-    return Positioned(
-      bottom: bottom,
-      left: 24.w,
-      right: 24.w,
-      child: SubscriptionButton(),
+  
+    final bottomOffset = bottomNavHeight + safeBottom + 45.h;
+
+    if (isInsideStack) {
+      return Positioned(
+        bottom: bottomOffset,
+        left: 24.w,
+        right: 24.w,
+        child: const SubscriptionButton(),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 24.w,
+        right: 24.w,
+        bottom: bottomOffset,
+      ),
+      child: const SubscriptionButton(),
     );
   }
 }

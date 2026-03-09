@@ -169,14 +169,12 @@ class HistorypageState extends State<Historypage> {
         }
 
         // ── Data state ────────────────────────────────────────────────
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            return SizedBox(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
+        // ✅ Column: الـ Grid في Expanded والزرار تحته مباشرةً خارج Stack
+        return Column(
+          children: [
+            Expanded(
               child: Stack(
                 children: [
-                  // ── Grid ──────────────────────────────────────────
                   Positioned.fill(
                     child: RefreshIndicator.adaptive(
                       onRefresh: _onRefresh,
@@ -195,11 +193,11 @@ class HistorypageState extends State<Historypage> {
                             SliverGrid(
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: crossAxisCount,
-                                    crossAxisSpacing: 12.w,
-                                    mainAxisSpacing: 12.h,
-                                    childAspectRatio: childAspectRatio,
-                                  ),
+                                crossAxisCount: crossAxisCount,
+                                crossAxisSpacing: 12.w,
+                                mainAxisSpacing: 12.h,
+                                childAspectRatio: childAspectRatio,
+                              ),
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
                                   if (index >= data.length) {
@@ -219,9 +217,7 @@ class HistorypageState extends State<Historypage> {
                               ),
                             ),
                             SliverPadding(
-                              padding: EdgeInsets.only(
-                                bottom: showOverlay ? 160.h : 80.h,
-                              ),
+                              padding: EdgeInsets.only(bottom: 20.h),
                               sliver: SliverToBoxAdapter(
                                 child: SizedBox.shrink(),
                               ),
@@ -231,16 +227,14 @@ class HistorypageState extends State<Historypage> {
                       ),
                     ),
                   ),
-
-                  // ✅ نفس الـ overlay بتاع Exploration — شكل وحجم واحد
-                  if (showOverlay)
-                    SubscriptionPromptOverlay(
-                      bottomOffset: MediaQuery.of(context).padding.bottom + 80,
-                    ),
                 ],
               ),
-            );
-          },
+            ),
+
+            // ✅ الزرار خارج Stack في Column — isInsideStack: false
+            if (showOverlay)
+              const SubscriptionPromptOverlay(isInsideStack: false),
+          ],
         );
       },
     );

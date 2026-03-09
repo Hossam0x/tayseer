@@ -211,7 +211,7 @@ PODS:
     - FlutterMacOS
   - permission_handler_apple (9.3.0):
     - Flutter
-  - photo_manager (3.8.3):
+  - photo_manager (3.9.0):
     - Flutter
     - FlutterMacOS
   - pro_video_editor (0.0.1):
@@ -456,7 +456,7 @@ SPEC CHECKSUMS:
   AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
   audio_session: 9bb7f6c970f21241b19f5a3658097ae459681ba0
-  audioplayers_darwin: 4f9ca89d92d3d21cec7ec580e78ca888e5fb68bd
+  audioplayers_darwin: 835ced6edd4c9fc8ebb0a7cc9e294a91d99917d5
   camera_avfoundation: be3be85408cd4126f250386828e9b1dfa40ab436
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   CryptoSwift: e64e11850ede528a02a0f3e768cec8e9d92ecb90
@@ -506,7 +506,7 @@ SPEC CHECKSUMS:
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
-  photo_manager: fe4cbb0808b96f8be4af7ce6ae18dcd9c9b983c6
+  photo_manager: 25fd77df14f4f0ba5ef99e2c61814dde77e2bceb
   pro_video_editor: 44ef9a6d48dbd757ed428cf35396dd05f35c7830
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   proximity_sensor: 2aef59f90cf0382935faf58ad0a79e1e860773bd

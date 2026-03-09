@@ -55,7 +55,7 @@ class PostsTab extends StatelessWidget {
           }
 
           if (state.postsState == CubitStates.failure && state.posts.isEmpty) {
-            return _buildError(state.postsErrorMessage, profileCubit);
+            return _buildError(state.postsErrorMessage, profileCubit, context);
           }
 
           if (state.posts.isEmpty) {
@@ -117,11 +117,11 @@ class PostsTab extends StatelessWidget {
     switch (state.shareActionState) {
       case CubitStates.success:
         state.isShareAdded == true
-            ? AppToast.success(context, message ?? 'تمت المشاركة بنجاح')
-            : AppToast.info(context, message ?? 'تم إلغاء المشاركة');
+            ? AppToast.success(context, message ?? context.tr('shared_success'))
+            : AppToast.info(context, message ?? context.tr('unshared_success'));
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء المشاركة');
+        AppToast.error(context, message ?? context.tr('shared_error'));
         break;
       default:
         break;
@@ -132,10 +132,10 @@ class PostsTab extends StatelessWidget {
     final message = state.saveMessage;
     switch (state.saveActionState) {
       case CubitStates.success:
-        AppToast.success(context, message ?? 'تمت العملية بنجاح');
+        AppToast.success(context, message ?? context.tr('operation_success'));
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء الحفظ');
+        AppToast.error(context, message ?? context.tr('save_error'));
         break;
       default:
         break;
@@ -146,10 +146,10 @@ class PostsTab extends StatelessWidget {
     final message = state.deletePostMessage;
     switch (state.deletePostActionState) {
       case CubitStates.success:
-        AppToast.success(context, message ?? 'تم الحذف بنجاح');
+        AppToast.success(context, message ?? context.tr('delete_success'));
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء الحذف');
+        AppToast.error(context, message ?? context.tr('delete_error'));
         break;
       default:
         break;
@@ -160,10 +160,10 @@ class PostsTab extends StatelessWidget {
     final message = state.archivePostMessage;
     switch (state.archivePostActionState) {
       case CubitStates.success:
-        AppToast.success(context, message ?? 'تمت الأرشفة بنجاح');
+        AppToast.success(context, message ?? context.tr('archive_success'));
         break;
       case CubitStates.failure:
-        AppToast.error(context, message ?? 'حدث خطأ أثناء الأرشفة');
+        AppToast.error(context, message ?? context.tr('archive_error'));
         break;
       default:
         break;
@@ -177,13 +177,16 @@ class PostsTab extends StatelessWidget {
         break;
       case CubitStates.success:
         CustomloadingApp.hide(context);
-        AppToast.success(context, state.blockUserMessage ?? 'تم الحظر بنجاح');
+        AppToast.success(
+          context,
+          state.blockUserMessage ?? context.tr('blocked_successfully'),
+        );
         break;
       case CubitStates.failure:
         CustomloadingApp.hide(context);
         AppToast.error(
           context,
-          state.blockUserMessage ?? 'حدث خطأ أثناء الحظر',
+          state.blockUserMessage ?? context.tr('failed_to_block'),
         );
         break;
       default:
@@ -210,22 +213,38 @@ class PostsTab extends StatelessWidget {
     itemBuilder: (_, __) => const PostCardShimmer(),
   );
 
-  Widget _buildError(String? error, ProfileCubit cubit) => Center(
-    child: Padding(
-      padding: EdgeInsets.all(24.w),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(error ?? 'حدث خطأ ما', style: Styles.textStyle16),
-          Gap(16.h),
-          ElevatedButton(
-            onPressed: () => cubit.fetchPosts(),
-            child: const Text('إعادة المحاولة'),
+  Widget _buildError(String? error, ProfileCubit cubit, BuildContext context) =>
+      Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
+              Text(
+                context.tr('error'),
+                style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
+              ),
+              Gap(16.h),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.kprimaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+                onPressed: () => cubit.fetchPosts(),
+                child: Text(
+                  context.tr('retry'),
+                  style: Styles.textStyle14Meduim.copyWith(
+                    color: AppColors.kWhiteColor,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 
   Widget _buildEmptyState(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: 80.h),
@@ -356,7 +375,7 @@ class _PostItemState extends State<_PostItem> {
   void _archivePost(String postId) =>
       widget.profileCubit.archivePost(postId: postId);
 
-  void _blockUser(String userId, String postId) =>
+  void _blockUser(String postId, String userId) =>
       widget.profileCubit.blockUser(visiblePostId: postId, advisorId: userId);
 
   void _hidePost(String postId) =>

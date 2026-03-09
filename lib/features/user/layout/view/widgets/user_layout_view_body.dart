@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/widgets/offline_banner.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/consultation_filtter/consultation_standalone_page.dart';
@@ -44,41 +46,49 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
             _handleBackButton(context, cubit, state);
           },
           child: Scaffold(
-            body: Stack(
+            body: Column(
               children: [
-                IndexedStack(index: state.currentIndex, children: pages),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: AnimatedSlide(
-                    duration: const Duration(milliseconds: 300),
-                    offset: state.isNavVisible
-                        ? Offset.zero
-                        : const Offset(0, 1),
-                    child: UserNavBar(
-                      onTabReselect: (index) {
-                        // ✅ Home tab - scroll to top
-                        if (index == 0 && state.currentIndex == 0) {
-                          cubit.scrollToTop();
-                          cubit.setNavVisibility(true);
-                        }
-                        // ✅ Marriage tab - scroll to top
-                        else if (index == 1 && state.currentIndex == 1) {
-                          _marriageKey.currentState?.scrollToTop();
-                          cubit.setNavVisibility(true);
-                        }
-                        // ✅ Interactions tab
-                        else if (index == 3 && state.currentIndex == 3) {
-                          _interactionsKey.currentState?.handleTabReselect();
-                        }
-                        // ✅ Profile in index 4
-                        else if (index == 4 && state.currentIndex == 4) {
-                          cubit.scrollToTop();
-                          cubit.setNavVisibility(true);
-                        }
-                      },
-                    ),
+                const OfflineBanner(),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      IndexedStack(index: state.currentIndex, children: pages),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: AnimatedSlide(
+                          duration: const Duration(milliseconds: 300),
+                          offset: state.isNavVisible
+                              ? Offset.zero
+                              : const Offset(0, 1),
+                          child: UserNavBar(
+                            onTabReselect: (index) {
+                              // ✅ Home tab - scroll to top
+                              if (index == 0 && state.currentIndex == 0) {
+                                cubit.scrollToTop();
+                                cubit.setNavVisibility(true);
+                              }
+                              // ✅ Marriage tab - scroll to top
+                              else if (index == 1 && state.currentIndex == 1) {
+                                _marriageKey.currentState?.scrollToTop();
+                                cubit.setNavVisibility(true);
+                              }
+                              // ✅ Interactions tab
+                              else if (index == 3 && state.currentIndex == 3) {
+                                _interactionsKey.currentState
+                                    ?.handleTabReselect();
+                              }
+                              // ✅ Profile in index 4
+                              else if (index == 4 && state.currentIndex == 4) {
+                                cubit.scrollToTop();
+                                cubit.setNavVisibility(true);
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -143,11 +153,14 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
           HomeView(onScroll: cubit.onScroll),
           GuestLockWidget(
             onTap: () {
+              CachNetwork.clearGuestAndProfileCache();
+              if (getIt.isRegistered<HomeCubit>()) {
+                getIt.resetLazySingleton<HomeCubit>();
+              }
               context.pushNamedAndRemoveUntil(
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
-              CachNetwork.removeData(key: ktoken);
             },
             message: 'فرص التوافق تبدأ بعد التسجيل',
             description:
@@ -158,11 +171,14 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
             onTap: () {
+              CachNetwork.clearGuestAndProfileCache();
+              if (getIt.isRegistered<HomeCubit>()) {
+                getIt.resetLazySingleton<HomeCubit>();
+              }
               context.pushNamedAndRemoveUntil(
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
-              CachNetwork.removeData(key: ktoken);
             },
           ),
           GuestLockWidget(
@@ -170,11 +186,14 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
             onTap: () {
+              CachNetwork.clearGuestAndProfileCache();
+              if (getIt.isRegistered<HomeCubit>()) {
+                getIt.resetLazySingleton<HomeCubit>();
+              }
               context.pushNamedAndRemoveUntil(
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
-              CachNetwork.removeData(key: ktoken);
             },
           ),
           GuestLockWidget(
@@ -182,11 +201,14 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
             description:
                 'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
             onTap: () {
+              CachNetwork.clearGuestAndProfileCache();
+              if (getIt.isRegistered<HomeCubit>()) {
+                getIt.resetLazySingleton<HomeCubit>();
+              }
               context.pushNamedAndRemoveUntil(
                 AppRouter.kRegisrationView,
                 predicate: (_) => false,
               );
-              CachNetwork.removeData(key: ktoken);
             },
           ),
         ];

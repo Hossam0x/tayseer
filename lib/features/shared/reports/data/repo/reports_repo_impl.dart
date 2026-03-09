@@ -25,7 +25,7 @@ class ReportsRepoImpl extends ReportsRepo {
     required String id,
     required ReportType reportType,
     String? reasonId,
-    String? details,
+    String? detailsId,
     String? otherReason,
   }) async {
     try {
@@ -34,7 +34,7 @@ class ReportsRepoImpl extends ReportsRepo {
         data: {
           _idField(reportType): id,
           if (reasonId != null) 'reasonId': reasonId,
-          if (details != null) 'details': details,
+          if (detailsId != null) 'details': detailsId,
           if (otherReason != null) 'other': otherReason,
         },
       );

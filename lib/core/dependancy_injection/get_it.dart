@@ -1,4 +1,10 @@
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/services/connectivity_service.dart';
+import 'package:tayseer/core/services/connectivity_cubit.dart';
+import 'package:tayseer/core/services/cache_cleanup_service.dart';
+import 'package:tayseer/core/utils/hive_service.dart';
+import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
+import 'package:tayseer/features/shared/home/data_source/posts_remote_datasource.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
@@ -112,6 +118,29 @@ Future<void> setupGetIt() async {
   /// ApiService
   getIt.registerLazySingleton<ApiService>(() => ApiService(getIt<Dio>()));
 
+  /// ConnectivityService
+  getIt.registerLazySingleton<ConnectivityService>(() => ConnectivityService());
+
+  /// ConnectivityCubit
+  getIt.registerLazySingleton<ConnectivityCubit>(
+    () => ConnectivityCubit(getIt<ConnectivityService>()),
+  );
+
+  /// PostsLocalDatasource
+  getIt.registerLazySingleton<PostsLocalDatasource>(
+    () => PostsLocalDatasource(HiveService()),
+  );
+
+  /// PostsRemoteDatasource
+  getIt.registerLazySingleton<PostsRemoteDatasource>(
+    () => PostsRemoteDatasource(getIt<ApiService>()),
+  );
+
+  /// CacheCleanupService
+  getIt.registerLazySingleton<CacheCleanupService>(
+    () => CacheCleanupService(getIt<PostsLocalDatasource>()),
+  );
+
   /// SocketHelper
   getIt.registerLazySingleton<tayseerSocketHelper>(() => tayseerSocketHelper());
 
@@ -130,10 +159,22 @@ Future<void> setupGetIt() async {
 
   //  Advisor Home
   getIt.registerLazySingleton<HomeRepository>(
-    () => HomeRepositoryImpl(getIt<ApiService>()),
+    () => HomeRepositoryImpl(
+      getIt<ApiService>(),
+      localDatasource: getIt<PostsLocalDatasource>(),
+      remoteDatasource: getIt<PostsRemoteDatasource>(),
+      connectivityService: getIt<ConnectivityService>(),
+    ),
   );
-  // Home Cubit
-  getIt.registerFactory<HomeCubit>(() => HomeCubit(getIt<HomeRepository>()));
+  // Home Cubit — LazySingleton عشان كل الأماكن اللي بتعمل
+  // getIt<HomeCubit>().refreshUserInfoFromCache() تشتغل على نفس الـ instance
+  getIt.registerLazySingleton<HomeCubit>(
+    () => HomeCubit(
+      getIt<HomeRepository>(),
+      connectivityCubit: getIt<ConnectivityCubit>(),
+      localDatasource: getIt<PostsLocalDatasource>(),
+    ),
+  );
 
   // Reels cubit
   getIt.registerFactoryParam<ReelsCubit, PostModel, void>(

@@ -161,6 +161,7 @@ class _LanguageSelectionViewBodyState
                                 return Padding(
                                   padding: EdgeInsets.symmetric(vertical: 40.h),
                                   child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
                                         Icons.language_outlined,
@@ -218,9 +219,8 @@ class _LanguageSelectionViewBodyState
                     final result = await context
                         .read<LanguageSelectionUiCubit>()
                         .confirmSelection();
-                    if (result != null && context.mounted) {
-                      Navigator.pop(context, result);
-                    }
+                    if (!context.mounted) return;
+                    Navigator.pop(context, result);
                   },
                 ),
               ),

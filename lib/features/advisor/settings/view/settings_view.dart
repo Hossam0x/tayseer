@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 
 import 'package:tayseer/core/cubits/toggle_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
@@ -58,15 +60,10 @@ class _SettingsViewState extends State<SettingsView> {
               if (state is SettingsLoaded) {
                 if (state.actionSuccess != null) {
                   if (state.actionSuccess == "update_language_success") {
-                    // الـ toast لازم يظهر بلغة الإعداد الجديد
+                    // Update language without showing toast
                     SharedPreferences.getInstance().then((p) {
                       final lang = p.getString(kAppLanguage) ?? 'ar';
                       if (context.mounted) {
-                        final message = AppLocalizations.translateFor(
-                          'update_language_success',
-                          lang,
-                        );
-                        AppToast.success(context, message);
                         context.read<LanguageCubit>().setLanguage(
                           lang,
                           context,
@@ -190,11 +187,7 @@ class _SettingsViewState extends State<SettingsView> {
                       slivers: [
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: EdgeInsets.only(
-                              left: 20.w,
-                              right: 20.w,
-                              top: 40.h,
-                            ),
+                            padding: EdgeInsets.only(left: 20.w, right: 20.w),
                             child: ReferralShareCard(
                               points: state.points,
                               referralLink: state.referralLink,
@@ -430,7 +423,7 @@ class _SettingsViewState extends State<SettingsView> {
       context,
       title: context.tr("logout"),
       supTitle: context.tr("logout_confirmation"),
-      imageUrl: AssetsData.pauseIcon,
+      imageUrl: AssetsData.kWoriningImage,
       bottonText: context.tr("cancel"),
       cancelText: context.tr("yes"),
       showCancelButton: true,
@@ -452,7 +445,13 @@ class _SettingsViewState extends State<SettingsView> {
     try {
       context.read<SettingsCubit>().logoutFromSever();
       await CachNetwork.clearCache();
+      await getIt<CacheCleanupService>().clearAllUserCache();
       getIt<tayseerSocketHelper>().disconnect();
+
+      // ✅ ريسيت الـ HomeCubit Singleton عشان يتعمل instance جديد بعد اللوجن الجديد
+      if (getIt.isRegistered<HomeCubit>()) {
+        getIt.resetLazySingleton<HomeCubit>();
+      }
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRouter.kRegisrationView,

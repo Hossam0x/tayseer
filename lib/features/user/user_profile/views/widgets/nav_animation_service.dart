@@ -9,8 +9,11 @@ class NavAnimationService {
   NavAnimationService._();
 
   // ⭐ Key على الـ nav item index 1 عشان نعرف مكانه على الشاشة
-  final GlobalKey navItem1Key = GlobalKey();
-
+   GlobalKey navItem1Key = GlobalKey();
+  // ✅ هنا الصح - جوه NavAnimationService مش جوه _FlyingIconWidgetState
+  void resetKey() {
+    navItem1Key = GlobalKey();
+  }
   OverlayEntry? _overlayEntry;
 
   /// شغّل الـ fly animation
@@ -190,6 +193,7 @@ class _FlyingIconWidgetState extends State<_FlyingIconWidget>
     final arcHeight = max(distance * 0.35, 80.0);
     return midRealY - arcHeight;
   }
+
 
   @override
   void dispose() {

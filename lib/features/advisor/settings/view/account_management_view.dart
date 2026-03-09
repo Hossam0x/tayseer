@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
@@ -244,7 +245,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppImage(AssetsData.pauseIcon),
+            AppImage(AssetsData.kWoriningImage),
             Gap(20.h),
             Text(
               title,
@@ -326,6 +327,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
 
       // 1. مسح جميع البيانات من SharedPreferences
       await CachNetwork.clearCache();
+      await getIt<CacheCleanupService>().clearAllUserCache();
 
       // 2. إعادة التوجيه إلى شاشة التسجيل/تسجيل الدخول
       Navigator.pushNamedAndRemoveUntil(

@@ -15,22 +15,28 @@ class GreetingProfileCard extends StatelessWidget {
     this.forceBlur = false,
   });
 
+  void _navigateToProfile(BuildContext context) {
+    context.pushNamed(
+      AppRouter.kMarriageView,
+      arguments: {
+        'personId': item.userId,
+        'fromInteractions': true,
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final shouldBlur = forceBlur || item.isImageBlurred;
 
     return BlocListener<InteractionsCubit, InteractionsState>(
       listener: (context, state) {
-        // ✅ Show success animation when sendCompliment succeeds
         if (state.actionState == CubitStates.success) {
           _showSuccessAnimation(context);
-
-          // Reset action state after showing dialog
           Future.delayed(const Duration(milliseconds: 100), () {
             context.read<InteractionsCubit>().resetActionState();
           });
         } else if (state.actionState == CubitStates.failure) {
-          // ✅ Show error message if fails
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -41,28 +47,20 @@ class GreetingProfileCard extends StatelessWidget {
           context.read<InteractionsCubit>().resetActionState();
         }
       },
-      child: Container(
-        height: 160.h,
-        padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(
-          color: const Color.fromRGBO(0, 0, 0, 0.08),
-          borderRadius: BorderRadius.circular(24.r),
-          border: Border.all(color: Colors.white.withOpacity(0.5)),
-        ),
-        child: Row(
-          children: [
-            // Profile Image
-            GestureDetector(
-              onTap: () {
-                context.pushNamed(
-                  AppRouter.kMarriageView,
-                  arguments: {
-                    'personId': item.userId,
-                    'fromInteractions': true,
-                  },
-                );
-              },
-              child: ClipRRect(
+      child: GestureDetector(
+        onTap: () => _navigateToProfile(context),
+        child: Container(
+          height: 160.h,
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: const Color.fromRGBO(0, 0, 0, 0.08),
+            borderRadius: BorderRadius.circular(24.r),
+            border: Border.all(color: Colors.white.withOpacity(0.5)),
+          ),
+          child: Row(
+            children: [
+              // Profile Image — بدون GestureDetector، الأب يتكفل
+              ClipRRect(
                 borderRadius: BorderRadius.circular(16.r),
                 child: Stack(
                   children: [
@@ -92,21 +90,10 @@ class GreetingProfileCard extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-            SizedBox(width: 12.w),
+              SizedBox(width: 12.w),
 
-            // User Info
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  context.pushNamed(
-                    AppRouter.kMarriageView,
-                    arguments: {
-                      'personId': item.userId,
-                      'fromInteractions': true,
-                    },
-                  );
-                },
+              // User Info — بدون GestureDetector، الأب يتكفل
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -163,60 +150,65 @@ class GreetingProfileCard extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
 
-            // Star Button
-            GestureDetector(
-              onTap: () {
-                context.read<InteractionsCubit>().sendCompliment(
-                  userId: item.userId,
-                );
-              },
-              child: Container(
-                width: 55.w,
-                height: 55.h,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [AppColors.primary200, AppColors.primary400],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF48174E).withOpacity(0.2),
-                      offset: const Offset(0, 2.87),
-                      blurRadius: 37.85,
-                      spreadRadius: 0,
+              // ✅ زر التحية — behavior: opaque يمنع الـ tap من الوصول للأب
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  context.read<InteractionsCubit>().sendCompliment(
+                    userId: item.userId,
+                  );
+                },
+                child: Container(
+                  width: 55.w,
+                  height: 55.h,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [AppColors.primary200, AppColors.primary400],
                     ),
-                  ],
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF48174E).withOpacity(0.2),
+                        offset: const Offset(0, 2.87),
+                        blurRadius: 37.85,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Icon(Icons.star, color: Colors.white, size: 30.r),
                 ),
-                child: Icon(Icons.star, color: Colors.white, size: 30.r),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ✅ Success Animation Dialog
-  void _showSuccessAnimation(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return Opacity(
-          opacity: 0.6,
+void _showSuccessAnimation(context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.transparent, // ✅ transparent لأن rootNavigator هيغطي كل حاجة
+    useRootNavigator: true, // ✅ هذا هو الحل
+    builder: (_) {
+      return Center(
+        child: Opacity(
+          opacity: 0.9,
           child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
-        );
-      },
-    );
-    Future.delayed(const Duration(seconds: 4), () {
-      context.pop();
-    });
-  }
-
+        ),
+      );
+    },
+  );
+  Future.delayed(const Duration(seconds: 4), () {
+    if (Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop(); // ✅ نفس الـ rootNavigator
+    }
+  });
+}
   Widget _buildBadge({required String text, String? icon}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),

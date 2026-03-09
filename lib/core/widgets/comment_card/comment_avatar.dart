@@ -20,6 +20,7 @@ class CommentAvatar extends StatelessWidget {
         child: AppImage(
           isAnnonymous ? AssetsData.anonymousProfile : avatarUrl ?? '',
           fit: BoxFit.cover,
+          isAvatar: true,
         ),
       ),
     );

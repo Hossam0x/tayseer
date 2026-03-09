@@ -11,11 +11,13 @@ class LayoutCubit extends Cubit<LayoutState> {
     final prefs = await SharedPreferences.getInstance();
     final isDeactivated =
         prefs.getBool('marriage_section_deactivated') ?? false;
-    if (isDeactivated) {
-      emit(state.copyWith(isMarriageVisible: false));
+    final shouldBeVisible = !isDeactivated;
+
+    // ⭐ فقط emit لو القيمة اتغيرت فعلاً
+    if (state.isMarriageVisible != shouldBeVisible) {
+      emit(state.copyWith(isMarriageVisible: shouldBeVisible));
     }
   }
-  
 
   void changeIndex(int index) {
     // لو المستخدم بالفعل في نفس الصفحة وضغط عليها تاني (زي فيسبوك)
@@ -64,10 +66,15 @@ class LayoutCubit extends Cubit<LayoutState> {
     emit(state.copyWith(userType: userType, currentIndex: 0));
   }
 
-void updateMarriageVisibility(bool isVisible) {
-  emit(state.copyWith(
-    isMarriageVisible: isVisible,
-    marriageToggleTrigger: state.marriageToggleTrigger + 1, // ⭐ trigger
-  ));
-}
+  void updateMarriageVisibility(bool isVisible) {
+    // ⭐ لو القيمة نفسها، متعملش emit عشان متشغلش animation زيادة
+    if (state.isMarriageVisible == isVisible) return;
+
+    emit(
+      state.copyWith(
+        isMarriageVisible: isVisible,
+        marriageToggleTrigger: state.marriageToggleTrigger + 1,
+      ),
+    );
+  }
 }

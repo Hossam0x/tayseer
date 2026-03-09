@@ -2,7 +2,6 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/otp_view_user.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class EmailEditView extends StatefulWidget {
@@ -36,23 +35,16 @@ class _EmailEditViewState extends State<EmailEditView> {
         body: BlocConsumer<EmailEditCubit, EmailEditState>(
           listener: (context, state) {
             if (state.errorMessage.isNotEmpty) {
-              showSafeSnackBar(
-                context: context,
-                text: context.tr(state.errorMessage),
-                isError: true,
-              );
+              AppToast.error(context, context.tr(state.errorMessage));
               context.read<EmailEditCubit>().clearMessages();
             } else if (state.successMessage.isNotEmpty &&
                 state.status == CubitStates.success) {
-              showSafeSnackBar(
-                context: context,
-                text: context.tr(state.successMessage),
-                isSuccess: true,
-              );
+              AppToast.success(context, context.tr(state.successMessage));
 
-              Future.delayed(const Duration(milliseconds: 1400), () {
+              Future.delayed(const Duration(milliseconds: 1400), () async {
                 if (!mounted) return;
-                Navigator.push(
+
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => OtpViewUser(
@@ -63,7 +55,15 @@ class _EmailEditViewState extends State<EmailEditView> {
                     ),
                   ),
                 );
-                context.read<EmailEditCubit>().reset();
+
+                // If OTP was successful, pop back to GeneralSettingsView
+                if (mounted && result == null) {
+                  Navigator.pop(context);
+                }
+
+                if (mounted) {
+                  context.read<EmailEditCubit>().reset();
+                }
               });
               context.read<EmailEditCubit>().clearMessages();
             }
@@ -105,7 +105,7 @@ class _EmailEditViewState extends State<EmailEditView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // حقل الإيميل
+                          // Email field
                           Container(
                             decoration: BoxDecoration(
                               color: AppColors.kWhiteColor,
@@ -120,8 +120,12 @@ class _EmailEditViewState extends State<EmailEditView> {
                             child: TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
-                              textDirection: TextDirection.ltr,
-                              textAlign: TextAlign.left,
+                              textDirection: isArabic
+                                  ? TextDirection.rtl
+                                  : TextDirection.ltr,
+                              textAlign: isArabic
+                                  ? TextAlign.right
+                                  : TextAlign.left,
                               style: Styles.textStyle14.copyWith(
                                 color: AppColors.secondary800,
                                 fontWeight: FontWeight.w500,

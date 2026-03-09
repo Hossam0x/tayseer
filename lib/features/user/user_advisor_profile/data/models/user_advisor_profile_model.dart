@@ -52,6 +52,7 @@ class UserAdvisorProfileModel extends Equatable {
   final int followers;
   final int following;
   final bool isVerified;
+  final bool isApproved;
   final String? location;
   final String? videoLink;
   final bool isMe;
@@ -70,6 +71,7 @@ class UserAdvisorProfileModel extends Equatable {
     required this.followers,
     required this.following,
     required this.isVerified,
+    this.isApproved = true,
     this.location,
     this.videoLink,
     required this.isMe,
@@ -80,6 +82,23 @@ class UserAdvisorProfileModel extends Equatable {
   });
 
   factory UserAdvisorProfileModel.fromJson(Map<String, dynamic> json) {
+    // Check if isBlocked array exists and is not empty
+    final isBlockedArray = json['isBlocked'] as List?;
+    final hasBlockedData = isBlockedArray != null && isBlockedArray.isNotEmpty;
+
+    // Parse room data or create from isBlocked array
+    RoomInfoModel? roomData;
+    if (json['room'] != null && json['room'] is Map) {
+      roomData = RoomInfoModel.fromJson(json['room']);
+    } else if (hasBlockedData) {
+      // If no room but isBlocked array exists, create room with blocked status
+      roomData = const RoomInfoModel(
+        chatRoomId: '',
+        isBlocked: true,
+        isHaveSession: false,
+      );
+    }
+
     return UserAdvisorProfileModel(
       id:
           json['id']?.toString() ??
@@ -94,6 +113,7 @@ class UserAdvisorProfileModel extends Equatable {
       followers: json['followers'] ?? 0,
       following: json['following'] ?? 0,
       isVerified: json['isVerified'] ?? false,
+      isApproved: json['isApproved'] ?? true,
       location: json['location'],
       videoLink: json['videoLink'],
       isMe: json['isMe'] ?? false,
@@ -102,9 +122,7 @@ class UserAdvisorProfileModel extends Equatable {
           json['professionalSpecialization']?.toString() ??
           json['ProfessionalSpecialization']?.toString(),
       jobGrade: json['jobGrade']?.toString() ?? json['JobGrade']?.toString(),
-      room: json['room'] != null
-          ? RoomInfoModel.fromJson(json['room'])
-          : null, // ⭐ إضافة Room
+      room: roomData,
     );
   }
 
@@ -118,6 +136,7 @@ class UserAdvisorProfileModel extends Equatable {
     'followers': followers,
     'following': following,
     'isVerified': isVerified,
+    'isApproved': isApproved,
     'location': location,
     'videoLink': videoLink,
     'isMe': isMe,
@@ -137,6 +156,7 @@ class UserAdvisorProfileModel extends Equatable {
     int? followers,
     int? following,
     bool? isVerified,
+    bool? isApproved,
     String? location,
     String? videoLink,
     bool? isMe,
@@ -155,6 +175,7 @@ class UserAdvisorProfileModel extends Equatable {
       followers: followers ?? this.followers,
       following: following ?? this.following,
       isVerified: isVerified ?? this.isVerified,
+      isApproved: isApproved ?? this.isApproved,
       location: location ?? this.location,
       videoLink: videoLink ?? this.videoLink,
       isMe: isMe ?? this.isMe,
@@ -183,6 +204,7 @@ class UserAdvisorProfileModel extends Equatable {
     followers,
     following,
     isVerified,
+    isApproved,
     location,
     videoLink,
     isMe,

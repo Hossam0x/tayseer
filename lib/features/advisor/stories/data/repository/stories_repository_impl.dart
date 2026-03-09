@@ -12,6 +12,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
   @override
   Future<Either<Failure, List<UserStoriesModel>>> fetchStories({
     required int page,
+    int limit = 10,
     String? advisorId,
     bool isSpecial = false,
     required BuildContext context,
@@ -21,7 +22,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
         endPoint: isSpecial
             ? ApiEndPoint.specialStories(advisorId)
             : ApiEndPoint.allStories,
-        query: {'page': page},
+        query: {'page': page, 'limit': limit},
       );
 
       final data = response['data'];
@@ -113,6 +114,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
   @override
   Future<Either<Failure, List<UserStoriesModel>>> fetchStoriesSilent({
     required int page,
+    int limit = 10,
     String? advisorId,
     bool isSpecial = false,
   }) async {
@@ -121,7 +123,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
         endPoint: isSpecial
             ? ApiEndPoint.specialStories(advisorId)
             : ApiEndPoint.allStories,
-        query: {'page': page},
+        query: {'page': page, 'limit': limit},
       );
 
       final data = response['data'];
@@ -212,7 +214,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
   }
 
   @override
-  Future<Either<Failure, void>> createStories({
+  Future<Either<Failure, StoryModel>> createStories({
     String? content,
     List<File>? images,
     List<XFile>? videos,
@@ -259,8 +261,9 @@ class StoriesRepositoryImpl implements StoriesRepository {
 
       final success = response['success'] ?? false;
 
-      if (success) {
-        return right(null);
+      if (success && response['data'] != null) {
+        final createdStory = StoryModel.fromJson(response['data']);
+        return right(createdStory);
       } else {
         return left(ServerFailure(response['message'] ?? 'فشل إنشاء القصة'));
       }

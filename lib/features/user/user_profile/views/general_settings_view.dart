@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/views/age_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/email_edit_view.dart';
@@ -20,27 +19,7 @@ class GeneralSettingsView extends StatefulWidget {
 class _GeneralSettingsViewState extends State<GeneralSettingsView> {
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<UserProfileCubit, UserProfileState>(
-      listenWhen: (previous, current) {
-        if (current is SettingsLoaded && previous is SettingsLoaded) {
-          return current.actionTimestamp != previous.actionTimestamp;
-        }
-        if (current is SettingsLoaded && current.actionMessage != null) {
-          return true;
-        }
-        return false;
-      },
-      listener: (context, state) {
-        if (state is SettingsLoaded && state.actionMessage != null) {
-          showSafeSnackBar(
-            context: context,
-            text: context.tr(state.actionMessage ?? ""),
-            isSuccess: state.isActionSuccess ?? false,
-            isError: !(state.isActionSuccess ?? true),
-            duration: const Duration(milliseconds: 1000),
-          );
-        }
-      },
+    return BlocBuilder<UserProfileCubit, UserProfileState>(
       builder: (context, state) {
         return Scaffold(
           body: AdvisorBackground(
@@ -276,8 +255,15 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           onTap: () async {
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => EmailEditView()),
+              MaterialPageRoute(
+                builder: (context) =>
+                    EmailEditView(initialEmail: userProfile?.email ?? ''),
+              ),
             );
+            // Refresh data after returning
+            if (mounted) {
+              context.read<UserProfileCubit>().refresh();
+            }
           },
           child: _buildSettingRow(label: context.tr('email'), value: ''),
         ),
@@ -285,8 +271,15 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           onTap: () async {
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => PhoneEditView()),
+              MaterialPageRoute(
+                builder: (context) =>
+                    PhoneEditView(initialPhone: userProfile?.phone ?? ''),
+              ),
             );
+            // Refresh data after returning
+            if (mounted) {
+              context.read<UserProfileCubit>().refresh();
+            }
           },
           child: _buildSettingRow(
             label: context.tr('phone'),

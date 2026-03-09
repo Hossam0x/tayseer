@@ -1,4 +1,5 @@
 import 'package:tayseer/core/appLocalizations/appLocalizations.dart';
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -13,43 +14,56 @@ class TayseerApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return BlocProvider(
-          create: (context) => LanguageCubit(),
-          child: BlocBuilder<LanguageCubit, Locale>(
-            builder: (context, state) {
-              return MaterialApp(
-                builder: (context, child) {
-                  return MediaQuery(
-                    data: MediaQuery.of(
-                      context,
-                    ).copyWith(textScaler: const TextScaler.linear(1.0)),
-                    child: child!,
-                  );
-                },
-                locale: state,
-                supportedLocales: const [Locale('ar'), Locale('en')],
-                localizationsDelegates: [
-                  AppLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                ],
-                title: isArabic ? kAppNameAr : kAppNameEn,
-                debugShowCheckedModeBanner: false,
-                useInheritedMediaQuery: true,
-                theme: ThemeData(
-                  scaffoldBackgroundColor: AppColors.kScaffoldColor,
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: AppColors.kprimaryColor,
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (context) => LanguageCubit()),
+            BlocProvider.value(value: getIt<ConnectivityCubit>()),
+          ],
+          child: ColoredBox(
+            color: AppColors.kScaffoldColor,
+            child: BlocBuilder<LanguageCubit, Locale>(
+              builder: (context, state) {
+                final cubit = context.read<LanguageCubit>();
+                final pendingRoute = cubit.consumePendingRoute();
+
+                return MaterialApp(
+                  key: ValueKey(state.languageCode),
+                  builder: (context, child) {
+                    return MediaQuery(
+                      data: MediaQuery.of(
+                        context,
+                      ).copyWith(textScaler: const TextScaler.linear(1.0)),
+                      child: child!,
+                    );
+                  },
+                  locale: state,
+                  supportedLocales: const [Locale('ar'), Locale('en')],
+                  localizationsDelegates: [
+                    AppLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                  ],
+                  title: isArabic ? kAppNameAr : kAppNameEn,
+                  debugShowCheckedModeBanner: false,
+                  useInheritedMediaQuery: true,
+                  theme: ThemeData(
+                    scaffoldBackgroundColor: AppColors.kScaffoldColor,
+                    colorScheme: ColorScheme.fromSeed(
+                      seedColor: AppColors.kprimaryColor,
+                    ),
+                    useMaterial3: true,
+                    fontFamily: kAppFont,
                   ),
-                  useMaterial3: true,
-                  fontFamily: kAppFont,
-                ),
-                navigatorObservers: [DrawerRouteObserver(), videoRouteObserver],
-                onGenerateRoute: AppRouter.onGenerateRoute,
-                initialRoute: AppRouter.kSplashView,
-              );
-            },
+                  navigatorObservers: [
+                    DrawerRouteObserver(),
+                    videoRouteObserver,
+                  ],
+                  onGenerateRoute: AppRouter.onGenerateRoute,
+                  initialRoute: pendingRoute ?? AppRouter.kSplashView,
+                );
+              },
+            ),
           ),
         );
       },

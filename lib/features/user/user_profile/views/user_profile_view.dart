@@ -21,17 +21,12 @@ class _UserProfileViewState extends State<UserProfileView> {
   final int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();
   int _rating = 0;
-  late UserProfileCubit _userProfileCubit;
 
-  @override
-  void initState() {
-    super.initState();
-    _userProfileCubit = UserProfileCubit(getIt<UserProfileRepository>());
-  }
+  // ✅ حذف _userProfileCubit - BlocProvider هيتحكم في الـ lifecycle
 
   @override
   void dispose() {
-    _userProfileCubit.close();
+    // ✅ حذف _userProfileCubit.close() - BlocProvider بيعمل ده تلقائياً
     _scrollController.dispose();
     super.dispose();
   }
@@ -39,7 +34,8 @@ class _UserProfileViewState extends State<UserProfileView> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => _userProfileCubit,
+      // ✅ BlocProvider بيعمل الـ cubit ويتحكم في lifecycle بشكل صح
+      create: (context) => UserProfileCubit(getIt<UserProfileRepository>()),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
@@ -55,10 +51,9 @@ class _UserProfileViewState extends State<UserProfileView> {
                 listeners: [
                   BlocListener<UserProfileCubit, UserProfileState>(
                     listenWhen: (previous, current) {
-                      // ⭐ اسمع لما يتحول من loading/initial لـ loaded (initial load)
                       if (previous is! SettingsLoaded &&
                           current is SettingsLoaded) {
-                        return true; // ⭐ ده هيمسك الـ initial load
+                        return true;
                       }
 
                       if (current is SettingsLoaded &&
@@ -98,23 +93,16 @@ class _UserProfileViewState extends State<UserProfileView> {
                         }
 
                         if (isLogoutError) {
-                          Navigator.pop(
-                            context,
-                          ); // Close loading dialog if open
+                          Navigator.pop(context);
                           AppToast.error(context, context.tr("logout_error"));
                           return;
                         }
 
                         if (state.actionMessage == "update_language_success") {
-                          // الـ toast لازم يظهر بلغة الإعداد الجديد
+                          // Update language without showing toast
                           SharedPreferences.getInstance().then((p) {
                             final lang = p.getString(kAppLanguage) ?? 'ar';
                             if (context.mounted) {
-                              final message = AppLocalizations.translateFor(
-                                'update_language_success',
-                                lang,
-                              );
-                              AppToast.success(context, message);
                               context.read<LanguageCubit>().setLanguage(
                                 lang,
                                 context,
@@ -726,7 +714,6 @@ class _UserProfileViewState extends State<UserProfileView> {
                     Builder(
                       builder: (context) {
                         String title = setting.title;
-
                         return Text(
                           context.tr(title),
                           style: Styles.textStyle16Meduim.copyWith(
@@ -749,13 +736,11 @@ class _UserProfileViewState extends State<UserProfileView> {
                   BlocSelector<UserProfileCubit, UserProfileState, bool>(
                     selector: (state) {
                       if (state is SettingsLoaded) {
-                        // ✅ Each switch reads its own state
                         if (setting.id == 'notifications') {
                           return state.isNotificationEnabled;
                         } else if (setting.id ==
                             'deactivate_the_marriage_section') {
-                          return state
-                              .isMarriageSectionDeactivated; // ⭐ new field
+                          return state.isMarriageSectionDeactivated;
                         }
                       }
                       return false;
@@ -900,7 +885,7 @@ class _UserProfileViewState extends State<UserProfileView> {
       context,
       title: context.tr("logout"),
       supTitle: context.tr("logout_confirmation"),
-      imageUrl: AssetsData.pauseIcon,
+      imageUrl: AssetsData.kWoriningImage,
       bottonText: context.tr("cancel"),
       cancelText: context.tr("yes"),
       showCancelButton: true,
@@ -1077,15 +1062,10 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   void _showDeactivateMarriageDialog(BuildContext context, bool value) {
-    // ⭐ احفظ reference للـ overlay قبل ما الـ dialog يفتح
     final overlay = Overlay.of(context);
-    // ⭐ الأيكون اللي هيطير:
-    //   لو value=true  (بيعطّل الزواج) → يطير أيكون الاستشارة
-    //   لو value=false (بيفعّل الزواج) → يطير أيكون الزواج
     final flyingIcon = value
-        ? AssetsData
-              .consultationIcon // هيتغير لاستشارة
-        : AssetsData.ringIcon; // هيتغير لزواج
+        ? AssetsData.consultationIcon
+        : AssetsData.ringIcon;
 
     CustomshowDialogWithImage(
       context,
@@ -1100,14 +1080,11 @@ class _UserProfileViewState extends State<UserProfileView> {
       cancelText: context.tr("no"),
       showCancelButton: true,
       onPressed: () {
-        // ⭐ زرار "نعم" - شغّل الـ fly animation
-        // نحتاج BuildContext الـ button نفسه - هنستخدم overlay center كـ fallback
         NavAnimationService.instance.flyIcon(
-          fromContext: context, // context الـ dialog
+          fromContext: context,
           iconAsset: flyingIcon,
           overlay: overlay,
           onComplete: () {
-            // ⭐ بعد ما الأيكون يوصل للـ nav bar، نعمل التغيير الفعلي
             context.read<UserProfileCubit>().updateSwitch(
               'deactivate_the_marriage_section',
               value,
@@ -1119,9 +1096,10 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
+  // ✅ استخدام context.read بدل _userProfileCubit مباشرة
   void _submitAppRating(int rating) {
-    if (rating > 0) {
-      _userProfileCubit.rateApp(rating);
+    if (rating > 0 && context.mounted) {
+      context.read<UserProfileCubit>().rateApp(rating);
     }
   }
 }

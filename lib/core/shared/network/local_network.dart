@@ -84,6 +84,18 @@ class CachNetwork {
     return await sharedPref.remove(key);
   }
 
+  /// مسح كاش الجيست والبروفايل عند الانتقال من جيست → لوجن
+  /// استخدمها قبل التوجيه لشاشة التسجيل
+  static Future<void> clearGuestAndProfileCache() async {
+    await Future.wait([
+      removeData(key: ktoken),
+      removeData(key: kMyProfileImage),
+      removeData(key: kMyProfileName),
+      removeData(key: kGuestName),
+      removeData(key: kGuestImage),
+    ]);
+  }
+
   static Future<void> setIsUserGuest(bool userType) async {
     await sharedPref.setBool("isUserGuest", userType);
     kIsUserGuest = userType;

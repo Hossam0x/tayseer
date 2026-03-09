@@ -31,12 +31,10 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
   @override
   void initState() {
     super.initState();
-
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
@@ -48,6 +46,13 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
     super.dispose();
   }
 
+  void _navigateToProfile() {
+    context.pushNamed(
+      AppRouter.kMarriageView,
+      arguments: {'personId': widget.item.userId, 'fromInteractions': true},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final shouldBlur = widget.forceBlur || widget.item.isImageBlurred;
@@ -55,40 +60,32 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
 
     return Opacity(
       opacity: isPendingRemoval ? 0.5 : 1.0,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: const Color.fromRGBO(0, 0, 0, 0.08),
-              borderRadius: BorderRadius.circular(20.r),
-              border: isPendingRemoval
-                  ? Border.all(color: Colors.grey.shade400, width: 2.w)
-                  : null,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AspectRatio(
-                  aspectRatio: 1.3,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16.r),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            context.pushNamed(
-                              AppRouter.kMarriageView,
-                              arguments: {
-                                'personId': widget.item.userId,
-                                'fromInteractions': true,
-                              },
-                            );
-                          },
-                          child: shouldBlur
+      child: GestureDetector(
+        onTap: _navigateToProfile,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: const Color.fromRGBO(0, 0, 0, 0.08),
+                borderRadius: BorderRadius.circular(20.r),
+                border: isPendingRemoval
+                    ? Border.all(color: Colors.grey.shade400, width: 2.w)
+                    : null,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1.3,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16.r),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          shouldBlur
                               ? ImageFiltered(
                                   imageFilter: ImageFilter.blur(
                                     sigmaX: 15,
@@ -100,89 +97,66 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                                   ),
                                 )
                               : AppImage(widget.item.image, fit: BoxFit.cover),
-                        ),
-                        if (shouldBlur)
-                          GestureDetector(
-                            onTap: () {
-                              context.pushNamed(
-                                AppRouter.kMarriageView,
-                                arguments: {
-                                  'personId': widget.item.userId,
-                                  'fromInteractions': true,
+
+                          if (shouldBlur)
+                            Container(color: Colors.black.withOpacity(0.2)),
+
+                          if (widget.showFavoriteIcon)
+                            Positioned(
+                              top: 12.h,
+                              left: 12.w,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () async {
+                                  final cubit = context
+                                      .read<InteractionsCubit>();
+                                  final currentStatus = widget.item.isFavorite;
+
+                                  if (currentStatus) {
+                                    final shouldRemove =
+                                        await showRemoveFavoriteDialog(context);
+                                    if (shouldRemove != true || !mounted)
+                                      return;
+                                    cubit.toggleFavorite(
+                                      userId: widget.item.userId,
+                                      isAdd: false,
+                                    );
+                                  } else {
+                                    _animationController.forward().then(
+                                      (_) => _animationController.reverse(),
+                                    );
+                                    cubit.toggleFavorite(
+                                      userId: widget.item.userId,
+                                      isAdd: true,
+                                    );
+                                  }
                                 },
-                              );
-                            },
-                            child: Container(
-                              color: Colors.black.withOpacity(0.2),
-                            ),
-                          ),
-
-                        if (widget.showFavoriteIcon)
-                          Positioned(
-                            top: 12.h,
-                            left: 12.w,
-                            child: GestureDetector(
-                              onTap: () async {
-                                final cubit = context.read<InteractionsCubit>();
-                                final currentStatus = widget.item.isFavorite;
-
-                                if (currentStatus) {
-                                  final shouldRemove =
-                                      await showRemoveFavoriteDialog(context);
-                                  if (shouldRemove != true || !mounted) return;
-
-                                  cubit.toggleFavorite(
-                                    userId: widget.item.userId,
-                                    isAdd: false,
-                                  );
-                                } else {
-                                  _animationController.forward().then(
-                                    (_) => _animationController.reverse(),
-                                  );
-
-                                  cubit.toggleFavorite(
-                                    userId: widget.item.userId,
-                                    isAdd: true,
-                                  );
-                                }
-                              },
-                              child: ScaleTransition(
-                                scale: _scaleAnimation,
-                                child: Container(
-                                  padding: EdgeInsets.all(6.w),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    widget.item.isFavorite
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-
-                                    color: widget.item.isFavorite
-                                        ? AppColors.primary400
-                                        : Colors.white,
-                                    size: 26.w,
+                                child: ScaleTransition(
+                                  scale: _scaleAnimation,
+                                  child: Container(
+                                    padding: EdgeInsets.all(6.w),
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      widget.item.isFavorite
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color: widget.item.isFavorite
+                                          ? AppColors.primary400
+                                          : Colors.white,
+                                      size: 26.w,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                GestureDetector(
-                  onTap: () {
-                    context.pushNamed(
-                      AppRouter.kMarriageView,
-                      arguments: {
-                        'personId': widget.item.userId,
-                        'fromInteractions': true,
-                      },
-                    );
-                  },
-                  child: Padding(
+                  Padding(
                     padding: EdgeInsets.only(
                       top: 8.h,
                       right: 4.w,
@@ -206,7 +180,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                               ),
                             ),
                             Text(
-                              ' ${widget.item.age} ${context.tr("age")}', // ✅ ترجمة "سنة"
+                              ' ${widget.item.age} ${context.tr("age")}',
                               style: Styles.textStyle16.copyWith(
                                 fontWeight: FontWeight.w400,
                                 fontSize: 14.sp,
@@ -253,9 +227,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                         ] else ...[
                           SizedBox(height: 6.h),
                           _buildBadge(
-                            text: context.tr(
-                              "no_job",
-                            ), // ✅ ترجمة "لا توجد وظيفة"
+                            text: context.tr("no_job"),
                             icon: AssetsData.workIcon,
                           ),
                           SizedBox(height: 6.h),
@@ -263,46 +235,44 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // ✅ الشعار (Ribbon) مع الترجمة
-          if (widget.showRibbon) ...[
-            if (widget.item.likedHim)
-              Positioned(
-                right:
-                    0, // ✅ دائمًا من اليمين، الـ StatusRibbon يتعامل مع الاتجاه داخليًا
-                top: 0,
-                child: StatusRibbonwidget(
-                  statusText: context.tr("you_liked"),
-                  topTextPosition: 28.h,
-                  rightTextPosition: 1.w,
-                ),
-              )
-            else if (widget.item.sentCompliment)
-              Positioned(
-                right: 0,
-                top: 0,
-                child: StatusRibbonwidget(
-                  statusText: context.tr("sent_compliment"),
-                  topTextPosition: 26.h,
-                  rightTextPosition: -2.w,
-                ),
-              )
-            else if (widget.item.likedMe)
-              Positioned(
-                right: 0,
-                top: 0,
-                child: StatusRibbonwidget(
-                  statusText: context.tr("liked_Me"),
-                  topTextPosition: 30.h,
-                  rightTextPosition: 5.w,
-                ),
+                ],
               ),
+            ),
+
+            if (widget.showRibbon) ...[
+              if (widget.item.likedHim)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: StatusRibbonwidget(
+                    statusText: context.tr("you_liked"),
+                    topTextPosition: 28.h,
+                    rightTextPosition: 1.w,
+                  ),
+                )
+              else if (widget.item.sentCompliment)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: StatusRibbonwidget(
+                    statusText: context.tr("sent_compliment"),
+                    topTextPosition: 26.h,
+                    rightTextPosition: -2.w,
+                  ),
+                )
+              else if (widget.item.likedMe)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: StatusRibbonwidget(
+                    statusText: context.tr("liked_Me"),
+                    topTextPosition: 30.h,
+                    rightTextPosition: 5.w,
+                  ),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

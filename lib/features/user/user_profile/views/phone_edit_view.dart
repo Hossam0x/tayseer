@@ -3,7 +3,6 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/otp_view_user.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class PhoneEditView extends StatefulWidget {
@@ -40,33 +39,33 @@ class _PhoneEditViewState extends State<PhoneEditView> {
         body: BlocConsumer<PhoneEditCubit, PhoneEditState>(
           listener: (context, state) {
             if (state.errorMessage.isNotEmpty) {
-              showSafeSnackBar(
-                context: context,
-                text: context.tr(state.errorMessage),
-                isError: true,
-              );
+              AppToast.error(context, context.tr(state.errorMessage));
               context.read<PhoneEditCubit>().clearMessages();
             } else if (state.successMessage.isNotEmpty &&
                 state.updatePhoneStatus == CubitStates.success) {
-              showSafeSnackBar(
-                context: context,
-                text: context.tr(state.successMessage),
-                isSuccess: true,
-              );
+              AppToast.success(context, context.tr(state.successMessage));
 
-              // التنقل عند النجاح فقط
-              Future.delayed(const Duration(milliseconds: 1500), () {
-                if (mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => OtpViewUser(
-                        phoneNumber: state.fullPhoneNumber,
-                        isPhoneUpdate: true,
-                        otpSource: OtpSource.editPhone,
-                      ),
+              // Navigate to OTP and return to GeneralSettingsView on success
+              Future.delayed(const Duration(milliseconds: 1500), () async {
+                if (!mounted) return;
+
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => OtpViewUser(
+                      phoneNumber: state.fullPhoneNumber,
+                      isPhoneUpdate: true,
+                      otpSource: OtpSource.editPhone,
                     ),
-                  );
+                  ),
+                );
+
+                // If OTP was successful, pop back to GeneralSettingsView
+                if (mounted && result == null) {
+                  Navigator.pop(context);
+                }
+
+                if (mounted) {
                   context.read<PhoneEditCubit>().resetError();
                 }
               });
@@ -187,62 +186,35 @@ class _PhoneEditViewState extends State<PhoneEditView> {
           width: state.phoneError.isNotEmpty ? 1.5 : 1,
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextFormField(
-              controller: _phoneController,
-              focusNode: _phoneFocusNode,
-              textAlign: isArabic ? TextAlign.right : TextAlign.left,
-              // textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(15),
-              ],
-              style: Styles.textStyle14.copyWith(
-                color: AppColors.secondary800,
-                fontWeight: FontWeight.w500,
-              ),
-              decoration: InputDecoration(
-                hintTextDirection: TextDirection.rtl,
-                hintText: context.tr('phone_hint'),
-                hintStyle: Styles.textStyle14.copyWith(
-                  color: AppColors.primary200,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Row(
+          children: [
+            InkWell(
+              onTap: () => _showCountryPicker(context),
+              child: Container(
+                padding: EdgeInsetsDirectional.only(
+                  start: 12.w,
+                  top: 14.h,
+                  bottom: 14.h,
                 ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  vertical: 14.h,
-                  horizontal: 12.w,
-                ),
-                errorText: null,
-              ),
-              onChanged: (value) {
-                context.read<PhoneEditCubit>().updatePhoneNumber(value);
-              },
-              onTap: () {
-                _phoneController.selection = TextSelection.fromPosition(
-                  TextPosition(offset: _phoneController.text.length),
-                );
-              },
-            ),
-          ),
-
-          InkWell(
-            onTap: () => _showCountryPicker(context),
-            child: Container(
-              padding: EdgeInsetsDirectional.only(
-                end: 12.w,
-                top: 14.h,
-                bottom: 14.h,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Gap(4.w),
-                  Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: Text(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      color: state.phoneError.isNotEmpty
+                          ? Colors.red
+                          : Colors.grey,
+                      size: 18.w,
+                    ),
+                    Gap(4.w),
+                    Text(
+                      state.selectedCountryFlag,
+                      style: TextStyle(fontSize: 18.sp),
+                    ),
+                    Gap(4.w),
+                    Text(
                       state.selectedCountryCode,
                       style: Styles.textStyle14.copyWith(
                         color: state.phoneError.isNotEmpty
@@ -251,24 +223,49 @@ class _PhoneEditViewState extends State<PhoneEditView> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-                  Gap(4.w),
-                  Text(
-                    state.selectedCountryFlag,
-                    style: TextStyle(fontSize: 18.sp),
-                  ),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: state.phoneError.isNotEmpty
-                        ? Colors.red
-                        : Colors.grey,
-                    size: 18.w,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+            Expanded(
+              child: TextFormField(
+                controller: _phoneController,
+                focusNode: _phoneFocusNode,
+                textAlign: TextAlign.left,
+                textDirection: TextDirection.ltr,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(15),
+                ],
+                style: Styles.textStyle14.copyWith(
+                  color: AppColors.secondary800,
+                  fontWeight: FontWeight.w500,
+                ),
+                decoration: InputDecoration(
+                  hintText: context.tr('phone_hint'),
+                  hintStyle: Styles.textStyle14.copyWith(
+                    color: AppColors.primary200,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 14.h,
+                    horizontal: 12.w,
+                  ),
+                  errorText: null,
+                ),
+                onChanged: (value) {
+                  context.read<PhoneEditCubit>().updatePhoneNumber(value);
+                },
+                onTap: () {
+                  _phoneController.selection = TextSelection.fromPosition(
+                    TextPosition(offset: _phoneController.text.length),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

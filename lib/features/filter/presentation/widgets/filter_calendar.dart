@@ -91,32 +91,43 @@ class FilterCalendar extends StatelessWidget {
           onPressed: () => context.read<AdvisorFilterCubit>().previousMonth(),
         ),
         Text(
-          "${selectedDate.year} - ${_getMonthName(selectedDate.month)}",
+          "${selectedDate.year} - ${_getMonthName(selectedDate.month, isArabic )}",
           style: Styles.textStyle16Bold,
         ),
         IconButton(
-          icon: const Icon(Icons.chevron_right),
+          icon: const Icon(Icons.chevron_right),  
           onPressed: () => context.read<AdvisorFilterCubit>().nextMonth(),
         ),
       ],
     );
   }
 
-  String _getMonthName(int month) {
-    const months = [
-      'يناير',
-      'فبراير',
-      'مارس',
-      'أبريل',
-      'مايو',
-      'يونيو',
-      'يوليو',
-      'أغسطس',
-      'سبتمبر',
-      'أكتوبر',
-      'نوفمبر',
-      'ديسمبر',
-    ];
-    return months[month - 1];
-  }
+  // String _getMonthName(int month) {
+  //   const months = [
+  //     'يناير',
+  //     'فبراير',
+  //     'مارس',
+  //     'أبريل',
+  //     'مايو',
+  //     'يونيو',
+  //     'يوليو',
+  //     'أغسطس',
+  //     'سبتمبر',
+  //     'أكتوبر',
+  //     'نوفمبر',
+  //     'ديسمبر',
+  //   ];
+  //   return months[month - 1];
+  // }
+  String _getMonthName(int month, bool isArabic) {
+  const arabicMonths = [
+    'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+  ];
+  const englishMonths = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  return isArabic ? arabicMonths[month - 1] : englishMonths[month - 1];
+}
 }

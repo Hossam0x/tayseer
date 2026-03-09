@@ -950,7 +950,7 @@ class _LikersBottomSheetState extends State<_LikersBottomSheet> {
   }
 
   void _navigateToProfile(BuildContext context, StoryUserModel user) {
-    Navigator.pop(context);
+    // Don't close the bottom sheet - keep story paused
     final isAdvisor = user.userType.toLowerCase() == 'advisor';
     if (isAdvisor) {
       Navigator.push(

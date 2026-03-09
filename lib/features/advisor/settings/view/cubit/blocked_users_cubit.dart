@@ -27,7 +27,7 @@ class BlockedUsersCubit extends Cubit<BlockedUsersState> {
         },
       );
     } catch (e) {
-      emit(BlockedUsersError(message: 'حدث خطأ غير متوقع: $e'));
+      emit(BlockedUsersError(message: 'unexpected_error: $e'));
     }
   }
 
@@ -59,6 +59,7 @@ class BlockedUsersCubit extends Cubit<BlockedUsersState> {
             currentState.copyWith(
               blockedUsers: updatedList,
               actionError: failure.message,
+              isActionKey: false, // API error message, not a translation key
             ),
           );
         },
@@ -66,7 +67,8 @@ class BlockedUsersCubit extends Cubit<BlockedUsersState> {
           emit(
             currentState.copyWith(
               blockedUsers: updatedList,
-              actionSuccess: 'تم إلغاء الحظر بنجاح',
+              actionSuccess: 'unblock_success',
+              isActionKey: true, // Translation key
             ),
           );
         },
@@ -77,7 +79,8 @@ class BlockedUsersCubit extends Cubit<BlockedUsersState> {
       emit(
         currentState.copyWith(
           blockedUsers: updatedList,
-          actionError: 'حدث خطأ في إلغاء الحظر',
+          actionError: 'unblock_error',
+          isActionKey: true, // Translation key
         ),
       );
     }
@@ -92,16 +95,31 @@ class BlockedUsersCubit extends Cubit<BlockedUsersState> {
 
       result.fold(
         (failure) {
-          emit(currentState.copyWith(actionError: failure.message));
+          emit(
+            currentState.copyWith(
+              actionError: failure.message,
+              isActionKey: false, // API error message
+            ),
+          );
         },
         (_) {
-          emit(currentState.copyWith(actionSuccess: 'تم حظر المستخدم بنجاح'));
+          emit(
+            currentState.copyWith(
+              actionSuccess: 'user_blocked_success',
+              isActionKey: true, // Translation key
+            ),
+          );
           // إعادة تحميل القائمة لضمان التزامن
           _loadBlockedUsers();
         },
       );
     } catch (e) {
-      emit(currentState.copyWith(actionError: 'حدث خطأ في حظر المستخدم'));
+      emit(
+        currentState.copyWith(
+          actionError: 'block_user_error',
+          isActionKey: true, // Translation key
+        ),
+      );
     }
   }
 

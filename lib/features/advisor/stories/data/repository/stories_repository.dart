@@ -5,6 +5,7 @@ import 'package:tayseer/my_import.dart';
 abstract class StoriesRepository {
   Future<Either<Failure, List<UserStoriesModel>>> fetchStories({
     required int page,
+    int limit = 10,
     String? advisorId,
     bool isSpecial = false,
     required BuildContext context,
@@ -13,12 +14,13 @@ abstract class StoriesRepository {
   /// Context-free version for silent background fetches
   Future<Either<Failure, List<UserStoriesModel>>> fetchStoriesSilent({
     required int page,
+    int limit = 10,
     String? advisorId,
     bool isSpecial = false,
   });
   void markStoryAsViewed({required String storyId});
   void likeStory({required String storyId});
-  Future<Either<Failure, void>> createStories({
+  Future<Either<Failure, StoryModel>> createStories({
     String? content,
     List<File>? images,
     List<XFile>? videos,

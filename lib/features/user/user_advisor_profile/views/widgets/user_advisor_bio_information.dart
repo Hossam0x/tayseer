@@ -19,6 +19,12 @@ class UserAdvisorBioInformation extends StatelessWidget {
         ),
         BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
           listenWhen: (previous, current) =>
+              previous.blockActionState != current.blockActionState &&
+              current.blockActionState != CubitStates.initial,
+          listener: _handleBlockState,
+        ),
+        BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+          listenWhen: (previous, current) =>
               previous.chatActionState != current.chatActionState &&
               current.chatActionState == CubitStates.failure,
           listener: (context, state) {
@@ -70,6 +76,33 @@ class UserAdvisorBioInformation extends StatelessWidget {
         break;
       case CubitStates.failure:
         AppToast.error(context, message ?? context.tr('follow_error'));
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _handleBlockState(BuildContext context, UserAdvisorProfileState state) {
+    final message = state.blockMessage;
+    final isBlocked = state.profile?.room?.isBlocked ?? false;
+
+    switch (state.blockActionState) {
+      case CubitStates.success:
+        AppToast.success(
+          context,
+          isBlocked
+              ? (message ?? context.tr('user_blocked_successfully'))
+              : (message ?? context.tr('unblocked_successfully')),
+        );
+        break;
+      case CubitStates.failure:
+        AppToast.error(
+          context,
+          message ??
+              (isBlocked
+                  ? context.tr('failed_to_block')
+                  : context.tr('failed_to_unblock')),
+        );
         break;
       default:
         break;
@@ -318,7 +351,8 @@ class UserAdvisorBioInformation extends StatelessWidget {
           previous.profile?.isFollowing != current.profile?.isFollowing ||
           previous.profile?.room != current.profile?.room ||
           previous.isChatLoading != current.isChatLoading ||
-          previous.followActionState != current.followActionState,
+          previous.followActionState != current.followActionState ||
+          previous.blockActionState != current.blockActionState,
       listener: (context, state) {
         // ⭐ معالجة رسائل المتابعة (ليست هناك حاجة للتكرار إذا كانت في BlocListener بالأعلى)
         // لكن بما أنه BlocConsumer يمكننا تركها أو إزالتها.
@@ -328,7 +362,8 @@ class UserAdvisorBioInformation extends StatelessWidget {
           previous.profile?.isFollowing != current.profile?.isFollowing ||
           previous.profile?.room != current.profile?.room ||
           previous.isChatLoading != current.isChatLoading ||
-          previous.followActionState != current.followActionState,
+          previous.followActionState != current.followActionState ||
+          previous.blockActionState != current.blockActionState,
       builder: (context, state) {
         final isBlocked = state.profile?.room?.isBlocked ?? false;
         final isFollowing = state.profile?.isFollowing ?? false;
@@ -401,6 +436,60 @@ class UserAdvisorBioInformation extends StatelessWidget {
                   elevation: 0,
                 ),
               ),
+
+              // Book Session Button (only for users)
+              if (!isBlocked && isFollowing && isUser) ...[
+                Gap(13.w),
+                GestureDetector(
+                  onTap: isSomeActionLoading
+                      ? null
+                      : () {
+                          if (isGuest) {
+                            CustomshowDialogWithImage(
+                              context,
+                              title: context.tr('joinUs'),
+                              supTitle: context.tr("guest_login_first"),
+                              icon: Icons.lock_person_outlined,
+                              iconColor: AppColors.kprimaryColor,
+                              bottonText: context.tr("login"),
+                              showCancelButton: true,
+                              cancelText: context.tr('skip'),
+                              onPressed: () {
+                                CachNetwork.removeData(key: ktoken);
+                                context.pushNamedAndRemoveUntil(
+                                  AppRouter.kRegisrationView,
+                                  predicate: (_) => false,
+                                );
+                              },
+                              onCancel: () {},
+                            );
+                            return;
+                          }
+
+                          Navigator.pushNamed(
+                            context,
+                            AppRouter.advisorchatprofile,
+                            arguments: {'advisorid': profile.id},
+                          );
+                        },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 13.h,
+                      horizontal: 16.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary100,
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(color: AppColors.kprimaryColor),
+                    ),
+                    child: AppImage(
+                      AssetsData.icBookSession,
+                      width: 22.w,
+                      color: AppColors.kprimaryColor,
+                    ),
+                  ),
+                ),
+              ],
 
               if (!isBlocked && isFollowing) ...[
                 Gap(13.w),
