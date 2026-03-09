@@ -26,9 +26,7 @@ import 'package:tayseer/features/advisor/settings/view/language_selection_view.d
 import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
-import 'package:tayseer/features/advisor/settings/view/advisor_subscription_view.dart';
-import 'package:tayseer/features/advisor/settings/view_model/advisor_subscription_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view_model/packages_cubit.dart';
+
 import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cubit.dart';
 import 'package:tayseer/features/advisor/update_posts/view/update_post_view.dart';
 import 'package:tayseer/features/shared/auth/view/purpose_selection_view.dart';
