@@ -22,6 +22,7 @@ class PackageDetailContent extends StatelessWidget {
     return RepaintBoundary(
       child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 24.w),
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
             _buildTitle(context),

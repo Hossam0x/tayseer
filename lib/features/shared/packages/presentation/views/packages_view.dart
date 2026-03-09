@@ -49,7 +49,12 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
   void initState() {
     super.initState();
     // Always start with Basic package (index 0)
-    _pageController = PageController(initialPage: 0);
+    // Use viewportFraction: 1.0 and keepPage: true for better performance
+    _pageController = PageController(
+      initialPage: 0,
+      viewportFraction: 1.0,
+      keepPage: true,
+    );
   }
 
   @override
@@ -136,17 +141,22 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
   }
 
   Widget _buildPageView() {
-    return PageView(
+    return PageView.builder(
       controller: _pageController,
       onPageChanged: _onPageChanged,
       physics: const BouncingScrollPhysics(),
       reverse: false,
-      children: [
+      pageSnapping: true,
+      itemCount: 3,
+      itemBuilder: (context, index) {
         // Same order for all languages: Basic -> Pro -> Elite
-        _buildPage(PackageType.basic),
-        _buildPage(PackageType.pro),
-        _buildPage(PackageType.elite),
-      ],
+        final packageTypes = [
+          PackageType.basic,
+          PackageType.pro,
+          PackageType.elite,
+        ];
+        return _buildPage(packageTypes[index]);
+      },
     );
   }
 
@@ -224,11 +234,9 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
     final index = packages.indexOf(state.selectedPackage);
 
     if (_pageController.hasClients && _pageController.page?.round() != index) {
-      _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
+      // Use jumpToPage for instant transition without animation
+      // This prevents the eye strain from seeing intermediate pages
+      _pageController.jumpToPage(index);
     }
   }
 

@@ -92,8 +92,8 @@ class PackageTabSelector extends StatelessWidget {
     final centerX = sectionWidth * (visualIndex + 0.5);
 
     return AnimatedPositioned(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
       left: centerX - 36.w,
       top: 0,
       child: Column(

@@ -32,6 +32,8 @@ class _PackageBackgroundState extends State<PackageBackground> {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
+        placeholderBuilder: (context) =>
+            Container(color: const Color(0xFFFDE9ED)),
       ),
     );
 
@@ -42,6 +44,8 @@ class _PackageBackgroundState extends State<PackageBackground> {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
+        placeholderBuilder: (context) =>
+            Container(color: const Color(0xFFFFF8E5)),
       ),
     );
 
@@ -53,6 +57,14 @@ class _PackageBackgroundState extends State<PackageBackground> {
         width: double.infinity,
         height: double.infinity,
         cacheWidth: 1080.w.toInt(),
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded) return child;
+          return AnimatedOpacity(
+            opacity: frame == null ? 0 : 1,
+            duration: const Duration(milliseconds: 100),
+            child: child,
+          );
+        },
       ),
     );
   }
@@ -67,9 +79,13 @@ class _PackageBackgroundState extends State<PackageBackground> {
       selector: (state) => state.selectedPackage,
       builder: (context, packageType) {
         return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
+          duration: const Duration(milliseconds: 150),
+          switchInCurve: Curves.easeInOut,
+          switchOutCurve: Curves.easeInOut,
+          transitionBuilder: (child, animation) {
+            // Use FadeTransition only for smoother performance
+            return FadeTransition(opacity: animation, child: child);
+          },
           child: _getBackground(packageType),
         );
       },
