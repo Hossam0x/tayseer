@@ -61,12 +61,12 @@ class PackageTabSelector extends StatelessWidget {
     return Stack(
       children: [
         _buildTriangleAt(
-          isArabic ? sectionWidth * 0.52 : sectionWidth * 0.48,
+          isArabic ? sectionWidth * 0.48 : sectionWidth * 0.52,
           color,
         ),
         _buildTriangleAt(sectionWidth * 1.49, color),
         _buildTriangleAt(
-          isArabic ? sectionWidth * 2.48 : sectionWidth * 2.52,
+          isArabic ? sectionWidth * 2.52 : sectionWidth * 2.48,
           color,
         ),
       ],
@@ -86,6 +86,8 @@ class PackageTabSelector extends StatelessWidget {
 
   Widget _buildSelectedIndicator(double sectionWidth) {
     final config = _getPackageConfig(selectedPackage);
+    // Same visual order for all languages: Basic (2) -> Pro (1) -> Elite (0)
+    // In RTL, the visual position is reversed but the index stays the same
     final visualIndex = isArabic ? (2 - config.index) : config.index;
     final centerX = sectionWidth * (visualIndex + 0.5);
 
@@ -142,9 +144,10 @@ class PackageTabSelector extends StatelessWidget {
   Widget _buildClickableOverlays() {
     return Row(
       children: [
-        _buildClickOverlay(PackageType.elite),
-        _buildClickOverlay(PackageType.pro),
+        // Same order for all languages: Basic -> Pro -> Elite
         _buildClickOverlay(PackageType.basic),
+        _buildClickOverlay(PackageType.pro),
+        _buildClickOverlay(PackageType.elite),
       ],
     );
   }
@@ -166,9 +169,10 @@ class PackageTabSelector extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        _buildTabText('Elite', PackageType.elite, textColor),
-        _buildTabText('Pro', PackageType.pro, textColor),
+        // Same order for all languages: Basic -> Pro -> Elite
         _buildTabText('Basic', PackageType.basic, textColor),
+        _buildTabText('Pro', PackageType.pro, textColor),
+        _buildTabText('Elite', PackageType.elite, textColor),
       ],
     );
   }
@@ -188,12 +192,13 @@ class PackageTabSelector extends StatelessWidget {
   }
 
   _PackageConfig _getPackageConfig(PackageType packageType) {
+    // Index represents visual position: Basic (0) -> Pro (1) -> Elite (2)
     switch (packageType) {
-      case PackageType.elite:
+      case PackageType.basic:
         return _PackageConfig(
           index: 0,
-          colors: const [Color(0xFF4BB8F9), Color(0xFF6284FF)],
-          label: "مميزة",
+          colors: [AppColors.primary300, AppColors.primary500],
+          label: "أساسية",
           isVertical: true,
         );
       case PackageType.pro:
@@ -203,11 +208,11 @@ class PackageTabSelector extends StatelessWidget {
           label: "ذهبية",
           isVertical: false,
         );
-      case PackageType.basic:
+      case PackageType.elite:
         return _PackageConfig(
           index: 2,
-          colors: [AppColors.primary300, AppColors.primary500],
-          label: "أساسية",
+          colors: const [Color(0xFF4BB8F9), Color(0xFF6284FF)],
+          label: "مميزة",
           isVertical: true,
         );
     }

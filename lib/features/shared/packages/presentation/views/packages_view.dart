@@ -48,7 +48,8 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: isArabic ? 2 : 0);
+    // Always start with Basic package (index 0)
+    _pageController = PageController(initialPage: 0);
   }
 
   @override
@@ -139,18 +140,13 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
       controller: _pageController,
       onPageChanged: _onPageChanged,
       physics: const BouncingScrollPhysics(),
-      reverse: !isArabic,
-      children: isArabic
-          ? [
-              _buildPage(PackageType.elite),
-              _buildPage(PackageType.pro),
-              _buildPage(PackageType.basic),
-            ]
-          : [
-              _buildPage(PackageType.basic),
-              _buildPage(PackageType.pro),
-              _buildPage(PackageType.elite),
-            ],
+      reverse: false,
+      children: [
+        // Same order for all languages: Basic -> Pro -> Elite
+        _buildPage(PackageType.basic),
+        _buildPage(PackageType.pro),
+        _buildPage(PackageType.elite),
+      ],
     );
   }
 
@@ -214,9 +210,8 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
   }
 
   void _onPageChanged(int index) {
-    final packages = isArabic
-        ? [PackageType.elite, PackageType.pro, PackageType.basic]
-        : [PackageType.basic, PackageType.pro, PackageType.elite];
+    // Same order for all languages: Basic (0) -> Pro (1) -> Elite (2)
+    const packages = [PackageType.basic, PackageType.pro, PackageType.elite];
     context.read<PackageSelectionCubit>().selectPackage(packages[index]);
   }
 
@@ -224,9 +219,8 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
     BuildContext context,
     PackageSelectionState state,
   ) {
-    final packages = isArabic
-        ? [PackageType.elite, PackageType.pro, PackageType.basic]
-        : [PackageType.basic, PackageType.pro, PackageType.elite];
+    // Same order for all languages: Basic (0) -> Pro (1) -> Elite (2)
+    const packages = [PackageType.basic, PackageType.pro, PackageType.elite];
     final index = packages.indexOf(state.selectedPackage);
 
     if (_pageController.hasClients && _pageController.page?.round() != index) {
