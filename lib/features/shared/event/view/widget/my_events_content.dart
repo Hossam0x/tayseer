@@ -26,7 +26,7 @@ class MyEventsContent extends StatelessWidget {
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
-                      ).copyWith(bottom: 80),
+                      ).copyWith(bottom: 90.h),
                       itemCount: 5,
                       separatorBuilder: (c, i) =>
                           Gap(context.responsiveHeight(16)),
@@ -101,7 +101,7 @@ class MyEventsContent extends StatelessWidget {
 
             // Create Event Button
             Positioned(
-              bottom: context.responsiveHeight(30),
+              bottom: context.responsiveHeight(15),
               left: context.responsiveWidth(16),
               right: context.responsiveWidth(16),
               child: CustomBotton(
