@@ -292,7 +292,7 @@ abstract class AssetsData {
       "assets/icons/performanceReports.svg";
   static const String basicBackground = "assets/icons/basicBackground.svg";
   static const String proBackground = "assets/icons/proBackground.svg";
-  static const String eliteBackground = "assets/icons/eliteBackground.svg";
+  // static const String eliteBackground = "assets/icons/eliteBackground.svg";
   static const String eliteBackgroundPng = "assets/images/eliteBackground.png";
 
   static const String kingIcon = "assets/icons/kingIcon.svg";

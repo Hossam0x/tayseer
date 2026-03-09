@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../data/models/package_model.dart';
-import '../data/repositories/advisor_packages_repository.dart';
+import '../../../../advisor/settings/data/models/package_model.dart';
+import '../../../../advisor/settings/data/repositories/advisor_packages_repository.dart';
 
 enum SelectedPackage { basic, pro, elite }
 

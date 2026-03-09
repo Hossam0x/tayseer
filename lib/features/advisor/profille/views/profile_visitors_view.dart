@@ -143,7 +143,7 @@ class ProfileVisitorsView extends StatelessWidget {
                                               onPressed: () {
                                                 Navigator.pushNamed(
                                                   context,
-                                                  AppRouter.kPackagesTabView,
+                                                  AppRouter.kPackagesView,
                                                 );
                                               },
                                             ),

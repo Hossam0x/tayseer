@@ -146,6 +146,12 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         },
       ),
       SettingItemModel(
+        id: 'events',
+        title: 'events',
+        iconAsset: AssetsData.eventIcon,
+        routeName: AppRouter.kEventView,
+      ),
+      SettingItemModel(
         id: 'language',
         title: 'app_language',
         subtitle: getLanguageKey(savedLanguage),

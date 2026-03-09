@@ -23,13 +23,13 @@ import 'package:tayseer/features/advisor/settings/view/edit_personal_data_view.d
 import 'package:tayseer/features/advisor/settings/view/help_support_view.dart';
 import 'package:tayseer/features/advisor/settings/view/hide_story_form_view.dart';
 import 'package:tayseer/features/advisor/settings/view/language_selection_view.dart';
-import 'package:tayseer/features/advisor/settings/view/packages_tab_view.dart';
 import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
-import 'package:tayseer/features/advisor/settings/view/advisor_subscription_view.dart';
-import 'package:tayseer/features/advisor/settings/view_model/advisor_subscription_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view_model/packages_cubit.dart';
+import 'package:tayseer/features/shared/packages/presentation/views/advisor_subscription_view.dart';
+import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
+import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
+import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_reservation_people_view.dart';
@@ -57,6 +57,7 @@ import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
+import 'package:tayseer/features/shared/packages/presentation/views/packages_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/report_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/reports_view.dart';
@@ -202,7 +203,7 @@ abstract class AppRouter {
   static const kEventDetailView = '/EventDetailView';
   static const kUpdateEventView = '/UpdateEventView';
   static const kSessionDetailsView = '/SessionDetailsView';
-  static const kPackagesTabView = '/packages_tab_view';
+  static const kPackagesView = '/packages_view';
   static const kArchiveView = '/archive_view';
   static const kSessionPricingView = '/session_pricing_view';
   static const kAppointmentsView = '/appointments_view';
@@ -232,6 +233,7 @@ abstract class AppRouter {
   static const kEventReservationPeopleView = '/EventReservationPeopleView';
   static const kOrderManagementView = '/order_management_view';
   static const kAdvisorSubscriptionView = '/advisor_subscription_view';
+  static const kEventView = '/event-view';
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
@@ -298,9 +300,9 @@ abstract class AppRouter {
           routeSettings: settings,
         );
 
-      case AppRouter.kPackagesTabView:
+      case AppRouter.kPackagesView:
         return SlideLeftRoute(
-          page: const PackagesTabView(),
+          page: const PackagesView(),
           routeSettings: settings,
         );
 
@@ -964,6 +966,10 @@ abstract class AppRouter {
           page: const OrderManagementView(),
           routeSettings: settings,
         );
+
+      case AppRouter.kEventView:
+        return SlideLeftRoute(page: const EventView(), routeSettings: settings);
+
       /////  report screens ///////
       case kReportsView:
         final arg = settings.arguments as Map<String, dynamic>;
