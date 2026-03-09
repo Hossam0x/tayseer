@@ -22,8 +22,20 @@ class _PackagesViewState extends State<PackagesView> {
   }
 }
 
-class _PackagesViewContent extends StatelessWidget {
+class _PackagesViewContent extends StatefulWidget {
   const _PackagesViewContent();
+
+  @override
+  State<_PackagesViewContent> createState() => _PackagesViewContentState();
+}
+
+class _PackagesViewContentState extends State<_PackagesViewContent> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Precache images for smooth transitions
+    precacheImage(const AssetImage(AssetsData.eliteBackgroundPng), context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +62,8 @@ class _PackagesViewContent extends StatelessWidget {
               child: Column(
                 children: [
                   const Expanded(child: _PackageDetailSwitcher()),
-                  Gap(80.h),
                   const _TabSelectorSection(),
-                  Gap(120.h),
+                  Gap(110.h),
                   const _BottomActionsSection(),
                   Gap(20.h),
                 ],
@@ -61,53 +72,98 @@ class _PackagesViewContent extends StatelessWidget {
           ),
 
           // King Icon (Independent Rebuild)
-          const _KingIconOverlay(),
+          Positioned(
+            left: isArabic ? 65.w : null,
+            right: !isArabic ? 25.w : null,
+            top: 55.h,
+            child: const _KingIconOverlay(),
+          ),
         ],
       ),
     );
   }
 }
 
-class _BackgroundLayer extends StatelessWidget {
+class _BackgroundLayer extends StatefulWidget {
   const _BackgroundLayer();
+
+  @override
+  State<_BackgroundLayer> createState() => _BackgroundLayerState();
+}
+
+class _BackgroundLayerState extends State<_BackgroundLayer> {
+  // Cache the backgrounds to avoid rebuilding
+  Widget? _basicBg;
+  Widget? _proBg;
+  Widget? _eliteBg;
+
+  @override
+  void initState() {
+    super.initState();
+    // Precache backgrounds
+    _precacheBackgrounds();
+  }
+
+  void _precacheBackgrounds() {
+    // Precache basic background
+    _basicBg = RepaintBoundary(
+      child: SvgPicture.asset(
+        AssetsData.basicBackground,
+        key: const ValueKey('basic_bg'),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      ),
+    );
+
+    // Precache pro background
+    _proBg = RepaintBoundary(
+      child: SvgPicture.asset(
+        AssetsData.proBackground,
+        key: const ValueKey('pro_bg'),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      ),
+    );
+
+    // Precache elite background
+    _eliteBg = RepaintBoundary(
+      child: Image.asset(
+        AssetsData.eliteBackgroundPng,
+        key: const ValueKey('elite_bg'),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        cacheWidth: 1080, // Optimize memory
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocSelector<PackagesCubit, PackagesState, SelectedPackage>(
       selector: (state) => state.selectedPackage,
       builder: (context, package) {
-        return RepaintBoundary(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: _buildBackground(package),
-          ),
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: _getBackground(package),
         );
       },
     );
   }
 
-  Widget _buildBackground(SelectedPackage package) {
-    if (package == SelectedPackage.elite) {
-      return Image.asset(
-        AssetsData.eliteBackgroundPng,
-        key: const ValueKey('elite_bg'),
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-      );
+  Widget _getBackground(SelectedPackage package) {
+    switch (package) {
+      case SelectedPackage.basic:
+        return _basicBg!;
+      case SelectedPackage.pro:
+        return _proBg!;
+      case SelectedPackage.elite:
+        return _eliteBg!;
     }
-
-    final String bgAsset = package == SelectedPackage.basic
-        ? AssetsData.basicBackground
-        : AssetsData.proBackground;
-
-    return SvgPicture.asset(
-      bgAsset,
-      key: ValueKey(bgAsset),
-      fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
-    );
   }
 }
 
@@ -127,19 +183,20 @@ class _PackageDetailSwitcher extends StatelessWidget {
           state.packages,
         );
         return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 250),
           switchInCurve: Curves.easeOutCubic,
           switchOutCurve: Curves.easeInCubic,
-          transitionBuilder: (child, animation) {
-            return FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: animation.drive(
-                  Tween(begin: const Offset(0, 0.05), end: Offset.zero),
-                ),
-                child: child,
-              ),
+          layoutBuilder: (currentChild, previousChildren) {
+            return Stack(
+              alignment: Alignment.topCenter,
+              children: <Widget>[
+                ...previousChildren,
+                if (currentChild != null) currentChild,
+              ],
             );
+          },
+          transitionBuilder: (child, animation) {
+            return FadeTransition(opacity: animation, child: child);
           },
           child: RepaintBoundary(
             key: ValueKey(package.id),
@@ -252,18 +309,17 @@ class _KingIconOverlay extends StatelessWidget {
     return BlocSelector<PackagesCubit, PackagesState, SelectedPackage>(
       selector: (state) => state.selectedPackage,
       builder: (context, selectedPackage) {
-        if (selectedPackage != SelectedPackage.elite)
-          return const SizedBox.shrink();
-        return Positioned(
-          left: isArabic ? 65.w : null,
-          right: !isArabic ? 25.w : null,
-          top: 55.h,
-          child: RepaintBoundary(
-            child: Transform.flip(
-              flipX: isArabic ? false : true,
-              child: SvgPicture.asset(AssetsData.kingIcon, height: 80.h),
-            ),
-          ),
+        return AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: selectedPackage == SelectedPackage.elite ? 1.0 : 0.0,
+          child: selectedPackage == SelectedPackage.elite
+              ? RepaintBoundary(
+                  child: Transform.flip(
+                    flipX: isArabic ? false : true,
+                    child: SvgPicture.asset(AssetsData.kingIcon, height: 80.h),
+                  ),
+                )
+              : const SizedBox.shrink(),
         );
       },
     );
@@ -284,13 +340,15 @@ Widget _buildBottomActions(BuildContext context, SelectedPackage selected) {
     final price = gulf ? "200" : "40";
     buttonText = context
         .tr('get_all_benefits_for')
-        .replaceFirst('{}', '$price $currency');
+        .replaceFirst('{}', price)
+        .replaceFirst('{currency}', currency);
     gradientColors = [const Color(0xFFBD8F14), const Color(0xFFF5C003)];
   } else {
     final price = gulf ? "399" : "80";
     buttonText = context
         .tr('subscribe_vip_for')
-        .replaceFirst('{}', '$price $currency');
+        .replaceFirst('{}', price)
+        .replaceFirst('{currency}', currency);
     gradientColors = [const Color(0xFF4BB8F9), const Color(0xFF6284FF)];
   }
 
@@ -416,7 +474,8 @@ PackageModel _getPackageData(
       price: '$price $currency',
       buttonText: context
           .tr('get_all_benefits_for')
-          .replaceFirst('{}', '$price $currency'),
+          .replaceFirst('{}', price)
+          .replaceFirst('{currency}', currency),
       themeColor: const Color(0xFFCF9916),
       backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFFFF8E5)],
       features: [
@@ -457,7 +516,8 @@ PackageModel _getPackageData(
       price: '$price $currency',
       buttonText: context
           .tr('subscribe_vip_for')
-          .replaceFirst('{}', '$price $currency'),
+          .replaceFirst('{}', price)
+          .replaceFirst('{currency}', currency),
       themeColor: const Color(0xFF4BB8F9),
       backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFE5F1FF)],
       features: [

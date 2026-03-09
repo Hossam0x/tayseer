@@ -24,6 +24,7 @@ import 'package:tayseer/features/advisor/settings/view/help_support_view.dart';
 import 'package:tayseer/features/advisor/settings/view/hide_story_form_view.dart';
 import 'package:tayseer/features/advisor/settings/view/language_selection_view.dart';
 import 'package:tayseer/features/advisor/settings/view/packages_tab_view.dart';
+import 'package:tayseer/features/advisor/settings/view/packages_view.dart';
 import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
@@ -202,7 +203,7 @@ abstract class AppRouter {
   static const kEventDetailView = '/EventDetailView';
   static const kUpdateEventView = '/UpdateEventView';
   static const kSessionDetailsView = '/SessionDetailsView';
-  static const kPackagesTabView = '/packages_tab_view';
+  static const kPackagesView = '/packages_view';
   static const kArchiveView = '/archive_view';
   static const kSessionPricingView = '/session_pricing_view';
   static const kAppointmentsView = '/appointments_view';
@@ -298,9 +299,9 @@ abstract class AppRouter {
           routeSettings: settings,
         );
 
-      case AppRouter.kPackagesTabView:
+      case AppRouter.kPackagesView:
         return SlideLeftRoute(
-          page: const PackagesTabView(),
+          page: const PackagesView(),
           routeSettings: settings,
         );
 

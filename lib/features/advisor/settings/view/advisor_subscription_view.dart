@@ -226,7 +226,7 @@ class _SubscriptionDurationCard extends StatelessWidget {
                       final String monthsText = context.tr(
                         data.months == 1
                             ? 'month'
-                            : (data.months <= 10 ? 'months' : 'month'),
+                            : (data.months <= 10 ? 'months' : 'months'),
                       );
                       final String durationPart =
                           "${context.tr('for_duration')} ${data.months == 1 ? '' : '${data.months} '}$monthsText";

@@ -161,7 +161,7 @@ class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
               padding: EdgeInsets.symmetric(horizontal: 35.w),
               child: BoostButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, AppRouter.kPackagesTabView);
+                  Navigator.pushNamed(context, AppRouter.kPackagesView);
                 },
                 text: context.tr('boost_button'),
               ),
