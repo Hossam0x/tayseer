@@ -6,7 +6,6 @@ import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/consultation_filtter/consultation_standalone_page.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
 import 'package:tayseer/features/user/layout/view/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';
@@ -24,9 +23,6 @@ class UserLayOutViewBody extends StatefulWidget {
 }
 
 class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
-  final GlobalKey<InteractionBodyState> _interactionsKey =
-      GlobalKey<InteractionBodyState>();
-
   // ✅ إضافة Key للـ MarriageBody للتحكم في الـ Scroll
   final GlobalKey<MarriageBodyState> _marriageKey =
       GlobalKey<MarriageBodyState>();
@@ -73,11 +69,6 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                               else if (index == 1 && state.currentIndex == 1) {
                                 _marriageKey.currentState?.scrollToTop();
                                 cubit.setNavVisibility(true);
-                              }
-                              // ✅ Interactions tab
-                              else if (index == 3 && state.currentIndex == 3) {
-                                _interactionsKey.currentState
-                                    ?.handleTabReselect();
                               }
                               // ✅ Reels in index 3
                               else if (index == 3) {
@@ -185,21 +176,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
               );
             },
           ),
-          GuestLockWidget(
-            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-            description:
-                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-            onTap: () {
-              CachNetwork.clearGuestAndProfileCache();
-              if (getIt.isRegistered<HomeCubit>()) {
-                getIt.resetLazySingleton<HomeCubit>();
-              }
-              context.pushNamedAndRemoveUntil(
-                AppRouter.kRegisrationView,
-                predicate: (_) => false,
-              );
-            },
-          ),
+          const ReelsNavView(tabIndex: 3),
           GuestLockWidget(
             message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
             description:

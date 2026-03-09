@@ -23,7 +23,7 @@ class _UserNavBarState extends State<UserNavBar>
   @override
   void initState() {
     super.initState();
-      NavAnimationService.instance.resetKey();
+    NavAnimationService.instance.resetKey();
     _toggleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),
@@ -31,18 +31,24 @@ class _UserNavBarState extends State<UserNavBar>
 
     _scaleAnim = TweenSequence([
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 1.45)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 1.0,
+          end: 1.45,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 35,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.45, end: 0.75)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween(
+          begin: 1.45,
+          end: 0.75,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 30,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 0.75, end: 1.0)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween(
+          begin: 0.75,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 35,
       ),
     ]).animate(_toggleController);
@@ -56,13 +62,17 @@ class _UserNavBarState extends State<UserNavBar>
 
     _fadeAnim = TweenSequence([
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 40,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 60,
       ),
     ]).animate(_toggleController);
@@ -123,7 +133,8 @@ class _UserNavBarState extends State<UserNavBar>
                 // ⭐ index 1: يأخذ GlobalKey + toggle animation
                 if (originalIndex == 1) {
                   return _AnimatedNavItem(
-                    key: NavAnimationService.instance.navItem1Key, // ⭐ GlobalKey
+                    key:
+                        NavAnimationService.instance.navItem1Key, // ⭐ GlobalKey
                     icon: navItem.icon,
                     activeIcon: navItem.activeIcon,
                     label: context.tr(navItem.labelKey),
@@ -152,6 +163,11 @@ class _UserNavBarState extends State<UserNavBar>
                       widget.onTabReselect?.call(originalIndex);
                     } else {
                       cubit.changeIndex(originalIndex);
+                      if (originalIndex == 3) {
+                        cubit.setNavVisibility(false);
+                      } else {
+                        cubit.setNavVisibility(true);
+                      }
                     }
                   },
                 );
@@ -275,8 +291,9 @@ class _AnimatedNavItemState extends State<_AnimatedNavItem>
                       curve: Curves.easeOut,
                       style: widget.isActive
                           ? Styles.textStyle14SemiBold
-                          : Styles.textStyle12
-                              .copyWith(color: AppColors.kTextGrey),
+                          : Styles.textStyle12.copyWith(
+                              color: AppColors.kTextGrey,
+                            ),
                       child: widget.isActive
                           ? GradientText(
                               text: widget.label,
@@ -284,8 +301,9 @@ class _AnimatedNavItemState extends State<_AnimatedNavItem>
                             )
                           : Text(
                               widget.label,
-                              style: Styles.textStyle12
-                                  .copyWith(color: AppColors.kTextGrey),
+                              style: Styles.textStyle12.copyWith(
+                                color: AppColors.kTextGrey,
+                              ),
                             ),
                     ),
                   ],
@@ -334,12 +352,14 @@ class _NavItemState extends State<_NavItem>
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.08,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _fadeAnimation = Tween<double>(
+      begin: 0.5,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     if (widget.isActive) _controller.forward();
   }
 
@@ -379,8 +399,9 @@ class _NavItemState extends State<_NavItem>
                     AppImage(
                       widget.isActive ? widget.activeIcon : widget.icon,
                       width: context.responsiveWidth(widget.isActive ? 26 : 24),
-                      height:
-                          context.responsiveHeight(widget.isActive ? 26 : 24),
+                      height: context.responsiveHeight(
+                        widget.isActive ? 26 : 24,
+                      ),
                       fit: BoxFit.contain,
                     ),
                     Gap(context.responsiveHeight(6)),
@@ -389,8 +410,9 @@ class _NavItemState extends State<_NavItem>
                       curve: Curves.easeOut,
                       style: widget.isActive
                           ? Styles.textStyle14SemiBold
-                          : Styles.textStyle12
-                              .copyWith(color: AppColors.kTextGrey),
+                          : Styles.textStyle12.copyWith(
+                              color: AppColors.kTextGrey,
+                            ),
                       child: widget.isActive
                           ? GradientText(
                               text: widget.label,
@@ -398,8 +420,9 @@ class _NavItemState extends State<_NavItem>
                             )
                           : Text(
                               widget.label,
-                              style: Styles.textStyle12
-                                  .copyWith(color: AppColors.kTextGrey),
+                              style: Styles.textStyle12.copyWith(
+                                color: AppColors.kTextGrey,
+                              ),
                             ),
                     ),
                   ],
