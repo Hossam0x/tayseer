@@ -176,7 +176,7 @@ Future<void> setupGetIt() async {
   );
 
   // Reels cubit
-  getIt.registerFactoryParam<ReelsCubit, PostModel, void>(
+  getIt.registerFactoryParam<ReelsCubit, PostModel?, void>(
     (post, _) => ReelsCubit(getIt<HomeRepository>(), initialPost: post),
   );
   // Stories Feature

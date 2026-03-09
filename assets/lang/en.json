@@ -289,6 +289,8 @@
   "chat": "Chat",
   "sessions": "Sessions",
   "event": "Event",
+  "reels": "Reels",
+  "no_reels_available": "No reels available at the moment",
   "profile": "Profile",
   "mySpace": "My Space",
   "welcomeAdvisor": "Welcome Advisor",

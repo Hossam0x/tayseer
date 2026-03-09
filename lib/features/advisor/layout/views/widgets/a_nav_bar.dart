@@ -46,7 +46,18 @@ class ANavBar extends StatelessWidget {
                             activeIcon: leftItems[index].activeIcon,
                             label: context.tr(leftItems[index].labelKey),
                             isActive: state.currentIndex == index,
-                            onTap: () => cubit.changeIndex(index),
+                            onTap: () {
+                              if (index == 2) {
+                                cubit.changeIndex(index);
+                                cubit.setNavVisibility(false);
+                              } else {
+                                if (index == 0 && state.currentIndex == 0) {
+                                  cubit.scrollToTop();
+                                }
+                                cubit.changeIndex(index);
+                                cubit.setNavVisibility(true);
+                              }
+                            },
                           );
                         }),
                       ),
@@ -63,7 +74,18 @@ class ANavBar extends StatelessWidget {
                             activeIcon: rightItems[index].activeIcon,
                             label: context.tr(rightItems[index].labelKey),
                             isActive: state.currentIndex == realIndex,
-                            onTap: () => cubit.changeIndex(realIndex),
+                            onTap: () {
+                              if (realIndex == 2) {
+                                cubit.changeIndex(realIndex);
+                                cubit.setNavVisibility(false);
+                              } else {
+                                if (realIndex == 0 && state.currentIndex == 0) {
+                                  cubit.scrollToTop();
+                                }
+                                cubit.changeIndex(realIndex);
+                                cubit.setNavVisibility(true);
+                              }
+                            },
                           );
                         }),
                       ),

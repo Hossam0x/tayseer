@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/widgets/offline_banner.dart';
-import 'package:tayseer/features/shared/event/view/event_view.dart';
+import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
@@ -79,6 +79,10 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                                 _interactionsKey.currentState
                                     ?.handleTabReselect();
                               }
+                              // ✅ Reels in index 3
+                              else if (index == 3) {
+                                cubit.setNavVisibility(false);
+                              }
                               // ✅ Profile in index 4
                               else if (index == 4 && state.currentIndex == 4) {
                                 cubit.scrollToTop();
@@ -144,7 +148,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                 ),
 
           MySpaceView(),
-          EventView(),
+          const ReelsNavView(tabIndex: 3),
           const UserProfileView(),
         ];
 

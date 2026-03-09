@@ -15,12 +15,14 @@ class ReelsItem extends StatefulWidget {
   final PostModel post;
   final bool isCurrentPage;
   final VideoPlayerController? sharedController;
+  final VoidCallback? onClose;
 
   const ReelsItem({
     super.key,
     required this.post,
     this.isCurrentPage = true,
     this.sharedController,
+    this.onClose,
   });
 
   @override
@@ -190,6 +192,7 @@ class _ReelsItemState extends State<ReelsItem>
                 post: currentPost,
                 cachedController: _activeController,
                 likeButtonKey: _likeButtonKey,
+                onClose: widget.onClose,
                 onReactionChanged: (ReactionType? reaction) {
                   context.read<ReelsCubit>().reactToReel(
                     postId: widget.post.postId,

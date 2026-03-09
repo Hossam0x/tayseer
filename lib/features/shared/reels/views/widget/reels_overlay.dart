@@ -24,6 +24,7 @@ class ReelsOverlay extends StatelessWidget {
   final VoidCallback? onSaveTapped;
   final VideoPlayerController? cachedController;
   final GlobalKey? likeButtonKey;
+  final VoidCallback? onClose;
 
   const ReelsOverlay({
     super.key,
@@ -33,6 +34,7 @@ class ReelsOverlay extends StatelessWidget {
     required this.onSaveTapped,
     this.cachedController,
     this.likeButtonKey,
+    this.onClose,
   });
 
   @override
@@ -109,7 +111,13 @@ class ReelsOverlay extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 GestureDetector(
-                  onTap: () => context.pop(),
+                  onTap: () {
+                    if (onClose != null) {
+                      onClose!();
+                    } else {
+                      context.pop();
+                    }
+                  },
                   child: Icon(Icons.close, color: Colors.white, size: 28.sp),
                 ),
                 if (!isGuest)
