@@ -1,3 +1,5 @@
+import 'package:tayseer/features/filter/presentation/cubit/advisor_filter_state.dart';
+
 import '../../../../my_import.dart';
 import '../cubit/advisor_filter_cubit.dart';
 import '../widgets/price_range_slider.dart';
@@ -120,14 +122,22 @@ class ApplyFiltersButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomBotton(
-      title: context.tr("apply_filters"),
-      onPressed: () {
-        context.read<AdvisorFilterCubit>().applyFilters();
-        Navigator.pop(context);
+    return BlocBuilder<AdvisorFilterCubit, AdvisorFilterState>(
+      buildWhen: (prev, curr) =>
+          prev.isLoading != curr.isLoading ||
+          prev.isFilterComplete != curr.isFilterComplete,
+      builder: (context, state) {
+        return CustomBotton(
+          title: state.isLoading ? '...' : context.tr("apply_filters"),
+          onPressed: (state.isLoading || !state.isFilterComplete) ?  null
+              : () => context.read<AdvisorFilterCubit>().applyFilters(context),
+          // ✅ لو كل حاجة اتحددت → اللون الأساسي، غير كده → رمادي
+          backGroundcolor: state.isFilterComplete
+              ? null // null = AppColors.kprimaryColor الافتراضي
+              : const Color(0xff9E9E9E),
+          width: double.infinity,
+        );
       },
-      backGroundcolor: const Color(0xff9E9E9E),
-      width: double.infinity,
     );
   }
 }

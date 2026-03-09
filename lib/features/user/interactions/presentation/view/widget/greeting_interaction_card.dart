@@ -57,138 +57,141 @@ class GreetingProfileCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(24.r),
             border: Border.all(color: Colors.white.withOpacity(0.5)),
           ),
-          child: Row(
-            children: [
-              // Profile Image — بدون GestureDetector، الأب يتكفل
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16.r),
-                child: Stack(
-                  children: [
-                    shouldBlur
-                        ? ImageFiltered(
-                            imageFilter: ImageFilter.blur(
-                              sigmaX: 15,
-                              sigmaY: 15,
-                            ),
-                            child: AppImage(
+          child: Directionality(
+    textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+            child: Row(
+              children: [
+                // Profile Image — بدون GestureDetector، الأب يتكفل
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Stack(
+                    children: [
+                      shouldBlur
+                          ? ImageFiltered(
+                              imageFilter: ImageFilter.blur(
+                                sigmaX: 15,
+                                sigmaY: 15,
+                              ),
+                              child: AppImage(
+                                item.image,
+                                width: 130.w,
+                                height: 117.h,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : AppImage(
                               item.image,
                               width: 130.w,
                               height: 117.h,
                               fit: BoxFit.cover,
                             ),
-                          )
-                        : AppImage(
-                            item.image,
-                            width: 130.w,
-                            height: 117.h,
-                            fit: BoxFit.cover,
-                          ),
-                    if (shouldBlur)
-                      Positioned.fill(
-                        child: Container(color: Colors.black.withOpacity(0.2)),
-                      ),
-                  ],
+                      if (shouldBlur)
+                        Positioned.fill(
+                          child: Container(color: Colors.black.withOpacity(0.2)),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(width: 12.w),
-
-              // User Info — بدون GestureDetector، الأب يتكفل
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  '${item.name},',
-                                  style: Styles.textStyle16SemiBold,
-                                  overflow: TextOverflow.ellipsis,
+                SizedBox(width: 12.w),
+            
+                // User Info — بدون GestureDetector، الأب يتكفل
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    '${item.name},',
+                                    style: Styles.textStyle16SemiBold,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                ' ${item.age} ${context.tr('age')}',
-                                style: Styles.textStyle16.copyWith(
-                                  fontWeight: FontWeight.w400,
+                                Text(
+                                  ' ${item.age} ${context.tr('age')}',
+                                  style: Styles.textStyle16.copyWith(
+                                    fontWeight: FontWeight.w400,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: 5.w),
-                              if (item.isverified)
-                                Icon(
-                                  Icons.verified,
-                                  color: Colors.blue,
-                                  size: 16.sp,
-                                ),
-                            ],
+                                SizedBox(width: 5.w),
+                                if (item.isverified)
+                                  Icon(
+                                    Icons.verified,
+                                    color: Colors.blue,
+                                    size: 16.sp,
+                                  ),
+                              ],
+                            ),
                           ),
+                        ],
+                      ),
+            
+                      SizedBox(height: 8.h),
+            
+                      Row(
+                        children: [
+                          _buildBadge(text: item.day),
+                          SizedBox(width: 4.w),
+                          if (item.country.isNotEmpty)
+                            _buildBadge(
+                              text: item.country,
+                              icon: AssetsData.EgyFlagIcon,
+                            ),
+                        ],
+                      ),
+            
+                      SizedBox(height: 4.h),
+            
+                      if (item.job.isNotEmpty)
+                        _buildBadge(text: item.job, icon: AssetsData.workIcon),
+                    ],
+                  ),
+                ),
+            
+                // ✅ زر التحية — behavior: opaque يمنع الـ tap من الوصول للأب
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    context.read<InteractionsCubit>().sendCompliment(
+                      userId: item.userId,
+                    );
+                  },
+                  child: Container(
+                    width: 55.w,
+                    height: 55.h,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [AppColors.primary200, AppColors.primary400],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF48174E).withOpacity(0.2),
+                          offset: const Offset(0, 2.87),
+                          blurRadius: 37.85,
+                          spreadRadius: 0,
                         ),
                       ],
                     ),
-
-                    SizedBox(height: 8.h),
-
-                    Row(
-                      children: [
-                        _buildBadge(text: item.day),
-                        SizedBox(width: 4.w),
-                        if (item.country.isNotEmpty)
-                          _buildBadge(
-                            text: item.country,
-                            icon: AssetsData.EgyFlagIcon,
-                          ),
-                      ],
-                    ),
-
-                    SizedBox(height: 4.h),
-
-                    if (item.job.isNotEmpty)
-                      _buildBadge(text: item.job, icon: AssetsData.workIcon),
-                  ],
-                ),
-              ),
-
-              // ✅ زر التحية — behavior: opaque يمنع الـ tap من الوصول للأب
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  context.read<InteractionsCubit>().sendCompliment(
-                    userId: item.userId,
-                  );
-                },
-                child: Container(
-                  width: 55.w,
-                  height: 55.h,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [AppColors.primary200, AppColors.primary400],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF48174E).withOpacity(0.2),
-                        offset: const Offset(0, 2.87),
-                        blurRadius: 37.85,
-                        spreadRadius: 0,
-                      ),
-                    ],
+                    child: Icon(Icons.star, color: Colors.white, size: 30.r),
                   ),
-                  child: Icon(Icons.star, color: Colors.white, size: 30.r),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-void _showSuccessAnimation(context) {
+void _showSuccessAnimation(BuildContext context) {
   showDialog(
     context: context,
     barrierDismissible: false,

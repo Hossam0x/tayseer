@@ -4,7 +4,7 @@ import 'interaction_usermodel .dart';
 class ExplorationResponseModel {
   final bool success;
   final String message;
-  final bool answerCompleted; // ✅ NEW
+  final bool answerCompleted; 
   final Map<String, CategoryData> categories;
 
   ExplorationResponseModel({
