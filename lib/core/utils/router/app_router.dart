@@ -29,6 +29,7 @@ import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/views/advisor_subscription_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
+import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_reservation_people_view.dart';
@@ -232,6 +233,7 @@ abstract class AppRouter {
   static const kEventReservationPeopleView = '/EventReservationPeopleView';
   static const kOrderManagementView = '/order_management_view';
   static const kAdvisorSubscriptionView = '/advisor_subscription_view';
+  static const kEventView = '/event-view';
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
@@ -964,6 +966,10 @@ abstract class AppRouter {
           page: const OrderManagementView(),
           routeSettings: settings,
         );
+
+      case AppRouter.kEventView:
+        return SlideLeftRoute(page: const EventView(), routeSettings: settings);
+
       /////  report screens ///////
       case kReportsView:
         final arg = settings.arguments as Map<String, dynamic>;
