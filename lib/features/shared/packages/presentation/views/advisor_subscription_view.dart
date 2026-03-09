@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:tayseer/features/advisor/settings/view_model/advisor_subscription_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view_model/packages_cubit.dart';
+import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
+import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/core/functions/country_helper.dart';
 import 'package:tayseer/my_import.dart';
 
