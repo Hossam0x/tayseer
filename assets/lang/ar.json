@@ -1594,5 +1594,8 @@
   "account_delete_failed": "فشل حذف الحساب",
   "greeting_send_error": "حدث خطأ أثناء إرسال التحية",
   "unblock_error": "حدث خطأ في إلغاء الحظر",
-  "block_user_error": "حدث خطأ في حظر المستخدم"
+  "block_user_error": "حدث خطأ في حظر المستخدم",
+  "data_and_activities": "بيانات وأنشطة 🔥",
+  "personal_data": "بيانات شخصية",
+  "religion_and_habits": "الدين والعادات"
 }

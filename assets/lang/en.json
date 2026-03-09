@@ -1602,5 +1602,8 @@
   "account_delete_failed": "Failed to delete account",
   "greeting_send_error": "Error sending greeting",
   "unblock_error": "Error unblocking user",
-  "block_user_error": "Error blocking user"
+  "block_user_error": "Error blocking user",
+  "data_and_activities": "Data & Activities 🔥",
+  "personal_data": "Personal Data",
+  "religion_and_habits": "Religion & Habits"
 }
