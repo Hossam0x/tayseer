@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tayseer/core/enum/user_type.dart';
-import 'package:tayseer/features/user/questions/view/widget/choose_gender_body.dart';
+import 'package:tayseer/features/shared/auth/view/widget/choose_gender_body.dart';
 
 class ChooseGenderView extends StatelessWidget {
   const ChooseGenderView({super.key, this.currentUserType = UserTypeEnum.user});

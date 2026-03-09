@@ -1538,5 +1538,12 @@
   "failed_to_start_recording": "Failed to start recording",
   "chat_unarchived_success": "Chat unarchived successfully",
   "post_unarchived_success": "Post unarchived successfully",
-  "select_category": "Select Category"
+  "select_category": "Select Category",
+  "post_updated_successfully": "Post updated successfully",
+  "post_update_failed": "Failed to update post",
+  "edit_post": "Edit Post",
+  "purpose_title": "What is your purpose for using the app?",
+  "purpose_subtitle": "Choose the option that suits you",
+  "purpose_consultation": "Consultations",
+  "purpose_marriage": "Marriage"
 }

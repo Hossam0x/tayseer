@@ -57,7 +57,6 @@ class PostsRepositoryImpl implements PostsRepository {
       final response = await apiService.post(
         endPoint: '/posts/create',
         isFromData: true,
-        isAuth: true,
         data: data,
       );
 
@@ -113,6 +112,60 @@ class PostsRepositoryImpl implements PostsRepository {
     } catch (e) {
       debugPrint('Error fetching categories: $e');
       return Left(ServerFailure('حدث خطأ أثناء الاتصال بالخادم'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updatePosts({
+    String? idPost,
+    String? content,
+    required String categoryId,
+    required String postType,
+    List<File>? imageFiles,
+    List<String>? imagesToDelete,
+    List<String>? videosToDelete,
+    XFile? videoFile,
+  }) async {
+    try {
+      List<MultipartFile> uploadedImages = [];
+
+      if (imageFiles != null && imageFiles.isNotEmpty) {
+        for (final file in imageFiles) {
+          uploadedImages.add(await _fileToMultipart(file));
+        }
+      }
+
+      final data = <String, dynamic>{
+        'content': content ?? '',
+        'categoryId': categoryId,
+        'postType': postType,
+        if (uploadedImages.isNotEmpty) 'images': uploadedImages,
+        if (videoFile != null) 'videos': await uploadVideoToApi(videoFile),
+        if (imagesToDelete != null && imagesToDelete.isNotEmpty)
+          'imagesToDelete[]': imagesToDelete,
+        if (videosToDelete != null && videosToDelete.isNotEmpty)
+          'videosToDelete[]': videosToDelete,
+      };
+
+      final response = await apiService.patch(
+        endPoint: '/posts/update/$idPost',
+        isFromData: true,
+        data: data,
+      );
+
+      final success = response['success'] ?? false;
+
+      if (success) {
+        return right(null);
+      } else {
+        return left(ServerFailure(response['message'] ?? 'فشل تعديل المنشور'));
+      }
+    } on DioException catch (error) {
+      final message =
+          error.response?.data['message'] ?? 'خطأ في الاتصال بالخادم';
+      return left(ServerFailure(message));
+    } catch (error) {
+      return left(ServerFailure('حدث خطأ غير متوقع: $error'));
     }
   }
 }

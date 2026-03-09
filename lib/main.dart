@@ -16,7 +16,6 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-
   await dotenv.load(fileName: '.env');
   await Hive.initFlutter();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -38,5 +37,3 @@ Future<void> _initializeVideoSystem() async {
     debugPrint('⚠️ Error initializing video system: $e');
   }
 }
-
-// test

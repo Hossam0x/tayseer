@@ -118,10 +118,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
               text: context.tr(AppStrings.edit),
               icon: Icons.drive_file_rename_outline_rounded,
               onTap: () {
-                context.pushNamed(
-                  AppRouter.kAddPostView,
-                  arguments: {"isEdit": true, "post": post},
-                );
+                context.pushNamed(AppRouter.kUpdatePostView, arguments: post);
               },
             ),
             OptionItem(

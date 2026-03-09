@@ -3,6 +3,7 @@ import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
+import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cubit.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/shared/event_detail/repo/event_detail_repository.dart';
@@ -427,4 +428,7 @@ Future<void> setupGetIt() async {
     () => ReportsRepoImpl(getIt<ApiService>()),
   );
   getIt.registerFactory<ReportsCubit>(() => ReportsCubit(getIt<ReportsRepo>()));
+
+  /// Update Post Cubit
+  getIt.registerFactory(() => UpdatePostCubit());
 }

@@ -12,5 +12,18 @@ abstract class PostsRepository {
     List<File>? imageFiles,
     XFile? videoFile,
   });
+  Future<Either<Failure, void>> updatePosts({
+    String? idPost,
+    String? content,
+    required String categoryId,
+    required String postType,
+    List<File>? imageFiles,
+    List<String>? imagesToDelete,
+    List<String>? videosToDelete,
+
+    XFile? videoFile,
+
+  });
+
   Future<Either<Failure, CategoryResponse>> getALLCategory(String? page);
 }

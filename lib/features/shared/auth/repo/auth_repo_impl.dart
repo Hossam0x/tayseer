@@ -559,4 +559,38 @@ class AuthRepoImpl implements AuthRepo {
       return left(ServerFailure('حدث خطأ غير متوقع: $error'));
     }
   }
+
+  @override
+  Future<Either<Failure, RegisterResponse>> setGender({
+    required String gender,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/user/set-gender',
+        data: {'gender': gender},
+        isAuth: true,
+      );
+
+      final success = response['success'] ?? false;
+      if (success) {
+        final registerResponse = RegisterResponse.fromJson(response);
+        await CachNetwork.setData(
+          key: kuserData,
+          value: jsonEncode(registerResponse.data?.user?.toJson()),
+        );
+        kCurrentUserData = registerResponse.data?.user;
+        return right(registerResponse);
+      } else {
+        final message = response['message'] ?? 'فشل إضافة اللغة';
+        return left(ServerFailure(message));
+      }
+    } on DioException catch (error) {
+      final message =
+          error.response?.data['message'] ?? 'خطأ في الاتصال بالخادم';
+      return left(ServerFailure(message));
+    } catch (error) {
+      debugPrint('setGender error: $error');
+      return left(ServerFailure('حدث خطأ غير متوقع: $error'));
+    }
+  }
 }

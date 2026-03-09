@@ -66,8 +66,11 @@ class _SplashScreenState extends State<SplashScreen>
           } else {
             context.pushReplacementNamed(AppRouter.kRegisrationView);
           }
-        } else {
-          context.pushReplacementNamed(AppRouter.kUserLayoutView);
+        } else if (selectedUserType == UserTypeEnum.user) {
+          kCurrentUserData?.isNew == false
+              ? context.pushReplacementNamed(AppRouter.kUserLayoutView)
+              : context.pushReplacementNamed(AppRouter.kRegisrationView);
+          ;
         }
       } else {
         context.pushReplacementNamed(AppRouter.kRegisrationView);

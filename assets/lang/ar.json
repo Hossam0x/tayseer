@@ -1518,5 +1518,12 @@
   "failed_to_start_recording": "فشل في بدء التسجيل",
   "chat_unarchived_success": "تم إلغاء أرشفة المحادثة بنجاح",
   "post_unarchived_success": "تم إلغاء أرشفة المنشور بنجاح",
-  "select_category": "اخترالمجموعه"
+  "select_category": "اخترالمجموعه",
+  "post_updated_successfully": "تم تحديث المنشور بنجاح",
+  "post_update_failed": "فشل تحديث المنشور",
+  "edit_post": "تعديل المنشور",
+  "purpose_title": "ما هو هدفك من استخدام التطبيق؟",
+  "purpose_subtitle": "اختر الغرض الذي يناسبك",
+  "purpose_consultation": "الاستشارات",
+  "purpose_marriage": "الزواج"
 }

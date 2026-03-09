@@ -24,6 +24,7 @@ class LoginData {
   final String? token;
   final String? id;
   final bool? verify;
+  final bool? isNew; // ✅ أضف هذا
   final String? userType;
   final String? name;
   final UserModel? user;
@@ -32,6 +33,7 @@ class LoginData {
     this.token,
     this.id,
     this.verify,
+    this.isNew, // ✅
     this.userType,
     this.name,
     this.user,
@@ -42,6 +44,7 @@ class LoginData {
       token: json['token'],
       id: json['id'],
       verify: json['verify'],
+      isNew: json['isNew'], // ✅
       userType: json['userType'],
       name: json['name'],
       user: json['user'] != null ? UserModel.fromJson(json['user']) : null,
@@ -53,6 +56,7 @@ class LoginData {
       'token': token,
       'id': id,
       'verify': verify,
+      'isNew': isNew, // ✅
       'userType': userType,
       'name': name,
       'user': user?.toJson(),
@@ -77,6 +81,7 @@ class UserModel {
   final List<dynamic>? nationalIdImages;
   final String? createdAt;
   final String? updatedAt;
+  final bool? isNew; // ✅ أضف هذا
 
   UserModel({
     this.id,
@@ -95,6 +100,7 @@ class UserModel {
     this.nationalIdImages,
     this.createdAt,
     this.updatedAt,
+    this.isNew, // ✅
   });
 
   /// Helper method to build full image URL from filename
@@ -141,6 +147,7 @@ class UserModel {
       nationalIdImages: json['nationalIdImages'] ?? [],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
+      isNew: json['isNew'], // ✅
     );
   }
 
@@ -161,6 +168,7 @@ class UserModel {
       'nationalIdImages': nationalIdImages,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'isNew': isNew, // ✅
     };
   }
 
@@ -181,6 +189,7 @@ class UserModel {
     List<dynamic>? nationalIdImages,
     String? createdAt,
     String? updatedAt,
+    bool? isNew, // ✅
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -199,6 +208,7 @@ class UserModel {
       nationalIdImages: nationalIdImages ?? this.nationalIdImages,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isNew: isNew ?? this.isNew, // ✅
     );
   }
 }

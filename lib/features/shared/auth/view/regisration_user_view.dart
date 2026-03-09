@@ -111,7 +111,11 @@ class _RegisrationViewState extends State<RegisrationView> {
                       ),
                     );
                     if (selectedUserType == UserTypeEnum.user) {
-                      context.pushReplacementNamed(AppRouter.kUserLayoutView);
+                      state.isNew == false
+                          ? context.pushReplacementNamed(
+                              AppRouter.kUserLayoutView,
+                            )
+                          : context.pushNamed(AppRouter.kChooseGenderView);
                     }
                     context.read<AuthCubit>().resetAuthStates();
                   }
@@ -131,7 +135,11 @@ class _RegisrationViewState extends State<RegisrationView> {
                     );
 
                     if (selectedUserType == UserTypeEnum.user) {
-                      context.pushReplacementNamed(AppRouter.kUserLayoutView);
+                      state.isNew == false
+                          ? context.pushReplacementNamed(
+                              AppRouter.kUserLayoutView,
+                            )
+                          : context.pushNamed(AppRouter.kChooseGenderView);
                     }
                     context.read<AuthCubit>().resetAuthStates();
                   }

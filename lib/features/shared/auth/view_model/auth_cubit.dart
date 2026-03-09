@@ -109,6 +109,7 @@ class AuthCubit extends Cubit<AuthState> {
           state.copyWith(
             registerState: CubitStates.success,
             verify: data.data?.verify,
+            isNew: data.data?.isNew,
             fromScreen: fromRegistrationScreen == true
                 ? 'register'
                 : 'registration',
@@ -403,13 +404,14 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-        (_) {
+        (result) {
           emit(
             state.copyWith(
               authGoogleState: CubitStates.success,
               signInWithGoogleState: CubitStates.success,
               fromScreen: 'registration',
               currentAuthUserType: userType,
+              isNew: result.data?.user?.isNew ?? true,
             ),
           );
         },
@@ -522,13 +524,14 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-        (_) {
+        (result) {
           emit(
             state.copyWith(
               authAppleState: CubitStates.success,
               signInWithAppleState: CubitStates.success,
               fromScreen: 'registration',
               currentAuthUserType: userType,
+              isNew: result.data?.user?.isNew ?? true,
             ),
           );
         },
@@ -574,7 +577,12 @@ class AuthCubit extends Cubit<AuthState> {
           emit(state.copyWith(verifyOtpState: CubitStates.initial));
         },
         (verifyResponse) {
-          emit(state.copyWith(verifyOtpState: CubitStates.success));
+          emit(
+            state.copyWith(
+              verifyOtpState: CubitStates.success,
+              isNew: verifyResponse.data?.user?.isNew ?? true,
+            ),
+          );
           emit(state.copyWith(verifyOtpState: CubitStates.initial));
         },
       );
@@ -1022,6 +1030,28 @@ class AuthCubit extends Cubit<AuthState> {
       );
       emit(state.copyWith(isAiState: CubitStates.initial));
     }
+  }
+
+  /// Seet Gender
+
+  Future<void> setGender({required String gender}) async {
+    emit(state.copyWith(setGenderState: CubitStates.loading));
+
+    final response = await _repo.setGender(gender: gender);
+
+    response.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            setGenderState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
+      },
+      (_) {
+        emit(state.copyWith(setGenderState: CubitStates.success));
+      },
+    );
   }
 
   ///// clear//////
