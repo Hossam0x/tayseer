@@ -71,9 +71,15 @@ class PackagesTabSelector extends StatelessWidget {
   Widget _buildStaticTriangles(double sectionWidth, Color color) {
     return Stack(
       children: [
-        _buildTriangleAt(sectionWidth * 0.52, color),
+        _buildTriangleAt(
+          isArabic ? sectionWidth * 0.52 : sectionWidth * 0.48,
+          color,
+        ),
         _buildTriangleAt(sectionWidth * 1.49, color),
-        _buildTriangleAt(sectionWidth * 2.48, color),
+        _buildTriangleAt(
+          isArabic ? sectionWidth * 2.48 : sectionWidth * 2.52,
+          color,
+        ),
       ],
     );
   }

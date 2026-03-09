@@ -1608,5 +1608,7 @@
   "every": "every",
   "discount_percent": "{}% Discount",
   "get_all_benefits_for": "Get all benefits for {} {currency}",
-  "subscribe_vip_for": "Subscribe to VIP for {} {currency}"
+  "subscribe_vip_for": "Subscribe to VIP for {} {currency}",
+  "20_messages_monthly": "20 Messages Monthly",
+  "20_sessions_monthly": "20 Sessions Monthly"
 }

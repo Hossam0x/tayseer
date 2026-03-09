@@ -21,6 +21,10 @@ class PackageFeatureGrid extends StatelessWidget {
         ? Colors.white
         : const Color(0xFF1A1A1A);
 
+    final itemCount = package.features.length;
+    final rows = (itemCount / 3).ceil();
+    final lastRowItemCount = itemCount % 3 == 0 ? 3 : itemCount % 3;
+
     return RepaintBoundary(
       child: Container(
         decoration: BoxDecoration(
@@ -34,25 +38,39 @@ class PackageFeatureGrid extends StatelessWidget {
             ),
           ],
         ),
-        child: GridView.builder(
-          shrinkWrap: true,
-          padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 20.w,
-            mainAxisSpacing: 0.h,
-            childAspectRatio: 0.95,
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 20.w),
+          child: Column(
+            children: List.generate(rows, (rowIndex) {
+              final startIndex = rowIndex * 3;
+              final endIndex = (startIndex + 3).clamp(0, itemCount);
+              final rowItems = package.features.sublist(startIndex, endIndex);
+              final isLastRow = rowIndex == rows - 1;
+              final shouldCenter = isLastRow && lastRowItemCount < 3;
+
+              return Padding(
+                padding: EdgeInsets.only(bottom: rowIndex < rows - 1 ? 20.h : 0),
+                child: Row(
+                  mainAxisAlignment: shouldCenter
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
+                  children: rowItems.asMap().entries.map((entry) {
+                    // final itemIndex = entry.key;
+                    final feature = entry.value;
+                    return Container(
+                      width: (MediaQuery.of(context).size.width - 35.w) / 3.5,
+                      padding: EdgeInsets.symmetric(horizontal: 10.w),
+                      child: _FeatureItem(
+                        feature: feature,
+                        iconColor: iconColor,
+                        textColor: textColor,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              );
+            }),
           ),
-          itemCount: package.features.length,
-          itemBuilder: (context, index) {
-            final feature = package.features[index];
-            return _FeatureItem(
-              feature: feature,
-              iconColor: iconColor,
-              textColor: textColor,
-            );
-          },
         ),
       ),
     );
@@ -79,9 +97,9 @@ class _FeatureItem extends StatelessWidget {
             ? SvgPicture.asset(
                 feature.iconPath,
                 colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                height: 32.h,
+                height: 28.h,
               )
-            : Image.asset(feature.iconPath, height: 32.h),
+            : Image.asset(feature.iconPath, height: 28.h),
         Gap(12.h),
         SizedBox(
           width: 75.w,

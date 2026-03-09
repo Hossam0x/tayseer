@@ -1600,5 +1600,7 @@
   "every": "كل",
   "discount_percent": "خصم {}%",
   "get_all_benefits_for": "احصل علي جميع المزايا مقابل {} {currency}",
-  "subscribe_vip_for": "اشترك في VIP مقابل {} {currency}"
+  "subscribe_vip_for": "اشترك في VIP مقابل {} {currency}",
+  "20_messages_monthly": "20 محادثة شهرياً",
+  "20_sessions_monthly": "20 جلسة شهرياً"
 }

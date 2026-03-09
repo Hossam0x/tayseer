@@ -30,6 +30,14 @@ class _PackagesViewContent extends StatefulWidget {
 }
 
 class _PackagesViewContentState extends State<_PackagesViewContent> {
+  late PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: isArabic ? 2 : 0);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -38,47 +46,134 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Transform.flip(
-            flipX: isArabic ? false : true,
-            child: SvgPicture.asset(AssetsData.backArrow),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Stack(
-        children: [
-          // Background Layer (Independent Rebuild)
-          const _BackgroundLayer(),
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
-          Positioned.fill(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  const Expanded(child: _PackageDetailSwitcher()),
-                  const _TabSelectorSection(),
-                  Gap(110.h),
-                  const _BottomActionsSection(),
-                  Gap(20.h),
-                ],
+  void _onPageChanged(int index) {
+    final cubit = context.read<PackagesCubit>();
+    // Reverse order for Arabic: Elite (0) -> Pro (1) -> Basic (2)
+    // Normal order for English: Basic (0) -> Pro (1) -> Elite (2)
+    final packages = isArabic
+        ? [SelectedPackage.elite, SelectedPackage.pro, SelectedPackage.basic]
+        : [SelectedPackage.basic, SelectedPackage.pro, SelectedPackage.elite];
+    cubit.selectPackage(packages[index]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<PackagesCubit, PackagesState>(
+      listenWhen: (previous, current) =>
+          previous.selectedPackage != current.selectedPackage,
+      listener: (context, state) {
+        // Sync page controller with cubit state when package is selected from tabs
+        final packages = isArabic
+            ? [
+                SelectedPackage.elite,
+                SelectedPackage.pro,
+                SelectedPackage.basic,
+              ]
+            : [
+                SelectedPackage.basic,
+                SelectedPackage.pro,
+                SelectedPackage.elite,
+              ];
+        final index = packages.indexOf(state.selectedPackage);
+        if (_pageController.hasClients &&
+            _pageController.page?.round() != index) {
+          _pageController.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: BlocSelector<PackagesCubit, PackagesState, SelectedPackage>(
+            selector: (state) => state.selectedPackage,
+            builder: (context, selectedPackage) {
+              final isElite = selectedPackage == SelectedPackage.elite;
+              return IconButton(
+                icon: Transform.flip(
+                  flipX: isArabic ? false : true,
+                  child: SvgPicture.asset(
+                    AssetsData.backArrow,
+                    colorFilter: ColorFilter.mode(
+                      isElite ? Colors.white : Colors.black,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(context),
+              );
+            },
+          ),
+        ),
+        body: Stack(
+          children: [
+            // Background Layer (Independent Rebuild)
+            const _BackgroundLayer(),
+
+            Positioned.fill(
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: PageView(
+                        controller: _pageController,
+                        onPageChanged: _onPageChanged,
+                        physics: const BouncingScrollPhysics(),
+                        reverse: isArabic ? false : true,
+                        children: isArabic
+                            ? const [
+                                // Arabic order: Elite -> Pro -> Basic
+                                _PackageDetailSwitcher(
+                                  package: SelectedPackage.elite,
+                                ),
+                                _PackageDetailSwitcher(
+                                  package: SelectedPackage.pro,
+                                ),
+                                _PackageDetailSwitcher(
+                                  package: SelectedPackage.basic,
+                                ),
+                              ]
+                            : const [
+                                // English order: Basic -> Pro -> Elite
+                                _PackageDetailSwitcher(
+                                  package: SelectedPackage.basic,
+                                ),
+                                _PackageDetailSwitcher(
+                                  package: SelectedPackage.pro,
+                                ),
+                                _PackageDetailSwitcher(
+                                  package: SelectedPackage.elite,
+                                ),
+                              ],
+                      ),
+                    ),
+                    const _TabSelectorSection(),
+                    Gap(110.h),
+                    const _BottomActionsSection(),
+                    Gap(20.h),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // King Icon (Independent Rebuild)
-          Positioned(
-            left: isArabic ? 65.w : null,
-            right: !isArabic ? 25.w : null,
-            top: 55.h,
-            child: const _KingIconOverlay(),
-          ),
-        ],
+            // King Icon (Independent Rebuild)
+            Positioned(
+              left: isArabic ? 65.w : null,
+              right: !isArabic ? 25.w : null,
+              top: 55.h,
+              child: const _KingIconOverlay(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -168,7 +263,9 @@ class _BackgroundLayerState extends State<_BackgroundLayer> {
 }
 
 class _PackageDetailSwitcher extends StatelessWidget {
-  const _PackageDetailSwitcher();
+  final SelectedPackage package;
+
+  const _PackageDetailSwitcher({required this.package});
 
   @override
   Widget build(BuildContext context) {
@@ -177,34 +274,9 @@ class _PackageDetailSwitcher extends StatelessWidget {
           prev.selectedPackage != curr.selectedPackage ||
           prev.packages != curr.packages,
       builder: (context, state) {
-        final package = _getPackageData(
-          context,
-          state.selectedPackage,
-          state.packages,
-        );
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          layoutBuilder: (currentChild, previousChildren) {
-            return Stack(
-              alignment: Alignment.topCenter,
-              children: <Widget>[
-                ...previousChildren,
-                if (currentChild != null) currentChild,
-              ],
-            );
-          },
-          transitionBuilder: (child, animation) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          child: RepaintBoundary(
-            key: ValueKey(package.id),
-            child: _PackageDetailContent(
-              package: package,
-              selected: state.selectedPackage,
-            ),
-          ),
+        final packageData = _getPackageData(context, package, state.packages);
+        return RepaintBoundary(
+          child: _PackageDetailContent(package: packageData, selected: package),
         );
       },
     );
@@ -301,23 +373,88 @@ class _BottomActionsSection extends StatelessWidget {
   }
 }
 
-class _KingIconOverlay extends StatelessWidget {
+class _KingIconOverlay extends StatefulWidget {
   const _KingIconOverlay();
+
+  @override
+  State<_KingIconOverlay> createState() => _KingIconOverlayState();
+}
+
+class _KingIconOverlayState extends State<_KingIconOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _rotateAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    // Slide from top animation
+    _slideAnimation = Tween<double>(begin: -100.0, end: 0.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+    );
+
+    // Rotate animation (from tilted to normal position)
+    _rotateAnimation =
+        Tween<double>(
+          begin: -0.3, // Start rotated ~17 degrees
+          end: 0.0, // End at normal position
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocSelector<PackagesCubit, PackagesState, SelectedPackage>(
       selector: (state) => state.selectedPackage,
       builder: (context, selectedPackage) {
+        final isElite = selectedPackage == SelectedPackage.elite;
+
+        // Trigger animation when Elite is selected
+        if (isElite) {
+          _animationController.forward(from: 0.0);
+        } else {
+          _animationController.reverse();
+        }
+
         return AnimatedOpacity(
           duration: const Duration(milliseconds: 200),
-          opacity: selectedPackage == SelectedPackage.elite ? 1.0 : 0.0,
-          child: selectedPackage == SelectedPackage.elite
-              ? RepaintBoundary(
-                  child: Transform.flip(
-                    flipX: isArabic ? false : true,
-                    child: SvgPicture.asset(AssetsData.kingIcon, height: 80.h),
-                  ),
+          opacity: isElite ? 1.0 : 0.0,
+          child: isElite
+              ? AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(0, _slideAnimation.value),
+                      child: Transform.rotate(
+                        angle: _rotateAnimation.value,
+                        child: RepaintBoundary(
+                          child: Transform.flip(
+                            flipX: isArabic ? false : true,
+                            child: SvgPicture.asset(
+                              AssetsData.kingIcon,
+                              height: 80.h,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 )
               : const SizedBox.shrink(),
         );
@@ -480,7 +617,7 @@ PackageModel _getPackageData(
       backgroundGradient: [const Color(0xFFFFFFFF), const Color(0xFFFFF8E5)],
       features: [
         PackageFeatureModel(
-          title: context.tr('unlimited_messages'),
+          title: context.tr('20_messages_monthly'),
           iconPath: AssetsData.threeMessages,
         ),
         PackageFeatureModel(
@@ -496,11 +633,7 @@ PackageModel _getPackageData(
           iconPath: AssetsData.oneBoost,
         ),
         PackageFeatureModel(
-          title: context.tr('initial_documentation'),
-          iconPath: AssetsData.verifiedBegin,
-        ),
-        PackageFeatureModel(
-          title: context.tr('unlimited_sessions'),
+          title: context.tr('20_sessions_monthly'),
           iconPath: AssetsData.graySessionIcon,
         ),
       ],
@@ -538,7 +671,7 @@ PackageModel _getPackageData(
           iconPath: AssetsData.premiumSupport,
         ),
         PackageFeatureModel(
-          title: context.tr('توثيق رسمى كامل'),
+          title: context.tr('full_official_documentation'),
           iconPath: AssetsData.verifiedBegin,
         ),
         PackageFeatureModel(
