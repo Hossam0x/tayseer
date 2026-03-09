@@ -1,4 +1,5 @@
 import 'package:preload_page_view/preload_page_view.dart';
+import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
@@ -128,9 +129,12 @@ class _ReelsNavContentState extends State<_ReelsNavContent> {
             final isActive = layoutState.currentIndex == widget.tabIndex;
             if (isActive != _isTabActive) {
               setState(() => _isTabActive = isActive);
-              if (isActive && !_hasFetched) {
-                _hasFetched = true;
-                context.read<ReelsCubit>().fetchReels();
+              if (isActive) {
+                GlobalMuteManager.instance.setMute(false);
+                if (!_hasFetched) {
+                  _hasFetched = true;
+                  context.read<ReelsCubit>().fetchReels();
+                }
               }
             }
           },
