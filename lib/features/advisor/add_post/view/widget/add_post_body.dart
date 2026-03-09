@@ -265,7 +265,6 @@ class AddPostBody extends StatelessWidget {
                   child: AppImage(AssetsData.kopenGalIcon),
                 ),
               ),
-              const SizedBox(width: 8),
 
               // ════════════════════════════════════════
               // 🎥 Video Button
@@ -305,6 +304,18 @@ class AddPostBody extends StatelessWidget {
                           },
                         ),
                       ),
+              ),
+              Spacer(),
+              IconButton(
+                padding: EdgeInsets.zero,
+                icon: Icon(
+                  Icons.event_outlined,
+                  color: HexColor('4d4d4d'),
+                  size: 28,
+                ),
+                onPressed: () {
+                  context.pushNamed(AppRouter.kCreatEventView);
+                },
               ),
             ],
           ),
