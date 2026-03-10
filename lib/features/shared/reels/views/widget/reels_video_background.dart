@@ -399,6 +399,9 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   void _disposeController() {
     if (_controller == null) return;
     _savePosition();
+    try {
+      _controller!.pause();
+    } catch (_) {}
     _detachListener();
     if (widget.sharedController == null) {
       _controller!.dispose();
