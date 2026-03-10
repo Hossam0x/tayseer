@@ -10,6 +10,7 @@ class SearchAdvisor extends Equatable {
   final int? followersCount;
   final bool isFollowing;
   final bool isVerified;
+  final bool isMe;
 
   const SearchAdvisor({
     required this.id,
@@ -20,6 +21,7 @@ class SearchAdvisor extends Equatable {
     this.followersCount,
     required this.isFollowing,
     this.isVerified = false,
+    required this.isMe,
   });
 
   factory SearchAdvisor.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class SearchAdvisor extends Equatable {
       followersCount: json['followersCount'],
       isFollowing: json['isFollowing'] ?? false,
       isVerified: json['isVerified'] ?? false,
+      isMe: json['isMe'],
     );
   }
 
@@ -44,6 +47,7 @@ class SearchAdvisor extends Equatable {
     int? followersCount,
     bool? isFollowing,
     bool? isVerified,
+    bool? isMe,
   }) {
     return SearchAdvisor(
       id: id ?? this.id,
@@ -54,6 +58,7 @@ class SearchAdvisor extends Equatable {
       followersCount: followersCount ?? this.followersCount,
       isFollowing: isFollowing ?? this.isFollowing,
       isVerified: isVerified ?? this.isVerified,
+      isMe: isMe ?? this.isMe,
     );
   }
 
@@ -67,5 +72,6 @@ class SearchAdvisor extends Equatable {
     followersCount,
     isFollowing,
     isVerified,
+    isMe,
   ];
 }

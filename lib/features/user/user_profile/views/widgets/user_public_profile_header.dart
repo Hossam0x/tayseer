@@ -79,7 +79,22 @@ class UserPublicProfileHeader extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Gap(40.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: AppColors.secondary600,
+                  size: 20.sp,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          Gap(20.h),
           Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
           Gap(10.h),
           Padding(
@@ -123,10 +138,21 @@ class UserPublicProfileHeader extends StatelessWidget {
     );
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Row(
         children: [
-          Gap(20.w),
+          InkWell(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: EdgeInsets.all(12.w),
+              constraints: const BoxConstraints(),
+              child: Icon(
+                Icons.arrow_back_ios,
+                color: AppColors.secondary600,
+                size: 20.sp,
+              ),
+            ),
+          ),
           // الصورة الشخصية
           SizedBox(
             width: 90.w,

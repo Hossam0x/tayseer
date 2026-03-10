@@ -61,8 +61,19 @@ class VisitorItem extends StatelessWidget {
                           color: Colors.white,
                           child: const Icon(Icons.person, color: Colors.grey),
                         ),
-                        placeholder: (context, url) => const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                        placeholder: (context, url) => Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: Container(
+                            color: Colors.white,
+                            child: const Center(
+                              child: Icon(
+                                Icons.person,
+                                size: 28,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
                         ),
                       )
                     : ImageFiltered(

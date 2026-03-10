@@ -82,11 +82,22 @@ class UserAdvisorProfileHeader extends StatelessWidget {
     );
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Gap(1.w),
+          InkWell(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              child: Icon(
+                Icons.arrow_back_ios,
+                color: AppColors.secondary600,
+                size: 20.sp,
+              ),
+            ),
+          ),
           // Profile picture with Hero animation
           Stack(
             children: [
@@ -168,7 +179,16 @@ class UserAdvisorProfileHeader extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SizedBox(height: 40.w),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: AppColors.secondary600,
+                  size: 20.sp,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
               _buildMoreButton(context),
             ],
           ),
