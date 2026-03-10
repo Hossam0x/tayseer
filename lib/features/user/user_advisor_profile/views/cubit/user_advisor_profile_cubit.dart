@@ -378,49 +378,65 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     // ⭐ إلغاء أي timer سابق
     _chatTimeoutTimer?.cancel();
 
-    // ⭐ إذا كان هناك room بالفعل
+    // ⭐ 1. التحقق إذا كان هناك room ID قادم من الـ Backend بالفعل
+    // إذا كان موجوداً، ننتقل مباشرة دون الحاجة للسوكيت
     if (state.profile?.hasRoom == true &&
         state.profile!.chatRoomId != null &&
         state.profile!.chatRoomId!.isNotEmpty) {
-      // ⭐ تحديث حالة التحميل والتنقل
+      log('🔗 Room ID found in backend: ${state.profile!.chatRoomId}');
       emit(state.copyWith(isChatLoading: true, shouldNavigateToChat: true));
       return;
     }
 
-    // ⭐ إذا لم يكن هناك room، ننشئ واحد
-    emit(
-      state.copyWith(
-        isChatLoading: true,
-        chatActionState: CubitStates.loading,
-        chatErrorMessage: null,
-      ),
-    );
+    // ⭐ 2. التأكد من اتصال السوكيت
+    bool connected = socketHelper.isConnected;
+    if (!connected) {
+      log('📡 Socket not connected, attempting to connect...');
+      emit(state.copyWith(isChatLoading: true, chatActionState: CubitStates.loading));
+      connected = await socketHelper.connect();
+      
+      if (!connected) {
+        log('❌ Failed to connect to socket');
+        emit(state.copyWith(
+          isChatLoading: false, 
+          chatActionState: CubitStates.failure,
+          chatErrorMessage: 'فشل الاتصال بخدمة المحادثة، يرجى المحاولة لاحقاً',
+        ));
+        return;
+      }
+      log('✅ Socket connected successfully');
+    }
 
-    // ⭐ تنظيف أي listeners سابقين
+    // ⭐ 3. البدء في عملية إنشاء الـ Room عبر السوكيت
+    emit(state.copyWith(isChatLoading: true, chatActionState: CubitStates.loading, chatErrorMessage: null));
+
+    // تنظيف وتهيئة الـ listeners (نستخدم listen بدلاً من legacy لتفادي التكرار)
     socketHelper.off('room_created');
     socketHelper.off('fail');
 
-    // ⭐ الاستماع لإنشاء الروم بنجاح
     socketHelper.listen('room_created', (data) {
-      _handleRoomCreated(data);
+      if (!isClosed) _handleRoomCreated(data);
     });
 
-    // ⭐ الاستماع لفشل إنشاء الروم
     socketHelper.listen('fail', (data) {
-      _handleRoomCreationFailed(data);
+      if (!isClosed) _handleRoomCreationFailed(data);
     });
 
-    // ⭐ إرسال طلب إنشاء room
-    socketHelper.send('create_room', {'receiverId': advisorId}, (ack) {
-      log("send room create for user: $advisorId");
-    });
+    // إرسال طلب إنشاء room
+    log("🚀 Sending create_room event for: $advisorId");
+    socketHelper.send('create_room', {'receiverId': advisorId}, (ack) {});
 
-    // ⭐ إضافة timeout في حالة عدم الرد
-    _chatTimeoutTimer = Timer(const Duration(seconds: 10), () {
+    // إضافة timeout
+    _chatTimeoutTimer = Timer(const Duration(seconds: 15), () {
       if (!isClosed && state.isChatLoading) {
-        emit(state.copyWith(isChatLoading: false));
-        // ⭐ يمكن إضافة toast خطأ هنا
-        log("Chat room creation timeout");
+        log("⏱️ Chat room creation timeout reached");
+        if (state.chatActionState == CubitStates.loading) {
+          emit(state.copyWith(
+            isChatLoading: false,
+            chatActionState: CubitStates.failure,
+            chatErrorMessage: 'انتهت مهلة إنشاء المحادثة، يرجى المحاولة مرة أخرى',
+          ));
+        }
       }
     });
   }

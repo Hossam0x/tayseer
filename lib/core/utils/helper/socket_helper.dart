@@ -11,7 +11,7 @@ class tayseerSocketHelper {
 
   final Map<String, Map<String, Function(dynamic)>> _listeners = {};
 
-  bool get isConnected => _isConnected;
+  bool get isConnected => _isConnected && _socket != null && _socket!.connected;
   Function()? onDisconnected;
   Function(String message)? onError;
 
@@ -22,6 +22,7 @@ class tayseerSocketHelper {
   Future<bool> connect() async {
     if (_socket != null && _socket!.connected) {
       log('🔁 Already connected');
+      _isConnected = true; // Sync internal flag
       return true;
     }
 
@@ -101,7 +102,7 @@ class tayseerSocketHelper {
     _socket!.connect();
 
     try {
-      return await _connectionCompleter!.future.timeout(
+      final bool connected = await _connectionCompleter!.future.timeout(
         const Duration(seconds: 10),
         onTimeout: () {
           log('⏱️ Connection timeout');
@@ -109,6 +110,8 @@ class tayseerSocketHelper {
           return false;
         },
       );
+      if (connected) _isConnected = true;
+      return connected;
     } catch (e) {
       log('❌ Error during connection: $e');
       return false;
