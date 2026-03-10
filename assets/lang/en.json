@@ -1540,6 +1540,7 @@
   "permissions_required_message": "We need access to your camera, microphone, and photos to share your stories. Please grant the required permissions.",
   "grant_permissions": "Grant Permissions",
   "open_settings": "Open Settings",
+  "are_you_sure_permanent_delete_message": "This action cannot be undone. All related data will be permanently removed.",
   "story_unarchived_success": "Story unarchived successfully",
   "tap_to_record": "Tap to record",
   "initializing_recorder": "Initializing recorder...",
