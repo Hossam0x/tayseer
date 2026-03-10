@@ -957,6 +957,7 @@ abstract class AppRouter {
           builder: (_) => MarriageView(
             personId: args?['personId'],
             fromInteractions: args?['fromInteractions'] ?? false, // ✅
+            initialIsFavorite: args?['isFavorite'] ?? false, // ✅
           ),
         );
       case AppRouter.kOrderManagementView:

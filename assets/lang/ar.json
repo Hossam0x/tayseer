@@ -1589,5 +1589,7 @@
   "greeting_send_error": "حدث خطأ أثناء إرسال التحية",
   "unexpected_error": "حدث خطأ غير متوقع",
   "unblock_error": "حدث خطأ في إلغاء الحظر",
-  "block_user_error": "حدث خطأ في حظر المستخدم"
+  "block_user_error": "حدث خطأ في حظر المستخدم",
+  "likes": "الإعجابات",
+"people_liked_you": "أشخاص أعجبوا بك"
 }

@@ -89,4 +89,51 @@ class MarriageRepositoryImpl implements MarriageRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> toggleFavorite({
+    required String userId,
+    required bool isAdd,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: '/user/user-interaction',
+        query: isAdd ? null : {'action': 'remove'}, // ✅ query منفصل
+        data: {'personInteractedWith': userId, 'interactionType': 'favorite'},
+      );
+
+      if (response['success'] == true) {
+        return Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل تعديل المفضلة'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+  @override
+Future<Either<Failure, List<String>>> getFavoriteIds() async {
+  try {
+    final response = await _apiService.get(
+      endPoint: '/user/user-interaction',
+      query: {'interactionType': 'favorite'},
+    );
+    if (response['success'] == true) {
+      final List data = response['data'] ?? [];
+      final ids = data
+          .map((item) => item['personInteractedWith']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toList();
+      return Right(ids);
+    } else {
+      return Left(ServerFailure(response['message'] ?? ''));
+    }
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure(e.toString()));
+  }
+}
 }

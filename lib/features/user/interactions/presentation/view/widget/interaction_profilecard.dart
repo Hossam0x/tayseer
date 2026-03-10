@@ -47,11 +47,15 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
   }
 
   void _navigateToProfile() {
-    context.pushNamed(
-      AppRouter.kMarriageView,
-      arguments: {'personId': widget.item.userId, 'fromInteractions': true},
-    );
-  }
+  context.pushNamed(
+    AppRouter.kMarriageView,
+    arguments: {
+      'personId': widget.item.userId,
+      'fromInteractions': true,
+      'isFavorite': widget.item.isFavorite, // ✅
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {

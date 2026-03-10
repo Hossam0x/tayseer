@@ -1597,5 +1597,7 @@
   "greeting_send_error": "Error sending greeting",
   "Medals": "Medals",
   "unblock_error": "Error unblocking user",
-  "block_user_error": "Error blocking user"
+  "block_user_error": "Error blocking user",
+  "likes": "Likes",
+"people_liked_you": "People who liked you"
 }

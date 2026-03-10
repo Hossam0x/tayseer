@@ -21,7 +21,8 @@ class MarriageState extends Equatable {
   final int currentPage;
   final int totalPages;
   final bool isLoadingMore;
-  final Map<String, dynamic> activeFilters; // ✅
+  final Map<String, dynamic> activeFilters;
+  final Set<String> favoritedIds; // ✅ جديد
 
   const MarriageState({
     this.marriageProfileState = CubitStates.initial,
@@ -42,7 +43,8 @@ class MarriageState extends Equatable {
     this.currentPage = 1,
     this.totalPages = 1,
     this.isLoadingMore = false,
-    this.activeFilters = const {}, // ✅
+    this.activeFilters = const {},
+    this.favoritedIds = const {}, // ✅ جديد
   });
 
   MarriageState copyWith({
@@ -64,7 +66,8 @@ class MarriageState extends Equatable {
     int? currentPage,
     int? totalPages,
     bool? isLoadingMore,
-    Map<String, dynamic>? activeFilters, // ✅
+    Map<String, dynamic>? activeFilters,
+    Set<String>? favoritedIds, // ✅ جديد
   }) {
     return MarriageState(
       marriageProfileState: marriageProfileState ?? this.marriageProfileState,
@@ -86,7 +89,8 @@ class MarriageState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      activeFilters: activeFilters ?? this.activeFilters, // ✅
+      activeFilters: activeFilters ?? this.activeFilters,
+      favoritedIds: favoritedIds ?? this.favoritedIds, // ✅ جديد
     );
   }
 
@@ -110,6 +114,7 @@ class MarriageState extends Equatable {
     currentPage,
     totalPages,
     isLoadingMore,
-    activeFilters, // ✅
+    activeFilters,
+    favoritedIds, // ✅ جديد
   ];
 }

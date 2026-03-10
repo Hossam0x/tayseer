@@ -18,10 +18,7 @@ class GreetingProfileCard extends StatelessWidget {
   void _navigateToProfile(BuildContext context) {
     context.pushNamed(
       AppRouter.kMarriageView,
-      arguments: {
-        'personId': item.userId,
-        'fromInteractions': true,
-      },
+      arguments: {'personId': item.userId, 'fromInteractions': true},
     );
   }
 
@@ -58,7 +55,7 @@ class GreetingProfileCard extends StatelessWidget {
             border: Border.all(color: Colors.white.withOpacity(0.5)),
           ),
           child: Directionality(
-    textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+            textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
             child: Row(
               children: [
                 // Profile Image — بدون GestureDetector، الأب يتكفل
@@ -87,13 +84,15 @@ class GreetingProfileCard extends StatelessWidget {
                             ),
                       if (shouldBlur)
                         Positioned.fill(
-                          child: Container(color: Colors.black.withOpacity(0.2)),
+                          child: Container(
+                            color: Colors.black.withOpacity(0.2),
+                          ),
                         ),
                     ],
                   ),
                 ),
                 SizedBox(width: 12.w),
-            
+
                 // User Info — بدون GestureDetector، الأب يتكفل
                 Expanded(
                   child: Column(
@@ -130,29 +129,35 @@ class GreetingProfileCard extends StatelessWidget {
                           ),
                         ],
                       ),
-            
+
                       SizedBox(height: 8.h),
-            
+
                       Row(
                         children: [
-                          _buildBadge(text: item.day),
+                          Flexible(
+                            // ✅
+                            child: _buildBadge(text: item.day),
+                          ),
                           SizedBox(width: 4.w),
                           if (item.country.isNotEmpty)
-                            _buildBadge(
-                              text: item.country,
-                              icon: AssetsData.EgyFlagIcon,
+                            Flexible(
+                              // ✅
+                              child: _buildBadge(
+                                text: item.country,
+                                icon: AssetsData.EgyFlagIcon,
+                              ),
                             ),
                         ],
                       ),
-            
+
                       SizedBox(height: 4.h),
-            
+
                       if (item.job.isNotEmpty)
                         _buildBadge(text: item.job, icon: AssetsData.workIcon),
                     ],
                   ),
                 ),
-            
+
                 // ✅ زر التحية — behavior: opaque يمنع الـ tap من الوصول للأب
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -191,27 +196,32 @@ class GreetingProfileCard extends StatelessWidget {
     );
   }
 
-void _showSuccessAnimation(BuildContext context) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.transparent, // ✅ transparent لأن rootNavigator هيغطي كل حاجة
-    useRootNavigator: true, // ✅ هذا هو الحل
-    builder: (_) {
-      return Center(
-        child: Opacity(
-          opacity: 0.9,
-          child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
-        ),
-      );
-    },
-  );
-  Future.delayed(const Duration(seconds: 4), () {
-    if (Navigator.of(context, rootNavigator: true).canPop()) {
-      Navigator.of(context, rootNavigator: true).pop(); // ✅ نفس الـ rootNavigator
-    }
-  });
-}
+  void _showSuccessAnimation(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor:
+          Colors.transparent, // ✅ transparent لأن rootNavigator هيغطي كل حاجة
+      useRootNavigator: true, // ✅ هذا هو الحل
+      builder: (_) {
+        return Center(
+          child: Opacity(
+            opacity: 0.9,
+            child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
+          ),
+        );
+      },
+    );
+    Future.delayed(const Duration(seconds: 4), () {
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pop(); // ✅ نفس الـ rootNavigator
+      }
+    });
+  }
+
   Widget _buildBadge({required String text, String? icon}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
@@ -227,10 +237,15 @@ void _showSuccessAnimation(BuildContext context) {
             AppImage(icon, width: 14.w),
             SizedBox(width: 4.w),
           ],
-          Text(
-            text,
-            style: Styles.textStyle14SemiBold.copyWith(
-              fontWeight: FontWeight.w400,
+          Flexible(
+            // ✅ أضف Flexible
+            child: Text(
+              text,
+              style: Styles.textStyle12SemiBold.copyWith(
+                fontWeight: FontWeight.w400,
+              ),
+              overflow: TextOverflow.ellipsis, // ✅ أضف ellipsis
+              maxLines: 1,
             ),
           ),
         ],

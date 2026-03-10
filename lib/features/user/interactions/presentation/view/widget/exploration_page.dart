@@ -166,31 +166,43 @@ class ExplorationState extends State<Exploration> {
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              // ✅ 1. من ضمن اختياراتك
-              if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ??
-                  false) ...[
+              if (state.explorationData["الإعجابات"]?.isNotEmpty ?? false) ...[
                 _buildSection(
-                  title: context.tr("likes_from_your_choices"),
-                  subtitle: context.tr("suggested_based_on_interests"),
-                  data: state.explorationData["من ضمن اختياراتك"]!,
+                  title: context.tr("likes"),
+                  subtitle: context.tr("people_liked_you"),
+                  data: state.explorationData["الإعجابات"]!,
                   isSubscribed: state.isSubscribed,
                   limit: 5,
+                  forceShowLikedMe: true, // ✅ هيخلي كل كارد يظهر "أعجب بك"
                 ),
                 SizedBox(height: 24.h),
               ],
 
-              // ✅ 2. من خارج اختياراتك
-              if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ??
-                  false) ...[
-                _buildSection(
-                  title: context.tr("likes_outside_choices"),
-                  subtitle: context.tr("outside_preferences"),
-                  data: state.explorationData["من خارج اختياراتك"]!,
-                  isSubscribed: state.isSubscribed,
-                  limit: 5,
-                ),
-                SizedBox(height: 24.h),
-              ],
+              // // ✅ 1. من ضمن اختياراتك
+              // if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ??
+              //     false) ...[
+              //   _buildSection(
+              //     title: context.tr("likes_from_your_choices"),
+              //     subtitle: context.tr("suggested_based_on_interests"),
+              //     data: state.explorationData["من ضمن اختياراتك"]!,
+              //     isSubscribed: state.isSubscribed,
+              //     limit: 5,
+              //   ),
+              //   SizedBox(height: 24.h),
+              // ],
+
+              // // ✅ 2. من خارج اختياراتك
+              // if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ??
+              //     false) ...[
+              //   _buildSection(
+              //     title: context.tr("likes_outside_choices"),
+              //     subtitle: context.tr("outside_preferences"),
+              //     data: state.explorationData["من خارج اختياراتك"]!,
+              //     isSubscribed: state.isSubscribed,
+              //     limit: 5,
+              //   ),
+              //   SizedBox(height: 24.h),
+              // ],
 
               // ✅ 3. يرغبون في التفاعل معك
               if (state.explorationData["يرغبون في التفاعل معك"]?.isNotEmpty ??
@@ -262,7 +274,7 @@ class ExplorationState extends State<Exploration> {
                       ),
                       child: Text(
                         context.tr("show_more"),
-                        style: Styles.textStyle18SemiBold.copyWith(
+                        style: Styles.textStyle16SemiBold.copyWith(
                           color: AppColors.secondary800,
                         ),
                       ),
@@ -377,13 +389,38 @@ class ExplorationState extends State<Exploration> {
     required bool isSubscribed,
     int limit = 5,
     bool showMoreButton = true,
+    bool forceShowLikedMe = false,
   }) {
+    // ✅ apply على الـ limited cards المعروضة في السكشن
     List<InteractionUserModel> limitedData = data.take(limit).toList();
+    if (forceShowLikedMe) {
+      limitedData = limitedData
+          .map(
+            (user) => user.copyWith(
+              likedMe: true,
+              likedHim: false, // ✅ أضف
+              sentCompliment: false, // ✅ أضف
+            ),
+          )
+          .toList();
+    }
+
+    final List<InteractionUserModel> navigationData = forceShowLikedMe
+        ? data
+              .map(
+                (user) => user.copyWith(
+                  likedMe: true,
+                  likedHim: false, // ✅ أضف
+                  sentCompliment: false, // ✅ أضف
+                ),
+              )
+              .toList()
+        : data;
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
     final cardWidth = isTablet ? 220.w : 190.w;
-    final cardHeight = isTablet ? 260.0 : 230.0;
+    final cardHeight = isTablet ? 260.0 : 245.0; 
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,7 +443,7 @@ class ExplorationState extends State<Exploration> {
                     builder: (context) => CategoryDetailPage(
                       title: title,
                       subtitle: subtitle,
-                      data: data,
+                      data: navigationData, // ✅ بدل data
                       isSubscribed: isSubscribed,
                       isRecentlyJoinedCategory: false,
                     ),
@@ -443,7 +480,7 @@ class ExplorationState extends State<Exploration> {
         SizedBox(
           height: cardHeight,
           child: Directionality(
-    textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+            textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: limitedData.length,

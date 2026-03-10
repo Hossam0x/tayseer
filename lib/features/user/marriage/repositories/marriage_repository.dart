@@ -15,4 +15,9 @@ abstract class MarriageRepository {
     required String personId,
     String? text,
   });
+  Future<Either<Failure, void>> toggleFavorite({
+  required String userId,
+  required bool isAdd,
+});
+Future<Either<Failure, List<String>>> getFavoriteIds();
 }
