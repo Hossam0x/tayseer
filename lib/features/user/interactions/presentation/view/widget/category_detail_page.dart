@@ -31,7 +31,7 @@ class CategoryDetailPage extends StatelessWidget {
   }
 
   double _getChildAspectRatio(int crossAxisCount) {
-  return crossAxisCount == 3 ? 0.72 : 0.75;
+  return crossAxisCount == 3 ? 0.68 : 0.70; // reduced from 0.72 / 0.75
 }
 
 double _getRecentlyJoinedAspectRatio(int crossAxisCount) {

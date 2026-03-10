@@ -207,173 +207,170 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   // ✅ IMAGES SECTION
   // ════════════════════════════════════════════════════════════════
   Widget _buildImagesSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    final serverImages = profile.userMedia?.images ?? [];
-    final serverSingleImage = profile.userMedia?.singleImage;
-    final pendingSingle = widget.state.pendingSingleImage;
-    final pendingImgs = widget.state.pendingImages;
-    final deletedSingleUrl = widget.state.deletedSingleImageUrl;
+  BuildContext context,
+  MarriageProfileCubit cubit,
+  MarriageUserProfileModel profile,
+) {
+  final serverImages = profile.userMedia?.images ?? [];
+  final serverSingleImage = profile.userMedia?.singleImage;
+  final pendingSingle = widget.state.pendingSingleImage;
+  final pendingImgs = widget.state.pendingImages;
+  final deletedSingleUrl = widget.state.deletedSingleImageUrl;
 
-    final displaySingleUrl = deletedSingleUrl != null
-        ? null
-        : serverSingleImage;
-    final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
+  final displaySingleUrl = deletedSingleUrl != null ? null : serverSingleImage;
+  final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
 
-    final filteredServerImages = serverImages
-        .where((url) => !widget.state.deletedImageUrls.contains(url))
-        .toList();
-    final allDisplayImages = [
-      ...filteredServerImages,
-      ...pendingImgs.map((f) => f.path),
-    ];
-    final secondaryImages = allDisplayImages.length > 4
-        ? allDisplayImages.sublist(0, 4)
-        : allDisplayImages;
-    final totalCount = (hasSingleToShow ? 1 : 0) + allDisplayImages.length;
-    final canDrag = secondaryImages.length > 1;
+  final filteredServerImages = serverImages
+      .where((url) => !widget.state.deletedImageUrls.contains(url))
+      .toList();
+  final allDisplayImages = [
+    ...filteredServerImages,
+    ...pendingImgs.map((f) => f.path),
+  ];
+  final secondaryImages = allDisplayImages.length > 4
+      ? allDisplayImages.sublist(0, 4)
+      : allDisplayImages;
+  final totalCount = (hasSingleToShow ? 1 : 0) + allDisplayImages.length;
+  final canDrag = secondaryImages.length > 1;
 
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: const Color.fromRGBO(251, 251, 251, 0.64),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${context.tr('images_count')} ( $totalCount ${context.tr('images_count')})',
-                style: Styles.textStyle18Meduim,
-              ),
-              Row(
-                children: [
-                  if (pendingSingle != null || pendingImgs.isNotEmpty)
-                    _buildPendingBadge(
-                      context,
-                      context.tr('images_pending_save'),
-                    ),
-                  if (canDrag) ...[
-                    Gap(8.w),
-                    GestureDetector(
-                      onTap: () => setState(() => _isDragMode = !_isDragMode),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 4.h,
-                        ),
-                        decoration: BoxDecoration(
+  return Container(
+    padding: EdgeInsets.all(10.w),
+    decoration: BoxDecoration(
+      color: const Color.fromRGBO(251, 251, 251, 0.64),
+      borderRadius: BorderRadius.circular(12.r),
+      border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ✅ Header مقسم لسطرين
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${context.tr('images_count')} ( $totalCount ${context.tr('images_count')})',
+                  style: Styles.textStyle18Meduim,
+                ),
+                if (canDrag)
+                  GestureDetector(
+                    onTap: () => setState(() => _isDragMode = !_isDragMode),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isDragMode
+                            ? AppColors.primary300.withOpacity(0.15)
+                            : Colors.grey.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
                           color: _isDragMode
-                              ? AppColors.primary300.withOpacity(0.15)
-                              : Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(
+                              ? AppColors.primary300
+                              : Colors.grey.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isDragMode
+                                ? Icons.check_rounded
+                                : Icons.swap_vert_rounded,
+                            size: 17.w,
                             color: _isDragMode
                                 ? AppColors.primary300
-                                : Colors.grey.withOpacity(0.3),
+                                : Colors.grey,
                           ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isDragMode
-                                  ? Icons.check_rounded
-                                  : Icons.swap_vert_rounded,
-                              size: 17.w,
+                          Gap(4.w),
+                          Text(
+                            _isDragMode
+                                ? context.tr('done')
+                                : context.tr('reorder'),
+                            style: TextStyle(
+                              fontSize: 13.sp,
                               color: _isDragMode
                                   ? AppColors.primary300
                                   : Colors.grey,
+                              fontWeight: FontWeight.w500,
                             ),
-                            Gap(4.w),
-                            Text(
-                              _isDragMode
-                                  ? context.tr('done')
-                                  : context.tr('reorder'),
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: _isDragMode
-                                    ? AppColors.primary300
-                                    : Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ],
-              ),
-            ],
-          ),
+                  ),
+              ],
+            ),
 
-          if (_isDragMode) ...[
-            Gap(8.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: AppColors.primary50.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.touch_app_outlined,
-                    size: 16.w,
+            // ✅ Badge في سطر منفصل
+            if (pendingSingle != null || pendingImgs.isNotEmpty) ...[
+              Gap(6.h),
+              _buildPendingBadge(context, context.tr('images_pending_save')),
+            ],
+          ],
+        ),
+
+        if (_isDragMode) ...[
+          Gap(8.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              color: AppColors.primary50.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.touch_app_outlined,
+                  size: 16.w,
+                  color: AppColors.primary400,
+                ),
+                Gap(6.w),
+                Text(
+                  context.tr('long_press_to_drag'),
+                  style: TextStyle(
+                    fontSize: 13.sp,
                     color: AppColors.primary400,
                   ),
-                  Gap(6.w),
-                  Text(
-                    context.tr('long_press_to_drag'),
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: AppColors.primary400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          Gap(12.h),
-
-          _isDragMode
-              ? _buildDragGrid(
-                  context,
-                  cubit,
-                  profile,
-                  displaySingleUrl: displaySingleUrl,
-                  pendingSingle: pendingSingle,
-                  hasSingleToShow: hasSingleToShow,
-                  secondaryImages: secondaryImages,
-                  filteredServerImages: filteredServerImages,
-                  allDisplayImages: allDisplayImages,
-                )
-              : _buildNormalGrid(
-                  context,
-                  cubit,
-                  profile,
-                  displaySingleUrl: displaySingleUrl,
-                  pendingSingle: pendingSingle,
-                  hasSingleToShow: hasSingleToShow,
-                  secondaryImages: secondaryImages,
-                  filteredServerImages: filteredServerImages,
-                  allDisplayImages: allDisplayImages,
                 ),
+              ],
+            ),
+          ),
         ],
-      ),
-    );
-  }
 
+        Gap(12.h),
+
+        _isDragMode
+            ? _buildDragGrid(
+                context,
+                cubit,
+                profile,
+                displaySingleUrl: displaySingleUrl,
+                pendingSingle: pendingSingle,
+                hasSingleToShow: hasSingleToShow,
+                secondaryImages: secondaryImages,
+                filteredServerImages: filteredServerImages,
+                allDisplayImages: allDisplayImages,
+              )
+            : _buildNormalGrid(
+                context,
+                cubit,
+                profile,
+                displaySingleUrl: displaySingleUrl,
+                pendingSingle: pendingSingle,
+                hasSingleToShow: hasSingleToShow,
+                secondaryImages: secondaryImages,
+                filteredServerImages: filteredServerImages,
+                allDisplayImages: allDisplayImages,
+              ),
+      ],
+    ),
+  );
+}
   // ════════════════════════════════════════════════════════════════
   // ✅ NORMAL GRID — with FullScreenImageView on tap
   // ════════════════════════════════════════════════════════════════

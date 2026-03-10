@@ -10,12 +10,14 @@ class MarriageView extends StatelessWidget {
     super.key,
     this.personId,
     this.fromInteractions = false,
+    this.initialIsFavorite = false, // ✅ أضف هذا
     this.onScroll,
   });
 
   final String? personId;
   final Function(bool isScrollingDown)? onScroll;
   final bool fromInteractions;
+  final bool initialIsFavorite; // ✅ أضف هذا
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +30,7 @@ class MarriageView extends StatelessWidget {
               child: MarriageBody(
                 personId: personId,
                 fromInteractions: fromInteractions,
+                initialIsFavorite: initialIsFavorite, // ✅ مرره
                 onScroll: onScroll,
               ),
             )

@@ -261,6 +261,7 @@
 // lib/features/user/marriage/view/widget/sliver_profile_header.dart
 
 // sliver_profile_header.dart
+// sliver_profile_header.dart
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
@@ -299,6 +300,10 @@ class SliverProfileHeader extends StatelessWidget {
   /// من 0 → 1 : تقدم الأنيميشن (0 مفيش حركة، 1 خارج الشاشة)
   final double swipeProgress;
 
+  // ✅ القلب
+  final VoidCallback? onFavoriteTap;
+  final bool isFavorited;
+
   const SliverProfileHeader({
     super.key,
     required this.images,
@@ -323,6 +328,8 @@ class SliverProfileHeader extends StatelessWidget {
     this.nextHeight,
     this.swipeDirection = 0,
     this.swipeProgress = 0,
+    this.onFavoriteTap, // ✅
+    this.isFavorited = false, // ✅
   });
 
   // ✅ هل الأنيميشن شغالة دلوقتي؟
@@ -427,6 +434,8 @@ class SliverProfileHeader extends StatelessWidget {
                     height: height,
                     swipeProgress: swipeProgress,
                     isAnimating: _isAnimating,
+                    onFavoriteTap: onFavoriteTap, // ✅
+                    isFavorited: isFavorited, // ✅
                   ),
                 ),
               ),
@@ -455,6 +464,8 @@ class _FrontProfileCard extends StatelessWidget {
   final String? height;
   final double swipeProgress;
   final bool isAnimating;
+  final VoidCallback? onFavoriteTap; // ✅
+  final bool isFavorited; // ✅
 
   const _FrontProfileCard({
     required this.images,
@@ -470,6 +481,8 @@ class _FrontProfileCard extends StatelessWidget {
     this.height,
     required this.swipeProgress,
     required this.isAnimating,
+    this.onFavoriteTap, // ✅
+    this.isFavorited = false, // ✅
   });
 
   @override
@@ -527,6 +540,8 @@ class _FrontProfileCard extends StatelessWidget {
             // ✅ أثناء الأنيميشن — نخفف الـ blur أو نشيله
             useBlur: !isAnimating,
             opacity: 0.18,
+            onFavoriteTap: onFavoriteTap, // ✅
+            isFavorited: isFavorited, // ✅
           ),
         ),
       ],
@@ -589,6 +604,9 @@ class _BackProfileCard extends StatelessWidget {
             // ✅ الكارت الخلفي — بدون blur دايماً (مش هيبان)
             useBlur: false,
             opacity: 0.14,
+            // ✅ الكارت الخلفي — مفيش قلب
+            onFavoriteTap: null,
+            isFavorited: false,
           ),
         ),
       ],
@@ -611,6 +629,8 @@ class _InfoCard extends StatelessWidget {
   final String? height;
   final bool useBlur;
   final double opacity;
+  final VoidCallback? onFavoriteTap; // ✅
+  final bool isFavorited; // ✅
 
   const _InfoCard({
     required this.name,
@@ -623,6 +643,8 @@ class _InfoCard extends StatelessWidget {
     this.height,
     required this.useBlur,
     required this.opacity,
+    this.onFavoriteTap, // ✅
+    this.isFavorited = false, // ✅
   });
 
   @override
@@ -637,22 +659,51 @@ class _InfoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Flexible(
-                child: Text(
-                  name,
-                  style: Styles.textStyle18Bold.copyWith(color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
+              // ✅ الاسم + السن + verified
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        name,
+                        style: Styles.textStyle18Bold.copyWith(
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Gap(5.w),
+                    if (age.isNotEmpty)
+                      Text(
+                        "$age ${context.tr("age")}",
+                        style: Styles.textStyle14.copyWith(color: Colors.white),
+                      ),
+                    if (name.isNotEmpty) ...[
+                      Gap(8.w),
+                      const Icon(Icons.verified, color: Colors.blue, size: 20),
+                    ],
+                  ],
                 ),
               ),
-              Gap(5.w),
-              if (age.isNotEmpty)
-                Text(
-                  "$age ${context.tr("age")}",
-                  style: Styles.textStyle14.copyWith(color: Colors.white),
-                ),
-              if (name.isNotEmpty) ...[
+
+              // ✅ القلب — بيظهر بس لو في onFavoriteTap
+              if (onFavoriteTap != null) ...[
                 Gap(8.w),
-                const Icon(Icons.verified, color: Colors.blue, size: 20),
+                GestureDetector(
+                  onTap: onFavoriteTap,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                    child: Icon(
+                      isFavorited ? Icons.favorite : Icons.favorite_border,
+                      key: ValueKey(isFavorited),
+                      color: isFavorited ? Colors.red : Colors.white,
+                      size: 30.r,
+                    ),
+                  ),
+                ),
               ],
             ],
           ),

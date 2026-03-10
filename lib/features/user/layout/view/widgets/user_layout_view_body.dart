@@ -5,7 +5,7 @@ import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
-import 'package:tayseer/features/user/consultation_filtter/consultation_standalone_page.dart';
+import 'package:tayseer/features/user/consultation_filtter/presentation/view/consultation_standalone_page.dart';
 import 'package:tayseer/features/user/layout/view/widgets/user_nav_bar.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';

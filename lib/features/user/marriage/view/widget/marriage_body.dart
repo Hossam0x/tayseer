@@ -28,11 +28,13 @@ class MarriageBody extends StatefulWidget {
     super.key,
     this.personId,
     this.fromInteractions = false,
+    this.initialIsFavorite = false, // ✅ جديد
     this.onScroll,
   });
 
   final String? personId;
   final bool fromInteractions;
+  final bool initialIsFavorite; // ✅ جديد
   final Function(bool isScrollingDown)? onScroll;
 
   @override
@@ -69,6 +71,14 @@ class MarriageBodyState extends State<MarriageBody>
     _mainScrollController.addListener(_scrollListener);
 
     final cubit = context.read<MarriageCubit>();
+
+    // ✅ seed القلب لو جاي من Interactions وكان مفضّل
+    if (widget.fromInteractions &&
+        widget.personId != null &&
+        widget.initialIsFavorite) {
+      cubit.seedFavorite(widget.personId!);
+    }
+
     cubit.fetchMarriageProfile();
     cubit.initAnimation(this);
   }
@@ -387,6 +397,11 @@ class MarriageBodyState extends State<MarriageBody>
                   nextHeight: hasNext
                       ? "📏 ${nextUser?.about?.height ?? ''}"
                       : null,
+                  // ✅ القلب منفصل تماماً عن Check
+                  isFavorited: state.favoritedIds.contains(user?.id ?? ''),
+                  onFavoriteTap: () {
+                    cubit.toggleLocalFavorite(user?.id ?? '');
+                  },
                 ),
                 SliverPadding(
                   padding: EdgeInsets.symmetric(
@@ -663,7 +678,7 @@ class MarriageBodyState extends State<MarriageBody>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // ❤️ Like
+                    // ✅ Check = like فقط، بدون favorite
                     buildCircleButton(
                       onTap: () {
                         cubit
@@ -679,7 +694,7 @@ class MarriageBodyState extends State<MarriageBody>
                               }
                             });
                       },
-                      Icons.favorite_outline,
+                      Icons.check,
                       AppColors.kprimaryTextColor,
                       HexColor('f8d3da'),
                     ),

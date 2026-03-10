@@ -47,11 +47,15 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
   }
 
   void _navigateToProfile() {
-    context.pushNamed(
-      AppRouter.kMarriageView,
-      arguments: {'personId': widget.item.userId, 'fromInteractions': true},
-    );
-  }
+  context.pushNamed(
+    AppRouter.kMarriageView,
+    arguments: {
+      'personId': widget.item.userId,
+      'fromInteractions': true,
+      'isFavorite': widget.item.isFavorite, // ✅
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -62,216 +66,225 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
       opacity: isPendingRemoval ? 0.5 : 1.0,
       child: GestureDetector(
         onTap: _navigateToProfile,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              padding: EdgeInsets.all(8.w),
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(0, 0, 0, 0.08),
-                borderRadius: BorderRadius.circular(20.r),
-                border: isPendingRemoval
-                    ? Border.all(color: Colors.grey.shade400, width: 2.w)
-                    : null,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AspectRatio(
-                    aspectRatio: 1.3,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16.r),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          shouldBlur
-                              ? ImageFiltered(
-                                  imageFilter: ImageFilter.blur(
-                                    sigmaX: 15,
-                                    sigmaY: 15,
-                                  ),
-                                  child: AppImage(
+        child: Directionality(
+          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(0, 0, 0, 0.08),
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: isPendingRemoval
+                      ? Border.all(color: Colors.grey.shade400, width: 2.w)
+                      : null,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 1.3,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16.r),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            shouldBlur
+                                ? ImageFiltered(
+                                    imageFilter: ImageFilter.blur(
+                                      sigmaX: 15,
+                                      sigmaY: 15,
+                                    ),
+                                    child: AppImage(
+                                      widget.item.image,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : AppImage(
                                     widget.item.image,
                                     fit: BoxFit.cover,
                                   ),
-                                )
-                              : AppImage(widget.item.image, fit: BoxFit.cover),
 
-                          if (shouldBlur)
-                            Container(color: Colors.black.withOpacity(0.2)),
+                            if (shouldBlur)
+                              Container(color: Colors.black.withOpacity(0.2)),
 
-                          if (widget.showFavoriteIcon)
-                            Positioned(
-                              top: 12.h,
-                              left: 12.w,
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () async {
-                                  final cubit = context
-                                      .read<InteractionsCubit>();
-                                  final currentStatus = widget.item.isFavorite;
+                            if (widget.showFavoriteIcon)
+                              Positioned(
+                                top: 12.h,
+                                left: 12.w,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () async {
+                                    final cubit = context
+                                        .read<InteractionsCubit>();
+                                    final currentStatus =
+                                        widget.item.isFavorite;
 
-                                  if (currentStatus) {
-                                    final shouldRemove =
-                                        await showRemoveFavoriteDialog(context);
-                                    if (shouldRemove != true || !mounted)
-                                      return;
-                                    cubit.toggleFavorite(
-                                      userId: widget.item.userId,
-                                      isAdd: false,
-                                    );
-                                  } else {
-                                    _animationController.forward().then(
-                                      (_) => _animationController.reverse(),
-                                    );
-                                    cubit.toggleFavorite(
-                                      userId: widget.item.userId,
-                                      isAdd: true,
-                                    );
-                                  }
-                                },
-                                child: ScaleTransition(
-                                  scale: _scaleAnimation,
-                                  child: Container(
-                                    padding: EdgeInsets.all(6.w),
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      widget.item.isFavorite
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                      color: widget.item.isFavorite
-                                          ? AppColors.primary400
-                                          : Colors.white,
-                                      size: 26.w,
+                                    if (currentStatus) {
+                                      final shouldRemove =
+                                          await showRemoveFavoriteDialog(
+                                            context,
+                                          );
+                                      if (shouldRemove != true || !mounted)
+                                        return;
+                                      cubit.toggleFavorite(
+                                        userId: widget.item.userId,
+                                        isAdd: false,
+                                      );
+                                    } else {
+                                      _animationController.forward().then(
+                                        (_) => _animationController.reverse(),
+                                      );
+                                      cubit.toggleFavorite(
+                                        userId: widget.item.userId,
+                                        isAdd: true,
+                                      );
+                                    }
+                                  },
+                                  child: ScaleTransition(
+                                    scale: _scaleAnimation,
+                                    child: Container(
+                                      padding: EdgeInsets.all(6.w),
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        widget.item.isFavorite
+                                            ? Icons.favorite
+                                            : Icons.favorite_border,
+                                        color: widget.item.isFavorite
+                                            ? AppColors.primary400
+                                            : Colors.white,
+                                        size: 26.w,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: 8.h,
+                        right: 4.w,
+                        left: 4.w,
+                        bottom: 4.h,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  '${widget.item.name},',
+                                  style: Styles.textStyle16SemiBold.copyWith(
+                                    fontSize: 14.sp,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                              Text(
+                                ' ${widget.item.age} ${context.tr("age")}',
+                                style: Styles.textStyle16.copyWith(
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 14.sp,
+                                ),
+                              ),
+                              if (widget.item.isverified) ...[
+                                SizedBox(width: 4.w),
+                                Icon(
+                                  Icons.verified,
+                                  color: Colors.blue,
+                                  size: 14.sp,
+                                ),
+                              ],
+                            ],
+                          ),
+
+                          SizedBox(height: 6.h),
+
+                          Row(
+                            children: [
+                              Flexible(
+                                flex: 0,
+                                child: _buildBadge(text: widget.item.day),
+                              ),
+                              if (widget.item.country.isNotEmpty) ...[
+                                SizedBox(width: 4.w),
+                                Flexible(
+                                  child: _buildBadge(
+                                    text: widget.item.country,
+                                    icon: "",
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+
+                          if (widget.item.job.isNotEmpty) ...[
+                            SizedBox(height: 6.h),
+                            _buildBadge(
+                              text: widget.item.job,
+                              icon: AssetsData.workIcon,
                             ),
+                            SizedBox(height: 6.h),
+                          ] else ...[
+                            SizedBox(height: 6.h),
+                            _buildBadge(
+                              text: context.tr("no_job"),
+                              icon: AssetsData.workIcon,
+                            ),
+                            SizedBox(height: 6.h),
+                          ],
                         ],
                       ),
                     ),
-                  ),
-
-                  Padding(
-                    padding: EdgeInsets.only(
-                      top: 8.h,
-                      right: 4.w,
-                      left: 4.w,
-                      bottom: 4.h,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                '${widget.item.name},',
-                                style: Styles.textStyle16SemiBold.copyWith(
-                                  fontSize: 14.sp,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                            Text(
-                              ' ${widget.item.age} ${context.tr("age")}',
-                              style: Styles.textStyle16.copyWith(
-                                fontWeight: FontWeight.w400,
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                            if (widget.item.isverified) ...[
-                              SizedBox(width: 4.w),
-                              Icon(
-                                Icons.verified,
-                                color: Colors.blue,
-                                size: 14.sp,
-                              ),
-                            ],
-                          ],
-                        ),
-
-                        SizedBox(height: 6.h),
-
-                        Row(
-                          children: [
-                            Flexible(
-                              flex: 0,
-                              child: _buildBadge(text: widget.item.day),
-                            ),
-                            if (widget.item.country.isNotEmpty) ...[
-                              SizedBox(width: 4.w),
-                              Flexible(
-                                child: _buildBadge(
-                                  text: widget.item.country,
-                                  icon: "",
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-
-                        if (widget.item.job.isNotEmpty) ...[
-                          SizedBox(height: 6.h),
-                          _buildBadge(
-                            text: widget.item.job,
-                            icon: AssetsData.workIcon,
-                          ),
-                          SizedBox(height: 6.h),
-                        ] else ...[
-                          SizedBox(height: 6.h),
-                          _buildBadge(
-                            text: context.tr("no_job"),
-                            icon: AssetsData.workIcon,
-                          ),
-                          SizedBox(height: 6.h),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            if (widget.showRibbon) ...[
-              if (widget.item.likedHim)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: StatusRibbonwidget(
-                    statusText: context.tr("you_liked"),
-                    topTextPosition: 28.h,
-                    rightTextPosition: 1.w,
-                  ),
-                )
-              else if (widget.item.sentCompliment)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: StatusRibbonwidget(
-                    statusText: context.tr("sent_compliment"),
-                    topTextPosition: 26.h,
-                    rightTextPosition: -2.w,
-                  ),
-                )
-              else if (widget.item.likedMe)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: StatusRibbonwidget(
-                    statusText: context.tr("liked_Me"),
-                    topTextPosition: 30.h,
-                    rightTextPosition: 5.w,
-                  ),
+                  ],
                 ),
+              ),
+
+              if (widget.showRibbon) ...[
+                if (widget.item.likedHim)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: StatusRibbonwidget(
+                      statusText: context.tr("you_liked"),
+                      topTextPosition: 28.h,
+                      rightTextPosition: 1.w,
+                    ),
+                  )
+                else if (widget.item.sentCompliment)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: StatusRibbonwidget(
+                      statusText: context.tr("sent_compliment"),
+                      topTextPosition: 26.h,
+                      rightTextPosition: -2.w,
+                    ),
+                  )
+                else if (widget.item.likedMe)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: StatusRibbonwidget(
+                      statusText: context.tr("liked_Me"),
+                      topTextPosition: 30.h,
+                      rightTextPosition: 5.w,
+                    ),
+                  ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

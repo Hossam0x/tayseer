@@ -708,6 +708,7 @@
   "years_experience": "of experience",
   "certificates": "Qualifications",
   "ratings": "Ratings",
+  "rate": "the Rate",
   "share_profile": "Share Profile",
   "copied_to_clipboard": "Link copied",
   "blocked_successfully": "User blocked successfully",
@@ -1603,6 +1604,7 @@
   "account_deleted_success": "Account deleted successfully",
   "account_delete_failed": "Failed to delete account",
   "greeting_send_error": "Error sending greeting",
+  "Medals": "Medals",
   "unblock_error": "Error unblocking user",
   "block_user_error": "Error blocking user",
   "data_and_activities": "Data & Activities 🔥",
@@ -1627,5 +1629,6 @@
   "story_unsaved_changes_title": "Unsaved Changes",
   "story_unsaved_changes_message": "Are you sure you want to discard your changes and exit?",
   "story_keep_editing": "Keep Editing",
-  "story_discard_and_exit": "Discard & Exit"
+  "story_discard_and_exit": "Discard & Exit",  
+"people_liked_you": "People who liked you"
 }

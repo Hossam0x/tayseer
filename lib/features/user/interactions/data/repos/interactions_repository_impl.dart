@@ -12,7 +12,7 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
   InteractionsRepositoryImpl(this.apiService);
 
   // ═══════════════════════════════════════════════════════════════════
-  // EXPLORATION - ✅ UPDATED TO USE REAL API
+  // EXPLORATION
   // ═══════════════════════════════════════════════════════════════════
 
   @override
@@ -21,13 +21,42 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
     required int page,
   }) async {
     try {
-      // ✅ Real API Call
+      // 1. Main exploration call
       final response = await apiService.get(
         endPoint: '/user/discovered-users',
         query: {'page': page.toString(), 'limit': '10'},
       );
 
-      final explorationResponse = ExplorationResponseModel.fromJson(response);
+      ExplorationResponseModel explorationResponse =
+          ExplorationResponseModel.fromJson(response);
+
+      // 2. Recently joined → "منضم حديثاً"
+      try {
+        final recentlyJoinedResponse = await apiService.get(
+          endPoint: '/user/recently-joined-users',
+        );
+        explorationResponse =
+            explorationResponse.withRecentlyJoined(recentlyJoinedResponse);
+      } catch (_) {}
+
+      // 3. Users liked me → "الإعجابات"
+      try {
+        final likedMeResponse = await apiService.get(
+          endPoint: '/user/users-liked-me',
+        );
+        explorationResponse =
+            explorationResponse.withLikedMe(likedMeResponse);
+      } catch (_) {}
+
+      // 4. Users to send regards to → "ارسل تحية"
+      try {
+        final sendRegardsResponse = await apiService.get(
+          endPoint: '/user/users-to-send-regards-to',
+        );
+        explorationResponse =
+            explorationResponse.withSendRegards(sendRegardsResponse);
+      } catch (_) {}
+
       return Right(explorationResponse);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
@@ -85,6 +114,7 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
   // ═══════════════════════════════════════════════════════════════════
   // ACTIONS
   // ═══════════════════════════════════════════════════════════════════
+
   @override
   Future<Either<Failure, String>> toggleFavorite({
     required String userId,
@@ -92,24 +122,23 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
   }) async {
     try {
       if (isAdd) {
-        final Map<String, dynamic> bodyData = {
-          'personInteractedWith': userId,
-          'interactionType': 'favorite',
-        };
-
         final response = await apiService.post(
           endPoint: '/user/user-interaction',
-          data: bodyData,
+          data: {
+            'personInteractedWith': userId,
+            'interactionType': 'favorite',
+          },
         );
-
         final message = response['message'] ?? 'تمت الإضافة للمفضلة بنجاح';
         return Right(message);
       } else {
         final response = await apiService.post(
           endPoint: '/user/user-interaction?action=remove',
-          data: {'personInteractedWith': userId, 'interactionType': 'favorite'},
+          data: {
+            'personInteractedWith': userId,
+            'interactionType': 'favorite',
+          },
         );
-
         final message = response['message'] ?? 'تمت الإزالة من المفضلة بنجاح';
         return Right(message);
       }
