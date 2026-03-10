@@ -31,7 +31,7 @@ class UserPublicProfileBio extends StatelessWidget {
             case CubitStates.success:
               if (state.profile != null) {
                 return SliverToBoxAdapter(
-                  child: _buildBioContent(context, state.profile!),
+                  child: _buildBioContent(context, state.profile!, state),
                 );
               }
               return _buildEmptyBio();
@@ -88,6 +88,7 @@ class UserPublicProfileBio extends StatelessWidget {
           isAnonymous: false,
           availableForMarry: false,
         ),
+        UserPublicProfileState(),
       ),
     );
   }
@@ -117,7 +118,12 @@ class UserPublicProfileBio extends StatelessWidget {
     );
   }
 
-  Widget _buildBioContent(BuildContext context, UserProfileModel profile) {
+  Widget _buildBioContent(
+    BuildContext context,
+    UserProfileModel profile,
+    UserPublicProfileState state,
+  ) {
+    final isBlocked = state.profile?.isBlockedByMe ?? false;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
@@ -162,34 +168,36 @@ class UserPublicProfileBio extends StatelessWidget {
                       height: 40.h,
                       backGroundcolor: AppColors.primary400,
                       title: context.tr('view_marriage_profile'),
-                      onPressed: () {
-                        if (isGuest) {
-                          CustomshowDialogWithImage(
-                            context,
-                            title: context.tr('joinUs'),
-                            supTitle: context.tr("guest_login_first"),
-                            icon: Icons.lock_person_outlined,
-                            iconColor: AppColors.kprimaryColor,
-                            bottonText: context.tr("login"),
-                            showCancelButton: true,
-                            cancelText: context.tr('skip'),
-                            onPressed: () {
-                              CachNetwork.removeData(key: ktoken);
-                              context.pushNamedAndRemoveUntil(
-                                AppRouter.kRegisrationView,
-                                predicate: (_) => false,
+                      onPressed: isBlocked
+                          ? null
+                          : () {
+                              if (isGuest) {
+                                CustomshowDialogWithImage(
+                                  context,
+                                  title: context.tr('joinUs'),
+                                  supTitle: context.tr("guest_login_first"),
+                                  icon: Icons.lock_person_outlined,
+                                  iconColor: AppColors.kprimaryColor,
+                                  bottonText: context.tr("login"),
+                                  showCancelButton: true,
+                                  cancelText: context.tr('skip'),
+                                  onPressed: () {
+                                    CachNetwork.removeData(key: ktoken);
+                                    context.pushNamedAndRemoveUntil(
+                                      AppRouter.kRegisrationView,
+                                      predicate: (_) => false,
+                                    );
+                                  },
+                                  onCancel: () {},
+                                );
+                                return;
+                              }
+
+                              context.pushNamed(
+                                AppRouter.kMarriageView,
+                                arguments: {'personId': profile.id},
                               );
                             },
-                            onCancel: () {},
-                          );
-                          return;
-                        }
-
-                        context.pushNamed(
-                          AppRouter.kMarriageView,
-                          arguments: {'personId': profile.id},
-                        );
-                      },
                     ),
                   )
                 : Container(
