@@ -3,6 +3,7 @@ import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/utils/hive_service.dart';
+import 'package:tayseer/features/advisor/notification/data/repo/NotificationRepo.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_remote_datasource.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
@@ -91,6 +92,7 @@ import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_d
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
 
+import '../../features/advisor/notification/presentation/manager/notification_cubit.dart';
 import '../../my_import.dart';
 
 final getIt = GetIt.instance;
@@ -468,4 +470,6 @@ Future<void> setupGetIt() async {
     () => ReportsRepoImpl(getIt<ApiService>()),
   );
   getIt.registerFactory<ReportsCubit>(() => ReportsCubit(getIt<ReportsRepo>()));
+  getIt.registerFactory<NotificationRepo>(() => NotificationRepo(apiService: getIt<ApiService>()));
+  getIt.registerFactory<NotificationCubit>(()=>NotificationCubit(notificationRepo: getIt<NotificationRepo>()));
 }

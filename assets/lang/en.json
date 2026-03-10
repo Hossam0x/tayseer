@@ -1588,5 +1588,17 @@
   "greeting_send_error": "Error sending greeting",
   "unexpected_error": "An unexpected error occurred",
   "unblock_error": "Error unblocking user",
-  "block_user_error": "Error blocking user"
+  "block_user_error": "Error blocking user",
+  "failed_to_load_post": "Failed to load post",
+  "no_post_data": "No post data available",
+  "notifications": "Notifications",
+  "no_notifications_yet": "No notifications yet",
+  "notifications_appear_here": "All your notifications about subscriptions and events will appear here",
+  "accept": "Accept",
+  "reject": "Reject",
+  "error_adding_comment": "Error adding comment",
+  "ago_prefix": "since",
+  "ago_minutes": "min ago",
+  "ago_hours": "h ago",
+  "ago_days": "day ago"
 }

@@ -142,13 +142,16 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(state.postLoadingError ?? 'فشل تحميل المنشور'),
+                    Text(
+                      state.postLoadingError ??
+                          context.tr(AppStrings.failedToLoadPost),
+                    ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => context
                           .read<PostDetailsCubit>()
                           .loadPostFromAPI(widget.postId_fromNotifc!),
-                      child: const Text('إعادة محاولة'),
+                      child: Text(context.tr(AppStrings.retry)),
                     ),
                   ],
                 ),
@@ -168,7 +171,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
-              body: const Center(child: Text('لا توجد بيانات المنشور')),
+              body: Center(child: Text(context.tr(AppStrings.noPostData))),
             );
           }
 

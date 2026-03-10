@@ -1580,5 +1580,17 @@
   "greeting_send_error": "حدث خطأ أثناء إرسال التحية",
   "unexpected_error": "حدث خطأ غير متوقع",
   "unblock_error": "حدث خطأ في إلغاء الحظر",
-  "block_user_error": "حدث خطأ في حظر المستخدم"
+  "block_user_error": "حدث خطأ في حظر المستخدم",
+  "failed_to_load_post": "فشل تحميل المنشور",
+  "no_post_data": "لا توجد بيانات المنشور",
+  "notifications": "الإشعارات",
+  "no_notifications_yet": "لا توجد اشعارات حتى الان",
+  "notifications_appear_here": "ستظهر جميع اشعاراتك هنا عن الاشتراكات والاحداث",
+  "accept": "قبول",
+  "reject": "رفض",
+  "error_adding_comment": "حدث خطأ أثناء إضافة التعليق",
+  "ago_prefix": "منذ",
+  "ago_minutes": "د",
+  "ago_hours": "س",
+  "ago_days": "يوم"
 }

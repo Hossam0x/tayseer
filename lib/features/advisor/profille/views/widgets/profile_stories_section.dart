@@ -80,6 +80,9 @@ class ProfileStoriesSection extends StatelessWidget {
           stories: state.storiesList,
           advisorId: advisorId,
         );
+      case CubitStates.loadingMore:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 }

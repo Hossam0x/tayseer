@@ -42,6 +42,9 @@ class StoriesSection extends StatelessWidget {
       case CubitStates.success:
       case CubitStates.initial:
         return const _StoriesListView();
+      case CubitStates.loadingMore:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 }
