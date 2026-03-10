@@ -67,23 +67,37 @@ class AdvisorChatRoomModel {
   });
 
   factory AdvisorChatRoomModel.fromJson(Map<String, dynamic> json) {
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is List && value.isNotEmpty) return value.first.toString();
+      return value.toString();
+    }
+
     return AdvisorChatRoomModel(
-      id: json['id'] ?? '',
+      id: extractString(json['id']),
       isBlocked: json['isBlocked'] ?? false,
       isHaveSession: json['isHaveSession'] ?? false,
       users: (json['users'] as List? ?? [])
-          .map((e) => ChatUserModel.fromJson(e))
+          .map((e) => ChatUserModel.fromJson(e is Map<String, dynamic> ? e : {}))
           .toList(),
-        lastMessage: json['lastMessage'] is Map<String, dynamic>
-            ? LastMessageModel.fromJson(json['lastMessage'])
-            : null,
-      lastMessageAt: json['lastMessageAt'] != null
-          ? DateTime.parse(json['lastMessageAt'])
+      lastMessage: json['lastMessage'] is Map<String, dynamic>
+          ? LastMessageModel.fromJson(json['lastMessage'])
           : null,
-      status: json['status'] ?? '',
-      sender: ChatUserModel.fromJson(json['sender'] ?? {}), // <--- هنا
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      lastMessageAt: json['lastMessageAt'] != null
+          ? DateTime.tryParse(json['lastMessageAt'].toString()) ??
+              DateTime.now()
+          : null,
+      status: extractString(json['status']),
+      sender: ChatUserModel.fromJson(
+        json['sender'] is Map<String, dynamic> ? json['sender'] : {},
+      ),
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
+          : DateTime.now(),
       unreadCount: json['unreadCount'] ?? 0,
     );
   }
@@ -106,11 +120,18 @@ class ChatUserModel {
   });
 
   factory ChatUserModel.fromJson(Map<String, dynamic> json) {
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is List && value.isNotEmpty) return value.first.toString();
+      return value.toString();
+    }
+
     return ChatUserModel(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      image: json['image'],
-      userType: json['userType'] ?? '',
+      id: extractString(json['id']),
+      name: extractString(json['name']),
+      image: json['image']?.toString(),
+      userType: extractString(json['userType']),
     );
   }
 }
@@ -143,17 +164,28 @@ class LastMessageModel {
   });
 
   factory LastMessageModel.fromJson(Map<String, dynamic> json) {
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is List && value.isNotEmpty) return value.first.toString();
+      return value.toString();
+    }
+
     return LastMessageModel(
-      id: json['id'] ?? '',
-      sender: json['sender'] ?? '',
-      senderType: json['senderType'] ?? '',
-      content: json['content'] ?? '',
-      messageType: json['messageType'] ?? '',
-      chatRoom: json['chatRoom'] ?? '',
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-      senderName: json['senderName'] ?? '',
-      timeAgo: json['timeAgo'] ?? '',
+      id: extractString(json['id']),
+      sender: extractString(json['sender']),
+      senderType: extractString(json['senderType']),
+      content: extractString(json['content']),
+      messageType: extractString(json['messageType']),
+      chatRoom: extractString(json['chatRoom']),
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      senderName: extractString(json['senderName']),
+      timeAgo: extractString(json['timeAgo']),
     );
   }
 }

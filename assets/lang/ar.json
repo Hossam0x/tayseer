@@ -1,4 +1,4 @@
-﻿{
+{
   "joinUs": "انضم لنا",
   "guest_login_first": "يجب عليك تسجيل الدخول أولاً للاستفادة من هذه الميزة.",
   "login": "تسجيل الدخول",
@@ -746,6 +746,7 @@
   "week_2": "الأسبوع 2",
   "week_3": "الأسبوع 3",
   "week_4": "الأسبوع 4",
+  "are_you_sure_permanent_delete_message": "هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع البيانات ذات الصلة نهائياً.",
   "video_load_error": "تعذر تحميل الفيديو",
   "video_size_error_10mb": "حجم الفيديو أكبر من 10 ميجابايت",
   "video_size_limit_10mb": "الحد الأقصى للفيديو 10 ميجابايت",
@@ -1057,7 +1058,12 @@
   "are_you_sure_permanent_delete": "هل أنت متأكد من حذف الحساب نهائياً",
   "temporary_disable": "إيقاف حسابي بشكل مؤقت",
   "are_you_sure_temporary_disable": "هل أنت متأكد من إيقاف حسابي بشكل مؤقت",
+  "are_you_sure_temporary_disable_message": "عند إيقاف حسابك مؤقتاً، لن يتمكن أي شخص من رؤية ملفك الشخصي أو إرسال طلبات صداقة أو رسائل إليك. ستظل جميع محادثاتك محفوظة ويمكنك استعادة حسابك في أي وقت عن طريق تسجيل الدخول مرة أخرى.",
   "account_suspended_successfully": "تم إيقاف حسابك مؤقتاً بنجاح",
+  "permissions_required_title": "الأذونات المطلوبة",
+  "permissions_required_message": "يرجى منح صلاحية الكاميرا والمعرض لتتمكن من إضافة قصة",
+  "grant_permissions": "منح الأذونات",
+  "open_settings": "فتح الاعدادات",
   "account_deleted_successfully": "تم حذف حسابك بنجاح",
   "archive_story": "أرشفة القصة",
   "unarchive_story": "إلغاء أرشفة القصة",
@@ -1614,5 +1620,9 @@
   "get_all_benefits_for": "احصل علي جميع المزايا مقابل {} {currency}",
   "subscribe_vip_for": "اشترك في VIP مقابل {} {currency}",
   "20_messages_monthly": "20 محادثة شهرياً",
-  "20_sessions_monthly": "20 جلسة شهرياً"
+  "20_sessions_monthly": "20 جلسة شهرياً",
+  "story_unsaved_changes_title": "تغييرات غير محفوظة",
+  "story_unsaved_changes_message": "هل أنت متأكد من رغبتك في تجاهل التغييرات والخروج؟",
+  "story_keep_editing": "متابعة التعديل",
+  "story_discard_and_exit": "تجاهل وخروج"
 }

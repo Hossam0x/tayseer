@@ -349,12 +349,38 @@ class _UserStoryPageState extends State<_UserStoryPage> {
                 child: StoryVideo.url(
                   story.video!,
                   controller: _storyController,
+                  // Use a stable key based on video URL so the widget is NOT
+                  // recreated on rebuild — prevents the "failed to load" flash.
+                  key: ValueKey('video_${story.id}'),
+                  // Show a spinner instead of "Media failed to load." during
+                  // the brief window where state=success but isInitialized=false.
+                  loadingWidget: const Center(
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    ),
+                  ),
+                  errorWidget: const Center(
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
             duration: duration,
           ),
         );
+
       } else {
         _storyItems.add(
           StoryItem(

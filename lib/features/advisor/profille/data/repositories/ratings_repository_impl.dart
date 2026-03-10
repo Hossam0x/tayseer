@@ -33,4 +33,33 @@ class RatingsRepositoryImpl implements RatingsRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+  @override
+  Future<Either<Failure, RatingModel>> submitRating({
+    required String advisorId,
+    required int rating,
+    required String review,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: '/advisor-rating',
+        data: {
+          "rating": rating,
+          "review": review,
+          "advisorId": advisorId,
+        },
+      );
+
+      if (response['success'] == true) {
+        final data = response['data'] as Map<String, dynamic>;
+        final ratingModel = RatingModel.fromJson(data);
+        return Right(ratingModel);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل تقديم التقييم'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

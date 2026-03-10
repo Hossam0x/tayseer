@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+import 'package:tayseer/features/advisor/profille/data/models/rating_model.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'ratings_state.dart';
@@ -157,6 +159,120 @@ class RatingsCubit extends Cubit<RatingsState> {
         isSilent: false, // Normal refresh
         forceRefresh: true, // ⭐ Force reload to update list
       );
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 SUBMIT RATING
+  // ═══════════════════════════════════════════════════════════
+  Future<void> submitRating({
+    required String advisorId,
+    required int rating,
+    required String review,
+    required VoidCallback onSuccess,
+    required Function(String) onFailure,
+  }) async {
+    final result = await _ratingsRepository.submitRating(
+      advisorId: advisorId,
+      rating: rating,
+      review: review,
+    );
+
+    result.fold(
+      (failure) => onFailure(failure.message),
+      (newRating) {
+        final existingIndex = state.ratings.indexWhere(
+          (r) => r.id == newRating.id,
+        );
+        List<RatingModel> updatedRatings;
+        RatingSummaryModel? updatedSummary;
+
+        if (existingIndex != -1) {
+          // ⭐ حالة التعديل (Edit Rating) - استبدال القديم بالجديد
+          final oldRating = state.ratings[existingIndex];
+          updatedRatings = List<RatingModel>.from(state.ratings);
+          updatedRatings[existingIndex] = newRating;
+
+          // تحديث الـ Summary لعملية التعديل
+          if (state.summary != null) {
+            final oldSummary = state.summary!;
+            final oldValue = oldRating.rating;
+            final newValue = newRating.rating;
+
+            // حساب المتوسط الجديد: طرح التقييم القديم وإضافة الجديد (العدد الكلي ثابت)
+            final double newAverage =
+                oldSummary.totalRatings > 0
+                    ? ((oldSummary.averageRating * oldSummary.totalRatings) -
+                            oldValue +
+                            newValue) /
+                        oldSummary.totalRatings
+                    : newValue;
+
+            final newBreakdown = Map<int, int>.from(oldSummary.starsBreakdown);
+            // تحديث توزيع النجوم
+            final oldKey = oldValue.toInt();
+            final newKey = newValue.toInt();
+
+            if (newBreakdown.containsKey(oldKey)) {
+              newBreakdown[oldKey] = (newBreakdown[oldKey] ?? 1) - 1;
+              if (newBreakdown[oldKey]! < 0) newBreakdown[oldKey] = 0;
+            }
+            newBreakdown[newKey] = (newBreakdown[newKey] ?? 0) + 1;
+
+            updatedSummary = RatingSummaryModel(
+              averageRating: newAverage,
+              totalRatings: oldSummary.totalRatings,
+              starsBreakdown: newBreakdown,
+            );
+          }
+        } else {
+          // ⭐ حالة إضافة تقييم جديد (New Rating) - الإضافة في البداية
+          updatedRatings = [newRating, ...state.ratings];
+
+          // تحديث الـ Summary لعملية الإضافة
+          if (state.summary != null) {
+            final oldSummary = state.summary!;
+            final newTotal = oldSummary.totalRatings + 1;
+            final newAverage =
+                ((oldSummary.averageRating * oldSummary.totalRatings) +
+                        newRating.rating) /
+                    newTotal;
+
+            final newBreakdown = Map<int, int>.from(oldSummary.starsBreakdown);
+            final newKey = newRating.rating.toInt();
+            newBreakdown[newKey] = (newBreakdown[newKey] ?? 0) + 1;
+
+            updatedSummary = RatingSummaryModel(
+              averageRating: newAverage,
+              totalRatings: newTotal,
+              starsBreakdown: newBreakdown,
+            );
+          }
+        }
+
+        emit(
+          state.copyWith(
+            ratings: updatedRatings,
+            summary: updatedSummary ?? state.summary,
+          ),
+        );
+
+        onSuccess();
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 FORMAT DATE
+  // ═══════════════════════════════════════════════════════════
+  String formatDate(String dateString, String lang) {
+    try {
+      final parsedDate = DateFormat('M/d/yyyy, hh:mm:ss a', 'en').parse(
+        dateString,
+      );
+      return DateFormat('dd MMMM yyyy', lang).format(parsedDate);
+    } catch (e) {
+      return dateString;
     }
   }
 

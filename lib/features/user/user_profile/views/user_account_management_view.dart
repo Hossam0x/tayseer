@@ -219,7 +219,7 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppImage(AssetsData.kWoriningImage),
+            AppImage(AssetsData.kWoriningImage, width: 100.w),
             Gap(20.h),
             Text(
               title,

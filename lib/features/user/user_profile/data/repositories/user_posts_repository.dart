@@ -122,7 +122,8 @@ class UserPostsRepositoryImpl implements UserPostsRepository {
     try {
       final response = await _apiService.post(
         endPoint: ApiEndPoint.savePost,
-        data: {"postId": postId, "action": isRemove ? "remove" : "add"},
+        query: {'action': isRemove ? 'remove' : 'add'},
+        data: {"postId": postId},
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
     } on DioException catch (e) {

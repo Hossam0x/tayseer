@@ -207,7 +207,8 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
     try {
       final response = await _apiService.post(
         endPoint: ApiEndPoint.savePost,
-        data: {"postId": postId, "action": isRemove ? "remove" : "add"},
+        query: {'action': isRemove ? 'remove' : 'add'},
+        data: {"postId": postId},
       );
       return Right(response['message'] ?? 'operation_success');
     } on DioException catch (e) {

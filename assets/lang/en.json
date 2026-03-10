@@ -1,4 +1,4 @@
-﻿{
+{
   "joinUs": "Join US",
   "guest_login_first": "You must login first to use this feature.",
   "login": "Login",
@@ -1204,6 +1204,7 @@
   "are_you_sure_permanent_delete": "Are you sure you want to permanent delete",
   "temporary_disable": "Temporary Disable",
   "are_you_sure_temporary_disable": "Are you sure you want to temporary disable",
+  "are_you_sure_temporary_disable_message": "When you temporarily disable your account, no one will be able to see your profile or send you friend requests or messages. All your conversations will be saved and you can restore your account at any time by logging in again.",
   "account_suspended_successfully": "Account suspended successfully",
   "account_deleted_successfully": "Account deleted successfully",
   "archive_story": "Archive Story",
@@ -1539,6 +1540,7 @@
   "permissions_required_message": "We need access to your camera, microphone, and photos to share your stories. Please grant the required permissions.",
   "grant_permissions": "Grant Permissions",
   "open_settings": "Open Settings",
+  "are_you_sure_permanent_delete_message": "This action cannot be undone. All related data will be permanently removed.",
   "story_unarchived_success": "Story unarchived successfully",
   "tap_to_record": "Tap to record",
   "initializing_recorder": "Initializing recorder...",
@@ -1621,5 +1623,9 @@
   "get_all_benefits_for": "Get all benefits for {} {currency}",
   "subscribe_vip_for": "Subscribe to VIP for {} {currency}",
   "20_messages_monthly": "20 Messages Monthly",
-  "20_sessions_monthly": "20 Sessions Monthly"
+  "20_sessions_monthly": "20 Sessions Monthly",
+  "story_unsaved_changes_title": "Unsaved Changes",
+  "story_unsaved_changes_message": "Are you sure you want to discard your changes and exit?",
+  "story_keep_editing": "Keep Editing",
+  "story_discard_and_exit": "Discard & Exit"
 }
