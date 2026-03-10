@@ -1,6 +1,3 @@
-import 'dart:developer';
-import 'dart:ui';
-
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/functions/count_formate.dart';
 import 'package:tayseer/core/widgets/follow_button.dart';
@@ -84,64 +81,58 @@ class ReelsOverlay extends StatelessWidget {
 
   // --- Header Section ---
   Widget _buildHeader(BuildContext context) {
-    log(
-      ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Building ReelsOverlay header for postId: ${post.isMine}",
-    );
     return ClipRRect(
       // 1. البوردر ريدياس من تحت بس (للقص)
       borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.4),
 
-            // 2. البوردر ريدياس من تحت بس (للشكل)
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
+          // 2. البوردر ريدياس من تحت بس (للشكل)
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
 
-            // 3. البوردر (الخط) من تحت بس
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
+          // 3. البوردر (الخط) من تحت بس
+          border: Border(
+            bottom: BorderSide(
+              color: Colors.white.withOpacity(0.3),
+              width: 1.5,
             ),
           ),
-          child: SafeArea(
-            bottom: false,
+        ),
+        child: SafeArea(
+          bottom: false,
 
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    if (onClose != null) {
-                      onClose!();
-                    } else {
-                      context.pop();
-                    }
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  if (onClose != null) {
+                    onClose!();
+                  } else {
+                    context.pop();
+                  }
+                },
+                child: Icon(Icons.close, color: Colors.white, size: 28.sp),
+              ),
+              if (!isGuest && !post.isMine)
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    context.pushNamed(
+                      AppRouter.kReportsView,
+                      arguments: {'type': ReportType.post, 'id': post.postId},
+                    );
                   },
-                  child: Icon(Icons.close, color: Colors.white, size: 28.sp),
-                ),
-                if (!isGuest && !post.isMine)
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: () {
-                      context.pushNamed(
-                        AppRouter.kReportsView,
-                        arguments: {'type': ReportType.post, 'id': post.postId},
-                      );
-                    },
 
-                    icon: Icon(
-                      Icons.info_outline,
-                      color: Colors.white,
-                      size: 26.sp,
-                    ),
+                  icon: Icon(
+                    Icons.info_outline,
+                    color: Colors.white,
+                    size: 26.sp,
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),

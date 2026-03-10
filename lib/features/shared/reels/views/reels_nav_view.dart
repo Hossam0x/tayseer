@@ -271,11 +271,13 @@ class _ReelsNavContentState extends State<_ReelsNavContent> {
     }
 
     final reel = state.reels[index];
+    final shouldInit = (index == _currentIndex || index == _currentIndex + 1);
 
     return ReelsItem(
       key: ValueKey('reel_nav_${reel.postId}'),
       post: reel,
       isCurrentPage: index == _currentIndex && _isTabActive,
+      shouldInitialize: shouldInit && _isTabActive,
       onClose: () {
         final layoutCubit = context.read<LayoutCubit>();
         layoutCubit.changeIndex(0);

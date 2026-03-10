@@ -13,6 +13,7 @@ class ReelsVideoBackground extends StatefulWidget {
   final String? videoId;
   final String? thumbnailUrl;
   final bool shouldPlay;
+  final bool shouldInitialize;
   final VoidCallback onTap;
   final void Function(Offset)? onDoubleTap;
   final bool showProgressBar;
@@ -25,6 +26,7 @@ class ReelsVideoBackground extends StatefulWidget {
     this.videoId,
     this.thumbnailUrl,
     required this.shouldPlay,
+    this.shouldInitialize = true,
     required this.onTap,
     this.onDoubleTap,
     this.showProgressBar = true,
@@ -63,12 +65,16 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
   String get _videoId => widget.videoId ?? widget.videoUrl.hashCode.toString();
 
+  bool _isListenerAttached = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _muteManager.isMuted.addListener(_onGlobalMuteChanged);
-    _initializeVideo();
+    if (widget.shouldInitialize) {
+      _initializeVideo();
+    }
   }
 
   @override
@@ -124,7 +130,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
           await _restorePosition();
           if (widget.shouldPlay) _controller!.play();
         }
-        _controller!.addListener(_videoListener);
+        _attachListener();
         widget.onControllerCreated?.call(_controller!);
         if (mounted && !_isDisposed) setState(() {});
       } catch (e) {
@@ -171,7 +177,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
       }
 
       // أضف الـ listener بعد النجاح فقط — لتجنب false errors
-      _controller!.addListener(_videoListener);
+      _attachListener();
 
       await _controller!.setLooping(true);
       await _controller!.setVolume(_volume);
@@ -200,7 +206,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
       // تخلص من الـ controller الفاشل
       try {
-        _controller?.removeListener(_videoListener);
+        _detachListener();
         _controller?.dispose();
       } catch (_) {}
       _controller = null;
@@ -307,7 +313,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
       // تخلص من الـ controller الحالي وأعد التهيئة
       try {
-        _controller?.removeListener(_videoListener);
+        _detachListener();
         if (widget.sharedController == null) {
           _controller?.dispose();
         }
@@ -340,18 +346,67 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   @override
   void didUpdateWidget(covariant ReelsVideoBackground oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    // تهيئة الفيديو لو shouldInitialize اتفعلت لأول مرة
+    if (widget.shouldInitialize &&
+        !oldWidget.shouldInitialize &&
+        !_isInitialized &&
+        _controller == null) {
+      _initializeVideo();
+      return;
+    }
+
+    // تحرير الـ controller لو الصفحة بعدت (shouldInitialize = false)
+    if (!widget.shouldInitialize &&
+        oldWidget.shouldInitialize &&
+        !widget.shouldPlay) {
+      _disposeController();
+      return;
+    }
+
     if (_isInitialized && _controller != null && !_isDisposed) {
       try {
         if (widget.shouldPlay && !oldWidget.shouldPlay) {
+          // إعادة ربط الـ listener عند التشغيل
+          _attachListener();
           _controller!.play();
         } else if (!widget.shouldPlay && oldWidget.shouldPlay) {
-          _savePosition(); // حفظ قبل الإيقاف
+          _savePosition();
           _controller!.pause();
+          // فصل الـ listener عند الإيقاف لتقليل callbacks
+          _detachListener();
         }
       } catch (e) {
         debugPrint('⚠️ Controller disposed in didUpdateWidget');
       }
     }
+  }
+
+  void _attachListener() {
+    if (!_isListenerAttached && _controller != null) {
+      _controller!.addListener(_videoListener);
+      _isListenerAttached = true;
+    }
+  }
+
+  void _detachListener() {
+    if (_isListenerAttached && _controller != null) {
+      _controller!.removeListener(_videoListener);
+      _isListenerAttached = false;
+    }
+  }
+
+  void _disposeController() {
+    if (_controller == null) return;
+    _savePosition();
+    _detachListener();
+    if (widget.sharedController == null) {
+      _controller!.dispose();
+    }
+    _controller = null;
+    _isInitialized = false;
+    _initCompleter = null;
+    if (mounted && !_isDisposed) setState(() {});
   }
 
   @override
@@ -397,7 +452,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
     final controller = _controller;
     if (controller != null) {
-      controller.removeListener(_videoListener);
+      _detachListener();
       if (widget.sharedController == null) {
         controller.dispose();
       }
@@ -421,7 +476,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     });
 
     if (widget.sharedController == null && _controller != null) {
-      _controller!.removeListener(_videoListener);
+      _detachListener();
       _controller!.dispose();
     }
     _controller = null;
@@ -635,104 +690,125 @@ class _VideoSeekBar extends StatefulWidget {
 class _VideoSeekBarState extends State<_VideoSeekBar> {
   double? _dragValue;
   bool _isDragging = false;
+  double _progress = 0.0;
+  Duration _duration = Duration.zero;
+  Timer? _updateTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startProgressTimer();
+  }
+
+  @override
+  void dispose() {
+    _updateTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startProgressTimer() {
+    _updateTimer = Timer.periodic(const Duration(milliseconds: 250), (_) {
+      if (!mounted || _isDragging) return;
+      final value = widget.controller.value;
+      if (value.duration.inMilliseconds == 0) return;
+      final newProgress =
+          value.position.inMilliseconds / value.duration.inMilliseconds;
+      if ((newProgress - _progress).abs() > 0.005) {
+        setState(() {
+          _progress = newProgress;
+          _duration = value.duration;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final duration = _isDragging ? _duration : widget.controller.value.duration;
+    if (duration.inMilliseconds == 0) return const SizedBox.shrink();
+    final progress = _isDragging ? _dragValue! : _progress;
+
     return SafeArea(
       top: false,
-      child: ValueListenableBuilder<VideoPlayerValue>(
-        valueListenable: widget.controller,
-        builder: (context, value, child) {
-          final duration = value.duration;
-          final position = value.position;
-
-          if (duration.inMilliseconds == 0) return const SizedBox.shrink();
-
-          final progress = _isDragging
-              ? _dragValue!
-              : position.inMilliseconds / duration.inMilliseconds;
-
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onHorizontalDragStart: (details) {
-              _isDragging = true;
-              widget.onDragStart();
-              _updateDragPosition(details.localPosition.dx, context);
-            },
-            onHorizontalDragUpdate: (details) {
-              _updateDragPosition(details.localPosition.dx, context);
-            },
-            onHorizontalDragEnd: (details) {
-              _isDragging = false;
-              widget.onDragEnd();
-              final newPosition = Duration(
-                milliseconds: (_dragValue! * duration.inMilliseconds).toInt(),
-              );
-              widget.onSeek(newPosition);
-            },
-            onTapUp: (details) {
-              final width = context.size!.width;
-              final tapPosition = details.localPosition.dx / width;
-              final newPosition = Duration(
-                milliseconds:
-                    (tapPosition.clamp(0.0, 1.0) * duration.inMilliseconds)
-                        .toInt(),
-              );
-              widget.onSeek(newPosition);
-            },
-            child: Container(
-              height: 30.h,
-              padding: EdgeInsets.symmetric(horizontal: 12.w),
-              alignment: Alignment.center,
-              child: Stack(
-                alignment: Alignment.centerLeft,
-                children: [
-                  // Gray background + white progress inside it
-                  ClipRRect(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onHorizontalDragStart: (details) {
+          _isDragging = true;
+          _duration = widget.controller.value.duration;
+          widget.onDragStart();
+          _updateDragPosition(details.localPosition.dx, context);
+        },
+        onHorizontalDragUpdate: (details) {
+          _updateDragPosition(details.localPosition.dx, context);
+        },
+        onHorizontalDragEnd: (details) {
+          _isDragging = false;
+          widget.onDragEnd();
+          final newPosition = Duration(
+            milliseconds: (_dragValue! * duration.inMilliseconds).toInt(),
+          );
+          widget.onSeek(newPosition);
+        },
+        onTapUp: (details) {
+          final width = context.size!.width;
+          final tapPosition = details.localPosition.dx / width;
+          final newPosition = Duration(
+            milliseconds:
+                (tapPosition.clamp(0.0, 1.0) * duration.inMilliseconds).toInt(),
+          );
+          widget.onSeek(newPosition);
+        },
+        child: Container(
+          height: 30.h,
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          alignment: Alignment.center,
+          child: Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              // Gray background + white progress inside it
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3.r),
+                child: Container(
+                  height: _isDragging ? 6.h : 3.h,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(3.r),
-                    child: Container(
-                      height: _isDragging ? 6.h : 3.h,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(3.r),
-                      ),
-                      alignment: Alignment.centerLeft,
-                      child: AnimatedContainer(
-                        duration: _isDragging
-                            ? Duration.zero
-                            : const Duration(milliseconds: 100),
-                        height: _isDragging ? 6.h : 3.h,
-                        width:
-                            (MediaQuery.of(context).size.width - 24.w) *
-                            progress.clamp(0.0, 1.0),
-                        color: Colors.white,
-                      ),
+                  ),
+                  alignment: Alignment.centerLeft,
+                  child: AnimatedContainer(
+                    duration: _isDragging
+                        ? Duration.zero
+                        : const Duration(milliseconds: 100),
+                    height: _isDragging ? 6.h : 3.h,
+                    width:
+                        (MediaQuery.of(context).size.width - 24.w) *
+                        progress.clamp(0.0, 1.0),
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              // Drag circle
+              if (_isDragging)
+                Positioned(
+                  left:
+                      (MediaQuery.of(context).size.width - 24.w) *
+                          progress.clamp(0.0, 1.0) -
+                      7.r,
+                  child: Container(
+                    width: 14.r,
+                    height: 14.r,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: Colors.black26, blurRadius: 4),
+                      ],
                     ),
                   ),
-                  // Drag circle
-                  if (_isDragging)
-                    Positioned(
-                      left:
-                          (MediaQuery.of(context).size.width - 24.w) *
-                              progress.clamp(0.0, 1.0) -
-                          7.r,
-                      child: Container(
-                        width: 14.r,
-                        height: 14.r,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(color: Colors.black26, blurRadius: 4),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
