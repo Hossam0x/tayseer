@@ -341,7 +341,6 @@ class UserAdvisorBioInformation extends StatelessWidget {
   }
 
   // ⭐ تحديث زر المحادثة في _buildFollowSection
-  // ⭐ تحديث _buildFollowSection
   Widget _buildFollowSection(
     BuildContext context,
     UserAdvisorProfileModel profile,
@@ -353,11 +352,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
           previous.isChatLoading != current.isChatLoading ||
           previous.followActionState != current.followActionState ||
           previous.blockActionState != current.blockActionState,
-      listener: (context, state) {
-        // ⭐ معالجة رسائل المتابعة (ليست هناك حاجة للتكرار إذا كانت في BlocListener بالأعلى)
-        // لكن بما أنه BlocConsumer يمكننا تركها أو إزالتها.
-        // بما أننا أضفنا BlocListener في الـ build، سنزيل هذا الجزء من هنا لتجنب التكرار.
-      },
+      listener: (context, state) {},
       buildWhen: (previous, current) =>
           previous.profile?.isFollowing != current.profile?.isFollowing ||
           previous.profile?.room != current.profile?.room ||
@@ -372,190 +367,315 @@ class UserAdvisorBioInformation extends StatelessWidget {
         final isChatLoading = state.isChatLoading;
         final room = state.profile?.room;
 
-        // ⭐ حالة التحميل العامة لتعطيل الأزرار
         final bool isSomeActionLoading =
             isLoadingFollow || isChatLoading || isLoadingBlock;
+
+        final bool isFollowSmall = isFollowing && !isBlocked;
+        final bool showBookSession = !isBlocked && isFollowing && isUser;
+        final bool showChat = !isBlocked && isFollowing;
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
           child: Row(
             children: [
               // زر المتابعة أو إلغاء الحظر
-              Expanded(
-                child: CustomBotton(
-                  height: 54.h,
-                  width: double.infinity,
-                  title: isBlocked
-                      ? context.tr('unblock')
-                      : (isFollowing
-                            ? context.tr('following')
-                            : context.tr('follow')),
-                  onPressed: isSomeActionLoading
-                      ? null
-                      : () {
-                          if (isBlocked) {
-                            context.read<UserAdvisorProfileCubit>().unblockUser(
-                              advisorId: profile.id,
-                            );
-                            return;
-                          }
-                          if (isGuest) {
-                            CustomshowDialogWithImage(
-                              context,
-                              title: context.tr('joinUs'),
-                              supTitle: context.tr("guest_login_first"),
-                              icon: Icons.lock_person_outlined,
-                              iconColor: AppColors.kprimaryColor,
-                              bottonText: context.tr("login"),
-                              showCancelButton: true,
-                              cancelText: context.tr('skip'),
-                              onPressed: () {
-                                CachNetwork.removeData(key: ktoken);
-                                context.pushNamedAndRemoveUntil(
-                                  AppRouter.kRegisrationView,
-                                  predicate: (_) => false,
-                                );
-                              },
-                              onCancel: () {},
-                            );
-                          } else {
-                            context
-                                .read<UserAdvisorProfileCubit>()
-                                .toggleFollow();
-                          }
-                        },
-                  backGroundcolor: (isFollowing || isBlocked)
-                      ? AppColors.kWhiteColor
-                      : AppColors.kprimaryColor,
-                  titleColor: (isFollowing || isBlocked)
-                      ? AppColors.kprimaryColor
-                      : AppColors.kWhiteColor,
-                  radius: 10.r,
-                  useGradient: (isFollowing || isBlocked) ? false : true,
-                  isLoading: isBlocked ? isLoadingBlock : isLoadingFollow,
-                  elevation: 0,
+              if (isFollowSmall)
+                _buildFollowButton(
+                  context: context,
+                  isBlocked: isBlocked,
+                  isFollowing: isFollowing,
+                  isLoadingBlock: isLoadingBlock,
+                  isLoadingFollow: isLoadingFollow,
+                  isSomeActionLoading: isSomeActionLoading,
+                  profile: profile,
+                  isSmall: true,
+                )
+              else
+                Expanded(
+                  child: _buildFollowButton(
+                    context: context,
+                    isBlocked: isBlocked,
+                    isFollowing: isFollowing,
+                    isLoadingBlock: isLoadingBlock,
+                    isLoadingFollow: isLoadingFollow,
+                    isSomeActionLoading: isSomeActionLoading,
+                    profile: profile,
+                    isSmall: false,
+                  ),
                 ),
-              ),
 
               // Book Session Button (only for users)
-              if (!isBlocked && isFollowing && isUser) ...[
+              if (showBookSession) ...[
                 Gap(13.w),
-                GestureDetector(
-                  onTap: isSomeActionLoading
-                      ? null
-                      : () {
-                          if (isGuest) {
-                            CustomshowDialogWithImage(
-                              context,
-                              title: context.tr('joinUs'),
-                              supTitle: context.tr("guest_login_first"),
-                              icon: Icons.lock_person_outlined,
-                              iconColor: AppColors.kprimaryColor,
-                              bottonText: context.tr("login"),
-                              showCancelButton: true,
-                              cancelText: context.tr('skip'),
-                              onPressed: () {
-                                CachNetwork.removeData(key: ktoken);
-                                context.pushNamedAndRemoveUntil(
-                                  AppRouter.kRegisrationView,
-                                  predicate: (_) => false,
-                                );
-                              },
-                              onCancel: () {},
-                            );
-                            return;
-                          }
-
-                          Navigator.pushNamed(
-                            context,
-                            AppRouter.advisorchatprofile,
-                            arguments: {'advisorid': profile.id},
-                          );
-                        },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 13.h,
-                      horizontal: 16.w,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary100,
-                      borderRadius: BorderRadius.circular(10.r),
-                      border: Border.all(color: AppColors.kprimaryColor),
-                    ),
-                    child: AppImage(
-                      AssetsData.icBookSession,
-                      width: 22.w,
-                      color: AppColors.kprimaryColor,
-                    ),
+                Expanded(
+                  child: _buildBookSessionButton(
+                    context,
+                    isSomeActionLoading,
+                    profile,
                   ),
                 ),
               ],
 
-              if (!isBlocked && isFollowing) ...[
+              if (showChat) ...[
                 Gap(13.w),
-                GestureDetector(
-                  onTap: isSomeActionLoading
-                      ? null
-                      : () {
-                          if (isGuest) {
-                            CustomshowDialogWithImage(
-                              context,
-                              title: context.tr('joinUs'),
-                              supTitle: context.tr("guest_login_first"),
-                              icon: Icons.lock_person_outlined,
-                              iconColor: AppColors.kprimaryColor,
-                              bottonText: context.tr("login"),
-                              showCancelButton: true,
-                              cancelText: context.tr('skip'),
-                              onPressed: () {
-                                CachNetwork.removeData(key: ktoken);
-                                context.pushNamedAndRemoveUntil(
-                                  AppRouter.kRegisrationView,
-                                  predicate: (_) => false,
-                                );
-                              },
-                              onCancel: () {},
-                            );
-                            return;
-                          }
-
-                          final cubit = context.read<UserAdvisorProfileCubit>();
-                          if (profile.hasRoom &&
-                              profile.chatRoomId != null &&
-                              profile.chatRoomId!.isNotEmpty &&
-                              room != null) {
-                            cubit.startChat();
-                          } else {
-                            cubit.startChat();
-                          }
-                        },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 13.h,
-                      horizontal: 16.w,
+                if (showBookSession)
+                  _buildChatButton(
+                    context,
+                    isSomeActionLoading,
+                    profile,
+                    room,
+                    isChatLoading,
+                    isSmall: true,
+                  )
+                else
+                  Expanded(
+                    child: _buildChatButton(
+                      context,
+                      isSomeActionLoading,
+                      profile,
+                      room,
+                      isChatLoading,
+                      isSmall: false,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary100,
-                      borderRadius: BorderRadius.circular(10.r),
-                      border: Border.all(color: AppColors.primary500),
-                    ),
-                    child: isChatLoading
-                        ? SizedBox(
-                            width: 22.w,
-                            height: 22.w,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primary500,
-                            ),
-                          )
-                        : AppImage(AssetsData.chatIconSVG, width: 22.w),
                   ),
-                ),
               ],
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildFollowButton({
+    required BuildContext context,
+    required bool isBlocked,
+    required bool isFollowing,
+    required bool isLoadingBlock,
+    required bool isLoadingFollow,
+    required bool isSomeActionLoading,
+    required UserAdvisorProfileModel profile,
+    required bool isSmall,
+  }) {
+    return GestureDetector(
+      onTap: isSomeActionLoading
+          ? null
+          : () {
+              if (isBlocked) {
+                context.read<UserAdvisorProfileCubit>().unblockUser(
+                  advisorId: profile.id,
+                );
+                return;
+              }
+              if (isGuest) {
+                CustomshowDialogWithImage(
+                  context,
+                  title: context.tr('joinUs'),
+                  supTitle: context.tr("guest_login_first"),
+                  icon: Icons.lock_person_outlined,
+                  iconColor: AppColors.kprimaryColor,
+                  bottonText: context.tr("login"),
+                  showCancelButton: true,
+                  cancelText: context.tr('skip'),
+                  onPressed: () {
+                    CachNetwork.removeData(key: ktoken);
+                    context.pushNamedAndRemoveUntil(
+                      AppRouter.kRegisrationView,
+                      predicate: (_) => false,
+                    );
+                  },
+                  onCancel: () {},
+                );
+              } else {
+                context.read<UserAdvisorProfileCubit>().toggleFollow();
+              }
+            },
+      child: Container(
+        height: 54.h,
+        width: isSmall ? 54.w : double.infinity,
+        decoration: BoxDecoration(
+          color: (isFollowing || isBlocked)
+              ? (isFollowing && !isBlocked
+                    ? AppColors.primary100
+                    : AppColors.kWhiteColor)
+              : AppColors.kprimaryColor,
+          gradient: (isFollowing || isBlocked)
+              ? null
+              : AppColors.defaultGradient,
+          borderRadius: BorderRadius.circular(10.r),
+          border: (isFollowing || isBlocked)
+              ? Border.all(
+                  color: isFollowing && !isBlocked
+                      ? AppColors.primary500
+                      : AppColors.kprimaryColor,
+                )
+              : null,
+        ),
+        child: Center(
+          child: (isBlocked ? isLoadingBlock : isLoadingFollow)
+              ? SizedBox(
+                  width: 24.w,
+                  height: 24.w,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: (isFollowing || isBlocked)
+                        ? AppColors.kprimaryColor
+                        : Colors.white,
+                  ),
+                )
+              : AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  transitionBuilder: (child, animation) {
+                    return ScaleTransition(
+                      scale: animation,
+                      child: FadeTransition(opacity: animation, child: child),
+                    );
+                  },
+                  child: isBlocked
+                      ? Text(
+                          context.tr('unblock'),
+                          key: const ValueKey('unblock'),
+                          style: Styles.textStyle14SemiBold.copyWith(
+                            color: AppColors.kprimaryColor,
+                          ),
+                        )
+                      : isFollowing
+                      ? Icon(
+                          Icons.how_to_reg,
+                          key: const ValueKey('followed'),
+                          color: AppColors.primary500,
+                          size: 24.w,
+                        ).animate().scale(
+                          duration: 400.ms,
+                          curve: Curves.easeOutBack,
+                        )
+                      : Text(
+                          context.tr('follow'),
+                          key: const ValueKey('follow'),
+                          style: Styles.textStyle14SemiBold.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookSessionButton(
+    BuildContext context,
+    bool isSomeActionLoading,
+    UserAdvisorProfileModel profile,
+  ) {
+    return GestureDetector(
+      onTap: isSomeActionLoading
+          ? null
+          : () {
+              if (isGuest) {
+                CustomshowDialogWithImage(
+                  context,
+                  title: context.tr('joinUs'),
+                  supTitle: context.tr("guest_login_first"),
+                  icon: Icons.lock_person_outlined,
+                  iconColor: AppColors.kprimaryColor,
+                  bottonText: context.tr("login"),
+                  showCancelButton: true,
+                  cancelText: context.tr('skip'),
+                  onPressed: () {
+                    CachNetwork.removeData(key: ktoken);
+                    context.pushNamedAndRemoveUntil(
+                      AppRouter.kRegisrationView,
+                      predicate: (_) => false,
+                    );
+                  },
+                  onCancel: () {},
+                );
+                return;
+              }
+
+              Navigator.pushNamed(
+                context,
+                AppRouter.advisorchatprofile,
+                arguments: {'advisorid': profile.id},
+              );
+            },
+      child: Container(
+        height: 54.h,
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        decoration: BoxDecoration(
+          color: AppColors.primary100,
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: AppColors.kprimaryColor),
+        ),
+        child: Center(
+          child: Text(
+            context.tr('book_session'),
+            style: Styles.textStyle14SemiBold.copyWith(
+              color: AppColors.kprimaryColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChatButton(
+    BuildContext context,
+    bool isSomeActionLoading,
+    UserAdvisorProfileModel profile,
+    dynamic room,
+    bool isChatLoading, {
+    required bool isSmall,
+  }) {
+    return GestureDetector(
+      onTap: isSomeActionLoading
+          ? null
+          : () {
+              if (isGuest) {
+                CustomshowDialogWithImage(
+                  context,
+                  title: context.tr('joinUs'),
+                  supTitle: context.tr("guest_login_first"),
+                  icon: Icons.lock_person_outlined,
+                  iconColor: AppColors.kprimaryColor,
+                  bottonText: context.tr("login"),
+                  showCancelButton: true,
+                  cancelText: context.tr('skip'),
+                  onPressed: () {
+                    CachNetwork.removeData(key: ktoken);
+                    context.pushNamedAndRemoveUntil(
+                      AppRouter.kRegisrationView,
+                      predicate: (_) => false,
+                    );
+                  },
+                  onCancel: () {},
+                );
+                return;
+              }
+
+              final cubit = context.read<UserAdvisorProfileCubit>();
+              cubit.startChat();
+            },
+      child: Container(
+        height: 54.h,
+        width: isSmall ? 54.w : double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.primary100,
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: AppColors.primary500),
+        ),
+        child: Center(
+          child: isChatLoading
+              ? SizedBox(
+                  width: 22.w,
+                  height: 22.w,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary500,
+                  ),
+                )
+              : AppImage(AssetsData.chatIconSVG, width: 22.w),
+        ),
+      ),
     );
   }
 
