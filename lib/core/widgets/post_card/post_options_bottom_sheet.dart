@@ -86,11 +86,12 @@ class PostOptionsBottomSheet extends StatelessWidget {
               icon: Icons.ios_share_rounded,
               onTap: onShare,
             ),
-            OptionItem(
-              text: context.tr(AppStrings.report),
-              icon: Icons.error_outline_rounded,
-              onTap: onReport,
-            ),
+            if (!(post?.isMine ?? false))
+              OptionItem(
+                text: context.tr(AppStrings.report),
+                icon: Icons.error_outline_rounded,
+                onTap: onReport,
+              ),
             OptionItem(
               text: context.tr(AppStrings.save),
               icon: isSaved

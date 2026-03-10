@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:ui';
 
 import 'package:tayseer/core/enum/report_type.dart';
@@ -83,6 +84,9 @@ class ReelsOverlay extends StatelessWidget {
 
   // --- Header Section ---
   Widget _buildHeader(BuildContext context) {
+    log(
+      ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Building ReelsOverlay header for postId: ${post.isMine}",
+    );
     return ClipRRect(
       // 1. البوردر ريدياس من تحت بس (للقص)
       borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
@@ -120,8 +124,9 @@ class ReelsOverlay extends StatelessWidget {
                   },
                   child: Icon(Icons.close, color: Colors.white, size: 28.sp),
                 ),
-                if (!isGuest)
+                if (!isGuest && !post.isMine)
                   IconButton(
+                    padding: EdgeInsets.zero,
                     onPressed: () {
                       context.pushNamed(
                         AppRouter.kReportsView,
