@@ -325,7 +325,7 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // INTERACTIONS — ✅ showActionSnackbar: false دايماً
+  // USER INTERACTION
   // ═══════════════════════════════════════════════════════════
   Future<void> userInteraction({
     required String personId,
@@ -335,7 +335,7 @@ class MarriageCubit extends Cubit<MarriageState> {
       state.copyWith(
         userInteractionState: CubitStates.initial,
         errorMessage: null,
-        showActionSnackbar: false, // ✅ مش هيظهر snackbar
+        showActionSnackbar: false,
       ),
     );
 
@@ -349,20 +349,20 @@ class MarriageCubit extends Cubit<MarriageState> {
         state.copyWith(
           userInteractionState: CubitStates.failure,
           errorMessage: failure.message,
-          showActionSnackbar: false, // ✅ حتى لو فشل مش هيظهر snackbar
+          showActionSnackbar: false,
         ),
       ),
       (_) => emit(
         state.copyWith(
           userInteractionState: CubitStates.success,
-          showActionSnackbar: false, // ✅
+          showActionSnackbar: false,
         ),
       ),
     );
   }
 
   // ═══════════════════════════════════════════════════════════
-  // REGARD — ✅ showActionSnackbar: true
+  // REGARD
   // ═══════════════════════════════════════════════════════════
   Future<void> sendRegard({required String personId}) async {
     emit(
@@ -380,13 +380,13 @@ class MarriageCubit extends Cubit<MarriageState> {
         state.copyWith(
           sendRegardState: CubitStates.failure,
           errorMessage: failure.message,
-          showActionSnackbar: true, // ✅ يظهر snackbar عند الفشل
+          showActionSnackbar: true,
         ),
       ),
       (_) => emit(
         state.copyWith(
           sendRegardState: CubitStates.success,
-          showActionSnackbar: true, // ✅ يظهر dialog عند النجاح
+          showActionSnackbar: true,
         ),
       ),
     );
@@ -411,15 +411,69 @@ class MarriageCubit extends Cubit<MarriageState> {
         state.copyWith(
           sendRegardTextState: CubitStates.failure,
           errorMessage: failure.message,
-          showActionSnackbar: true, // ✅
+          showActionSnackbar: true,
         ),
       ),
       (_) => emit(
         state.copyWith(
           sendRegardTextState: CubitStates.success,
-          showActionSnackbar: true, // ✅
+          showActionSnackbar: true,
         ),
       ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ BLOCK USER
+  // ═══════════════════════════════════════════════════════════
+  Future<void> blockUser({required String personId}) async {
+    emit(state.copyWith(
+      blockActionState: CubitStates.loading,
+      blockMessage: null,
+    ));
+
+    final result = await _repo.blockUser(personId: personId);
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+        blockActionState: CubitStates.failure,
+        blockMessage: failure.message,
+      )),
+      (message) {
+        // ✅ شيل اليوزر من الـ list بعد الحظر
+        final updatedUsers = state.allUsers
+            .where((u) => u.user?.id != personId)
+            .toList();
+        emit(state.copyWith(
+          blockActionState: CubitStates.success,
+          blockMessage: message,
+          allUsers: updatedUsers,
+          currentIndex: 0,
+        ));
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ✅ UNBLOCK USER
+  // ═══════════════════════════════════════════════════════════
+  Future<void> unblockUser({required String personId}) async {
+    emit(state.copyWith(
+      blockActionState: CubitStates.loading,
+      blockMessage: null,
+    ));
+
+    final result = await _repo.unblockUser(personId: personId);
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+        blockActionState: CubitStates.failure,
+        blockMessage: failure.message,
+      )),
+      (message) => emit(state.copyWith(
+        blockActionState: CubitStates.success,
+        blockMessage: message,
+      )),
     );
   }
 
@@ -471,7 +525,7 @@ class MarriageCubit extends Cubit<MarriageState> {
         sendRegardState: CubitStates.initial,
         sendRegardTextState: CubitStates.initial,
         errorMessage: null,
-        showActionSnackbar: false, // ✅
+        showActionSnackbar: false,
       ),
     );
   }

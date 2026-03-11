@@ -56,7 +56,6 @@ class UserItem {
     "answers": answers?.toJson(),
   };
 }
-
 class User {
   String? id;
   String? name;
@@ -69,7 +68,8 @@ class User {
   bool? isNew;
   int? age;
   UserAbout? about;
-  bool? isFavorite; // ✅ جديد
+  bool? isFavorite;
+  bool? isBlocked; // ✅ جديد
 
   User({
     this.id,
@@ -83,7 +83,8 @@ class User {
     this.isNew,
     this.age,
     this.about,
-    this.isFavorite, // ✅
+    this.isFavorite,
+    this.isBlocked, // ✅
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -102,7 +103,8 @@ class User {
     isNew: json["isNew"],
     age: json["age"],
     about: json["about"] != null ? UserAbout.fromJson(json["about"]) : null,
-    isFavorite: json["isFavorite"], // ✅
+    isFavorite: json["isFavorite"],
+    isBlocked: json["isBlocked"], // ✅
   );
 
   Map<String, dynamic> toJson() => {
@@ -117,10 +119,10 @@ class User {
     "isNew": isNew,
     "age": age,
     "about": about?.toJson(),
-    "isFavorite": isFavorite, // ✅
+    "isFavorite": isFavorite,
+    "isBlocked": isBlocked, // ✅
   };
 }
-
 class UserAbout {
   String? job;
   String? educationLevel;

@@ -649,18 +649,41 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                     sliver: SliverToBoxAdapter(
                       child: BottomActionsSection(
-                        onBlock: () {
-                          CustomshowDialogWithImage(
-                            context,
-                            bottonText: context.tr("send_report"),
-                            imageUrl: AssetsData.kWoriningImage,
-                            title: context.tr("confirm_report"),
-                            supTitle: context.tr("sup_confirm_report"),
-                            onPressed: () {},
-                            showCancelButton: true,
-                          );
-                        },
-                        onReport: () {
+                    onBlock: () {
+  final isBlocked = user?.isBlocked ?? false;
+  CustomshowDialogWithImage(
+    context,
+    title: isBlocked
+        ? context.tr('unblock_user')
+        : context.tr(AppStrings.blockUser),
+    supTitle: isBlocked
+        ? context.tr('unblock_user_confirmation')
+        : context.tr(AppStrings.blockUserConfirmation),
+    icon: Icons.block,
+    bottonText: context.tr(AppStrings.yes),
+    onPressed: () async {
+      Navigator.pop(context);
+      if (isBlocked) {
+        await cubit.unblockUser(personId: user?.id ?? '');
+      } else {
+        await cubit.blockUser(personId: user?.id ?? '');
+      }
+      final newState = cubit.state;
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: newState.blockMessage ?? '',
+          isSuccess: newState.blockActionState == CubitStates.success,
+          isError: newState.blockActionState == CubitStates.failure,
+        ),
+      );
+    },
+    showCancelButton: true,
+    cancelText: context.tr(AppStrings.no),
+    onCancel: () => Navigator.pop(context),
+  );
+},  onReport: () {
                           context.pushNamed(
                             AppRouter.kReportsView,
                             arguments: {
