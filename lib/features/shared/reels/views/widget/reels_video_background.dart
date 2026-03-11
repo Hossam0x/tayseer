@@ -710,7 +710,7 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
   }
 
   void _startProgressTimer() {
-    _updateTimer = Timer.periodic(const Duration(milliseconds: 250), (_) {
+    _updateTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
       if (!mounted || _isDragging) return;
       final value = widget.controller.value;
       if (value.duration.inMilliseconds == 0) return;
