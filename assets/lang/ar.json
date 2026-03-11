@@ -1626,8 +1626,7 @@
   "story_unsaved_changes_title": "تغييرات غير محفوظة",
   "story_unsaved_changes_message": "هل أنت متأكد من رغبتك في تجاهل التغييرات والخروج؟",
   "story_keep_editing": "متابعة التعديل",
-  "story_discard_and_exit": "تجاهل وخروج"
-  "block_user_error": "حدث خطأ في حظر المستخدم",
+  "story_discard_and_exit": "تجاهل وخروج",
   "failed_to_load_post": "فشل تحميل المنشور",
   "no_post_data": "لا توجد بيانات المنشور",
   "notifications": "الإشعارات",

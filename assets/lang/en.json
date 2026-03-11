@@ -1630,8 +1630,7 @@
   "story_unsaved_changes_message": "Are you sure you want to discard your changes and exit?",
   "story_keep_editing": "Keep Editing",
   "story_discard_and_exit": "Discard & Exit",  
-"people_liked_you": "People who liked you"
-  "block_user_error": "Error blocking user",
+  "people_liked_you": "People who liked you" ,
   "failed_to_load_post": "Failed to load post",
   "no_post_data": "No post data available",
   "notifications": "Notifications",

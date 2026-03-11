@@ -49,6 +49,8 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
 
     return ListView.separated(
       controller: _scrollController,
+        cacheExtent: 9999,
+
       padding: const EdgeInsets.only(top: 10, bottom: 20),
       itemCount: cubit.notifications.length + (cubit.hasNextPage ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 12),

@@ -3,7 +3,6 @@ import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
-import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/advisor_chat_screen.dart';
