@@ -1,3 +1,4 @@
+import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/login_data.dart';
@@ -22,3 +23,5 @@ bool get isUser => selectedUserType == UserTypeEnum.user;
 bool get isAdvisor => selectedUserType == UserTypeEnum.asConsultant;
 bool get isGuest => selectedUserType == UserTypeEnum.guest;
 bool get isConsultant => selectedUserType == UserTypeEnum.asConsultant;
+
+AdvisorStatus? advisorStatus;

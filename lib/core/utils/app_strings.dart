@@ -131,4 +131,12 @@ class AppStrings {
   // Upload Post
   static const String postPublishFailed = "post_publish_failed";
   static const String retryButton = "retry_button";
+
+  static const String accountUnderReview = "account_under_review";
+  static const String accountUnderReviewMessage =
+      "account_under_review_message";
+  static const String gotIt = "got_it";
+  static const String cannotDoThisAction = "cannot_do_this_action";
+  static const String accountDisApprovedMessage = "account_disapproved_message";
+  static const String contactSupport = "contact_support";
 }

@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
-import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
@@ -220,6 +221,9 @@ class HomeCubit extends Cubit<HomeState> {
           CachNetwork.setData(key: kMyProfileName, value: data.name);
         }
 
+        if (isAdvisor) {
+          setAdvisorStatus(data.approvalKey);
+        }
         // تحديث الـ State فقط لو البيانات اتغيرت
         if (_isUserInfoChanged(data)) {
           emit(

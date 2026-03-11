@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_cast
+
 import 'package:tayseer/core/functions/pac_date.dart';
 import 'package:tayseer/my_import.dart';
 
