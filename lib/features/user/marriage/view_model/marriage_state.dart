@@ -22,7 +22,8 @@ class MarriageState extends Equatable {
   final int totalPages;
   final bool isLoadingMore;
   final Map<String, dynamic> activeFilters;
-  final Set<String> favoritedIds; // ✅ جديد
+  final Set<String> favoritedIds;
+  final bool showActionSnackbar; // ✅ جديد
 
   const MarriageState({
     this.marriageProfileState = CubitStates.initial,
@@ -44,7 +45,8 @@ class MarriageState extends Equatable {
     this.totalPages = 1,
     this.isLoadingMore = false,
     this.activeFilters = const {},
-    this.favoritedIds = const {}, // ✅ جديد
+    this.favoritedIds = const {},
+    this.showActionSnackbar = false, // ✅ جديد
   });
 
   MarriageState copyWith({
@@ -67,7 +69,8 @@ class MarriageState extends Equatable {
     int? totalPages,
     bool? isLoadingMore,
     Map<String, dynamic>? activeFilters,
-    Set<String>? favoritedIds, // ✅ جديد
+    Set<String>? favoritedIds,
+    bool? showActionSnackbar, // ✅ جديد
   }) {
     return MarriageState(
       marriageProfileState: marriageProfileState ?? this.marriageProfileState,
@@ -83,14 +86,14 @@ class MarriageState extends Equatable {
       swipeProgress: swipeProgress ?? this.swipeProgress,
       isAnimating: isAnimating ?? this.isAnimating,
       showHistory: showHistory ?? this.showHistory,
-      selectedHistoryFilter:
-          selectedHistoryFilter ?? this.selectedHistoryFilter,
+      selectedHistoryFilter: selectedHistoryFilter ?? this.selectedHistoryFilter,
       allUsers: allUsers ?? this.allUsers,
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       activeFilters: activeFilters ?? this.activeFilters,
-      favoritedIds: favoritedIds ?? this.favoritedIds, // ✅ جديد
+      favoritedIds: favoritedIds ?? this.favoritedIds,
+      showActionSnackbar: showActionSnackbar ?? this.showActionSnackbar, // ✅
     );
   }
 
@@ -115,6 +118,7 @@ class MarriageState extends Equatable {
     totalPages,
     isLoadingMore,
     activeFilters,
-    favoritedIds, // ✅ جديد
+    favoritedIds,
+    showActionSnackbar, // ✅
   ];
 }

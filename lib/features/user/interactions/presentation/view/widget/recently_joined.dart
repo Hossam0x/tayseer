@@ -20,14 +20,15 @@ class RecentlyJoined extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-      context.pushNamed(
-    AppRouter.kMarriageView,
-    arguments: {
-      'personId': item.userId,
-      'fromInteractions': true,
-      'isFavorite':item.isFavorite, // ✅
-    },
-  );
+    context.pushNamed(
+      AppRouter.kMarriageView,
+      arguments: {
+        'personId': item.userId,
+        'fromInteractions': true,
+        'isFavorite': item.isFavorite,
+        'interactionUser': item,
+      },
+    );
       },
       child: Container(
         margin: EdgeInsets.only(top: 10.h, left: 4.w),
