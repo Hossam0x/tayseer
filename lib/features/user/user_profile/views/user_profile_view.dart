@@ -322,61 +322,15 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   Widget _buildProfileErrorSection(BuildContext context, SettingsError state) {
-    return Column(
-      children: [
-        Container(
-          width: 120.w,
-          height: 120.w,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.secondary100,
-            border: Border.all(color: AppColors.kRedColor, width: 2),
-          ),
-          child: Center(
-            child: Icon(
-              Icons.error_outline,
-              color: AppColors.kRedColor,
-              size: 48.w,
-            ),
-          ),
-        ),
-        Gap(12.h),
-        Text(
-          context.tr("error_loading_data"),
-          style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-          textAlign: TextAlign.center,
-        ),
-        Gap(4.h),
-        Text(
-          state.message,
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
-          textAlign: TextAlign.center,
-          maxLines: 2,
-        ),
-        Gap(16.h),
-        ElevatedButton(
-          onPressed: () async {
-            final cubit = context.read<UserProfileCubit>();
-            try {
-              await cubit.refresh();
-            } catch (e) {}
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary100,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-          ),
-          child: Text(
-            context.tr("retry"),
-            style: Styles.textStyle16Meduim.copyWith(
-              color: AppColors.kWhiteColor,
-            ),
-          ),
-        ),
-        Gap(20.h),
-      ],
+    return CustomErrorView(
+      message: state.message,
+      verticalPadding: 40.h,
+      onRetry: () async {
+        final cubit = context.read<UserProfileCubit>();
+        try {
+          await cubit.refresh();
+        } catch (e) {}
+      },
     );
   }
 

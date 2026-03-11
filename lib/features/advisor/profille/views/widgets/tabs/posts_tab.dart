@@ -214,36 +214,9 @@ class PostsTab extends StatelessWidget {
   );
 
   Widget _buildError(String? error, ProfileCubit cubit, BuildContext context) =>
-      Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-              Text(
-                context.tr('error'),
-                style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-              ),
-              Gap(16.h),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.kprimaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                ),
-                onPressed: () => cubit.fetchPosts(),
-                child: Text(
-                  context.tr('retry'),
-                  style: Styles.textStyle14Meduim.copyWith(
-                    color: AppColors.kWhiteColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      CustomErrorView(
+        message: error,
+        onRetry: () => cubit.fetchPosts(),
       );
 
   Widget _buildEmptyState(BuildContext context) => Padding(

@@ -206,7 +206,10 @@ class _FollowingViewState extends State<FollowingView> {
     }
 
     if (state.errorMessage != null && state.followers.isEmpty) {
-      return _buildErrorWidget(context, state.errorMessage!);
+      return CustomErrorView(
+        message: state.errorMessage,
+        onRetry: () => _cubit.fetchFollowers(),
+      );
     }
 
     if (state.followers.isEmpty) {
@@ -286,28 +289,6 @@ class _FollowingViewState extends State<FollowingView> {
       itemBuilder: (context, index) {
         return const FollowerItemSkeleton();
       },
-    );
-  }
-
-  Widget _buildErrorWidget(BuildContext context, String error) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 50.w, color: Colors.red),
-          SizedBox(height: 16.h),
-          Text(
-            error,
-            style: Styles.textStyle16.copyWith(color: Colors.red),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 16.h),
-          ElevatedButton(
-            onPressed: () => _cubit.fetchFollowers(),
-            child: Text(context.tr('retry')),
-          ),
-        ],
-      ),
     );
   }
 

@@ -118,7 +118,10 @@ class _PostsTabBody extends StatelessWidget {
             case CubitStates.loading:
               return _buildSkeletonPosts();
             case CubitStates.failure:
-              return _buildErrorPosts(context, state.errorMessage);
+              return CustomErrorView(
+                message: state.errorMessage,
+                onRetry: () => context.read<ArchivedPostsCubit>().refresh(),
+              );
             case CubitStates.success:
               if (state.posts.isEmpty) {
                 return SharedEmptyState(title: context.tr("no_archived_posts"));
@@ -139,41 +142,6 @@ class _PostsTabBody extends StatelessWidget {
       itemBuilder: (context, index) => Padding(
         padding: EdgeInsets.only(bottom: 16.h),
         child: const PostCardShimmer(),
-      ),
-    );
-  }
-
-  Widget _buildErrorPosts(BuildContext context, String? errorMessage) {
-    return Padding(
-      padding: EdgeInsets.all(24.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-          Gap(16.h),
-          Text(
-            errorMessage ?? context.tr('error_loading_archived_posts'),
-            style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-            textAlign: TextAlign.center,
-          ),
-          Gap(24.h),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.kprimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            ),
-            onPressed: () => context.read<ArchivedPostsCubit>().refresh(),
-            child: Text(
-              context.tr('retry'),
-              style: Styles.textStyle14Meduim.copyWith(
-                color: AppColors.kWhiteColor,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

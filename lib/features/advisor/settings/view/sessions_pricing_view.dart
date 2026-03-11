@@ -75,34 +75,10 @@ class SessionPricingView extends StatelessWidget {
                             Expanded(child: _buildSkeletonLoading())
                           // Error State
                           else if (state.state == CubitStates.failure)
-                            Expanded(
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      color: AppColors.kRedColor,
-                                      size: 48.w,
-                                    ),
-                                    Gap(16.h),
-                                    Text(
-                                      state.errorMessage ??
-                                          context.tr('error_loading_data'),
-                                      textAlign: TextAlign.center,
-                                      style: Styles.textStyle16.copyWith(
-                                        color: AppColors.kRedColor,
-                                      ),
-                                    ),
-                                    Gap(24.h),
-                                    ElevatedButton(
-                                      onPressed: () =>
-                                          cubit.loadServiceProvider(),
-                                      child: Text(context.tr('retry')),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            CustomErrorView(
+                              verticalPadding: 100,
+                              message: state.errorMessage,
+                              onRetry: () => cubit.loadServiceProvider(),
                             )
                           // Success State
                           else

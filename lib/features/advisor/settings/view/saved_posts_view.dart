@@ -192,34 +192,10 @@ class _SavedPostsBody extends StatelessWidget {
         }
 
         if (state.status == CubitStates.failure && state.posts.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  context.tr('error_loading_posts'),
-                  style: Styles.textStyle16.copyWith(color: AppColors.kGreyB3),
-                ),
-                Gap(12.h),
-                ElevatedButton(
-                  onPressed: () => cubit.refresh(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.kprimaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24.w,
-                      vertical: 12.h,
-                    ),
-                  ),
-                  child: Text(
-                    context.tr('retry'),
-                    style: Styles.textStyle14.copyWith(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
+          return CustomErrorView(
+            verticalPadding: 100,
+            message: state.errorMessage,
+            onRetry: () => cubit.refresh(),
           );
         }
 

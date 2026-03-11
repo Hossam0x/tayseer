@@ -257,36 +257,10 @@ class UserPublicPostsTab extends StatelessWidget {
   }
 
   Widget _buildErrorState(BuildContext context, UserPublicProfileCubit cubit) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
-      child: Column(
-        children: [
-          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-          Gap(16.h),
-          Text(
-            context.tr('error_loading_posts'),
-            style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-            textAlign: TextAlign.center,
-          ),
-          Gap(24.h),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.kprimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            ),
-            onPressed: () => cubit.fetchPosts(),
-            child: Text(
-              context.tr('retry'),
-              style: Styles.textStyle14Meduim.copyWith(
-                color: AppColors.kWhiteColor,
-              ),
-            ),
-          ),
-        ],
-      ),
+    final state = cubit.state;
+    return CustomErrorView(
+      message: state.postsErrorMessage,
+      onRetry: () => cubit.fetchPosts(),
     );
   }
 

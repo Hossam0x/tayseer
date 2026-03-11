@@ -217,24 +217,9 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
     }
 
     if (state.state == CubitStates.failure) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-            Gap(16.h),
-            Text(
-              state.errorMessage ?? context.tr('error_loading_users'),
-              textAlign: TextAlign.center,
-              style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-            ),
-            Gap(24.h),
-            ElevatedButton(
-              onPressed: () => cubit.loadRestrictedUsers(),
-              child: Text(context.tr('retry')),
-            ),
-          ],
-        ),
+      return CustomErrorView(
+        message: state.errorMessage ?? context.tr('error_loading_users'),
+        onRetry: () => cubit.loadRestrictedUsers(),
       );
     }
 

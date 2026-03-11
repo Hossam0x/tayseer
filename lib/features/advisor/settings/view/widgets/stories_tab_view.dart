@@ -23,7 +23,10 @@ class StoriesTabView extends StatelessWidget {
           case CubitStates.loading:
             return _buildSkeletonStories();
           case CubitStates.failure:
-            return _buildErrorStories(context, state.errorMessage);
+            return CustomErrorView(
+              message: state.errorMessage,
+              onRetry: () => context.read<ArchivedStoriesCubit>().refresh(),
+            );
           case CubitStates.success:
             if (state.stories.isEmpty) {
               return SharedEmptyState(title: context.tr('no_stories'));
@@ -121,41 +124,6 @@ class StoriesTabView extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildErrorStories(BuildContext context, String? errorMessage) {
-    return Padding(
-      padding: EdgeInsets.all(24.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-          Gap(16.h),
-          Text(
-            errorMessage ?? context.tr('error_loading_stories'),
-            style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-            textAlign: TextAlign.center,
-          ),
-          Gap(24.h),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.kprimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            ),
-            onPressed: () => context.read<ArchivedStoriesCubit>().refresh(),
-            child: Text(
-              context.tr('retry'),
-              style: Styles.textStyle14Meduim.copyWith(
-                color: AppColors.kWhiteColor,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
