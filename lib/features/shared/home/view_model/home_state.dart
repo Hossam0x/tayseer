@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/category_model.dart';
-import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 

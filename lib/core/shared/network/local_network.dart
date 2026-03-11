@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/login_data.dart';
 import 'package:tayseer/my_import.dart';
@@ -44,6 +45,21 @@ class CachNetwork {
 
     selectedLanguage = sharedPref.getString(kAppLanguage) ?? 'ar';
     debugPrint("selectedLanguage initialized to: $selectedLanguage");
+
+    final advisorStatusString = sharedPref.getString(kAdvisorStatus);
+    if (advisorStatusString != null && advisorStatusString.isNotEmpty) {
+      try {
+        advisorStatus = AdvisorStatus.values.firstWhere(
+          (e) => e.name == advisorStatusString,
+        );
+        debugPrint('advisorStatus === $advisorStatus');
+      } catch (e) {
+        debugPrint('Error parsing advisor status from cache: $e');
+        advisorStatus = null;
+      }
+    } else {
+      advisorStatus = null;
+    }
   }
 
   static Future<bool> setData({

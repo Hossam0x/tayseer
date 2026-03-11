@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
@@ -106,6 +107,7 @@ class AuthCubit extends Cubit<AuthState> {
         );
       },
       (data) {
+        setAdvisorStatus(data.data?.approvalKey);
         emit(
           state.copyWith(
             registerState: CubitStates.success,
@@ -116,6 +118,7 @@ class AuthCubit extends Cubit<AuthState> {
                 : 'registration',
           ),
         );
+
         clearControllers();
       },
     );
@@ -406,6 +409,7 @@ class AuthCubit extends Cubit<AuthState> {
           );
         },
         (result) {
+          setAdvisorStatus(result.data?.approvalKey);
           emit(
             state.copyWith(
               authGoogleState: CubitStates.success,
@@ -526,6 +530,7 @@ class AuthCubit extends Cubit<AuthState> {
           );
         },
         (result) {
+          setAdvisorStatus(result.data?.approvalKey);
           emit(
             state.copyWith(
               authAppleState: CubitStates.success,

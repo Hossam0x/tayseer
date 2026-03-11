@@ -1630,5 +1630,12 @@
   "story_unsaved_changes_message": "Are you sure you want to discard your changes and exit?",
   "story_keep_editing": "Keep Editing",
   "story_discard_and_exit": "Discard & Exit",  
-"people_liked_you": "People who liked you"
+  "people_liked_you": "People who liked you",
+  "account_under_review" : "Your account is under review",
+  "account_under_review_message" : "Your account is currently under review by our team. We will notify you once the review process is complete. Thank you for your patience",
+  "got_it": "Got it",
+  "cannot_do_this_action" : "You cannot do this action right now",
+  "account_disapproved_message" : "Unfortunately, your account did not meet our guidelines and has been disapproved. If you believe this is a mistake, please contact our support team for further assistance.",
+  "contactSupport": "Contact Support"
+
 }

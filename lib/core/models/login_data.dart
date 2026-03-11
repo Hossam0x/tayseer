@@ -28,6 +28,7 @@ class LoginData {
   final String? userType;
   final String? name;
   final UserModel? user;
+  final String? approvalKey;
 
   LoginData({
     this.token,
@@ -37,6 +38,7 @@ class LoginData {
     this.userType,
     this.name,
     this.user,
+    this.approvalKey,
   });
 
   factory LoginData.fromJson(Map<String, dynamic> json) {
@@ -48,6 +50,7 @@ class LoginData {
       userType: json['userType'],
       name: json['name'],
       user: json['user'] != null ? UserModel.fromJson(json['user']) : null,
+      approvalKey: json['approvalKey'],
     );
   }
 
