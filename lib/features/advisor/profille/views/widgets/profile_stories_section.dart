@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
@@ -40,12 +41,14 @@ class ProfileStoriesSection extends StatelessWidget {
           return const BlockedProfilePlaceholder(isSliver: true);
         }
 
+        // ✅ Hide if offline and empty or if it's explicitly requested by the user
+        final isOffline = getIt<ConnectivityCubit>().isOffline;
         final isEmpty =
             (state.storiesState == CubitStates.success ||
                 state.storiesState == CubitStates.initial) &&
             state.storiesList.isEmpty;
 
-        if (isEmpty) {
+        if (isEmpty || (isOffline && state.storiesList.isEmpty)) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
 
@@ -61,7 +64,6 @@ class ProfileStoriesSection extends StatelessWidget {
       },
     );
   }
-
   Widget _buildContent(BuildContext context, StoriesState state) {
     switch (state.storiesState) {
       case CubitStates.loading:

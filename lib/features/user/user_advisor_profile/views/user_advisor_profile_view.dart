@@ -1,3 +1,5 @@
+import 'package:tayseer/core/services/connectivity_cubit.dart';
+import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
@@ -39,6 +41,7 @@ class UserAdvisorProfileView extends StatelessWidget {
                   context: context,
                 ),
             ),
+            BlocProvider.value(value: getIt<ConnectivityCubit>()),
           ],
           child: Stack(
             children: [
@@ -65,19 +68,38 @@ class _UserProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
-      listenWhen: (previous, current) =>
-          (previous.profile?.room?.isBlocked == true &&
-          current.profile?.room?.isBlocked == false),
-      listener: (context, state) {
-        // ✅ Refetch everything when unblocked
-        context.read<UserAdvisorProfileCubit>().refresh();
-        context.read<StoriesCubit>().fetchStories(
-              isSpecial: true,
-              advisorId: advisorId,
-              context: context,
-            );
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+          listenWhen: (previous, current) =>
+              (previous.profile?.room?.isBlocked == true &&
+              current.profile?.room?.isBlocked == false),
+          listener: (context, state) {
+            // ✅ Refetch everything when unblocked
+            context.read<UserAdvisorProfileCubit>().refresh();
+            context.read<StoriesCubit>().fetchStories(
+                  isSpecial: true,
+                  advisorId: advisorId,
+                  context: context,
+                );
+          },
+        ),
+        BlocListener<ConnectivityCubit, ConnectivityState>(
+          listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
+          listener: (context, state) {
+            final storiesCubit = context.read<StoriesCubit>();
+            if (storiesCubit.state.storiesState == CubitStates.failure ||
+                storiesCubit.state.storiesList.isEmpty) {
+              storiesCubit.fetchStories(
+                isSpecial: true,
+                advisorId: advisorId,
+                context: context,
+              );
+            }
+            context.read<UserAdvisorProfileCubit>().refresh();
+          },
+        ),
+      ],
       child: BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
         buildWhen: (previous, current) =>
             previous.profile?.room?.isBlocked !=
@@ -85,16 +107,20 @@ class _UserProfileContent extends StatelessWidget {
         builder: (context, state) {
           final isBlocked = state.profile?.room?.isBlocked ?? false;
 
-          return RefreshIndicator.adaptive(
-            onRefresh: () => Future.wait([
-              context.read<UserAdvisorProfileCubit>().refresh(),
-              if (!isBlocked)
-                context.read<StoriesCubit>().fetchStories(
-                      isSpecial: true,
-                      advisorId: advisorId,
-                      context: context,
-                    ),
-            ]),
+          return RefreshIndicator(
+            onRefresh: () async {
+              if (getIt<ConnectivityCubit>().isOffline) return;
+              VideoManager.instance.stopAll();
+              await Future.wait([
+                context.read<UserAdvisorProfileCubit>().refresh(),
+                if (!isBlocked)
+                  context.read<StoriesCubit>().fetchStories(
+                        isSpecial: true,
+                        advisorId: advisorId,
+                        context: context,
+                      ),
+              ]);
+            },
             color: AppColors.kprimaryColor,
             backgroundColor: AppColors.kWhiteColor,
             displacement: 40.h,

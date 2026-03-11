@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tayseer/core/services/connectivity_cubit.dart';
+import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
@@ -34,12 +36,16 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      // ✅ BlocProvider بيعمل الـ cubit ويتحكم في lifecycle بشكل صح
-      create: (context) {
-        _cubit = UserProfileCubit(getIt<UserProfileRepository>());
-        return _cubit!;
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<UserProfileCubit>(
+          create: (context) {
+            _cubit = UserProfileCubit(getIt<UserProfileRepository>());
+            return _cubit!;
+          },
+        ),
+        BlocProvider.value(value: getIt<ConnectivityCubit>()),
+      ],
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
@@ -144,6 +150,13 @@ class _UserProfileViewState extends State<UserProfileView> {
                       }
                     },
                   ),
+                  BlocListener<ConnectivityCubit, ConnectivityState>(
+                    listenWhen: (prev, curr) =>
+                        !prev.isConnected && curr.isConnected,
+                    listener: (context, state) {
+                      context.read<UserProfileCubit>().refresh();
+                    },
+                  ),
                 ],
                 child: BlocBuilder<UserProfileCubit, UserProfileState>(
                   builder: (context, state) {
@@ -159,8 +172,10 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   Widget _buildBodyContent(BuildContext context, UserProfileState state) {
-    return RefreshIndicator.adaptive(
+    return RefreshIndicator(
       onRefresh: () async {
+        if (getIt<ConnectivityCubit>().isOffline) return;
+        VideoManager.instance.stopAll();
         final cubit = context.read<UserProfileCubit>();
         await cubit.refresh();
       },
