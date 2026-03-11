@@ -5,6 +5,8 @@ import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_s
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
+import 'main.dart';
+
 class TayseerApp extends StatelessWidget {
   const TayseerApp({super.key});
 
@@ -16,6 +18,7 @@ class TayseerApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (context, child) {
         return MultiBlocProvider(
+          
           providers: [
             BlocProvider(create: (context) => LanguageCubit()),
             BlocProvider.value(value: getIt<ConnectivityCubit>()),
@@ -28,6 +31,7 @@ class TayseerApp extends StatelessWidget {
                 final pendingRoute = cubit.consumePendingWidget();
 
                 return MaterialApp(
+                  navigatorKey:navigatorKey ,
                   key: ValueKey(state.languageCode),
                   builder: (context, child) {
                     return MediaQuery(
