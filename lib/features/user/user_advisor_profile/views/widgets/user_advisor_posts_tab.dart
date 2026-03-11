@@ -156,6 +156,8 @@ class UserAdvisorPostsTab extends StatelessWidget {
         context,
         state.blockUserMessage ?? context.tr('blocked_successfully'),
       );
+
+      // Update: No longer popping the view. The UI will update in-place based on the block state.
     } else if (state.blockUserActionState == CubitStates.failure) {
       AppToast.error(
         context,

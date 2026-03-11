@@ -39,6 +39,7 @@ class UserAdvisorProfileState extends Equatable {
 
   final CubitStates blockUserActionState;
   final String? blockUserMessage;
+  final String? lastBlockedUserId;
 
   final CubitStates chatActionState;
   final String? chatErrorMessage;
@@ -77,6 +78,7 @@ class UserAdvisorProfileState extends Equatable {
     this.archivePostMessage,
     this.blockUserActionState = CubitStates.initial,
     this.blockUserMessage,
+    this.lastBlockedUserId,
     this.blockActionState = CubitStates.initial,
     this.blockMessage,
     this.reportActionState = CubitStates.initial,
@@ -114,6 +116,7 @@ class UserAdvisorProfileState extends Equatable {
     String? archivePostMessage,
     CubitStates? blockUserActionState,
     String? blockUserMessage,
+    String? lastBlockedUserId,
     CubitStates? blockActionState,
     String? blockMessage,
     CubitStates? reportActionState,
@@ -150,6 +153,7 @@ class UserAdvisorProfileState extends Equatable {
       archivePostMessage: archivePostMessage ?? this.archivePostMessage,
       blockUserActionState: blockUserActionState ?? this.blockUserActionState,
       blockUserMessage: blockUserMessage ?? this.blockUserMessage,
+      lastBlockedUserId: lastBlockedUserId ?? this.lastBlockedUserId,
       blockActionState: blockActionState ?? this.blockActionState,
       blockMessage: blockMessage ?? this.blockMessage,
       reportActionState: reportActionState ?? this.reportActionState,
@@ -187,6 +191,7 @@ class UserAdvisorProfileState extends Equatable {
     archivePostMessage,
     blockUserActionState,
     blockUserMessage,
+    lastBlockedUserId,
     blockActionState,
     blockMessage,
     reportActionState,

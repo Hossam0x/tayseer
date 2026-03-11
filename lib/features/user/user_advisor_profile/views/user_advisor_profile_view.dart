@@ -65,52 +65,72 @@ class _UserProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
-      buildWhen: (previous, current) =>
-          previous.profile?.room?.isBlocked != current.profile?.room?.isBlocked,
-      builder: (context, state) {
-        final isBlocked = state.profile?.room?.isBlocked ?? false;
-
-        return RefreshIndicator.adaptive(
-          onRefresh: () => Future.wait([
-            context.read<UserAdvisorProfileCubit>().refresh(),
-            if (!isBlocked)
-              context.read<StoriesCubit>().fetchStories(
-                isSpecial: true,
-                advisorId: advisorId,
-                context: context,
-              ),
-          ]),
-          color: AppColors.kprimaryColor,
-          backgroundColor: AppColors.kWhiteColor,
-          displacement: 40.h,
-          edgeOffset: 0,
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            slivers: [
-              // Profile Header
-              const UserAdvisorProfileHeader(),
-
-              // Bio Information
-              const UserAdvisorBioInformation(),
-
-              // Stories Section
-              ProfileStoriesSection(advisorId: advisorId),
-
-              // Spacing
-              SliverToBoxAdapter(child: Gap(20.h)),
-
-              // Posts Tabs Section
-              UserAdvisorProfileTabsSection(advisorId: advisorId),
-
-              // Bottom padding
-              SliverToBoxAdapter(child: Gap(100.h)),
-            ],
-          ),
-        );
+    return BlocListener<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+      listenWhen: (previous, current) =>
+          (previous.profile?.room?.isBlocked == true &&
+          current.profile?.room?.isBlocked == false),
+      listener: (context, state) {
+        // ✅ Refetch everything when unblocked
+        context.read<UserAdvisorProfileCubit>().refresh();
+        context.read<StoriesCubit>().fetchStories(
+              isSpecial: true,
+              advisorId: advisorId,
+              context: context,
+            );
       },
+      child: BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
+        buildWhen: (previous, current) =>
+            previous.profile?.room?.isBlocked !=
+            current.profile?.room?.isBlocked,
+        builder: (context, state) {
+          final isBlocked = state.profile?.room?.isBlocked ?? false;
+
+          return RefreshIndicator.adaptive(
+            onRefresh: () => Future.wait([
+              context.read<UserAdvisorProfileCubit>().refresh(),
+              if (!isBlocked)
+                context.read<StoriesCubit>().fetchStories(
+                      isSpecial: true,
+                      advisorId: advisorId,
+                      context: context,
+                    ),
+            ]),
+            color: AppColors.kprimaryColor,
+            backgroundColor: AppColors.kWhiteColor,
+            displacement: 40.h,
+            edgeOffset: 0,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              slivers: [
+                // Profile Header - Always visible
+                const UserAdvisorProfileHeader(),
+
+                // Bio Information - Always visible
+                const UserAdvisorBioInformation(),
+
+                // Stories Section - Now handles blocked state internally
+                ProfileStoriesSection(
+                  advisorId: advisorId,
+                  isBlocked: isBlocked,
+                ),
+
+                if (!isBlocked) ...[
+                  // Spacing
+                  SliverToBoxAdapter(child: Gap(20.h)),
+
+                  // Posts Tabs Section
+                  UserAdvisorProfileTabsSection(advisorId: advisorId),
+                ],
+
+                // Bottom padding
+                SliverToBoxAdapter(child: Gap(100.h)),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
