@@ -6,6 +6,7 @@ import 'package:tayseer/features/shared/post_details/presentation/views/widgets/
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/post_details_body.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/post_shimmer_loader.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostDetailsView extends StatefulWidget {
@@ -37,6 +38,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   late PostModel? _currentPost;
   StreamSubscription<PostModel?>? _postSubscription;
   late PostDetailsCubit _postDetailsCubit;
+  late PostCallbacks _effectiveCallbacks;
 
   @override
   void initState() {
@@ -57,8 +59,11 @@ class _PostDetailsViewState extends State<PostDetailsView> {
       _postDetailsCubit.loadPostFromAPI(widget.postId_fromNotifc!);
     }
 
+    // ✅ إنشاء callbacks من HomeCubit إذا كان الدخول من الإشعارات
+    _effectiveCallbacks = _buildEffectiveCallbacks();
+
     // ✅ الاشتراك في الـ Stream
-    _postSubscription = widget.callbacks.postUpdatesStream?.listen(
+    _postSubscription = _effectiveCallbacks.postUpdatesStream?.listen(
       _onPostUpdated,
     );
   }
@@ -93,6 +98,41 @@ class _PostDetailsViewState extends State<PostDetailsView> {
         curve: Curves.easeOutQuart,
       );
     }
+  }
+
+  /// ✅ إنشاء callbacks فعّالة - من الـ widget أو من HomeCubit
+  PostCallbacks _buildEffectiveCallbacks() {
+    // إذا كان هناك callbacks ممررة من الخارج (مش من الإشعارات)
+    if (widget.callbacks.hasCallbacks ||
+        widget.callbacks.postUpdatesStream != null) {
+      return widget.callbacks;
+    }
+
+    // 🔔 دخول من الإشعارات -> إنشاء callbacks من HomeCubit
+    final homeCubit = getIt<HomeCubit>();
+    final String postId = widget.post?.postId ?? widget.postId_fromNotifc ?? '';
+
+    final postStream = homeCubit.stream
+        .map(
+          (state) => state.posts.where((p) => p.postId == postId).firstOrNull,
+        )
+        .distinct();
+
+    return PostCallbacks(
+      postUpdatesStream: postStream,
+      onReactionChanged: (pId, type) =>
+          homeCubit.reactToPost(postId: pId, reactionType: type),
+      onSave: (pId) => homeCubit.toggleSavePost(postId: pId),
+      onDelete: (pId) => homeCubit.deletePost(postId: pId),
+      onHide: (pId) => homeCubit.toggleHidePost(postId: pId),
+      onBlock: (pId, userId) =>
+          homeCubit.blockUser(visiblePostId: pId, advisorId: userId),
+      onArchive: (pId) => homeCubit.archivePost(postId: pId),
+      onPollVote: (pId, choice) =>
+          homeCubit.voteInPoll(postId: pId, choiceText: choice),
+      onCommented: (pId, isAnon) =>
+          homeCubit.markPostAsCommented(postId: pId, isAnonymous: isAnon),
+    );
   }
 
   @override
@@ -210,7 +250,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                       currentPost: _currentPost!,
                       cachedController: widget.cachedController,
                       scrollController: _scrollController,
-                      callbacks: widget.callbacks,
+                      callbacks: _effectiveCallbacks,
                       heroPrefix: widget.heroPrefix,
                     ),
                   ),
@@ -233,7 +273,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
         commentsCount: (_currentPost?.commentsCount ?? 0) + 1,
       );
     });
-    widget.callbacks.onCommented?.call(_currentPost!.postId, isAnonymous);
+    _effectiveCallbacks.onCommented?.call(_currentPost!.postId, isAnonymous);
   }
 
   AppBar _buildAppBar(BuildContext context) {

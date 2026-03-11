@@ -4,6 +4,8 @@ import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/nav_animation_service.dart';
 import 'package:tayseer/my_import.dart';
 
+import '../../splash_screen&&on_boarding/view/splash_screen.dart';
+
 part 'language_state.dart';
 
 class LanguageCubit extends Cubit<Locale> {
@@ -36,9 +38,17 @@ class LanguageCubit extends Cubit<Locale> {
     NavAnimationService.instance.resetKey();
 
     if (navigate) {
-      _pendingWidget = isAdvisor
-          ? ALayoutView(currentUserType: UserTypeEnum.asConsultant)
-          : UserLayoutView();
+
+      String? token = CachNetwork.getStringData(key: ktoken);
+     if(token!=null){
+       _pendingWidget = isAdvisor
+           ? ALayoutView(currentUserType: UserTypeEnum.asConsultant)
+           : UserLayoutView();
+     }else
+       {
+         _pendingWidget = SplashScreen();
+       }
+
     }
 
     // Emit triggers MaterialApp rebuild with new key (ValueKey(locale))

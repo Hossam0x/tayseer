@@ -32,7 +32,7 @@ class TayseerApp extends StatelessWidget {
 
                 return MaterialApp(
                   navigatorKey:navigatorKey ,
-                  key: ValueKey(state.languageCode),
+                key: ValueKey(state.languageCode),
                   builder: (context, child) {
                     return MediaQuery(
                       data: MediaQuery.of(
