@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
@@ -7,6 +8,7 @@ import 'package:tayseer/features/shared/post_details/presentation/views/widgets/
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/post_shimmer_loader.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostDetailsView extends StatefulWidget {
@@ -122,6 +124,28 @@ class _PostDetailsViewState extends State<PostDetailsView> {
       postUpdatesStream: postStream,
       onReactionChanged: (pId, type) =>
           homeCubit.reactToPost(postId: pId, reactionType: type),
+      onShareTap: (pId) => homeCubit.toggleSharePost(postId: pId),
+      onHashtagTap: (hashtag) {
+        final cleanHashtag = hashtag.startsWith('#')
+            ? hashtag.substring(1)
+            : hashtag;
+        navigatorKey.currentContext?.pushNamed(
+          AppRouter.kAdvisorSearchView,
+          arguments: {'query': cleanHashtag, 'tab': 'posts'},
+        );
+      },
+      onEdit: (post) {
+        navigatorKey.currentContext?.pushNamed(
+          AppRouter.kAddPostView,
+          arguments: {"post": post, "isEdit": true},
+        );
+      },
+      onReport: (pId) {
+        navigatorKey.currentContext?.pushNamed(
+          AppRouter.kReportsView,
+          arguments: {'type': ReportType.post, 'id': pId},
+        );
+      },
       onSave: (pId) => homeCubit.toggleSavePost(postId: pId),
       onDelete: (pId) => homeCubit.deletePost(postId: pId),
       onHide: (pId) => homeCubit.toggleHidePost(postId: pId),
