@@ -86,11 +86,12 @@ class PostOptionsBottomSheet extends StatelessWidget {
               icon: Icons.ios_share_rounded,
               onTap: onShare,
             ),
-            OptionItem(
-              text: context.tr(AppStrings.report),
-              icon: Icons.error_outline_rounded,
-              onTap: onReport,
-            ),
+            if (!(post?.isMine ?? false))
+              OptionItem(
+                text: context.tr(AppStrings.report),
+                icon: Icons.error_outline_rounded,
+                onTap: onReport,
+              ),
             OptionItem(
               text: context.tr(AppStrings.save),
               icon: isSaved
@@ -118,10 +119,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
               text: context.tr(AppStrings.edit),
               icon: Icons.drive_file_rename_outline_rounded,
               onTap: () {
-                context.pushNamed(
-                  AppRouter.kAddPostView,
-                  arguments: {"isEdit": true, "post": post},
-                );
+                context.pushNamed(AppRouter.kUpdatePostView, arguments: post);
               },
             ),
             OptionItem(

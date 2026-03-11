@@ -21,6 +21,7 @@ class _UserProfileViewState extends State<UserProfileView> {
   final int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();
   int _rating = 0;
+  UserProfileCubit? _cubit;
 
   // ✅ حذف _userProfileCubit - BlocProvider هيتحكم في الـ lifecycle
 
@@ -35,7 +36,10 @@ class _UserProfileViewState extends State<UserProfileView> {
   Widget build(BuildContext context) {
     return BlocProvider(
       // ✅ BlocProvider بيعمل الـ cubit ويتحكم في lifecycle بشكل صح
-      create: (context) => UserProfileCubit(getIt<UserProfileRepository>()),
+      create: (context) {
+        _cubit = UserProfileCubit(getIt<UserProfileRepository>());
+        return _cubit!;
+      },
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
@@ -99,14 +103,10 @@ class _UserProfileViewState extends State<UserProfileView> {
                         }
 
                         if (state.actionMessage == "update_language_success") {
+                          // Update language without showing toast
                           SharedPreferences.getInstance().then((p) {
                             final lang = p.getString(kAppLanguage) ?? 'ar';
                             if (context.mounted) {
-                              final message = AppLocalizations.translateFor(
-                                'update_language_success',
-                                lang,
-                              );
-                              AppToast.success(context, message);
                               context.read<LanguageCubit>().setLanguage(
                                 lang,
                                 context,
@@ -526,11 +526,7 @@ class _UserProfileViewState extends State<UserProfileView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 12.w,
-              height: 12.w,
-              color: AppColors.secondary200,
-            ),
+            Container(width: 12.w, height: 12.w, color: AppColors.secondary200),
             Gap(10.w),
             Container(
               width: 120.w,
@@ -581,7 +577,7 @@ class _UserProfileViewState extends State<UserProfileView> {
       children: [
         for (var i = 0; i < settings.length; i++) ...[
           _buildSettingItem(context, settings[i], state),
-          if (i < settings.length - 1)
+          if (i < settings.length)
             Divider(color: AppColors.secondary100, height: 1),
         ],
       ],
@@ -695,12 +691,7 @@ class _UserProfileViewState extends State<UserProfileView> {
             : null,
         child: Container(
           padding: isNotificationsItem || isDeactiveTheMarriageSection
-              ? EdgeInsets.only(
-                  top: 12.h,
-                  bottom: 12.h,
-                  right: 12.w,
-                  left: 8.w,
-                )
+              ? EdgeInsets.only(top: 12.h, bottom: 12.h, right: 12.w, left: 8.w)
               : EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16.r),
@@ -730,7 +721,8 @@ class _UserProfileViewState extends State<UserProfileView> {
                         return Text(
                           context.tr(title),
                           style: Styles.textStyle16Meduim.copyWith(
-                            color: isNotificationsItem ||
+                            color:
+                                isNotificationsItem ||
                                     isDeactiveTheMarriageSection
                                 ? AppColors.secondary800.withOpacity(0.9)
                                 : AppColors.secondary800,
@@ -839,8 +831,7 @@ class _UserProfileViewState extends State<UserProfileView> {
             children: [
               Text(
                 context.tr(setting.subtitle!),
-                style:
-                    Styles.textStyle16.copyWith(color: AppColors.secondary),
+                style: Styles.textStyle16.copyWith(color: AppColors.secondary),
               ),
               Gap(4.w),
               Icon(Icons.arrow_forward_ios_rounded, size: 16.w),
@@ -852,12 +843,7 @@ class _UserProfileViewState extends State<UserProfileView> {
   Widget _buildLogoutButton(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.only(
-        left: 50.w,
-        right: 50.w,
-        top: 32.h,
-        bottom: 30.h,
-      ),
+      margin: EdgeInsets.only(left: 50.w, right: 50.w, top: 32.h, bottom: 30.h),
       child: InkWell(
         onTap: () => _showLogoutConfirmation(context),
         borderRadius: BorderRadius.circular(16.r),
@@ -903,7 +889,7 @@ class _UserProfileViewState extends State<UserProfileView> {
       context,
       title: context.tr("logout"),
       supTitle: context.tr("logout_confirmation"),
-      imageUrl: AssetsData.pauseIcon,
+      imageUrl: AssetsData.kWoriningImage,
       bottonText: context.tr("cancel"),
       cancelText: context.tr("yes"),
       showCancelButton: true,
@@ -919,9 +905,8 @@ class _UserProfileViewState extends State<UserProfileView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
-        child: CircularProgressIndicator(color: AppColors.primary100),
-      ),
+      builder: (context) =>
+          Center(child: CircularProgressIndicator(color: AppColors.primary100)),
     );
     cubit.logout();
   }
@@ -938,12 +923,12 @@ class _UserProfileViewState extends State<UserProfileView> {
   void _showRateAppDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20.r),
         ),
         child: StatefulBuilder(
-          builder: (context, setState) {
+          builder: (builderContext, setState) {
             return Container(
               padding: EdgeInsets.all(24.w),
               decoration: BoxDecoration(
@@ -957,11 +942,11 @@ class _UserProfileViewState extends State<UserProfileView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => Navigator.pop(dialogContext),
                         child: Icon(Icons.close, size: 24.w),
                       ),
                       Text(
-                        context.tr("rate_app"),
+                        builderContext.tr("rate_app"),
                         style: Styles.textStyle20Meduim.copyWith(
                           color: AppColors.primary500,
                         ),
@@ -997,7 +982,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                   if (_rating > 0) ...[
                     Gap(12.h),
                     Text(
-                      '${context.tr("rating")}: $_rating / 5',
+                      '${builderContext.tr("rating")}: $_rating / 5',
                       style: Styles.textStyle14.copyWith(
                         color: AppColors.primary500,
                       ),
@@ -1007,7 +992,7 @@ class _UserProfileViewState extends State<UserProfileView> {
                   Gap(24.h),
 
                   Text(
-                    context.tr("rate_app_message"),
+                    builderContext.tr("rate_app_message"),
                     style: Styles.textStyle16.copyWith(
                       color: AppColors.secondary700,
                     ),
@@ -1017,10 +1002,11 @@ class _UserProfileViewState extends State<UserProfileView> {
                   Gap(32.h),
 
                   CustomBotton(
-                    title: context.tr("send_rating"),
+                    title: builderContext.tr("send_rating"),
                     onPressed: () {
-                      Navigator.pop(context);
-                      _submitAppRating(_rating);
+                      final ratingToSubmit = _rating;
+                      Navigator.pop(dialogContext);
+                      _submitAppRating(ratingToSubmit);
                       setState(() {
                         _rating = 0;
                       });
@@ -1115,10 +1101,10 @@ class _UserProfileViewState extends State<UserProfileView> {
     );
   }
 
-  // ✅ استخدام context.read بدل _userProfileCubit مباشرة
+  // ✅ استخدام _cubit المحفوظ بدلاً من context.read
   void _submitAppRating(int rating) {
-    if (rating > 0 && context.mounted) {
-      context.read<UserProfileCubit>().rateApp(rating);
+    if (rating > 0 && _cubit != null) {
+      _cubit!.rateApp(rating);
     }
   }
 }

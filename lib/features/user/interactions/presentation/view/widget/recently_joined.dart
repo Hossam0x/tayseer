@@ -35,98 +35,102 @@ class RecentlyJoined extends StatelessWidget {
         child: SizedBox(
           height: isCompact ? 170.h : 190.h, // ✅ ارتفاع مصغر
           width: isCompact ? 100.w : 110.w, // ✅ عرض مصغر
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16.r),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      shouldBlur
-                          ? ImageFiltered(
-                              imageFilter: ImageFilter.blur(
-                                sigmaX: 15,
-                                sigmaY: 15,
-                              ),
-                              child: AppImage(
+          child: Directionality(
+    textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16.r),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        shouldBlur
+                            ? ImageFiltered(
+                                imageFilter: ImageFilter.blur(
+                                  sigmaX: 15,
+                                  sigmaY: 15,
+                                ),
+                                child: AppImage(
+                                  item.image,
+                                  fit: BoxFit.cover,
+                                  height: isCompact ? 80.h : 100.h,
+                                ),
+                              )
+                            : AppImage(
                                 item.image,
                                 fit: BoxFit.cover,
                                 height: isCompact ? 80.h : 100.h,
                               ),
-                            )
-                          : AppImage(
-                              item.image,
-                              fit: BoxFit.cover,
-                              height: isCompact ? 80.h : 100.h,
+                        if (shouldBlur)
+                          Container(color: Colors.black.withOpacity(0.2)),
+                      ],
+                    ),
+                  ),
+                ),
+            
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: isCompact ? 6.h : 10.h, // ✅ مسافة مصغرة
+                    right: 4.w,
+                    left: 4.w,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    item.name,
+                                    style: Styles.textStyle14SemiBold.copyWith(
+                                      fontSize: isCompact
+                                          ? 12.sp
+                                          : 14.sp, // ✅ حجم خط مصغر
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                SizedBox(width: 4.w),
+                                if (item.isverified)
+                                  Icon(
+                                    Icons.verified,
+                                    color: Colors.blue,
+                                    size: isCompact
+                                        ? 13.sp
+                                        : 16.sp, // ✅ حجم أيقونة مصغر
+                                  ),
+                              ],
                             ),
-                      if (shouldBlur)
-                        Container(color: Colors.black.withOpacity(0.2)),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
+                      _buildBadge(
+                        text: context.tr("recently_joined"),
+                        icon: AssetsData.joinedIcon,
+                        isCompact: isCompact,
+                      ),
+                      SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
+                      if (item.country.isNotEmpty) ...[
+                        _buildBadge(
+                          text: item.country,
+                          icon: "",
+                          isCompact: isCompact,
+                        ),
+                      ] else ...[
+                        _buildBadge(text: "", icon: "", isCompact: isCompact),
+                      ],
                     ],
                   ),
                 ),
-              ),
-
-              Padding(
-                padding: EdgeInsets.only(
-                  top: isCompact ? 6.h : 10.h, // ✅ مسافة مصغرة
-                  right: 4.w,
-                  left: 4.w,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  item.name,
-                                  style: Styles.textStyle14SemiBold.copyWith(
-                                    fontSize: isCompact
-                                        ? 12.sp
-                                        : 14.sp, // ✅ حجم خط مصغر
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              SizedBox(width: 4.w),
-                              if (item.isverified)
-                                Icon(
-                                  Icons.verified,
-                                  color: Colors.blue,
-                                  size: isCompact
-                                      ? 13.sp
-                                      : 16.sp, // ✅ حجم أيقونة مصغر
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
-                    _buildBadge(
-                      text: context.tr("recently_joined"),
-                      icon: AssetsData.joinedIcon,
-                      isCompact: isCompact,
-                    ),
-                    SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
-                    if (item.country.isNotEmpty) ...[
-                      _buildBadge(
-                        text: item.country,
-                        icon: "",
-                        isCompact: isCompact,
-                      ),
-                    ] else ...[
-                      _buildBadge(text: "", icon: "", isCompact: isCompact),
-                    ],
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

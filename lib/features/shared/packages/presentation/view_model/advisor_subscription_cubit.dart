@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/functions/country_helper.dart';
-import '../view_model/packages_cubit.dart';
+import '../../../../../core/functions/country_helper.dart';
+import 'packages_cubit.dart';
 
 class AdvisorSubscriptionState {
   final int selectedDurationIndex;

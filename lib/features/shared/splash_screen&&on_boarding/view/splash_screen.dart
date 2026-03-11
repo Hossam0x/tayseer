@@ -38,17 +38,19 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     String? token = CachNetwork.getStringData(key: ktoken);
-
-    if (token.isNotEmpty) {
-      if (selectedUserType == UserTypeEnum.asConsultant) {
-        if (kCurrentUserData?.compeletedData == true) {
-          navigatorKey.currentState?.pushReplacementNamed(
-            AppRouter.kAdvisorLayoutView,
-          );
-        } else {
-          navigatorKey.currentState?.pushReplacementNamed(
-            AppRouter.kRegisrationView,
-          );
+    if (mounted) {
+      if (token.isNotEmpty) {
+        if (selectedUserType == UserTypeEnum.asConsultant) {
+          if (kCurrentUserData?.compeletedData == true) {
+            context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+          } else {
+            context.pushReplacementNamed(AppRouter.kRegisrationView);
+          }
+        } else if (selectedUserType == UserTypeEnum.user) {
+          kCurrentUserData?.isNew == false
+              ? context.pushReplacementNamed(AppRouter.kUserLayoutView)
+              : context.pushReplacementNamed(AppRouter.kRegisrationView);
+          
         }
       } else {
         navigatorKey.currentState?.pushReplacementNamed(

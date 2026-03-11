@@ -15,22 +15,25 @@ class GreetingProfileCard extends StatelessWidget {
     this.forceBlur = false,
   });
 
+  void _navigateToProfile(BuildContext context) {
+    context.pushNamed(
+      AppRouter.kMarriageView,
+      arguments: {'personId': item.userId, 'fromInteractions': true},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final shouldBlur = forceBlur || item.isImageBlurred;
 
     return BlocListener<InteractionsCubit, InteractionsState>(
       listener: (context, state) {
-        // ✅ Show success animation when sendCompliment succeeds
         if (state.actionState == CubitStates.success) {
           _showSuccessAnimation(context);
-
-          // Reset action state after showing dialog
           Future.delayed(const Duration(milliseconds: 100), () {
             context.read<InteractionsCubit>().resetActionState();
           });
         } else if (state.actionState == CubitStates.failure) {
-          // ✅ Show error message if fails
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -41,179 +44,181 @@ class GreetingProfileCard extends StatelessWidget {
           context.read<InteractionsCubit>().resetActionState();
         }
       },
-      child: Container(
-        height: 160.h,
-        padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(
-          color: const Color.fromRGBO(0, 0, 0, 0.08),
-          borderRadius: BorderRadius.circular(24.r),
-          border: Border.all(color: Colors.white.withOpacity(0.5)),
-        ),
-        child: Row(
-          children: [
-            // Profile Image
-            GestureDetector(
-              onTap: () {
-                context.pushNamed(
-                  AppRouter.kMarriageView,
-                  arguments: {
-                    'personId': item.userId,
-                    'fromInteractions': true,
-                  },
-                );
-              },
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16.r),
-                child: Stack(
-                  children: [
-                    shouldBlur
-                        ? ImageFiltered(
-                            imageFilter: ImageFilter.blur(
-                              sigmaX: 15,
-                              sigmaY: 15,
-                            ),
-                            child: AppImage(
+      child: GestureDetector(
+        onTap: () => _navigateToProfile(context),
+        child: Container(
+          height: 160.h,
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: const Color.fromRGBO(0, 0, 0, 0.08),
+            borderRadius: BorderRadius.circular(24.r),
+            border: Border.all(color: Colors.white.withOpacity(0.5)),
+          ),
+          child: Directionality(
+            textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+            child: Row(
+              children: [
+                // Profile Image — بدون GestureDetector، الأب يتكفل
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Stack(
+                    children: [
+                      shouldBlur
+                          ? ImageFiltered(
+                              imageFilter: ImageFilter.blur(
+                                sigmaX: 15,
+                                sigmaY: 15,
+                              ),
+                              child: AppImage(
+                                item.image,
+                                width: 130.w,
+                                height: 117.h,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : AppImage(
                               item.image,
                               width: 130.w,
                               height: 117.h,
                               fit: BoxFit.cover,
                             ),
-                          )
-                        : AppImage(
-                            item.image,
-                            width: 130.w,
-                            height: 117.h,
-                            fit: BoxFit.cover,
+                      if (shouldBlur)
+                        Positioned.fill(
+                          child: Container(
+                            color: Colors.black.withOpacity(0.2),
                           ),
-                    if (shouldBlur)
-                      Positioned.fill(
-                        child: Container(color: Colors.black.withOpacity(0.2)),
-                      ),
-                  ],
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(width: 12.w),
+                SizedBox(width: 12.w),
 
-            // User Info
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  context.pushNamed(
-                    AppRouter.kMarriageView,
-                    arguments: {
-                      'personId': item.userId,
-                      'fromInteractions': true,
-                    },
-                  );
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  '${item.name},',
-                                  style: Styles.textStyle16SemiBold,
-                                  overflow: TextOverflow.ellipsis,
+                // User Info — بدون GestureDetector، الأب يتكفل
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    '${item.name},',
+                                    style: Styles.textStyle16SemiBold,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                ' ${item.age} ${context.tr('age')}',
-                                style: Styles.textStyle16.copyWith(
-                                  fontWeight: FontWeight.w400,
+                                Text(
+                                  ' ${item.age} ${context.tr('age')}',
+                                  style: Styles.textStyle16.copyWith(
+                                    fontWeight: FontWeight.w400,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: 5.w),
-                              if (item.isverified)
-                                Icon(
-                                  Icons.verified,
-                                  color: Colors.blue,
-                                  size: 16.sp,
-                                ),
-                            ],
+                                SizedBox(width: 5.w),
+                                if (item.isverified)
+                                  Icon(
+                                    Icons.verified,
+                                    color: Colors.blue,
+                                    size: 16.sp,
+                                  ),
+                              ],
+                            ),
                           ),
+                        ],
+                      ),
+
+                      SizedBox(height: 8.h),
+
+                      Row(
+                        children: [
+                          Flexible(
+                            // ✅
+                            child: _buildBadge(text: item.day),
+                          ),
+                          SizedBox(width: 4.w),
+                          if (item.country.isNotEmpty)
+                            Flexible(
+                              // ✅
+                              child: _buildBadge(
+                                text: item.country,
+                                icon: AssetsData.EgyFlagIcon,
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      SizedBox(height: 4.h),
+
+                      if (item.job.isNotEmpty)
+                        _buildBadge(text: item.job, icon: AssetsData.workIcon),
+                    ],
+                  ),
+                ),
+
+                // ✅ زر التحية — behavior: opaque يمنع الـ tap من الوصول للأب
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    context.read<InteractionsCubit>().sendCompliment(
+                      userId: item.userId,
+                    );
+                  },
+                  child: Container(
+                    width: 55.w,
+                    height: 55.h,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [AppColors.primary200, AppColors.primary400],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF48174E).withOpacity(0.2),
+                          offset: const Offset(0, 2.87),
+                          blurRadius: 37.85,
+                          spreadRadius: 0,
                         ),
                       ],
                     ),
-
-                    SizedBox(height: 8.h),
-
-                    Row(
-                      children: [
-                        _buildBadge(text: item.day),
-                        SizedBox(width: 4.w),
-                        if (item.country.isNotEmpty)
-                          _buildBadge(
-                            text: item.country,
-                            icon: AssetsData.EgyFlagIcon,
-                          ),
-                      ],
-                    ),
-
-                    SizedBox(height: 4.h),
-
-                    if (item.job.isNotEmpty)
-                      _buildBadge(text: item.job, icon: AssetsData.workIcon),
-                  ],
-                ),
-              ),
-            ),
-
-            // Star Button
-            GestureDetector(
-              onTap: () {
-                context.read<InteractionsCubit>().sendCompliment(
-                  userId: item.userId,
-                );
-              },
-              child: Container(
-                width: 55.w,
-                height: 55.h,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [AppColors.primary200, AppColors.primary400],
+                    child: Icon(Icons.star, color: Colors.white, size: 30.r),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF48174E).withOpacity(0.2),
-                      offset: const Offset(0, 2.87),
-                      blurRadius: 37.85,
-                      spreadRadius: 0,
-                    ),
-                  ],
                 ),
-                child: Icon(Icons.star, color: Colors.white, size: 30.r),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  // ✅ Success Animation Dialog
   void _showSuccessAnimation(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
+      barrierColor:
+          Colors.transparent, // ✅ transparent لأن rootNavigator هيغطي كل حاجة
+      useRootNavigator: true, // ✅ هذا هو الحل
       builder: (_) {
-        return Opacity(
-          opacity: 0.6,
-          child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
+        return Center(
+          child: Opacity(
+            opacity: 0.9,
+            child: AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
+          ),
         );
       },
     );
     Future.delayed(const Duration(seconds: 4), () {
-      context.pop();
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pop(); // ✅ نفس الـ rootNavigator
+      }
     });
   }
 
@@ -232,10 +237,15 @@ class GreetingProfileCard extends StatelessWidget {
             AppImage(icon, width: 14.w),
             SizedBox(width: 4.w),
           ],
-          Text(
-            text,
-            style: Styles.textStyle14SemiBold.copyWith(
-              fontWeight: FontWeight.w400,
+          Flexible(
+            // ✅ أضف Flexible
+            child: Text(
+              text,
+              style: Styles.textStyle12SemiBold.copyWith(
+                fontWeight: FontWeight.w400,
+              ),
+              overflow: TextOverflow.ellipsis, // ✅ أضف ellipsis
+              maxLines: 1,
             ),
           ),
         ],

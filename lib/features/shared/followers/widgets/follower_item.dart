@@ -40,6 +40,7 @@ class FollowerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMe = follower.isMe;
     return Column(
       children: [
         GestureDetector(
@@ -110,7 +111,7 @@ class FollowerItem extends StatelessWidget {
                               ),
                             )
                           : Text(
-                              follower.username,
+                              isMe ? 'You' : follower.username,
                               style: Styles.textStyle14.copyWith(
                                 color: Colors.grey,
                               ),
@@ -122,16 +123,8 @@ class FollowerItem extends StatelessWidget {
                 SizedBox(width: 12.w),
 
                 // Follow Button
-                if (!isSkeleton && follower.isAdvisor && !follower.isMe)
+                if (!isSkeleton && follower.isAdvisor && !isMe)
                   _buildFollowButton(context),
-                // if (!isSkeleton && follower.isMe)
-                //   Text(
-                //     'Me',
-                //     style: Styles.textStyle16.copyWith(
-                //       fontWeight: FontWeight.bold,
-                //       color: Colors.black87,
-                //     ),
-                //   ),
               ],
             ),
           ),

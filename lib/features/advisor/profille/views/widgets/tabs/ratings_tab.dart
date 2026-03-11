@@ -1,4 +1,3 @@
-import 'package:intl/intl.dart';
 import 'package:tayseer/core/cubits/int_cubit.dart';
 import 'package:tayseer/core/cubits/toggle_cubit.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
@@ -30,6 +29,7 @@ class _RatingsTabState extends State<RatingsTab>
     final bool isMe = widget.isMe;
 
     return BlocBuilder<RatingsCubit, RatingsState>(
+      
       builder: (context, state) {
         if (state.state == CubitStates.loading) {
           return _buildSkeletonRatings();
@@ -120,10 +120,12 @@ class _RatingsTabState extends State<RatingsTab>
   void _showRateDialog(BuildContext context) {
     _reviewController.clear();
 
+    final ratingsCubit = context.read<RatingsCubit>();
     showDialog(
       context: context,
       builder: (dialogContext) => MultiBlocProvider(
         providers: [
+          BlocProvider.value(value: ratingsCubit),
           BlocProvider(create: (_) => IntCubit(0)), // For Rating
           BlocProvider(create: (_) => ToggleCubit(false)), // For submit loading
         ],
@@ -201,6 +203,7 @@ class _RatingsTabState extends State<RatingsTab>
                     maxLines: 4,
                     maxLength: 400,
                     decoration: InputDecoration(
+                      alignLabelWithHint: true,
                       labelText: context.tr('write_your_review'),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.r),
@@ -218,7 +221,7 @@ class _RatingsTabState extends State<RatingsTab>
                         );
                       }
                       return BlocBuilder<IntCubit, int>(
-                        builder: (context, currentRating) {
+                        builder: (ratingContext, currentRating) {
                           return CustomBotton(
                             title: context.tr('send_rating'),
                             onPressed: currentRating == 0
@@ -227,10 +230,36 @@ class _RatingsTabState extends State<RatingsTab>
                                     loadingContext.read<ToggleCubit>().set(
                                       true,
                                     );
-                                    await _submitRating(
-                                      loadingContext,
-                                      currentRating,
-                                      _reviewController.text,
+                                    await ratingsCubit.submitRating(
+                                      advisorId: widget.advisorId,
+                                      rating: currentRating,
+                                      review: _reviewController.text,
+                                      onSuccess: () {
+                                        if (dialogContext.mounted) {
+                                          Navigator.of(
+                                            dialogContext,
+                                            rootNavigator: true,
+                                          ).pop();
+                                        }
+                                        if (mounted) {
+                                          showSafeSnackBar(
+                                            context: context,
+                                            text: context.tr(
+                                              'advisor_rated_successfully',
+                                            ),
+                                            isSuccess: true,
+                                          );
+                                        }
+                                      },
+                                      onFailure: (error) {
+                                        if (dialogContext.mounted) {
+                                          showSafeSnackBar(
+                                            context: dialogContext,
+                                            text: error,
+                                            isError: true,
+                                          );
+                                        }
+                                      },
                                     );
                                   },
                             width: double.infinity,
@@ -251,67 +280,6 @@ class _RatingsTabState extends State<RatingsTab>
         ),
       ),
     );
-  }
-
-  Future<void> _submitRating(
-    BuildContext dialogContext,
-    int rating,
-    String review,
-  ) async {
-    try {
-      final apiService = getIt<ApiService>();
-      final response = await apiService.post(
-        endPoint: '/advisor-rating',
-        data: {
-          "rating": rating,
-          "review": review,
-          "advisorId": widget.advisorId,
-        },
-      );
-
-      if (response['success'] == true) {
-        if (dialogContext.mounted) {
-          Navigator.of(dialogContext, rootNavigator: true).pop();
-        }
-
-        showSafeSnackBar(
-          context: context,
-          text: response['message'] ?? context.tr('advisor_rated_successfully'),
-          isSuccess: true,
-        );
-
-        if (mounted) {
-          context.read<RatingsCubit>().fetchRatings(
-            advisorId: widget.advisorId,
-            loadMore: false,
-            isSilent: false,
-            forceRefresh: true,
-          );
-        }
-      } else {
-        if (dialogContext.mounted) {
-          showSafeSnackBar(
-            context: dialogContext,
-            text:
-                response['message'] ??
-                dialogContext.tr('failed_to_rate_advisor'),
-            isError: true,
-          );
-        }
-      }
-    } catch (e) {
-      if (dialogContext.mounted) {
-        showSafeSnackBar(
-          context: dialogContext,
-          text: dialogContext.tr('failed_to_rate_advisor'),
-          isError: true,
-        );
-      }
-    } finally {
-      if (dialogContext.mounted) {
-        dialogContext.read<ToggleCubit>().set(false);
-      }
-    }
   }
 
   Widget _buildSkeletonRatings() {
@@ -670,7 +638,10 @@ class _RatingsTabState extends State<RatingsTab>
                           textAlign: TextAlign.right,
                         ),
                         Text(
-                          _formatDate(rating.createdAt),
+                          context.read<RatingsCubit>().formatDate(
+                            rating.createdAt,
+                            context.read<LanguageCubit>().state.languageCode,
+                          ),
                           style: Styles.textStyle12.copyWith(
                             color: AppColors.secondaryText,
                           ),
@@ -704,20 +675,6 @@ class _RatingsTabState extends State<RatingsTab>
         );
       },
     );
-  }
-
-  String _formatDate(String dateString) {
-    try {
-      final parsedDate = DateFormat(
-        'M/d/yyyy, hh:mm:ss a',
-        'en',
-      ).parse(dateString);
-
-      final lang = context.read<LanguageCubit>().state.languageCode;
-      return DateFormat('dd MMMM yyyy', lang).format(parsedDate);
-    } catch (e) {
-      return dateString;
-    }
   }
 
   Widget _buildLoadMoreButton(BuildContext context, RatingsState state) {

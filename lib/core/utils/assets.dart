@@ -103,6 +103,8 @@ abstract class AssetsData {
   static const String selectedWalletIcon = "assets/icons/selected_wallet.svg";
   static const String eventIcon = "assets/icons/event.svg";
   static const String selectedEventIcon = "assets/icons/selected_event.svg";
+  static const String reelsIcon = "assets/icons/reels_icon.svg";
+  static const String selectedReelsIcon = "assets/icons/selected_reels.svg";
   static const String joinedIcon = "assets/icons/Joined.svg";
 
   static const String notificationIcon = "assets/icons/notification.svg";
@@ -290,7 +292,7 @@ abstract class AssetsData {
       "assets/icons/performanceReports.svg";
   static const String basicBackground = "assets/icons/basicBackground.svg";
   static const String proBackground = "assets/icons/proBackground.svg";
-  static const String eliteBackground = "assets/icons/eliteBackground.svg";
+  // static const String eliteBackground = "assets/icons/eliteBackground.svg";
   static const String eliteBackgroundPng = "assets/images/eliteBackground.png";
 
   static const String kingIcon = "assets/icons/kingIcon.svg";

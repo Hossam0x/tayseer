@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:dartz/dartz.dart'; // ✅ أضف هذا
 import 'package:flutter/animation.dart';
+import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart'; // ✅ أضف هذا
 import 'package:tayseer/features/user/marriage/view_model/marriage_event_bus.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
 import 'package:tayseer/features/user/marriage/repositories/marriage_repository.dart';
@@ -9,7 +11,6 @@ class MarriageCubit extends Cubit<MarriageState> {
   MarriageCubit({MarriageRepository? repository})
     : _repo = repository ?? getIt<MarriageRepository>(),
       super(const MarriageState()) {
-    // ✅ يسمع على الـ filter events
     _filterSubscription = MarriageEventBus.instance.onFilterApplied.listen(
       (filters) => fetchMarriageProfile(filters: filters),
     );
@@ -24,17 +25,14 @@ class MarriageCubit extends Cubit<MarriageState> {
 
   void initAnimation(TickerProvider vsync) {
     if (_cardController != null) return;
-
     _cardController = AnimationController(
       vsync: vsync,
       duration: const Duration(milliseconds: 350),
     );
-
     _cardAnimation = CurvedAnimation(
       parent: _cardController!,
       curve: Curves.easeOutCubic,
     );
-
     _cardController!.addListener(_onAnimationTick);
   }
 
@@ -49,45 +47,59 @@ class MarriageCubit extends Cubit<MarriageState> {
   // FETCH — الصفحة الأولى
   // ═══════════════════════════════════════════════════════════
   Future<void> fetchMarriageProfile({Map<String, dynamic>? filters}) async {
-    emit(
+  emit(
+    state.copyWith(
+      marriageProfileState: CubitStates.loading,
+      errorMessage: null,
+      activeFilters: filters ?? state.activeFilters,
+    ),
+  );
+
+  // ✅ اجلب المفضلين والبروفايلات بالتوازي
+  final results = await Future.wait([
+    _repo.getMarriageProfile("1", filters: state.activeFilters),
+    _repo.getFavoriteIds(),
+  ]);
+
+  final profileResult = results[0] as Either<Failure, UsersMarriageResponse>;
+  final favoritesResult = results[1] as Either<Failure, List<String>>;
+
+  // ✅ استخرج IDs المفضلين
+  final fetchedFavoriteIds = favoritesResult.fold(
+    (_) => <String>{},
+    (ids) => ids.toSet(),
+  );
+
+  profileResult.fold(
+    (failure) => emit(
       state.copyWith(
-        marriageProfileState: CubitStates.loading,
-        errorMessage: null,
-        // ✅ لو في فلاتر جديدة احفظها، لو لا استخدم القديمة
-        activeFilters: filters ?? state.activeFilters,
+        marriageProfileState: CubitStates.failure,
+        errorMessage: failure.message,
       ),
-    );
+    ),
+    (profile) {
+      if (isClosed) return;
 
-    final result = await _repo.getMarriageProfile(
-      "1",
-      filters: state.activeFilters, // ✅ نمرر الفلاتر
-    );
+      // ✅ ادمج المفضلين الجدد مع الموجودين
+      final mergedFavorites = {
+        ...state.favoritedIds,
+        ...fetchedFavoriteIds,
+      };
 
-    result.fold(
-      (failure) => emit(
+      emit(
         state.copyWith(
-          marriageProfileState: CubitStates.failure,
-          errorMessage: failure.message,
+          marriageProfileState: CubitStates.success,
+          profile: profile,
+          currentIndex: 0,
+          allUsers: profile.data?.users ?? [],
+          currentPage: profile.data?.pagination?.currentPage ?? 1,
+          totalPages: profile.data?.pagination?.totalPages ?? 1,
+          favoritedIds: mergedFavorites, // ✅
         ),
-      ),
-      (profile) {
-        if (isClosed) {
-          return;
-        }
-        emit(
-          state.copyWith(
-            marriageProfileState: CubitStates.success,
-            profile: profile,
-            currentIndex: 0,
-            allUsers: profile.data?.users ?? [],
-            currentPage: profile.data?.pagination?.currentPage ?? 1,
-            totalPages: profile.data?.pagination?.totalPages ?? 1,
-          ),
-        );
-      },
-    );
-  }
-
+      );
+    },
+  );
+}
   // ═══════════════════════════════════════════════════════════
   // LOAD MORE — تحميل الصفحة التالية
   // ═══════════════════════════════════════════════════════════
@@ -99,25 +111,30 @@ class MarriageCubit extends Cubit<MarriageState> {
 
     final result = await _repo.getMarriageProfile(
       (state.currentPage + 1).toString(),
-      filters: state.activeFilters, // ✅ نفس الفلاتر تلقائي
+      filters: state.activeFilters,
     );
 
     result.fold(
       (_) => emit(state.copyWith(isLoadingMore: false)),
-      (profile) => emit(
-        state.copyWith(
-          isLoadingMore: false,
-          allUsers: [...state.allUsers, ...profile.data?.users ?? []],
-          currentPage:
-              profile.data?.pagination?.currentPage ?? state.currentPage,
-          totalPages: profile.data?.pagination?.totalPages ?? state.totalPages,
-        ),
-      ),
+      (profile) {
+        emit(
+          state.copyWith(
+            isLoadingMore: false,
+            allUsers: [...state.allUsers, ...profile.data?.users ?? []],
+            currentPage:
+                profile.data?.pagination?.currentPage ?? state.currentPage,
+            totalPages:
+                profile.data?.pagination?.totalPages ?? state.totalPages,
+            // ✅ حافظ على favoritedIds بدون تغيير
+            favoritedIds: state.favoritedIds,
+          ),
+        );
+      },
     );
   }
 
   // ═══════════════════════════════════════════════════════════
-  // SWIPE LIKE
+  // SWIPE LIKE — like فقط، بدون favorite
   // ═══════════════════════════════════════════════════════════
   Future<void> swipeLike({
     required String personId,
@@ -129,9 +146,7 @@ class MarriageCubit extends Cubit<MarriageState> {
     emit(state.copyWith(swipeDirection: 1, isAnimating: true));
 
     userInteraction(personId: personId, interactionType: 'like');
-
     await _cardController!.forward(from: 0);
-
     _onSwipeComplete(personId: personId, hasSinglePerson: hasSinglePerson);
   }
 
@@ -146,11 +161,8 @@ class MarriageCubit extends Cubit<MarriageState> {
     if (state.isAnimating || _cardController == null) return;
 
     emit(state.copyWith(swipeDirection: -1, isAnimating: true));
-
     userInteraction(personId: personId, interactionType: 'dislike');
-
     await _cardController!.forward(from: 0);
-
     _onSwipeComplete(personId: personId, hasSinglePerson: hasSinglePerson);
   }
 
@@ -167,7 +179,6 @@ class MarriageCubit extends Cubit<MarriageState> {
       final updatedUsers = state.allUsers
           .where((u) => u.user?.id != personId)
           .toList();
-
       final newLength = updatedUsers.length;
 
       if (newLength <= 3) {
@@ -204,17 +215,12 @@ class MarriageCubit extends Cubit<MarriageState> {
   // ═══════════════════════════════════════════════════════════
   // HISTORY
   // ═══════════════════════════════════════════════════════════
-  void showHistoryView() {
-    emit(state.copyWith(showHistory: true, selectedHistoryFilter: "liked_you"));
-  }
-
-  void hideHistoryView() {
-    emit(state.copyWith(showHistory: false));
-  }
-
-  void setHistoryFilter(String filter) {
-    emit(state.copyWith(selectedHistoryFilter: filter));
-  }
+  void showHistoryView() => emit(
+    state.copyWith(showHistory: true, selectedHistoryFilter: "liked_you"),
+  );
+  void hideHistoryView() => emit(state.copyWith(showHistory: false));
+  void setHistoryFilter(String filter) =>
+      emit(state.copyWith(selectedHistoryFilter: filter));
 
   // ═══════════════════════════════════════════════════════════
   // SCROLL
@@ -249,10 +255,12 @@ class MarriageCubit extends Cubit<MarriageState> {
         errorMessage: null,
       ),
     );
+
     final result = await _repo.userInteraction(
       personId: personId,
       interactionType: interactionType,
     );
+
     result.fold(
       (failure) => emit(
         state.copyWith(
@@ -271,7 +279,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     emit(
       state.copyWith(sendRegardState: CubitStates.initial, errorMessage: null),
     );
+
     final result = await _repo.sendRegard(personId: personId);
+
     result.fold(
       (failure) => emit(
         state.copyWith(
@@ -293,7 +303,9 @@ class MarriageCubit extends Cubit<MarriageState> {
         errorMessage: null,
       ),
     );
+
     final result = await _repo.sendRegard(personId: personId, text: text);
+
     result.fold(
       (failure) => emit(
         state.copyWith(
@@ -303,6 +315,39 @@ class MarriageCubit extends Cubit<MarriageState> {
       ),
       (_) => emit(state.copyWith(sendRegardTextState: CubitStates.success)),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // TOGGLE FAVORITE — القلب فقط
+  // ═══════════════════════════════════════════════════════════
+  Future<void> toggleLocalFavorite(String userId) async {
+    final isCurrentlyFavorited = state.favoritedIds.contains(userId);
+    final updatedFavorites = Set<String>.from(state.favoritedIds);
+
+    if (isCurrentlyFavorited) {
+      updatedFavorites.remove(userId);
+    } else {
+      updatedFavorites.add(userId);
+    }
+
+    // ✅ Optimistic update
+    emit(state.copyWith(favoritedIds: updatedFavorites));
+
+    final result = await _repo.toggleFavorite(
+      userId: userId,
+      isAdd: !isCurrentlyFavorited,
+    );
+
+    result.fold((failure) {
+      // ❌ Revert on failure
+      final revertFavorites = Set<String>.from(state.favoritedIds);
+      if (isCurrentlyFavorited) {
+        revertFavorites.add(userId);
+      } else {
+        revertFavorites.remove(userId);
+      }
+      emit(state.copyWith(favoritedIds: revertFavorites));
+    }, (_) {});
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -326,9 +371,16 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
   }
 
+  // ✅ يُستخدم من MarriageBody لـ seed القلب عند الفتح من Interactions
+  void seedFavorite(String userId) {
+    if (state.favoritedIds.contains(userId)) return;
+    final updated = Set<String>.from(state.favoritedIds)..add(userId);
+    emit(state.copyWith(favoritedIds: updated));
+  }
+
   @override
   Future<void> close() {
-    _filterSubscription.cancel(); // ✅ نلغي الاشتراك
+    _filterSubscription.cancel();
     _cardController?.removeListener(_onAnimationTick);
     _cardController?.dispose();
     return super.close();

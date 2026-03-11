@@ -36,7 +36,8 @@ class ServiceProviderRepositoryImpl implements ServiceProviderRepository {
 
         final serviceProviderResponse = ServiceProviderResponse(
           success: true,
-          message: response['message']?.toString() ?? 'تم جلب البيانات بنجاح',
+          message:
+              response['message']?.toString() ?? 'data_fetched_successfully',
           data: serviceProvider,
         );
 
@@ -44,7 +45,8 @@ class ServiceProviderRepositoryImpl implements ServiceProviderRepository {
       } else {
         return Left(
           ServerFailure(
-            response['message']?.toString() ?? 'فشل جلب بيانات مقدم الخدمة',
+            response['message']?.toString() ??
+                'failed_to_fetch_service_provider',
           ),
         );
       }
@@ -75,7 +77,8 @@ class ServiceProviderRepositoryImpl implements ServiceProviderRepository {
         // عند التحديث الناجح، نعيد نفس الـ request كـ data
         final serviceProviderResponse = ServiceProviderResponse(
           success: true,
-          message: response['message']?.toString() ?? 'تم تحديث البيانات بنجاح',
+          message:
+              response['message']?.toString() ?? 'data_updated_successfully',
           data: request,
         );
 
@@ -83,7 +86,8 @@ class ServiceProviderRepositoryImpl implements ServiceProviderRepository {
       } else {
         return Left(
           ServerFailure(
-            response['message']?.toString() ?? 'فشل تحديث بيانات مقدم الخدمة',
+            response['message']?.toString() ??
+                'failed_to_update_service_provider',
           ),
         );
       }

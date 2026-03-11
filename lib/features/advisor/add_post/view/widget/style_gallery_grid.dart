@@ -1,9 +1,5 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:photo_manager/photo_manager.dart';
-import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/add_post/view/widget/full_image_editor_screen.dart';
+import 'package:tayseer/my_import.dart';
 
 class StyleCombinedGrid extends StatelessWidget {
   final List<File> capturedImages;
@@ -12,6 +8,10 @@ class StyleCombinedGrid extends StatelessWidget {
   final Function(AssetEntity image) onRemoveGallery;
   final double spacing;
 
+  // ✅ للـ Update Mode - صور السيرفر
+  final List<String> existingImageUrls;
+  final void Function(String url)? onRemoveExisting;
+
   const StyleCombinedGrid({
     super.key,
     required this.capturedImages,
@@ -19,15 +19,24 @@ class StyleCombinedGrid extends StatelessWidget {
     required this.onRemoveCaptured,
     required this.onRemoveGallery,
     this.spacing = 3,
+    // ✅ اختيارية عشان الـ AddPost ما يتأثرش
+    this.existingImageUrls = const [],
+    this.onRemoveExisting,
   });
 
-  int get totalCount => capturedImages.length + galleryImages.length;
+  int get totalCount =>
+      existingImageUrls.length + capturedImages.length + galleryImages.length;
 
   // ════════════════════════════════════════════════════
-  // ✅ فتح شاشة التعديل (من تحت لفوق زي الفيس)
+  // ✅ فتح شاشة التعديل - بس للصور الجديدة مش السيرفر
   // ════════════════════════════════════════════════════
-
   void _openEditor(BuildContext context, int index) {
+    // ✅ لو الصورة من السيرفر ما نفتحش الإديتور
+    if (index < existingImageUrls.length) return;
+
+    // ✅ نحول الـ index لـ index في الصور الجديدة
+    final newIndex = index - existingImageUrls.length;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -42,7 +51,7 @@ class StyleCombinedGrid extends StatelessWidget {
             galleryImages: galleryImages,
             onRemoveCaptured: onRemoveCaptured,
             onRemoveGallery: onRemoveGallery,
-            initialIndex: index,
+            initialIndex: newIndex,
           ),
         ),
       ),
@@ -77,30 +86,43 @@ class StyleCombinedGrid extends StatelessWidget {
     }
   }
 
-  // ═══════════════════════════════════════════════════
-  // Helper: Get image widget at index (✅ مع onTap)
-  // ═══════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════
+  // ✅ Helper: Get image widget at index
+  // ════════════════════════════════════════════════════
   Widget _getImageAt(
     BuildContext context,
     int index, {
     bool showRemove = true,
   }) {
-    if (index < capturedImages.length) {
-      return _fileImageItem(
+    // ✅ 1) صور السيرفر أولاً
+    if (index < existingImageUrls.length) {
+      return _networkImageItem(
         context: context,
-        image: capturedImages[index],
-        index: index,
-        showRemove: showRemove,
-      );
-    } else {
-      final galleryIndex = index - capturedImages.length;
-      return _assetImageItem(
-        context: context,
-        asset: galleryImages[galleryIndex],
+        url: existingImageUrls[index],
         index: index,
         showRemove: showRemove,
       );
     }
+
+    // ✅ 2) صور الكاميرا
+    final newIndex = index - existingImageUrls.length;
+    if (newIndex < capturedImages.length) {
+      return _fileImageItem(
+        context: context,
+        image: capturedImages[newIndex],
+        index: index,
+        showRemove: showRemove,
+      );
+    }
+
+    // ✅ 3) صور الجاليري
+    final galleryIndex = newIndex - capturedImages.length;
+    return _assetImageItem(
+      context: context,
+      asset: galleryImages[galleryIndex],
+      index: index,
+      showRemove: showRemove,
+    );
   }
 
   // ═══════════════════════════════════════════════════
@@ -118,9 +140,8 @@ class StyleCombinedGrid extends StatelessWidget {
   // 2 صور
   // ═══════════════════════════════════════════════════
   Widget _buildTwoImages(BuildContext context) {
-    final height = context.height * 0.4;
     return SizedBox(
-      height: height,
+      height: context.height * 0.4,
       child: Row(
         children: [
           Expanded(child: _getImageAt(context, 0)),
@@ -135,9 +156,8 @@ class StyleCombinedGrid extends StatelessWidget {
   // 3 صور
   // ═══════════════════════════════════════════════════
   Widget _buildThreeImages(BuildContext context) {
-    final height = context.height * 0.45;
     return SizedBox(
-      height: height,
+      height: context.height * 0.45,
       child: Row(
         children: [
           Expanded(flex: 1, child: _getImageAt(context, 0)),
@@ -161,9 +181,8 @@ class StyleCombinedGrid extends StatelessWidget {
   // 4 صور
   // ═══════════════════════════════════════════════════
   Widget _buildFourImages(BuildContext context) {
-    final height = context.height * 0.5;
     return SizedBox(
-      height: height,
+      height: context.height * 0.5,
       child: Row(
         children: [
           Expanded(flex: 1, child: _getImageAt(context, 0)),
@@ -189,11 +208,10 @@ class StyleCombinedGrid extends StatelessWidget {
   // 5+ صور
   // ═══════════════════════════════════════════════════
   Widget _buildFiveOrMoreImages(BuildContext context) {
-    final height = context.height * 0.5;
     final remaining = totalCount - 4;
 
     return SizedBox(
-      height: height,
+      height: context.height * 0.5,
       child: Row(
         children: [
           Expanded(flex: 1, child: _getImageAt(context, 0)),
@@ -240,7 +258,45 @@ class StyleCombinedGrid extends StatelessWidget {
   }
 
   // ═══════════════════════════════════════════════════
-  // File Image Item (من الكاميرا) ✅ مع onTap
+  // ✅ Network Image Item (من السيرفر)
+  // ═══════════════════════════════════════════════════
+  Widget _networkImageItem({
+    required BuildContext context,
+    required String url,
+    required int index,
+    bool showRemove = true,
+  }) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        AppImage(
+          url,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+        ),
+        if (showRemove)
+          Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              onTap: () => onRemoveExisting?.call(url),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.close, size: 16.sp, color: Colors.white),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════
+  // File Image Item (من الكاميرا)
   // ═══════════════════════════════════════════════════
   Widget _fileImageItem({
     required BuildContext context,
@@ -281,7 +337,7 @@ class StyleCombinedGrid extends StatelessWidget {
   }
 
   // ═══════════════════════════════════════════════════
-  // Asset Image Item (من الجاليري) ✅ مع onTap
+  // Asset Image Item (من الجاليري)
   // ═══════════════════════════════════════════════════
   Widget _assetImageItem({
     required BuildContext context,

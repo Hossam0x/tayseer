@@ -77,12 +77,27 @@ class UserAdvisorProfileHeader extends StatelessWidget {
     required String profileId,
     String? profileName,
   }) {
+    final isBlocked = context.select<UserAdvisorProfileCubit, bool>(
+      (cubit) => cubit.state.profile?.room?.isBlocked ?? false,
+    );
+
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Gap(1.w),
+          InkWell(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              child: Icon(
+                Icons.arrow_back_ios,
+                color: AppColors.secondary600,
+                size: 20.sp,
+              ),
+            ),
+          ),
           // Profile picture with Hero animation
           Stack(
             children: [
@@ -90,7 +105,7 @@ class UserAdvisorProfileHeader extends StatelessWidget {
                 width: 85.w,
                 imageUrl: imageUrl,
                 heroTag: 'advisor_profile_image_$profileId',
-                onTap: imageUrl.isNotEmpty
+                onTap: imageUrl.isNotEmpty && !isBlocked
                     ? () {
                         Navigator.push(
                           context,
@@ -110,11 +125,13 @@ class UserAdvisorProfileHeader extends StatelessWidget {
           Gap(10.w),
           // Stats
           GestureDetector(
-            onTap: () => Navigator.pushNamed(
-              context,
-              AppRouter.kFollowingView,
-              arguments: profileId, // ⭐ استخدام الـ profileId
-            ),
+            onTap: isBlocked
+                ? null
+                : () => Navigator.pushNamed(
+                    context,
+                    AppRouter.kFollowingView,
+                    arguments: profileId,
+                  ),
             child: Column(
               children: [
                 Text(following, style: Styles.textStyle16SemiBold),
@@ -124,11 +141,13 @@ class UserAdvisorProfileHeader extends StatelessWidget {
           ),
           Gap(20.w),
           GestureDetector(
-            onTap: () => Navigator.pushNamed(
-              context,
-              AppRouter.kFollowersView,
-              arguments: profileId, // ⭐ استخدام الـ profileId
-            ),
+            onTap: isBlocked
+                ? null
+                : () => Navigator.pushNamed(
+                    context,
+                    AppRouter.kFollowersView,
+                    arguments: profileId,
+                  ),
             child: Column(
               children: [
                 Text(followers, style: Styles.textStyle16SemiBold),
@@ -160,7 +179,16 @@ class UserAdvisorProfileHeader extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SizedBox(height: 40.w),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: AppColors.secondary600,
+                  size: 20.sp,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
               _buildMoreButton(context),
             ],
           ),

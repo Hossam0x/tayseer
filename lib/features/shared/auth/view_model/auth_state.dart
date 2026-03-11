@@ -21,6 +21,7 @@ class AuthState {
   final CubitStates addNationalImageState;
   final CubitStates addLanguageState;
   final CubitStates isAiState;
+  final CubitStates setGenderState;
 
   final LastLoginResponse? lastLoginResponse;
   final GuestData? guestData;
@@ -50,7 +51,8 @@ class AuthState {
 
   // ✅ الحقل الجديد لتحديد نوع المستخدم الحالي أثناء عملية التسجيل
   final UserTypeEnum? currentAuthUserType;
-
+  // is Useer New
+  final bool? isNew;
   const AuthState({
     this.registerState = CubitStates.initial,
     this.verifyOtpState = CubitStates.initial,
@@ -68,6 +70,7 @@ class AuthState {
     this.addNationalImageState = CubitStates.initial,
     this.addLanguageState = CubitStates.initial,
     this.isAiState = CubitStates.initial,
+    this.setGenderState = CubitStates.initial,
     this.lastLoginResponse,
     this.guestData,
     this.answerCompleted,
@@ -88,6 +91,7 @@ class AuthState {
     this.price30Min = '',
     this.price60Min = '',
     this.currentAuthUserType, // ✅ جديد
+    this.isNew, // ✅ جديد
   });
 
   AuthState copyWith({
@@ -108,6 +112,7 @@ class AuthState {
     CubitStates? addNationalImageState,
     CubitStates? addLanguageState,
     CubitStates? isAiState,
+    CubitStates? setGenderState,
     LastLoginResponse? lastLoginResponse,
     bool? verify,
     bool? answerCompleted,
@@ -129,6 +134,7 @@ class AuthState {
     String? price30Min,
     String? price60Min,
     UserTypeEnum? currentAuthUserType, // ✅ جديد
+    bool? isNew, // ✅ جديد
   }) {
     return AuthState(
       registerState: registerState ?? this.registerState,
@@ -150,6 +156,7 @@ class AuthState {
           addNationalImageState ?? this.addNationalImageState,
       addLanguageState: addLanguageState ?? this.addLanguageState,
       isAiState: isAiState ?? this.isAiState,
+      setGenderState: setGenderState ?? this.setGenderState,
       lastLoginResponse: lastLoginResponse ?? this.lastLoginResponse,
       errorMessage: errorMessage ?? this.errorMessage,
       lastLoginBy: lastLoginBy ?? this.lastLoginBy,
@@ -174,6 +181,7 @@ class AuthState {
       price60Min: price60Min ?? this.price60Min,
       currentAuthUserType:
           currentAuthUserType ?? this.currentAuthUserType, // ✅ جديد
+      isNew: isNew ?? this.isNew, // ✅ جديد
     );
   }
 

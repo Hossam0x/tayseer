@@ -82,6 +82,11 @@ class LanguageSelectionUiCubit extends Cubit<LanguageSelectionState> {
     if (state.selectedLanguage == null) return null;
 
     final prefs = await SharedPreferences.getInstance();
+    final currentCode = prefs.getString('app_language') ?? 'ar';
+
+    // لو نفس اللغة الحالية → مفيش تغيير
+    if (state.selectedLanguage!.code == currentCode) return null;
+
     await prefs.setString('app_language', state.selectedLanguage!.code);
 
     return state.selectedLanguage!.code;

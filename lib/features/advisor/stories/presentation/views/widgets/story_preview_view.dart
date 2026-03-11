@@ -218,14 +218,14 @@ class _StoryPreviewViewState extends State<StoryPreviewView> {
     final completer = Completer<bool>();
     CustomshowDialogWithImage(
       context,
-      title: context.tr('unsaved_changes_title'),
-      supTitle: context.tr('unsaved_changes_message'),
+      title: context.tr('story_unsaved_changes_title'),
+      supTitle: context.tr('story_unsaved_changes_message'),
       icon: Icons.warning_amber_rounded,
       iconColor: Colors.white,
       iconBackgroundColor: AppColors.kprimaryColor,
-      bottonText: context.tr('discard_and_exit'),
+      bottonText: context.tr('story_discard_and_exit'),
       showCancelButton: true,
-      cancelText: context.tr('keep_editing'),
+      cancelText: context.tr('story_keep_editing'),
       onPressed: () {
         if (!completer.isCompleted) completer.complete(true);
       },

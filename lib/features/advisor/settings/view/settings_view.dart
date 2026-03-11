@@ -60,15 +60,10 @@ class _SettingsViewState extends State<SettingsView> {
               if (state is SettingsLoaded) {
                 if (state.actionSuccess != null) {
                   if (state.actionSuccess == "update_language_success") {
-                    // الـ toast لازم يظهر بلغة الإعداد الجديد
+                    // Update language without showing toast
                     SharedPreferences.getInstance().then((p) {
                       final lang = p.getString(kAppLanguage) ?? 'ar';
                       if (context.mounted) {
-                        final message = AppLocalizations.translateFor(
-                          'update_language_success',
-                          lang,
-                        );
-                        AppToast.success(context, message);
                         context.read<LanguageCubit>().setLanguage(
                           lang,
                           context,
@@ -192,7 +187,11 @@ class _SettingsViewState extends State<SettingsView> {
                       slivers: [
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: EdgeInsets.only(left: 20.w, right: 20.w),
+                            padding: EdgeInsets.only(
+                              left: 20.w,
+                              right: 20.w,
+                              top: 10.h,
+                            ),
                             child: ReferralShareCard(
                               points: state.points,
                               referralLink: state.referralLink,
@@ -249,7 +248,7 @@ class _SettingsViewState extends State<SettingsView> {
         final itemIndex = index ~/ 2;
         final setting = settings[itemIndex];
         return _buildSettingItem(context, setting);
-      }, childCount: settings.length * 2 - 1),
+      }, childCount: settings.length * 2),
     );
   }
 
@@ -428,7 +427,7 @@ class _SettingsViewState extends State<SettingsView> {
       context,
       title: context.tr("logout"),
       supTitle: context.tr("logout_confirmation"),
-      imageUrl: AssetsData.pauseIcon,
+      imageUrl: AssetsData.kWoriningImage,
       bottonText: context.tr("cancel"),
       cancelText: context.tr("yes"),
       showCancelButton: true,

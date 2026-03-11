@@ -147,16 +147,14 @@ class UserPublicPostsTab extends StatelessWidget {
     UserPublicProfileState state,
   ) {
     if (state.blockUserActionState == CubitStates.success) {
-      showSafeSnackBar(
-        context: context,
-        text: state.blockUserMessage ?? context.tr('blocked_successfully'),
-        isSuccess: true,
+      AppToast.success(
+        context,
+        state.blockUserMessage ?? context.tr('blocked_successfully'),
       );
     } else if (state.blockUserActionState == CubitStates.failure) {
-      showSafeSnackBar(
-        context: context,
-        text: state.blockUserMessage ?? context.tr('failed_to_block'),
-        isError: true,
+      AppToast.error(
+        context,
+        state.blockUserMessage ?? context.tr('failed_to_block'),
       );
     }
   }

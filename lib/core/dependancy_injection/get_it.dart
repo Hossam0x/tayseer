@@ -10,6 +10,7 @@ import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
+import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cubit.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/shared/event_detail/repo/event_detail_repository.dart';
@@ -24,7 +25,7 @@ import 'package:tayseer/features/advisor/settings/data/repositories/blocked_user
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view_model/packages_cubit.dart';
+import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/user_followings_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -178,7 +179,7 @@ Future<void> setupGetIt() async {
   );
 
   // Reels cubit
-  getIt.registerFactoryParam<ReelsCubit, PostModel, void>(
+  getIt.registerFactoryParam<ReelsCubit, PostModel?, void>(
     (post, _) => ReelsCubit(getIt<HomeRepository>(), initialPost: post),
   );
   // Stories Feature
@@ -470,6 +471,9 @@ Future<void> setupGetIt() async {
     () => ReportsRepoImpl(getIt<ApiService>()),
   );
   getIt.registerFactory<ReportsCubit>(() => ReportsCubit(getIt<ReportsRepo>()));
+
+  /// Update Post Cubit
+  getIt.registerFactory(() => UpdatePostCubit());
   getIt.registerFactory<NotificationRepo>(() => NotificationRepo(apiService: getIt<ApiService>()));
   getIt.registerFactory<NotificationCubit>(()=>NotificationCubit(notificationRepo: getIt<NotificationRepo>()));
 }

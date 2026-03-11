@@ -14,13 +14,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class ReelsItem extends StatefulWidget {
   final PostModel post;
   final bool isCurrentPage;
+  final bool shouldInitialize;
   final VideoPlayerController? sharedController;
+  final VoidCallback? onClose;
 
   const ReelsItem({
     super.key,
     required this.post,
     this.isCurrentPage = true,
+    this.shouldInitialize = true,
     this.sharedController,
+    this.onClose,
   });
 
   @override
@@ -106,7 +110,7 @@ class _ReelsItemState extends State<ReelsItem>
   }
 
   Widget _buildFlyingHeart() {
-    return const Icon(Icons.favorite, color: Colors.red, size: 50);
+    return Icon(Icons.favorite, color: Colors.red, size: 90.sp);
   }
 
   @override
@@ -114,102 +118,114 @@ class _ReelsItemState extends State<ReelsItem>
     return VisibilityDetector(
       key: Key('reel_${widget.post.postId}'),
       onVisibilityChanged: _handleVisibility,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 1. Video Background
-          ReelsVideoBackground(
-            videoUrl: widget.post.videoUrl ?? '',
-            videoId: widget.post.postId,
-            thumbnailUrl: widget.post.videoData?.thumbnail,
-            shouldPlay: _shouldPlay,
-            onTap: _togglePlay,
-            onDoubleTap: isGuest ? null : _handleDoubleTap,
-            showProgressBar: true,
-            sharedController: widget.sharedController,
-            onControllerCreated: (controller) {
-              _activeController = controller;
-              if (mounted) setState(() {});
-            },
-          ),
-
-          // 2. Gradient Overlay
-          IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withValues(alpha: 0.3),
-                    Colors.transparent,
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.3),
-                  ],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  stops: const [0.0, 0.15, 0.85, 1.0],
-                ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _togglePlay,
+        onDoubleTapDown: isGuest
+            ? null
+            : (details) => _handleDoubleTap(details.globalPosition),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 1. Video Background
+            RepaintBoundary(
+              child: ReelsVideoBackground(
+                videoUrl: widget.post.videoUrl ?? '',
+                videoId: widget.post.postId,
+                thumbnailUrl: widget.post.videoData?.thumbnail,
+                shouldPlay: _shouldPlay,
+                shouldInitialize: widget.shouldInitialize,
+                onTap: _togglePlay,
+                onDoubleTap: isGuest ? null : _handleDoubleTap,
+                showProgressBar: true,
+                sharedController: widget.sharedController,
+                onControllerCreated: (controller) {
+                  _activeController = controller;
+                  if (mounted) setState(() {});
+                },
               ),
-              child: const SizedBox.expand(),
             ),
-          ),
 
-          // 3. Play/Pause Animation Icon
-          if (_showIcon)
-            Center(
-              child: ScaleTransition(
-                scale: _iconScaleAnim,
+            // 2. Gradient Overlay
+            const RepaintBoundary(
+              child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0x4D000000),
+                        Colors.transparent,
+                        Colors.transparent,
+                        Color(0x4D000000),
+                      ],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      stops: [0.0, 0.15, 0.85, 1.0],
+                    ),
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.all(16.r),
-                    child: Icon(
-                      _isPausedByUser
-                          ? Icons.play_arrow_rounded
-                          : Icons.pause_rounded,
-                      color: Colors.white,
-                      size: 50.sp,
+                  child: SizedBox.expand(),
+                ),
+              ),
+            ),
+
+            // 3. Play/Pause Animation Icon
+            if (_showIcon)
+              Center(
+                child: ScaleTransition(
+                  scale: _iconScaleAnim,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(16.r),
+                      child: Icon(
+                        _isPausedByUser
+                            ? Icons.play_arrow_rounded
+                            : Icons.pause_rounded,
+                        color: Colors.white,
+                        size: 50.sp,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-          // 4. Info Overlay - Using BlocSelector to get updated post from state
-          BlocSelector<ReelsCubit, ReelsState, PostModel>(
-            selector: (state) {
-              return state.reels.firstWhere(
-                (reel) => reel.postId == widget.post.postId,
-                orElse: () => widget.post,
-              );
-            },
-            builder: (context, currentPost) {
-              return ReelsOverlay(
-                post: currentPost,
-                cachedController: _activeController,
-                likeButtonKey: _likeButtonKey,
-                onReactionChanged: (ReactionType? reaction) {
-                  context.read<ReelsCubit>().reactToReel(
-                    postId: widget.post.postId,
-                    reactionType: reaction,
+            // 4. Info Overlay - Using BlocSelector to get updated post from state
+            RepaintBoundary(
+              child: BlocSelector<ReelsCubit, ReelsState, PostModel>(
+                selector: (state) {
+                  return state.reelsMap[widget.post.postId] ?? widget.post;
+                },
+                builder: (context, currentPost) {
+                  return ReelsOverlay(
+                    post: currentPost,
+                    cachedController: _activeController,
+                    likeButtonKey: _likeButtonKey,
+                    onClose: widget.onClose,
+                    onReactionChanged: (ReactionType? reaction) {
+                      context.read<ReelsCubit>().reactToReel(
+                        postId: widget.post.postId,
+                        reactionType: reaction,
+                      );
+                    },
+                    onShareTapped: () {
+                      context.read<ReelsCubit>().toggleShareReel(
+                        postId: widget.post.postId,
+                      );
+                    },
+                    onSaveTapped: () {
+                      context.read<ReelsCubit>().toggleSaveReel(
+                        postId: widget.post.postId,
+                      );
+                    },
                   );
                 },
-                onShareTapped: () {
-                  context.read<ReelsCubit>().toggleShareReel(
-                    postId: widget.post.postId,
-                  );
-                },
-                onSaveTapped: () {
-                  context.read<ReelsCubit>().toggleSaveReel(
-                    postId: widget.post.postId,
-                  );
-                },
-              );
-            },
-          ),
-        ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

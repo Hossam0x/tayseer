@@ -1,5 +1,4 @@
 // features/user/user_profile/views/user_public_profile_view.dart
-import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
@@ -18,8 +17,6 @@ class UserPublicProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isArabic =
-        context.read<LanguageCubit>().state.languageCode == 'ar';
     return BlocProvider<UserPublicProfileCubit>(
       create: (_) => UserPublicProfileCubit(
         getIt<UserPublicProfileRepository>(),
@@ -29,28 +26,7 @@ class UserPublicProfileView extends StatelessWidget {
       ),
       child: Scaffold(
         body: AdvisorBackground(
-          child: Stack(
-            children: [
-              // المحتوى الرئيسي
-              const SafeArea(child: _UserPublicProfileContent()),
-
-              // زر الرجوع
-              // According language direction ar or en
-              Positioned(
-                top: 55.h,
-                right: isArabic ? 8.w : null,
-                left: !isArabic ? 8.w : null,
-                child: IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(
-                    Icons.arrow_back_ios,
-                    color: AppColors.secondary600,
-                    size: 24.w,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          child: SafeArea(child: _UserPublicProfileContent()),
         ),
         floatingActionButton: _buildFloatingActionButton(),
       ),

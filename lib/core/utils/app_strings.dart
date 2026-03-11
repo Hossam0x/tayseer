@@ -60,6 +60,8 @@ class AppStrings {
   static const String reelSavedSuccess = "reel_saved_success";
   static const String reelUnsavedSuccess = "reel_unsaved_success";
   static const String reelSaveError = "reel_save_error";
+  static const String reels = "reels";
+  static const String noReelsAvailable = "no_reels_available";
 
   // Video Download
   static const String download = "download";

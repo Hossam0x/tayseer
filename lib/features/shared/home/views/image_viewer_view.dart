@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'dart:async';
 import 'dart:ui';
 import 'package:tayseer/core/enum/report_type.dart';
@@ -10,6 +8,24 @@ import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/my_import.dart';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Constants
+// ══════════════════════════════════════════════════════════════════════════════
+const _kDismissThresholdRatio = 0.15;
+const _kDismissVelocity = 1000.0;
+const _kDragScaleReduction = 0.3;
+const _kMinDragScale = 0.5;
+const _kResetDuration = Duration(milliseconds: 200);
+const _kOverlayDuration = Duration(milliseconds: 300);
+const _kMaxZoomScale = 4.0;
+const _kZoomThreshold = 1.01;
+
+const _kWhite20 = Color.fromRGBO(255, 255, 255, 0.2);
+const _kWhite30 = Color.fromRGBO(255, 255, 255, 0.3);
+const _kWhite50 = Color.fromRGBO(255, 255, 255, 0.5);
+const _kBlack20 = Color.fromRGBO(0, 0, 0, 0.2);
+const _kBlack30 = Color.fromRGBO(0, 0, 0, 0.3);
 
 class ImageViewerView extends StatefulWidget {
   final List<String> images;
@@ -47,12 +63,11 @@ class _ImageViewerViewState extends State<ImageViewerView>
   final ValueNotifier<bool> _showOverlaysNotifier = ValueNotifier(true);
   final GlobalKey _reactionDestinationKey = GlobalKey();
 
-  // Drag variables
-  double _dragY = 0.0;
+  // Drag state
+  final ValueNotifier<double> _dragYNotifier = ValueNotifier(0.0);
   bool _isDragging = false;
-
-  // ✅ متغير جديد للتحكم في حالة الزوم
   bool _isZoomed = false;
+  double _screenHeight = 0;
 
   late AnimationController _resetController;
   late Animation<double> _resetAnimation;
@@ -74,7 +89,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
 
     _resetController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
+      duration: _kResetDuration,
     );
     _resetController.addListener(_onResetAnimation);
   }
@@ -94,7 +109,13 @@ class _ImageViewerViewState extends State<ImageViewerView>
   }
 
   void _onResetAnimation() {
-    setState(() => _dragY = _resetAnimation.value);
+    _dragYNotifier.value = _resetAnimation.value;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _screenHeight = MediaQuery.sizeOf(context).height;
   }
 
   @override
@@ -102,13 +123,14 @@ class _ImageViewerViewState extends State<ImageViewerView>
     _postSubscription?.cancel();
     _pageController.dispose();
     _showOverlaysNotifier.dispose();
+    _dragYNotifier.dispose();
     _resetController.removeListener(_onResetAnimation);
     _resetController.dispose();
     super.dispose();
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // Gesture Handlers (Vertical Drag for Dismiss)
+  // Gesture Handlers
   // ══════════════════════════════════════════════════════════════════════════
 
   void _onImageTap() {
@@ -116,38 +138,38 @@ class _ImageViewerViewState extends State<ImageViewerView>
     _showOverlaysNotifier.value = !_showOverlaysNotifier.value;
   }
 
-  void _onVerticalDragStart(DragStartDetails details) {
-    // ✅ إذا كانت الصورة مكبرة، لا تسمح بالسحب للإغلاق
-    if (_isZoomed) return;
+  // ── Dismiss callbacks (called from _ZoomableImage) ─────────────────────
 
-    _isDragging = true;
+  void _onDismissStart() {
+    setState(() => _isDragging = true);
     _showOverlaysNotifier.value = false;
   }
 
-  void _onVerticalDragUpdate(DragUpdateDetails details) {
-    // ✅ حماية إضافية
-    if (_isZoomed && !_isDragging) return;
-
-    setState(() => _dragY += details.delta.dy);
+  void _onDismissUpdate(double totalDragY) {
+    _dragYNotifier.value = totalDragY;
   }
 
-  void _onVerticalDragEnd(DragEndDetails details) {
-    if (_isZoomed && !_isDragging) return;
+  void _onDismissEnd(double dragY, double velocity) {
+    final threshold = _screenHeight * _kDismissThresholdRatio;
 
-    _isDragging = false;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final threshold = screenHeight * 0.15;
-    final velocity = details.primaryVelocity ?? 0;
-
-    if (_dragY.abs() > threshold || velocity.abs() > 1000) {
+    if (dragY.abs() > threshold || velocity.abs() > _kDismissVelocity) {
       Navigator.pop(context);
-    } else {
-      _showOverlaysNotifier.value = true;
-      _resetAnimation = Tween<double>(begin: _dragY, end: 0.0).animate(
-        CurvedAnimation(parent: _resetController, curve: Curves.easeOut),
-      );
-      _resetController.forward(from: 0);
+      return;
     }
+
+    _resetAnimation = Tween<double>(
+      begin: dragY,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _resetController, curve: Curves.easeOut));
+    _resetController.forward(from: 0);
+    _showOverlaysNotifier.value = true;
+    setState(() => _isDragging = false);
+  }
+
+  void _onDismissCancel() {
+    _dragYNotifier.value = 0;
+    _showOverlaysNotifier.value = true;
+    setState(() => _isDragging = false);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -178,30 +200,39 @@ class _ImageViewerViewState extends State<ImageViewerView>
 
   @override
   Widget build(BuildContext context) {
-    final dragRatio = (_dragY.abs() / MediaQuery.of(context).size.height).clamp(
-      0.0,
-      1.0,
-    );
-    final backgroundOpacity = (1.0 - dragRatio * 2).clamp(0.0, 1.0);
-    final scale = (1.0 - dragRatio * 0.3).clamp(0.5, 1.0);
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background
-          Container(color: Colors.black.withOpacity(backgroundOpacity)),
+          // Background – rebuilds only on drag value change
+          ValueListenableBuilder<double>(
+            valueListenable: _dragYNotifier,
+            builder: (context, dragY, _) {
+              final ratio = (dragY.abs() / _screenHeight).clamp(0.0, 1.0);
+              final opacity = (1.0 - ratio * 2).clamp(0.0, 1.0);
+              return ColoredBox(color: Color.fromRGBO(0, 0, 0, opacity));
+            },
+          ),
 
-          // Draggable Content (Gesture Detector for DISMISS)
-          GestureDetector(
-            onVerticalDragStart: _onVerticalDragStart,
-            onVerticalDragUpdate: _onVerticalDragUpdate,
-            onVerticalDragEnd: _onVerticalDragEnd,
-            child: Transform.translate(
-              offset: Offset(0, _dragY),
-              child: Transform.scale(scale: scale, child: _buildImageSlider()),
-            ),
+          // Draggable Content – rebuilds only on drag value change
+          ValueListenableBuilder<double>(
+            valueListenable: _dragYNotifier,
+            builder: (context, dragY, child) {
+              final ratio = (dragY.abs() / _screenHeight).clamp(0.0, 1.0);
+              final scale = (1.0 - ratio * _kDragScaleReduction).clamp(
+                _kMinDragScale,
+                1.0,
+              );
+              return Transform(
+                transform: Matrix4.identity()
+                  ..translate(0.0, dragY)
+                  ..scale(scale),
+                alignment: Alignment.center,
+                child: child,
+              );
+            },
+            child: _buildImageSlider(),
           ),
 
           // Overlays
@@ -213,7 +244,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
 
   Widget _buildOverlays() {
     return AnimatedOpacity(
-      duration: const Duration(milliseconds: 200),
+      duration: _kResetDuration,
       opacity: _isDragging ? 0.0 : 1.0,
       child: ValueListenableBuilder<bool>(
         valueListenable: _showOverlaysNotifier,
@@ -221,38 +252,37 @@ class _ImageViewerViewState extends State<ImageViewerView>
           return Stack(
             fit: StackFit.expand,
             children: [
-              // Header
               AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
+                duration: _kOverlayDuration,
                 top: showOverlays ? 0 : -150,
                 left: 0,
                 right: 0,
-                child: _ViewerHeader(
-                  postId: widget.postId,
-                  currentIndex: _currentIndex,
-                  totalImages: widget.images.length,
-                  onClose: () => Navigator.pop(context),
+                child: RepaintBoundary(
+                  child: _ViewerHeader(
+                    postId: widget.postId,
+                    currentIndex: _currentIndex,
+                    totalImages: widget.images.length,
+                    onClose: () => Navigator.pop(context),
+                  ),
                 ),
               ),
-
-              // Counter
               AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
+                duration: _kOverlayDuration,
                 top: showOverlays ? context.responsiveHeight(120) : -100,
                 right: context.responsiveWidth(24),
-                child: _GlassCounter(
-                  current: _currentIndex + 1,
-                  total: widget.images.length,
+                child: RepaintBoundary(
+                  child: _GlassCounter(
+                    current: _currentIndex + 1,
+                    total: widget.images.length,
+                  ),
                 ),
               ),
-
-              // Bottom Bar
               AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
+                duration: _kOverlayDuration,
                 bottom: showOverlays ? 0 : -200,
                 left: 0,
                 right: 0,
-                child: _buildBottomBar(),
+                child: RepaintBoundary(child: _buildBottomBar()),
               ),
             ],
           );
@@ -265,24 +295,20 @@ class _ImageViewerViewState extends State<ImageViewerView>
     return PageView.builder(
       controller: _pageController,
       itemCount: widget.images.length,
-      // ✅ نوقف السكرول الجانبي إذا كانت الصورة مكبرة
       physics: _isZoomed
           ? const NeverScrollableScrollPhysics()
           : const BouncingScrollPhysics(),
       onPageChanged: (index) {
         setState(() {
           _currentIndex = index;
-          _isZoomed = false; // إعادة تعيين الزوم عند تغيير الصورة
+          _isZoomed = false;
         });
       },
       itemBuilder: (context, index) {
-        final imageUrl = widget.images[index];
-
-        // ✅ استخدام الويدجت الجديد المخصص للزوم
         return _ZoomableImage(
           isFromProfile: widget.isFromProfile,
           heroPrefix: widget.heroPrefix,
-          imageUrl: imageUrl,
+          imageUrl: widget.images[index],
           postId: widget.postId,
           onTap: _onImageTap,
           onZoomStatusChanged: (isZoomed) {
@@ -290,8 +316,11 @@ class _ImageViewerViewState extends State<ImageViewerView>
               setState(() => _isZoomed = isZoomed);
             }
           },
+          onDismissStart: _onDismissStart,
+          onDismissUpdate: _onDismissUpdate,
+          onDismissEnd: _onDismissEnd,
+          onDismissCancel: _onDismissCancel,
           onDoubleTapReaction: (tapPosition) {
-            // منطق التفاعل (القلب الطائر)
             if (!_showOverlaysNotifier.value) {
               _showOverlaysNotifier.value = true;
             }
@@ -326,11 +355,9 @@ class _ImageViewerViewState extends State<ImageViewerView>
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+            color: _kBlack20,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-            border: Border(
-              top: BorderSide(color: Colors.white.withOpacity(0.3), width: 1.5),
-            ),
+            border: const Border(top: BorderSide(color: _kWhite30, width: 1.5)),
           ),
           child: SafeArea(
             top: false,
@@ -393,6 +420,12 @@ class _ZoomableImage extends StatefulWidget {
   final ValueChanged<bool> onZoomStatusChanged;
   final Function(Offset) onDoubleTapReaction;
 
+  // Dismiss callbacks (forwarded from parent)
+  final VoidCallback? onDismissStart;
+  final ValueChanged<double>? onDismissUpdate;
+  final void Function(double dragY, double velocity)? onDismissEnd;
+  final VoidCallback? onDismissCancel;
+
   const _ZoomableImage({
     required this.isFromProfile,
     this.heroPrefix,
@@ -401,6 +434,10 @@ class _ZoomableImage extends StatefulWidget {
     required this.onTap,
     required this.onZoomStatusChanged,
     required this.onDoubleTapReaction,
+    this.onDismissStart,
+    this.onDismissUpdate,
+    this.onDismissEnd,
+    this.onDismissCancel,
   });
 
   @override
@@ -414,29 +451,42 @@ class _ZoomableImageState extends State<_ZoomableImage>
   late AnimationController _animationController;
   Animation<Matrix4>? _animation;
 
+  bool _lastZoomedState = false;
+
+  // Dismiss tracking
+  bool _isDismissing = false;
+  double _cumulativeDismissY = 0;
+
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
+      duration: _kResetDuration,
     );
+    _animationController.addListener(_onAnimationTick);
+    _transformationController.addListener(_checkZoomStatus);
+  }
 
-    // مراقبة التغييرات في حجم الصورة
-    _transformationController.addListener(() {
-      _checkZoomStatus();
-    });
+  void _onAnimationTick() {
+    if (_animation != null) {
+      _transformationController.value = _animation!.value;
+    }
   }
 
   void _checkZoomStatus() {
     final scale = _transformationController.value.getMaxScaleOnAxis();
-    // إذا كان الاسكيل أكبر من 1 بقليل، نعتبرها مكبرة
-    final isZoomed = scale > 1.01;
-    widget.onZoomStatusChanged(isZoomed);
+    final isZoomed = scale > _kZoomThreshold;
+    if (isZoomed != _lastZoomedState) {
+      _lastZoomedState = isZoomed;
+      widget.onZoomStatusChanged(isZoomed);
+    }
   }
 
   @override
   void dispose() {
+    _animationController.removeListener(_onAnimationTick);
+    _transformationController.removeListener(_checkZoomStatus);
     _transformationController.dispose();
     _animationController.dispose();
     super.dispose();
@@ -444,8 +494,7 @@ class _ZoomableImageState extends State<_ZoomableImage>
 
   void _handleDoubleTap(TapDownDetails details) {
     if (_transformationController.value != Matrix4.identity()) {
-      // إذا كانت مكبرة -> أرجعها للحجم الطبيعي
-      final animation =
+      _animation =
           Matrix4Tween(
             begin: _transformationController.value,
             end: Matrix4.identity(),
@@ -455,56 +504,72 @@ class _ZoomableImageState extends State<_ZoomableImage>
               curve: Curves.easeOut,
             ),
           );
-
-      _animation = animation;
-
-      _animationController.addListener(() {
-        _transformationController.value = _animation!.value;
-      });
-
       _animationController.forward(from: 0);
     } else {
-      // إذا كانت طبيعية -> شغل انيميشن القلب
       widget.onDoubleTapReaction(details.globalPosition);
     }
   }
 
-  // في _ZoomableImage فقط - غيّر الـ build method
+  // ── InteractiveViewer interaction handlers ────────────────────────────
+
+  void _onInteractionStart(ScaleStartDetails details) {
+    if (details.pointerCount == 1 && !_lastZoomedState) {
+      _isDismissing = true;
+      _cumulativeDismissY = 0;
+      widget.onDismissStart?.call();
+    }
+  }
+
+  void _onInteractionUpdate(ScaleUpdateDetails details) {
+    if (_isDismissing) {
+      if (details.pointerCount > 1) {
+        // Pinch detected → cancel dismiss, let zoom take over
+        _isDismissing = false;
+        widget.onDismissCancel?.call();
+      } else {
+        _cumulativeDismissY += details.focalPointDelta.dy;
+        widget.onDismissUpdate?.call(_cumulativeDismissY);
+      }
+    }
+  }
+
+  void _onInteractionEnd(ScaleEndDetails details) {
+    if (_isDismissing) {
+      _isDismissing = false;
+      widget.onDismissEnd?.call(
+        _cumulativeDismissY,
+        details.velocity.pixelsPerSecond.dy,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
+      onDoubleTap: () {},
       onDoubleTapDown: _handleDoubleTap,
       child: InteractiveViewer(
         transformationController: _transformationController,
         minScale: 1.0,
-        maxScale: 4.0,
-        panEnabled: true,
-        onInteractionUpdate: (_) => _checkZoomStatus(),
-        onInteractionEnd: (_) => _checkZoomStatus(),
+        maxScale: _kMaxZoomScale,
+        panEnabled: _lastZoomedState,
+        onInteractionStart: _onInteractionStart,
+        onInteractionUpdate: _onInteractionUpdate,
+        onInteractionEnd: _onInteractionEnd,
         child: Center(
           child: Hero(
             tag:
                 '${widget.heroPrefix ?? (widget.isFromProfile ? 'profile' : 'home')}_post_${widget.postId}_img_${widget.imageUrl}',
-            // ✅ استخدم CachedNetworkImage مباشرة بدل AppImage
             child: CachedNetworkImage(
               imageUrl: widget.imageUrl,
               fit: BoxFit.contain,
               width: double.infinity,
               height: double.infinity,
-              // ✅ Placeholder شفاف أو خفيف للخلفية السوداء
               placeholder: (context, url) => const SizedBox.shrink(),
-              // أو لو عايز loading indicator خفيف:
-              // placeholder: (context, url) => Center(
-              //   child: CircularProgressIndicator(
-              //     color: Colors.white.withOpacity(0.3),
-              //     strokeWidth: 2,
-              //   ),
-              // ),
-              errorWidget: (context, url, error) => Icon(
+              errorWidget: (context, url, error) => const Icon(
                 Icons.broken_image_outlined,
-                color: Colors.white.withOpacity(0.3),
+                color: _kWhite30,
                 size: 48,
               ),
             ),
@@ -539,15 +604,12 @@ class _ViewerHeader extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.2),
+            color: _kBlack20,
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
+            border: const Border(
+              bottom: BorderSide(color: _kWhite30, width: 1.5),
             ),
           ),
           child: SafeArea(
@@ -564,17 +626,17 @@ class _ViewerHeader extends StatelessWidget {
                 else
                   const SizedBox(),
                 if (!isGuest)
-                  IconButton(
-                    onPressed: () {
+                  GestureDetector(
+                    onTap: () {
                       context.pushNamed(
                         AppRouter.kReportsView,
                         arguments: {'type': ReportType.post, 'id': postId},
                       );
                     },
-                    icon: Icon(
+                    child: Icon(
                       Icons.info_outline,
                       color: Colors.white,
-                      size: 26.sp,
+                      size: 28.sp,
                     ),
                   )
                 else
@@ -598,9 +660,7 @@ class _ViewerHeader extends StatelessWidget {
           width: isActive ? 8.w : 6.w,
           height: isActive ? 8.w : 6.w,
           decoration: BoxDecoration(
-            color: isActive
-                ? HexColor("#AC1A37")
-                : Colors.white.withOpacity(0.5),
+            color: isActive ? HexColor("#AC1A37") : _kWhite50,
             shape: BoxShape.circle,
           ),
         );
@@ -628,12 +688,12 @@ class _GlassCounter extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.3),
+            color: _kBlack30,
             borderRadius: BorderRadius.circular(8.r),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
+            border: Border.all(color: _kWhite20),
           ),
           child: Text(
-            "$current\\$total",
+            "$current/$total",
             style: Styles.textStyle14.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w600,

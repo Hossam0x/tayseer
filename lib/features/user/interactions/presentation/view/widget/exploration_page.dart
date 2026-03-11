@@ -41,16 +41,16 @@ class ExplorationState extends State<Exploration> {
     required Widget showMoreWidget,
   }) {
     final row = Row(
-      children: [titleWidget, SizedBox(width: 12.w), showMoreWidget],
+      children: [
+        titleWidget,
+        SizedBox(width: 12.w),
+        showMoreWidget,
+      ],
     );
 
-  
     return isArabic
         ? row
-        : Directionality(
-            textDirection: TextDirection.ltr,
-            child: row,
-          );
+        : Directionality(textDirection: TextDirection.ltr, child: row);
   }
 
   @override
@@ -131,8 +131,7 @@ class ExplorationState extends State<Exploration> {
               delegate: SliverChildListDelegate([
                 _buildSection(
                   title: "الإعجابات من ضمن اختياراتك",
-                  subtitle:
-                      "الأشخاص الذين تم اقتراحهم لك بناءً على اهتماماتك",
+                  subtitle: "الأشخاص الذين تم اقتراحهم لك بناءً على اهتماماتك",
                   data: dummyData["من ضمن اختياراتك"]!,
                   isSubscribed: true,
                   showMoreButton: false,
@@ -167,31 +166,43 @@ class ExplorationState extends State<Exploration> {
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              // ✅ 1. من ضمن اختياراتك
-              if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ??
-                  false) ...[
+              if (state.explorationData["الإعجابات"]?.isNotEmpty ?? false) ...[
                 _buildSection(
-                  title: context.tr("likes_from_your_choices"),
-                  subtitle: context.tr("suggested_based_on_interests"),
-                  data: state.explorationData["من ضمن اختياراتك"]!,
+                  title: context.tr("likes"),
+                  subtitle: context.tr("people_liked_you"),
+                  data: state.explorationData["الإعجابات"]!,
                   isSubscribed: state.isSubscribed,
                   limit: 5,
+                  forceShowLikedMe: true, // ✅ هيخلي كل كارد يظهر "أعجب بك"
                 ),
                 SizedBox(height: 24.h),
               ],
 
-              // ✅ 2. من خارج اختياراتك
-              if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ??
-                  false) ...[
-                _buildSection(
-                  title: context.tr("likes_outside_choices"),
-                  subtitle: context.tr("outside_preferences"),
-                  data: state.explorationData["من خارج اختياراتك"]!,
-                  isSubscribed: state.isSubscribed,
-                  limit: 5,
-                ),
-                SizedBox(height: 24.h),
-              ],
+              // // ✅ 1. من ضمن اختياراتك
+              // if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ??
+              //     false) ...[
+              //   _buildSection(
+              //     title: context.tr("likes_from_your_choices"),
+              //     subtitle: context.tr("suggested_based_on_interests"),
+              //     data: state.explorationData["من ضمن اختياراتك"]!,
+              //     isSubscribed: state.isSubscribed,
+              //     limit: 5,
+              //   ),
+              //   SizedBox(height: 24.h),
+              // ],
+
+              // // ✅ 2. من خارج اختياراتك
+              // if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ??
+              //     false) ...[
+              //   _buildSection(
+              //     title: context.tr("likes_outside_choices"),
+              //     subtitle: context.tr("outside_preferences"),
+              //     data: state.explorationData["من خارج اختياراتك"]!,
+              //     isSubscribed: state.isSubscribed,
+              //     limit: 5,
+              //   ),
+              //   SizedBox(height: 24.h),
+              // ],
 
               // ✅ 3. يرغبون في التفاعل معك
               if (state.explorationData["يرغبون في التفاعل معك"]?.isNotEmpty ??
@@ -263,7 +274,7 @@ class ExplorationState extends State<Exploration> {
                       ),
                       child: Text(
                         context.tr("show_more"),
-                        style: Styles.textStyle18SemiBold.copyWith(
+                        style: Styles.textStyle16SemiBold.copyWith(
                           color: AppColors.secondary800,
                         ),
                       ),
@@ -271,16 +282,20 @@ class ExplorationState extends State<Exploration> {
                   ),
                 ),
                 SizedBox(height: 4.h),
-                Wrap(
-                  children:
-                      state.explorationData["منضم حديثاً"]!.take(6).map((
-                    item,
-                  ) {
-                    return RecentlyJoined(
-                      item: item,
-                      forceBlur: !state.isSubscribed,
-                    );
-                  }).toList(),
+                Directionality(
+                  textDirection: isArabic
+                      ? TextDirection.rtl
+                      : TextDirection.ltr,
+                  child: Wrap(
+                    children: state.explorationData["منضم حديثاً"]!.take(6).map(
+                      (item) {
+                        return RecentlyJoined(
+                          item: item,
+                          forceBlur: !state.isSubscribed,
+                        );
+                      },
+                    ).toList(),
+                  ),
                 ),
                 SizedBox(height: 24.h),
               ],
@@ -337,13 +352,12 @@ class ExplorationState extends State<Exploration> {
                     ),
                   ),
                 ),
-                SizedBox(height: 16.h),
+                // SizedBox(height: 16.h),
                 ListView.builder(
                   scrollDirection: Axis.vertical,
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
-                  itemCount:
-                      state.explorationData["ارسل تحية"]!.take(3).length,
+                  itemCount: state.explorationData["ارسل تحية"]!.take(4).length,
                   itemBuilder: (context, index) {
                     final item = state.explorationData["ارسل تحية"]![index];
                     return Padding(
@@ -375,13 +389,38 @@ class ExplorationState extends State<Exploration> {
     required bool isSubscribed,
     int limit = 5,
     bool showMoreButton = true,
+    bool forceShowLikedMe = false,
   }) {
+    // ✅ apply على الـ limited cards المعروضة في السكشن
     List<InteractionUserModel> limitedData = data.take(limit).toList();
+    if (forceShowLikedMe) {
+      limitedData = limitedData
+          .map(
+            (user) => user.copyWith(
+              likedMe: true,
+              likedHim: false, // ✅ أضف
+              sentCompliment: false, // ✅ أضف
+            ),
+          )
+          .toList();
+    }
+
+    final List<InteractionUserModel> navigationData = forceShowLikedMe
+        ? data
+              .map(
+                (user) => user.copyWith(
+                  likedMe: true,
+                  likedHim: false, // ✅ أضف
+                  sentCompliment: false, // ✅ أضف
+                ),
+              )
+              .toList()
+        : data;
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
     final cardWidth = isTablet ? 220.w : 190.w;
-    final cardHeight = isTablet ? 320.h : 280.h;
+    final cardHeight = isTablet ? 260.0 : 245.0; 
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,7 +443,7 @@ class ExplorationState extends State<Exploration> {
                     builder: (context) => CategoryDetailPage(
                       title: title,
                       subtitle: subtitle,
-                      data: data,
+                      data: navigationData, // ✅ بدل data
                       isSubscribed: isSubscribed,
                       isRecentlyJoinedCategory: false,
                     ),
@@ -412,8 +451,7 @@ class ExplorationState extends State<Exploration> {
                 );
               },
               child: Padding(
-                padding:
-                    EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
+                padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
                 child: Text(
                   context.tr("show_more"),
                   style: Styles.textStyle16SemiBold.copyWith(
@@ -441,22 +479,25 @@ class ExplorationState extends State<Exploration> {
         SizedBox(height: 16.h),
         SizedBox(
           height: cardHeight,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: limitedData.length,
-            clipBehavior: Clip.none,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: EdgeInsetsDirectional.only(end: 12.w),
-                child: SizedBox(
-                  width: cardWidth,
-                  child: InteractionProfileCard(
-                    item: limitedData[index],
-                    forceBlur: !isSubscribed,
+          child: Directionality(
+            textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: limitedData.length,
+              clipBehavior: Clip.none,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: EdgeInsetsDirectional.only(end: 12.w),
+                  child: SizedBox(
+                    width: cardWidth,
+                    child: InteractionProfileCard(
+                      item: limitedData[index],
+                      forceBlur: !isSubscribed,
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ],

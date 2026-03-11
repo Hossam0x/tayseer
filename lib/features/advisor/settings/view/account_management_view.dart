@@ -245,7 +245,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppImage(AssetsData.pauseIcon),
+            AppImage(AssetsData.kWoriningImage, height: 100.h),
             Gap(20.h),
             Text(
               title,

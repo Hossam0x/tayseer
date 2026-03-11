@@ -12,6 +12,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
   @override
   Future<Either<Failure, List<UserStoriesModel>>> fetchStories({
     required int page,
+    int limit = 10,
     String? advisorId,
     bool isSpecial = false,
     required BuildContext context,
@@ -21,7 +22,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
         endPoint: isSpecial
             ? ApiEndPoint.specialStories(advisorId)
             : ApiEndPoint.allStories,
-        query: {'page': page},
+        query: {'page': page, 'limit': limit},
       );
 
       final data = response['data'];
@@ -113,6 +114,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
   @override
   Future<Either<Failure, List<UserStoriesModel>>> fetchStoriesSilent({
     required int page,
+    int limit = 10,
     String? advisorId,
     bool isSpecial = false,
   }) async {
@@ -121,7 +123,7 @@ class StoriesRepositoryImpl implements StoriesRepository {
         endPoint: isSpecial
             ? ApiEndPoint.specialStories(advisorId)
             : ApiEndPoint.allStories,
-        query: {'page': page},
+        query: {'page': page, 'limit': limit},
       );
 
       final data = response['data'];

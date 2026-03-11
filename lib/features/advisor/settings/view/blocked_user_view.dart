@@ -1,5 +1,4 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/blocked_user_model.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users_cubit.dart';
@@ -8,7 +7,6 @@ import 'package:tayseer/features/advisor/settings/view/widgets/custom_error_widg
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/advisor/settings/data/models/blocked_user_item.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 
 class BlockedUsersView extends StatefulWidget {
   const BlockedUsersView({super.key});
@@ -74,17 +72,19 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
                         listener: (context, state) {
                           if (state is BlockedUsersLoaded) {
                             if (state.actionError != null) {
-                              showSafeSnackBar(
-                                context: context,
-                                text: state.actionError!,
-                                isError: true,
+                              AppToast.error(
+                                context,
+                                state.isActionKey
+                                    ? context.tr(state.actionError!)
+                                    : state.actionError!,
                               );
                               context.read<BlockedUsersCubit>().clearMessages();
                             } else if (state.actionSuccess != null) {
-                              showSafeSnackBar(
-                                context: context,
-                                text: state.actionSuccess!,
-                                isSuccess: true,
+                              AppToast.success(
+                                context,
+                                state.isActionKey
+                                    ? context.tr(state.actionSuccess!)
+                                    : state.actionSuccess!,
                               );
                               context.read<BlockedUsersCubit>().clearMessages();
                             }

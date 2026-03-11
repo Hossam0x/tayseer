@@ -51,15 +51,18 @@ class SubscriptionPromptOverlay extends StatelessWidget {
   final bool isInsideStack;
   const SubscriptionPromptOverlay({super.key, this.isInsideStack = true});
 
-  
-
   @override
   Widget build(BuildContext context) {
-    final safeBottom = MediaQuery.of(context).padding.bottom;
+    // ✅ احصل على ارتفاع الـ bottom nav bar الفعلي
+    final bottomNavHeight = kBottomNavigationBarHeight; 
+    final safeBottom = MediaQuery.of(context).padding.bottom; 
+
+  
+    final bottomOffset = bottomNavHeight + safeBottom + 45.h;
 
     if (isInsideStack) {
       return Positioned(
-        bottom: 100.h + safeBottom,
+        bottom: bottomOffset,
         left: 24.w,
         right: 24.w,
         child: const SubscriptionButton(),
@@ -70,7 +73,7 @@ class SubscriptionPromptOverlay extends StatelessWidget {
       padding: EdgeInsets.only(
         left: 24.w,
         right: 24.w,
-        bottom: 100.h + safeBottom,
+        bottom: bottomOffset,
       ),
       child: const SubscriptionButton(),
     );

@@ -1,5 +1,3 @@
-// lib/features/user/marriage_filter/view/widget/marriage_filter_body.dart
-
 import 'package:tayseer/core/widgets/custom_build_age_and_country_section.dart';
 import 'package:tayseer/features/user/marriage_filter/view/widget/custom_data_card.dart';
 import 'package:tayseer/features/user/marriage_filter/view/widget/filter_selection_body.dart';
@@ -23,7 +21,7 @@ class MarriageFilterBody extends StatelessWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(
                 context,
-                text: state.errorMessage ?? 'حدث خطأ',
+                text: state.errorMessage ?? context.tr('error_occurred'),
                 isError: true,
               ),
             );
@@ -62,10 +60,9 @@ class MarriageFilterBody extends StatelessWidget {
                 ),
               ),
 
-              // ... باقي الـ Sections ...
               SliverToBoxAdapter(
                 child: CustomDataCard(
-                  sectionTitle: "بيانات وأنشطة 🔥",
+                  sectionTitle: context.tr('data_and_activities'),
                   items: [
                     _buildRow(context, "verified_id", "isVerified"),
                     _buildRow(context, "new_member", "isNew"),
@@ -77,7 +74,7 @@ class MarriageFilterBody extends StatelessWidget {
 
               SliverToBoxAdapter(
                 child: CustomDataCard(
-                  sectionTitle: "بيانات شخصية",
+                  sectionTitle: context.tr('personal_data'),
                   items: [
                     _buildRow(context, "height", "height"),
                     _buildRow(context, "marital_status", "maritalStatus"),
@@ -90,7 +87,7 @@ class MarriageFilterBody extends StatelessWidget {
 
               SliverToBoxAdapter(
                 child: CustomDataCard(
-                  sectionTitle: "الأهداف",
+                  sectionTitle: context.tr('goals'),
                   items: [
                     _buildRow(context, "marriage", "goalMarry"),
                     _buildRow(context, "engagement", "goalEngagment"),
@@ -102,7 +99,7 @@ class MarriageFilterBody extends StatelessWidget {
 
               SliverToBoxAdapter(
                 child: CustomDataCard(
-                  sectionTitle: "الدين والعادات",
+                  sectionTitle: context.tr('religion_and_habits'),
                   items: [
                     _buildRow(
                       context,
@@ -153,11 +150,13 @@ class MarriageFilterBody extends StatelessWidget {
     final state = context.read<MarriageFilterCubit>().state;
     final value = state.selectedFilters[fieldKey];
 
-    String displayValue = "لا يوجد تفضيل";
+    String displayValue = context.tr('no_preference');
     if (value is String) {
       displayValue = value.contains('_') ? context.tr(value) : value;
     }
-    if (value is List) displayValue = "${value.length} مختارة";
+    if (value is List) {
+      displayValue = "${value.length} ${context.tr('selected')}";
+    }
 
     return FilterItemModel(
       title: context.tr(title),

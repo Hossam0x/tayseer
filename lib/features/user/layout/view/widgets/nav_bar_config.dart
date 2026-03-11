@@ -38,9 +38,9 @@ class NavBarConfig {
     ),
 
     NavBarItem(
-      icon: AssetsData.eventIcon,
-      activeIcon: AssetsData.selectedEventIcon,
-      labelKey: "event",
+      icon: AssetsData.reelsIcon,
+      activeIcon: AssetsData.selectedReelsIcon,
+      labelKey: "reels",
     ),
     NavBarItem(
       icon: AssetsData.profileIcon,
@@ -66,9 +66,9 @@ class NavBarConfig {
       labelKey: "mySpace",
     ),
     NavBarItem(
-      icon: AssetsData.eventIcon,
-      activeIcon: AssetsData.selectedEventIcon,
-      labelKey: "event",
+      icon: AssetsData.reelsIcon,
+      activeIcon: AssetsData.selectedReelsIcon,
+      labelKey: "reels",
     ),
 
     NavBarItem(

@@ -1,10 +1,7 @@
-// lib/features/user/questions/view/screens/choose_gender_body.dart
-
-import 'package:tayseer/core/enum/auth_enum.dart';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
-import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
-import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
+import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
+import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 
 import '../../../../../my_import.dart';
 
@@ -133,20 +130,15 @@ class ChooseGenderBody extends StatelessWidget {
     return ValueListenableBuilder<Gender?>(
       valueListenable: selectedGender,
       builder: (context, gender, _) {
-        return BlocConsumer<QuestionsCubit, QuestionsState>(
+        return BlocConsumer<AuthCubit, AuthState>(
           listenWhen: (previous, current) =>
-              previous.answerQuestionsState != current.answerQuestionsState,
+              previous.setGenderState != current.setGenderState,
           listener: (context, state) {
-            if (state.answerQuestionsState == CubitStates.success) {
-              // ✅ الانتقال لـ QuestionsPageView مع تمرير الـ Gender
-              context.pushReplacementNamed(
-                AppRouter.kQuestionsPageView,
-                arguments: {
-                  'currentUserType': currentUserType,
-                  'selectedGender': gender,
-                },
-              );
-            } else if (state.answerQuestionsState == CubitStates.failure) {
+            if (state.setGenderState == CubitStates.success) {
+              context.pushReplacementNamed(AppRouter.kPurposeSelectionView);
+
+              // ✅ لو Guest - روح مباشرة
+            } else if (state.setGenderState == CubitStates.failure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 CustomSnackBar(
                   context,
@@ -157,7 +149,7 @@ class ChooseGenderBody extends StatelessWidget {
             }
           },
           builder: (context, state) {
-            final isLoading = state.answerQuestionsState == CubitStates.loading;
+            final isLoading = state.setGenderState == CubitStates.loading;
             final isEnabled = gender != null;
 
             return CustomBotton(
@@ -174,14 +166,8 @@ class ChooseGenderBody extends StatelessWidget {
                           arguments: {'currentUserType': UserTypeEnum.guest},
                         );
                       } else {
-                        // User - أرسل الإجابة أولاً
-                        context.read<QuestionsCubit>().sendAnswerQuestions(
-                          question: context.tr('choose_identity'),
-                          questionCategoryEnum: AuthEnum.gender.name,
-                          questionNumber: 1,
-                          answers: [
-                            {'answer': gender.name},
-                          ],
+                        context.read<AuthCubit>().setGender(
+                          gender: gender.name,
                         );
                       }
                     }

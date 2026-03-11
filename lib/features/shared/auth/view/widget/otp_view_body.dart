@@ -68,11 +68,15 @@ class _OtpViewBodyState extends State<OtpViewBody> {
                 AppRouter.kPersonalInfoAsConsultantView,
               );
             }
-          } else {
-            context.pushNamedAndRemoveUntil(
-              AppRouter.kUserLayoutView,
-              predicate: (route) => false,
-            );
+          } else if (selectedUserType == UserTypeEnum.user) {
+            if (state.isNew == true) {
+              context.pushReplacementNamed(AppRouter.kChooseGenderView);
+            } else {
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kUserLayoutView,
+                predicate: (route) => false,
+              );
+            }
           }
         } else if (state.verifyOtpState == CubitStates.failure) {
           context.pop();

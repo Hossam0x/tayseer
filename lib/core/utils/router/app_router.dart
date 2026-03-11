@@ -24,13 +24,17 @@ import 'package:tayseer/features/advisor/settings/view/edit_personal_data_view.d
 import 'package:tayseer/features/advisor/settings/view/help_support_view.dart';
 import 'package:tayseer/features/advisor/settings/view/hide_story_form_view.dart';
 import 'package:tayseer/features/advisor/settings/view/language_selection_view.dart';
-import 'package:tayseer/features/advisor/settings/view/packages_tab_view.dart';
 import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
-import 'package:tayseer/features/advisor/settings/view/advisor_subscription_view.dart';
-import 'package:tayseer/features/advisor/settings/view_model/advisor_subscription_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view_model/packages_cubit.dart';
+
+import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cubit.dart';
+import 'package:tayseer/features/advisor/update_posts/view/update_post_view.dart';
+import 'package:tayseer/features/shared/auth/view/purpose_selection_view.dart';
+import 'package:tayseer/features/shared/packages/presentation/views/advisor_subscription_view.dart';
+import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
+import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
+import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_reservation_people_view.dart';
@@ -58,6 +62,7 @@ import 'package:tayseer/features/shared/auth/view/upload_nationalid_view.dart';
 import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
+import 'package:tayseer/features/shared/packages/presentation/views/packages_view.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/report_details_view.dart';
@@ -76,7 +81,7 @@ import 'package:tayseer/features/user/questions/view/face_verification_view.dart
 import 'package:tayseer/features/user/questions/view/otp_phone_user_question.dart';
 import 'package:tayseer/features/user/questions/view/partner_filter_view.dart';
 import 'package:tayseer/features/user/questions/view/questions_page_view.dart';
-import 'package:tayseer/features/user/questions/view/choose_gender_view.dart';
+import 'package:tayseer/features/shared/auth/view/choose_gender_view.dart';
 import 'package:tayseer/features/user/questions/view/personal_info_view.dart';
 import 'package:tayseer/features/user/questions/view/subscription_view.dart';
 import 'package:tayseer/features/user/questions/view/verify_data_view.dart';
@@ -124,6 +129,7 @@ abstract class AppRouter {
   static const kRegisterView = '/RegisterView';
   static const kOtpView = '/OtpView';
   static const kUserLayoutView = '/UserLayoutView';
+  static const kPurposeSelectionView = '/PurposeSelectionView';
 static const kPostDetailsView = '/PostDetailsView';
   static const kChooseGenderView = '/ChooseGenderView';
   static const kNationalityView = '/NationalityView';
@@ -188,6 +194,7 @@ static const kPostDetailsView = '/PostDetailsView';
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
   static const kAdvisorSearchView = '/SearchView';
   static const kAddPostView = '/AddPostView';
+  static const kUpdatePostView = '/UpdatePostView';
   static const kCameraView = '/CameraView';
   static const kEditCertificateView = '/editCertificateView';
   static const kSettingsView = '/settings';
@@ -204,7 +211,7 @@ static const kPostDetailsView = '/PostDetailsView';
   static const kEventDetailView = '/EventDetailView';
   static const kUpdateEventView = '/UpdateEventView';
   static const kSessionDetailsView = '/SessionDetailsView';
-  static const kPackagesTabView = '/packages_tab_view';
+  static const kPackagesView = '/packages_view';
   static const kArchiveView = '/archive_view';
   static const kSessionPricingView = '/session_pricing_view';
   static const kAppointmentsView = '/appointments_view';
@@ -234,6 +241,7 @@ static const kPostDetailsView = '/PostDetailsView';
   static const kEventReservationPeopleView = '/EventReservationPeopleView';
   static const kOrderManagementView = '/order_management_view';
   static const kAdvisorSubscriptionView = '/advisor_subscription_view';
+  static const kEventView = '/event-view';
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
@@ -310,9 +318,9 @@ return MaterialPageRoute(
           routeSettings: settings,
         );
 
-      case AppRouter.kPackagesTabView:
+      case AppRouter.kPackagesView:
         return SlideLeftRoute(
-          page: const PackagesTabView(),
+          page: const PackagesView(),
           routeSettings: settings,
         );
 
@@ -526,6 +534,8 @@ return MaterialPageRoute(
             ),
           ),
         );
+      case AppRouter.kPurposeSelectionView:
+        return MaterialPageRoute(builder: (_) => const PurposeSelectionView());
 
       case kOtpView:
         return MaterialPageRoute(
@@ -674,7 +684,14 @@ return MaterialPageRoute(
             ),
           ),
         );
-
+      case AppRouter.kUpdatePostView:
+        final post = settings.arguments as PostModel;
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => getIt<UpdatePostCubit>(),
+            child: UpdatePostView(post: post),
+          ),
+        );
       case kMapView:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
@@ -969,6 +986,7 @@ return MaterialPageRoute(
           builder: (_) => MarriageView(
             personId: args?['personId'],
             fromInteractions: args?['fromInteractions'] ?? false, // ✅
+            initialIsFavorite: args?['isFavorite'] ?? false, // ✅
           ),
         );
       case AppRouter.kOrderManagementView:
@@ -976,6 +994,10 @@ return MaterialPageRoute(
           page: const OrderManagementView(),
           routeSettings: settings,
         );
+
+      case AppRouter.kEventView:
+        return SlideLeftRoute(page: const EventView(), routeSettings: settings);
+
       /////  report screens ///////
       case kReportsView:
         final arg = settings.arguments as Map<String, dynamic>;

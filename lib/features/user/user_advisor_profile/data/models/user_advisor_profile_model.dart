@@ -82,6 +82,23 @@ class UserAdvisorProfileModel extends Equatable {
   });
 
   factory UserAdvisorProfileModel.fromJson(Map<String, dynamic> json) {
+    // Check if isBlocked array exists and is not empty
+    final isBlockedArray = json['isBlocked'] as List?;
+    final hasBlockedData = isBlockedArray != null && isBlockedArray.isNotEmpty;
+
+    // Parse room data or create from isBlocked array
+    RoomInfoModel? roomData;
+    if (json['room'] != null && json['room'] is Map) {
+      roomData = RoomInfoModel.fromJson(json['room']);
+    } else if (hasBlockedData) {
+      // If no room but isBlocked array exists, create room with blocked status
+      roomData = const RoomInfoModel(
+        chatRoomId: '',
+        isBlocked: true,
+        isHaveSession: false,
+      );
+    }
+
     return UserAdvisorProfileModel(
       id:
           json['id']?.toString() ??
@@ -105,9 +122,7 @@ class UserAdvisorProfileModel extends Equatable {
           json['professionalSpecialization']?.toString() ??
           json['ProfessionalSpecialization']?.toString(),
       jobGrade: json['jobGrade']?.toString() ?? json['JobGrade']?.toString(),
-      room: json['room'] != null
-          ? RoomInfoModel.fromJson(json['room'])
-          : null, // ⭐ إضافة Room
+      room: roomData,
     );
   }
 
