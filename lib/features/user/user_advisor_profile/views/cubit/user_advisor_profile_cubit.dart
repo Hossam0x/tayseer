@@ -207,7 +207,10 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
   }
 
   Future<void> refresh() async {
-    await Future.wait([fetchProfile(), fetchPosts(loadMore: false)]);
+    await Future.wait([
+      fetchProfile(),
+      fetchPosts(loadMore: false, forceRefresh: true),
+    ]);
   }
 
   Future<void> toggleFollow() async {
@@ -661,6 +664,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
         blockUserActionState: visiblePostId != null
             ? CubitStates.loading
             : null,
+        lastBlockedUserId: null, // ✅ Clear old data
       ),
     );
 
@@ -696,11 +700,27 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
               updatedPosts.add(post);
             }
           }
+          // If the blocked user is the same as the profile owner, update the profile state too
+          UserAdvisorProfileModel? updatedProfile = state.profile;
+          if (advisorId == this.advisorId) {
+            updatedProfile = state.profile?.copyWith(
+              room:
+                  state.profile?.room?.copyWith(isBlocked: true) ??
+                  const RoomInfoModel(
+                    chatRoomId: '',
+                    isBlocked: true,
+                    isHaveSession: false,
+                  ),
+            );
+          }
+
           emit(
             state.copyWith(
               posts: updatedPosts,
+              profile: updatedProfile,
               blockUserActionState: CubitStates.success,
               blockUserMessage: message,
+              lastBlockedUserId: advisorId,
             ),
           );
         } else {
@@ -719,6 +739,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
               profile: updatedProfile,
               blockActionState: CubitStates.success,
               blockMessage: message,
+              lastBlockedUserId: advisorId, // ✅ Consistent tracking
             ),
           );
         }
@@ -744,7 +765,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
           ),
         );
       },
-      (message) {
+      (message) async {
         final updatedProfile = state.profile?.copyWith(
           room: state.profile?.room?.copyWith(isBlocked: false),
         );
@@ -755,6 +776,9 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
             blockMessage: message,
           ),
         );
+
+        // ✅ Automatically refresh everything after unblocking
+        await refresh();
       },
     );
   }

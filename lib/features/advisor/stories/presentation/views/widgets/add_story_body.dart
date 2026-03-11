@@ -24,7 +24,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
     super.initState();
     // Permissions are handled by Cubit. When granted, listener will trigger _initCamera.
     final state = context.read<AddStoryCubit>().state;
-    if (state.permissionsGranted == true) {
+    if (state.isCameraGranted == true) {
       _initCamera();
     }
   }
@@ -104,7 +104,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
         }
 
         // Trigger Camera initialization once permissions are granted
-        if (state.permissionsGranted == true &&
+        if (state.isCameraGranted == true &&
             !_isCameraInitialized &&
             _cameraController == null) {
           _initCamera();
@@ -116,10 +116,6 @@ class _AddStoryBodyState extends State<AddStoryBody> {
             backgroundColor: Colors.white,
             body: Center(child: CustomloadingApp()),
           );
-        }
-
-        if (state.permissionsGranted == false && state.galleryAssets.isEmpty) {
-          return _buildPermissionDenied(context);
         }
 
         return AnimatedSwitcher(
@@ -216,69 +212,16 @@ class _AddStoryBodyState extends State<AddStoryBody> {
       body: StoriesGalleryGrid(
         controller: _cameraController,
         isInitialized: _isCameraInitialized,
-        onCameraTap: () {
-          setState(() {
-            _isCameraActive = true;
-          });
+        onCameraTap: () async {
+          final isGranted = await context.read<AddStoryCubit>().checkAndRequestCamera();
+          if (isGranted) {
+            setState(() {
+              _isCameraActive = true;
+            });
+          }
         },
       ),
     );
   }
 
-  Widget _buildPermissionDenied(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.lock_person_outlined,
-              size: 80.sp,
-              color: AppColors.kprimaryColor,
-            ),
-            Gap(24.h),
-            Text(
-              context.tr('permissions_required_title'),
-              style: Styles.textStyle18Bold,
-              textAlign: TextAlign.center,
-            ),
-            Gap(12.h),
-            Text(
-              context.tr('permissions_required_message'),
-              style: Styles.textStyle14.copyWith(color: AppColors.kGreyB3),
-              textAlign: TextAlign.center,
-            ),
-            Gap(32.h),
-            CustomBotton(
-              title: context.tr('grant_permissions'),
-              onPressed: () {
-                context.read<AddStoryCubit>().requestAllPermissions();
-              },
-            ),
-            Gap(16.h),
-            TextButton(
-              onPressed: () => openAppSettings(),
-              child: Text(
-                context.tr('open_settings'),
-                style: Styles.textStyle14SemiBold.copyWith(
-                  color: AppColors.kprimaryColor,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

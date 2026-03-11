@@ -1,3 +1,5 @@
+import 'package:tayseer/core/services/connectivity_cubit.dart';
+import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/account_review_content.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
@@ -49,6 +51,7 @@ class ProfileView extends StatelessWidget {
                         context: context,
                       ),
                   ),
+                  BlocProvider.value(value: getIt<ConnectivityCubit>()),
                 ],
                 child: Stack(
                   children: [
@@ -99,16 +102,35 @@ class _ProfileContentState extends State<_ProfileContent> {
             }
           },
         ),
+        BlocListener<ConnectivityCubit, ConnectivityState>(
+          listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
+          listener: (context, state) {
+            final storiesCubit = context.read<StoriesCubit>();
+            if (storiesCubit.state.storiesState == CubitStates.failure ||
+                storiesCubit.state.storiesList.isEmpty) {
+              storiesCubit.fetchStories(
+                isSpecial: true,
+                advisorId: null,
+                context: context,
+              );
+            }
+            context.read<ProfileCubit>().refresh();
+          },
+        ),
       ],
-      child: RefreshIndicator.adaptive(
-        onRefresh: () => Future.wait([
-          context.read<ProfileCubit>().refresh(),
-          context.read<StoriesCubit>().fetchStories(
-            isSpecial: true,
-            advisorId: null,
-            context: context,
-          ),
-        ]),
+      child: RefreshIndicator(
+        onRefresh: () async {
+          if (getIt<ConnectivityCubit>().isOffline) return;
+          VideoManager.instance.stopAll();
+          await Future.wait([
+            context.read<ProfileCubit>().refresh(),
+            context.read<StoriesCubit>().fetchStories(
+              isSpecial: true,
+              advisorId: null,
+              context: context,
+            ),
+          ]);
+        },
         color: AppColors.kprimaryColor,
         backgroundColor: AppColors.kWhiteColor,
         displacement: 40.h,

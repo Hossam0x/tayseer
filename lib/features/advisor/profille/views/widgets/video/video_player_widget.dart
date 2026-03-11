@@ -1,11 +1,10 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/video/cubit/video_player_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/video/video_state_manager.dart';
-import 'package:tayseer/core/widgets/post_card/full_screen_video_player.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/video/profile_full_screen_video_player.dart';
 import 'video_controller_cache.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
@@ -173,7 +172,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
         _controller = VideoPlayerController.networkUrl(
           Uri.parse(widget.videoUrl),
           videoPlayerOptions: VideoPlayerOptions(
-            mixWithOthers: true,
+            mixWithOthers: false,
             allowBackgroundPlayback: false,
           ),
           httpHeaders: {
@@ -190,7 +189,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
         return;
       }
 
-      _controller!.setVolume(1.0);
+      _controller!.setVolume(0.0);
       _controller!.addListener(_videoListener);
 
       await _restorePosition();
@@ -334,16 +333,18 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
       _cubit.setPlaying(false);
     }
 
-    final result = await Navigator.push<FullscreenResult>(
+    final result = await Navigator.push<ProfileFullscreenResult>(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => FullscreenVideoPlayer(
-          videoUrl: widget.videoUrl,
-          startPosition: currentPosition,
-          isMuted: _cubit.state.isMuted,
-        ),
-        transitionsBuilder: (_, a, __, c) =>
-            FadeTransition(opacity: a, child: c),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            ProfileFullscreenVideoPlayer(
+              videoUrl: widget.videoUrl,
+              startPosition: currentPosition,
+              isMuted: _cubit.state.isMuted,
+              controller: _controller, // ✅ Pass the existing controller
+            ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
       ),
     );
 
@@ -370,27 +371,38 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
   Widget build(BuildContext context) {
     super.build(context); // ⭐ مهم للـ AutomaticKeepAliveClientMixin
 
-    return BlocProvider.value(
-      value: _cubit, // Provide local cubit
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    return VisibilityDetector(
+      key: Key('video_player_${widget.videoUrl}'),
+      onVisibilityChanged: (info) {
+        if (info.visibleFraction == 0.0) {
+          if (_controller != null && _controller!.value.isPlaying && mounted) {
+            _controller!.pause();
+            _cubit.setPlaying(false);
+          }
+        }
+      },
+      child: BlocProvider.value(
+        value: _cubit, // Provide local cubit
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16.r),
+            child: BlocBuilder<VideoPlayerCubit, VideoPlayerState>(
+              builder: (context, state) {
+                return state.isInitialized && _controller != null
+                    ? _buildVideoPlayer(state)
+                    : _buildLoadingState(state);
+              },
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16.r),
-          child: BlocBuilder<VideoPlayerCubit, VideoPlayerState>(
-            builder: (context, state) {
-              return state.isInitialized && _controller != null
-                  ? _buildVideoPlayer(state)
-                  : _buildLoadingState(state);
-            },
           ),
         ),
       ),
@@ -401,7 +413,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
     return Container(
       height: 400.h,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: Colors.black, // Dark background to match reels
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Center(
@@ -411,7 +423,10 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
                 children: [
                   Icon(Icons.error_outline, color: Colors.red, size: 40.w),
                   SizedBox(height: 10.h),
-                  Text('فشل تحميل الفيديو', style: Styles.textStyle14),
+                  Text(
+                    'فشل تحميل الفيديو',
+                    style: Styles.textStyle14.copyWith(color: Colors.white),
+                  ),
                   SizedBox(height: 10.h),
                   ElevatedButton(
                     onPressed: _retryInitialization,
@@ -419,7 +434,10 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
                   ),
                 ],
               )
-            : Container(),
+            : const CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2.5,
+              ),
       ),
     );
   }
@@ -435,9 +453,12 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
         children: [
           // Video Player
           Center(
-            child: AspectRatio(
-              aspectRatio: videoSize.width / videoSize.height,
-              child: VideoPlayer(_controller!),
+            child: Hero(
+              tag: 'video_${widget.videoUrl}',
+              child: AspectRatio(
+                aspectRatio: videoSize.width / videoSize.height,
+                child: VideoPlayer(_controller!),
+              ),
             ),
           ),
 
@@ -454,7 +475,9 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
                       IconButton(
                         onPressed: _skipBackward,
                         icon: Icon(
-                          Icons.forward_10,
+                          Directionality.of(context) == TextDirection.rtl
+                              ? Icons.forward_10
+                              : Icons.replay_10,
                           color: Colors.white,
                           size: 35.w,
                         ),
@@ -474,7 +497,9 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
                       IconButton(
                         onPressed: _skipForward,
                         icon: Icon(
-                          Icons.replay_10,
+                          Directionality.of(context) == TextDirection.rtl
+                              ? Icons.replay_10
+                              : Icons.forward_10,
                           color: Colors.white,
                           size: 35.w,
                         ),
@@ -502,18 +527,33 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (widget.showFullScreenButton)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: IconButton(
-                        onPressed: _openFullscreen,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          if (_controller == null) return;
+                          final isMuted = state.isMuted;
+                          _controller!.setVolume(isMuted ? 1.0 : 0.0);
+                          _cubit.setMuted(!isMuted);
+                        },
                         icon: Icon(
-                          Icons.fullscreen,
+                          state.isMuted ? Icons.volume_off : Icons.volume_up,
                           color: Colors.white,
-                          size: 30.w,
+                          size: 26.w,
                         ),
                       ),
-                    ),
+                      if (widget.showFullScreenButton)
+                        IconButton(
+                          onPressed: _openFullscreen,
+                          icon: Icon(
+                            Icons.fullscreen,
+                            color: Colors.white,
+                            size: 30.w,
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -526,6 +566,22 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
                 onTap: _toggleControls,
                 behavior: HitTestBehavior.opaque,
                 child: Container(color: Colors.transparent),
+              ),
+            ),
+
+          // Buffering indicator like reels
+          if (state.isBuffering)
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.black38,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               ),
             ),
         ],

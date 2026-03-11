@@ -59,7 +59,10 @@ class _ChatsTabViewBody extends StatelessWidget {
               case CubitStates.loading:
                 return _buildSkeletonChats();
               case CubitStates.failure:
-                return _buildErrorChats(context, state.errorMessage);
+                return CustomErrorView(
+                  message: state.errorMessage,
+                  onRetry: () => context.read<ArchivedChatsCubit>().refresh(),
+                );
               case CubitStates.success:
                 if (state.chatRooms.isEmpty) {
                   return _buildEmptyState(context);
@@ -132,43 +135,6 @@ class _ChatsTabViewBody extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildErrorChats(BuildContext context, String? errorMessage) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, color: AppColors.kRedColor, size: 64.w),
-            Gap(16.h),
-            Text(
-              errorMessage ?? context.tr('error_loading_chats'),
-              style: Styles.textStyle16.copyWith(color: AppColors.secondary700),
-              textAlign: TextAlign.center,
-            ),
-            Gap(24.h),
-            ElevatedButton(
-              onPressed: () => context.read<ArchivedChatsCubit>().refresh(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.kprimaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 14.h),
-              ),
-              child: Text(
-                context.tr('retry'),
-                style: Styles.textStyle16Meduim.copyWith(
-                  color: AppColors.kWhiteColor,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

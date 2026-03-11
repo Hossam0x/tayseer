@@ -479,38 +479,15 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                 child: Column(
                                   children: [
                                     Gap(32.h),
-
                                     if (state.state == CubitStates.loading)
                                       _buildSkeletonLoading()
                                     else if (state.state == CubitStates.failure)
-                                      Center(
-                                        child: Column(
-                                          children: [
-                                            Icon(
-                                              Icons.error_outline,
-                                              color: AppColors.kRedColor,
-                                              size: 48.w,
-                                            ),
-                                            Gap(16.h),
-                                            Text(
-                                              state.errorMessage ??
-                                                  context.tr("data_load_error"),
-                                              textAlign: TextAlign.center,
-                                              style: Styles.textStyle14
-                                                  .copyWith(
-                                                    color:
-                                                        AppColors.secondary600,
-                                                  ),
-                                            ),
-                                            Gap(24.h),
-                                            CustomBotton(
-                                              width: context.width * 0.6,
-                                              title: context.tr("retry"),
-                                              onPressed: () =>
-                                                  cubit.loadProfileData(),
-                                            ),
-                                          ],
-                                        ),
+                                      CustomErrorView(
+                                        verticalPadding: 100,
+                                        message:
+                                            state.errorMessage ??
+                                            context.tr("data_load_error"),
+                                        onRetry: () => cubit.loadProfileData(),
                                       )
                                     else
                                       Column(

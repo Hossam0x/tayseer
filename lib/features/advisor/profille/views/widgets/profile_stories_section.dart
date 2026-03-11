@@ -1,14 +1,15 @@
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
+import 'package:tayseer/features/user/user_advisor_profile/views/widgets/blocked_profile_placeholder.dart';
 import 'package:tayseer/my_import.dart';
-
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 
 class ProfileStoriesSection extends StatelessWidget {
   final String? advisorId;
-  const ProfileStoriesSection({super.key, this.advisorId});
+  final bool isBlocked;
+  const ProfileStoriesSection({super.key, this.advisorId, this.isBlocked = false});
 
   @override
   Widget build(BuildContext context) {
@@ -36,12 +37,18 @@ class ProfileStoriesSection extends StatelessWidget {
           previous.storiesState != current.storiesState ||
           previous.storiesList != current.storiesList,
       builder: (context, state) {
+        if (isBlocked) {
+          return const BlockedProfilePlaceholder(isSliver: true);
+        }
+
+        // ✅ Hide if offline and empty or if it's explicitly requested by the user
+        final isOffline = getIt<ConnectivityCubit>().isOffline;
         final isEmpty =
             (state.storiesState == CubitStates.success ||
                 state.storiesState == CubitStates.initial) &&
             state.storiesList.isEmpty;
 
-        if (isEmpty) {
+        if (isEmpty || (isOffline && state.storiesList.isEmpty)) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
 
@@ -57,7 +64,6 @@ class ProfileStoriesSection extends StatelessWidget {
       },
     );
   }
-
   Widget _buildContent(BuildContext context, StoriesState state) {
     switch (state.storiesState) {
       case CubitStates.loading:

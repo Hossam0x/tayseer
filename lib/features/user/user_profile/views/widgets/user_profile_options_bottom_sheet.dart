@@ -1,7 +1,5 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/report_type.dart';
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -48,9 +46,7 @@ class UserProfileOptionsBottomSheet extends StatelessWidget {
             ? context.tr('unblock_user')
             : context.tr(AppStrings.blockUser),
         icon: Icons.block_outlined,
-        onTap: () => cubit.state.profile?.isBlockedByMe == true
-            ? _showUnblockConfirmation(context)
-            : _showBlockConfirmation(context),
+        onTap: () => _showBlockConfirmation(context),
         isDestructive: true,
         isBlock: true,
       ),
@@ -170,43 +166,34 @@ class UserProfileOptionsBottomSheet extends StatelessWidget {
   }
 
   void _showBlockConfirmation(BuildContext context) {
+    final isBlocked = cubit.state.profile?.isBlockedByMe ?? false;
+
+    // ✅ Unblock: no confirmation dialog, instant action
+    if (isBlocked) {
+      Navigator.pop(context); // close sheet
+      cubit.unblockUser(userId: userId);
+      return;
+    }
+
+    // 🔒 Block: show confirmation dialog
+    // Note: showGeneralDialog (used inside CustomshowDialogWithImage) dismisses
+    // the dialog BEFORE calling onPressed, so we only need ONE pop here for the sheet.
     CustomshowDialogWithImage(
       context,
       title: context.tr(AppStrings.blockUser),
       supTitle: context.tr(AppStrings.blockUserConfirmation),
       icon: Icons.block,
       bottonText: context.tr(AppStrings.yes),
-      onPressed: () async {
-        Navigator.pop(context); // dialog
-        Navigator.pop(context); // sheet
-
-        await cubit.blockUser(userId: userId);
+      onPressed: () {
+        // Dialog already dismissed — just close sheet
+        Navigator.pop(context);
+        // Fire-and-forget: BlocListener handles toast & UI update
+        cubit.blockUser(userId: userId);
       },
       showCancelButton: true,
       cancelText: context.tr(AppStrings.no),
       onCancel: () {
-        Navigator.pop(context);
-      },
-    );
-  }
-
-  void _showUnblockConfirmation(BuildContext context) {
-    CustomshowDialogWithImage(
-      context,
-      title: context.tr('unblock_user'),
-      supTitle: context.tr('unblock_user_confirmation'),
-      icon: Icons.lock_open,
-      bottonText: context.tr(AppStrings.yes),
-      onPressed: () async {
-        Navigator.pop(context); // dialog
-        Navigator.pop(context); // sheet
-
-        await cubit.unblockUser(userId: userId);
-      },
-      showCancelButton: true,
-      cancelText: context.tr(AppStrings.no),
-      onCancel: () {
-        Navigator.pop(context);
+        // Dialog already dismissed — nothing to close
       },
     );
   }

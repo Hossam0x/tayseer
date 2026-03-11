@@ -529,7 +529,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
           ),
         );
       },
-      (message) {
+      (message) async {
         final updatedProfile = state.profile?.copyWith(
           room: Map<String, dynamic>.from(state.profile?.room ?? {})
             ..['isBlocked'] = false,
@@ -542,6 +542,9 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
             blockMessage: message,
           ),
         );
+
+        // ✅ Automatically refresh everything after unblocking
+        await refresh();
       },
     );
   }

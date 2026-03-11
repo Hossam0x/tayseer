@@ -21,7 +21,8 @@ class AddStoryState extends Equatable {
   final XFile? capturedVideo;
   final String draftText;
   final bool isAiLoading;
-  final bool? permissionsGranted;
+  final bool? isCameraGranted;
+  final bool? isGalleryGranted;
 
   const AddStoryState({
     this.albums = const [],
@@ -42,7 +43,8 @@ class AddStoryState extends Equatable {
     this.capturedVideo,
     this.draftText = '',
     this.isAiLoading = false,
-    this.permissionsGranted,
+    this.isCameraGranted,
+    this.isGalleryGranted,
   });
 
   AddStoryState copyWith({
@@ -64,7 +66,8 @@ class AddStoryState extends Equatable {
     XFile? capturedVideo,
     String? draftText,
     bool? isAiLoading,
-    bool? permissionsGranted,
+    bool? isCameraGranted,
+    bool? isGalleryGranted,
   }) {
     return AddStoryState(
       albums: albums ?? this.albums,
@@ -85,7 +88,8 @@ class AddStoryState extends Equatable {
       capturedVideo: capturedVideo ?? this.capturedVideo,
       draftText: draftText ?? this.draftText,
       isAiLoading: isAiLoading ?? this.isAiLoading,
-      permissionsGranted: permissionsGranted ?? this.permissionsGranted,
+      isCameraGranted: isCameraGranted ?? this.isCameraGranted,
+      isGalleryGranted: isGalleryGranted ?? this.isGalleryGranted,
     );
   }
 
@@ -109,7 +113,8 @@ class AddStoryState extends Equatable {
     capturedVideo,
     draftText,
     isAiLoading,
-    permissionsGranted,
+    isCameraGranted,
+    isGalleryGranted,
   ];
 
   AddStoryState clearSelection() {

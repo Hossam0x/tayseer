@@ -170,58 +170,34 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
 
   void _showBlockConfirmation(BuildContext context) {
     final isBlocked = cubit.state.profile?.room?.isBlocked ?? false;
+
+    // ✅ Unblock: no confirmation dialog, just do it directly
+    if (isBlocked) {
+      Navigator.pop(context); // close sheet
+      cubit.unblockUser(advisorId: advisorId);
+      return;
+    }
+
+    // 🔒 Block: show confirmation dialog
+    // Note: showGeneralDialog (used inside CustomshowDialogWithImage) dismisses
+    // the dialog BEFORE calling onPressed, so we only need ONE pop here for the sheet.
     CustomshowDialogWithImage(
       context,
-      title: isBlocked
-          ? context.tr('unblock_user')
-          : context.tr(AppStrings.blockUser),
-      supTitle: isBlocked
-          ? context.tr('unblock_user_confirmation')
-          : context.tr(AppStrings.blockUserConfirmation),
+      title: context.tr(AppStrings.blockUser),
+      supTitle: context.tr(AppStrings.blockUserConfirmation),
       icon: Icons.block,
       bottonText: context.tr(AppStrings.yes),
-      onPressed: () async {
-        final scaffoldContext = context;
+      onPressed: () {
+        // Dialog is already dismissed by this point — just close the sheet
+        Navigator.pop(context); // close sheet (local navigator)
 
-        Navigator.pop(context); // dialog
-        Navigator.pop(context); // sheet
-
-        if (isBlocked) {
-          await cubit.unblockUser(advisorId: advisorId);
-        } else {
-          await cubit.blockUser(advisorId: advisorId);
-        }
-
-        final state = cubit.state;
-
-        if (!scaffoldContext.mounted) return;
-
-        if (state.blockActionState == CubitStates.success) {
-          showSafeSnackBar(
-            context: scaffoldContext,
-            text:
-                state.blockMessage ??
-                (isBlocked
-                    ? context.tr('unblocked_successfully')
-                    : context.tr('blocked_successfully')),
-            isSuccess: true,
-          );
-        } else {
-          showSafeSnackBar(
-            context: scaffoldContext,
-            text:
-                state.blockMessage ??
-                (isBlocked
-                    ? context.tr('failed_to_unblock')
-                    : context.tr('failed_to_block')),
-            isError: true,
-          );
-        }
+        // Fire-and-forget: BlocListener in bio handles toast & UI update
+        cubit.blockUser(advisorId: advisorId);
       },
       showCancelButton: true,
       cancelText: context.tr(AppStrings.no),
       onCancel: () {
-        Navigator.pop(context);
+        // Dialog is already dismissed — nothing else to close
       },
     );
   }

@@ -22,8 +22,12 @@ class UserAdvisorProfileHeader extends StatelessWidget {
             return SliverToBoxAdapter(child: _buildSkeletonHeader(context));
           case CubitStates.failure:
             return SliverToBoxAdapter(
-              child: _buildErrorHeader(context, state.profileErrorMessage),
+              child: CustomErrorView(
+                onRetry: () =>
+                    context.read<UserAdvisorProfileCubit>().fetchProfile(),
+              ),
             );
+
           case CubitStates.success:
             if (state.profile != null) {
               return SliverToBoxAdapter(
