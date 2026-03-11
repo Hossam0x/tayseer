@@ -16,10 +16,14 @@ class GreetingProfileCard extends StatelessWidget {
   });
 
   void _navigateToProfile(BuildContext context) {
-    context.pushNamed(
-      AppRouter.kMarriageView,
-      arguments: {'personId': item.userId, 'fromInteractions': true},
-    );
+  context.pushNamed(
+    AppRouter.kMarriageView,
+    arguments: {
+      'personId': item.userId,
+      'fromInteractions': true,
+      'isFavorite': item.isFavorite, // ✅
+    },
+  );
   }
 
   @override

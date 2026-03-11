@@ -1,16 +1,21 @@
 import 'dart:async';
-import 'package:dartz/dartz.dart'; // ✅ أضف هذا
+import 'package:dartz/dartz.dart';
 import 'package:flutter/animation.dart';
-import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart'; // ✅ أضف هذا
+import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
+import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_event_bus.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
 import 'package:tayseer/features/user/marriage/repositories/marriage_repository.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageCubit extends Cubit<MarriageState> {
-  MarriageCubit({MarriageRepository? repository})
-    : _repo = repository ?? getIt<MarriageRepository>(),
-      super(const MarriageState()) {
+  MarriageCubit({
+    MarriageRepository? repository,
+    this.seedPersonId,
+    this.seedIsFavorite = false,
+    this.interactionUser,
+  }) : _repo = repository ?? getIt<MarriageRepository>(),
+       super(const MarriageState()) {
     _filterSubscription = MarriageEventBus.instance.onFilterApplied.listen(
       (filters) => fetchMarriageProfile(filters: filters),
     );
@@ -18,6 +23,11 @@ class MarriageCubit extends Cubit<MarriageState> {
 
   final MarriageRepository _repo;
   late final StreamSubscription<Map<String, dynamic>> _filterSubscription;
+
+  /// بيانات اليوزر اللي فُتح من الـ interactions
+  final String? seedPersonId;
+  final bool seedIsFavorite;
+  final InteractionUserModel? interactionUser;
 
   // ═══ Animation ═══
   AnimationController? _cardController;
@@ -46,60 +56,140 @@ class MarriageCubit extends Cubit<MarriageState> {
   // ═══════════════════════════════════════════════════════════
   // FETCH — الصفحة الأولى
   // ═══════════════════════════════════════════════════════════
-  Future<void> fetchMarriageProfile({Map<String, dynamic>? filters}) async {
-  emit(
-    state.copyWith(
-      marriageProfileState: CubitStates.loading,
-      errorMessage: null,
-      activeFilters: filters ?? state.activeFilters,
-    ),
-  );
-
-  // ✅ اجلب المفضلين والبروفايلات بالتوازي
-  final results = await Future.wait([
-    _repo.getMarriageProfile("1", filters: state.activeFilters),
-    _repo.getFavoriteIds(),
-  ]);
-
-  final profileResult = results[0] as Either<Failure, UsersMarriageResponse>;
-  final favoritesResult = results[1] as Either<Failure, List<String>>;
-
-  // ✅ استخرج IDs المفضلين
-  final fetchedFavoriteIds = favoritesResult.fold(
-    (_) => <String>{},
-    (ids) => ids.toSet(),
-  );
-
-  profileResult.fold(
-    (failure) => emit(
+  Future<void> fetchMarriageProfile({
+    Map<String, dynamic>? filters,
+    String? seedFavoriteId,
+  }) async {
+    emit(
       state.copyWith(
-        marriageProfileState: CubitStates.failure,
-        errorMessage: failure.message,
+        marriageProfileState: CubitStates.loading,
+        errorMessage: null,
+        activeFilters: filters ?? state.activeFilters,
       ),
-    ),
-    (profile) {
-      if (isClosed) return;
+    );
 
-      // ✅ ادمج المفضلين الجدد مع الموجودين
-      final mergedFavorites = {
-        ...state.favoritedIds,
-        ...fetchedFavoriteIds,
-      };
+    final results = await Future.wait([
+      _repo.getMarriageProfile("1", filters: state.activeFilters),
+      _repo.getFavoriteIds(),
+    ]);
 
-      emit(
-        state.copyWith(
-          marriageProfileState: CubitStates.success,
-          profile: profile,
-          currentIndex: 0,
-          allUsers: profile.data?.users ?? [],
-          currentPage: profile.data?.pagination?.currentPage ?? 1,
-          totalPages: profile.data?.pagination?.totalPages ?? 1,
-          favoritedIds: mergedFavorites, // ✅
-        ),
-      );
-    },
-  );
-}
+    final profileResult = results[0] as Either<Failure, UsersMarriageResponse>;
+    final favoritesResult = results[1] as Either<Failure, List<String>>;
+
+    final fetchedFavoriteIds = favoritesResult.fold(
+      (_) => <String>{},
+      (ids) => ids.toSet(),
+    );
+
+    profileResult.fold(
+      (failure) {
+        // ✅ لو فتحنا من interactions والسيرفر فشل، نعرض الـ user من الـ seed
+        if (interactionUser != null) {
+          _emitFromInteractionUser(
+            fetchedFavoriteIds: fetchedFavoriteIds,
+            seedFavoriteId: seedFavoriteId,
+          );
+        } else {
+          emit(
+            state.copyWith(
+              marriageProfileState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        }
+      },
+      (profile) {
+        if (isClosed) return;
+
+        // ✅ استخرج الـ favorites من الـ users مباشرةً
+        final favoritesFromUsers = (profile.data?.users ?? [])
+            .where((item) => item.user?.isFavorite == true)
+            .map((item) => item.user?.id ?? '')
+            .where((id) => id.isNotEmpty)
+            .toSet();
+
+        final mergedFavorites = {
+          ...state.favoritedIds,
+          ...fetchedFavoriteIds,
+          ...favoritesFromUsers,
+          if (seedFavoriteId != null && seedFavoriteId.isNotEmpty)
+            seedFavoriteId,
+          if (seedPersonId != null && seedIsFavorite && seedPersonId!.isNotEmpty)
+            seedPersonId!,
+        };
+
+        final serverUsers = profile.data?.users ?? [];
+
+        // ✅ لو السيرفر ما رجعش اليوزر المطلوب (مثلاً بعد interaction)
+        // نضيف الـ user من الـ interactionUser كـ fallback
+        List<UserItem> finalUsers = serverUsers;
+        if (interactionUser != null && seedPersonId != null) {
+          final found = serverUsers.any((u) => u.user?.id == seedPersonId);
+          if (!found) {
+            final seededItem = _buildUserItemFromInteraction(interactionUser!);
+            finalUsers = [seededItem, ...serverUsers];
+          }
+        }
+
+        emit(
+          state.copyWith(
+            marriageProfileState: CubitStates.success,
+            profile: profile,
+            currentIndex: 0,
+            allUsers: finalUsers,
+            currentPage: profile.data?.pagination?.currentPage ?? 1,
+            totalPages: profile.data?.pagination?.totalPages ?? 1,
+            favoritedIds: mergedFavorites,
+          ),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // HELPERS — بناء UserItem من InteractionUserModel
+  // ═══════════════════════════════════════════════════════════
+  UserItem _buildUserItemFromInteraction(InteractionUserModel item) {
+    return UserItem(
+      user: User(
+        id: item.userId,
+        name: item.name,
+        image: item.image,
+        country: item.country,
+        isFavorite: item.isFavorite,
+        about: UserAbout(job: item.job),
+      ),
+      answers: null,
+    );
+  }
+
+  void _emitFromInteractionUser({
+    required Set<String> fetchedFavoriteIds,
+    String? seedFavoriteId,
+  }) {
+    if (isClosed) return;
+    final item = interactionUser!;
+    final seededItem = _buildUserItemFromInteraction(item);
+
+    final mergedFavorites = {
+      ...state.favoritedIds,
+      ...fetchedFavoriteIds,
+      if (item.isFavorite) item.userId,
+      if (seedFavoriteId != null && seedFavoriteId.isNotEmpty) seedFavoriteId,
+    };
+
+    emit(
+      state.copyWith(
+        marriageProfileState: CubitStates.success,
+        currentIndex: 0,
+        allUsers: [seededItem],
+        currentPage: 1,
+        totalPages: 1,
+        favoritedIds: mergedFavorites,
+      ),
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════
   // LOAD MORE — تحميل الصفحة التالية
   // ═══════════════════════════════════════════════════════════
@@ -114,27 +204,22 @@ class MarriageCubit extends Cubit<MarriageState> {
       filters: state.activeFilters,
     );
 
-    result.fold(
-      (_) => emit(state.copyWith(isLoadingMore: false)),
-      (profile) {
-        emit(
-          state.copyWith(
-            isLoadingMore: false,
-            allUsers: [...state.allUsers, ...profile.data?.users ?? []],
-            currentPage:
-                profile.data?.pagination?.currentPage ?? state.currentPage,
-            totalPages:
-                profile.data?.pagination?.totalPages ?? state.totalPages,
-            // ✅ حافظ على favoritedIds بدون تغيير
-            favoritedIds: state.favoritedIds,
-          ),
-        );
-      },
-    );
+    result.fold((_) => emit(state.copyWith(isLoadingMore: false)), (profile) {
+      emit(
+        state.copyWith(
+          isLoadingMore: false,
+          allUsers: [...state.allUsers, ...profile.data?.users ?? []],
+          currentPage:
+              profile.data?.pagination?.currentPage ?? state.currentPage,
+          totalPages: profile.data?.pagination?.totalPages ?? state.totalPages,
+          favoritedIds: state.favoritedIds,
+        ),
+      );
+    });
   }
 
   // ═══════════════════════════════════════════════════════════
-  // SWIPE LIKE — like فقط، بدون favorite
+  // SWIPE LIKE
   // ═══════════════════════════════════════════════════════════
   Future<void> swipeLike({
     required String personId,
@@ -369,13 +454,6 @@ class MarriageCubit extends Cubit<MarriageState> {
         errorMessage: null,
       ),
     );
-  }
-
-  // ✅ يُستخدم من MarriageBody لـ seed القلب عند الفتح من Interactions
-  void seedFavorite(String userId) {
-    if (state.favoritedIds.contains(userId)) return;
-    final updated = Set<String>.from(state.favoritedIds)..add(userId);
-    emit(state.copyWith(favoritedIds: updated));
   }
 
   @override

@@ -67,8 +67,9 @@ class User {
   int? similarity;
   List<MatchingTag>? matchingTags;
   bool? isNew;
-  int? age; // ✅ تمت الإضافة
-  UserAbout? about; // ✅ تمت الإضافة
+  int? age;
+  UserAbout? about;
+  bool? isFavorite; // ✅ جديد
 
   User({
     this.id,
@@ -82,6 +83,7 @@ class User {
     this.isNew,
     this.age,
     this.about,
+    this.isFavorite, // ✅
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -100,6 +102,7 @@ class User {
     isNew: json["isNew"],
     age: json["age"],
     about: json["about"] != null ? UserAbout.fromJson(json["about"]) : null,
+    isFavorite: json["isFavorite"], // ✅
   );
 
   Map<String, dynamic> toJson() => {
@@ -114,6 +117,7 @@ class User {
     "isNew": isNew,
     "age": age,
     "about": about?.toJson(),
+    "isFavorite": isFavorite, // ✅
   };
 }
 

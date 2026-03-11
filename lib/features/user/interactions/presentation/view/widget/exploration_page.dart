@@ -4,7 +4,7 @@ import 'package:tayseer/features/user/interactions/presentation/Interactions_cub
 import 'package:tayseer/features/user/interactions/presentation/view/get_dummy_interaction.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/category_detail_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/empty_Exploration.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/Interaction_ProfileCard.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_profilecard.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/greeting_interaction_card.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/recently_joined.dart';
 import 'package:tayseer/my_import.dart';
@@ -420,7 +420,7 @@ class ExplorationState extends State<Exploration> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
     final cardWidth = isTablet ? 220.w : 190.w;
-    final cardHeight = isTablet ? 260.0 : 245.0; 
+    final cardHeight = isTablet ? 260.0 : 245.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,6 +493,11 @@ class ExplorationState extends State<Exploration> {
                     child: InteractionProfileCard(
                       item: limitedData[index],
                       forceBlur: !isSubscribed,
+                      showRibbon:
+                          forceShowLikedMe, // ✅ يظهر الشعار بس في سكشن الإعجابات
+                      selectedFilter: forceShowLikedMe
+                          ? "liked_Me"
+                          : "", // ✅ يحدد نوع الشعار
                     ),
                   ),
                 );

@@ -28,13 +28,13 @@ class MarriageBody extends StatefulWidget {
     super.key,
     this.personId,
     this.fromInteractions = false,
-    this.initialIsFavorite = false, // ✅ جديد
+    this.initialIsFavorite = false,
     this.onScroll,
   });
 
   final String? personId;
   final bool fromInteractions;
-  final bool initialIsFavorite; // ✅ جديد
+  final bool initialIsFavorite;
   final Function(bool isScrollingDown)? onScroll;
 
   @override
@@ -72,14 +72,14 @@ class MarriageBodyState extends State<MarriageBody>
 
     final cubit = context.read<MarriageCubit>();
 
-    // ✅ seed القلب لو جاي من Interactions وكان مفضّل
-    if (widget.fromInteractions &&
-        widget.personId != null &&
-        widget.initialIsFavorite) {
-      cubit.seedFavorite(widget.personId!);
-    }
+    // ✅ الـ cubit عنده كل المعلومات من الـ constructor
+    // نمرر الـ seedFavoriteId لو كان اليوزر favorite
+    cubit.fetchMarriageProfile(
+      seedFavoriteId: (cubit.seedPersonId != null && cubit.seedIsFavorite)
+          ? cubit.seedPersonId
+          : null,
+    );
 
-    cubit.fetchMarriageProfile();
     cubit.initAnimation(this);
   }
 
@@ -336,6 +336,11 @@ class MarriageBodyState extends State<MarriageBody>
     final answers = profile.answers;
     final images = answers?.userMedia?.image ?? [];
 
+    // ✅ لو الصورة مش موجودة في answers لكن موجودة في user.image، نستخدمها
+    final List<String> displayImages = images.isNotEmpty
+        ? images
+        : (user?.image != null && user!.image!.isNotEmpty ? [user.image!] : []);
+
     final bool hasNext =
         widget.personId == null && profileIndex + 1 < users.length;
 
@@ -359,7 +364,7 @@ class MarriageBodyState extends State<MarriageBody>
               slivers: [
                 SliverProfileHeader(
                   reportId: user?.id,
-                  images: images,
+                  images: displayImages,
                   name: user?.name ?? '',
                   age: "🎂 ${answers?.aboutMe?.age ?? ''}",
                   location: user?.country ?? answers?.aboutMe?.country ?? '',
@@ -414,8 +419,7 @@ class MarriageBodyState extends State<MarriageBody>
                       subtitle: user?.similarity != null
                           ? '${user!.similarity}%'
                           : '',
-                      tags:
-                          user?.matchingTags
+                      tags: user?.matchingTags
                               ?.where(
                                 (t) =>
                                     t.value != null &&
@@ -427,7 +431,7 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
                 ),
-                if (images.length > 1 && images[1].isNotEmpty)
+                if (displayImages.length > 1 && displayImages[1].isNotEmpty)
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -436,7 +440,7 @@ class MarriageBodyState extends State<MarriageBody>
                     sliver: SliverToBoxAdapter(
                       child: AdditionalImageSection(
                         personId: user?.id ?? '',
-                        imageUrl: images[1],
+                        imageUrl: displayImages[1],
                       ),
                     ),
                   ),
@@ -462,7 +466,7 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
                 ),
-                if (images.length > 2 && images[2].isNotEmpty)
+                if (displayImages.length > 2 && displayImages[2].isNotEmpty)
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -471,7 +475,7 @@ class MarriageBodyState extends State<MarriageBody>
                     sliver: SliverToBoxAdapter(
                       child: AdditionalImageSection(
                         personId: user?.id ?? '',
-                        imageUrl: images[2],
+                        imageUrl: displayImages[2],
                       ),
                     ),
                   ),
@@ -494,7 +498,7 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
                 ),
-                if (images.length > 3 && images[3].isNotEmpty)
+                if (displayImages.length > 3 && displayImages[3].isNotEmpty)
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -503,7 +507,7 @@ class MarriageBodyState extends State<MarriageBody>
                     sliver: SliverToBoxAdapter(
                       child: AdditionalImageSection(
                         personId: user?.id ?? '',
-                        imageUrl: images[3],
+                        imageUrl: displayImages[3],
                       ),
                     ),
                   ),
@@ -540,7 +544,7 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
                 ),
-                if (images.isNotEmpty)
+                if (displayImages.isNotEmpty)
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -549,7 +553,7 @@ class MarriageBodyState extends State<MarriageBody>
                     sliver: SliverToBoxAdapter(
                       child: AdditionalImageSection(
                         personId: user?.id ?? '',
-                        imageUrl: images.first,
+                        imageUrl: displayImages.first,
                       ),
                     ),
                   ),
@@ -582,7 +586,7 @@ class MarriageBodyState extends State<MarriageBody>
                       child: VideoSection(videoUrl: answers!.userMedia!.video!),
                     ),
                   ),
-                if (images.length > 4 && images[4].isNotEmpty)
+                if (displayImages.length > 4 && displayImages[4].isNotEmpty)
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -591,7 +595,7 @@ class MarriageBodyState extends State<MarriageBody>
                     sliver: SliverToBoxAdapter(
                       child: AdditionalImageSection(
                         personId: user?.id ?? '',
-                        imageUrl: images[4],
+                        imageUrl: displayImages[4],
                       ),
                     ),
                   ),
