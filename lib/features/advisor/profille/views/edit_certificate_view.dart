@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart'
@@ -6,7 +7,6 @@ import 'package:tayseer/features/advisor/profille/data/repositories/certificates
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_state.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:intl/intl.dart';
 
@@ -328,44 +328,73 @@ class EditCertificateView extends StatelessWidget {
     EditCertificateCubit cubit,
     EditCertificateState state,
   ) {
+    final hasLocalFile = state.certificateImageFile != null;
+    final hasNetworkImage = state.certificateImageUrl != null;
+    final hasAnyImage = hasLocalFile || hasNetworkImage;
+    const heroTag = 'edit_certificate_image';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Gap(50.h),
         Stack(
           children: [
-            Container(
-              height: 150.h,
-              width: 155.w,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(32.r),
-                border: Border.all(color: AppColors.primary100, width: 1.5),
+            GestureDetector(
+              // Tap the image to open fullscreen viewer
+              onTap: hasAnyImage
+                  ? () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FullScreenImageView(
+                            imageFile:
+                                hasLocalFile ? state.certificateImageFile : null,
+                            imageUrl:
+                                !hasLocalFile ? state.certificateImageUrl : null,
+                            heroTag: heroTag,
+                          ),
+                        ),
+                      )
+                  : null,
+              child: Container(
+                height: 150.h,
+                width: 155.w,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(32.r),
+                  border:
+                      Border.all(color: AppColors.primary100, width: 1.5),
+                ),
+                child: hasLocalFile
+                    ? Hero(
+                        tag: heroTag,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(32.r),
+                          child: Image.file(
+                            state.certificateImageFile!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          ),
+                        ),
+                      )
+                    : hasNetworkImage
+                    ? Hero(
+                        tag: heroTag,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(32.r),
+                          child: AppImage(
+                            state.certificateImageUrl!,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Icon(
+                          Icons.school,
+                          size: 40.w,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
               ),
-              child: state.certificateImageFile != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(32.r),
-                      child: Image.file(
-                        state.certificateImageFile!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      ),
-                    )
-                  : state.certificateImageUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(32.r),
-                      child: AppImage(
-                        state.certificateImageUrl!,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : Center(
-                      child: Icon(
-                        Icons.school,
-                        size: 40.w,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
             ),
             Positioned(
               bottom: 10.r,
@@ -375,8 +404,7 @@ class EditCertificateView extends StatelessWidget {
                 child: AppImage(AssetsData.addCertificateImage, width: 32.w),
               ),
             ),
-            if (state.certificateImageFile != null ||
-                state.certificateImageUrl != null)
+            if (hasAnyImage)
               Positioned(
                 top: 12.r,
                 right: 12.r,
@@ -401,7 +429,8 @@ class EditCertificateView extends StatelessWidget {
         Gap(8.h),
         Text(
           context.tr('certificate_image_hint'),
-          style: Styles.textStyle16.copyWith(color: AppColors.secondary400),
+          style:
+              Styles.textStyle16.copyWith(color: AppColors.secondary400),
           textAlign: TextAlign.center,
         ),
       ],

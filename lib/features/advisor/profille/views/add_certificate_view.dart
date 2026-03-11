@@ -1,13 +1,12 @@
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
-import 'package:tayseer/core/enum/cubit_states.dart';
 
 class AddCertificateView extends StatelessWidget {
   const AddCertificateView({super.key});
@@ -129,6 +128,9 @@ class AddCertificateView extends StatelessWidget {
     AddCertificateState state,
     BuildContext context,
   ) {
+    final hasImage = state.certificateImageFile != null;
+    const heroTag = 'add_certificate_image';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -136,10 +138,21 @@ class AddCertificateView extends StatelessWidget {
         Stack(
           children: [
             GestureDetector(
-              onTap: cubit.pickCertificateImage,
+              // When image exists → open fullscreen; otherwise → pick image
+              onTap: hasImage
+                  ? () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FullScreenImageView(
+                            imageFile: state.certificateImageFile,
+                            heroTag: heroTag,
+                          ),
+                        ),
+                      )
+                  : cubit.pickCertificateImage,
               child: Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: state.certificateImageFile != null ? 0 : 45.r,
+                  horizontal: hasImage ? 0 : 45.r,
                 ),
                 height: 190.h,
                 width: double.infinity,
@@ -148,13 +161,16 @@ class AddCertificateView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(color: AppColors.primary100),
                 ),
-                child: state.certificateImageFile != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(20.r),
-                        child: Image.file(
-                          state.certificateImageFile!,
-                          fit: BoxFit.fill,
-                          width: double.infinity,
+                child: hasImage
+                    ? Hero(
+                        tag: heroTag,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20.r),
+                          child: Image.file(
+                            state.certificateImageFile!,
+                            fit: BoxFit.fitWidth,
+                            width: double.infinity,
+                          ),
                         ),
                       )
                     : Center(
@@ -182,6 +198,34 @@ class AddCertificateView extends StatelessWidget {
                       ),
               ),
             ),
+            // Re-pick button shown only when an image is already selected
+            if (hasImage)
+              Positioned(
+                bottom: 10.r,
+                right: 10.r,
+                child: GestureDetector(
+                  onTap: cubit.pickCertificateImage,
+                  child: Container(
+                    padding: EdgeInsets.all(8.r),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.kWhiteColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 6.r,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.camera_alt_outlined,
+                      size: 20.w,
+                      color: AppColors.kprimaryColor,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ],
