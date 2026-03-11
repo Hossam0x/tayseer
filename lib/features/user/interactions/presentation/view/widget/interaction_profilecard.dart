@@ -10,6 +10,7 @@ class InteractionProfileCard extends StatefulWidget {
   final bool forceBlur;
   final bool showFavoriteIcon;
   final bool showRibbon;
+  final String selectedFilter;
 
   const InteractionProfileCard({
     super.key,
@@ -17,6 +18,7 @@ class InteractionProfileCard extends StatefulWidget {
     this.forceBlur = false,
     this.showFavoriteIcon = false,
     this.showRibbon = true,
+    this.selectedFilter = "",
   });
 
   @override
@@ -47,15 +49,16 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
   }
 
   void _navigateToProfile() {
-  context.pushNamed(
-    AppRouter.kMarriageView,
-    arguments: {
-      'personId': widget.item.userId,
-      'fromInteractions': true,
-      'isFavorite': widget.item.isFavorite, // ✅
-    },
-  );
-}
+    context.pushNamed(
+      AppRouter.kMarriageView,
+      arguments: {
+        'personId': widget.item.userId,
+        'fromInteractions': true,
+        'isFavorite': widget.item.isFavorite,
+        'interactionUser': widget.item,
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -251,18 +254,19 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                 ),
               ),
 
+              // ✅ Ribbon logic based on selectedFilter
               if (widget.showRibbon) ...[
-                if (widget.item.likedHim)
+                if (widget.selectedFilter == "liked_you")
                   Positioned(
                     right: 0,
                     top: 0,
                     child: StatusRibbonwidget(
-                      statusText: context.tr("you_liked"),
-                      topTextPosition: 28.h,
-                      rightTextPosition: 1.w,
+                      statusText: context.tr("liked_you"),
+                      topTextPosition: 30.h,
+                      rightTextPosition: 5.w,
                     ),
                   )
-                else if (widget.item.sentCompliment)
+                else if (widget.selectedFilter == "sent_compliment")
                   Positioned(
                     right: 0,
                     top: 0,

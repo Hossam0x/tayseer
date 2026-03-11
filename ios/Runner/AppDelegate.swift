@@ -11,8 +11,11 @@ import AVFoundation
   ) -> Bool {
 
     GMSServices.provideAPIKey("AIzaSyBwj3AABMp5Sw9qpkfR1ByoBdrF1djZzFQ")
+    
+    // ✅ لازم يكون أول حاجة
+    GeneratedPluginRegistrant.register(with: self)
 
-    // ✅ Audio Session Channel للتسجيل الصوتي على iOS
+    // ✅ Audio Session Channel
     if let controller = window?.rootViewController as? FlutterViewController {
       let audioSessionChannel = FlutterMethodChannel(
         name: "com.athr.tayser/audio_session",
@@ -34,7 +37,6 @@ import AVFoundation
       }
     }
 
-    GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }

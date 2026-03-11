@@ -15,6 +15,8 @@ abstract class MarriageRepository {
     required String personId,
     String? text,
   });
+   Future<Either<Failure, String>> blockUser({required String personId});
+  Future<Either<Failure, String>> unblockUser({required String personId});
   Future<Either<Failure, void>> toggleFavorite({
   required String userId,
   required bool isAdd,

@@ -37,6 +37,7 @@ class BottomActionsSection extends StatelessWidget {
 
             Expanded(
               child: _buildActionItem(
+                
                 Icons.block_flipped,
                 context.tr("block_profile"),
                 AppColors.kscandryTextColor,

@@ -28,13 +28,13 @@ class MarriageBody extends StatefulWidget {
     super.key,
     this.personId,
     this.fromInteractions = false,
-    this.initialIsFavorite = false, // ✅ جديد
+    this.initialIsFavorite = false,
     this.onScroll,
   });
 
   final String? personId;
   final bool fromInteractions;
-  final bool initialIsFavorite; // ✅ جديد
+  final bool initialIsFavorite;
   final Function(bool isScrollingDown)? onScroll;
 
   @override
@@ -72,14 +72,14 @@ class MarriageBodyState extends State<MarriageBody>
 
     final cubit = context.read<MarriageCubit>();
 
-    // ✅ seed القلب لو جاي من Interactions وكان مفضّل
-    if (widget.fromInteractions &&
-        widget.personId != null &&
-        widget.initialIsFavorite) {
-      cubit.seedFavorite(widget.personId!);
-    }
+    // ✅ الـ cubit عنده كل المعلومات من الـ constructor
+    // نمرر الـ seedFavoriteId لو كان اليوزر favorite
+    cubit.fetchMarriageProfile(
+      seedFavoriteId: (cubit.seedPersonId != null && cubit.seedIsFavorite)
+          ? cubit.seedPersonId
+          : null,
+    );
 
-    cubit.fetchMarriageProfile();
     cubit.initAnimation(this);
   }
 
@@ -94,21 +94,17 @@ class MarriageBodyState extends State<MarriageBody>
   void _scrollListener() {
     final currentOffset = _mainScrollController.offset;
     final delta = currentOffset - _lastOffset;
-
     _scrollDelta += delta;
 
     if (_scrollDelta.abs() >= _scrollThreshold) {
       final isDown = _scrollDelta > 0;
-
       final cubit = context.read<MarriageCubit>();
       if (cubit.state.isScrollingDown != isDown) {
         cubit.setScrollingDown(isDown);
       }
-
       widget.onScroll?.call(isDown);
       _scrollDelta = 0;
     }
-
     _lastOffset = currentOffset;
   }
 
@@ -145,14 +141,18 @@ class MarriageBodyState extends State<MarriageBody>
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<MarriageCubit, MarriageState>(
+      // ✅ بس نسمع للـ regard و sendRegardText — مش userInteraction
       listenWhen: (previous, current) =>
           previous.marriageProfileState != current.marriageProfileState ||
-          previous.userInteractionState != current.userInteractionState ||
-          previous.sendRegardState != current.sendRegardState,
+          (previous.sendRegardState != current.sendRegardState &&
+              current.showActionSnackbar) ||
+          (previous.sendRegardTextState != current.sendRegardTextState &&
+              current.showActionSnackbar),
       listener: (context, state) {
-        if (state.userInteractionState == CubitStates.failure ||
-            state.sendRegardState == CubitStates.failure ||
-            state.sendRegardTextState == CubitStates.failure) {
+        // ✅ فشل الـ regard فقط
+        if ((state.sendRegardState == CubitStates.failure ||
+                state.sendRegardTextState == CubitStates.failure) &&
+            state.showActionSnackbar) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -163,7 +163,9 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
 
-        if (state.sendRegardState == CubitStates.success) {
+        // ✅ نجاح الـ regard فقط
+        if (state.sendRegardState == CubitStates.success &&
+            state.showActionSnackbar) {
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -172,7 +174,7 @@ class MarriageBodyState extends State<MarriageBody>
             },
           );
           Future.delayed(const Duration(seconds: 4), () {
-            context.pop();
+            if (context.mounted) context.pop();
           });
           context.read<MarriageCubit>().resetState();
         }
@@ -193,7 +195,6 @@ class MarriageBodyState extends State<MarriageBody>
           );
         }
 
-        // ✅ نستخدم state.allUsers بدل state.profile?.data?.users
         final List<UserItem> allUsers = state.allUsers;
         final List<UserItem> users = widget.personId != null
             ? allUsers.where((p) => p.user?.id == widget.personId).toList()
@@ -336,6 +337,11 @@ class MarriageBodyState extends State<MarriageBody>
     final answers = profile.answers;
     final images = answers?.userMedia?.image ?? [];
 
+    // ✅ لو الصورة مش موجودة في answers لكن موجودة في user.image، نستخدمها
+    final List<String> displayImages = images.isNotEmpty
+        ? images
+        : (user?.image != null && user!.image!.isNotEmpty ? [user.image!] : []);
+
     final bool hasNext =
         widget.personId == null && profileIndex + 1 < users.length;
 
@@ -352,318 +358,346 @@ class MarriageBodyState extends State<MarriageBody>
       child: CustomBackground(
         child: Stack(
           children: [
-            CustomScrollView(
-              physics: const ClampingScrollPhysics(),
-              key: ValueKey<int>(profileIndex),
-              controller: _mainScrollController,
-              slivers: [
-                SliverProfileHeader(
-                  reportId: user?.id,
-                  images: images,
-                  name: user?.name ?? '',
-                  age: "🎂 ${answers?.aboutMe?.age ?? ''}",
-                  location: user?.country ?? answers?.aboutMe?.country ?? '',
-                  tagsjob: "💼 ${user?.about?.job ?? ''}",
-                  educationLevel: "🎓 ${user?.about?.educationLevel ?? ''}",
-                  religiousCommitment:
-                      "🕌 ${user?.about?.religiousCommitment ?? ''}",
-                  nationality: "🌍 ${user?.about?.nationality ?? ''}",
-                  height: "📏 ${user?.about?.height ?? ''}",
-                  toggleWidget: _buildToggle(),
-                  swipeDirection: state.swipeDirection,
-                  swipeProgress: state.swipeProgress,
-                  nextImages: hasNext ? nextImages : null,
-                  nextName: hasNext ? (nextUser?.name ?? '') : null,
-                  nextAge: hasNext
-                      ? "🎂 ${nextAnswers?.aboutMe?.age ?? ''}"
-                      : null,
-                  nextLocation: hasNext
-                      ? (nextUser?.country ??
-                            nextAnswers?.aboutMe?.country ??
-                            '')
-                      : null,
-                  nextTagsjob: hasNext
-                      ? "💼 ${nextUser?.about?.job ?? ''}"
-                      : null,
-                  nextEducationLevel: hasNext
-                      ? "🎓 ${nextUser?.about?.educationLevel ?? ''}"
-                      : null,
-                  nextReligiousCommitment: hasNext
-                      ? "🕌 ${nextUser?.about?.religiousCommitment ?? ''}"
-                      : null,
-                  nextNationality: hasNext
-                      ? "🌍 ${nextUser?.about?.nationality ?? ''}"
-                      : null,
-                  nextHeight: hasNext
-                      ? "📏 ${nextUser?.about?.height ?? ''}"
-                      : null,
-                  // ✅ القلب منفصل تماماً عن Check
-                  isFavorited: state.favoritedIds.contains(user?.id ?? ''),
-                  onFavoriteTap: () {
-                    cubit.toggleLocalFavorite(user?.id ?? '');
-                  },
-                ),
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 20.h,
+            // ✅ RefreshIndicator يغلف الـ CustomScrollView
+            RefreshIndicator.adaptive(
+              onRefresh: () => cubit.refreshProfile(),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(), // ✅ مهم
+                key: ValueKey<int>(profileIndex),
+                controller: _mainScrollController,
+                slivers: [
+                  SliverProfileHeader(
+                    reportId: user?.id,
+                    images: displayImages,
+                    name: user?.name ?? '',
+                    age: "🎂 ${answers?.aboutMe?.age ?? ''}",
+                    location: user?.country ?? answers?.aboutMe?.country ?? '',
+                    tagsjob: "💼 ${user?.about?.job ?? ''}",
+                    educationLevel: "🎓 ${user?.about?.educationLevel ?? ''}",
+                    religiousCommitment:
+                        "🕌 ${user?.about?.religiousCommitment ?? ''}",
+                    nationality: "🌍 ${user?.about?.nationality ?? ''}",
+                    height: "📏 ${user?.about?.height ?? ''}",
+                    toggleWidget: _buildToggle(),
+                    swipeDirection: state.swipeDirection,
+                    swipeProgress: state.swipeProgress,
+                    nextImages: hasNext ? nextImages : null,
+                    nextName: hasNext ? (nextUser?.name ?? '') : null,
+                    nextAge: hasNext
+                        ? "🎂 ${nextAnswers?.aboutMe?.age ?? ''}"
+                        : null,
+                    nextLocation: hasNext
+                        ? (nextUser?.country ??
+                              nextAnswers?.aboutMe?.country ??
+                              '')
+                        : null,
+                    nextTagsjob: hasNext
+                        ? "💼 ${nextUser?.about?.job ?? ''}"
+                        : null,
+                    nextEducationLevel: hasNext
+                        ? "🎓 ${nextUser?.about?.educationLevel ?? ''}"
+                        : null,
+                    nextReligiousCommitment: hasNext
+                        ? "🕌 ${nextUser?.about?.religiousCommitment ?? ''}"
+                        : null,
+                    nextNationality: hasNext
+                        ? "🌍 ${nextUser?.about?.nationality ?? ''}"
+                        : null,
+                    nextHeight: hasNext
+                        ? "📏 ${nextUser?.about?.height ?? ''}"
+                        : null,
+                    isFavorited: state.favoritedIds.contains(user?.id ?? ''),
+                    onFavoriteTap: () {
+                      cubit.toggleLocalFavorite(user?.id ?? '');
+                    },
                   ),
-                  sliver: SliverToBoxAdapter(
-                    child: CompatibilitySection(
-                      title: context.tr('compatibility_profile'),
-                      subtitle: user?.similarity != null
-                          ? '${user!.similarity}%'
-                          : '',
-                      tags:
-                          user?.matchingTags
-                              ?.where(
-                                (t) =>
-                                    t.value != null &&
-                                    t.value!.trim().isNotEmpty,
-                              )
-                              .map<String>((t) => t.value!)
-                              .toList() ??
-                          [],
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 20.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: CompatibilitySection(
+                        title: context.tr('compatibility_profile'),
+                        subtitle: user?.similarity != null
+                            ? '${user!.similarity}%'
+                            : '',
+                        tags:
+                            user?.matchingTags
+                                ?.where(
+                                  (t) =>
+                                      t.value != null &&
+                                      t.value!.trim().isNotEmpty,
+                                )
+                                .map<String>((t) => t.value!)
+                                .toList() ??
+                            [],
+                      ),
                     ),
                   ),
-                ),
-                if (images.length > 1 && images[1].isNotEmpty)
+                  if (displayImages.length > 1 && displayImages[1].isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: AdditionalImageSection(
+                          personId: user?.id ?? '',
+                          imageUrl: displayImages[1],
+                        ),
+                      ),
+                    ),
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
                       vertical: 10.h,
                     ),
                     sliver: SliverToBoxAdapter(
-                      child: AdditionalImageSection(
-                        personId: user?.id ?? '',
-                        imageUrl: images[1],
+                      child: AboutMeSection(
+                        items: [
+                          if (answers?.aboutMe?.socialStatus != null)
+                            {'label': "💍 ${answers!.aboutMe!.socialStatus}"},
+                          if (answers?.family?.hasChildren != null)
+                            {'label': "👶 ${answers!.family!.hasChildren}"},
+                          if (answers?.aboutMe?.weight != null)
+                            {'label': "⚖️ ${answers?.aboutMe?.weight} gm"},
+                          if (answers?.professionalLife?.job != null)
+                            {'label': "💼 ${answers!.professionalLife!.job}"},
+                          if (answers?.aboutMe?.healthStatus != null)
+                            {'label': "🩺 ${answers!.aboutMe!.healthStatus}"},
+                        ],
                       ),
                     ),
                   ),
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: AboutMeSection(
-                      items: [
-                        if (answers?.aboutMe?.socialStatus != null)
-                          {'label': "💍 ${answers!.aboutMe!.socialStatus}"},
-                        if (answers?.family?.hasChildren != null)
-                          {'label': "👶 ${answers!.family!.hasChildren}"},
-                        if (answers?.aboutMe?.weight != null)
-                          {'label': "⚖️ ${answers?.aboutMe?.weight} gm"},
-                        if (answers?.professionalLife?.job != null)
-                          {'label': "💼 ${answers!.professionalLife!.job}"},
-                        if (answers?.aboutMe?.healthStatus != null)
-                          {'label': "🩺 ${answers!.aboutMe!.healthStatus}"},
-                      ],
+                  if (displayImages.length > 2 && displayImages[2].isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: AdditionalImageSection(
+                          personId: user?.id ?? '',
+                          imageUrl: displayImages[2],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                if (images.length > 2 && images[2].isNotEmpty)
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
                       vertical: 10.h,
                     ),
                     sliver: SliverToBoxAdapter(
-                      child: AdditionalImageSection(
-                        personId: user?.id ?? '',
-                        imageUrl: images[2],
+                      child: EducationSection(
+                        items: [
+                          if (answers?.professionalLife?.educationLevel != null)
+                            {
+                              'label':
+                                  "🎓 ${answers!.professionalLife!.educationLevel}",
+                            },
+                          if (answers?.professionalLife?.job != null)
+                            {'label': "💼 ${answers!.professionalLife!.job}"},
+                        ],
                       ),
                     ),
                   ),
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: EducationSection(
-                      items: [
-                        if (answers?.professionalLife?.educationLevel != null)
+                  if (displayImages.length > 3 && displayImages[3].isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: AdditionalImageSection(
+                          personId: user?.id ?? '',
+                          imageUrl: displayImages[3],
+                        ),
+                      ),
+                    ),
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: LifeEventsSection(
+                        titleName: user?.name ?? '',
+                        events: [
                           {
-                            'label':
-                                "🎓 ${answers!.professionalLife!.educationLevel}",
+                            'timeLabel': answers?.yourGoals?.marry,
+                            'goalLabel': context.tr('marriage_profile'),
+                            'isActive': true,
                           },
-                        if (answers?.professionalLife?.job != null)
-                          {'label': "💼 ${answers!.professionalLife!.job}"},
-                      ],
-                    ),
-                  ),
-                ),
-                if (images.length > 3 && images[3].isNotEmpty)
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: AdditionalImageSection(
-                        personId: user?.id ?? '',
-                        imageUrl: images[3],
-                      ),
-                    ),
-                  ),
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: LifeEventsSection(
-                      titleName: user?.name ?? '',
-                      events: [
-                        {
-                          'timeLabel': answers?.yourGoals?.marry,
-                          'goalLabel': context.tr('marriage_profile'),
-                          'isActive': true,
-                        },
-                        {
-                          'timeLabel': answers?.yourGoals?.engagment ?? '',
-                          'goalLabel': context.tr('engagement_profile'),
-                          'isActive': true,
-                        },
-                        {
-                          'timeLabel': answers?.yourGoals?.children ?? '',
-                          'goalLabel': context.tr('children_profile'),
-                          'isActive': true,
-                        },
-                        {
-                          'timeLabel': answers?.yourGoals?.travel,
-                          'goalLabel': context.tr('travel_profile'),
-                          'isActive': true,
-                        },
-                      ],
-                    ),
-                  ),
-                ),
-                if (images.isNotEmpty)
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: AdditionalImageSection(
-                        personId: user?.id ?? '',
-                        imageUrl: images.first,
-                      ),
-                    ),
-                  ),
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: ReligiousSection(
-                      tags: [
-                        if (answers?.aboutMe?.religiousCommitment != null)
                           {
-                            'label':
-                                "🕌 ${answers!.aboutMe!.religiousCommitment}",
+                            'timeLabel': answers?.yourGoals?.engagment ?? '',
+                            'goalLabel': context.tr('engagement_profile'),
+                            'isActive': true,
                           },
-                        if (answers?.aboutMe?.smoker != null)
-                          {'label': "🚬 ${answers!.aboutMe!.smoker}"},
-                      ],
-                    ),
-                  ),
-                ),
-                if (answers?.userMedia?.video != null)
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: VideoSection(videoUrl: answers!.userMedia!.video!),
-                    ),
-                  ),
-                if (images.length > 4 && images[4].isNotEmpty)
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: AdditionalImageSection(
-                        personId: user?.id ?? '',
-                        imageUrl: images[4],
+                          {
+                            'timeLabel': answers?.yourGoals?.children ?? '',
+                            'goalLabel': context.tr('children_profile'),
+                            'isActive': true,
+                          },
+                          {
+                            'timeLabel': answers?.yourGoals?.travel,
+                            'goalLabel': context.tr('travel_profile'),
+                            'isActive': true,
+                          },
+                        ],
                       ),
                     ),
                   ),
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: InterestsSection(
-                      interests: (answers?.hobbies ?? [])
-                          .map((h) => {'label': h})
-                          .toList(),
+                  if (displayImages.isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: AdditionalImageSection(
+                          personId: user?.id ?? '',
+                          imageUrl: displayImages.first,
+                        ),
+                      ),
+                    ),
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: ReligiousSection(
+                        tags: [
+                          if (answers?.aboutMe?.religiousCommitment != null)
+                            {
+                              'label':
+                                  "🕌 ${answers!.aboutMe!.religiousCommitment}",
+                            },
+                          if (answers?.aboutMe?.smoker != null)
+                            {'label': "🚬 ${answers!.aboutMe!.smoker}"},
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: BioVoiceSection(
-                      bioText: answers?.myDescription ?? '',
-                      audioPath: answers?.userMedia?.audio ?? '',
+                  if (answers?.userMedia?.video != null)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: VideoSection(
+                          videoUrl: answers!.userMedia!.video!,
+                        ),
+                      ),
+                    ),
+                  if (displayImages.length > 4 && displayImages[4].isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: AdditionalImageSection(
+                          personId: user?.id ?? '',
+                          imageUrl: displayImages[4],
+                        ),
+                      ),
+                    ),
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: InterestsSection(
+                        interests: (answers?.hobbies ?? [])
+                            .map((h) => {'label': h})
+                            .toList(),
+                      ),
                     ),
                   ),
-                ),
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 10.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: MessageInputSection(
-                      name: user?.name ?? '',
-                      personId: user?.id ?? '',
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: BioVoiceSection(
+                        bioText: answers?.myDescription ?? '',
+                        audioPath: answers?.userMedia?.audio ?? '',
+                      ),
                     ),
                   ),
-                ),
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 20.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: BottomActionsSection(
-                      onBlock: () {
-                        CustomshowDialogWithImage(
-                          context,
-                          bottonText: context.tr("send_report"),
-                          imageUrl: AssetsData.kWoriningImage,
-                          title: context.tr("confirm_report"),
-                          supTitle: context.tr("sup_confirm_report"),
-                          onPressed: () {},
-                          showCancelButton: true,
-                        );
-                      },
-                      onReport: () {
-                        context.pushNamed(
-                          AppRouter.kReportsView,
-                          arguments: {
-                            'type': ReportType.user,
-                            'id': user?.id ?? '',
-                          },
-                        );
-                      },
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: MessageInputSection(
+                        name: user?.name ?? '',
+                        personId: user?.id ?? '',
+                      ),
                     ),
                   ),
-                ),
-                SliverToBoxAdapter(child: SizedBox(height: 150.h)),
-              ],
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 20.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: BottomActionsSection(
+                    onBlock: () {
+  final isBlocked = user?.isBlocked ?? false;
+  CustomshowDialogWithImage(
+    context,
+    title: isBlocked
+        ? context.tr('unblock_user')
+        : context.tr(AppStrings.blockUser),
+    supTitle: isBlocked
+        ? context.tr('unblock_user_confirmation')
+        : context.tr(AppStrings.blockUserConfirmation),
+    icon: Icons.block,
+    bottonText: context.tr(AppStrings.yes),
+    onPressed: () async {
+      Navigator.pop(context);
+      if (isBlocked) {
+        await cubit.unblockUser(personId: user?.id ?? '');
+      } else {
+        await cubit.blockUser(personId: user?.id ?? '');
+      }
+      final newState = cubit.state;
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: newState.blockMessage ?? '',
+          isSuccess: newState.blockActionState == CubitStates.success,
+          isError: newState.blockActionState == CubitStates.failure,
+        ),
+      );
+    },
+    showCancelButton: true,
+    cancelText: context.tr(AppStrings.no),
+    onCancel: () => Navigator.pop(context),
+  );
+},  onReport: () {
+                          context.pushNamed(
+                            AppRouter.kReportsView,
+                            arguments: {
+                              'type': ReportType.user,
+                              'id': user?.id ?? '',
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(child: SizedBox(height: 150.h)),
+                ],
+              ),
             ),
 
             // ✅ أزرار Like / Star / Dislike
