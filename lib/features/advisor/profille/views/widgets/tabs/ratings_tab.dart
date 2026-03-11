@@ -1,6 +1,5 @@
 import 'package:tayseer/core/cubits/int_cubit.dart';
 import 'package:tayseer/core/cubits/toggle_cubit.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_state.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
