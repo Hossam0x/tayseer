@@ -58,6 +58,7 @@ class UserItem {
 }
 class User {
   String? id;
+   bool? imageBlur;
   String? name;
   bool? isLiked;
   bool? isVerified;
@@ -73,6 +74,7 @@ class User {
 
   User({
     this.id,
+      this.imageBlur,
     this.name,
     this.isLiked,
     this.isVerified,
@@ -89,6 +91,7 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) => User(
     id: json["id"],
+    imageBlur: json["imageBlur"],
     name: json["name"],
     isLiked: json["isLiked"],
     isVerified: json["isVerified"],
@@ -121,6 +124,7 @@ class User {
     "about": about?.toJson(),
     "isFavorite": isFavorite,
     "isBlocked": isBlocked, // ✅
+    "imageBlur": imageBlur, // ✅
   };
 }
 class UserAbout {
