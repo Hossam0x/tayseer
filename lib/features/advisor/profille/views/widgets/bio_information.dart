@@ -53,6 +53,7 @@ class BioInformation extends StatelessWidget {
           location: '',
           professionalSpecialization: null,
           jobGrade: null,
+          approvalKey: '',
         ),
       ),
     );

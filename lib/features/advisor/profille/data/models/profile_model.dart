@@ -8,7 +8,7 @@ class ProfileModel extends Equatable {
   final int followers;
   final int following;
   final bool isVerified;
-  final bool isApproved;
+  final String approvalKey;
   final String? location;
   final String? yearsOfExperience;
   final String? professionalSpecialization;
@@ -22,7 +22,7 @@ class ProfileModel extends Equatable {
     required this.followers,
     required this.following,
     required this.isVerified,
-    this.isApproved = true,
+    required this.approvalKey,
     required this.location,
     this.yearsOfExperience,
     this.professionalSpecialization,
@@ -42,7 +42,7 @@ class ProfileModel extends Equatable {
       followers: json['followers'] ?? 0,
       following: json['following'] ?? 0,
       isVerified: json['isVerified'] ?? false,
-      isApproved: json['isApproved'] ?? true,
+      approvalKey: json['approvalKey'] ?? '',
       location: json['location'],
     );
   }
@@ -58,7 +58,7 @@ class ProfileModel extends Equatable {
     'followers': followers,
     'following': following,
     'isVerified': isVerified,
-    'isApproved': isApproved,
+    'approvalKey': approvalKey,
     'location': location,
   };
 
@@ -73,7 +73,7 @@ class ProfileModel extends Equatable {
     int? followers,
     int? following,
     bool? isVerified,
-    bool? isApproved,
+    String? approvalKey,
     String? location,
   }) {
     return ProfileModel(
@@ -88,7 +88,7 @@ class ProfileModel extends Equatable {
       followers: followers ?? this.followers,
       following: following ?? this.following,
       isVerified: isVerified ?? this.isVerified,
-      isApproved: isApproved ?? this.isApproved,
+      approvalKey: approvalKey ?? this.approvalKey,
       location: location ?? this.location,
     );
   }
@@ -105,7 +105,7 @@ class ProfileModel extends Equatable {
     followers,
     following,
     isVerified,
-    isApproved,
+    approvalKey,
     location,
   ];
 }

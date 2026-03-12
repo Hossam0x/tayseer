@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
@@ -110,7 +111,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         } catch (e) {
           debugPrint('❌ Error caching advisor profile: $e');
         }
-
+        setAdvisorStatus(profileModel.approvalKey);
         emit(
           state.copyWith(
             profileState: CubitStates.success,

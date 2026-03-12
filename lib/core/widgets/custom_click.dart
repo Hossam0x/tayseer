@@ -79,10 +79,9 @@ class CustomClick extends StatelessWidget {
   void _showAdvisorPendingDialog(BuildContext context) {
     CustomshowDialogWithImage(
       context,
-      title: context.tr(AppStrings.accountUnderReview),
+      title: context.tr(AppStrings.cannotDoThisAction),
       supTitle: context.tr(AppStrings.accountUnderReviewMessage),
-      icon: Icons.hourglass_top,
-      iconColor: Colors.orange,
+      imageUrl: AssetsData.pendingIcon,
       bottonText: context.tr(AppStrings.gotIt),
       showCancelButton: false,
       onPressed: () {
@@ -96,15 +95,12 @@ class CustomClick extends StatelessWidget {
       context,
       title: context.tr(AppStrings.cannotDoThisAction),
       supTitle: context.tr(AppStrings.accountDisApprovedMessage),
-      icon: Icons.cancel_outlined,
-      iconColor: Colors.red,
+      imageUrl: AssetsData.appErrorIcon,
       bottonText: context.tr(AppStrings.contactSupport),
       showCancelButton: true,
       cancelText: context.tr(AppStrings.gotIt),
       onPressed: () {
-        // Navigate to contact support page or open email client
-        // For example:
-        // Navigator.pushNamed(context, AppRouter.kContactSupportView);
+        context.pushNamed(AppRouter.kHelpSupportView);
       },
       onCancel: () {
         // Dialog closes automatically

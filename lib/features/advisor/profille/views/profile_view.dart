@@ -1,9 +1,9 @@
+import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
-import 'package:tayseer/core/widgets/account_review_content.dart';
+import 'package:tayseer/core/widgets/advisor_status_widget.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/account_review_dialog_listener.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/bio_information.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_header.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
@@ -53,14 +53,7 @@ class ProfileView extends StatelessWidget {
                   ),
                   BlocProvider.value(value: getIt<ConnectivityCubit>()),
                 ],
-                child: Stack(
-                  children: [
-                    _ProfileContent(),
-
-                    // ⭐ إضافة AccountReviewDialogListener
-                    const AccountReviewDialogListener(),
-                  ],
-                ),
+                child: Stack(children: [_ProfileContent()]),
               ),
             ),
           ],
@@ -135,50 +128,39 @@ class _ProfileContentState extends State<_ProfileContent> {
         backgroundColor: AppColors.kWhiteColor,
         displacement: 40.h,
         edgeOffset: 0,
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          slivers: [
-            // Profile Header
-            const ProfileHeader(),
+        child: BlocBuilder<ProfileCubit, ProfileState>(
+          buildWhen: (previous, current) => previous.profile != current.profile,
+          builder: (context, state) {
+            return CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              slivers: [
+                // Profile Header
+                const ProfileHeader(),
 
-            // Bio Information
-            const BioInformation(),
+                // Bio Information
+                const BioInformation(),
 
-            // Stories Section
-            const ProfileStoriesSection(advisorId: null),
+                // Stories Section
+                const ProfileStoriesSection(advisorId: null),
 
-            // Spacing
-            SliverToBoxAdapter(child: Gap(20.h)),
+                // Spacing
+                SliverToBoxAdapter(child: Gap(20.h)),
 
-            // Posts Tabs Section or Account Review Content
-            BlocBuilder<ProfileCubit, ProfileState>(
-              buildWhen: (previous, current) =>
-                  previous.profile?.isApproved != current.profile?.isApproved,
-              builder: (context, state) {
-                final isApproved = state.profile?.isApproved ?? true;
+                // Posts Tabs Section or Account Review Content
+                if (advisorStatus == AdvisorStatus.disapproved ||
+                    advisorStatus == AdvisorStatus.pending)
+                  SliverToBoxAdapter(child: AdvisorStatusWidget())
+                else
+                  const ProfileTabsSection(),
 
-                if (!isApproved) {
-                  return SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
-                      child: const AccountReviewContent(
-                        isDialog: false,
-                        showButton: false,
-                      ),
-                    ),
-                  );
-                }
-
-                return const ProfileTabsSection();
-              },
-            ),
-
-            // Bottom padding for better scrolling
-            SliverToBoxAdapter(child: Gap(100.h)),
-          ],
+                // Bottom padding for better scrolling
+                SliverToBoxAdapter(child: Gap(100.h)),
+              ],
+            );
+          },
         ),
       ),
     );

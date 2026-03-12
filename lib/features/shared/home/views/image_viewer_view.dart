@@ -324,7 +324,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
             if (!_showOverlaysNotifier.value) {
               _showOverlaysNotifier.value = true;
             }
-            if (!isGuest) {
+            if (canAct) {
               FlyAnimation.flyWidget(
                 context: context,
                 startOffset: tapPosition,
@@ -625,22 +625,20 @@ class _ViewerHeader extends StatelessWidget {
                   _buildDots()
                 else
                   const SizedBox(),
-                if (!isGuest)
-                  GestureDetector(
-                    onTap: () {
-                      context.pushNamed(
-                        AppRouter.kReportsView,
-                        arguments: {'type': ReportType.post, 'id': postId},
-                      );
-                    },
-                    child: Icon(
-                      Icons.info_outline,
-                      color: Colors.white,
-                      size: 28.sp,
-                    ),
-                  )
-                else
-                  SizedBox(width: 24.w),
+
+                CustomClick(
+                  onTap: () {
+                    context.pushNamed(
+                      AppRouter.kReportsView,
+                      arguments: {'type': ReportType.post, 'id': postId},
+                    );
+                  },
+                  child: Icon(
+                    Icons.info_outline,
+                    color: Colors.white,
+                    size: 28.sp,
+                  ),
+                ),
               ],
             ),
           ),

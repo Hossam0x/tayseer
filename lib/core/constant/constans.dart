@@ -25,3 +25,15 @@ bool get isGuest => selectedUserType == UserTypeEnum.guest;
 bool get isConsultant => selectedUserType == UserTypeEnum.asConsultant;
 
 AdvisorStatus? advisorStatus;
+
+bool get canAct {
+  if (isGuest) return false;
+  if (isAdvisor) {
+    if (advisorStatus == AdvisorStatus.approved) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  return true;
+}

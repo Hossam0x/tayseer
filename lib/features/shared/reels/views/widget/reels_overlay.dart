@@ -116,7 +116,7 @@ class ReelsOverlay extends StatelessWidget {
                 },
                 child: Icon(Icons.close, color: Colors.white, size: 28.sp),
               ),
-              if (!isGuest && !post.isMine)
+              if (canAct && !post.isMine)
                 IconButton(
                   padding: EdgeInsets.zero,
                   onPressed: () {
