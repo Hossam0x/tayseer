@@ -70,6 +70,7 @@ class UserPublicProfileHeader extends StatelessWidget {
       following: profile.following.toString(),
       context: context,
       profile: profile,
+      imageBlur: profile.imageBlur ?? false,
     );
   }
 
@@ -132,6 +133,7 @@ class UserPublicProfileHeader extends StatelessWidget {
     required String following,
     required BuildContext context,
     required UserProfileModel profile,
+    bool imageBlur = false,
   }) {
     final isBlocked = context.select<UserPublicProfileCubit, bool>(
       (cubit) => cubit.state.profile?.isBlockedByMe ?? false,
@@ -162,8 +164,9 @@ class UserPublicProfileHeader extends StatelessWidget {
                 MyProfileImage(
                   width: 90.w,
                   imageUrl: imageUrl,
+                  isBlur: imageBlur,
                   heroTag: 'profile_image_${profile.id}',
-                  onTap: imageUrl.isNotEmpty && !isBlocked
+                  onTap: imageUrl.isNotEmpty && !isBlocked && !imageBlur
                       ? () {
                           Navigator.push(
                             context,

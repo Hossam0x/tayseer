@@ -252,15 +252,28 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
+  static const _guestProtectedIds = {
+    'events',
+    'savers',
+    'order_management',
+    'packages',
+    'archive',
+    'hide_story',
+    'appointments',
+    'workshops',
+    'blocks',
+  };
+
   Widget _buildSettingItem(BuildContext context, SettingItemModel setting) {
     final isNotificationsItem = setting.id == 'notifications';
+    final isGuestProtected = _guestProtectedIds.contains(setting.id);
 
-    return AnimatedContainer(
+    final child = AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: isNotificationsItem
+          onTap: isNotificationsItem || isGuestProtected
               ? null
               : () => _handleSettingTap(context, setting),
           borderRadius: BorderRadius.circular(16.r),
@@ -357,6 +370,15 @@ class _SettingsViewState extends State<SettingsView> {
         ),
       ),
     );
+
+    if (isGuestProtected) {
+      return CustomClick(
+        onTap: () => _handleSettingTap(context, setting),
+        child: child,
+      );
+    }
+
+    return child;
   }
 
   Widget _buildTrailingWidget(BuildContext context, SettingItemModel setting) {
